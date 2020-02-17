@@ -1,0 +1,27 @@
+<div class="ccl-left-panel" *ngIf="user">
+
+    <div class="ccl-left-panel-head-wrap">
+        <h4 class="ccl-left-panel-head-ttl">More</h4>
+    </div>
+    <div class="cc1-left-panel-user">
+        <div class="cc1-left-panel-user-thumb">
+            <avatar image="{{user.avatar}}" name={{user.name}}></avatar>
+        </div>
+        <div class="cc1-left-panel-user-name-wrap">
+            <h6 class="cc1-left-panel-user-name">{{user.name}}</h6>
+            <span class="cc1-left-panel-user-status ccl-blue-color">Online</span>
+        </div>
+    </div>
+    <div class="cc1-left-panel-myacc-opts-wrap">
+        <div class="cc1-left-panel-myacc-opts-list-ttl ccl-text-uppercase">Other</div>
+        <div class="cc1-left-panel-myacc-opts-list">
+            <a href="https://forum.cometchat.com/" target="_blank"
+                class="cc1-left-panel-myacc-opt help ccl-semi-bold-text"><span
+                    class="cc1-left-panel-myacc-optname"></span>Help</a>
+            <a href="https://forum.cometchat.com/" target="_blank"
+                class="cc1-left-panel-myacc-opt report ccl-semi-bold-text"><span
+                    class="cc1-left-panel-myacc-optname"></span>Report a Problem</a>
+        </div>
+    </div>
+
+</div>

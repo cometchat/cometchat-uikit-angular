@@ -17,7 +17,17 @@
     "lib": [
       "es2018",
       "dom"
-    ]
+    ],
+    "paths": {
+      "ui-kit": [
+        "dist/ui-kit/ui-kit",
+        "dist/ui-kit"
+      ],
+      "cometchat-angular-ui-kit": [
+        "dist/cometchat-angular-ui-kit/cometchat-angular-ui-kit",
+        "dist/cometchat-angular-ui-kit"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,

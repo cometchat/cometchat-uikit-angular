@@ -1,0 +1,157 @@
+<div class="cc1-chat-win-msg-block " *ngIf="sender">
+    <div class="cc1-chat-win-rcvr-msg-wrap" [ngSwitch]="message.category">
+        <!-- <p class="chat-txt-msg">{{message.text}}</p> -->
+        <div *ngSwitchCase="'message'">
+            <div [ngSwitch]="message.type">
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.TEXT" class="message-text">
+                    {{(message.text?message.text:message.category)}}
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.VIDEO" class="message-text">
+                    <video width="320" height="240" controls>
+                        <source src={{message.data.url}} type="audio/mp4">
+                    </video>
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.AUDIO" class="message-text">
+                    <audio controls>
+                        <source src={{message.data.url}}>
+                    </audio>
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.MEDIA" class="message-text">
+                    {{(message.text?"this is text Message":message.category)}}
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.FILE" class="message-text">
+                    <a href={{message.data.url}} target="_blank">File message</a>
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.CUSTOM" class="message-text">
+                    {{(message.text?"this is text Message":message.category)}}
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.IMAGE" class="message-text">
+                    <img src={{message.data.url?message.data.url:message.category}}>
+                </div>
+                <div *ngSwitchDefault class="message-text">
+                    {{(message.text?"Something Unknown CometChat can't process":"Something Unknown CometChat can't process")}}
+                </div>
+            </div>
+        </div>
+        <div *ngSwitchCase="'custom'" class="message-text">
+            this is a custom message
+        </div>
+        <div *ngSwitchCase="'action'" class="message-text">
+            this is a action message
+        </div>
+        <div *ngSwitchCase="'call'" class="call-message">
+            <span [ngSwitch]="message.action">
+                <div *ngSwitchCase="cometchat.CALL_STATUS.UNANSWERED" class="call-message">
+                    {{message.sender.name + " had missed call from " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.REJECTED" class="call-message">
+                    {{message.sender.name + " had rejected call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.ONGOING" class="call-message">
+                    {{message.sender.name + " had joined the call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.INITIATED" class="call-message">
+                    {{message.sender.name + " had initiated the call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.ENDED" class="call-message">
+                    {{message.sender.name + " ended the call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.CANCELLED" class="call-message">
+                    {{message.sender.name + " rejected the call with " +message.receiver.name}}
+                </div>
+            </span>
+        </div>
+
+
+        <!-- <div class="message-timestamp">
+            {{message.sentAt *1000|date:'h:mm a'	}}
+        </div> -->
+    </div>
+    <div class="cc1-chat-win-msg-time-wrap">
+        <span class="cc1-chat-win-timestamp">{{ message.sentAt * 1000 | date : 'h:mm a'}}</span>
+        <span class="cc1-chat-win-tick" *ngIf="message.sentAt && ! message.deliveredAt && ! message.readAt">
+            <img style="width: 15px;" src='./assets/images/single_tick.png' alt="sent">
+            <!-- <fa-icon [icon]=faCheck></fa-icon> -->
+        </span>
+        <span class="cc1-chat-win-tick" *ngIf="message.deliveredAt && !   message.readAt">
+            <img style="width: 15px;" src='./assets/images/double_tick.png' alt="sent">
+            <!-- <fa-icon [icon]=faCheckDouble></fa-icon> -->
+        </span>
+        <span class="cc1-chat-win-tick" *ngIf="message.readAt">
+            <img style="width: 15px;" src='./assets/images/double_tick_blue.png' alt="sent">
+            <!-- <fa-icon [icon]=faCheckDouble></fa-icon> -->
+        </span>
+    </div>
+</div>
+
+<div class="cc1-chat-win-msg-block" *ngIf="!sender">
+    <div class="cc1-chat-win-sndr-msg-wrap" [ngSwitch]="message.category">
+        <!-- <p class="chat-txt-msg">{{message.text}}</p> -->
+
+        <div *ngSwitchCase="'message'">
+
+            <div [ngSwitch]="message.type">
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.TEXT" class="message-text">
+                    {{(message.text?message.text:message.category)}}
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.VIDEO" class="message-text">
+                    <video width="320" height="240" controls>
+                        <source src={{message.data.url}}>
+                    </video>
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.AUDIO" class="message-text">
+                    <audio controls>
+                        <source src={{message.data.url}}>
+                    </audio>
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.MEDIA" class="message-text">
+                    {{(message.text?"this is text Message":message.category)}}
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.FILE" class="message-text">
+                    <a href={{message.data.url}} target="_blank">File message</a>
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.CUSTOM" class="message-text">
+                    {{(message.text?"this is text Message":message.category)}}
+                </div>
+                <div *ngSwitchCase="cometchat.MESSAGE_TYPE.IMAGE" class="message-text">
+                    <img src={{message.data.url?message.data.url:message.category}}>
+
+                </div>
+                <div *ngSwitchDefault class="message-text">
+                    {{(message.text?"Something Unknown CometChat can't process":"Something Unknown CometChat can't process")}}
+                </div>
+            </div>
+        </div>
+        <div *ngSwitchCase="'custom'" class="message-text">
+            this is a custom message
+        </div>
+        <div *ngSwitchCase="'action'" class="message-text">
+            this is a action message
+        </div>
+        <div *ngSwitchCase="'call'" class="call-message">
+            <span [ngSwitch]="message.action">
+                <div *ngSwitchCase="cometchat.CALL_STATUS.UNANSWERED" class="call-message">
+                    {{message.sender.name + " had missed call from " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.REJECTED" class="call-message">
+                    {{message.sender.name + " had rejected call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.ONGOING" class="call-message">
+                    {{message.sender.name + " had joined the call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.INITIATED" class="call-message">
+                    {{message.sender.name + " had initiated the call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.ENDED" class="call-message">
+                    {{message.sender.name + " ended the call with " +message.receiver.name}}
+                </div>
+                <div *ngSwitchCase="cometchat.CALL_STATUS.CANCELLED" class="call-message">
+                    {{message.sender.name + " rejected the call with " +message.receiver.name}}
+                </div>
+            </span>
+        </div>
+    </div>
+    <div class="cc1-chat-win-msg-time-wrap">
+        <span class="cc1-chat-win-timestamp"> {{ message.sentAt | date : 'h:mm a'}} </span>
+    </div>
+</div>

@@ -1,0 +1,20 @@
+<div style="height:100%;width: 100%;">
+    <cometchat-loader *ngIf="loader">
+
+    </cometchat-loader>
+    <div class="ccl-left-panel-head-wrap">
+        <h4 class="ccl-left-panel-head-ttl">Groups</h4>
+        <!-- <a href="javascript:;" class="ccl-left-panel-head-edit-link"></a> -->
+    </div>
+
+    <search style="height:max-content;" (searchModelChange)="updateSearchModel($event)"></search>
+
+
+    <div class="chat-ppl-list-ext-wrap" (scroll)="onScroll($event)" style="height: calc(100% - 160px); width: 100%;">
+        <div class="chat-ppl-list-wrap" *ngIf="groups?.length > 0">
+            <div class="chat-ppl-listitem clearfix" *ngFor="let group of groups;" (click)="onGroupSelect(group)">
+                <group-view class="full-width" group={{JSONParser.stringify(group)}}></group-view>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,137 @@
+.chat-ppl-thumbnail-wrap {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+	margin-right: 7px;
+	vertical-align: top;
+	padding: 5px;
+    img {
+        display: block;
+        border-radius: 18px;
+        overflow: hidden;
+        width: 36px;
+    }
+}
+.grp-chat-ppl-thumbnail-wrap {
+    position: relative;
+}
+.chat-ppl-thumbnail-wrap.grp-chat-ppl-thumbnail-wrap{
+    .chat-contact-listitem-thum{
+        img {
+            width: 24px;
+            position: absolute;
+            display: inline-block;
+            &:first-child {
+                top: 0;
+                left: 0;
+            }
+            &:nth-child(2) {
+                bottom: 0;
+                right: 0;
+            }
+        }
+    }
+}
+
+.ccl-dtls-panel-section {
+	.chat-ppl-listitem {
+		padding: 13px 0 0;
+		.chat-ppl-listitem-dtls {
+			float: left;
+			margin-top: 9px;
+		}
+	}
+}
+
+.chat-ppl-listitem-dtls {
+	display: inline-block;
+	width: calc(100% - 43px);
+	vertical-align: middle;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #f7f7f7;
+}
+
+.chat-ppl-listitem-name {
+	font-size: 15px;
+	font-weight: 600;
+	letter-spacing: -.1px;
+	display: block;
+	// max-width: 147px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.chat-ppl-listitem-txt {
+	margin: 0;
+	font-size: 13px;
+	// max-width: 176px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	letter-spacing: -0.1px;
+	line-height: 20px;
+}
+.chat-ppl-listitem-time {
+	font-size: 12px;
+	letter-spacing: -.1px;
+	text-transform: uppercase;
+	display: block;
+	position: absolute;
+	right: 16px;
+	top: 15px;
+}
+.chat-ppl-listitem-pin {
+	display: block;
+	width: 16px;
+	height: 17px;
+	background: url(../../assets/images/svg/chat-pin-grey-icon.svg)no-repeat center;
+	position: absolute;
+	right: 16px;
+	top: 33px;
+}
+.chat-ppl-listitem-msg-cnt {
+	display: block;
+	font-size: 12px;
+	width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	background-color: #39f;
+	color: #fff;
+	letter-spacing: -.1px;
+	text-align: center;
+	font-weight: 600;
+	position: absolute;
+	right: 16px;
+	top: 33px;
+}
+
+
+.call-ppl-list-ext-wrap {
+	.chat-ppl-listitem-txt {
+		padding-left: 23px;
+	}
+	.chat-ppl-listitem-txt.incoming {
+		background: url(../../assets/images/svg/incoming-call-grey-icon.svg) no-repeat left center;
+	}
+	.chat-ppl-listitem-txt.video-incoming {
+		background: url(../../assets/images/svg/incoming-call-video-grey-icon.svg) no-repeat left center;
+	}
+	.chat-ppl-listitem-txt.outgoing {
+		background: url(../../assets/images/svg/outgoing-call-grey-icon.svg) no-repeat left center;
+	}
+	.chat-ppl-listitem-txt.missed {
+		background: url(../../assets/images/svg/missed-call-grey-icon.svg) no-repeat left center;
+	}
+	.del-call-link {
+		width: 14px;
+		height: 18px;
+		background: url(../../assets/images/svg/delete-grey-icon.svg) no-repeat center;
+		position: absolute;
+		right: 16px;
+		top: 25px;
+		display: none;
+	}
+}
+.ccl-secondary-color {
+	color: rgba(20, 20, 20, 0.6);
+}

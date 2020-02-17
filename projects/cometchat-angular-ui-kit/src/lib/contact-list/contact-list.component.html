@@ -1,0 +1,24 @@
+<div style="height:100%;width: 100%;">
+    <cometchat-loader *ngIf="loader">
+
+    </cometchat-loader>
+    <div style="max-height: 100%; overflow: auto;">
+        <div class="ccl-left-panel-head-wrap" style="height: max-content;">
+            <h4 class="ccl-left-panel-head-ttl">Contacts</h4>
+        </div>
+        <search style="height:max-content;" (searchModelChange)="updateSearchModel($event)"></search>
+
+        <div class="chat-contact-list-ext-wrap" (scroll)="onScroll($event)"
+            style="height: calc(100% - 160px); width: 100%">
+            <div class='chat-contact-list' *ngIf="users?.length > 0">
+                <div class="contact-list-wrpr" *ngFor="let user of users;let i = index" (click)="onItemSelect(user)">
+                    <span class='chat-contact-list-apla-ftlr'
+                        *ngIf="(i == 0)">{{ user.name.substring(0, 1).toUpperCase()}}</span>
+                    <span class='chat-contact-list-apla-ftlr'
+                        *ngIf="(i > 0 && users[i-1].name.charAt(0).toUpperCase() !== user.name.charAt(0).toUpperCase())">{{(i > 0 && users[i-1].name.charAt(0).toUpperCase() === user.name.charAt(0).toUpperCase()) ? '' : user.name.substring(0, 1).toUpperCase()}}</span>
+                    <user-view class="full-width" user={{JSONParser.stringify(user)}}></user-view>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

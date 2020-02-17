@@ -1,0 +1,45 @@
+.chat-contact-listitem-thum {
+  display: inline-block;
+  width: 26px;
+  vertical-align: middle;
+  margin-right: 8px;
+
+  img {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: inherit;
+    background: white;
+  }
+  .default-profile {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #512DA8;
+    font-size: 20px;
+    color: #fff;
+    text-align: center;
+    padding: 2px;
+  }
+}
+
+.chat-ppl-thumbnail-wrap.grp-chat-ppl-thumbnail-wrap {
+  .chat-contact-listitem-thum {
+    img {
+      width: 24px;
+      position: absolute;
+      display: inline-block;
+
+      &:first-child {
+        top: 0;
+        left: 0;
+      }
+
+      &:nth-child(2) {
+        bottom: 0;
+        right: 0;
+      }
+    }
+  }
+}

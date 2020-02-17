@@ -1,0 +1,22 @@
+<div style="height:100%;width: 100%;">
+    <cometchat-loader *ngIf="loader">
+
+    </cometchat-loader>
+    <div class="ccl-left-panel-head-wrap">
+        <h4 class="ccl-left-panel-head-ttl">Chats</h4>
+        <!-- <a href="javascript:;" class="ccl-left-panel-head-edit-link"></a> -->
+    </div>
+    <!-- <search [(searchModel)]="searchModel"></search> -->
+
+    <div class="chat-ppl-list-ext-wrap chat-contact-list-ext-wrap" (scroll)="onScroll($event)"
+        style="height: calc(100% - 160px); width: 100%">
+        <div class="chat-ppl-list-wrap" *ngIf="conversations?.length > 0">
+
+            <div class="chat-ppl-listitem clearfix" *ngFor="let conversation of conversations "
+                (click)="onItemClicked(conversation)">
+                <conversation-view class="full-width" *ngIf="conversation"
+                    conversation={{JSONParser.stringify(conversation)}}></conversation-view>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,149 @@
+.cc1-chat-win-inpt-ext-wrap {
+  padding: 0;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background-color: #fff;
+  z-index: 1;
+}
+
+.cc1-chat-win-inpt-int-wrap {
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.cc1-chat-win-inpt-attach {
+  width: 60px;
+  text-align: center;
+
+  a {
+    padding: 3px;
+    margin-top: 3px;
+    display: inline-block;
+  }
+}
+
+.cc1-chat-win-inpt-wrap {
+  flex: 1;
+  position: relative;
+  width: calc(100% - 120px);
+}
+
+.cc1-chat-win-inpt-box {
+  display: block;
+  width: 100%;
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(20, 20, 20, 0.04);
+  border-radius: 8px;
+  background-color: rgba(20, 20, 20, 0.04);
+  letter-spacing: -0.1px;
+  line-height: 20px;
+  padding: 6px 36px 6px 12px;
+  max-height: 100px;
+  overflow-y: scroll;
+}
+
+.font-15 {
+  font-size: 1.5rem;
+  line-height: 20px;
+}
+
+.smile-button {
+  width: 20px;
+  height: 20px;
+  display: block;
+  position: absolute;
+  margin-top: 15px;
+  right: 9px;
+  top: 6px;
+  background: url(../../assets/images/svg/smilie-grey-icon.svg) no-repeat center;
+}
+
+.cc1-chat-win-inpt-send {
+  width: 60px;
+  text-align: center;
+
+  a {
+    padding: 3px;
+    margin-top: 3px;
+    display: inline-block;
+  }
+}
+
+a.cc1-chat-win-inpt-voice-btn {
+  margin-top: 5px;
+}
+
+.cc1-chat-win-inpt-rply-for-wrap {
+  position: relative;
+  padding: 0 14px 0 28px;
+  margin-bottom: 14px;
+
+  &:before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 14px;
+    width: 3px;
+    height: 96%;
+    background-color: rgba(20, 20, 20, 0.11);
+    border-radius: 2px;
+  }
+}
+
+.cc1-chat-win-inpt-rply-ttl {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -.1px;
+  line-height: 16px;
+  color: #969696;
+}
+
+
+.cc1-chat-win-inpt-rply-for-msg {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: -.1px;
+  line-height: 18px;
+}
+
+.cc1-chat-win-inpt-rply-for-close {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  display: block;
+  background: url(../../assets/images/svg/cross-grey-icon.svg) no-repeat center;
+  background-size: 10px;
+  top: 7px;
+  right: 17px;
+}
+
+::-webkit-scrollbar {
+  width: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DDD;
+  width: 50px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #AAA;
+}
+
+input[type="button"] {
+  -webkit-appearance: button;
+  cursor: pointer;
+  outline: 0;
+  border: 0;
+  background-color: transparent;
+}

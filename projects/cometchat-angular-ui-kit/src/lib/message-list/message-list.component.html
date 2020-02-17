@@ -1,0 +1,54 @@
+<div class="ccl-center-panel ccl-chat-center-panel">
+
+  <message-list-header *ngIf='selectedUser' user={{selectedUser}} (click)="detailScreen(selectedUser)">
+  </message-list-header>
+  <message-list-body refreshMessageList={{updatedMessagesList}} *ngIf='selectedUser' user={{selectedUser}}>
+  </message-list-body>
+
+  <message-list-footer [onAction]=onAction [onMessageSent]=onMessageSent *ngIf='selectedUser' user={{selectedUser}}>
+  </message-list-footer>
+
+
+  <div [hidden]="!showOptionMenu" class="media-menu">
+    <media-message-composer [callBack]=onMediItemClick class="composerWrpr">
+    </media-message-composer>
+
+
+    <!--TODO make a seperate component -->
+    <!--START-->
+    <div *ngIf="filesInput||imageInput||audioInput||videoInput" class="cometchat-image-viewer-container">
+      <div class="media-wrap-container">
+        <img *ngIf=imageInput src={{imageInput}} class="cometchat-image-viewer-image">
+        <audio controls *ngIf=audioInput class="cometchat-image-viewer-image">
+          <source src={{audioInput}}>
+        </audio>
+        <video controls *ngIf=videoInput class="cometchat-image-viewer-image">
+          <source src={{videoInput}}>
+        </video>
+
+        <div *ngIf=fileName style="margin:auto;color: white;">{{fileName}}</div>
+        <div *ngIf=fileSize style="margin:auto; color: white;">{{fileSize}}</div>
+        <div (click)=sendImageMessage($event) class="cometchat-image-viewer-image-send-button"
+          class="cometchat-image-viewer-image-send-button">Send File</div>
+      </div>
+    </div>
+
+    <input [hidden]="!(inputType=='image')" (change)=onMediInputChange($event) #fileInput id="image-input"
+      accept="image/*" type='file' name="name" style="display: none;" />
+    <input [hidden]="!(inputType=='video')" #fileInput id="video-input" (change)=onMediInputChange($event)
+      accept="video/*" type='file' name="name" style="display: none;" />
+    <input [hidden]="!(inputType=='file')" #fileInput id="file-input" (change)=onMediInputChange($event) type='file'
+      name="name" style="display: none;" />
+    <input [hidden]="!(inputType=='audio')" #fileInput id="audio-input" type='file' accept="audio/*"
+      (change)=onMediInputChange($event) name="name" style="display: none;" />
+
+    <!--END-->
+
+
+  </div>
+
+
+</div>
+
+<detail-info class="ccl-right-panel" [ngClass]="{'showdetail-info': isShowDetailScreen}" user={{selectedUser}}>
+</detail-info>

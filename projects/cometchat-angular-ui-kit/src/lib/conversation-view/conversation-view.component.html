@@ -1,0 +1,11 @@
+<div class="chat-ppl-thumbnail-wrap">
+    <avatar image="{{image}}" name={{name}} cornerRadius="50%" borderColor="#CCC" borderWidth="1px">
+    </avatar>
+</div>
+<div class="chat-ppl-listitem-dtls">
+    <span class="chat-ppl-listitem-name">{{name}}</span>
+    <p class="chat-ppl-listitem-txt ccl-secondary-color">{{text}}</p>
+</div>
+<!-- <span class="chat-ppl-listitem-time ccl-secondary-color">8:46 PM</span> -->
+<!-- <a href="javascript:void(0);" class="chat-ppl-listitem-pin" *ngIf="count < 1"></a> -->
+<badgecount style="position: absolute;right: 16px;" *ngIf="count > 0" count={{count}}></badgecount>

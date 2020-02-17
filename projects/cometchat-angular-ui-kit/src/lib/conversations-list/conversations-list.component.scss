@@ -1,0 +1,111 @@
+.clearfix {
+  &:after {
+    content: " ";
+    display: table;
+    clear: both;
+  }
+
+  &:before {
+    content: " ";
+    display: table;
+  }
+
+  clear: both;
+}
+
+h4 {
+  font-family: "Inter", sans-serif;
+  font-stretch: normal;
+  font-weight: normal;
+  font-size: 2.2rem;
+  line-height: 27px;
+}
+
+.ccl-left-panel-head-wrap {
+  padding: 20px 16px;
+  position: relative;
+}
+
+.ccl-left-panel-head-ttl {
+  margin: 0;
+  font-weight: 700;
+}
+
+.ccl-left-panel-head-edit-link {
+  position: absolute;
+  right: 14px;
+  top: 23px;
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: url(../../assets/images/svg/edit-blue-icon.svg) no-repeat center;
+}
+
+.chat-ppl-list-ext-wrap {
+  height: calc(100vh - 164px);
+  padding: 16px 0;
+  overflow-y: scroll;
+  height: 450px;
+}
+
+.chat-contact-list-ext-wrap {
+  padding: 16px 0 20px;
+  overflow-y: scroll;
+  height: 500px;
+}
+.chat-ppl-listitem.active {
+  background-color: rgba(247, 247, 247, 0.92);
+}
+.chat-ppl-listitem {
+  padding: 13px 16px 0;
+  position: relative;
+  margin-top: -1px;
+  cursor: pointer;
+  .chat-ppl-thumbnail-wrap {
+    float: left;
+  }
+  .chat-ppl-listitem-dtls {
+    float: left;
+    margin-top: 9px;
+  }
+  .chat-ppl-listitem-name {
+    display: inline-block;
+    vertical-align: middle;
+    width: 72%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: none;
+  }
+  .chat-ppl-listitem-role {
+    display: inline-block;
+    vertical-align: middle;
+    width: 25%;
+    text-align: right;
+    font-size: 12px;
+  }
+}
+
+.chat-ppl-listitem:hover {
+  background-color: #f8f8f8;
+}
+.full-width {
+  width: 100%;
+  display: block;
+}
+
+::-webkit-scrollbar {
+  width: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DDD;
+  width: 50px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #AAA;
+}

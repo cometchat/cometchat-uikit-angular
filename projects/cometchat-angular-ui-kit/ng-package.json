@@ -1,0 +1,7 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/cometchat-angular-ui-kit",
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  }
+}

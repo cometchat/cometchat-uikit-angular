@@ -1,0 +1,18 @@
+<div class='cometchat-media-message-composer-container'>
+    <ul>
+        <li *ngFor="let item of listItems;" (click)="onItemClick($event,item)" style="width: 50px; height: 50px; float: left; margin-right: 5px;">
+        <div class='cometchat-auto-margin'>
+            <div class='cometchat-media-message-composer-icon'>
+                <img src="./assets/images/svg/{{item.icon}}.svg"/>
+            </div>
+            <div class='cometchat-media-message-composer-icon-title'>
+            {{item.title}}
+            </div>
+        </div>
+        </li>
+    </ul>
+</div>
+
+
+
+  
