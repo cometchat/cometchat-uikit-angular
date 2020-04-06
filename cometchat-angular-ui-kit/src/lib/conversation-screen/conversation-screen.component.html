@@ -1,0 +1,86 @@
+<div class="cometchat-conversation-screen-conatiner">
+
+  <!-- * start of CometChat conversations screen header enclosure-->
+  <div style="min-width:40%; width:100%;height: 100%;">
+    <div class="cometchat-conversations-screen-header">
+
+      <!-- * start of conversation page header * -->
+
+      <!-- * conversation header for user *-->
+      <cometchat-conversation-header (actionPerformed)=optionMenuSelected($event) *ngIf='user' user={{user}}>
+      </cometchat-conversation-header>
+
+      <!-- * conversation header for group * -->
+      <cometchat-conversation-header (actionPerformed)=optionMenuSelected($event) *ngIf='group' group={{group}}>
+      </cometchat-conversation-header>
+
+      <!-- * End of conversation page header * -->
+
+    </div>
+    <!-- * End of CometChat conversations screen header enclosure -->
+
+
+
+    <!-- * Start of CometChat conversations screen messages list enclosure -->
+    <div class="cometchat-conversations-screen-messages-list">
+      <!-- *messages list for user -->
+      <cometchat-messages-list refreshMessageList={{updatedMessagesList}} *ngIf='user' user={{user}}>
+      </cometchat-messages-list>
+
+      <!-- *messages list for group -->
+      <cometchat-messages-list refreshMessageList={{updatedMessagesList}} *ngIf='group' group={{group}}>
+      </cometchat-messages-list>
+    </div>
+    <!-- * End of CometChat conversations screen messages list enclosure -->
+
+
+
+    <!-- * start of CometChat conversations screen message composer component enclosure -->
+    <div class="cometchat-conversations-screen-message-composer" style="max-width: 100%; width: 100%;background: #FFF;">
+
+      <div style="display: flex;">
+
+        <div [ngClass]="{'hidden': !showOptionMenu}">
+          <cometchat-media-message-composer-preview (actionPerformed)=onMediaMessageSent($event) *ngIf='user'
+            user={{user}} showOptionMenu={{showOptionMenu}}>
+          </cometchat-media-message-composer-preview>
+          <cometchat-media-message-composer-preview (actionPerformed)=onMediaMessageSent($event) *ngIf='group'
+            group={{group}} showOptionMenu={{showOptionMenu}}>
+          </cometchat-media-message-composer-preview>
+        </div>
+
+        <!-- * Mesasge composer for user -->
+        <cometchat-message-composer (actionPerformed)="onMessageComposerEvent($event)" *ngIf='user' user={{user}}
+          style="width: 100%;" [ngStyle]="{'z-index': (showOptionMenu?1000:'')}">
+        </cometchat-message-composer>
+
+        <!-- * Mesasge composer for group -->
+        <cometchat-message-composer (actionPerformed)="onMessageComposerEvent($event)" *ngIf='group' group={{group}}
+          style="width: 100%;">
+        </cometchat-message-composer>
+
+      </div>
+    </div>
+
+    <!-- * End of CometChat conversations screen message composer component enclosure -->
+  </div>
+
+  <div *ngIf="showItemDetails" style="min-width:300px; width:30%; height: 100%;">
+    <div style="width: 100%; transition: opacity 1s ease-out; border-left: 0.5px solid #DDD;height: 100%;"
+      [ngClass]="{'active':showItemDetails}" class="cometchat-entity-details">
+      <cometchat-entity-details-component *ngIf='user' user={{user}}>
+      </cometchat-entity-details-component>
+      <cometchat-entity-details-component (actionPerformed)=handleEventsFromDetails($event) *ngIf='group'
+        group={{group}}>
+      </cometchat-entity-details-component>
+    </div>
+  </div>
+
+  <div *ngIf="showAddMembersPopup">
+
+    <cometchat-add-members-component (actionPerformed)=groupMemberActions($event) *ngIf='group' group={{group}}
+      showPopup=showAddMembersPopup>
+
+    </cometchat-add-members-component>
+  </div>
+</div>

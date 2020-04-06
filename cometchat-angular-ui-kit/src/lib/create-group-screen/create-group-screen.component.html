@@ -1,0 +1,40 @@
+<div class="popup-wrapper" *ngIf=showPopUp>
+    <div class="popup-body">
+        <div (click)=closePopup() class="close-button-container"><i class="close-button"></i></div>
+        <div style="margin: 10px;">
+            <p class="popup-header">Create Group</p>
+
+            <div class="form-container">
+
+                <label for="groupname"> Group Name <span style="color: red;"> * </span></label>
+                <input id="groupname" (keydown)="onKeydownOnGroupName($event)"
+                    [ngClass]="{'input-error': groupName=='' }" [(ngModel)]="groupName" type="text"
+                    placeholder="Enter a group name">
+
+                <label for="guid"> GUID </label>
+                <input [(ngModel)]="guid" (keydown)="onKeydown($event)" type="text" id="guid"
+                    placeholder="Enter a GUID">
+
+                <label for="type">Select a group type </label>
+
+                <select id="type" [(ngModel)]="groupType">
+                    <option value="public" selected="selected">Public</option>
+                    <option value="private">Private</option>
+                    <option value="password">Password</option>
+                </select>
+                <label for="password" *ngIf="groupType==='password'">Enter A Group Password </label>
+                <input [(ngModel)]="password" *ngIf="groupType==='password'" type="text" id="password"
+                    placeholder="Password">
+
+                <div class="primary-button" (click)=createGroup(groupName,guid,groupType,password)>Create A group</div>
+
+                <p class="error_message" *ngIf="failedCreation">
+                    {{failedCreation.message}}
+                </p>
+
+
+
+            </div>
+        </div>
+    </div>
+</div>

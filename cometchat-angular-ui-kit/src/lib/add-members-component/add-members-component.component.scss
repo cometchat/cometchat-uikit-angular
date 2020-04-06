@@ -1,0 +1,193 @@
+@import "../styles.scss";
+@import "./../../styles.scss";
+
+@include font-family;
+
+.popup-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: transparentize($color: #141414ff, $amount: 0.1);
+  z-index: 2000;
+  display: flex;
+}
+
+.popup-body {
+  max-width: 400px;
+  margin: auto;
+  width: 80%;
+  border-radius: 10px;
+  height: 80%;
+  max-height: 700px;
+  background: darken(#fff, 0%);
+  overflow: hidden;
+}
+
+.close-button-container {
+  width: 100%;
+}
+
+.close-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #dedede;
+  float: right;
+  background-size: auto;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url("../../assets/icon_set/cross-black-icon.svg");
+  margin: 10px;
+}
+
+.close-button:hover {
+  background-color: darken(#dedede, 10%);
+  cursor: pointer;
+}
+
+.popup-header {
+  color: $primary-color;
+  font-size: 16px;
+  font-weight: 550;
+  margin: 10px;
+  text-align: center;
+}
+
+.popup-container {
+  margin: 10px;
+  overflow: hidden;
+  height: 80%;
+  padding: 10px;
+}
+
+.popup-content {
+  margin: 10px;
+  overflow: hidden;
+  height: 80%;
+  padding: 5px;
+  width: 90%;
+}
+
+.primary-button {
+  background: $primary-color;
+  color: $primary-text-light;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  max-width: 94%;
+  margin: auto;
+  margin-bottom: 25px;
+  margin-top: 25px;
+}
+
+.primary-button:hover {
+  background: darken($primary-color, 10%);
+  cursor: pointer;
+}
+
+.cometchat-userlist-decoration {
+  list-style: none;
+  padding-inline-start: 0px;
+  height: 100%;
+  overflow: auto;
+}
+
+.cometchat-userlist-container {
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cometchat-userlist-header-text {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.cometchat-users-search-input,
+.cometchat-users-search-input:active,
+.cometchat-users-search-input:focus {
+  max-width: 100%;
+  width: 80%;
+  margin: 0 auto;
+  border-radius: 5px;
+  font-size: 12px;
+  padding: 8px;
+  padding-left: 27px;
+  outline: none;
+  white-space: initial;
+  word-wrap: break-word;
+  text-overflow: initial;
+  color: #14141488;
+  border: 0px;
+  background: #eeeeee;
+  background-image: url("../../assets/icon_set/search-grey-icon.svg");
+  background-repeat: no-repeat;
+  background-position: 8.5px 8.5px;
+}
+
+.cometchat-userlist-seperator {
+  border-bottom: 1px solid #eee;
+  margin-left: 45px;
+  margin-right: 15px;
+}
+
+.contactIndexs {
+  color: #14141488;
+  padding: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cometchat-userlist-decorator-message-container {
+  height: 50%;
+  overflow: hidden;
+  max-width: 100%;
+  display: flex;
+}
+
+.cometchat-userlist-decorator-message {
+  margin: auto;
+  color: #14141488;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+
+
+.unchecked {
+  margin-top: auto;
+  margin-bottom: auto;
+  width: 16px;
+  height: 16px;
+  background: url("../../assets/icon_set/checkbox-inactive.svg") no-repeat;
+  background-size: contain;
+  margin-right: 5px;
+  margin-left: 5px;
+}
+
+.checked {
+  margin-top: auto;
+  margin-bottom: auto;
+  width: 16px;
+  height: 16px;
+  background: url("../../assets/icon_set/checkbox-blue-active.svg") no-repeat;
+  background-size: contain;
+  margin-right: 5px;
+  margin-left: 5px;
+}
+
+.display-flex {
+  display: flex;
+}
+
+.m-a {
+  margin: auto;
+}

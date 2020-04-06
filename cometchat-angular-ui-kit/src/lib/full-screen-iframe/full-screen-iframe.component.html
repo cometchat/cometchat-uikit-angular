@@ -1,0 +1,17 @@
+<div class="full-screen-container" *ngIf=showFrame>
+  <div class="close-btn-wpr" (click)=closeFrame($event)></div>
+  <div style="display: flex;">
+    <!-- <div style="width: 30%; height: 100vh; background: #FFF; margin:auto;">
+      <cometchat-conversation-screen (actionPerformed)=handleChatActions($event) *ngIf=user user={{user}}>
+      </cometchat-conversation-screen>
+
+      <cometchat-conversation-screen *ngIf=group group={{group}} (actionPerformed)=handleChatActions($event)>
+      </cometchat-conversation-screen>
+    </div> -->
+    <div style="width:100%;height: 100vh; background: #FFF;  margin:auto;">
+      <iframe allow="geolocation; microphone; camera" *ngIf=url width="100%" height="100%" [src]="url | safe"
+        frameborder="0"></iframe>
+    </div>
+  </div>
+</div>
+5

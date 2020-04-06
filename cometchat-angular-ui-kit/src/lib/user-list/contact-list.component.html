@@ -1,0 +1,28 @@
+<div class="cometchat-userlist-container" (scroll)="onScroll($event)">
+
+  <div class="cometchat-userlist-header-text-container">
+    <p class="cometchat-userlist-header-text">Contacts</p>
+  </div>
+
+  <input class="cometchat-users-search-input" type="text" placeholder="Search" (input)='onSearchChange($event)' />
+
+  <ul *ngIf="users?.length > 0" class="cometchat-userlist-decoration">
+    <li *ngFor="let user of users;let i = index" (click)="onItemClick(user,'user')">
+      <div class="cometchat-contact-index-container" *ngIf="printContactIndex(i,user)!=''">
+        <span class="cometchat-contact-index">{{printContactIndex(i,user)}}</span>
+      </div>
+      <cometchat-user-view user={{JSONParser.stringify(user)}}
+        [selected]="((selectedUser && selectedUser.uid==user.uid)?true: false)">
+      </cometchat-user-view>
+      <div class="cometchat-userlist-seperator">
+      </div>
+    </li>
+  </ul>
+
+  <div *ngIf="users?.length==0" class="cometchat-userlist-decorator-message-container">
+    <p class="cometchat-userlist-decorator-message">
+      {{messageToDisplay}}
+    </p>
+  </div>
+
+</div>

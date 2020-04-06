@@ -1,0 +1,16 @@
+<div style="position: fixed;height: 50%; width: 300px; right:0px; bottom: 0px; border: 1px solid #141414; ">
+    <div style="display: flex; width: 100%;height: 100%;padding-bottom: 10px;">
+        <div style="width: 280px; height: 100%;">
+            <cometchat-sidebar (actionPerformed)="onItemSelected($event,'')">
+            </cometchat-sidebar>
+        </div>
+    </div>
+</div>
+
+<div style="position: fixed;height: 50%; width: 300px; right:300px; bottom: 0px; border: 1px solid #141414;">
+    <cometchat-conversation-screen *ngIf=user user={{json.stringify(user)}}>
+    </cometchat-conversation-screen>
+
+    <cometchat-conversation-screen *ngIf=group group={{json.stringify(group)}}>
+    </cometchat-conversation-screen>
+</div>

@@ -1,0 +1,274 @@
+/* The switch - the box around the slider */
+
+@import "../styles.scss";
+@import "./../../styles.scss";
+
+@include font-family;
+
+
+ul {
+  list-style: none;
+}
+
+
+/** Header related css */
+.cometchat-entity-details-heading-container {
+  max-height: 50px;
+  min-height: 50px;
+  display: flex;
+}
+
+.cometchat-entity-details-heading {
+  font-size: 24px;
+  font-weight: 600;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+
+/** Notification option css*/
+.title-text {
+  text-transform: capitalize;
+  font-size: medium;
+  font-weight: 600;
+  width: 90%;
+}
+
+.title-text:hover {
+  cursor: pointer;
+}
+
+.check-box {
+  margin-top: auto;
+  margin-bottom: auto;
+  width: 16px;
+  height: 16px;
+  margin-left: 10px;
+  margin-right: 24px;
+}
+
+.checked {
+  background: url("../../assets/icon_set/checkbox-blue-active.svg") no-repeat;
+  background-size: contain;
+}
+
+.unchecked {
+  background: url("../../assets/icon_set/checkbox-inactive.svg") no-repeat;
+  background-size: contain;
+}
+
+.check-box:hover {
+  cursor: pointer;
+}
+
+
+
+.cometchat-details-secondary-heading {
+  color: lighten(#141414, 60%);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/** actions options css*/
+
+.cometchat-details-actions-list {
+  padding: 0px;
+
+  >li {
+    padding-bottom: 20px;
+    color: $primary_color;
+    font-weight: 550;
+  }
+
+  >li:hover {
+    cursor: pointer;
+    color: darken($primary-color, 10%);
+  }
+}
+
+/** privacy and support options css*/
+.cometchat-privacy-list {
+  padding: 0px;
+
+  >li {
+    padding-bottom: 20px;
+    color: red;
+    font-weight: 550;
+  }
+
+  >li:hover {
+    cursor: pointer;
+    color: darken(red, 10%);
+  }
+}
+
+/**media list navigation section*/
+nav {
+  >ul {
+    color: #141414;
+    display: flex;
+    background: lighten(#141414, 50%);
+    border-radius: 3px;
+    width: 98%;
+    padding: 2.5px 0px;
+
+    >li {
+      margin: auto;
+      padding: 2.5px 10px;
+      font-weight: 500;
+      font-size: 12px;
+    }
+
+    >li:hover {
+      cursor: pointer;
+    }
+
+    >li .selected {
+      background: #FFF;
+    }
+
+    span {
+      font-size: 10px;
+      margin: auto;
+    }
+
+    .selected {
+      >p {
+        margin: auto 0px;
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//GROUP ENITTY
+.add-member-link {
+  display: flex;
+  color: $primary-color;
+  font-weight: 600;
+
+  :hover {
+    color: darken($color: $primary-color, $amount: 20%);
+    cursor: pointer;
+  }
+
+  .add-member-icon {
+    height: 20px;
+    width: 20px;
+    margin: auto 10px;
+    background: url("./../../assets/icon_set/plus-blue-icon.svg");
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  .add-member-link-title {
+    //TODO  color: $primary-color;
+  }
+}
+
+.entity-container {
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+  overflow: auto;
+
+}
+
+.user-entity-container {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.group-entity-details-container {
+  max-width: 100%;
+  width: 100%;
+  height: calc(100% - 60px);
+  overflow: hidden;
+}
+
+.group-entity-details-header {
+  display: flex;
+  height: 60px;
+}
+
+.group-details-section-header {
+  text-transform: uppercase;
+  color: lighten($color: #141414, $amount: 50%);
+  font-size: small;
+  font-weight: 600;
+  padding-top: 10px;
+}
+
+.heading {
+  //TODO paending css
+}
+
+.notification-switch-title {
+  color: #141414;
+  font-size: medium;
+  font-weight: 600;
+}
+
+.group-privcacy-support-list {
+  padding: 0px;
+
+  >li {
+    padding-bottom: 20px;
+    color: red;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  >li:hover {
+    cursor: pointer;
+    color: darken(red, 10%);
+  }
+}
+
+.image-list-container {
+  width: 100%;
+  display: flex;
+  list-style: none;
+  padding: 0px;
+  height: 100%;
+  flex-flow: row wrap;
+}
+
+.image-list {
+  border-radius: 10px;
+  margin: auto;
+  width: 45%;
+  height: 0;
+  padding-bottom: 45%;
+  margin-bottom: 10px;
+  border: 0.5px solid lighten(#141414, 50%);
+}
+
+.m-a {
+  margin: auto;
+}
+
+.m-l-a {
+  margin-left: auto;
+}
+
+.m-r-a {
+  margin-right: auto;
+}
+
+
+.display-flex {
+  display: flex;
+}

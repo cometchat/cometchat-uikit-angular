@@ -1,0 +1,60 @@
+<div class="more-info-container">
+    <div class="more-info-header-container">
+        <p class="more-info-header">More</p>
+    </div>
+
+    <!-- User details sections-->
+    <div class="user-profile-container">
+        <cometchat-user-view *ngIf=user user={{user}}>
+        </cometchat-user-view>
+    </div>
+
+
+    <!-- Preferences section-->
+    <div class="preference-list-container">
+        <p class="section-header">PREFERENCES</p>
+        <Ul>
+            <li class="list-item" id="notification" (click)="onItemClick($event,EVENTS[0])">
+                <div>
+                    <p class="icon-notification"><span>Notifications</span></p>
+                </div>
+            </li>
+            <div class="list-seperator"></div>
+            <li class="list-item" id="privacyAndSecurity" (click)="onItemClick($event,EVENTS[1])">
+                <div>
+                    <p class="icon-privacy-and-security"><span>Privacay and Security</span></p>
+                </div>
+            </li>
+            <div class="list-seperator"></div>
+            <li class="list-item" id="chats" (click)="onItemClick($event,EVENTS[2])">
+                <div>
+                    <p class="icon-chats"><span>Chats</span></p>
+                </div>
+                <div class="list-seperator"></div>
+            </li>
+        </Ul>
+    </div>
+
+
+    <!--Others section-->
+    <div class="preference-list-container">
+        <p class="section-header">OTHER</p>
+        <Ul>
+            <li class="list-item" id="help" (click)="onItemClick($event,EVENTS[3])">
+                <div>
+                    <p class="icon-help"><span>Help</span></p>
+                </div>
+            </li>
+            <div class="list-seperator"></div>
+            <li class="list-item" id="reportProblem" (click)="onItemClick($event,EVENTS[4])">
+                <div>
+                    <p class="icon-report-a-problem"><span>Report a Problem</span></p>
+                </div>
+            </li>
+            <div class="list-seperator"></div>
+
+        </Ul>
+    </div>
+
+
+</div>

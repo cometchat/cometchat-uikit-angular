@@ -1,0 +1,61 @@
+@import "../styles.scss";
+@import "./../../styles.scss";
+
+@include font-family;
+.cometchat-call-screen-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background: #444;
+  display: flex;
+  z-index: 10000;
+}
+
+.cometchat-call-receiver-info,.cometchat-call-initiator-info {
+  position: absolute;
+  margin: auto;
+  display: flex;
+  color: white;
+  flex-direction: column;
+  img {
+    border-radius: 50%;
+    min-height: 150px;
+    min-width: 150px;
+    max-width: 150px;
+    max-height: 150px;
+    border: 3px solid white;
+  }
+  .cancel-button {
+    width: 75px;
+    height: 75px;
+    background-color: red;
+    border-radius: 50%;
+    background-image: url("../../assets/icon_set/call-end-white-icon.svg");
+    background-repeat: no-repeat;
+    background-size: auto;
+    background-position: center;
+  }
+  .cancel-button:hover {
+    background-color: darken($color: red, $amount: 15%);
+    cursor: pointer;
+  }
+  .accept-button{width: 75px;
+    height: 75px;
+    background-color: green;
+    border-radius: 50%;
+    background-image: url("../../assets/icon_set/call-end-white-icon.svg");
+    background-repeat: no-repeat;
+    background-size: auto;
+    background-position: center;
+
+  }
+  .accept-button:hover {
+    background-color: darken($color: green, $amount: 15%);
+    cursor: pointer;
+  }
+}
+.m-a {
+  margin: auto;
+}

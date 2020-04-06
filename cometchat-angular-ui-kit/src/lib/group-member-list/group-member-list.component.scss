@@ -1,0 +1,24 @@
+@import "../styles.scss";
+@import "./../../styles.scss";
+
+@include font-family;
+
+
+.cometchat-userlist-decoration {
+  list-style: none;
+  padding-inline-start: 0px;
+}
+
+.cometchat-userlist-container {
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cometchat-userlist-seperator {
+  border-bottom: 1px solid #eee;
+  margin-left: 45px;
+  margin-right: 15px;
+}

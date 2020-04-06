@@ -1,0 +1,63 @@
+@import '../styles.scss';
+@import "./../../styles.scss";
+
+@include font-family;
+
+.cometchat-conversation-list-decoration {
+  list-style: none;
+  padding-inline-start: 0px;
+  width: 100%;
+}
+
+.cometchat-conversation-list-container {
+  overflow: auto;
+  height: 100%;
+}
+
+.cometchat-conversation-list-seperator {
+  border-bottom: 1px solid #EEE;
+  margin-left: 45px;
+  margin-bottom: 5px;
+}
+
+.cometchat-conversation-list-header-text-container {
+  min-height: 60px;
+  max-height: 60px;
+  display: flex;
+}
+
+.cometchat-conversation-list-header-text {
+  font-size: 24px;
+  font-weight: 600;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.cometchat-conversation-list-search-input,
+.cometchat-conversation-list-search-input:active,
+.cometchat-conversation-list-search-input:focus {
+  width: 97%;
+  box-sizing: border-box;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  font-size: 16px;
+  background-color: #ddd;
+  background-position: 10px 10px;
+  background-repeat: no-repeat;
+  padding: 7px;
+  outline: none;
+}
+
+.cometchat-conversation-list-decorator-message-container {
+  height: 50%;
+  overflow: hidden;
+  max-width: 100%;
+  display: flex;
+}
+
+.cometchat-conversation-list-decorator-message {
+  margin: auto;
+  color: #aaa;
+  font-size: 24px;
+  font-weight: 600;
+}

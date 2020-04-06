@@ -1,0 +1,24 @@
+<div #thisRed class="cometchat-messages-list-container"
+  style="overflow-y: auto;height: calc(100% - 10px); padding-top: 10px;" (scroll)="onScroll($event)">
+  <div *ngIf="messages?.length > 0">
+    <div *ngFor="let message of messages;let i = index">
+      <div class="dateSeperatorCongtainer"
+        *ngIf="( i===0?printDate(message.sentAt):printDate(message.sentAt,messages[i-1].sentAt))">
+        <span class="dateSeperator">
+          {{( i===0?printDate(message.sentAt):printDate(message.sentAt,messages[i-1].sentAt))}}
+        </span>
+      </div>
+      <div *ngIf="message">
+        <cometchat-message-bubble message="{{message|json}}" (actionPerformed)=handleBubbleActions($event)
+          [sender]="loggedInUser.uid===message.sender.uid">
+        </cometchat-message-bubble>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="!(messages?.length > 0)" style="display:flex;height: calc(100% - 10px);">
+    <h1 style="margin: auto; color: #AAA;">
+      {{decoreMessage}}
+    </h1>
+  </div>
+
+</div>

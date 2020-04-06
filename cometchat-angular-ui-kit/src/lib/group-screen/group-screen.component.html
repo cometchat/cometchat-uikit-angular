@@ -1,0 +1,17 @@
+<div class="cometchat-embedded-container">
+
+  <div class="cometchat-embedded-sidebar">
+    <cometchat-group-list (actionPerformed)=onItemSelected($event)>
+    </cometchat-group-list>
+  </div>
+
+  <div class="cometchat-embedded-chat-screen">
+    <cometchat-conversation-screen (actionPerformed)=handleActionByConversationScreen($event) *ngIf=group
+      group={{json.stringify(group)}}>
+    </cometchat-conversation-screen>
+  </div>
+</div>
+
+<app-calling-screen (actionPerformed)=handleCallScreenActions($event); inProgressCall={{inProgressCall}}
+  incomingScreen={{incomingScreen}}>
+</app-calling-screen>

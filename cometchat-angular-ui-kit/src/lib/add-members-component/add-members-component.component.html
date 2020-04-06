@@ -1,0 +1,28 @@
+<div class="popup-wrapper">
+  <div class="popup-body">
+    <div (click)=closePopup() class="close-button-container"><i class="close-button"></i></div>
+    <p class="popup-header">Add Members</p>
+    <div class="popup-content">
+      <ul *ngIf="usersList?.length > 0" class="cometchat-userlist-decoration" (scroll)="onScroll($event)">
+        <li *ngFor="let user of usersList;let i = index" (click)="onItemClick(user.user)">
+          <div style="display: flex; background: #fff;">
+            <div style="width: 100%;">
+              <cometchat-user-view user={{JSONParser.stringify(user.user)}}>
+              </cometchat-user-view>
+              <div class="cometchat-userlist-seperator">
+              </div>
+            </div>
+            <div [ngClass]="{'unchecked': !user.selected, 'checked': user.selected}">
+            </div>
+          </div>
+
+        </li>
+      </ul>
+    </div>
+
+    <div class="display-flex">
+      <span class="primary-button m-a" (click)=addMemberToGroup()>Add Members</span>
+    </div>
+
+  </div>
+</div>

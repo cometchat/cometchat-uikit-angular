@@ -1,0 +1,57 @@
+@import "../../lib/styles.scss";
+ul {
+  display: flex;
+  padding: 1px;
+  li {
+    margin: auto;
+    list-style: none;
+    width: 20px;
+    height: 20px;
+    background: #777;
+    margin: auto;
+    mask-size: contain;
+  }
+  li:hover {
+    // background: darken($color: #888, $amount: 10%);
+    cursor: pointer;
+  }
+
+  #cometchat-user-list-tab {
+    mask: url("../../assets/icon_set/people-grey-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+  #cometchat-groups-list-tab {
+    width: 25px;
+    mask: url("../../assets/icon_set/group-chat-grey-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+  #cometchat-more-info-tab {
+    mask: url("../../assets/icon_set/more-grey-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+  #cometchat-conversations-list-tab {
+    mask: url("../../assets/icon_set/chat-grey-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+
+  .selected#cometchat-user-list-tab {
+    mask: url("../../assets/icon_set/people-blue-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+  .selected#cometchat-groups-list-tab {
+    width: 25px;
+    mask: url("../../assets/icon_set/group-chat-blue-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+  .selected#cometchat-more-info-tab {
+    mask: url("../../assets/icon_set/more-blue-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+  .selected#cometchat-conversations-list-tab {
+    mask: url("../../assets/icon_set/chat-blue-icon.svg") no-repeat;
+    mask-size: contain;
+  }
+  .selected {
+    background: $primary-color;
+  }
+}

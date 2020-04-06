@@ -1,0 +1,32 @@
+<!-- CometChat message composer container, contains option to create text message, media message and Custom message. -->
+<div class="cometchat-message-composer-container">
+
+  <!-- Media message option menu exapder button -->
+  <div class="cometchat-message-composer-icons-container">
+    <p class="cometchat-message-composer-icons" id="cometchat-message-composer-media-message-icon"
+      [ngClass]="{'rotate-icon': fileOptionsExpanded}" (click)="onActionGenerated($event,OPTION_MENU)">
+    </p>
+  </div>
+  <!-- Actual text message composer, contains option menu for emoji keyboard and editable input for text-message. -->
+  <div class="cometchat-message-composer-input-container">
+    <p contenteditable="true" class="cometchat-message-composer-input" (keydown)=onchangeDetect($event)
+      (focus)=onActive($event) (blur)=onBlur($event) id='cometchat-message-composer'>{{text}} </p>
+    <span id="cometchat-message-composer-emoji-icon" (click)="onActionGenerated($event,TOGLE_EMOJI)">
+    </span>
+  </div>
+  <emoji-mart *ngIf=showEmojiKeyboard showPreview='' set='android' darkMode='' title="CometChat Pro" skin=4
+    [style]="{ position: 'absolute', bottom: '50px', right: '50px', width:'500px','max-width':'100%','max-height':'100%' }"
+    isNative={{true}} (emojiSelect)=clickOnEmoji($event)></emoji-mart>
+  <!-- Recording button option menu -->
+  <!-- <div class="cometchat-message-composer-icons-container">
+    <p class="cometchat-message-composer-icons" id="cometchat-message-composer-voice-rec-icon"
+      (click)="onActionGenerated($event,RECORD_AUDIO)">
+    </p>
+  </div> -->
+  <div class="cometchat-message-composer-icons-container">
+    <p class="cometchat-message-composer-icons" id="cometchat-message-composer-send-message-icon"
+      (click)="onActionGenerated($event,SEND_MESSAGE)">
+    </p>
+  </div>
+
+</div>

@@ -1,0 +1,21 @@
+@mixin font-family {
+  div,
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  span,
+  i,
+  li,
+  ul,
+  b,
+  strong {
+    font-family: "Inter", sans-serif;
+  }
+}
+body {
+  background: WHITE;
+}
+
+@import "../../../../node_modules/@ctrl/ngx-emoji-mart/picker";

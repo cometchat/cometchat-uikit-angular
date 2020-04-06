@@ -1,0 +1,83 @@
+@import "../../lib/styles.scss";
+@import "./../../styles.scss";
+
+@include font-family;
+
+.cometchat-media-message-composer-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+ul {
+  list-style: none;
+  margin: auto;
+  display: flex;
+  margin-left: -40px;
+  // width: 100%;
+  // height: 100%;
+  // flex-wrap: wrap;
+}
+
+li {
+  color: $primary-color;
+  margin: 10px;
+  min-width: 20px;
+  max-width: 20px;
+  height: 20px;
+  display: flex;
+  transition-duration: 0.5s;
+}
+
+li:hover {
+  color: darken($primary-color, 15%);
+  cursor: pointer;
+}
+
+.cometchat-auto-margin {
+  margin: auto;
+}
+
+.cometchat-media-message-composer-icon {
+  padding: 5px;
+  font-size: 24px;
+}
+
+.cometchat-media-message-composer-icon-title {
+  padding: 5px;
+  white-space: nowrap;
+  word-break: inherit;
+  max-width: 90px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.attachments-icons {
+  width: 20px;
+  height: 20px;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  background: $primary-color;
+}
+.image-icon {
+  mask: url("../../assets/icon_set/image-24px.svg");
+}
+
+.audio-icon {
+  mask: url("../../assets/icon_set/audiotrack-24px.svg");
+}
+.video-icon {
+  mask: url("../../assets/icon_set/videocam-24px.svg");
+}
+.broadcast-icon {
+  mask: url("../../assets/icon_set/headset_mic-24px.svg");
+}
+.whiteBoard-icon {
+  mask: url("../../assets/icon_set/gesture-24px.svg");
+}
+.writeBoard-icon {
+  mask: url("../../assets/icon_set/edit-blue-icon.svg");
+}
+.file-icon {
+  mask: url("../../assets/icon_set/edit-blue-icon.svg");
+}

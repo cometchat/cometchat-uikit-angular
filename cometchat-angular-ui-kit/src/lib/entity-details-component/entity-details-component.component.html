@@ -1,0 +1,128 @@
+<div class="entity-container">
+
+  <div class="cometchat-entity-details-heading-container">
+    <p class="cometchat-entity-details-heading">
+      Details
+    </p>
+  </div>
+
+  <div *ngIf=user class="user-entity-container">
+    <div class="display-flex" (click)=onNotificationToggeled($event)>
+      <p class="title-text m-r-a">
+        Notifications
+      </p>
+      <p class="check-box" [ngClass]="{'unchecked': !notificationOption, 'checked': notificationOption}">
+      </p>
+    </div>
+
+    <div style="max-width: 100%;">
+      <p class="cometchat-details-secondary-heading">ACTIONS</p>
+      <ul class="cometchat-details-actions-list">
+        <li>
+          Search in conversation
+        </li>
+        <li>
+          Create group
+        </li>
+      </ul>
+    </div>
+
+    <!-- <div style="max-width: 100%;">
+      <p class="cometchat-details-secondary-heading">PRIVACY AND SUPPORT</p>
+      <ul class="cometchat-privacy-list">
+        <Li>
+          Clear Chat
+        </Li>
+        <li>
+          Block User
+        </li>
+        <li>
+          Report
+        </li>
+      </ul>
+    </div> -->
+
+
+    <!-- <div style="max-width: 100%; overflow: hidden; height: 350px;">
+      <p class="cometchat-details-secondary-heading">SHARED MEDIA</p>
+      <nav style="max-width: 100%;">
+        <ul>
+          <li class="selected">Photos</li>
+          <span>|</span>
+          <li>Links</li>
+          <span>|</span>
+          <li>Docs</li>
+        </ul>
+      </nav>
+      <div style="width: 100%; overflow: auto; display: flex; height:250px">
+        <ul class="image-list-container">
+          <li class="image-list" *ngFor="let imageMessage of imageMessages; let i = index"
+            [ngStyle]="{ 'background-image': 'url(' + imageMessage.data.url + ')'}">
+          </li>
+        </ul>
+      </div>
+    </div> -->
+
+  </div>
+
+
+
+
+
+  <div *ngIf=group class="group-entity-details-container">
+
+    <!-- <div class="display-flex" (click)=onNotificationToggeled($event)>
+      <p class="title-text m-r-a">
+        Notifications
+      </p>
+      <p class="check-box" [ngClass]="{'unchecked': !notificationOption, 'checked': notificationOption}">
+      </p>
+    </div> -->
+
+    <div *ngIf=canAddMembers (click)=addMember($event)>
+      <div class="add-member-link">
+        <p class="add-member-icon"></p>
+        <p class="add-member-link-title">Add new member</p>
+      </div>
+    </div>
+
+    <p class="group-details-section-header">Members</p>
+    <div style="height:600px; max-height: 75%;">
+      <div style="height:100%">
+        <cometchat-group-member-list [onItemClick]=onActionPefrmed group={{group}}>
+        </cometchat-group-member-list>
+      </div>
+    </div>
+    <!-- <p class="group-details-section-header">Privacy And Support</p> -->
+    <!-- <div style="height:60px">
+      <ul class="group-privcacy-support-list">
+        <li id="delete-and-exit" (click)="leaveGroup($event)">
+          Delete and Exit
+        </li>
+        <li id="report" (click)="onAction($event)">
+          Report
+        </li>
+      </ul>
+    </div> -->
+    <!-- 
+    <div style="max-width: 100%; overflow: hidden; height: 350px;">
+      <p class="cometchat-details-secondary-heading">SHARED MEDIA</p>
+      <nav style="max-width: 100%;">
+        <ul>
+          <li class="selected">Photos</li>
+          <span>|</span>
+          <li>Links</li>
+          <span>|</span>
+          <li>Docs</li>
+        </ul>
+      </nav>
+      <div style="width: 100%; overflow: auto; display: flex; height:250px">
+        <ul class="image-list-container">
+          <li class="image-list" *ngFor="let imageMessage of imageMessages; let i = index"
+            [ngStyle]="{ 'background-image': 'url(' + imageMessage.data.url + ')'}">
+          </li>
+        </ul>
+      </div>
+    </div> -->
+
+  </div>

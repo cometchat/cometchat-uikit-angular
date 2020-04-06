@@ -1,0 +1,73 @@
+@import "./../../styles.scss";
+@include font-family;
+
+.cometchat-conversation-item {
+  display: flex;
+  background: #fff;
+  padding: 8px;
+  overflow: hidden;
+  max-width: calc(100% - 10px);
+  width: calc(100% - 10px);
+  display: flex;
+}
+
+.cometchat-conversation-avatar {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.conversationSelected {
+  background: darken(#fff, $amount: 10%);
+}
+
+.cometchat-conversation-item:hover {
+  background: darken(#fff, $amount: 10%);
+  cursor: pointer;
+}
+
+.cometchat-conversation-item-details {
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-left: 10px;
+  text-transform: capitalize;
+  color: #333;
+  max-width: 75%;
+  width: 75%;
+}
+
+.cometchat-conversation-name,
+.cometchat-conversation-text {
+  margin: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cometchat-conversation-name {
+  text-transform: capitalize;
+  font-weight: 600;
+  color: #141414;
+  display: flex;
+  font-size: 15px;
+}
+
+.cometchat-conversation-text {
+  color: #888;
+  font-weight: 400;
+  font-size: 13px;
+  max-width: 80%;
+}
+
+.cometchat-conversation-item-container {
+  display: flex;
+}
+
+.cometchat-conversation-unread-count {
+  margin-left: auto;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.status-indicator {
+  position: relative;
+  right: 10px;
+  bottom: -10px;
+}

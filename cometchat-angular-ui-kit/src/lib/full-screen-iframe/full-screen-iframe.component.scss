@@ -1,0 +1,28 @@
+.full-screen-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #fff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+}
+.close-btn-wpr {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #dedede;
+  right: 5px;
+  top: 5px;
+  background-size: auto;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url("../../assets/icon_set/cross-black-icon.svg");
+  margin: 10px;
+}
+.close-btn-wpr:hover {
+  background-color: darken($color: #dedede, $amount: 20%);
+  cursor: pointer;
+}

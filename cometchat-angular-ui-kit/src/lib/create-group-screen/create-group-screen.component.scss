@@ -1,0 +1,116 @@
+@import "../styles.scss";
+@import "./../../styles.scss";
+
+@include font-family;
+
+.popup-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: transparentize($color: #141414ff, $amount: 0.1);
+  z-index: 2000;
+  display: flex;
+}
+
+.popup-body {
+  max-width: 400px;
+  margin: auto;
+  width: 80%;
+  border-radius: 10px;
+  max-height: 80%;
+  background: darken(#fff, 10%);
+}
+
+.close-button-container {
+  width: 100%;
+}
+
+.close-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #dedede;
+  float: right;
+  background-size: auto;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url("../../assets/icon_set/cross-black-icon.svg");
+  margin: 5px;
+}
+
+.close-button:hover {
+  background-color: darken(#dedede, 10%);
+  cursor: pointer;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+
+  >label {
+    padding-bottom: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 10px;
+    min-width: 94%;
+    margin: auto;
+  }
+
+  >input,
+  >select,
+  >button,
+  >input:active,
+  >select:active,
+  >button:active,
+  >input:focus,
+  >select:focus,
+  >button:focus {
+    min-width: 94%;
+    margin: auto;
+    height: 28px;
+    border-radius: 5px;
+    border: 0.5px solid #dedede;
+    margin-bottom: 10px;
+    outline: none;
+    padding: 5px;
+    font-size: 12px;
+  }
+
+  .input-error {
+    border: solid 1px #ff0000;
+  }
+}
+
+.error_message {
+  color: red;
+  font-size: 12px;
+}
+
+.primary-button {
+  background: $primary-color;
+  color: $primary-text-light;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  max-width: 94%;
+  margin: auto;
+  margin-bottom: 25px;
+  margin-top: 25px;
+}
+
+.primary-button:hover {
+  background: darken($primary-color, 10%);
+  cursor: pointer;
+}
+
+.popup-header {
+  color: $primary-color;
+  font-size: 16px;
+  font-weight: 550;
+}

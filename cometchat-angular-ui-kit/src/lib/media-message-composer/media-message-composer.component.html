@@ -1,0 +1,12 @@
+<div class='cometchat-media-message-composer-container'>
+  <ul>
+    <li *ngFor="let item of listItems;" (click)="onItemClick($event,item)">
+      <div class='cometchat-auto-margin'>
+        <div class='cometchat-media-message-composer-icon'>
+          <div [ngClass]="item.id+'-icon'" class="attachments-icons">
+          </div>
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>

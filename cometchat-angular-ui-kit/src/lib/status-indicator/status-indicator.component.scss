@@ -1,0 +1,14 @@
+.online {
+  border: 2px solid rgb(238, 238, 238);
+  width: 7px;
+  height: 7px;
+  background: rgb(0, 255, 0);
+  border-radius: 50%;
+}
+.offline {
+  border: 2px solid rgb(238, 238, 238);
+  width: 7px;
+  height: 7px;
+  background: rgb(85, 85, 85);
+  border-radius: 50%;
+}

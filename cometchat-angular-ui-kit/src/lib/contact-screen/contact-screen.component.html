@@ -1,0 +1,21 @@
+<div class="cometchat-embedded-container">
+
+  <div class="cometchat-embedded-sidebar">
+    <cometchat-contact-list [friendsOnly]=friendsOnly (actionPerformed)=onItemSelected($event)>
+    </cometchat-contact-list>
+  </div>
+
+  <div class="cometchat-embedded-chat-screen">
+    <cometchat-conversation-screen (actionPerformed)=handleActionByConversationScreen($event) *ngIf=user
+      user={{json.stringify(user)}}>
+    </cometchat-conversation-screen>
+
+    <cometchat-conversation-screen (actionPerformed)=handleActionByConversationScreen($event) *ngIf=group
+      group={{json.stringify(group)}}>
+    </cometchat-conversation-screen>
+  </div>
+</div>
+
+<app-calling-screen (actionPerformed)=handleCallScreenActions($event); inProgressCall={{inProgressCall}}
+  incomingScreen={{incomingScreen}}>
+</app-calling-screen>

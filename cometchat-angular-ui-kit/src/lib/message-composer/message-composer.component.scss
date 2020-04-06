@@ -1,0 +1,101 @@
+@import "../styles.scss";
+
+.cometchat-message-composer-input {
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-top: auto;
+  margin-bottom: auto;
+  max-height: 30px;
+  height: 20px;
+  min-width: calc(100% - 55px);
+  max-width: calc(100% - 55px);
+  padding: 10px;
+  white-space: initial;
+  word-wrap: break-word;
+  text-overflow: initial;
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  color: #141414;
+}
+
+.cometchat-message-composer-icons-container {
+  display: flex;
+  margin-top: auto;
+  margin-bottom: auto;
+  width: 40px;
+  height: 100%;
+  margin: auto;
+}
+
+.cometchat-message-composer-input-container {
+  width: 100%;
+  max-width: 90%;
+  border-radius: 10px;
+  display: flex;
+  background: #14141412;
+  text-decoration: none;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.cometchat-message-composer-input:focus {
+  outline: none;
+}
+
+.cometchat-message-composer-container {
+  overflow: auto;
+  display: flex;
+  background: #fff;
+}
+
+.cometchat-message-composer-icons {
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  background: #333;
+  mask-size: contain;
+  mask-position: center;
+  transition-duration: 0.5s;
+}
+
+#cometchat-message-composer-emoji-icon {
+  background: #333;
+  mask-size: contain;
+  mask-position: center;
+  margin-top: auto;
+  margin-bottom: auto;
+  min-width: 20px;
+  min-height: 20px;
+  position: relative;
+  margin: auto;
+}
+
+#cometchat-message-composer-voice-rec-icon {
+  mask: url("../../assets/icon_set/voice-record-frey-icon.svg") no-repeat;
+}
+#cometchat-message-composer-send-message-icon {
+  mask: url("../../assets/icon_set/send-blue-icon.svg") no-repeat;
+}
+#cometchat-message-composer-media-message-icon {
+  mask: url("../../assets/icon_set/rounded-plus-grey-icon.svg") no-repeat;
+}
+
+#cometchat-message-composer-emoji-icon {
+  mask: url("../../assets/icon_set/smilie-grey-icon.svg") no-repeat;
+}
+
+.cometchat-message-composer-icons:hover {
+  background: darken(#888, 50%);
+}
+
+.rotate-icon {
+  transform: rotate(45deg);
+}
+
+.cometchat-message-composer-icons:hover {
+  color: darken(#555, 10%);
+  cursor: pointer;
+}
+
+@import "../../../../../../node_modules/@ctrl/ngx-emoji-mart/picker.css";

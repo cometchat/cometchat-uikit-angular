@@ -1,0 +1,12 @@
+<div class="cometchat-user-item" [ngClass]="selected?'cometchat-user-selected':''">
+  <cometchat-avatar image={{user.avatar}} cornerRadius="50%" borderColor="#CCC" borderWidth="1px">
+  </cometchat-avatar>
+  <status-indicator class="status-indicator" status={{user.status}}>
+
+  </status-indicator>
+  <div class="cometchat-user-details">
+    <p style="display: flex;margin-top: auto; margin-bottom: auto;">
+      {{user.name}}
+    </p>
+  </div>
+</div>

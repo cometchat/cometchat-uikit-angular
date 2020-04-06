@@ -1,0 +1,54 @@
+@import "./../../styles.scss";
+
+@include font-family;
+
+.cometchat-group-avatar {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.cometchat-group-item {
+  display: flex;
+  background: #fff;
+  overflow: hidden;
+  padding: 8px;
+  max-width: calc(100% - 10px);
+}
+.cometchat-group-item:hover {
+  background: darken(#fff, $amount: 10%);
+  cursor: pointer;
+}
+.cometchat-group-selected {
+  background: darken(#fff, $amount: 10%);
+}
+.cometchat-group-details {
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-left: 10px;
+  margin-top: auto;
+  margin-bottom: auto;
+  width: 100%;
+  overflow: hidden;
+  .cometchat-group-name {
+    text-transform: capitalize;
+    font-weight: 600;
+    color: #141414;
+    display: flex;
+    margin: auto;
+    font-size: 15px;
+  }
+
+  .cometchat-group-desc {
+    width: 100%;
+    margin: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #888;
+    font-weight: 400;
+    font-size: 13px;
+    text-transform: capitalize;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    overflow: hidden;
+  }
+}

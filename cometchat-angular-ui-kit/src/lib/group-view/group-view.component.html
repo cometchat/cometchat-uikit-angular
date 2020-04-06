@@ -1,0 +1,14 @@
+<div class="cometchat-group-item" [ngClass]="selected?'cometchat-group-selected':''">
+  <cometchat-avatar class=" cometchat-group-avatar" image={{group.icon}} cornerRadius="50%" borderColor="#CCC"
+    borderWidth="1px">
+  </cometchat-avatar>
+
+  <div class="cometchat-group-details">
+    <p class="cometchat-group-name">
+      {{group.name}}
+    </p>
+    <p class="cometchat-group-desc">
+      {{group.description?group.description:group.type}}
+    </p>
+  </div>
+</div>

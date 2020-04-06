@@ -1,0 +1,24 @@
+<div class="cometchat-conversation-list-container" (scroll)="onScroll($event)">
+  <div class="cometchat-conversation-list-header-text-container">
+    <p class="cometchat-conversation-list-header-text">Chats</p>
+  </div>
+
+
+  <ul *ngIf="conversations?.length > 0" class="cometchat-conversation-list-decoration">
+
+    <li *ngFor="let conversation of conversations" (click)="onConversationClick(conversation)">
+      <cometchat-conversation-view *ngIf="conversation"
+        [selected]="(conversation.conversationId === selectedConversation?.conversationId)"
+        conversation={{JSONParser.stringify(conversation)}}></cometchat-conversation-view>
+
+      <div class="cometchat-conversation-list-seperator" *ngIf="conversation"></div>
+    </li>
+
+  </ul>
+
+  <div *ngIf="conversations?.length==0" class="cometchat-conversation-list-decorator-message-container">
+    <p class="cometchat-conversation-list-decorator-message">
+      {{decoratorMessage}}
+    </p>
+  </div>
+</div>

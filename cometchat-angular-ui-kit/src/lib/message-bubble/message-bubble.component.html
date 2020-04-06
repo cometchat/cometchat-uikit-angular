@@ -1,0 +1,268 @@
+<div class="bubble-container">
+  <div style="display: flex; flex-direction: column;">
+    <div style="min-width: 100%;">
+      <span style="float: right;"
+        *ngIf="(sender) &&(message.type=='text' || message.category=='custom' || message.type=='media'||message.type=='image'|| (message.category==='message' && message.type=='audio')||(message.category==='message' && message.type=='video')||message.type=='file')"
+        class="receiver-display-name"> {{message.sender.name}}</span>
+    </div>
+
+    <div *ngIf="sender" class="right-bubble-container">
+      <div style="float: right; padding-left: 10px;"
+        *ngIf="(sender) && (message.type=='text' || message.category=='custom' || message.type=='media'||message.type=='image'||(message.category==='message' && message.type=='audio')||(message.category==='message' && message.type=='video')||message.type=='file')">
+        <cometchat-avatar cornerRadius="50%" borderColor="#CCC" borderWidth="1px"
+          image={{(message.sender.avatar?message.sender.avatar:getSVGAvatar(message.sender.uid,(message.sender.name.substring(0,1))))}}>
+        </cometchat-avatar>
+      </div>
+      <div [ngSwitch]="message.category">
+        <div *ngSwitchCase="'message'">
+
+          <div [ngSwitch]="message.type">
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.TEXT" class="message-text">
+              {{(message.text?message.text:message.category)}}
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.VIDEO" class="message-video">
+              <video controls>
+                <source src={{message.data.url}} type="audio/mp4">
+              </video>
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.AUDIO" class="message-text">
+              <audio controls>
+                <source src={{message.data.url}}>
+              </audio>
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.MEDIA" class="message-text">
+              {{(message.text?"this is text Message":message.category)}}
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.FILE" class="message-file">
+
+
+              <a href={{message.data.url}} target="_blank">
+                <div>
+                  <p class="file-icon"></p>
+                  <p class="file-name">{{message.data.attachments[0].name}}</p>
+                </div>
+              </a>
+
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.CUSTOM" class="message-text">
+              {{(message.text?"this is text Message":message.category)}}
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.IMAGE" class="cometchat-image-message ">
+              <img src={{message.data.url?message.data.url:message.category}}>
+            </div>
+            <div *ngSwitchDefault class="message-text">
+              {{(message.text?"Something Unknown CometChat can't process":"Something Unknown CometChat can't process")}}
+            </div>
+          </div>
+        </div>
+        <div *ngSwitchCase="'custom'" class="">
+          <span [ngSwitch]="message.type" class="custom-message">
+            <div *ngSwitchCase="'whiteBoard'" (click)=openWhiteBoard($event,message)>
+              <div style="display:flex; flex-direction: row;" class="message-text">
+                <p class="white-board-icon m-a"></p>
+                <p class="m-a">White Board</p>
+              </div>
+            </div>
+            <div *ngSwitchCase="'writeBoard'" (click)=openWriteBoard($event,message)>
+              <div style="display:flex; flex-direction: row;" class="message-text">
+                <p class="write-board-icon m-a"></p>
+                <p class="m-a">Write Board</p>
+              </div>
+            </div>
+            <div *ngSwitchCase="'broadcast'" (click)=openBroadcast($event,message)>
+              <div style="display:flex; flex-direction: row;" class="message-text">
+                <p class="broadcast-icon m-a"></p>
+                <p class="m-a">Broadcast</p>
+              </div>
+            </div>
+          </span>
+        </div>
+        <div *ngSwitchCase="'custom'">
+          <span [ngSwitch]="message.type" class="custom-message">
+            <div *ngSwitchCase="'broadcastDemo'" (click)=openBroadcastDemo($event,message)>
+              <div style="display:flex; flex-direction:column;" class="boradcast-container">
+                <p class="card-image m-a"></p>
+                <div class="card-body" style="display:flex; flex-direction:column;">
+                  <div class="card-heading" style="text-align: center;"><strong> You started a broadcast</strong>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </span>
+        </div>
+        <div *ngSwitchCase="'action'" class="call-message">
+          {{message.message}}
+        </div>
+        <div *ngSwitchCase="'call'" class="call-message">
+          <span [ngSwitch]="message.action">
+            <div *ngSwitchCase="cometchat.CALL_STATUS.UNANSWERED" class="call-message">
+              {{message.sender.name + " had missed call from " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.REJECTED" class="call-message">
+              {{message.sender.name + " had rejected call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.ONGOING" class="call-message">
+              {{message.sender.name + " had joined the call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.INITIATED" class="call-message">
+              {{message.sender.name + " had initiated the call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.ENDED" class="call-message">
+              {{message.sender.name + " ended the call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.CANCELLED" class="call-message">
+              {{message.sender.name + " rejected the call with " +message.receiver.name}}
+            </div>
+          </span>
+        </div>
+
+        <div class="message-timestamp" style="display: flex; width: 60px;"
+          *ngIf="message.type=='text' || message.category=='custom' || message.type=='media'||message.type=='image'||(message.category==='message' && message.type=='audio')||(message.category==='message' && message.type=='video')||message.type=='file'">
+          <div style="margin:auto">{{message.sentAt *1000|date:'h:mm a'	}}</div>
+          <div class="cometchat-message-receipts" *ngIf="message.sentAt && ! message.deliveredAt && ! message.readAt">
+            <div class="cometchat-message-sent"></div>
+          </div>
+          <div class="cometchat-message-receipts" *ngIf="message.deliveredAt && !   message.readAt">
+            <div class="cometchat-message-delivered"></div>
+          </div>
+          <div class="cometchat-message-receipts" *ngIf=message.readAt>
+            <div class="cometchat-message-read"></div>
+          </div>
+        </div>
+      </div>
+      <br>
+    </div>
+  </div>
+
+  <span
+    *ngIf="(!sender) &&(message.type=='text' || message.category=='custom' || message.type=='media'||message.type=='image'|| (message.category==='message' && message.type=='audio')||(message.category==='message' && message.type=='video')||message.type=='file')"
+    class="sender-display-name"> {{message.sender.name}}</span>
+  <div style="display: flex;">
+    <div
+      *ngIf="(!sender) && (message.type=='text' || message.category=='custom' || message.type=='media'||message.type=='image'||(message.category==='message' && message.type=='audio')||(message.category==='message' && message.type=='video')||message.type=='file')">
+      <cometchat-avatar cornerRadius="50%" borderColor="#CCC" borderWidth="1px"
+        image={{(message.sender.avatar?message.sender.avatar:getSVGAvatar(message.sender.uid,(message.sender.name.substring(0,1))))}}>
+      </cometchat-avatar>
+    </div>
+    <div *ngIf='!sender' class="left-bubble-container">
+      <div [ngSwitch]="message.category">
+        <div *ngSwitchCase="'message'">
+          <div [ngSwitch]="message.type">
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.TEXT" class="message-text">
+              {{(message.text?message.text:message.category)}}
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.VIDEO" class="message-video">
+              <video controls>
+                <source src={{message.data.url}}>
+              </video>
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.AUDIO" class="message-text">
+              <audio controls>
+                <source src={{message.data.url}}>
+              </audio>
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.MEDIA" class="message-text">
+              {{(message.text?"this is text Message":message.category)}}
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.FILE" class="message-file">
+              <a href={{message.data.url}} target="_blank">
+                <div>
+                  <p class="file-icon"></p>
+                  <p class="file-name">{{message.data.attachments[0].name}}</p>
+                </div>
+              </a>
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.CUSTOM" class="message-text">
+              {{(message.text?"this is text Message":message.category)}}
+            </div>
+            <div *ngSwitchCase="cometchat.MESSAGE_TYPE.IMAGE" class="cometchat-image-message">
+              <img src={{message.data.url?message.data.url:message.category}}>
+
+            </div>
+            <div *ngSwitchDefault class="message-text">
+              {{(message.text?"Something Unknown CometChat can't process":"Something Unknown CometChat can't process")}}
+            </div>
+          </div>
+        </div>
+        <div *ngSwitchCase="'custom'" class="">
+          <span [ngSwitch]="message.type" class="custom-message">
+            <div *ngSwitchCase="'whiteBoard'" (click)=openWhiteBoard($event,message)>
+              <div style="display:flex; flex-direction: row;" class="message-text">
+                <p class="white-board-icon m-a"></p>
+                <p class="m-a">White Board</p>
+              </div>
+            </div>
+            <div *ngSwitchCase="'writeBoard'" (click)=openWriteBoard($event,message)>
+              <div style="display:flex; flex-direction: row;" class="message-text">
+                <p class="write-board-icon m-a"></p>
+                <p class="m-a">Write Board</p>
+              </div>
+            </div>
+            <div *ngSwitchCase="'broadcast'" (click)=openBroadcast($event,message,true)>
+              <div style="display:flex; flex-direction: row;" class="message-text">
+                <p class="broadcast-icon m-a"></p>
+                <p class="m-a">Broadcast</p>
+              </div>
+            </div>
+          </span>
+        </div>
+        <div *ngSwitchCase="'custom'" class="">
+          <span [ngSwitch]="message.type" class="custom-message">
+            <div *ngSwitchCase="'broadcastDemo'" (click)=openBroadcastDemo($event,message,true)>
+              <div style="display:flex; flex-direction:column;" class="boradcast-container">
+                <p class="card-image m-a"></p>
+                <div class="card-body" style="display:flex; flex-direction:column;">
+                  <div class="card-heading"><strong> {{message.sender.name}} has started a broadcast</strong>
+                    <!-- <p class="card-sub-heading">TO JOIN:<i>
+                        <a
+                          href="{{(message.data.customData?(message.data.customData.viewers.player):'Older messages')}}">
+                          click me</a></i>
+                    </p> -->
+                  </div>
+                  <div class="card-action">
+                    Join Broadcast
+                  </div>
+                </div>
+              </div>
+            </div>
+          </span>
+        </div>
+        <div *ngSwitchCase="'action'" class="call-message">
+          {{message.message}}
+        </div>
+        <div *ngSwitchCase="'call'" class="call-message">
+          <span [ngSwitch]="message.action">
+            <div *ngSwitchCase="cometchat.CALL_STATUS.UNANSWERED" class="call-message">
+              {{message.sender.name + " had missed call from " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.REJECTED" class="call-message">
+              {{message.sender.name + " had rejected call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.ONGOING" class="call-message">
+              {{message.sender.name + " had joined the call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.INITIATED" class="call-message">
+              {{message.sender.name + " had initiated the call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.ENDED" class="call-message">
+              {{message.sender.name + " ended the call with " +message.receiver.name}}
+            </div>
+            <div *ngSwitchCase="cometchat.CALL_STATUS.CANCELLED" class="call-message">
+              {{message.sender.name + " rejected the call with " +message.receiver.name}}
+            </div>
+          </span>
+        </div>
+        <div class="message-timestamp"
+          *ngIf="message.type=='text' || message.category=='custom' || message.type=='media'||message.type=='image'||(message.category==='message' && message.type=='audio')||(message.category==='message' && message.type=='video')||message.type=='file'">
+          {{message.sentAt *1000|date:'h:mm a'	}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<app-full-screen-iframe *ngIf=showFullScreen sessionId={{sessionId}} url={{broadcastUrl}} whiteBoard={{whiteBoard}}
+  writeBoard={{writeBoard}} broadcast={{broadcast}} broadcastDemo={{broadcastDemo}}
+  (actionPerformed)=handleIFrameActions($event) (close)=handleIFrameClose($event) receiver={{receiver}} group={{group}}
+  user={{user}}>
+</app-full-screen-iframe>

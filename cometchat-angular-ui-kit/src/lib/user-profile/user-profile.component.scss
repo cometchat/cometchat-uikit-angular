@@ -1,0 +1,108 @@
+@import "../styles.scss";
+@import "./../../styles.scss";
+
+@include font-family;
+
+.more-info-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  max-width: 100%;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+}
+
+.more-info-header-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.more-info-header {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.user-profile-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.preference-list-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 100%;
+}
+
+.section-header {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 100%;
+  color: lighten(#141414, 40%);
+  font-size: 12px;
+  padding-bottom: 15px;
+}
+
+ul,
+li {
+  list-style: none;
+  padding: 0px;
+  padding-bottom: 3px;
+  width: 100%;
+  max-width: 100%;
+
+  :hover {
+    cursor: pointer;
+    color: lighten(#141414, 20%);
+  }
+}
+
+
+.list-item {
+  color: #141414;
+  font-size: 14px;
+  font-weight: 600;
+
+  span {
+    margin-left: 30px;
+    width: 100%;
+  }
+
+}
+
+.list-seperator {
+  border-bottom: 1px solid #AAA5;
+  max-width: 100%;
+  margin: auto 30px;
+}
+
+.icon-notification {
+  background: url('../../assets/icon_set/notification-black-icon.svg') no-repeat;
+  background-size: contain;
+  ;
+}
+
+.icon-privacy-and-security {
+  background: url('../../assets/icon_set/privacy-black-icon.svg') no-repeat;
+  background-size: contain;
+
+}
+
+.icon-chats {
+  background: url('../../assets/icon_set/chat-black-icon.svg') no-repeat;
+  background-size: contain;
+}
+
+.icon-report-a-problem {
+  background: url('../../assets/icon_set/report-black-icon.svg') no-repeat;
+  background-size: contain;
+}
+
+.icon-help {
+  background: url('../../assets/icon_set/help-black-icon.svg') no-repeat;
+  background-size: contain;
+}

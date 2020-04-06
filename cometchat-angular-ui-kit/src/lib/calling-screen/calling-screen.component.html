@@ -1,0 +1,43 @@
+<div class="cometchat-call-screen-container" *ngIf=callInProgress>
+
+  <div style="height: 100%;width: 100%;" *ngIf=outgoingScreen class="cometchat-call-receiver-info">
+    <h2 class="m-a">
+      Calling...
+    </h2>
+    <p class="m-a">
+      <img [src]=image alt="">
+    </p>
+    <h1 class="m-a">
+      {{name}}
+    </h1>
+    <div class="cancel-button m-a" (click)=endOutGoingCall($event)></div>
+  </div>
+
+  <div style="height: 100%;width: 100%;" *ngIf=incomingScreen class="cometchat-call-initiator-info">
+    <p class="m-a">
+      <img [src]=image alt="">
+    </p>
+    <h1 class="m-a">
+      {{name}}
+    </h1>
+    <div style="display: flex; width: 300px;" class="m-a">
+      <div class="cancel-button m-a" (click)=endIncomingCall($event)></div>
+      <div class="accept-button m-a" (click)=acceptIncomingCall($event)></div>
+    </div>
+
+  </div>
+  <div id="callScreen" style="height: 100%;width: 100%;display: flex;">
+    <!-- <div style="height: 100%;width: 30%; margin: auto; background: white; z-index: 5000000;"
+      *ngIf="!incomingScreen && !outgoingScreen">
+      <cometchat-conversation-screen *ngIf=toUser user={{json.stringify(toUser)}}>
+      </cometchat-conversation-screen>
+
+      <cometchat-conversation-screen *ngIf=toGroup group={{json.stringify(toGroup)}}>
+      </cometchat-conversation-screen>
+    </div> -->
+    <div style="height: 100%; margin: auto;">
+
+    </div>
+  </div>
+
+</div>

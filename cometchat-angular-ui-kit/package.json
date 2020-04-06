@@ -1,0 +1,9 @@
+{
+  "name": "cometchat-angular-ui-kit",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/common": "^8.2.14",
+    "@angular/core": "^8.2.14",
+    "@cometchat-pro/chat": "^2.0.5"
+  }
+}

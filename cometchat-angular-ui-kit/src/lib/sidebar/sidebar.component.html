@@ -1,0 +1,29 @@
+<div class="cometchat-sidebar-container">
+  <div class="cometchat-sidebar-content">
+
+    <cometchat-contact-list [friendsOnly]=friendsOnly *ngIf="selectedTab=='users'"
+      selectedUser={{json.stringify(selectedUser)}} (actionPerformed)=onItemSelected($event)>
+    </cometchat-contact-list>
+
+    <cometchat-group-list selectedGroup={{json.stringify(selectedGroup)}} *ngIf="selectedTab=='groups'"
+      (actionPerformed)=onItemSelected($event)>
+    </cometchat-group-list>
+
+    <cometchat-conversations-list *ngIf="selectedTab=='conversation'" [actionRequired]="messagesActions"
+      selectedUser={{json.stringify(selectedUser)}} selectedGroup={{json.stringify(selectedGroup)}}
+      (actionPerformed)=onItemSelected($event)>
+    </cometchat-conversations-list>
+
+    <cometchat-user-profile (actionPerformed)=optionMenuSelected($event) *ngIf="selectedTab=='profile'">
+    </cometchat-user-profile>
+
+  </div>
+
+  <div class="cometchat-sidebar-footer-menu">
+
+    <cometchat-bottom-navigation (actionPerformed)=handleNavigationChange($event)>
+    </cometchat-bottom-navigation>
+
+  </div>
+
+</div>

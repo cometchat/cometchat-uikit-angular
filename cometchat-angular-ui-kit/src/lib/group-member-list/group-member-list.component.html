@@ -1,0 +1,17 @@
+<div class="cometchat-userlist-container" (scroll)="onScroll($event)">
+    <ul *ngIf="groupMembers?.length > 0" class="cometchat-userlist-decoration">
+        <li *ngFor="let member of groupMembers;let i = index" (click)=onItemClick(member)>
+            <div style="width: 100%; display: flex; overflow: hidden;">
+                <cometchat-user-view user={{JSON.stringify(member)}}
+                    style="min-width: 70%;">
+                </cometchat-user-view>
+                <span style="margin:auto 0;font-size: 10px; color: #333;">
+                    {{member.scope | titlecase}}
+                </span>
+            </div>
+
+            <div class="cometchat-userlist-seperator">
+            </div>
+        </li>
+    </ul>
+</div>

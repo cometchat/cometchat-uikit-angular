@@ -1,0 +1,65 @@
+<div class="cometchat-header-container">
+
+  <div class="cometchat-header-profile-img-container" *ngIf="user">
+
+    <cometchat-avatar class="cometchat-header-profile-img" image={{user.avatar}} cornerRadius="50%" borderColor="#CCC"
+      borderWidth="1px">
+    </cometchat-avatar>
+    <status-indicator class="status-indicator" status={{user.status}}></status-indicator>
+  </div>
+  <div class="cometchat-header-profile-img-container" *ngIf="group">
+    <cometchat-avatar class="cometchat-header-profile-img" image={{group.icon}} cornerRadius="50%" borderColor="#CCC"
+      borderWidth="1px">
+    </cometchat-avatar>
+  </div>
+
+  <div class="cometchat-header-profile-info-conatiner" *ngIf="user">
+    <div class="cometchat-header-profile-info">
+      <p class="cometchat-header-profile-info-text">
+        {{user.name}}
+      </p>
+      <p class="cometchat-header-profile-info-text-small">
+        <span class="cometchat-header-online-status" *ngIf="user.status==='online'">
+          {{(status?status:user.status)}}
+        </span>
+        <span class="cometchat-header-offline-status" *ngIf="user.status==='offline'">
+          {{(status?status:(user.lastActiveAt?('Last active at : '+ (user.lastActiveAt * 1000 | date:'medium')):'offline'))	}}
+        </span>
+      </p>
+    </div>
+  </div>
+  <div class="cometchat-header-profile-info-conatiner" *ngIf="group">
+    <div class="cometchat-header-profile-info">
+      <p class="cometchat-header-profile-info-text">
+        {{group.name}}
+      </p>
+      <p class="cometchat-header-profile-info-text-small">
+        <span class="cometchat-header-offline-status" *ngIf="group.type">
+          {{group.type}}
+        </span>
+      </p>
+    </div>
+  </div>
+
+
+  <div class="cometchat-header-menu-container">
+    <p class="cometchat-header-menu-item" id="cometchat-header-audio-button">
+
+      <i #audioCall class="audioCallIcon" (click)="makeAudioCall($event)" alt="audio call"></i>
+    </p>
+    <p class="cometchat-header-menu-item" id="cometchat-header-video-button">
+
+      <i #videoCall class="videoCallIcon" src="../../assets/icon_set/video-call-blue-icon.svg"
+        (click)="makeVideoCall($event)" alt="video call"></i>
+    </p>
+    <p *ngIf=group class="cometchat-header-menu-item" id="cometchat-header-menu-button">
+
+      <i #optionMenu src="../../assets/icon_set/details-pane-blue-icon.svg" class="menuIcon"
+        (click)="clickMenuOption($event)" alt="video call"></i>
+    </p>
+  </div>
+</div>
+
+<!-- <app-calling-screen inProgressCall={{inProgressCall}}>
+
+</app-calling-screen> -->

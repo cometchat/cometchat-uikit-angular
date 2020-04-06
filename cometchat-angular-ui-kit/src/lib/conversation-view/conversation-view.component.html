@@ -1,0 +1,22 @@
+<div class="cometchat-conversation-item-container">
+  <div class="cometchat-conversation-item" [ngClass]="{conversationSelected: (selected)}">
+    <cometchat-avatar class="cometchat-conversation-avatar" image="{{image}}" cornerRadius="50%" borderColor="#CCC"
+      borderWidth="1px">
+    </cometchat-avatar>
+    <status-indicator class="status-indicator" *ngIf="conversationType==='user'" status={{status}}>
+
+    </status-indicator>
+    <div class="cometchat-conversation-item-details">
+      <p class="cometchat-conversation-name">
+        {{name}}
+      </p>
+      <p class="cometchat-conversation-text">
+        {{text}}
+      </p>
+    </div>
+    <div class="cometchat-conversation-unread-count" *ngIf="count > 0">
+      <cometchat-badge count={{count}} backgroundColor="#3399FF" textColor="#FFF">
+      </cometchat-badge>
+    </div>
+  </div>
+</div>

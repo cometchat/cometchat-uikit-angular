@@ -1,0 +1,96 @@
+<div [hidden]="!showOptionMenu" style="transition-duration: 2s;">
+  <media-message-composer (mediaOptionSelected)=onMediaItemSelected($event)
+    class="cometchat-media-message-composer-component">
+  </media-message-composer>
+
+
+  <div *ngIf="filesInput||imageInput||audioInput||videoInput" class="cometchat-image-viewer-container">
+
+    <div class="cometchat-image-viewer-body">
+      <h1 style="color: white;">Upload a file</h1>
+
+      <div class="cometchat-image-viewer-image-container">
+        <img *ngIf=imageInput src={{imageInput}} class="cometchat-image-viewer-image">
+        <audio controls *ngIf=audioInput class="cometchat-image-viewer-image">
+          <source src={{audioInput}}>
+        </audio>
+
+        <video controls *ngIf=videoInput class="cometchat-image-viewer-image">
+          <source src={{videoInput}}>
+        </video>
+      </div>
+
+
+
+
+      <div style="display: flex; width: 80%; border: 2px solid white; margin: auto; border-radius: 5px;    margin-top: 10px;
+    border-radius: 5px;
+    padding: 5px 15px;">
+
+        <div *ngIf=fileName style="margin:auto;color: white;  font-size: 14px; font-weight: 600;">
+          {{fileName}}
+        </div>
+
+        <!-- <div *ngIf=fileSize style="margin:auto; color: white;">{{fileSize}}</div> -->
+
+        <div (click)=sendImageMessage($event) class="cometchat-image-viewer-image-send-button">
+          Send File
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <input [hidden]="!(inputType==='image')" (change)=onMediInputChange($event) #fileInput id="image-input"
+    accept="image/*" type='file' name="name" style="display: none;" />
+  <input [hidden]="!(inputType==='video')" #fileInput id="video-input" (change)=onMediInputChange($event)
+    accept="video/*" type='file' name="name" style="display: none;" />
+  <input [hidden]="!(inputType==='file')" #fileInput id="file-input" (change)=onMediInputChange($event) type='file'
+    name="name" style="display: none;" />
+  <input [hidden]="!(inputType==='audio')" #fileInput id="audio-input" type='file' accept="audio/*"
+    (change)=onMediInputChange($event) name="name" style="display: none;" />
+</div>
+
+<app-full-screen-iframe user={{user}} group={{group}} whiteBoard={{whiteBoard}} writeBoard={{writeBoard}}
+  broadcast={{broadcast}} sessionId={{whiteBoardSessionId}} *ngIf=showWhiteboard (close)=closeFrame($event)
+  (actionPerformed)=iframeActions($event)>
+</app-full-screen-iframe>
+
+
+
+<div
+  style="position:fixed; display: flex; top:0px; left:0px; width: 100vw; height: 100vh; background: #0008; z-index:200000"
+  *ngIf=broadcastDemo>
+  <div style="margin: auto;" *ngIf=message>
+    <span class="custom-message">
+      <div>
+        <div style="display:flex; flex-direction:column;" class="boradcast-container">
+          <p class="card-image m-a"></p>
+          <div class="card-body" style="display:flex; flex-direction:column;">
+            <div class="card-heading"><strong> You are about to start a broadcast</strong>
+              <p class="card-sub-heading">Server:<i><strong>
+                    {{(message.data.customData?(message.data.customData.broadcaster.server):'Older messages')}}
+                  </strong></i>
+              </p>
+              <p class="card-sub-heading">Stream Key:<i><strong>
+                    {{(message.data.customData?(message.data.customData.broadcaster.streamKey):'Older messages')}}
+                  </strong>
+                </i>
+              </p>
+
+            </div>
+            <div class="card-action">
+              <div (click)=startBroadcast()>
+                Start
+              </div>
+              <div (click)=cancelBroadcast()>
+                Cancel
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>

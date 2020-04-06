@@ -1,0 +1,44 @@
+@import "./../../styles.scss";
+
+@include font-family;
+
+.cometchat-user-item {
+  display: flex;
+  background: #fff;
+  padding: 12px;
+  overflow: hidden;
+  max-width: calc(100% - 10px);
+}
+
+.cometchat-user-item:hover {
+  background: darken(#fff, $amount: 10%);
+  cursor: pointer;
+}
+
+.cometchat-user-selected {
+  background: darken(#fff, $amount: 10%);
+}
+
+.cometchat-user-details {
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-left: 10px;
+  text-transform: capitalize;
+  color: #333;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 550;
+  font-family: "Inter";
+  max-width: calc(100% - 46px);
+
+  > p {
+    line-height: 22px;
+  }
+}
+.status-indicator {
+  position: relative;
+  right: 10px;
+  bottom: -3px;
+}
