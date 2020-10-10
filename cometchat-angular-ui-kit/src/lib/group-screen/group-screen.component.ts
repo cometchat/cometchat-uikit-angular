@@ -9,7 +9,8 @@ import { CONVERSATIONS_SCREEN_ACTIONS, CONTACT_LIST_ACTIONS, GROUP_LIST_ACTIONS 
 export class GroupScreenComponent implements OnInit {
   group?: object;
   json = JSON;
-  inProgressCall
+  inProgressCall;
+  incomingScreen;
   constructor() { }
 
   ngOnInit() {

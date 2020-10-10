@@ -13,6 +13,7 @@ export class ConversationsScreenComponent implements OnInit {
   json = JSON;
   inProgressCall;
   messagesActions;
+  incomingScreen;
   constructor(private cdRef: ChangeDetectorRef) { }
 
   ngOnInit() {
