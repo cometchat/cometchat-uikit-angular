@@ -14,7 +14,7 @@ export class CreateGroupScreenComponent implements OnChanges {
   @Input() showPopUp;
   groupManager: GroupMenager;
   logedInUser;
-  groupName;
+  groupName:string = "";
   guid = this.groupName ? this.groupName.replace(/ /g, '') + new Date().getTime() : new Date().getTime();
   groupType;
   failedCreation;

@@ -97,7 +97,7 @@ export class ConversationsListComponent implements OnChanges, OnInit {
                     updatedConversation.setUnreadMessageCount(0);
                   } else {
                     // tslint:disable-next-line: radix
-                    updatedConversation.setUnreadMessageCount(parseInt(conversation.getUnreadMessageCount()) + 1);
+                    updatedConversation.setUnreadMessageCount(conversation.getUnreadMessageCount() + 1);
                   }
                   updatedConversation.setConversationWith(this.conversations[i].getConversationWith());
 
@@ -126,7 +126,7 @@ export class ConversationsListComponent implements OnChanges, OnInit {
                     updatedConversation.setUnreadMessageCount(0);
                   } else {
                     // tslint:disable-next-line: radix
-                    updatedConversation.setUnreadMessageCount(parseInt(conversation.getUnreadMessageCount()) + 1);
+                    updatedConversation.setUnreadMessageCount(conversation.getUnreadMessageCount() + 1);
                   }
 
                   this.conversations.splice(i, 1);
@@ -242,7 +242,7 @@ export class ConversationsListComponent implements OnChanges, OnInit {
 
               } else {
                 // tslint:disable-next-line: radix
-                updatedConversation.setUnreadMessageCount(parseInt(conversation.getUnreadMessageCount()) + 1);
+                updatedConversation.setUnreadMessageCount(conversation.getUnreadMessageCount() + 1);
               }
               if (makeFirst) {
                 this.conversations.splice(i, 1);
