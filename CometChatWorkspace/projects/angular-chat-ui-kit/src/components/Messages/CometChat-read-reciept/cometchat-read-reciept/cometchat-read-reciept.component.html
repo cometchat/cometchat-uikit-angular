@@ -1,0 +1,53 @@
+<div [ngSwitch]="tickStatus">
+  <div
+    *ngSwitchCase="'sent'"
+    class="recieptContainer"
+    [ngClass]="{
+      recieptContainerSecondaryStyle: displayReadReciept === false
+    }"
+  >
+    <span
+      class="msgTimestampStyle"
+      [ngClass]="{
+        msgTimestampSecondaryStyle: displayReadReciept === false
+      }"
+    >
+      {{ getTime() | date: "shortTime" }}
+    </span>
+    <span *ngIf="displayReadReciept" class="tick sent">&nbsp;</span>
+  </div>
+  <div
+    *ngSwitchCase="'deliv'"
+    class="recieptContainer"
+    [ngClass]="{
+      recieptContainerSecondaryStyle: displayReadReciept === false
+    }"
+  >
+    <span
+      class="msgTimestampStyle"
+      [ngClass]="{
+        msgTimestampSecondaryStyle: displayReadReciept === false
+      }"
+    >
+      {{ getTime() | date: "shortTime" }}
+    </span>
+    <span *ngIf="displayReadReciept" class="tick deliv">&nbsp;</span>
+  </div>
+  <div
+    *ngSwitchCase="'read'"
+    class="recieptContainer"
+    [ngClass]="{
+      recieptContainerSecondaryStyle: displayReadReciept === false
+    }"
+  >
+    <span
+      class="msgTimestampStyle"
+      [ngClass]="{
+        msgTimestampSecondaryStyle: displayReadReciept === false
+      }"
+    >
+      {{ getTime() | date: "shortTime" }}
+    </span>
+    <span *ngIf="displayReadReciept" class="tick read">&nbsp;</span>
+  </div>
+</div>

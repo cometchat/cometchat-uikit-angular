@@ -1,0 +1,97 @@
+.messageContainerStyle {
+  margin-bottom: 16px;
+  max-width: 100%;
+  clear: both;
+  flex-shrink: 0;
+
+  align-self: flex-end;
+}
+
+.messageWrapperStyle {
+  flex: 1 1;
+  position: relative;
+  width: 100%;
+
+  /* alignment below is only for sender */
+  display: flex;
+  flex-direction: column;
+}
+
+.messageWrapperDeletedMessageStyle {
+  flex: 1 1;
+  position: relative;
+  width: 100%;
+}
+
+.messageTxtWrapperStyle {
+  display: inline-block;
+  border-radius: 12px;
+  padding: 8px 12px;
+  align-self: flex-start;
+  width: auto;
+  background-color: #f6f6f6;
+  font-style: italic;
+
+  /* alignment is different for sender and receiver */
+  align-self: flex-end;
+}
+
+.messageTxtStyle {
+  font-size: 14px !important;
+  margin: 0;
+  line-height: 20px !important;
+  color: rgba(20, 20, 20, 0.6);
+}
+
+.messageInfoWrapperStyle {
+  /* alignment is different for sender and receiver */
+  align-self: flex-end;
+  /* align-self: flex-start; */
+}
+
+.messageTimeStampStyle {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 12px;
+  text-transform: uppercase;
+  color: rgba(20, 20, 20, 0.6);
+}
+
+.messageThumbnailStyle {
+  width: 36px;
+  height: 36px;
+  margin: 12px 5px;
+  float: left;
+}
+
+.messageDetailStyle {
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  /* below padding will be used in group conversation */
+  /* paddingLeft: 5px; */
+}
+
+.nameWrapperStyle {
+  align-self: flex-start;
+  /* below padding will be used in group conversation */
+  /* padding: 3px 5px; */
+}
+
+.nameStyle {
+  font-size: 10px;
+  color: rgba(20, 20, 20, 0.6);
+}
+
+.deletedMessageReceivedStyle {
+  align-self: flex-start;
+}
+
+.deletedMessageWrapperStyle {
+  flex: 1 1;
+  position: relative;
+  width: 100%;
+}

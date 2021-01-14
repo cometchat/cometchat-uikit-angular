@@ -1,0 +1,109 @@
+<div>
+  <cometchat-backdrop></cometchat-backdrop>
+  <form [formGroup]="pollFormData" (ngSubmit)="createPoll(pollFormData.value)">
+    <div class="modalWrapperStyle">
+      <span class="modalCloseStyle" (click)="closePollView()"></span>
+      <div class="modalBodyStyle">
+        <table class="modalTableStyle">
+          <caption class="tableCaptionStyle">
+            {{
+              CREATE_POLL
+            }}
+          </caption>
+          <tbody class="tableBodyStyle">
+            <tr class="tableRowStyle">
+              <td colSpan="3" class="tableDataStyle">
+                <div class="modalErrorStyle">{{ errorText }}</div>
+              </td>
+            </tr>
+
+            <tr class="tableRowStyle">
+              <td class="tableDataStyle tableDataWidthStyle">
+                <label class="tableDataLabelStyle">{{ QUESTION }}</label>
+              </td>
+              <td colSpan="2" class="tableDataStyle">
+                <input
+                  class="tableDataInputStyle"
+                  type="text"
+                  autoFocus
+                  tabIndex="1"
+                  [placeholder]="ENTER_YOUR_QUESTION"
+                  formControlName="question"
+                />
+              </td>
+            </tr>
+            <tr class="tableRowStyle">
+              <td class="tableDataStyle tableDataWidthStyle">
+                <label class="tableDataLabelStyle">{{ OPTIONS }}</label>
+              </td>
+              <td colSpan="2" class="tableDataStyle">
+                <input
+                  class="tableDataInputStyle"
+                  type="text"
+                  [placeholder]="ENTER_YOUR_OPTION"
+                  formControlName="firstOption"
+                />
+              </td>
+            </tr>
+
+            <tr class="tableRowStyle">
+              <td class="tableDataStyle tableDataWidthStyle">&nbsp;</td>
+              <td colSpan="2" class="tableDataStyle">
+                <input
+                  class="tableDataInputStyle"
+                  type="text"
+                  [placeholder]="ENTER_YOUR_OPTION"
+                  formControlName="secondOption"
+                />
+              </td>
+            </tr>
+
+            <!--  POLL OPTION VIEW BELOW -->
+            <tr
+              class="tableRowStyle"
+              *ngFor="let option of getOptionsFormControls(); let i = index"
+            >
+              <td class="tableDataStyle tableDataWidthStyle">&nbsp;</td>
+              <td colSpan="2" class="tableDataStyle">
+                <input
+                  class="tableDataInputStyle"
+                  type="text"
+                  [placeholder]="ENTER_YOUR_OPTION"
+                  [formControl]="option"
+                />
+              </td>
+              <td class="iconWrapperStyle tableDataStyle">
+                <!-- Remove Icon -->
+                <span
+                  class="optionIconStyle removeIcon"
+                  (click)="removePollOption(i)"
+                ></span>
+              </td>
+            </tr>
+            <!--  POLL OPTION VIEW ABOVE -->
+            <tr class="tableRowStyle">
+              <td class="tableDataStyle tableDataWidthStyle">&nbsp;</td>
+              <td class="tableDataStyle">
+                <label class="tableDataLabelStyle">{{ ADD_NEW_OPTION }}</label>
+              </td>
+              <td class="iconWrapperStyle tableDataStyle">
+                <!-- Add Icon -->
+                <span
+                  class="optionIconStyle addIcon"
+                  (click)="addPollOption()"
+                ></span>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot class="tableFootStyle">
+            <tr>
+              <td colSpan="2">
+                <button type="submit">{{ createBtnText }}</button>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,28 @@
+<div class="userDetailStyle">
+  <div class="headerStyle">
+    <div class="headerCloseStyle" (click)="closeThreadView()"></div>
+    <h4 class="headerTitleStyle">{{ DETAILS }}</h4>
+  </div>
+  <div class="sectionStyle">
+    <!-- BLOCKED USER VIEW -->
+    <div class="privacySectionStyle">
+      <h6 class="sectionHeaderStyle">{{ OPTIONS }}</h6>
+      <div class="sectionContentStyle">
+        <div class="contentItemStyle">
+          <div class="itemLinkStyle" (click)="toggleBlockUser()">
+            {{ blockUserText }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- BLOCKED USER VIEW -->
+
+    <!-- SHARED MEDIA VIEW -->
+    <div class="sharedMedia">
+      <cometchat-shared-media
+        [item]="item"
+        [type]="type"
+      ></cometchat-shared-media>
+    </div>
+  </div>
+</div>

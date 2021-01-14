@@ -1,0 +1,17 @@
+.badgeStyle {
+  display: block;
+  font-size: 12px;
+  width: auto;
+  height: 18px;
+  border-radius: 16px;
+  background-color: #39f;
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  line-height: 18px;
+  margin-left: 4px;
+  padding: 0 9px;
+  margin-right: 2px;
+  opacity: 1;
+  transition: opacity 0.1s;
+}

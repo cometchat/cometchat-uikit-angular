@@ -1,0 +1,80 @@
+* {
+  overflow: hidden;
+}
+.unifiedStyle {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: Inter, sans-serif;
+  position: relative;
+}
+.unifiedStyle * {
+  box-sizing: border-box;
+  font-family: Inter, sans-serif;
+}
+.unifiedStyle * ::-webkit-scrollbar {
+  width: 8px;
+  height: 4px;
+}
+.unifiedStyle *::-webkit-scrollbar-track {
+  background-color: #ffffff00;
+}
+.unifiedStyle *::-webkit-scrollbar-thumb {
+  background: #ccc;
+}
+
+.unifiedSidebarStyle {
+  width: 280px;
+  border-right: 1px solid #eaeaea;
+  height: 100%;
+  position: relative;
+}
+
+.unifiedMainStyle {
+  width: calc(100% - 280px);
+  height: 100%;
+  order: 2;
+}
+
+.unifiedMainSecondaryStyle {
+  width: calc(100% - 500px);
+}
+
+.unifiedSecondaryStyle {
+  float: right;
+  border-left: 1px solid #eaeaea;
+  height: 100%;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  order: 3;
+}
+
+.detailScreenStyle {
+  height: 100%;
+}
+
+@media (min-width: 320px) and (max-width: 767px) {
+  .unifiedSidebarStyle {
+    position: absolute !important;
+    top: 0;
+    bottom: 0;
+    width: 100% !important;
+    z-index: 2;
+    background-color: white;
+  }
+  .unifiedMainStyle {
+    width: 100% !important;
+    background-color: white;
+  }
+  .unifiedSecondaryStyle {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0;
+    bottom: 0;
+    width: 100% !important;
+    z-index: 2;
+    background-color: white;
+  }
+}

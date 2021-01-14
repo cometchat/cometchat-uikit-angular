@@ -1,0 +1,70 @@
+<div *ngIf="!pollView">
+  <ul
+    class="messageActionStyle"
+    *ngIf="
+      showToolTip && (!receivedMessage || (receivedMessage && !threadView))
+    "
+    [ngClass]="{
+      messageActionStyleSecondaryStyle: !receivedMessage
+    }"
+  >
+    <div [class.tool]="!receivedMessage" class="toolTip">
+      <li class="actionGroupStyle" *ngIf="!receivedMessage">
+        <button type="button" class="groupButtonStyle" (click)="sendReaction()">
+          <img [src]="reactionIcon" class="regularReactionIcon" />
+        </button>
+      </li>
+      <li class="actionGroupStyle" *ngIf="showReplyOption">
+        <button
+          type="button"
+          class="groupButtonStyle replyIcon"
+          (click)="replyToMessage()"
+        ></button>
+      </li>
+      <li
+        class="actionGroupStyle"
+        *ngIf="!showOnlyReplyButton && MessageDetails?.type === 'text'"
+      >
+        <button
+          type="button"
+          class="groupButtonStyle editIcon"
+          (click)="editMessage()"
+        ></button>
+      </li>
+      <li class="actionGroupStyle" *ngIf="!showOnlyReplyButton">
+        <button
+          type="button"
+          class="groupButtonStyle deleteIcon"
+          (click)="deleteMessage()"
+        ></button>
+      </li>
+
+      <li class="actionGroupStyle" *ngIf="receivedMessage">
+        <button type="button" class="groupButtonStyle" (click)="sendReaction()">
+          <img [src]="reactionIcon" class="regularReactionIcon" />
+        </button>
+      </li>
+    </div>
+  </ul>
+</div>
+
+<!-- For Poll View Sent ,  only delete option is there -->
+<div *ngIf="pollView">
+  <ul
+    class="messageActionStyle"
+    *ngIf="
+      showToolTip && (!receivedMessage || (receivedMessage && !threadView))
+    "
+  >
+    <div [class.tool]="!receivedMessage">
+      <li class="actionGroupStyle" *ngIf="!showOnlyReplyButton">
+        <button
+          type="button"
+          class="groupButtonStyle deleteIcon"
+          (click)="deleteMessage()"
+        ></button>
+      </li>
+    </div>
+  </ul>
+</div>
+<!-- For Poll View Sent ,  only delete option is there -->

@@ -1,0 +1,84 @@
+<div class="unifiedStyle">
+  <div class="unifiedSidebarStyle" [@FadeInFadeOut]="checkAnimatedState">
+    <cometchat-nav-bar
+      [item]="item"
+      [type]="type"
+      [groupToUpdate]="groupToUpdate"
+      [groupToLeave]="groupToLeave"
+      [groupToDelete]="groupToDelete"
+      [lastMessage]="lastMessage"
+      (onUserClick)="userClicked($event)"
+      (actionGenerated)="actionHandler($event)"
+    ></cometchat-nav-bar>
+  </div>
+  <div
+    class="unifiedMainStyle"
+    *ngIf="item !== null"
+    [ngClass]="{
+      unifiedMainSecondaryStyle: threadMessageView || viewDetailScreen
+    }"
+  >
+    <cometchat-messages
+      [item]="item"
+      [type]="type"
+      [callMessage]="callMessage"
+      [composedthreadmessage]="composedthreadmessage"
+      [groupMessage]="groupMessage"
+      (actionGenerated)="actionHandler($event)"
+    >
+    </cometchat-messages>
+  </div>
+  <!--Detail Screen-->
+  <div
+    class="unifiedSecondaryStyle"
+    *ngIf="threadMessageView || viewDetailScreen"
+  >
+    <div
+      *ngIf="type === 'user'"
+      [ngClass]="{
+        detailScreenStyle: viewDetailScreen
+      }"
+    >
+      <cometchat-user-details
+        *ngIf="viewDetailScreen"
+        [item]="item"
+        [type]="type"
+        (actionGenerated)="actionHandler($event)"
+      >
+      </cometchat-user-details>
+    </div>
+    <div *ngIf="type === 'group'">
+      <cometchat-group-details
+        *ngIf="viewDetailScreen"
+        [item]="item"
+        [type]="type"
+        (actionGenerated)="actionHandler($event)"
+      ></cometchat-group-details>
+    </div>
+
+    <cometchat-message-thread
+      *ngIf="threadMessageView"
+      [item]="threadMessageItem"
+      [type]="threadMessageType"
+      [parentMessage]="threadMessageParent"
+      [loggedInUser]="loggedInUser"
+      (actionGenerated)="actionHandler($event)"
+    ></cometchat-message-thread>
+  </div>
+  <cometchat-image-viewer
+    *ngIf="fullScreenViewImage"
+    [MessageDetails]="imageView"
+    [open]="true"
+    (actionGenerated)="actionHandler($event)"
+  ></cometchat-image-viewer>
+  <cometchat-incoming-call
+    (actionGenerated)="actionHandler($event)"
+  ></cometchat-incoming-call>
+  <cometchat-outgoing-call
+    [item]="item"
+    [type]="type"
+    [incomingCall]="incomingCall"
+    [outgoingCall]="outgoingCall"
+    (actionGenerated)="actionHandler($event)"
+  ></cometchat-outgoing-call>
+</div>

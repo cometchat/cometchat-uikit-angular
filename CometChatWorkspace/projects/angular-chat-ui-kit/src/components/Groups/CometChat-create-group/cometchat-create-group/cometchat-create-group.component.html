@@ -1,0 +1,72 @@
+<div>
+  <cometchat-backdrop></cometchat-backdrop>
+  <!-- <p>test</p> -->
+  <div class="modalWrapperStyle">
+    <span class="modalCloseStyle" (click)="closeCreateGroupView()"></span>
+    <div class="modalBodyStyle">
+      <table class="modalTableStyle">
+        <caption class="tableCaptionStyle">
+          {{
+            CREATE_GROUP
+          }}
+        </caption>
+        <tbody class="tableBodyStyle">
+          <tr>
+            <td>
+              <div class="tableErrorStyle" *ngIf="error">{{ error }}</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <input
+                class="inputStyle"
+                autoComplete="off"
+                [placeholder]="ENTER_GROUP_NAME"
+                type="text"
+                tabIndex="1"
+                (keyup)="nameChangeHandler($event)"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <select
+                class="inputStyle"
+                tabIndex="2"
+                (change)="typeChangeHandler($event)"
+              >
+                <option value="">{{ SELECT_GROUP_TYPE }}</option>
+                <option value="public">{{ PUBLIC }}</option>
+                <option value="private">{{ PRIVATE }}</option>
+                <option value="protected">{{ PASSWORD_PROTECTED }}</option>
+              </select>
+            </td>
+          </tr>
+          <!-- Password -->
+          <tr *ngIf="passwordInput">
+            <td>
+              <input
+                class="inputStyle"
+                autoComplete="off"
+                [placeholder]="ENTER_GROUP_PASSWORD"
+                type="password"
+                tabIndex="3"
+                (keyup)="passwordChangeHandler($event)"
+              />
+            </td>
+          </tr>
+          <!-- Password -->
+        </tbody>
+        <tfoot class="tableFootStyle">
+          <tr>
+            <td>
+              <button tabIndex="4" (click)="createGroup()">
+                {{ createBtnText }}
+              </button>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>

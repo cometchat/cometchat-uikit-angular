@@ -1,0 +1,45 @@
+<div class="stickerWrapperStyle">
+  <!--Message container-->
+  <div class="stickerMsgStyle" *ngIf="loading; else elseBlock">
+    <p class="stickerMsgTxtStyle">
+      {{ decoratorMessage }}
+    </p>
+  </div>
+  <ng-template #elseBlock>
+    <div
+      class="stickerCloseStyle"
+      (click)="closeStickerWindow('closeSticker')"
+    ></div>
+
+    <!--ActiveStickerList-->
+
+    <div class="stickerListStyle">
+      <div
+        *ngFor="let stickers of activeStickerList"
+        (click)="sendStickerMessage(stickers)"
+      >
+        <img
+          [src]="stickers.stickerUrl"
+          alt="stickers.stickerSetName"
+          class="stickerItemStyle"
+          loading="lazy"
+        />
+      </div>
+    </div>
+
+    <!--Section Items-->
+    <div class="stickerSectionListStyle">
+      <div
+        *ngFor="let stickers of categoryStickerUrl"
+        (click)="stickerSetClicked(stickers.stickerSetName)"
+      >
+        <img
+          [src]="stickers.stickerUrl"
+          alt="stickers.stickerSetName"
+          class="sectionListItemStyle"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  </ng-template>
+</div>

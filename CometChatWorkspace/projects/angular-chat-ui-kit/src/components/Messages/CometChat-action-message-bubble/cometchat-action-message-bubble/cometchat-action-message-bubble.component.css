@@ -1,0 +1,11 @@
+.callMessageStyle {
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.callMessageTxtStyle {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
