@@ -1,0 +1,28 @@
+<div class="callScreenWrapperStyle" *ngIf="callInProgress" #callScreenFrame>
+  <!-- OUTGOING CALL SCREEN BELOW -->
+  <div class="callScreenContainerStyle" *ngIf="outgoingCallScreen">
+    <div class="headerStyle">
+      <span class="headerDurationStyle"> {{ CALLING }} </span>
+      <h6 class="headerNameStyle">{{ item?.name }}</h6>
+    </div>
+    <div class="thumbnailWrapperStyle">
+      <div class="thumbnailStyle">
+        <cometchat-avatar
+          [item]="item"
+          [enableUserStatus]="false"
+        ></cometchat-avatar>
+      </div>
+    </div>
+    <!-- ERROR SCREEN BELOW -->
+    <div class="errorContainerStyle" *ngIf="errorScreen">
+      <div>{{ errorMessage }}</div>
+    </div>
+    <!-- ERROR SCREEN ABOVE -->
+    <div class="headerIconStyle">
+      <div class="iconWrapperStyle">
+        <div class="iconStyle" (click)="cancelCall()"></div>
+      </div>
+    </div>
+  </div>
+  <!-- OUTGOING CALL SCREEN ABOVE -->
+</div>

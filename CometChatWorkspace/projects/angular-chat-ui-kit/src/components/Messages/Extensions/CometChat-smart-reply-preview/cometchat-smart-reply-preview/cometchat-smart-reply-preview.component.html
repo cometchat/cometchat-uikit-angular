@@ -1,0 +1,14 @@
+<div class="previewWrapperStyle" *ngIf="replyPreview" [@slideInOut]>
+  <div class="previewHeadingStyle" (click)="closeReplyPreview()">
+    <div class="previewCloseStyle"></div>
+  </div>
+  <div class="previewOptionsWrapperStyle">
+    <!-- SMART REPLY OPTION BELOW -->
+    <div *ngFor="let option of options">
+      <div class="previewOptionStyle" (click)="sendReplyMessage(option)">
+        {{ option }}
+      </div>
+    </div>
+    <!-- SMART REPLY OPTION ABOVE -->
+  </div>
+</div>

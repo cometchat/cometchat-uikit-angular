@@ -1,0 +1,89 @@
+.modalWrapperStyle {
+  display: block;
+  min-width: 350px;
+  min-height: 450px;
+  width: 50%;
+  height: 40%;
+  overflow: hidden;
+  background-color: #fff;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1002;
+  margin: 0 auto;
+  box-shadow: rgba(20, 20, 20, 0.2) 0 16px 32px,
+    rgba(20, 20, 20, 0.04) 0 0 0 1px;
+  border-radius: 12px;
+}
+
+.modalCloseStyle {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  top: 16px;
+  right: 16px;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAFaADAAQAAAABAAAAFQAAAAAIGxIOAAACcElEQVQ4EZ2UPYgTQRiGs3MJhoAHBoNgIQd3vYiVjaV2IhHCZqMcWFgqCqcQ9U4Uf++wsFCw8DfJhuUKUUhhk0KwUlA4sFA4EJSAhAsWggSzPt+6EyZze6dxYJj53vf93vl2ftZJbdLCMFSNRmOP4zhT9Dy9C7bquu475uFGqU4SgdF2kqskeow7bA34V7Aa3I1KpbK2jreBer1eAbtLn7S5hHhNKXWiXC4vm5wyAyqcJ67R/8VQUrdRbUDenAS6DT8fYhbBI02MM8b763qeF0heZOr7/s7BYPCRODeOmaX9nslkZkql0rfo86nwkm3I6s/pvpUYheBP6M8sbrLf718QTLVarS2YupYgBfaaz/HA71jcEvAs2BsLT7HQ0Xa7nVa9Xm8/5NYEwVW5CbRTcJExSYvEc/H+X7ZzKCTf6XT2KYTTNikxggm4x9qY+SEqPBsbPkAycnMMj+k0B1QwgJGpNm42myu8ohcssBdsM0MppiCrrXsRpjMV3sTwfRAEu/j0t8RLJp8wlwehPicQEYTBdV7LeflkTvYTlcpdPAd+a6Mc8VO5XK6N6KctgryHQdXYwwy6mjZGf9/OIf5B3qvo8pO4zF4cMUUY3Cb+Ar7IODwU8F/Ep8FnGE/Shw3OpxAvLQjuFzmwwwgntIL5GT03x1hj312R9OEWZBJVwEF8YJUrAvxvI3+Bg5Sn/ufty4RVHP4BTxnl1zdWw/AhX31cJ5l7FXLSx9gKqXigBX8ZRTdvGop++Oszk7nsu9nja2AH4z00aXnjclgtCqiydSsjJEGiqRZx4QvczwOYTIHlWaDLfDWbzb4sFotdrbPH34IuDwr79+D1AAAAAElFTkSuQmCC")
+    center center no-repeat;
+  cursor: pointer;
+}
+
+.modalBodyStyle {
+  padding: 25px;
+  height: 100%;
+  width: 100%;
+}
+
+.modalTableStyle {
+  border-collapse: collapse;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 90%;
+}
+
+.modalTableStyle tr {
+  border: 1px solid #eaeaea;
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.modalTableStyle tr th {
+  padding: 8px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.tableCaptionStyle {
+  font-size: 20px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.tableBodyStyle {
+  height: 325px;
+  overflow-y: auto;
+  display: block;
+}
+
+.actionColumnStyle {
+  width: 70px;
+}
+
+@media (min-width: 320px) and (max-width: 767px) {
+  .modalWrapperStyle {
+    width: 100%;
+    height: 100%;
+  }
+
+  .scopeColumnStyle {
+    width: 170px;
+  }
+
+  .actionColumnStyle {
+    width: 55px;
+  }
+}

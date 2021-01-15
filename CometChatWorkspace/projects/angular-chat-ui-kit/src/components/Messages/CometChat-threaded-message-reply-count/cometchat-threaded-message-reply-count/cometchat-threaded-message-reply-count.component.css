@@ -1,0 +1,13 @@
+.replyCountStyle {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 12px;
+  text-transform: lowercase;
+  padding: 0 10px;
+  cursor: pointer;
+  color: #39f;
+}
+.replyCountStyle:hover {
+  text-decoration: underline;
+}

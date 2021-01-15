@@ -1,0 +1,47 @@
+<div class="messageContainerStyle" *ngIf="loggedInUserDeletedThisMessage">
+  <div class="messageWrapperStyle">
+    <div class="messageTxtWrapperStyle">
+      <p class="messageTxtStyle">You deleted this message.</p>
+    </div>
+    <div class="messageInfoWrapperStyle">
+      <span class="messageTimeStampStyle">
+        {{ getTime() | date: "shortTime" }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Received a Deleted Message Buubble -->
+<div
+  class="messageContainerStyle deletedMessageReceivedStyle"
+  *ngIf="!loggedInUserDeletedThisMessage"
+>
+  <div class="deletedMessageWrapperStyle">
+    <div
+      class="messageThumbnailStyle"
+      *ngIf="MessageDetails?.receiverType == 'group'"
+    >
+      <cometchat-avatar
+        [item]="MessageDetails?.sender"
+        [enableUserStatus]="false"
+        class="avatarStyle"
+      ></cometchat-avatar>
+    </div>
+    <div class="messageDetailStyle">
+      <div class="nameWrapperStyle">
+        <span class="nameStyle">
+          {{ MessageDetails?.sender?.name }}
+        </span>
+      </div>
+      <div class="messageTxtWrapperStyle deletedMessageReceivedStyle">
+        <p class="messageTxtStyle">This message was deleted.</p>
+      </div>
+      <div class="messageInfoWrapperStyle deletedMessageReceivedStyle">
+        <span class="messageTimeStampStyle">
+          {{ getTime() | date: "shortTime" }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Received a Deleted Message Buubble -->

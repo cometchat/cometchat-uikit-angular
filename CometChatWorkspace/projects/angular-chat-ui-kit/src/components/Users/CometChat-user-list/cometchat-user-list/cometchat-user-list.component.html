@@ -1,0 +1,66 @@
+<div class="contactWrapperStyle">
+  <div class="contactHeaderStyle">
+    <h4 class="contactHeaderTitleStyle">{{ USERS }}</h4>
+    <div></div>
+  </div>
+  <div class="contactSearchStyle">
+    <input
+      class="contactSearchInputStyle"
+      [placeholder]="SEARCH"
+      #search
+      type="text"
+      (keyup)="searchUsers(search.value)"
+      autocomplete="off"
+    />
+  </div>
+
+  <div *ngIf="loader" class="contactMsgStyle">
+    <p class="contactTxtMsgStyle">
+      {{ decoratorMsg }}
+    </p>
+  </div>
+
+  <div class="contactListStyle" (scroll)="handleScroll($event)">
+    <div *ngIf="contactsNotFound" class="contactMsgStyle">
+      <p class="contactTxtMsgStyle">
+        {{ decoratorMsg }}
+      </p>
+    </div>
+    <div
+      class="contactAlphabetStyle"
+      *ngFor="let user of usersList; let i = index"
+    >
+      <div *ngIf="i > 0; else elseBlock">
+        <div
+          *ngIf="
+            usersList[i - 1].name[0].toUpperCase() !==
+            usersList[i].name[0].toUpperCase()
+          "
+        >
+          {{ usersList[i].name[0].toUpperCase() }}
+        </div>
+      </div>
+      <ng-template #elseBlock>{{
+        usersList[i].name[0].toUpperCase()
+      }}</ng-template>
+
+      <div class="contactNameStyle" (click)="onUserClicked(user)">
+        <div class="listItem">
+          <div class="itemThumbnailStyle">
+            <cometchat-avatar
+              [item]="user"
+              [userStatus]="user.status"
+              class="avatarContact"
+            ></cometchat-avatar>
+          </div>
+
+          <div class="itemDetailStyle">
+            <div class="itemNameStyle">
+              {{ user.name }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

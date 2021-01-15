@@ -1,0 +1,39 @@
+<div class="userInfoScreenStyle">
+  <div class="headerStyle">
+    <h4 class="headerTitleStyle">{{ MORE }}</h4>
+  </div>
+  <div class="detailStyle">
+    <div class="thumbnailStyle">
+      <cometchat-avatar [item]="user"></cometchat-avatar>
+    </div>
+    <div class="userDetailStyle">
+      <div class="userNameStyle">
+        {{ name }}
+      </div>
+      <p class="userStatusStyle">{{ ONLINE }}</p>
+    </div>
+  </div>
+  <div class="optionsStyle">
+    <div class="optionTitleStyle">{{ PREFERENCES }}</div>
+    <div class="optionListStyle">
+      <div class="optionStyle Notifications">
+        <div class="optionNameStyle">{{ NOTIFICATIONS }}</div>
+      </div>
+      <div class="optionStyle Privacy">
+        <div class="optionNameStyle">{{ PRIVACY_AND_SECURITY }}</div>
+      </div>
+      <div class="optionStyle Chats">
+        <div class="optionNameStyle">{{ CHATS }}</div>
+      </div>
+    </div>
+    <div class="optionTitleStyle Other">{{ OTHER }}</div>
+    <div class="optionListStyle">
+      <div class="optionStyle Help">
+        <div class="optionNameStyle">{{ HELP }}</div>
+      </div>
+      <div class="optionStyle Report">
+        <div class="optionNameStyle">{{ REPORT_PROBLEM }}</div>
+      </div>
+    </div>
+  </div>
+</div>
