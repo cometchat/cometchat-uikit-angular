@@ -156,8 +156,11 @@ CometChat.login(uid, authKey).then(
 
 ## 3. Add UI Kit to your project
 
-- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git`
-- Copy the cloned repository into your project src folder.
+- Clone this repository
+
+`git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git`
+
+- Copy the folder to your source folder.
 
 <div style="width:100%">
     <img width="200px" height="400px" src="./Screenshots/folder_struc.png">
