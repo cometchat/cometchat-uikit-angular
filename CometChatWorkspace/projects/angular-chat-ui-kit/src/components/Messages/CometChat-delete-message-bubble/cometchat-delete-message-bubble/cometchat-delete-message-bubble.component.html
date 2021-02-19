@@ -1,11 +1,11 @@
 <div class="messageContainerStyle" *ngIf="loggedInUserDeletedThisMessage">
   <div class="messageWrapperStyle">
     <div class="messageTxtWrapperStyle">
-      <p class="messageTxtStyle">You deleted this message.</p>
+      <p class="messageTxtStyle">{{ YOU_DELETED_THIS_MESSAGE }}</p>
     </div>
     <div class="messageInfoWrapperStyle">
       <span class="messageTimeStampStyle">
-        {{ getTime() | date: "shortTime" }}
+        {{ time | date: "shortTime" }}
       </span>
     </div>
   </div>
@@ -19,26 +19,29 @@
   <div class="deletedMessageWrapperStyle">
     <div
       class="messageThumbnailStyle"
-      *ngIf="MessageDetails?.receiverType == 'group'"
+      *ngIf="messageDetails?.receiverType == GROUP"
     >
       <cometchat-avatar
-        [item]="MessageDetails?.sender"
+        [item]="messageDetails?.sender"
         [enableUserStatus]="false"
         class="avatarStyle"
       ></cometchat-avatar>
     </div>
     <div class="messageDetailStyle">
-      <div class="nameWrapperStyle">
+      <div
+        class="nameWrapperStyle"
+        *ngIf="messageDetails?.receiverType == GROUP"
+      >
         <span class="nameStyle">
-          {{ MessageDetails?.sender?.name }}
+          {{ messageDetails?.sender?.name }}
         </span>
       </div>
       <div class="messageTxtWrapperStyle deletedMessageReceivedStyle">
-        <p class="messageTxtStyle">This message was deleted.</p>
+        <p class="messageTxtStyle">{{ THIS_MESSAGE_DELETED }}</p>
       </div>
       <div class="messageInfoWrapperStyle deletedMessageReceivedStyle">
         <span class="messageTimeStampStyle">
-          {{ getTime() | date: "shortTime" }}
+          {{ time | date: "shortTime" }}
         </span>
       </div>
     </div>

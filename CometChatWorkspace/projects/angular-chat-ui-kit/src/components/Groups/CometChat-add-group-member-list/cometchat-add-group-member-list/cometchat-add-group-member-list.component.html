@@ -25,11 +25,11 @@
 
         <tbody class="tableBodyStyle" (scroll)="handleScroll($event)">
           <cometchat-add-group-member-list-item
-            *ngFor="let user of filteredlist"
+            *ngFor="let user of filteredList"
             [item]="item"
             [type]="type"
             [user]="user"
-            [members]="memberlist"
+            [members]="memberList"
             (actionGenerated)="actionHandler($event)"
           ></cometchat-add-group-member-list-item>
         </tbody>

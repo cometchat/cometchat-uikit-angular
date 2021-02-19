@@ -1,6 +1,5 @@
 * {
   font-family: Inter, sans-serif;
-  /* overflow: hidden; */
 }
 .contactWrapperStyle {
   display: flex;
@@ -100,23 +99,13 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  /* width: 100%;
-  padding: 10px 15px;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: scroll; */
+
   height: calc(100% - 125px);
-  /* height: 84%; */
-  /* overflow: hidden; */
+
   overflow-y: auto;
   margin: 0;
   padding: 0;
 }
-
-/* .avatarContact {
-  margin-right: 15px;
-} */
 
 .contactAlphabetStyle {
   margin: 5px 0;

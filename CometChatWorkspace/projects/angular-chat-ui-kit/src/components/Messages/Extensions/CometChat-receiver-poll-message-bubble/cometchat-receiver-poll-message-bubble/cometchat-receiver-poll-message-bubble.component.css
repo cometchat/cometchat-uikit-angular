@@ -1,7 +1,7 @@
 .messageContainerStyle {
   align-self: flex-start;
   margin-bottom: 16px;
-  /* padding-left: 16px; */
+
   padding-right: 16px;
   max-width: 100%;
   clear: both;
@@ -46,9 +46,6 @@
 
 .nameWrapperStyle {
   align-self: flex-start;
-
-  /* if avatar is to be shown in group polls , below padding is added */
-  /* padding: "3px 5px", */
 }
 
 .nameStyle {
@@ -105,11 +102,8 @@
 }
 
 .pollPercentStyle {
-  /* curved borders */
-
   max-width: 100%;
 
-  /* dynamic width to show the grey shade */
   width: 100%;
 
   border-radius: 8px 8px 8px 8px;
@@ -131,11 +125,6 @@
 }
 
 .answerWrapperStyle {
-  /* background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/></svg>')
-    no-repeat 10px center;
-
-  background-size: 20px 20px; */
-
   width: 100%;
   color: #141414;
   display: flex;
@@ -148,7 +137,7 @@
 .answerWrapperStyle p {
   margin: 0;
   padding: 6px 12px;
-  /* padding: 6px 12px 6px 35px; */
+
   width: calc(100% - 40px);
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -158,7 +147,7 @@
 .answerWrapperStyle span {
   width: 40px;
   padding: 6px 12px;
-  /* padding: 6px 6px 6px 40px; */
+
   font-weight: bold;
   display: inline-block;
   font-size: 13px;
@@ -181,7 +170,7 @@
 
 .answerCheckedWrapperStyle p {
   margin: 0;
-  /* padding: 6px 12px; */
+
   padding: 6px 12px 6px 35px;
   width: calc(100% - 40px);
   white-space: pre-wrap;
@@ -191,7 +180,7 @@
 
 .answerCheckedWrapperStyle span {
   width: 40px;
-  /* padding: 6px 12px; */
+
   padding: 6px 6px 6px 40px;
   font-weight: bold;
   display: inline-block;
@@ -225,8 +214,6 @@
   display: block;
   height: 28px;
   width: 28px;
-  /* background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>')
-    center center no-repeat; */
 }
 
 .messageThumbnailStyle {

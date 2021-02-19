@@ -11,8 +11,6 @@
   flex: 1 1;
   position: relative;
   width: 100%;
-
-  /* alignment below is only for sender */
   display: flex;
   flex-direction: column;
 }
@@ -32,7 +30,6 @@
   background-color: #f6f6f6;
   font-style: italic;
 
-  /* alignment is different for sender and receiver */
   align-self: flex-end;
 }
 
@@ -44,9 +41,7 @@
 }
 
 .messageInfoWrapperStyle {
-  /* alignment is different for sender and receiver */
   align-self: flex-end;
-  /* align-self: flex-start; */
 }
 
 .messageTimeStampStyle {
@@ -70,15 +65,10 @@
   display: flex;
   flex-direction: column;
   position: relative;
-
-  /* below padding will be used in group conversation */
-  /* paddingLeft: 5px; */
 }
 
 .nameWrapperStyle {
   align-self: flex-start;
-  /* below padding will be used in group conversation */
-  /* padding: 3px 5px; */
 }
 
 .nameStyle {

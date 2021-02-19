@@ -32,15 +32,12 @@
 }
 
 .groupScreenSidebarStyle {
-  /* styling according to sidebar status */
-
   width: 280px;
   border-right: 1px solid #eaeaea;
   height: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
-  /* overflow: scroll; */
 }
 
 .groupScreenSidebarStyle .css-15jyeqi {
@@ -68,7 +65,7 @@
 @media (min-width: 320px) and (max-width: 767px) {
   .groupScreenSidebarStyle {
     position: absolute !important;
-    /* left: -100%; */
+
     top: 0;
     bottom: 0;
     width: 100% !important;

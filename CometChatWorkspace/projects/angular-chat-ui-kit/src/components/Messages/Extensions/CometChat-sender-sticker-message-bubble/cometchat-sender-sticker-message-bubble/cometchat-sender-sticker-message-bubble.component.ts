@@ -7,8 +7,11 @@ import {
   SimpleChanges,
   OnChanges,
 } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../../utils/common";
-import { STRING_MESSAGES } from "../../../../utils/messageConstants";
+import {
+  checkMessageForExtensionsData,
+  logger,
+} from "../../../../../utils/common";
+import * as enums from "../../../../../utils/enums";
 
 @Component({
   selector: "cometchat-sender-sticker-message-bubble",
@@ -17,7 +20,7 @@ import { STRING_MESSAGES } from "../../../../utils/messageConstants";
 })
 export class CometChatSenderStickerMessageBubbleComponent
   implements OnInit, OnChanges {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() loggedInUser;
 
@@ -25,48 +28,64 @@ export class CometChatSenderStickerMessageBubbleComponent
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  messageFrom = "sender";
+  messageFrom = enums.SENDER;
   message;
   stickerUrl: string;
   stickerName: string;
-  checkReaction: boolean = false;
+  checkReaction = [];
 
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["MessageDetails"]) {
-      if (
-        change["MessageDetails"].previousValue !==
-        change["MessageDetails"].currentValue
-      ) {
-        const message = Object.assign({}, this.MessageDetails, {
-          messageFrom: this.messageFrom,
-        });
-        this.MessageDetails = message;
+    try {
+      if (change[enums.MESSAGE_DETAILS]) {
+        if (
+          change[enums.MESSAGE_DETAILS].previousValue !==
+          change[enums.MESSAGE_DETAILS].currentValue
+        ) {
+          const message = Object.assign({}, this.messageDetails, {
+            messageFrom: this.messageFrom,
+          });
+          this.messageDetails = message;
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
   ngOnInit() {
-    let stickerData = null;
-    if (
-      this.MessageDetails.hasOwnProperty("data") &&
-      this.MessageDetails.data.hasOwnProperty("customData")
-    ) {
-      stickerData = this.MessageDetails.data.customData;
-      if (stickerData.hasOwnProperty("sticker_url")) {
-        this.stickerName = stickerData.hasOwnProperty("sticker_name")
-          ? stickerData.sticker_name
-          : "Sticker";
-        this.stickerUrl = stickerData.sticker_url;
+    try {
+      let stickerData = null;
+      if (
+        this.messageDetails.hasOwnProperty(enums.DATA) &&
+        this.messageDetails.data.hasOwnProperty(enums.CUSTOM_DATA)
+      ) {
+        stickerData = this.messageDetails.data.customData;
+        if (stickerData.hasOwnProperty(enums.STICKER_URL)) {
+          this.stickerName = stickerData.hasOwnProperty(enums.STICKER_NAME)
+            ? stickerData.sticker_name
+            : enums.STICKER;
+          this.stickerUrl = stickerData.sticker_url;
+        }
       }
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
+    } catch (error) {
+      logger(error);
     }
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
   }
+
+  /**
+   * Handles all the events emitted by child components
+   */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

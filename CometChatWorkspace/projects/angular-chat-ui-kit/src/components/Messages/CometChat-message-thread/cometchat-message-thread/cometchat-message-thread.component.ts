@@ -10,8 +10,9 @@ import {
   SimpleChanges,
 } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import * as enums from "../../../utils/enums";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-message-thread",
@@ -35,32 +36,74 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
   replyPreview = null;
   imageView = null;
   fullScreenViewImage: boolean = false;
+  typeOfMessage: String = "";
 
   messageToReact = null;
-  THREAD: String = STRING_MESSAGES.THREAD;
+  THREAD: String = COMETCHAT_CONSTANTS.THREAD;
+
+  MESSAGE_TYPE_TEXT: String = CometChat.MESSAGE_TYPE.TEXT;
+  MESSAGE_TYPE_IMAGE: String = CometChat.MESSAGE_TYPE.IMAGE;
+  MESSAGE_TYPE_VIDEO: String = CometChat.MESSAGE_TYPE.VIDEO;
+  MESSAGE_TYPE_AUDIO: String = CometChat.MESSAGE_TYPE.AUDIO;
+  MESSAGE_TYPE_FILE: String = CometChat.MESSAGE_TYPE.FILE;
+  MESSAGE_TYPE_CUSTOM: String = CometChat.MESSAGE_TYPE.CUSTOM;
+  CALL_TYPE_AUDIO: String = CometChat.CALL_TYPE.AUDIO;
+  CALL_TYPE_VIDEO: String = CometChat.CALL_TYPE.VIDEO;
+  CATEGORY_MESSAGE: String = CometChat.CATEGORY_MESSAGE;
+  CATEGORY_ACTION: String = CometChat.CATEGORY_ACTION;
+  CATEGORY_CALL: String = CometChat.CATEGORY_CALL;
 
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["parentMessage"]) {
-      this.messageList = [];
-      this.scrollToBottomOfChatWindow();
-      if (change["parentMessage"].currentValue.hasOwnProperty("replyCount")) {
-        this.replyCount = this.parentMessage.replyCount;
-      } else {
-        this.replyCount = 0;
+    try {
+      if (change[enums.PARENT_MESSAGE]) {
+        if (
+          change[enums.PARENT_MESSAGE].previousValue &&
+          change[enums.PARENT_MESSAGE].previousValue.id !==
+            change[enums.PARENT_MESSAGE].currentValue.id
+        ) {
+          let type = change[enums.PARENT_MESSAGE].currentValue.type;
+
+          this.typeOfMessage = "";
+
+          setTimeout(() => {
+            this.typeOfMessage = type;
+          }, 200);
+
+          this.messageList = [];
+        }
+
+        this.scrollToBottomOfChatWindow();
+        if (
+          change[enums.PARENT_MESSAGE].currentValue.hasOwnProperty(
+            enums.REPLY_COUNT
+          )
+        ) {
+          this.replyCount = this.parentMessage.replyCount;
+        } else {
+          this.replyCount = 0;
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
   ngOnInit() {
-    if (this.parentMessage.hasOwnProperty("replyCount")) {
-      this.replyCount = this.parentMessage.replyCount;
-    }
+    try {
+      this.typeOfMessage = this.parentMessage.type;
 
-    let user = CometChat.getLoggedinUser().then((user) => {
-      this.loggedInUser = user;
-    });
+      if (this.parentMessage.hasOwnProperty(enums.REPLY_COUNT)) {
+        this.replyCount = this.parentMessage.replyCount;
+      }
+
+      let user = CometChat.getLoggedinUser().then((user) => {
+        this.loggedInUser = user;
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -68,100 +111,100 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Event action
    */
   actionHandler(action) {
-    let messages = action.payLoad;
+    try {
+      let messages = action.payLoad;
 
-    // console.log("MessageThread --> action generation is ", action);
-
-    switch (action.type) {
-      case enums.NEW_CONVERSATION_OPENED: {
-        this.setMessages(messages);
-        this.replyCount = messages.length;
-        break;
-      }
-      case enums.THREAD_PARENT_MESSAGE_UPDATED: {
-        // console.log("messageThread --> updating thread parent ");
-        this.parentMessage = messages;
-        break;
-      }
-      case enums.MESSAGE_COMPOSED: {
-        this.appendMessage(messages);
-        this.replyCount = this.replyCount + messages.length;
-
-        this.actionGenerated.emit({
-          type: enums.CHANGE_THREAD_PARENT_MESSAGE_REPLY_COUNT,
-          payLoad: this.replyCount,
-        });
-        break;
-      }
-      case enums.MESSAGE_UPDATED: {
-        this.updateMessages(messages);
-        break;
-      }
-
-      case enums.CUSTOM_MESSAGE_RECEIVE:
-      case enums.MESSAGE_RECEIVED: {
-        const message = messages[0];
-        if (message.parentMessageId === this.parentMessage.id) {
-          // const replyCount = this.state.replyCount + 1;
-          this.smartReplyPreview(messages);
-          this.replyCount = this.replyCount + messages.length;
+      switch (action.type) {
+        case enums.NEW_CONVERSATION_OPENED: {
+          this.setMessages(messages);
+          this.replyCount = messages.length;
+          break;
+        }
+        case enums.THREAD_PARENT_MESSAGE_UPDATED: {
+          this.parentMessage = messages;
+          break;
+        }
+        case enums.MESSAGE_COMPOSED: {
           this.appendMessage(messages);
+          this.replyCount = this.replyCount + messages.length;
+
           this.actionGenerated.emit({
             type: enums.CHANGE_THREAD_PARENT_MESSAGE_REPLY_COUNT,
             payLoad: this.replyCount,
           });
+          break;
         }
-        break;
-      }
-      case enums.OLDER_MESSAGES_FETCHED: {
-        this.reachedTopOfConversation = false;
+        case enums.MESSAGE_UPDATED: {
+          this.updateMessages(messages);
+          break;
+        }
 
-        //No Need for below actions if there is nothing to prepend
-        if (messages.length == 0) break;
+        case enums.CUSTOM_MESSAGE_RECEIVE:
+        case enums.MESSAGE_RECEIVED: {
+          const message = messages[0];
+          if (message.parentMessageId === this.parentMessage.id) {
+            this.smartReplyPreview(messages);
+            this.replyCount = this.replyCount + messages.length;
+            this.appendMessage(messages);
+            this.actionGenerated.emit({
+              type: enums.CHANGE_THREAD_PARENT_MESSAGE_REPLY_COUNT,
+              payLoad: this.replyCount,
+            });
+          }
+          break;
+        }
+        case enums.OLDER_MESSAGES_FETCHED: {
+          this.reachedTopOfConversation = false;
 
-        let prevScrollHeight = this.chatWindow.nativeElement.scrollHeight;
+          //No Need for below actions if there is nothing to prepend
+          if (messages.length == 0) break;
 
-        this.prependMessages(messages);
+          let prevScrollHeight = this.chatWindow.nativeElement.scrollHeight;
 
-        setTimeout(() => {
-          this.scrollVariable =
-            this.chatWindow.nativeElement.scrollHeight - prevScrollHeight;
-        }, 1);
+          this.prependMessages(messages);
 
-        break;
+          setTimeout(() => {
+            this.scrollVariable =
+              this.chatWindow.nativeElement.scrollHeight - prevScrollHeight;
+          }, 1);
+
+          break;
+        }
+        case enums.EDIT_MESSAGE: {
+          this.editMessage(messages);
+          break;
+        }
+        case enums.MESSAGE_EDIT: {
+          this.messageEdited(messages);
+          break;
+        }
+        case enums.DELETE_MESSAGE: {
+          this.deleteMessage(messages);
+          break;
+        }
+        case enums.MESSAGE_DELETE:
+          this.removeMessages(messages);
+          break;
+        case enums.VIEW_ACTUAL_IMAGE: {
+          this.actionGenerated.emit({
+            type: enums.VIEW_ACTUAL_IMAGE,
+            payLoad: messages,
+          });
+          break;
+        }
+        case enums.CLOSE_FULL_SCREEN_IMAGE: {
+          this.actionGenerated.emit({
+            type: enums.VIEW_ACTUAL_IMAGE,
+            payLoad: null,
+          });
+          break;
+        }
+        case enums.REACT_TO_MESSAGE:
+          this.reactToMessage(messages);
+          break;
       }
-      case enums.EDIT_MESSAGE: {
-        this.editMessage(messages);
-        break;
-      }
-      case enums.MESSAGE_EDIT: {
-        this.messageEdited(messages);
-        break;
-      }
-      case enums.DELETE_MESSAGE: {
-        this.deleteMessage(messages);
-        break;
-      }
-      case enums.MESSAGE_DELETE:
-        this.removeMessages(messages);
-        break;
-      case enums.VIEW_ACTUAL_IMAGE: {
-        this.actionGenerated.emit({
-          type: enums.VIEW_ACTUAL_IMAGE,
-          payLoad: messages,
-        });
-        break;
-      }
-      case enums.CLOSE_FULL_SCREEN_IMAGE: {
-        this.actionGenerated.emit({
-          type: enums.VIEW_ACTUAL_IMAGE,
-          payLoad: null,
-        });
-        break;
-      }
-      case enums.REACT_TO_MESSAGE:
-        this.reactToMessage(messages);
-        break;
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -170,10 +213,14 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param
    */
   closeThread() {
-    this.actionGenerated.emit({
-      type: enums.CLOSE_THREAD_CLICKED,
-      payLoad: null,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.CLOSE_THREAD_CLICKED,
+        payLoad: null,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -181,9 +228,13 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any messages
    */
   setMessages(messages) {
-    this.messageList = [...messages];
+    try {
+      this.messageList = [...messages];
 
-    this.scrollToBottomOfChatWindow();
+      this.scrollToBottomOfChatWindow();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -191,11 +242,15 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any messages
    */
   appendMessage = (messages) => {
-    let dummy = [...this.messageList];
+    try {
+      let dummy = [...this.messageList];
 
-    this.messageList = [...dummy, ...messages];
+      this.messageList = [...dummy, ...messages];
 
-    this.scrollToBottomOfChatWindow();
+      this.scrollToBottomOfChatWindow();
+    } catch (error) {
+      logger(error);
+    }
   };
 
   /**
@@ -203,7 +258,11 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any messages
    */
   prependMessages(messages) {
-    this.messageList = [...messages, ...this.messageList];
+    try {
+      this.messageList = [...messages, ...this.messageList];
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -211,10 +270,11 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any messages
    */
   updateMessages = (messages) => {
-    // let dummy = [...this.messageList];
-
-    this.messageList = [...messages];
-    //this.scrollToBottomOfChatWindow();
+    try {
+      this.messageList = [...messages];
+    } catch (error) {
+      logger(error);
+    }
   };
 
   /**
@@ -222,7 +282,11 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any messages
    */
   editMessage(messages) {
-    this.messageToBeEdited = messages;
+    try {
+      this.messageToBeEdited = messages;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -230,22 +294,26 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any message
    */
   messageEdited(message) {
-    const messageList = [...this.messageList];
-    let messageKey = messageList.findIndex((m) => m.id === message.id);
-    if (messageKey > -1) {
-      const messageObj = messageList[messageKey];
+    try {
+      const messageList = [...this.messageList];
+      let messageKey = messageList.findIndex((m) => m.id === message.id);
+      if (messageKey > -1) {
+        const messageObj = messageList[messageKey];
 
-      const newMessageObj = Object.assign({}, messageObj, message);
+        const newMessageObj = Object.assign({}, messageObj, message);
 
-      messageList.splice(messageKey, 1, newMessageObj);
-      this.updateMessages(messageList);
+        messageList.splice(messageKey, 1, newMessageObj);
+        this.updateMessages(messageList);
 
-      if (messageList.length - messageKey === 1 && !message.replyCount) {
-        this.actionGenerated.emit({
-          type: enums.MESSAGE_EDIT,
-          payLoad: [newMessageObj],
-        });
+        if (messageList.length - messageKey === 1 && !message.replyCount) {
+          this.actionGenerated.emit({
+            type: enums.MESSAGE_EDIT,
+            payLoad: [newMessageObj],
+          });
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -254,24 +322,28 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any message
    */
   deleteMessage = (message) => {
-    const messageId = message.id;
-    CometChat.deleteMessage(messageId)
-      .then((deletedMessage) => {
-        this.removeMessages([deletedMessage]);
+    try {
+      const messageId = message.id;
+      CometChat.deleteMessage(messageId)
+        .then((deletedMessage) => {
+          this.removeMessages([deletedMessage]);
 
-        const messageList = [...this.messageList];
-        let messageKey = messageList.findIndex((m) => m.id === message.id);
+          const messageList = [...this.messageList];
+          let messageKey = messageList.findIndex((m) => m.id === message.id);
 
-        if (messageList.length - messageKey === 1 && !message.replyCount) {
-          this.actionGenerated.emit({
-            type: enums.MESSAGE_DELETE,
-            payLoad: [deletedMessage],
-          });
-        }
-      })
-      .catch((error) => {
-        console.log("Message delete failed with error:", error);
-      });
+          if (messageList.length - messageKey === 1 && !message.replyCount) {
+            this.actionGenerated.emit({
+              type: enums.MESSAGE_DELETE,
+              payLoad: [deletedMessage],
+            });
+          }
+        })
+        .catch((error) => {
+          logger("Message delete failed with error:", error);
+        });
+    } catch (error) {
+      logger(error);
+    }
   };
 
   /**
@@ -279,40 +351,52 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any messages
    */
   removeMessages = (messages) => {
-    const deletedMessage = messages[0];
-    const messagelist = [...this.messageList];
+    try {
+      const deletedMessage = messages[0];
+      const messagelist = [...this.messageList];
 
-    let messageKey = messagelist.findIndex(
-      (message) => message.id === deletedMessage.id
-    );
-    if (messageKey > -1) {
-      let messageObj = { ...messagelist[messageKey] };
-      let newMessageObj = Object.assign({}, messageObj, deletedMessage);
+      let messageKey = messagelist.findIndex(
+        (message) => message.id === deletedMessage.id
+      );
+      if (messageKey > -1) {
+        let messageObj = { ...messagelist[messageKey] };
+        let newMessageObj = Object.assign({}, messageObj, deletedMessage);
 
-      messagelist.splice(messageKey, 1, newMessageObj);
-      this.messageList = [...messagelist];
+        messagelist.splice(messageKey, 1, newMessageObj);
+        this.messageList = [...messagelist];
+      }
+    } catch (error) {
+      logger(error);
     }
   };
 
+  /**
+   * Checks smartReplyPreview Extension
+   * @param messages
+   */
   smartReplyPreview(messages) {
-    const message = messages[0];
+    try {
+      const message = messages[0];
 
-    if (message.hasOwnProperty("metadata")) {
-      const metadata = message.metadata;
-      if (metadata.hasOwnProperty("@injected")) {
-        const injectedObject = metadata["@injected"];
-        if (injectedObject.hasOwnProperty("extensions")) {
-          const extensionsObject = injectedObject["extensions"];
-          if (extensionsObject.hasOwnProperty("smart-reply")) {
-            const smartReply = extensionsObject["smart-reply"];
-            if (smartReply.hasOwnProperty("error") === false) {
-              this.replyPreview = message;
-            } else {
-              this, (this.replyPreview = null);
+      if (message.hasOwnProperty(enums.METADATA)) {
+        const metadata = message[enums.METADATA];
+        if (metadata.hasOwnProperty(enums.INJECTED)) {
+          const injectedObject = metadata[enums.INJECTED];
+          if (injectedObject.hasOwnProperty(enums.EXTENSIONS)) {
+            const extensionsObject = injectedObject[enums.EXTENSIONS];
+            if (extensionsObject.hasOwnProperty(enums.SMART_REPLY)) {
+              const smartReply = extensionsObject[enums.SMART_REPLY];
+              if (smartReply.hasOwnProperty(enums.ERROR) === false) {
+                this.replyPreview = message;
+              } else {
+                this, (this.replyPreview = null);
+              }
             }
           }
         }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -321,19 +405,31 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param Any message
    */
   toggleImageView(message) {
-    this.imageView = message;
-    this.fullScreenViewImage = !this.fullScreenViewImage;
+    try {
+      this.imageView = message;
+      this.fullScreenViewImage = !this.fullScreenViewImage;
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * Handles Scroll of window
+   * @param e
+   */
   handleScroll(e) {
-    const bottom =
-      Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
-      Math.round(e.currentTarget.clientHeight);
+    try {
+      const bottom =
+        Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
+        Math.round(e.currentTarget.clientHeight);
 
-    const top = e.currentTarget.scrollTop === 0;
+      const top = e.currentTarget.scrollTop === 0;
 
-    if (top) {
-      this.reachedTopOfConversation = top;
+      if (top) {
+        this.reachedTopOfConversation = top;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -342,22 +438,41 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * @param
    */
   getReplyCountText(replyCount) {
-    if (replyCount === 1) {
-      return replyCount + " reply";
-    } else if (replyCount > 1) {
-      return replyCount + " replies";
+    try {
+      if (replyCount === 1) {
+        return replyCount + " " + COMETCHAT_CONSTANTS.REPLY;
+      } else if (replyCount > 1) {
+        return replyCount + " " + COMETCHAT_CONSTANTS.REPLIES;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
+  /**
+   * Scrolls to bottom of chat window
+   */
   scrollToBottomOfChatWindow() {
-    setTimeout(() => {
-      this.scrollVariable =
-        this.chatWindow.nativeElement.scrollHeight -
-        this.chatWindow.nativeElement.clientHeight;
-    }, 1);
+    try {
+      setTimeout(() => {
+        this.scrollVariable =
+          this.chatWindow.nativeElement.scrollHeight -
+          this.chatWindow.nativeElement.clientHeight;
+      }, 1);
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * Sets reaction to message
+   * @param message
+   */
   reactToMessage(message) {
-    this.messageToReact = message;
+    try {
+      this.messageToReact = message;
+    } catch (error) {
+      logger(error);
+    }
   }
 }

@@ -2,7 +2,7 @@
   align-self: flex-end;
   margin-bottom: 16px;
   padding-left: 16px;
-  /* padding-right: 16px; */
+
   max-width: 65%;
   clear: both;
   position: relative;
@@ -69,11 +69,8 @@
 }
 
 .pollPercentStyle {
-  /* curved borders */
-
   max-width: 100%;
 
-  /* dynamic width to show the grey shade */
   width: 100%;
 
   border-radius: 8px 8px 8px 8px;

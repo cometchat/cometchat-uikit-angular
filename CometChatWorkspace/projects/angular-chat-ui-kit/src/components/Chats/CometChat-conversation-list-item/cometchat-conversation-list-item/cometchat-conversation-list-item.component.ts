@@ -8,8 +8,9 @@ import {
   EventEmitter,
 } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import * as enums from "../../../utils/enums";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-conversation-list-item",
@@ -18,7 +19,7 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
 })
 export class CometChatConversationListItemComponent
   implements OnInit, OnChanges {
-  @Input() ConversationDetails = null;
+  @Input() conversationDetails = null;
   @Input() loggedInUser = null;
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
 
@@ -30,23 +31,32 @@ export class CometChatConversationListItemComponent
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["ConversationDetails"]) {
-      if (
-        change["ConversationDetails"].currentValue !==
-        change["ConversationDetails"].previousValue
-      ) {
-        this.getLastMessage(change["ConversationDetails"].currentValue);
-        this.getLastMessageTimestamp(
-          change["ConversationDetails"].currentValue
-        );
-        this.getName(change["ConversationDetails"].currentValue);
+    try {
+      if (change[enums.CONVERSATION_DETAILS]) {
+        if (
+          change[enums.CONVERSATION_DETAILS].currentValue !==
+          change[enums.CONVERSATION_DETAILS].previousValue
+        ) {
+          this.getLastMessage(change[enums.CONVERSATION_DETAILS].currentValue);
+          this.getLastMessageTimestamp(
+            change[enums.CONVERSATION_DETAILS].currentValue
+          );
+          this.getName(change[enums.CONVERSATION_DETAILS].currentValue);
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
+
   ngOnInit() {
-    this.getLastMessage(this.ConversationDetails);
-    this.getLastMessageTimestamp(this.ConversationDetails);
-    this.getName(this.ConversationDetails);
+    try {
+      this.getLastMessage(this.conversationDetails);
+      this.getLastMessageTimestamp(this.conversationDetails);
+      this.getName(this.conversationDetails);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -54,12 +64,16 @@ export class CometChatConversationListItemComponent
    * @param
    */
   getAvatar(data) {
-    if (data.conversationType === "user") {
-      this.setAvatar = data.conversationWith;
-    } else if (data.conversationType === "group") {
-      this.setAvatar = data.conversationWith;
+    try {
+      if (data.conversationType === CometChat.RECEIVER_TYPE.USER) {
+        this.setAvatar = data.conversationWith;
+      } else if (data.conversationType === CometChat.RECEIVER_TYPE.GROUP) {
+        this.setAvatar = data.conversationWith;
+      }
+      return this.setAvatar;
+    } catch (error) {
+      logger(error);
     }
-    return this.setAvatar;
   }
 
   /**
@@ -67,8 +81,12 @@ export class CometChatConversationListItemComponent
    * @param
    */
   getName(data) {
-    this.lastMessageName = data.conversationWith.name;
-    return this.lastMessageName;
+    try {
+      this.lastMessageName = data.conversationWith.name;
+      return this.lastMessageName;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -76,40 +94,44 @@ export class CometChatConversationListItemComponent
    * @param
    */
   getLastMessage(data) {
-    if (data === null) {
-      return false;
-    }
-    if (data.hasOwnProperty("lastMessage") === false) {
-      return false;
-    }
-    let message = null;
-    const lastMessage = data.lastMessage;
-
-    if (lastMessage.hasOwnProperty("deletedAt")) {
-      message =
-        this.loggedInUser.uid === lastMessage.sender.uid
-          ? STRING_MESSAGES.YOU_DELETED_THIS_MESSAGE
-          : STRING_MESSAGES.THIS_MESSAGE_DELETED;
-    } else {
-      switch (lastMessage.category) {
-        case enums.MESSAGE:
-          message = this.getMessage(lastMessage);
-          break;
-        case enums.CALL:
-          message = this.getCallMessage(lastMessage);
-          break;
-        case enums.ACTION:
-          message = lastMessage.message;
-          break;
-        case enums.CUSTOM:
-          message = this.getCustomMessage(lastMessage);
-          break;
-        default:
-          break;
+    try {
+      if (data === null) {
+        return false;
       }
+      if (data.hasOwnProperty(enums.LAST_MESSAGE) === false) {
+        return false;
+      }
+      let message = null;
+      const lastMessage = data.lastMessage;
+
+      if (lastMessage.hasOwnProperty(enums.DELETED_AT)) {
+        message =
+          this.loggedInUser.uid === lastMessage.sender.uid
+            ? COMETCHAT_CONSTANTS.YOU_DELETED_THIS_MESSAGE
+            : COMETCHAT_CONSTANTS.THIS_MESSAGE_DELETED;
+      } else {
+        switch (lastMessage.category) {
+          case CometChat.CATEGORY_MESSAGE:
+            message = this.getMessage(lastMessage);
+            break;
+          case CometChat.CATEGORY_CALL:
+            message = this.getCallMessage(lastMessage);
+            break;
+          case CometChat.CATEGORY_ACTION:
+            message = lastMessage.message;
+            break;
+          case CometChat.MESSAGE_TYPE.CUSTOM:
+            message = this.getCustomMessage(lastMessage);
+            break;
+          default:
+            break;
+        }
+      }
+      this.lastMessage = message;
+      return this.lastMessage;
+    } catch (error) {
+      logger(error);
     }
-    this.lastMessage = message;
-    return this.lastMessage;
   }
 
   /**
@@ -117,40 +139,46 @@ export class CometChatConversationListItemComponent
    * @param
    */
   getLastMessageTimestamp(data) {
-    if (data === null) {
-      return false;
-    }
+    try {
+      if (data === null) {
+        return false;
+      }
 
-    if (data.hasOwnProperty("lastMessage") === false) {
-      return false;
-    }
-    if (data.lastMessage.hasOwnProperty("sentAt") === false) {
-      return false;
-    }
-    let timestamp = null;
+      if (data.hasOwnProperty(enums.LAST_MESSAGE) === false) {
+        return false;
+      }
+      if (data.lastMessage.hasOwnProperty(enums.SENT_AT) === false) {
+        return false;
+      }
+      let timestamp = null;
 
-    const messageTimestamp: any = new Date(data.lastMessage.sentAt * 1000);
-    const currentTimestamp = Date.now();
-    const diffTimestamp = currentTimestamp - messageTimestamp;
-    if (diffTimestamp < 24 * 60 * 60 * 1000) {
-      timestamp = messageTimestamp.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "numeric",
-        hour12: true,
-      });
-    } else if (diffTimestamp < 48 * 60 * 60 * 1000) {
-      timestamp = STRING_MESSAGES.YESTERDAY;
-    } else if (diffTimestamp < 7 * 24 * 60 * 60 * 1000) {
-      timestamp = messageTimestamp.toLocaleString("en-US", { weekday: "long" });
-    } else {
-      timestamp = messageTimestamp.toLocaleDateString("en-US", {
-        year: "2-digit",
-        month: "2-digit",
-        day: "2-digit",
-      });
+      const messageTimestamp: any = new Date(data.lastMessage.sentAt * 1000);
+      const currentTimestamp = Date.now();
+      const diffTimestamp = currentTimestamp - messageTimestamp;
+      if (diffTimestamp < 24 * 60 * 60 * 1000) {
+        timestamp = messageTimestamp.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "numeric",
+          hour12: true,
+        });
+      } else if (diffTimestamp < 48 * 60 * 60 * 1000) {
+        timestamp = COMETCHAT_CONSTANTS.YESTERDAY;
+      } else if (diffTimestamp < 7 * 24 * 60 * 60 * 1000) {
+        timestamp = messageTimestamp.toLocaleString("en-US", {
+          weekday: "long",
+        });
+      } else {
+        timestamp = messageTimestamp.toLocaleDateString("en-US", {
+          year: "2-digit",
+          month: "2-digit",
+          day: "2-digit",
+        });
+      }
+      this.lastMessageTimestamp = timestamp;
+      return this.lastMessageTimestamp;
+    } catch (error) {
+      logger(error);
     }
-    this.lastMessageTimestamp = timestamp;
-    return this.lastMessageTimestamp;
   }
 
   /**
@@ -158,33 +186,37 @@ export class CometChatConversationListItemComponent
    * @param
    */
   getMessage(lastMessage) {
-    let message = null;
-    switch (lastMessage.type) {
-      case CometChat.MESSAGE_TYPE.TEXT:
-        message = lastMessage.text;
-        break;
-      case CometChat.MESSAGE_TYPE.MEDIA:
-        message = STRING_MESSAGES.MEDIA_MESSAGE;
-        break;
-      case CometChat.MESSAGE_TYPE.IMAGE:
-        message = STRING_MESSAGES.MESSAGE_IMAGE;
-        break;
-      case CometChat.MESSAGE_TYPE.FILE:
-        message = STRING_MESSAGES.MESSAGE_FILE;
-        break;
-      case CometChat.MESSAGE_TYPE.VIDEO:
-        message = STRING_MESSAGES.MESSAGE_VIDEO;
-        break;
-      case CometChat.MESSAGE_TYPE.AUDIO:
-        message = STRING_MESSAGES.MESSAGE_AUDIO;
-        break;
-      case CometChat.MESSAGE_TYPE.CUSTOM:
-        message = STRING_MESSAGES.CUSTOM_MESSAGE;
-        break;
-      default:
-        break;
+    try {
+      let message = null;
+      switch (lastMessage.type) {
+        case CometChat.MESSAGE_TYPE.TEXT:
+          message = lastMessage.text;
+          break;
+        case CometChat.MESSAGE_TYPE.MEDIA:
+          message = COMETCHAT_CONSTANTS.MEDIA_MESSAGE;
+          break;
+        case CometChat.MESSAGE_TYPE.IMAGE:
+          message = COMETCHAT_CONSTANTS.MESSAGE_IMAGE;
+          break;
+        case CometChat.MESSAGE_TYPE.FILE:
+          message = COMETCHAT_CONSTANTS.MESSAGE_FILE;
+          break;
+        case CometChat.MESSAGE_TYPE.VIDEO:
+          message = COMETCHAT_CONSTANTS.MESSAGE_VIDEO;
+          break;
+        case CometChat.MESSAGE_TYPE.AUDIO:
+          message = COMETCHAT_CONSTANTS.MESSAGE_AUDIO;
+          break;
+        case CometChat.MESSAGE_TYPE.CUSTOM:
+          message = COMETCHAT_CONSTANTS.CUSTOM_MESSAGE;
+          break;
+        default:
+          break;
+      }
+      return message;
+    } catch (error) {
+      logger(error);
     }
-    return message;
   }
 
   /**
@@ -192,19 +224,23 @@ export class CometChatConversationListItemComponent
    * @param
    */
   getCallMessage(lastMessage) {
-    let message = null;
-    switch (lastMessage.type) {
-      case CometChat.MESSAGE_TYPE.VIDEO:
-        message = STRING_MESSAGES.VIDEO_CALL;
-        break;
-      case CometChat.MESSAGE_TYPE.AUDIO:
-        message = STRING_MESSAGES.AUDIO_CALL;
-        break;
-      default:
-        break;
-    }
+    try {
+      let message = null;
+      switch (lastMessage.type) {
+        case CometChat.MESSAGE_TYPE.VIDEO:
+          message = COMETCHAT_CONSTANTS.VIDEO_CALL;
+          break;
+        case CometChat.MESSAGE_TYPE.AUDIO:
+          message = COMETCHAT_CONSTANTS.AUDIO_CALL;
+          break;
+        default:
+          break;
+      }
 
-    return message;
+      return message;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -212,19 +248,23 @@ export class CometChatConversationListItemComponent
    * @param
    */
   getCustomMessage = (lastMessage) => {
-    let message = null;
-    switch (lastMessage.type) {
-      case enums.CUSTOM_TYPE_POLL:
-        message = STRING_MESSAGES.CUSTOM_MESSAGE_POLL;
-        break;
-      case enums.CUSTOM_TYPE_STICKER:
-        message = STRING_MESSAGES.CUSTOM_MESSAGE_STICKER;
-        break;
-      default:
-        break;
-    }
+    try {
+      let message = null;
+      switch (lastMessage.type) {
+        case enums.CUSTOM_TYPE_POLL:
+          message = COMETCHAT_CONSTANTS.CUSTOM_MESSAGE_POLL;
+          break;
+        case enums.CUSTOM_TYPE_STICKER:
+          message = COMETCHAT_CONSTANTS.CUSTOM_MESSAGE_STICKER;
+          break;
+        default:
+          break;
+      }
 
-    return message;
+      return message;
+    } catch (error) {
+      logger(error);
+    }
   };
 
   /**
@@ -232,6 +272,10 @@ export class CometChatConversationListItemComponent
    * @param Any userToEmit
    */
   onUserClicked(userToEmit) {
-    this.onUserClick.emit(userToEmit);
+    try {
+      this.onUserClick.emit(userToEmit);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

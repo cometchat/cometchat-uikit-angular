@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, ElementRef, ViewChild } from "@angular/core";
-import * as enums from "../../../utils/enums";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 import {
   trigger,
   state,
@@ -7,6 +8,7 @@ import {
   transition,
   animate,
 } from "@angular/animations";
+import { logger } from "../../../../utils/common";
 @Component({
   selector: "cometchat-live-reactions",
   templateUrl: "./cometchat-live-reactions.component.html",
@@ -45,59 +47,71 @@ export class CometChatLiveReactionsComponent implements OnInit {
   constructor() {}
 
   ngOnDestroy() {
-    clearTimeout(this.timer);
+    try {
+      clearTimeout(this.timer);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   ngOnInit() {
-    this.counter = 0;
-    this.verticalSpeed = 5;
-    this.horizontalSpeed = 2;
-    this.items = [];
+    try {
+      this.counter = 0;
+      this.verticalSpeed = 5;
+      this.horizontalSpeed = 2;
+      this.items = [];
 
-    this.before = Date.now();
-    const reaction = this.reactionName
-      ? enums.LIVE_REACTIONS[this.reactionName]
-      : enums.LIVE_REACTIONS["heart"];
+      this.before = Date.now();
+      const reaction = this.reactionName
+        ? enums.LIVE_REACTIONS[this.reactionName]
+        : enums.LIVE_REACTIONS[COMETCHAT_CONSTANTS.HEART];
 
-    this.setItems();
-    this.requestAnimation();
+      this.setItems();
+      this.requestAnimation();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Sets height width speed for animation
    */
   setItems() {
-    //Toggle animation state
-    this.checkAnimatedState == "normal"
-      ? (this.checkAnimatedState = "animated")
-      : (this.checkAnimatedState = "normal");
+    try {
+      //Toggle animation state
+      this.checkAnimatedState == "normal"
+        ? (this.checkAnimatedState = "animated")
+        : (this.checkAnimatedState = "normal");
 
-    const width = this.emojiWindow.nativeElement.parentElement.offsetWidth;
-    const height = this.emojiWindow.nativeElement.parentElement.offsetHeight;
-    const elements = this.emojiWindow.nativeElement.parentElement.querySelectorAll(
-      ".reactionEmojiStyle"
-    );
+      const width = this.emojiWindow.nativeElement.parentElement.offsetWidth;
+      const height = this.emojiWindow.nativeElement.parentElement.offsetHeight;
+      const elements = this.emojiWindow.nativeElement.parentElement.querySelectorAll(
+        ".reactionEmojiStyle"
+      );
 
-    for (let i = 0; i < elements.length; i++) {
-      const element = elements[i],
-        elementWidth = element.offsetWidth,
-        elementHeight = element.offsetHeight;
-      const item = {
-        element: element,
-        elementHeight: elementHeight,
-        elementWidth: elementWidth,
-        ySpeed: -this.verticalSpeed,
-        omega: (2 * Math.PI * this.horizontalSpeed) / (width * 60), //omega= 2Pi*frequency
-        random: (Math.random() / 2 + 0.5) * i * 10000, //random time offset
-        x: function (time) {
-          return (
-            ((Math.sin(this.omega * (time + this.random)) + 1) / 2) *
-            (width - elementWidth)
-          );
-        },
-        y: height + (Math.random() + 0.2) * i * elementHeight,
-      };
-      this.items.push(item);
+      for (let i = 0; i < elements.length; i++) {
+        const element = elements[i],
+          elementWidth = element.offsetWidth,
+          elementHeight = element.offsetHeight;
+        const item = {
+          element: element,
+          elementHeight: elementHeight,
+          elementWidth: elementWidth,
+          ySpeed: -this.verticalSpeed,
+          omega: (2 * Math.PI * this.horizontalSpeed) / (width * 60), //omega= 2Pi*frequency
+          random: (Math.random() / 2 + 0.5) * i * 10000, //random time offset
+          x: function (time) {
+            return (
+              ((Math.sin(this.omega * (time + this.random)) + 1) / 2) *
+              (width - elementWidth)
+            );
+          },
+          y: height + (Math.random() + 0.2) * i * elementHeight,
+        };
+        this.items.push(item);
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -105,31 +119,39 @@ export class CometChatLiveReactionsComponent implements OnInit {
    * Function to call animation with Timeout
    */
   requestAnimation() {
-    this.timer = setTimeout(() => {
-      this.animate();
-    }, 1000 / 60);
+    try {
+      this.timer = setTimeout(() => {
+        this.animate();
+      }, 1000 / 60);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
-   * Animates
+   * Animates the reactions
    */
   animate() {
-    if (!this.emojiWindow.nativeElement.parentElement) {
-      return false;
+    try {
+      if (!this.emojiWindow.nativeElement.parentElement) {
+        return false;
+      }
+
+      const height = this.emojiWindow.nativeElement.parentElement.offsetHeight;
+      const time = +new Date(); //little trick, gives unix time in ms
+
+      for (let i = 0; i < this.items.length; i++) {
+        const item = this.items[i];
+
+        const transformString =
+          "translate3d(" + item.x(time) + "px, " + item.y + "px, 0px)";
+        item.element.style.transform = transformString;
+        item.element.style.visibility = "visible";
+        item.y += item.ySpeed;
+      }
+      this.requestAnimation();
+    } catch (error) {
+      logger(error);
     }
-
-    const height = this.emojiWindow.nativeElement.parentElement.offsetHeight;
-    const time = +new Date(); //little trick, gives unix time in ms
-
-    for (let i = 0; i < this.items.length; i++) {
-      const item = this.items[i];
-
-      const transformString =
-        "translate3d(" + item.x(time) + "px, " + item.y + "px, 0px)";
-      item.element.style.transform = transformString;
-      item.element.style.visibility = "visible";
-      item.y += item.ySpeed;
-    }
-    this.requestAnimation();
   }
 }

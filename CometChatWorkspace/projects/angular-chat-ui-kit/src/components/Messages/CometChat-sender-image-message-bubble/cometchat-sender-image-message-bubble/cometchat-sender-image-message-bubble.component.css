@@ -2,7 +2,7 @@
   align-self: flex-end;
   margin-bottom: 16px;
   padding-left: 16px;
-  /* padding-right: 16px; */
+
   max-width: 65%;
   clear: both;
   position: relative;
@@ -32,6 +32,7 @@
   height: 200px;
   cursor: pointer;
   flex-shrink: 0;
+  width: -webkit-fill-available;
 }
 .messageImgWrapper img {
   border-radius: 8px;
@@ -40,7 +41,6 @@
 }
 
 .messageInfoWrapperStyle {
-  /* align-self: flex-end; */
   display: flex;
   align-self: flex-end;
 }

@@ -1,6 +1,9 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../utils/common";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import {
+  checkMessageForExtensionsData,
+  logger,
+} from "../../../../utils/common";
+import * as enums from "../../../../utils/enums";
 
 @Component({
   selector: "cometchat-sender-file-message-bubble",
@@ -8,11 +11,11 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-sender-file-message-bubble.component.css"],
 })
 export class CometChatSenderFileMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
   @Input() loggedInUser;
-  checkReaction: boolean = false;
+  checkReaction = [];
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
   url: string;
@@ -20,18 +23,27 @@ export class CometChatSenderFileMessageBubbleComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
-    this.url = this.MessageDetails.data.attachments[0].url;
-    this.name = this.MessageDetails.data.attachments[0].name;
+    try {
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
+      this.url = this.messageDetails.data.attachments[0].url;
+      this.name = this.messageDetails.data.attachments[0].name;
+    } catch (error) {
+      logger(error);
+    }
   }
+
   /**
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

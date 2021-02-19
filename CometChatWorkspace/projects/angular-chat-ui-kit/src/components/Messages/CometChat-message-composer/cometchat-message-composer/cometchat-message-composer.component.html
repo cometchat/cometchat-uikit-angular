@@ -60,7 +60,7 @@
             <input
               type="file"
               accept="video/*"
-              #vidPicker
+              #videoPicker
               (change)="onVideoChange($event)"
             />
           </span>
@@ -74,7 +74,7 @@
             <input
               type="file"
               accept="audio/*"
-              #audPicker
+              #audioPicker
               (change)="onAudChange($event)"
             />
           </span>
@@ -88,7 +88,7 @@
             <input
               type="file"
               accept="image/*"
-              #imgPicker
+              #imagePicker
               (change)="onImgChange($event)"
             />
           </span>
@@ -141,7 +141,7 @@
           <span
             id="send"
             title="send message"
-            *ngIf="senddisable"
+            *ngIf="enableSendButton"
             class="sendButtonStyle"
             (click)="sendTextMessage(message.value)"
           >
@@ -149,7 +149,7 @@
           <span
             class="reactionBtnStyle"
             id="reaction"
-            *ngIf="reactdisable && !parentMessageId"
+            *ngIf="enableReaction && !parentMessageId"
             (click)="sendReaction($event)"
           >
           </span>

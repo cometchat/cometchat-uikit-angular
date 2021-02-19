@@ -7,8 +7,9 @@ import {
   EventEmitter,
 } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import * as enums from "../../../utils/enums";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-add-group-member-list",
@@ -18,36 +19,44 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
 export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
   @Input() item = null;
   @Input() type = null;
-  @Input() memberlist = [];
-  @Input() bannedmemberlist = [];
+  @Input() memberList = [];
+  @Input() bannedMemberList = [];
   @Input() friendsOnly: boolean = false;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  decoratorMessage = STRING_MESSAGES.LOADING_MESSSAGE;
+  decoratorMessage = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
   userlist = [];
   membersToAdd = [];
   membersToRemove = [];
-  filteredlist = [];
+  filteredList = [];
   timeout;
-  addBtnText: String = STRING_MESSAGES.ADD;
+  addBtnText: String = COMETCHAT_CONSTANTS.ADD;
 
   membersRequest = null;
-  userListenerId = "userlist_" + new Date().getTime();
+  userListenerId = enums.USER_LIST_ + new Date().getTime();
 
-  USERS: String = STRING_MESSAGES.USERS;
-  SEARCH: String = STRING_MESSAGES.SEARCH;
+  USERS: String = COMETCHAT_CONSTANTS.USERS;
+  SEARCH: String = COMETCHAT_CONSTANTS.SEARCH;
 
   constructor() {}
 
   ngOnInit() {
-    this.membersRequest = this.createMemberRequest();
-    this.getUsers();
-    this.attachListeners(this.userUpdated);
+    try {
+      this.membersRequest = this.createMemberRequest();
+      this.getUsers();
+      this.attachListeners(this.userUpdated);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   ngOnDestroy() {
-    this.removeListeners();
+    try {
+      this.removeListeners();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -55,19 +64,23 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param function callback
    */
   attachListeners(callback) {
-    CometChat.addUserListener(
-      this.userListenerId,
-      new CometChat.UserListener({
-        onUserOnline: (onlineUser) => {
-          /* when someuser/friend comes online, user will be received here */
-          callback(onlineUser);
-        },
-        onUserOffline: (offlineUser) => {
-          /* when someuser/friend went offline, user will be received here */
-          callback(offlineUser);
-        },
-      })
-    );
+    try {
+      CometChat.addUserListener(
+        this.userListenerId,
+        new CometChat.UserListener({
+          onUserOnline: (onlineUser) => {
+            /* when someuser/friend comes online, user will be received here */
+            callback(onlineUser);
+          },
+          onUserOffline: (offlineUser) => {
+            /* when someuser/friend went offline, user will be received here */
+            callback(offlineUser);
+          },
+        })
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -75,7 +88,11 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param
    */
   removeListeners() {
-    CometChat.removeUserListener(this.userListenerId);
+    try {
+      CometChat.removeUserListener(this.userListenerId);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -83,18 +100,22 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param Any user
    */
   userUpdated = (user) => {
-    let userlist = [...this.userlist];
+    try {
+      let userlist = [...this.userlist];
 
-    //search for user
-    let userKey = userlist.findIndex((u, k) => u.uid === user.uid);
+      //search for user
+      let userKey = userlist.findIndex((u, k) => u.uid === user.uid);
 
-    //if found in the list, update user object
-    if (userKey > -1) {
-      let userObj = userlist[userKey]; //{...userlist[userKey]};
-      let newUserObj = Object.assign({}, userObj, user);
-      userlist.splice(userKey, 1, newUserObj);
+      //if found in the list, update user object
+      if (userKey > -1) {
+        let userObj = userlist[userKey];
+        let newUserObj = Object.assign({}, userObj, user);
+        userlist.splice(userKey, 1, newUserObj);
 
-      this.userlist = userlist;
+        this.userlist = userlist;
+      }
+    } catch (error) {
+      logger(error);
     }
   };
 
@@ -103,21 +124,25 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param String searchKey
    */
   createMemberRequest(searchKey = "") {
-    let membersRequest = null;
+    try {
+      let membersRequest = null;
 
-    if (searchKey !== "") {
-      membersRequest = new CometChat.UsersRequestBuilder()
-        .setLimit(30)
-        .friendsOnly(this.friendsOnly)
-        .setSearchKeyword(searchKey)
-        .build();
-    } else {
-      membersRequest = new CometChat.UsersRequestBuilder()
-        .setLimit(30)
-        .friendsOnly(this.friendsOnly)
-        .build();
+      if (searchKey !== "") {
+        membersRequest = new CometChat.UsersRequestBuilder()
+          .setLimit(30)
+          .friendsOnly(this.friendsOnly)
+          .setSearchKeyword(searchKey)
+          .build();
+      } else {
+        membersRequest = new CometChat.UsersRequestBuilder()
+          .setLimit(30)
+          .friendsOnly(this.friendsOnly)
+          .build();
+      }
+      return membersRequest;
+    } catch (error) {
+      logger(error);
     }
-    return membersRequest;
   }
 
   /**
@@ -125,22 +150,26 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param Event e
    */
   searchUsers = (e) => {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
+    try {
+      if (this.timeout) {
+        clearTimeout(this.timeout);
+      }
+
+      let val = e.target.value;
+      this.timeout = setTimeout(() => {
+        this.decoratorMessage = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
+
+        this.membersRequest = this.createMemberRequest(val);
+
+        this.userlist = [];
+        this.membersToAdd = [];
+        this.membersToRemove = [];
+        this.filteredList = [];
+        this.getUsers();
+      }, 500);
+    } catch (error) {
+      logger(error);
     }
-
-    let val = e.target.value;
-    this.timeout = setTimeout(() => {
-      this.decoratorMessage = STRING_MESSAGES.LOADING_MESSSAGE;
-
-      this.membersRequest = this.createMemberRequest(val);
-
-      this.userlist = [];
-      this.membersToAdd = [];
-      this.membersToRemove = [];
-      this.filteredlist = [];
-      this.getUsers();
-    }, 500);
   };
 
   /**
@@ -148,48 +177,46 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param
    */
   getUsers = () => {
-    CometChat.getLoggedinUser()
-      .then((user) => {
-        this.fetchNextUsers()
-          .then((userList) => {
-            const filteredUserList = userList.filter((user) => {
-              const found = this.memberlist.find(
-                (member) => user.uid === member.uid
-              );
-              const foundbanned = this.bannedmemberlist.find(
-                (member) => user.uid === member.uid
-              );
-              if (found || foundbanned) {
-                return false;
+    try {
+      CometChat.getLoggedinUser()
+        .then((user) => {
+          this.fetchNextUsers()
+            .then((userList) => {
+              const filteredUserList = userList.filter((user) => {
+                const found = this.memberList.find(
+                  (member) => user.uid === member.uid
+                );
+                const foundBanned = this.bannedMemberList.find(
+                  (member) => user.uid === member.uid
+                );
+                if (found || foundBanned) {
+                  return false;
+                }
+                return true;
+              });
+
+              this.userlist = [...this.userlist, ...userList];
+
+              this.filteredList = [...this.filteredList, ...filteredUserList];
+
+              if (this.filteredList.length === 0) {
+                this.decoratorMessage = COMETCHAT_CONSTANTS.NO_USERS_FOUND;
+              } else {
+                this.decoratorMessage = "";
               }
-              return true;
+            })
+            .catch((error) => {
+              this.decoratorMessage = COMETCHAT_CONSTANTS.ERROR;
+              logger("[CometChatAddMembers] getUsers fetchNext error", error);
             });
-
-            this.userlist = [...this.userlist, ...userList];
-
-            this.filteredlist = [...this.filteredlist, ...filteredUserList];
-
-            if (this.filteredlist.length === 0) {
-              this.decoratorMessage = STRING_MESSAGES.NO_USERS_FOUND;
-            } else {
-              this.decoratorMessage = "";
-            }
-          })
-          .catch((error) => {
-            this.decoratorMessage = STRING_MESSAGES.ERROR;
-            console.error(
-              "[CometChatAddMembers] getUsers fetchNext error",
-              error
-            );
-          });
-      })
-      .catch((error) => {
-        this.decoratorMessage = STRING_MESSAGES.ERROR;
-        console.log(
-          "[CometChatAddMembers] getUsers getLoggedInUser error",
-          error
-        );
-      });
+        })
+        .catch((error) => {
+          this.decoratorMessage = COMETCHAT_CONSTANTS.ERROR;
+          logger("[CometChatAddMembers] getUsers getLoggedInUser error", error);
+        });
+    } catch (error) {
+      logger(error);
+    }
   };
 
   /**
@@ -197,15 +224,17 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param Event action
    */
   actionHandler(action) {
-    let data = action.payLoad;
+    try {
+      let data = action.payLoad;
 
-    // console.log("comet chat add members --> action generated is ", action);
-
-    switch (action.type) {
-      case enums.MEMBER_UPDATED: {
-        this.membersUpdated(data.user, data.userState);
-        break;
+      switch (action.type) {
+        case enums.MEMBER_UPDATED: {
+          this.membersUpdated(data.user, data.userState);
+          break;
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -214,19 +243,23 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param Any user
    */
   membersUpdated = (user, userState) => {
-    if (userState) {
-      const members = [...this.membersToAdd];
-      members.push(user);
-      this.membersToAdd = [...members];
-    } else {
-      const membersToAdd = [...this.membersToAdd];
-      const IndexFound = membersToAdd.findIndex(
-        (member) => member.uid === user.uid
-      );
-      if (IndexFound > -1) {
-        membersToAdd.splice(IndexFound, 1);
-        this.membersToAdd = [...membersToAdd];
+    try {
+      if (userState) {
+        const members = [...this.membersToAdd];
+        members.push(user);
+        this.membersToAdd = [...members];
+      } else {
+        const membersToAdd = [...this.membersToAdd];
+        const IndexFound = membersToAdd.findIndex(
+          (member) => member.uid === user.uid
+        );
+        if (IndexFound > -1) {
+          membersToAdd.splice(IndexFound, 1);
+          this.membersToAdd = [...membersToAdd];
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   };
 
@@ -235,56 +268,62 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param
    */
   updateMembers = () => {
-    if (this.addBtnText == STRING_MESSAGES.ADDING_MESSSAGE) {
-      return;
-    }
-
-    this.addBtnText = STRING_MESSAGES.ADDING_MESSSAGE;
-
-    const guid = this.item.guid;
-    const membersList = [];
-
-    this.membersToAdd.forEach((newmember) => {
-      //if a selected member is already part of the member list, don't add
-      const IndexFound = this.memberlist.findIndex(
-        (member) => member.uid === newmember.uid
-      );
-      if (IndexFound === -1) {
-        const newMember = new CometChat.GroupMember(
-          newmember.uid,
-          CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT
-        );
-        membersList.push(newMember);
-
-        newmember["type"] = "add";
+    try {
+      if (this.addBtnText == COMETCHAT_CONSTANTS.ADDING_MESSSAGE) {
+        return;
       }
-    });
 
-    if (membersList.length) {
-      const membersToAdd = [];
-      CometChat.addMembersToGroup(guid, membersList, [])
-        .then((response) => {
-          if (Object.keys(response).length) {
-            for (const member in response) {
-              if (response[member] === "success") {
-                const found = this.userlist.find((user) => user.uid === member);
-                found["scope"] = CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT;
-                membersToAdd.push(found);
+      this.addBtnText = COMETCHAT_CONSTANTS.ADDING_MESSSAGE;
+
+      const guid = this.item.guid;
+      const membersList = [];
+
+      this.membersToAdd.forEach((newmember) => {
+        //if a selected member is already part of the member list, don't add
+        const IndexFound = this.memberList.findIndex(
+          (member) => member.uid === newmember.uid
+        );
+        if (IndexFound === -1) {
+          const newMember = new CometChat.GroupMember(
+            newmember.uid,
+            CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT
+          );
+          membersList.push(newMember);
+
+          newmember[enums.TYPE] = enums.ADD;
+        }
+      });
+
+      if (membersList.length) {
+        const membersToAdd = [];
+        CometChat.addMembersToGroup(guid, membersList, [])
+          .then((response) => {
+            if (Object.keys(response).length) {
+              for (const member in response) {
+                if (response[member] === enums.SUCCESS) {
+                  const found = this.userlist.find(
+                    (user) => user.uid === member
+                  );
+                  found[enums.SCOPE] = CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT;
+                  membersToAdd.push(found);
+                }
               }
+              this.actionGenerated.emit({
+                type: enums.ADD_GROUP_PARTICIPANTS,
+                payLoad: membersToAdd,
+              });
             }
-            this.actionGenerated.emit({
-              type: enums.ADD_GROUP_PARTICIPANTS,
-              payLoad: membersToAdd,
-            });
-          }
-          this.closeAddMembersView();
-        })
-        .catch((error) => {
-          console.log("addMembersToGroup failed with exception:", error);
-        })
-        .finally(() => {
-          this.addBtnText = STRING_MESSAGES.ADD;
-        });
+            this.closeAddMembersView();
+          })
+          .catch((error) => {
+            logger("addMembersToGroup failed with exception:", error);
+          })
+          .finally(() => {
+            this.addBtnText = COMETCHAT_CONSTANTS.ADD;
+          });
+      }
+    } catch (error) {
+      logger(error);
     }
   };
 
@@ -293,7 +332,11 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param
    */
   fetchNextUsers() {
-    return this.membersRequest.fetchNext();
+    try {
+      return this.membersRequest.fetchNext();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -301,16 +344,27 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param Event action
    */
   handleScroll(e) {
-    const bottom =
-      Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
-      Math.round(e.currentTarget.clientHeight);
-    if (bottom) this.getUsers();
+    try {
+      const bottom =
+        Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
+        Math.round(e.currentTarget.clientHeight);
+      if (bottom) this.getUsers();
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * emits an action to close the addMember modal
+   */
   closeAddMembersView() {
-    this.actionGenerated.emit({
-      type: enums.CLOSE_ADD_VIEW_MEMBER,
-      payLoad: null,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.CLOSE_ADD_VIEW_MEMBER,
+        payLoad: null,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

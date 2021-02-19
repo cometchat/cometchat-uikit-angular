@@ -1,15 +1,15 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import { checkMessageForExtensionsData } from "../../../../utils/common";
-import * as enums from "../../../../utils/enums";
-import { STRING_MESSAGES } from "../../../../utils/messageConstants";
+import { checkMessageForExtensionsData } from "../../../../../utils/common";
+import * as enums from "../../../../../utils/enums";
+import { logger } from "../../../../../utils/common";
 @Component({
   selector: "cometchat-receiver-poll-message-bubble",
   templateUrl: "./cometchat-receiver-poll-message-bubble.component.html",
   styleUrls: ["./cometchat-receiver-poll-message-bubble.component.css"],
 })
 export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showReplyCount = true;
 
   @Input() loggedInUserUid = "";
@@ -25,39 +25,52 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
   pollOptions = [];
   totalVotes = 0;
   selectedOption = null;
-  checkReaction: boolean = false;
+  checkReaction = [];
+
+  GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
   constructor() {}
 
   ngOnInit() {
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
 
-    this.checkPollExtension();
+      this.checkPollExtension();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Displays the poll component , only if it is enabled
-   * @param Event action
    */
   checkPollExtension() {
-    if (this.MessageDetails.hasOwnProperty("metadata")) {
-      if (this.MessageDetails.metadata.hasOwnProperty("@injected")) {
+    try {
+      if (this.messageDetails.hasOwnProperty(enums.METADATA)) {
         if (
-          this.MessageDetails.metadata["@injected"].hasOwnProperty("extensions")
+          this.messageDetails[enums.METADATA].hasOwnProperty(enums.INJECTED)
         ) {
           if (
-            this.MessageDetails.metadata["@injected"][
-              "extensions"
-            ].hasOwnProperty("polls")
+            this.messageDetails[enums.METADATA][enums.INJECTED].hasOwnProperty(
+              enums.EXTENSIONS
+            )
           ) {
-            this.isPollExtensionEnabled = true;
-            this.setPollExtensionData();
+            if (
+              this.messageDetails[enums.METADATA][enums.INJECTED][
+                enums.EXTENSIONS
+              ].hasOwnProperty(enums.POLLS)
+            ) {
+              this.isPollExtensionEnabled = true;
+              this.setPollExtensionData();
+            }
           }
         }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -66,43 +79,46 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
    * @param
    */
   setPollExtensionData() {
-    this.pollExtensionData = this.MessageDetails.metadata["@injected"][
-      "extensions"
-    ]["polls"];
+    try {
+      this.pollExtensionData = this.messageDetails[enums.METADATA][
+        enums.INJECTED
+      ][enums.EXTENSIONS][enums.POLLS];
 
-    this.pollId = this.pollExtensionData.id;
+      this.pollId = this.pollExtensionData.id;
 
-    this.totalVotes = this.pollExtensionData.results.total;
+      this.totalVotes = this.pollExtensionData.results.total;
 
-    let optionKeys = Object.keys(this.pollExtensionData.options);
+      let optionKeys = Object.keys(this.pollExtensionData.options);
 
-    let optionList = [];
-    optionKeys.forEach((currentItem) => {
-      // Add Percentage calculation logic
-      const optionData = this.pollExtensionData.results.options[currentItem];
-      const vote = optionData["count"];
-      let calculatedPercent = 0;
+      let optionList = [];
+      optionKeys.forEach((currentItem) => {
+        const optionData = this.pollExtensionData.results.options[currentItem];
+        const vote = optionData[enums.COUNT];
+        let calculatedPercent = 0;
 
-      if (this.totalVotes > 0) {
-        calculatedPercent = Math.round((vote / this.totalVotes) * 100);
-      }
-
-      let selectedByLoggedInUser = false;
-      if (optionData.hasOwnProperty("voters")) {
-        if (optionData.voters.hasOwnProperty(this.loggedInUserUid)) {
-          selectedByLoggedInUser = true;
+        if (this.totalVotes > 0) {
+          calculatedPercent = Math.round((vote / this.totalVotes) * 100);
         }
-      }
 
-      optionList.push({
-        id: currentItem,
-        percent: calculatedPercent + "%",
-        text: this.pollExtensionData.options[currentItem],
-        selectedByLoggedInUser,
+        let selectedByLoggedInUser = false;
+        if (optionData.hasOwnProperty(enums.VOTERS)) {
+          if (optionData.voters.hasOwnProperty(this.loggedInUserUid)) {
+            selectedByLoggedInUser = true;
+          }
+        }
+
+        optionList.push({
+          id: currentItem,
+          percent: calculatedPercent + "%",
+          text: this.pollExtensionData.options[currentItem],
+          selectedByLoggedInUser,
+        });
       });
-    });
 
-    this.pollOptions = [...optionList];
+      this.pollOptions = [...optionList];
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -110,21 +126,25 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
    * @param Any selectedOption
    */
   answerPollQuestion(selectedOption) {
-    this.selectedOption = selectedOption;
+    try {
+      this.selectedOption = selectedOption;
 
-    CometChat.callExtension("polls", "POST", "v1/vote", {
-      vote: selectedOption.id,
-      id: this.pollId,
-    })
-      .then((response) => {
-        this.actionGenerated.emit({
-          type: enums.POLL_ANSWERED,
-          payLoad: response,
-        });
+      CometChat.callExtension(enums.POLLS, enums.POST, enums.V1_VOTE, {
+        vote: selectedOption.id,
+        id: this.pollId,
       })
-      .catch((error) => {
-        console.log("answerPollQuestion error", error);
-      });
+        .then((response) => {
+          this.actionGenerated.emit({
+            type: enums.POLL_ANSWERED,
+            payLoad: response,
+          });
+        })
+        .catch((error) => {
+          logger("answerPollQuestion error", error);
+        });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -132,7 +152,11 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -140,17 +164,20 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
    * @param Event action
    */
   getStyles(key = null, data = null) {
-    switch (key) {
-      case "answerWrapperStyle": {
-        if (data.id !== this.selectedOption.id) {
-          return { background: "none" };
+    try {
+      switch (key) {
+        case enums.ANSWER_WRAPPER_STYLE: {
+          if (data.id !== this.selectedOption.id) {
+            return { background: "none" };
+          }
+
+          break;
         }
-
-        break;
       }
-    }
 
-    //return { background: "none" };
-    return {};
+      return {};
+    } catch (error) {
+      logger(error);
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import * as enums from "../../../utils/enums";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-add-group-member-list-item",
@@ -19,7 +20,13 @@ export class CometChatAddGroupMemberListItemComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    this.checked = this.members.find((member) => member.uid === this.user.uid);
+    try {
+      this.checked = this.members.find(
+        (member) => member.uid === this.user.uid
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -27,11 +34,15 @@ export class CometChatAddGroupMemberListItemComponent implements OnInit {
    * @param Event event
    */
   handleCheck(event) {
-    this.checked = !this.checked;
+    try {
+      this.checked = !this.checked;
 
-    this.actionGenerated.emit({
-      type: enums.MEMBER_UPDATED,
-      payLoad: { user: this.user, userState: this.checked },
-    });
+      this.actionGenerated.emit({
+        type: enums.MEMBER_UPDATED,
+        payLoad: { user: this.user, userState: this.checked },
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

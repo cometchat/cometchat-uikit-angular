@@ -27,22 +27,16 @@
   background: #ccc;
 }
 
-/* The Media Query Styling is left .. take help ... and SideBarView */
 .userScreenSidebarStyle {
   width: 280px;
   border-right: 1px solid #eaeaea;
   height: 100%;
   position: relative;
-  /* display: flex;
-  flex-direction: column; */
 }
 
-/* The Media Query Styling is left .. take help ... and SecondaryVieww */
 .userScreenMainStyle {
   width: calc(100% - 280px);
-  /* width: 80%; */
-  /* display: flex;
-  flex-direction: column; */
+
   height: 100%;
   order: 2;
 }
@@ -65,7 +59,6 @@
 }
 
 @media (min-width: 320px) and (max-width: 767px) {
-  /* Media query for  */
   .userScreenSidebarStyle {
     position: absolute !important;
     top: 0;
@@ -88,6 +81,3 @@
     background-color: white;
   }
 }
-
-/* This Styling will be used while creating the Detail and threaded message View screen ( Right Side Bar ) */
-/* .chatScreenSecondaryStyle */

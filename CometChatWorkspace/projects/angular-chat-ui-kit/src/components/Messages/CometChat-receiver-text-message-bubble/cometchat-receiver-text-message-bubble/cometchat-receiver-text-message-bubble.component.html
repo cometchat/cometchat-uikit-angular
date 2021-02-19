@@ -3,25 +3,25 @@
   <cometchat-message-actions
     class="tool"
     [ngClass]="{
-      toolGroup: type == 'group'
+      toolGroup: type == GROUP
     }"
-    [MessageDetails]="MessageDetails"
+    [messageDetails]="messageDetails"
     (actionGenerated)="actionHandler($event)"
     *ngIf="showToolTip"
   ></cometchat-message-actions>
 
   <div class="messageWrapperStyle">
     <!--avatar component-->
-    <div class="messageThumbnailStyle" *ngIf="type == 'group'">
+    <div class="messageThumbnailStyle" *ngIf="type == GROUP">
       <cometchat-avatar
-        [item]="MessageDetails?.sender"
+        [item]="messageDetails?.sender"
         [enableUserStatus]="false"
       ></cometchat-avatar>
     </div>
     <div class="messageDetailStyle">
       <!--name--->
-      <div class="nameWrapperStyle" *ngIf="type == 'group'">
-        <span class="nameStyle"> {{ MessageDetails?.sender?.name }} </span>
+      <div class="nameWrapperStyle" *ngIf="type == GROUP">
+        <span class="nameStyle"> {{ messageDetails?.sender?.name }} </span>
       </div>
 
       <div class="messageTxtContainerStyle">
@@ -30,7 +30,7 @@
         <div class="messageWrapperStyle" id="check">
           <div class="messageTxtWrapperStyle" *ngIf="linkPreview === false">
             <p class="messageTxtStyle">
-              {{ MessageDetails.data.text }}
+              {{ messageDetails.data.text }}
             </p>
           </div>
           <div class="messagePreviewContainerStyle" *ngIf="linkPreview">
@@ -64,18 +64,18 @@
       </div>
       <cometchat-message-reactions
         *ngIf="checkReaction"
-        [MessageDetails]="MessageDetails"
+        [messageDetails]="messageDetails"
         [loggedInUser]="loggedInUser"
         (actionGenerated)="actionHandler($event)"
       ></cometchat-message-reactions>
       <div class="messageInfoWrapperStyle">
-        <cometchat-read-reciept
-          [MessageDetails]="MessageDetails"
+        <cometchat-read-receipt
+          [messageDetails]="messageDetails"
           [displayReadReciept]="false"
-        ></cometchat-read-reciept>
+        ></cometchat-read-receipt>
         <cometchat-threaded-message-reply-count
           *ngIf="showReplyCount"
-          [MessageDetails]="MessageDetails"
+          [messageDetails]="messageDetails"
           (actionGenerated)="actionHandler($event)"
         >
         </cometchat-threaded-message-reply-count>

@@ -34,8 +34,6 @@
 
 .chatScreenMainStyle {
   width: calc(100% - 280px);
-  /* display: flex;
-  flex-direction: column; */
   height: 100%;
   order: 2;
 }
@@ -57,7 +55,6 @@
   height: 100%;
 }
 
-/** MEDIA TAG*/
 @media (min-width: 320px) and (max-width: 767px) {
   .chatScreenSidebarStyle {
     position: absolute !important;
@@ -70,7 +67,6 @@
 
   .chatScreenMainStyle {
     width: 100% !important;
-    /* z-index: 2; */
     background-color: white;
   }
   .chatScreenSecondaryStyle {

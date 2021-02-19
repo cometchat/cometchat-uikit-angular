@@ -123,8 +123,8 @@ export * from "./components/UserProfile/CometChat-nav-bar/cometchat-nav-bar/come
 export * from "./components/UserProfile/CometChat-nav-bar/cometchat-nav-bar.module";
 
 //readReceipt
-export * from "./components/Messages/CometChat-read-reciept/cometchat-read-reciept/cometchat-read-reciept.component";
-export * from "./components/Messages/CometChat-read-reciept/cometchat-read-reciept.module";
+export * from "./components/Messages/CometChat-read-receipt/cometchat-read-receipt/cometchat-read-receipt.component";
+export * from "./components/Messages/CometChat-read-receipt/cometchat-read-receipt.module";
 
 //receiverAudioBubble
 export * from "./components/Messages/CometChat-receiver-audio-message-bubble/cometchat-receiver-audio-message-bubble/cometchat-receiver-audio-message-bubble.component";
@@ -211,8 +211,8 @@ export * from "./components/Messages/CometChat-message-actions/cometchat-message
 export * from "./components/Messages/CometChat-message-actions/cometchat-message-actions.module";
 
 //CometChat Unified
-export * from "./components/CometChatUI/CometChat/cometchat/cometchat-ui.component";
-export * from "./components/CometChatUI/CometChat/cometchat-ui.module";
+export * from "./components/CometChatUI/CometChat-Ui/cometchat-ui/cometchat-ui.component";
+export * from "./components/CometChatUI/CometChat-Ui/cometchat-ui.module";
 
 //userDetail
 export * from "./components/Users/CometChat-user-details/cometchat-user-details/cometchat-user-details.component";

@@ -7,8 +7,9 @@ import {
 } from "@angular/forms";
 
 import { CometChat } from "@cometchat-pro/chat";
-import { STRING_MESSAGES } from "../../../../utils/messageConstants";
-import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../../utils/messageConstants";
+import * as enums from "../../../../../utils/enums";
+import { logger } from "../../../../../utils/common";
 @Component({
   selector: "cometchat-create-poll",
   templateUrl: "./cometchat-create-poll.component.html",
@@ -22,13 +23,13 @@ export class CometChatCreatePollComponent implements OnInit {
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  createBtnText = STRING_MESSAGES.CREATE;
-  CREATE_POLL: String = STRING_MESSAGES.CREATE_POLL;
-  QUESTION: String = STRING_MESSAGES.QUESTION;
-  ENTER_YOUR_QUESTION: String = STRING_MESSAGES.ENTER_YOUR_QUESTION;
-  OPTIONS: String = STRING_MESSAGES.OPTIONS;
-  ENTER_YOUR_OPTION: String = STRING_MESSAGES.ENTER_YOUR_OPTION;
-  ADD_NEW_OPTION: String = STRING_MESSAGES.ADD_NEW_OPTION;
+  createBtnText = COMETCHAT_CONSTANTS.CREATE;
+  CREATE_POLL: String = COMETCHAT_CONSTANTS.CREATE_POLL;
+  QUESTION: String = COMETCHAT_CONSTANTS.QUESTION;
+  ENTER_YOUR_QUESTION: String = COMETCHAT_CONSTANTS.ENTER_YOUR_QUESTION;
+  OPTIONS: String = COMETCHAT_CONSTANTS.OPTIONS;
+  ENTER_YOUR_OPTION: String = COMETCHAT_CONSTANTS.ENTER_YOUR_OPTION;
+  ADD_NEW_OPTION: String = COMETCHAT_CONSTANTS.ADD_NEW_OPTION;
 
   constructor(private fb: FormBuilder) {
     this.pollFormData = this.fb.group({
@@ -46,9 +47,13 @@ export class CometChatCreatePollComponent implements OnInit {
    * @param
    */
   addPollOption() {
-    (this.pollFormData.get("optionItems") as FormArray).push(
-      this.fb.control(null)
-    );
+    try {
+      (this.pollFormData.get(enums.OPTION_ITEMS) as FormArray).push(
+        this.fb.control(null)
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -56,11 +61,22 @@ export class CometChatCreatePollComponent implements OnInit {
    * @param number index
    */
   removePollOption(index) {
-    (this.pollFormData.get("optionItems") as FormArray).removeAt(index);
+    try {
+      (this.pollFormData.get(enums.OPTION_ITEMS) as FormArray).removeAt(index);
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * used to add options in poll dynamically as form control
+   */
   getOptionsFormControls(): AbstractControl[] {
-    return (<FormArray>this.pollFormData.get("optionItems")).controls;
+    try {
+      return (<FormArray>this.pollFormData.get(enums.OPTION_ITEMS)).controls;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -68,95 +84,92 @@ export class CometChatCreatePollComponent implements OnInit {
    * @param Any values
    */
   createPoll(values) {
-    // console.log("create Poll View --> create poll with below data", values);
+    try {
+      if (values.question.trim().length === 0) {
+        this.errorText = COMETCHAT_CONSTANTS.POLL_QUESTION_BLANK;
+        return false;
+      }
 
-    if (values.question.trim().length === 0) {
-      this.errorText = STRING_MESSAGES.POLL_QUESTION_BLANK;
-      return false;
-    }
+      if (
+        values.firstOption.trim().length === 0 ||
+        values.secondOption.trim().length === 0
+      ) {
+        this.errorText = COMETCHAT_CONSTANTS.POLL_OPTION_BLANK;
+        return false;
+      }
 
-    if (
-      values.firstOption.trim().length === 0 ||
-      values.secondOption.trim().length === 0
-    ) {
-      this.errorText = STRING_MESSAGES.POLL_OPTION_BLANK;
-      return false;
-    }
+      let optionList = [
+        values.firstOption,
+        values.secondOption,
+        ...values.optionItems,
+      ];
 
-    let optionList = [
-      values.firstOption,
-      values.secondOption,
-      ...values.optionItems,
-    ];
+      let receiverId;
+      let receiverType = this.type;
+      if (this.type === CometChat.RECEIVER_TYPE.USER) {
+        receiverId = this.item.uid;
+      } else if (this.type === CometChat.RECEIVER_TYPE.GROUP) {
+        receiverId = this.item.guid;
+      }
 
-    let receiverId;
-    let receiverType = this.type;
-    if (this.type === "user") {
-      receiverId = this.item.uid;
-    } else if (this.type === "group") {
-      receiverId = this.item.guid;
-    }
+      if (this.createBtnText == COMETCHAT_CONSTANTS.CREATING_MESSSAGE) {
+        return;
+      }
 
-    if (this.createBtnText == STRING_MESSAGES.CREATING_MESSSAGE) {
-      return;
-    }
+      this.createBtnText = COMETCHAT_CONSTANTS.CREATING_MESSSAGE;
 
-    this.createBtnText = STRING_MESSAGES.CREATING_MESSSAGE;
+      CometChat.callExtension(enums.POLLS, enums.POST, enums.V1_CREATE, {
+        question: values.question,
+        options: optionList,
+        receiver: receiverId,
+        receiverType: receiverType,
+      })
+        .then((response: any) => {
+          const data = response.message.data;
+          const customData = data.data.customData;
+          const options = customData.options;
 
-    CometChat.callExtension("polls", "POST", "v1/create", {
-      question: values.question,
-      options: optionList,
-      receiver: receiverId,
-      receiverType: receiverType,
-    })
-      .then((response: any) => {
-        //const data = response.message.data;
-        const data = response.message.data;
-        const customData = data.data.customData;
-        const options = customData.options;
+          const resultOptions = {};
+          for (const option in options) {
+            resultOptions[option] = {
+              text: options[option],
+              count: 0,
+            };
+          }
 
-        const resultOptions = {};
-        for (const option in options) {
-          resultOptions[option] = {
-            text: options[option],
-            count: 0,
-          };
-        }
-
-        const polls = {
-          id: data.id,
-          options: options,
-          results: {
-            total: 0,
-            options: resultOptions,
+          const polls = {
+            id: data.id,
+            options: options,
+            results: {
+              total: 0,
+              options: resultOptions,
+              question: customData.question,
+            },
             question: customData.question,
-          },
-          question: customData.question,
-        };
+          };
 
-        const message = {
-          ...data,
-          sender: { uid: data.sender },
-          metadata: { "@injected": { extensions: { polls: polls } } },
-        };
+          const message = {
+            ...data,
+            sender: { uid: data.sender },
+            metadata: { "@injected": { extensions: { polls: polls } } },
+          };
 
-        // console.log(" create poll view --> poll created ", message);
-
-        this.actionGenerated.emit({
-          type: enums.POLL_CREATED,
-          payLoad: message,
+          this.actionGenerated.emit({
+            type: enums.POLL_CREATED,
+            payLoad: message,
+          });
+          this.errorText = "";
+        })
+        .catch((error) => {
+          logger(enums.ERROR, error);
+          this.errorText = error.message.message;
+        })
+        .finally(() => {
+          this.createBtnText = COMETCHAT_CONSTANTS.CREATE;
         });
-        this.errorText = "";
-      })
-      .catch((error) => {
-        console.log("error", error);
-        this.errorText = error.message.message;
-      })
-      .finally(() => {
-        this.createBtnText = STRING_MESSAGES.CREATE;
-      });
-
-    //this.resetPollFormData();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -164,7 +177,11 @@ export class CometChatCreatePollComponent implements OnInit {
    * @param
    */
   resetPollFormData() {
-    this.pollFormData.reset();
+    try {
+      this.pollFormData.reset();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -172,6 +189,10 @@ export class CometChatCreatePollComponent implements OnInit {
    * @param
    */
   closePollView() {
-    this.actionGenerated.emit({ type: enums.CLOSE_POLL_VIEW, payLoad: null });
+    try {
+      this.actionGenerated.emit({ type: enums.CLOSE_POLL_VIEW, payLoad: null });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

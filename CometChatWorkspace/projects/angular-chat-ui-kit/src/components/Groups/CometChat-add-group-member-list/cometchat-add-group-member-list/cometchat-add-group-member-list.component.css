@@ -82,9 +82,6 @@
   table-layout: fixed;
 }
 
-.tableFootStyle {
-}
-
 .tableFootStyle button {
   cursor: pointer;
   padding: 10px 20px;

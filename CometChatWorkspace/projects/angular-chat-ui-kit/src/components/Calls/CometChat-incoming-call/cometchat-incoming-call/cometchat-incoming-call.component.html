@@ -12,11 +12,11 @@
         </div>
         <div class="callTypeStyle">
           <!--call type-->
-          <div *ngIf="incomingCall.type === 'audio'">
+          <div *ngIf="incomingCall.type === CALL_TYPE_AUDIO">
             <span class="audioCall"></span>
             <span>{{ INCOMING_AUDIO_CALL }}</span>
           </div>
-          <div *ngIf="incomingCall.type === 'video'">
+          <div *ngIf="incomingCall.type === CALL_TYPE_VIDEO">
             <span class="videoCall"></span>
             <span>{{ INCOMING_VIDEO_CALL }}</span>
           </div>

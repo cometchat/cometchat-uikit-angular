@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import * as enums from "../../../utils/enums";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-threaded-message-reply-count",
@@ -8,7 +9,7 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-threaded-message-reply-count.component.css"],
 })
 export class CometChatThreadedMessageReplyCountComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   replies = null;
@@ -16,31 +17,44 @@ export class CometChatThreadedMessageReplyCountComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    let replyCount = this.getReplyCount();
-    if (replyCount === 1) {
-      this.reply = replyCount + " " + STRING_MESSAGES.REPLY;
-    } else if (replyCount > 1) {
-      this.reply = replyCount + " " + STRING_MESSAGES.REPLIES;
+    try {
+      let replyCount = this.getReplyCount();
+      if (replyCount === 1) {
+        this.reply = replyCount + " " + COMETCHAT_CONSTANTS.REPLY;
+      } else if (replyCount > 1) {
+        this.reply = replyCount + " " + COMETCHAT_CONSTANTS.REPLIES;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
+
   /**
    * get reply count for thread
    */
   getReplyCount() {
-    if (this.MessageDetails.hasOwnProperty("replyCount") === false) {
-      this.replies = null;
-    }
+    try {
+      if (this.messageDetails.hasOwnProperty(enums.REPLY_COUNT) === false) {
+        this.replies = null;
+      }
 
-    this.replies = this.MessageDetails.replyCount;
-    return this.replies;
+      this.replies = this.messageDetails.replyCount;
+      return this.replies;
+    } catch (error) {
+      logger(error);
+    }
   }
   /**
    * Open thread when clicked
    */
   openThreadMessage() {
-    this.actionGenerated.emit({
-      type: enums.VIEW_MESSAGE_THREAD,
-      payLoad: this.MessageDetails,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.VIEW_MESSAGE_THREAD,
+        payLoad: this.messageDetails,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

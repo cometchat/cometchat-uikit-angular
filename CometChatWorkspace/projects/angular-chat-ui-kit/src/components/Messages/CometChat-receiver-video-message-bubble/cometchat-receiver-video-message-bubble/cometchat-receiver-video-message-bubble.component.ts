@@ -1,6 +1,8 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../utils/common";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import { checkMessageForExtensionsData } from "../../../../utils/common";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
+import { CometChat } from "@cometchat-pro/chat";
 
 @Component({
   selector: "cometchat-receiver-video-message-bubble",
@@ -8,54 +10,63 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-receiver-video-message-bubble.component.css"],
 })
 export class CometChatReceiverVideoMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
   @Input() loggedInUser;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  //Sets the User Avatar if group
   avatar = null;
-  //Sets Username of Avatar
   name: string = null;
 
   videoUrl: string;
 
-  checkReaction: boolean = false;
+  checkReaction = [];
 
-  //if group then only show avatar
   avatarIfGroup: boolean = false;
 
-  message = Object.assign({}, this.MessageDetails, { messageFrom: "receiver" });
+  message = Object.assign({}, this.messageDetails, {
+    messageFrom: enums.RECEIVER,
+  });
+
+  GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
   constructor() {}
 
   ngOnInit() {
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
 
-    /**
-     *  If Group then displays Avatar And Name
-     */
-    if (this.MessageDetails.receiverType === "group") {
-      this.avatarIfGroup = true;
-      if (!this.MessageDetails.sender.avatar) {
-        const uid = this.MessageDetails.sender.getUid();
-        const char = this.MessageDetails.sender.getName().charAt(0);
+      /**
+       *  If Group then displays Avatar And Name
+       */
+      if (this.messageDetails.receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+        this.avatarIfGroup = true;
+        if (!this.messageDetails.sender.avatar) {
+          const uid = this.messageDetails.sender.getUid();
+          const char = this.messageDetails.sender.getName().charAt(0);
+        }
+        this.name = this.messageDetails.sender.name;
+        this.avatar = this.messageDetails.sender.avatar;
       }
-      this.name = this.MessageDetails.sender.name;
-      this.avatar = this.MessageDetails.sender.avatar;
+      this.getUrl();
+    } catch (error) {
+      logger(error);
     }
-    this.getUrl();
   }
 
   /**
    * Gets the url of video to be displayed
    */
   getUrl() {
-    this.videoUrl = this.MessageDetails.data.url;
+    try {
+      this.videoUrl = this.messageDetails.data.url;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -63,6 +74,10 @@ export class CometChatReceiverVideoMessageBubbleComponent implements OnInit {
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

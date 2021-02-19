@@ -3,14 +3,14 @@
   <cometchat-message-actions
     class="tool"
     *ngIf="showToolTip"
-    [MessageDetails]="MessageDetails"
+    [messageDetails]="messageDetails"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-message-actions>
 
   <div class="messageWrapperStyle">
     <div class="messageTxtWrapperStyle" *ngIf="linkPreview === false">
       <p class="messageTxtStyle message__txt">
-        {{ MessageDetails.data.text }}
+        {{ messageDetails.data.text }}
       </p>
     </div>
     <div class="messagePreviewContainerStyle" *ngIf="linkPreview">
@@ -46,7 +46,7 @@
   </div>
   <cometchat-message-reactions
     *ngIf="checkReaction"
-    [MessageDetails]="MessageDetails"
+    [messageDetails]="messageDetails"
     [loggedInUser]="loggedInUser"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-message-reactions>
@@ -54,13 +54,13 @@
     <!--ReplyCount component-->
     <cometchat-threaded-message-reply-count
       *ngIf="showReplyCount"
-      [MessageDetails]="MessageDetails"
+      [messageDetails]="messageDetails"
       (actionGenerated)="actionHandler($event)"
     >
     </cometchat-threaded-message-reply-count>
     <!--ReadReciept component-->
-    <cometchat-read-reciept
-      [MessageDetails]="MessageDetails"
-    ></cometchat-read-reciept>
+    <cometchat-read-receipt
+      [messageDetails]="messageDetails"
+    ></cometchat-read-receipt>
   </div>
 </div>

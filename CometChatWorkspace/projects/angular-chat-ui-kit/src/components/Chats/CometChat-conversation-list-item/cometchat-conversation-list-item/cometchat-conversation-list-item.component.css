@@ -43,9 +43,9 @@
 .itemLastMsgStyle {
   margin: 0;
   font-size: 13px;
-  width: calc(100% - 50px);
+  width: calc(100% - 30px);
   overflow: hidden;
-  text-emphasis: ellipsis;
+  text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 20px;
   color: rgba(20, 20, 20, 0.6);

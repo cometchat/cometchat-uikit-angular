@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import * as enums from "../../../utils/enums";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-image-viewer",
@@ -7,7 +8,7 @@ import * as enums from "../../../utils/enums";
   styleUrls: ["./cometchat-image-viewer.component.css"],
 })
 export class CometChatImageViewerComponent implements OnInit {
-  @Input() MessageDetails;
+  @Input() messageDetails;
   @Input() open;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -15,17 +16,36 @@ export class CometChatImageViewerComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    this.getUrl();
-  }
-  getUrl() {
-    let img = new Image();
-    img.src = this.MessageDetails.data.url;
-    this.imageUrl = img.src;
+    try {
+      this.getUrl();
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * Gets the Url of image
+   */
+  getUrl() {
+    try {
+      let img = new Image();
+      img.src = this.messageDetails.data.url;
+      this.imageUrl = img.src;
+    } catch (error) {
+      logger(error);
+    }
+  }
+
+  /**
+   * Emits action to close full screen view
+   */
   close() {
-    this.actionGenerated.emit({
-      type: enums.CLOSE_FULL_SCREEN_IMAGE,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.CLOSE_FULL_SCREEN_IMAGE,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

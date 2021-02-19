@@ -23,7 +23,9 @@
       </li>
       <li
         class="actionGroupStyle"
-        *ngIf="!showOnlyReplyButton && MessageDetails?.type === 'text'"
+        *ngIf="
+          !showOnlyReplyButton && messageDetails?.type === MESSAGE_TYPE_TEXT
+        "
       >
         <button
           type="button"

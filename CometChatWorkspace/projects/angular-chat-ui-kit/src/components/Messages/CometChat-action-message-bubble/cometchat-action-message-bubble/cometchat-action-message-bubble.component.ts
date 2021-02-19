@@ -1,6 +1,8 @@
 import { Component, Input, OnInit } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-action-message-bubble",
@@ -8,121 +10,138 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-action-message-bubble.component.css"],
 })
 export class CometChatActionMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() loggedInUserUid;
   message;
   constructor() {}
 
   ngOnInit() {
-    this.getMessage();
+    try {
+      this.getMessage();
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * Sets the Call Messages
+   */
   getMessage() {
-    const call = this.MessageDetails;
-    switch (call.status) {
-      case CometChat.CALL_STATUS.INITIATED: {
-        this.message = STRING_MESSAGES.CALL_INITIATED;
-        if (call.type === "audio") {
-          if (call.receiverType === "user") {
-            this.message =
-              call.callInitiator.uid === this.loggedInUserUid
-                ? STRING_MESSAGES.OUTGOING_AUDIO_CALL
-                : STRING_MESSAGES.INCOMING_AUDIO_CALL;
-          } else if (call.receiverType === "group") {
-            if (call.action === CometChat.CALL_STATUS.INITIATED) {
+    try {
+      const call = this.messageDetails;
+      switch (call.status) {
+        case CometChat.CALL_STATUS.INITIATED: {
+          this.message = COMETCHAT_CONSTANTS.CALL_INITIATED;
+          if (call.type === CometChat.CALL_TYPE.AUDIO) {
+            if (call.receiverType === CometChat.RECEIVER_TYPE.USER) {
               this.message =
                 call.callInitiator.uid === this.loggedInUserUid
-                  ? STRING_MESSAGES.OUTGOING_AUDIO_CALL
-                  : STRING_MESSAGES.INCOMING_AUDIO_CALL;
+                  ? COMETCHAT_CONSTANTS.OUTGOING_AUDIO_CALL
+                  : COMETCHAT_CONSTANTS.INCOMING_AUDIO_CALL;
+            } else if (call.receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+              if (call.action === CometChat.CALL_STATUS.INITIATED) {
+                this.message =
+                  call.callInitiator.uid === this.loggedInUserUid
+                    ? COMETCHAT_CONSTANTS.OUTGOING_AUDIO_CALL
+                    : COMETCHAT_CONSTANTS.INCOMING_AUDIO_CALL;
+              } else if (call.action === CometChat.CALL_STATUS.REJECTED) {
+                this.message =
+                  call.sender.uid === this.loggedInUserUid
+                    ? COMETCHAT_CONSTANTS.CALL_REJECTED
+                    : `${call.sender.name} ` +
+                      COMETCHAT_CONSTANTS.REJECTED_CALL;
+              }
+            }
+          } else if (call.type === CometChat.CALL_TYPE.VIDEO) {
+            if (call.receiverType === CometChat.RECEIVER_TYPE.USER) {
+              this.message =
+                call.callInitiator.uid === this.loggedInUserUid
+                  ? COMETCHAT_CONSTANTS.OUTGOING_VIDEO_CALL
+                  : COMETCHAT_CONSTANTS.INCOMING_VIDEO_CALL;
+            } else if (call.receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+              if (call.action === CometChat.CALL_STATUS.INITIATED) {
+                this.message =
+                  call.callInitiator.uid === this.loggedInUserUid
+                    ? COMETCHAT_CONSTANTS.OUTGOING_VIDEO_CALL
+                    : COMETCHAT_CONSTANTS.INCOMING_VIDEO_CALL;
+              } else if (call.action === CometChat.CALL_STATUS.REJECTED) {
+                this.message =
+                  call.sender.uid === this.loggedInUserUid
+                    ? COMETCHAT_CONSTANTS.CALL_REJECTED
+                    : `${call.sender.name} ` +
+                      COMETCHAT_CONSTANTS.REJECTED_CALL;
+              }
+            }
+          }
+          break;
+        }
+        case CometChat.CALL_STATUS.ONGOING: {
+          if (call.receiverType === CometChat.RECEIVER_TYPE.USER) {
+            this.message = COMETCHAT_CONSTANTS.CALL_ACCEPTED;
+          } else if (call.receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+            if (call.action === CometChat.CALL_STATUS.ONGOING) {
+              this.message =
+                call.sender.uid === this.loggedInUserUid
+                  ? COMETCHAT_CONSTANTS.CALL_ACCEPTED
+                  : `${call.sender.name} ` + COMETCHAT_CONSTANTS.JOINED;
             } else if (call.action === CometChat.CALL_STATUS.REJECTED) {
               this.message =
                 call.sender.uid === this.loggedInUserUid
-                  ? STRING_MESSAGES.CALL_REJECTED
-                  : `${call.sender.name} ` + STRING_MESSAGES.REJECTED_CALL;
-            }
-          }
-        } else if (call.type === "video") {
-          if (call.receiverType === "user") {
-            this.message =
-              call.callInitiator.uid === this.loggedInUserUid
-                ? STRING_MESSAGES.OUTGOING_VIDEO_CALL
-                : STRING_MESSAGES.INCOMING_VIDEO_CALL;
-          } else if (call.receiverType === "group") {
-            if (call.action === CometChat.CALL_STATUS.INITIATED) {
-              this.message =
-                call.callInitiator.uid === this.loggedInUserUid
-                  ? STRING_MESSAGES.OUTGOING_VIDEO_CALL
-                  : STRING_MESSAGES.INCOMING_VIDEO_CALL;
-            } else if (call.action === CometChat.CALL_STATUS.REJECTED) {
+                  ? COMETCHAT_CONSTANTS.CALL_REJECTED
+                  : `${call.sender.name} ` + COMETCHAT_CONSTANTS.REJECTED_CALL;
+            } else if (call.action === enums.LEFT) {
               this.message =
                 call.sender.uid === this.loggedInUserUid
-                  ? STRING_MESSAGES.CALL_REJECTED
-                  : `${call.sender.name} ` + STRING_MESSAGES.REJECTED_CALL;
+                  ? COMETCHAT_CONSTANTS.YOU +
+                    " " +
+                    COMETCHAT_CONSTANTS.LEFT_THE_CALL
+                  : `${call.sender.name} ` + COMETCHAT_CONSTANTS.LEFT_THE_CALL;
             }
           }
-        }
-        break;
-      }
-      case CometChat.CALL_STATUS.ONGOING: {
-        if (call.receiverType === "user") {
-          this.message = STRING_MESSAGES.CALL_ACCEPTED;
-        } else if (call.receiverType === "group") {
-          if (call.action === CometChat.CALL_STATUS.ONGOING) {
-            this.message =
-              call.sender.uid === this.loggedInUserUid
-                ? STRING_MESSAGES.CALL_ACCEPTED
-                : `${call.sender.name} ` + STRING_MESSAGES.JOINED;
-          } else if (call.action === CometChat.CALL_STATUS.REJECTED) {
-            this.message =
-              call.sender.uid === this.loggedInUserUid
-                ? STRING_MESSAGES.CALL_REJECTED
-                : `${call.sender.name} ` + STRING_MESSAGES.REJECTED_CALL;
-          } else if (call.action === "left") {
-            this.message =
-              call.sender.uid === this.loggedInUserUid
-                ? "You " + STRING_MESSAGES.LEFT_THE_CALL
-                : `${call.sender.name} ` + STRING_MESSAGES.LEFT_THE_CALL;
-          }
-        }
 
-        break;
-      }
-      case CometChat.CALL_STATUS.UNANSWERED: {
-        this.message = "Call unanswered";
-        if (
-          call.type === "audio" &&
-          (call.receiverType === "user" || call.receiverType === "group")
-        ) {
-          this.message =
-            call.callInitiator.uid === this.loggedInUserUid
-              ? STRING_MESSAGES.UNANSWERED_AUDIO_CALL
-              : "Missed audio call";
-        } else if (
-          call.type === "video" &&
-          (call.receiverType === "user" || call.receiverType === "group")
-        ) {
-          this.message =
-            call.callInitiator.uid === this.loggedInUserUid
-              ? STRING_MESSAGES.UNANSWERED_VIDEO_CALL
-              : "Missed video call";
+          break;
         }
-        break;
+        case CometChat.CALL_STATUS.UNANSWERED: {
+          this.message = COMETCHAT_CONSTANTS.CALL_UNANSWERED;
+          if (
+            call.type === CometChat.CALL_TYPE.AUDIO &&
+            (call.receiverType === CometChat.RECEIVER_TYPE.USER ||
+              call.receiverType === CometChat.RECEIVER_TYPE.GROUP)
+          ) {
+            this.message =
+              call.callInitiator.uid === this.loggedInUserUid
+                ? COMETCHAT_CONSTANTS.UNANSWERED_AUDIO_CALL
+                : COMETCHAT_CONSTANTS.MISSED_AUDIO_CALL;
+          } else if (
+            call.type === CometChat.CALL_TYPE.VIDEO &&
+            (call.receiverType === CometChat.RECEIVER_TYPE.USER ||
+              call.receiverType === CometChat.RECEIVER_TYPE.GROUP)
+          ) {
+            this.message =
+              call.callInitiator.uid === this.loggedInUserUid
+                ? COMETCHAT_CONSTANTS.UNANSWERED_VIDEO_CALL
+                : COMETCHAT_CONSTANTS.MISSED_VIDEO_CALL;
+          }
+          break;
+        }
+        case CometChat.CALL_STATUS.REJECTED: {
+          this.message = COMETCHAT_CONSTANTS.CALL_REJECTED;
+          break;
+        }
+        case CometChat.CALL_STATUS.ENDED:
+          this.message = COMETCHAT_CONSTANTS.CALL_ENDED;
+          break;
+        case CometChat.CALL_STATUS.CANCELLED:
+          this.message = COMETCHAT_CONSTANTS.CALL_CANCELLED;
+          break;
+        case CometChat.CALL_STATUS.BUSY:
+          this.message = COMETCHAT_CONSTANTS.CALL_BUSY;
+          break;
+        default:
+          break;
       }
-      case CometChat.CALL_STATUS.REJECTED: {
-        this.message = STRING_MESSAGES.CALL_REJECTED;
-        break;
-      }
-      case CometChat.CALL_STATUS.ENDED:
-        this.message = STRING_MESSAGES.CALL_ENDED;
-        break;
-      case CometChat.CALL_STATUS.CANCELLED:
-        this.message = STRING_MESSAGES.CALL_CANCELLED;
-        break;
-      case CometChat.CALL_STATUS.BUSY:
-        this.message = STRING_MESSAGES.CALL_BUSY;
-        break;
-      default:
-        break;
+    } catch (error) {
+      logger(error);
     }
   }
 }

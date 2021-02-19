@@ -14,11 +14,8 @@
 }
 
 .listDisplayStyle {
-  /* height: calc(100% - 20px); */
-  /* overflow-y: hidden; */
   overflow-y: hidden;
-  /* overflow-y: scroll; */
-  /* height: 100%; */
+
   height: calc(100% - 40px);
 }
 .navbarStyle {

@@ -1,8 +1,8 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import { BAN_ICON } from "../../../resources/icons/banIcon";
-import * as enums from "../../../utils/enums";
-
+import { BAN_ICON } from "./resources/banIcon";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
 @Component({
   selector: "cometchat-ban-group-member-list",
   templateUrl: "./cometchat-ban-group-member-list.component.html",
@@ -21,10 +21,18 @@ export class CometChatBanGroupMemberListComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {}
+
+  /**
+   * propagates and action to unaban the current member
+   */
   unbanMember() {
-    this.actionGenerated.emit({
-      type: enums.UNBAN,
-      payLoad: { member: this.member },
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.UNBAN,
+        payLoad: { member: this.member },
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

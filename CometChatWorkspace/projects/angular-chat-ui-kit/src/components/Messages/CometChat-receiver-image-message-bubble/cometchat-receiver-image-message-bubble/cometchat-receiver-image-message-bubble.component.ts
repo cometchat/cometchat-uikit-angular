@@ -6,9 +6,10 @@ import {
   EventEmitter,
   HostListener,
 } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../utils/common";
-import * as enums from "../../../utils/enums";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import { checkMessageForExtensionsData } from "../../../../utils/common";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
+import { CometChat } from "@cometchat-pro/chat";
 
 @Component({
   selector: "cometchat-receiver-image-message-bubble",
@@ -16,48 +17,51 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-receiver-image-message-bubble.component.css"],
 })
 export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
   @Input() loggedInUser;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
-  messageFrom = "receiver";
+  messageFrom = enums.RECEIVER;
 
-  messageAssign = Object.assign({}, this.MessageDetails, {
+  messageAssign = Object.assign({}, this.messageDetails, {
     messageFrom: this.messageFrom,
   });
   imageLoader: boolean = false;
   innerWidth;
   checkScreenSize: boolean = false;
-  checkReaction: boolean = false;
-
+  checkReaction = [];
   avatar = null;
-  //Sets Username of Avatar
   name: string = null;
-  //If Group then only show avatar
-  //If Group then only show avatar
   avatarIfGroup: boolean = false;
 
   message = this.messageAssign;
   imageUrl = "";
+  timer = null;
+
+  GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
   constructor() {}
 
   ngOnInit() {
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
 
-    /**
-     *  If Group then displays Avatar And Name
-     */
-    if (this.MessageDetails.receiverType === "group") {
-      this.avatarIfGroup = true;
-      this.name = this.MessageDetails.sender.name;
-      this.avatar = this.MessageDetails.sender.avatar;
+      /**
+       *  If Group then displays Avatar And Name
+       */
+      if (this.messageDetails.receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+        this.avatarIfGroup = true;
+        this.name = this.messageDetails.sender.name;
+        this.avatar = this.messageDetails.sender.avatar;
+      }
+      this.setImage();
+    } catch (error) {
+      logger(error);
     }
-    this.setImage();
   }
 
   /**
@@ -65,103 +69,115 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
    */
   @HostListener("window:resize", [])
   onResize() {
-    this.innerWidth = window.innerWidth;
-    if (this.innerWidth >= "320" && this.innerWidth <= "767") {
-      this.checkScreenSize = true;
-    } else {
-      if (this.checkScreenSize === true) {
-        this.setImage();
+    try {
+      this.innerWidth = window.innerWidth;
+      if (
+        this.innerWidth >= enums.BREAKPOINT_MIN_WIDTH &&
+        this.innerWidth <= enums.BREAKPOINT_MAX_WIDTH
+      ) {
+        this.checkScreenSize = true;
+      } else {
+        if (this.checkScreenSize === true) {
+          this.setImage();
+        }
+        this.checkScreenSize = false;
       }
-      this.checkScreenSize = false;
+    } catch (error) {
+      logger(error);
     }
   }
+
   /**
    * Checks if thumnail-generation extension is present or not And then Sets the image
-   *
    */
   setImage() {
-    this.imageLoader = true;
-    if (this.MessageDetails.hasOwnProperty("metadata")) {
-      const metadata = this.MessageDetails.metadata;
+    try {
+      this.imageLoader = true;
+      if (this.messageDetails.hasOwnProperty(enums.METADATA)) {
+        const metadata = this.messageDetails[enums.METADATA];
 
-      const injectedObject = metadata["@injected"];
-      if (injectedObject && injectedObject.hasOwnProperty("extensions")) {
-        const extensionsObject = injectedObject["extensions"];
-        if (
-          extensionsObject &&
-          extensionsObject.hasOwnProperty("thumbnail-generation")
-        ) {
-          const thumbnailGenerationObject =
-            extensionsObject["thumbnail-generation"];
+        const injectedObject = metadata[enums.INJECTED];
+        if (injectedObject && injectedObject.hasOwnProperty(enums.EXTENSIONS)) {
+          const extensionsObject = injectedObject[enums.EXTENSIONS];
+          if (
+            extensionsObject &&
+            extensionsObject.hasOwnProperty(enums.THUMBNAIL_GENERATION)
+          ) {
+            const thumbnailGenerationObject =
+              extensionsObject[enums.THUMBNAIL_GENERATION];
 
-          const mq = window.matchMedia(
-            "(min-width:360px) and (max-width: 767px)"
-          );
+            const mq = window.matchMedia(
+              "(min-width:360px) and (max-width: 767px)"
+            );
 
-          const imageToShow = this.chooseImage(thumbnailGenerationObject);
-          let img = new Image();
-          img.src = imageToShow;
-          img.onload = () => {
-            this.imageLoader = false;
-            this.imageUrl = img.src;
-            URL.revokeObjectURL(img.src);
-          };
+            const imageToDownload = this.chooseImage(thumbnailGenerationObject);
+            this.downloadImage(imageToDownload).then((response) => {
+              let img = new Image();
+              img.src = imageToDownload;
+              img.onload = () => {
+                this.imageLoader = false;
+                this.imageUrl = img.src;
+                URL.revokeObjectURL(img.src);
+              };
+            });
+          }
         }
+      } else {
+        this.setMessageImageUrl();
       }
-    } else {
-      this.setMessageImageUrl();
+    } catch (error) {
+      logger(error);
     }
   }
+
   /**
-   * If thumbnail-extension is not present then this works
-   *
+   * If thumbnail-extension is not present then set default URL
    */
   setMessageImageUrl = () => {
-    let img = new Image();
-    img.src = this.MessageDetails.data.url;
-    img.onload = () => {
-      this.imageLoader = false;
-      this.imageUrl = img.src;
-    };
+    try {
+      let img = new Image();
+      img.src = this.messageDetails.data.url;
+      img.onload = () => {
+        this.imageLoader = false;
+        this.imageUrl = img.src;
+      };
+    } catch (error) {
+      logger(error);
+    }
   };
+
   /**
    * Sets image url i.e medium-size or small-size
    * @param
    */
   chooseImage(thumbnailGenerationObject) {
-    const smallUrl = thumbnailGenerationObject["url_small"];
-    const mediumUrl = thumbnailGenerationObject["url_medium"];
-    const mq = window.matchMedia("(min-width:360px) and (max-width: 767px)");
-    let imageToShow = mediumUrl;
-    if (mq.matches) {
-      imageToShow = smallUrl;
-    }
+    try {
+      const smallUrl = thumbnailGenerationObject[enums.URL_SMALL];
+      const mediumUrl = thumbnailGenerationObject[enums.URL_MEDIUM];
+      const mq = window.matchMedia("(min-width:360px) and (max-width: 767px)");
+      let imageToShow = mediumUrl;
+      if (mq.matches) {
+        imageToShow = smallUrl;
+      }
 
-    return imageToShow;
+      return imageToShow;
+    } catch (error) {
+      logger(error);
+    }
   }
+
   /**
-   *
    *   Emits action to view image in full screen
    */
   open() {
-    this.actionGenerated.emit({
-      type: enums.VIEW_ACTUAL_IMAGE,
-      payLoad: { ...this.message, ...this.MessageDetails },
-    });
-  }
-
-  /**
-   * Set Time-Stamp for receiving image
-   *
-   */
-  getTime() {
-    let msgSentAt = this.MessageDetails.sentAt;
-    let timeStamp = new Date(msgSentAt * 1000).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-    });
-    return timeStamp;
+    try {
+      this.actionGenerated.emit({
+        type: enums.VIEW_ACTUAL_IMAGE,
+        payLoad: { ...this.message, ...this.messageDetails },
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -169,6 +185,51 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
+  }
+
+  /**
+   * Downloads image from server
+   * @param imgUrl
+   */
+  downloadImage(imgUrl) {
+    try {
+      const promise = new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(enums.GET, imgUrl, true);
+        xhr.responseType = enums.BLOB;
+
+        xhr.onload = () => {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              this.timer = null;
+              resolve(xhr.response);
+            } else if (xhr.status === 403) {
+              this.timer = setTimeout(() => {
+                this.downloadImage(imgUrl)
+                  .then((response) => resolve(response))
+                  .catch((error) => reject(error));
+              }, 800);
+            }
+          } else {
+            reject(xhr.statusText);
+          }
+        };
+
+        xhr.onerror = (event) =>
+          reject(new Error("There was a network error."));
+        xhr.ontimeout = (event) =>
+          reject(new Error("There was a timeout error."));
+        xhr.send();
+      });
+
+      return promise;
+    } catch (error) {
+      logger(error);
+    }
   }
 }

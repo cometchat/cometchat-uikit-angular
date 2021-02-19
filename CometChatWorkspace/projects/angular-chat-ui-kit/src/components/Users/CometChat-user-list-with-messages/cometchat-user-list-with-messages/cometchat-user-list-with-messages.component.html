@@ -16,7 +16,7 @@
     <cometchat-messages
       [item]="curentItem"
       [type]="type"
-      [composedthreadmessage]="composedthreadmessage"
+      [composedThreadMessage]="composedThreadMessage"
       [callMessage]="callMessage"
       (actionGenerated)="actionHandler($event)"
     ></cometchat-messages>
@@ -60,7 +60,7 @@
   ></cometchat-outgoing-call>
   <cometchat-image-viewer
     *ngIf="fullScreenViewImage"
-    [MessageDetails]="imageView"
+    [messageDetails]="imageView"
     [open]="true"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-image-viewer>
