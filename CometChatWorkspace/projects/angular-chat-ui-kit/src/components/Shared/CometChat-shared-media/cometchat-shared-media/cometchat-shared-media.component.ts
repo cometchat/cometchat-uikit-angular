@@ -1,8 +1,8 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import * as enums from "../../../utils/enums";
-import { CometChatManager } from "../../../utils/controller";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-shared-media",
@@ -14,10 +14,7 @@ export class CometChatSharedMediaComponent implements OnInit {
 
   @Input() type = null;
   @Input() item = null;
-
-  //Sets type of media message to be fetched
-  messageType: string = "image";
-  //To get all the media message that user requests
+  messageType: string = CometChat.MESSAGE_TYPE.IMAGE; //Sets type of media message to be fetched
   messageList = [];
 
   displaySharedMedia: any;
@@ -37,47 +34,63 @@ export class CometChatSharedMediaComponent implements OnInit {
   videoClick: boolean = false;
   docsClick: boolean = false;
 
-  SHARED_MEDIA: String = STRING_MESSAGES.SHARED_MEDIA;
-  PHOTOS: String = STRING_MESSAGES.PHOTOS;
-  VIDEOS: String = STRING_MESSAGES.VIDEOS;
-  DOCUMENT: String = STRING_MESSAGES.DOCUMENT;
+  SHARED_MEDIA: String = COMETCHAT_CONSTANTS.SHARED_MEDIA;
+  PHOTOS: String = COMETCHAT_CONSTANTS.PHOTOS;
+  VIDEOS: String = COMETCHAT_CONSTANTS.VIDEOS;
+  DOCUMENT: String = COMETCHAT_CONSTANTS.DOCUMENT;
+  MESSAGE_TYPE_IMAGE: String = CometChat.MESSAGE_TYPE.IMAGE;
+  MESSAGE_TYPE_VIDEO: String = CometChat.MESSAGE_TYPE.VIDEO;
+  MESSAGE_TYPE_FILE: String = CometChat.MESSAGE_TYPE.FILE;
 
   constructor() {}
 
   ngOnInit() {
-    this.displaySharedMedia = this.mediaMessageRequestBuilder(
-      this.item,
-      this.type,
-      this.messageType
-    );
-    this.getMessages(true);
-    this.addMediaMessageEventListeners(this.messageUpdated);
+    try {
+      this.displaySharedMedia = this.mediaMessageRequestBuilder(
+        this.item,
+        this.type,
+        this.messageType
+      );
+      this.getMessages(true);
+      this.addMediaMessageEventListeners(this.messageUpdated);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Removing Listeners
    */
   ngOnDestroy() {
-    CometChat.removeMessageListener(this.mediaMessageListenerId);
+    try {
+      CometChat.removeMessageListener(this.mediaMessageListenerId);
+    } catch (error) {
+      logger(error);
+    }
   }
+
   /**
    * Builds the user request
    */
   mediaMessageRequestBuilder(item, type, messageType) {
-    if (type === "user") {
-      this.mediaMessageRequest = new CometChat.MessagesRequestBuilder()
-        .setUID(item.uid)
-        .setLimit(10)
-        .setCategory("message")
-        .setType(messageType)
-        .build();
-    } else {
-      this.mediaMessageRequest = new CometChat.MessagesRequestBuilder()
-        .setGUID(item.guid)
-        .setLimit(10)
-        .setCategory("message")
-        .setType(messageType)
-        .build();
+    try {
+      if (type === CometChat.RECEIVER_TYPE.USER) {
+        this.mediaMessageRequest = new CometChat.MessagesRequestBuilder()
+          .setUID(item.uid)
+          .setLimit(10)
+          .setCategory(CometChat.CATEGORY_MESSAGE)
+          .setType(messageType)
+          .build();
+      } else {
+        this.mediaMessageRequest = new CometChat.MessagesRequestBuilder()
+          .setGUID(item.guid)
+          .setLimit(10)
+          .setCategory(CometChat.CATEGORY_MESSAGE)
+          .setType(messageType)
+          .build();
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -86,32 +99,40 @@ export class CometChatSharedMediaComponent implements OnInit {
    *  @param
    */
   addMediaMessageEventListeners(callback) {
-    CometChat.addMessageListener(
-      this.mediaMessageListenerId,
-      new CometChat.MessageListener({
-        onMediaMessageReceived: (mediaMessage) => {
-          callback(enums.MEDIA_MESSAGE_RECEIVED, mediaMessage);
-        },
-        onMessageDeleted: (deletedMessage) => {
-          callback(enums.MESSAGE_DELETED, deletedMessage);
-        },
-      })
-    );
+    try {
+      CometChat.addMessageListener(
+        this.mediaMessageListenerId,
+        new CometChat.MessageListener({
+          onMediaMessageReceived: (mediaMessage) => {
+            callback(enums.MEDIA_MESSAGE_RECEIVED, mediaMessage);
+          },
+          onMessageDeleted: (deletedMessage) => {
+            callback(enums.MESSAGE_DELETED, deletedMessage);
+          },
+        })
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
-   * CallBack for listeners
+   * Updates sharedMediaView on basis of user activity or group activity
    */
   messageUpdated(key, message) {
-    switch (key) {
-      case enums.MESSAGE_DELETED:
-        this.messageDeleted(message);
-        break;
-      case enums.MEDIA_MESSAGE_RECEIVED:
-        this.messageReceived(message);
-        break;
-      default:
-        break;
+    try {
+      switch (key) {
+        case enums.MESSAGE_DELETED:
+          this.messageDeleted(message);
+          break;
+        case enums.MEDIA_MESSAGE_RECEIVED:
+          this.messageReceived(message);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -120,19 +141,23 @@ export class CometChatSharedMediaComponent implements OnInit {
    * @param
    */
   messageDeleted(deletedMessage) {
-    const messageType = deletedMessage.data.type;
-    if (
-      this.type === "group" &&
-      deletedMessage.getReceiverType() === "group" &&
-      deletedMessage.getReceiver().guid === this.item.guid &&
-      messageType === this.messageType
-    ) {
-      const messageList = [...this.messageList];
-      const filteredMessages = messageList.filter(
-        (message) => message.id !== deletedMessage.id
-      );
-      this.messageList = filteredMessages;
-      this.scrolltoBottom = false;
+    try {
+      const messageType = deletedMessage.data.type;
+      if (
+        this.type === CometChat.RECEIVER_TYPE.GROUP &&
+        deletedMessage.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
+        deletedMessage.getReceiver().guid === this.item.guid &&
+        messageType === this.messageType
+      ) {
+        const messageList = [...this.messageList];
+        const filteredMessages = messageList.filter(
+          (message) => message.id !== deletedMessage.id
+        );
+        this.messageList = filteredMessages;
+        this.scrolltoBottom = false;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
   /**
@@ -140,17 +165,21 @@ export class CometChatSharedMediaComponent implements OnInit {
    * @param
    */
   messageReceived(message) {
-    const messageType = message.data.type;
-    if (
-      this.type === "group" &&
-      message.getReceiverType() === "group" &&
-      message.getReceiver().guid === this.item.guid &&
-      messageType === this.messageType
-    ) {
-      let messages = [...this.messageList];
-      messages = messages.concat(message);
-      this.messageList = messages;
-      this.scrolltoBottom = true;
+    try {
+      const messageType = message.data.type;
+      if (
+        this.type === CometChat.RECEIVER_TYPE.GROUP &&
+        message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
+        message.getReceiver().guid === this.item.guid &&
+        messageType === this.messageType
+      ) {
+        let messages = [...this.messageList];
+        messages = messages.concat(message);
+        this.messageList = messages;
+        this.scrolltoBottom = true;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -159,73 +188,79 @@ export class CometChatSharedMediaComponent implements OnInit {
    * @param
    */
   getMessages(scrollToBottom = false) {
-    new CometChatManager()
-      .getLoggedInUser()
-      .then((user) => {
-        this.loggedInUser = user;
+    try {
+      CometChat.getLoggedinUser()
+        .then((user) => {
+          this.loggedInUser = user;
 
-        this.fetchPreviousMessages()
-          .then((messages) => {
-            const messageList = [...messages, ...this.messageList];
+          this.fetchPreviousMessages()
+            .then((messages) => {
+              const messageList = [...messages, ...this.messageList];
 
-            if (messageList.length === 0) {
-              this.checkMediaMessage = true;
-              this.displayMessage = STRING_MESSAGES.NO_RECORDS_FOUND;
-            }
-            if (scrollToBottom) {
-              this.messageList = messageList;
-              this.scrollToBottom();
-            } else {
-              //No Need for below actions if there is nothing to prepend
-              if (messages.length !== 0) {
-                let prevScrollHeight = this.mediaWindow.nativeElement
-                  .scrollHeight;
-
-                this.messageList = messageList;
-
-                // this.prependMessages(messages);
-
-                setTimeout(() => {
-                  this.scrollVariable =
-                    this.mediaWindow.nativeElement.scrollTop +
-                    this.mediaWindow.nativeElement.scrollHeight -
-                    prevScrollHeight;
-                });
+              if (messageList.length === 0) {
+                this.checkMediaMessage = true;
+                this.displayMessage = COMETCHAT_CONSTANTS.NO_RECORDS_FOUND;
               }
-            }
-          })
-          .catch((error) => {
-            //TODO Handle the erros in contact list.
-            console.error(
-              "[SharedMediaView] getMessages fetchPrevious error",
-              error
-            );
-          });
-      })
-      .catch((error) => {
-        console.log(
-          "[SharedMediaView] getMessages getLoggedInUser error",
-          error
-        );
-      });
+              if (scrollToBottom) {
+                this.messageList = messageList;
+                this.scrollToBottom();
+              } else {
+                //No Need for below actions if there is nothing to prepend
+                if (messages.length !== 0) {
+                  let prevScrollHeight = this.mediaWindow.nativeElement
+                    .scrollHeight;
+
+                  this.messageList = messageList;
+
+                  setTimeout(() => {
+                    this.scrollVariable =
+                      this.mediaWindow.nativeElement.scrollTop +
+                      this.mediaWindow.nativeElement.scrollHeight -
+                      prevScrollHeight;
+                  });
+                }
+              }
+            })
+            .catch((error) => {
+              //TODO Handle the erros in contact list.
+              logger(
+                "[SharedMediaView] getMessages fetchPrevious error",
+                error
+              );
+            });
+        })
+        .catch((error) => {
+          logger("[SharedMediaView] getMessages getLoggedInUser error", error);
+        });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Fetches All the previous Messages
    */
   fetchPreviousMessages() {
-    return this.mediaMessageRequest.fetchPrevious();
+    try {
+      return this.mediaMessageRequest.fetchPrevious();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Scrolls to Bottom of Chat Window
    */
   scrollToBottom() {
-    setTimeout(() => {
-      this.scrollVariable =
-        this.mediaWindow.nativeElement.scrollHeight -
-        this.mediaWindow.nativeElement.clientHeight;
-    });
+    try {
+      setTimeout(() => {
+        this.scrollVariable =
+          this.mediaWindow.nativeElement.scrollHeight -
+          this.mediaWindow.nativeElement.clientHeight;
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -233,9 +268,13 @@ export class CometChatSharedMediaComponent implements OnInit {
    * @param
    */
   handleScroll(e) {
-    const top = Math.round(e.currentTarget.scrollTop) === 0;
-    if (top && this.messageList.length) {
-      this.getMessages();
+    try {
+      const top = Math.round(e.currentTarget.scrollTop) === 0;
+      if (top && this.messageList.length) {
+        this.getMessages();
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -244,28 +283,32 @@ export class CometChatSharedMediaComponent implements OnInit {
    * @param
    */
   mediaClickHandler(type) {
-    if (type === "image") {
-      this.imageClick = true;
-      this.videoClick = false;
-      this.docsClick = false;
-    } else if (type === "video") {
-      this.imageClick = false;
-      this.videoClick = true;
-      this.docsClick = false;
-    } else if (type === "file") {
-      this.imageClick = false;
-      this.videoClick = false;
-      this.docsClick = true;
-    }
+    try {
+      if (type === CometChat.MESSAGE_TYPE.IMAGE) {
+        this.imageClick = true;
+        this.videoClick = false;
+        this.docsClick = false;
+      } else if (type === CometChat.MESSAGE_TYPE.VIDEO) {
+        this.imageClick = false;
+        this.videoClick = true;
+        this.docsClick = false;
+      } else if (type === CometChat.MESSAGE_TYPE.FILE) {
+        this.imageClick = false;
+        this.videoClick = false;
+        this.docsClick = true;
+      }
 
-    this.checkMediaMessage = false;
-    this.messageList = [];
-    this.messageType = type;
-    this.displaySharedMedia = this.mediaMessageRequestBuilder(
-      this.item,
-      this.type,
-      this.messageType
-    );
-    this.getMessages(true);
+      this.checkMediaMessage = false;
+      this.messageList = [];
+      this.messageType = type;
+      this.displaySharedMedia = this.mediaMessageRequestBuilder(
+        this.item,
+        this.type,
+        this.messageType
+      );
+      this.getMessages(true);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

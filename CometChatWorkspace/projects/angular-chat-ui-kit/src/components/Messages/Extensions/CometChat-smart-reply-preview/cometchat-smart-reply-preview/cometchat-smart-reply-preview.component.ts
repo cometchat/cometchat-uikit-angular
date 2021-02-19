@@ -8,7 +8,8 @@ import {
   EventEmitter,
 } from "@angular/core";
 import { trigger, style, transition, animate } from "@angular/animations";
-import * as enums from "../../../../utils/enums";
+import * as enums from "../../../../../utils/enums";
+import { logger } from "../../../../../utils/common";
 @Component({
   selector: "cometchat-smart-reply-preview",
   templateUrl: "./cometchat-smart-reply-preview.component.html",
@@ -32,43 +33,56 @@ export class CometChatSmartReplyPreviewComponent implements OnInit {
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["replyPreview"]) {
-      if (change["replyPreview"].currentValue) {
-        this.generateSmartReplyOptions(change["replyPreview"].currentValue);
+    try {
+      if (change[enums.REPLY_PREVIEW]) {
+        if (change[enums.REPLY_PREVIEW].currentValue) {
+          this.generateSmartReplyOptions(
+            change[enums.REPLY_PREVIEW].currentValue
+          );
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
   ngOnInit() {
-    if (this.replyPreview) {
-      this.generateSmartReplyOptions(this.replyPreview);
+    try {
+      if (this.replyPreview) {
+        this.generateSmartReplyOptions(this.replyPreview);
+      }
+    } catch (error) {
+      logger(error);
     }
   }
-
   /**
    * Generate the quick replies that the current user can use
    * @param Any message
    */
   generateSmartReplyOptions(message) {
-    if (message.hasOwnProperty("metadata")) {
-      const metadata = message.metadata;
-      if (metadata.hasOwnProperty("@injected")) {
-        const injectedObject = metadata["@injected"];
-        if (injectedObject.hasOwnProperty("extensions")) {
-          const extensionsObject = injectedObject["extensions"];
-          if (extensionsObject.hasOwnProperty("smart-reply")) {
-            const smartReplyObject = extensionsObject["smart-reply"];
+    try {
+      if (message.hasOwnProperty(enums.METADATA)) {
+        const metadata = message[enums.METADATA];
+        if (metadata.hasOwnProperty(enums.INJECTED)) {
+          const injectedObject = metadata[enums.INJECTED];
+          if (injectedObject.hasOwnProperty(enums.EXTENSIONS)) {
+            const extensionsObject = injectedObject[enums.EXTENSIONS];
+            if (extensionsObject.hasOwnProperty(enums.SMART_REPLY)) {
+              const smartReplyObject = extensionsObject[enums.SMART_REPLY];
 
-            const options = [
-              smartReplyObject["reply_positive"],
-              smartReplyObject["reply_neutral"],
-              smartReplyObject["reply_negative"],
-            ];
+              const options = [
+                smartReplyObject[enums.REPLY_POSITIVE],
+                smartReplyObject[enums.REPLY_NEUTRAL],
+                smartReplyObject[enums.REPLY_NEGATIVE],
+              ];
 
-            this.options = options;
+              this.options = options;
+            }
           }
         }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -77,10 +91,14 @@ export class CometChatSmartReplyPreviewComponent implements OnInit {
    * @param
    */
   sendReplyMessage(message) {
-    this.actionGenerated.emit({
-      type: enums.SEND_SMART_REPLY,
-      payLoad: message,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.SEND_SMART_REPLY,
+        payLoad: message,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -88,6 +106,10 @@ export class CometChatSmartReplyPreviewComponent implements OnInit {
    * @param
    */
   closeReplyPreview() {
-    this.replyPreview = null;
+    try {
+      this.replyPreview = null;
+    } catch (error) {
+      logger(error);
+    }
   }
 }

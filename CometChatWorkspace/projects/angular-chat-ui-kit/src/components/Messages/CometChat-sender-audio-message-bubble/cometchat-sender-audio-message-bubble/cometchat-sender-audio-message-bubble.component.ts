@@ -1,6 +1,8 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../utils/common";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import { checkMessageForExtensionsData } from "../../../../utils/common";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
+import { CometChat } from "@cometchat-pro/chat";
 
 @Component({
   selector: "cometchat-sender-audio-message-bubble",
@@ -8,34 +10,55 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-sender-audio-message-bubble.component.css"],
 })
 export class CometChatSenderAudioMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
   @Input() loggedInUser;
 
-  checkReaction: boolean = false;
+  checkReaction = [];
 
   audioUrl: string;
-  message = Object.assign({}, this.MessageDetails, { messageFrom: "sender" });
+  message = Object.assign({}, this.messageDetails, {
+    messageFrom: enums.SENDER,
+  });
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
+
+  GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
   constructor() {}
 
   ngOnInit() {
-    this.getUrl();
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.getUrl();
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
+
+  /**
+   * Gets the url of audio to be displayed
+   */
   getUrl() {
-    this.audioUrl = this.MessageDetails.data.url;
+    try {
+      this.audioUrl = this.messageDetails.data.url;
+    } catch (error) {
+      logger(error);
+    }
   }
+
   /**
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

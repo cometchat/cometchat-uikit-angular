@@ -1,6 +1,6 @@
 import { NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { CometChatUIComponent } from "./cometchat/cometchat-ui.component";
+import { CometChatUIComponent } from "./cometchat-ui/cometchat-ui.component";
 import { CometChatNavBar } from "../../UserProfile/CometChat-nav-bar/cometchat-nav-bar.module";
 import { CometChatMessages } from "../../Messages/CometChat-messages/cometchat-messages.module";
 import { CometChatUserDetails } from "../../Users/CometChat-user-details/cometchat-user-details.module";

@@ -1,7 +1,7 @@
 <div class="messageContainerStyle">
   <cometchat-message-actions
     class="tool"
-    [MessageDetails]="MessageDetails"
+    [messageDetails]="messageDetails"
     (actionGenerated)="actionHandler($event)"
     *ngIf="showToolTip"
   ></cometchat-message-actions>
@@ -13,7 +13,7 @@
   </div>
   <cometchat-message-reactions
     *ngIf="checkReaction"
-    [MessageDetails]="MessageDetails"
+    [messageDetails]="messageDetails"
     [loggedInUser]="loggedInUser"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-message-reactions>
@@ -21,12 +21,12 @@
     <!--ReplyCount-->
     <cometchat-threaded-message-reply-count
       *ngIf="showReplyCount"
-      [MessageDetails]="MessageDetails"
+      [messageDetails]="messageDetails"
       (actionGenerated)="actionHandler($event)"
     >
     </cometchat-threaded-message-reply-count>
-    <cometchat-read-reciept
-      [MessageDetails]="MessageDetails"
-    ></cometchat-read-reciept>
+    <cometchat-read-receipt
+      [messageDetails]="messageDetails"
+    ></cometchat-read-receipt>
   </div>
 </div>

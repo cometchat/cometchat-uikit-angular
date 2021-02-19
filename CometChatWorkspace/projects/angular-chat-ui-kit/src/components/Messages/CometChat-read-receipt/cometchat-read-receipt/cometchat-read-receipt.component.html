@@ -1,6 +1,6 @@
 <div [ngSwitch]="tickStatus">
   <div
-    *ngSwitchCase="'sent'"
+    *ngSwitchCase="SENT"
     class="recieptContainer"
     [ngClass]="{
       recieptContainerSecondaryStyle: displayReadReciept === false
@@ -12,12 +12,12 @@
         msgTimestampSecondaryStyle: displayReadReciept === false
       }"
     >
-      {{ getTime() | date: "shortTime" }}
+      {{ time | date: "shortTime" }}
     </span>
     <span *ngIf="displayReadReciept" class="tick sent">&nbsp;</span>
   </div>
   <div
-    *ngSwitchCase="'deliv'"
+    *ngSwitchCase="DELIVERED"
     class="recieptContainer"
     [ngClass]="{
       recieptContainerSecondaryStyle: displayReadReciept === false
@@ -29,12 +29,12 @@
         msgTimestampSecondaryStyle: displayReadReciept === false
       }"
     >
-      {{ getTime() | date: "shortTime" }}
+      {{ time | date: "shortTime" }}
     </span>
     <span *ngIf="displayReadReciept" class="tick deliv">&nbsp;</span>
   </div>
   <div
-    *ngSwitchCase="'read'"
+    *ngSwitchCase="READ"
     class="recieptContainer"
     [ngClass]="{
       recieptContainerSecondaryStyle: displayReadReciept === false
@@ -46,7 +46,7 @@
         msgTimestampSecondaryStyle: displayReadReciept === false
       }"
     >
-      {{ getTime() | date: "shortTime" }}
+      {{ time | date: "shortTime" }}
     </span>
     <span *ngIf="displayReadReciept" class="tick read">&nbsp;</span>
   </div>

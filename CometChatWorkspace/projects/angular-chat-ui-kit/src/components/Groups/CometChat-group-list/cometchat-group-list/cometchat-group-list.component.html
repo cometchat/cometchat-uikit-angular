@@ -18,7 +18,7 @@
     <p class="groupMsgTxtStyle">{{ decoratorMessage }}</p>
   </div>
   <div class="groupListStyle" (scroll)="handleScroll($event)">
-    <div *ngFor="let group of grouplist">
+    <div *ngFor="let group of groupList">
       <cometchat-group-list-item
         [group]="group"
         [selectedGroup]="this.selectedGroup"

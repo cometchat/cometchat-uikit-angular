@@ -30,24 +30,10 @@ export const USER_OFFLINE = "onUserOffline";
 export const TYPING_STARTED = "onTypingStarted";
 export const TYPING_ENDED = "onTypingEnded";
 
-export const CATEGORY_MESSAGE = "message";
-export const MESSAGE_TYPE_TEXT = "text";
-export const MESSAGE_TYPE_IMAGE = "image";
-export const MESSAGE_TYPE_VIDEO = "video";
-export const MESSAGE_TYPE_AUDIO = "audio";
-export const MESSAGE_TYPE_FILE = "file";
-
-export const CATEGORY_CUSTOM = "custom";
 export const CUSTOM_TYPE_POLL = "extension_poll";
 export const CUSTOM_TYPE_STICKER = "extension_sticker";
 
-export const CATEGORY_ACTION = "action";
 export const ACTION_TYPE_GROUPMEMBER = "groupMember";
-export const ACTION_TYPE_MESSAGE = "message";
-
-export const CATEGORY_CALL = "call";
-export const CALL_TYPE_AUDIO = "audio";
-export const CALL_TYPE_VIDEO = "video";
 
 export const LIVE_REACTION_KEY = "live_reaction";
 export const LIVE_REACTIONS = {
@@ -67,10 +53,13 @@ export const CLOSE_STICKER = "closeSticker";
 export const CUSTOM_MESSAGE_RECEIVE = "customMessageReceived";
 export const MESSAGE_RECEIVED = "messageReceived";
 export const MESSAGE_FETCHED = "messageFetched";
+export const MESSAGE_FETCHED_AGAIN = "messageFetchedAgain";
 export const OLDER_MESSAGES_FETCHED = "olderMessagesFetched";
 export const MESSAGE_COMPOSED = "messageComposed";
 export const MESSAGE_UPDATED = "messageUpdated";
 export const THREAD_PARENT_MESSAGE_UPDATED = "threadParentMessageUpdated";
+export const EDIT = "edit";
+export const DELETE = "delete";
 export const VIEW_ACTUAL_IMAGE = "viewActualImage";
 export const NEW_CONVERSATION_OPENED = "newConversationOpened";
 export const VIEW_MESSAGE_THREAD = "viewMessageThread";
@@ -122,11 +111,6 @@ export const CHANGE_SCOPE = "changescope";
 export const BAN = "ban";
 export const KICK = "kick";
 
-export const MESSAGE = "message";
-export const CALL = "call";
-export const ACTION = "action";
-export const CUSTOM = "custom";
-
 export const CLOSE_MENU_CLICKED = "closeMenuClicked";
 
 export const ACCEPT_INCOMING_CALL = "acceptIncomingCall";
@@ -149,3 +133,119 @@ export const REACT_TO_MESSAGE = "reactToMessage";
 export const MESSAGE__READ = "messageRead";
 
 export const TAB_CHANGED = "tabChanged";
+
+//New
+
+export const ANSWER_WRAPPER_STYLE = "answerWrapperStyle";
+
+export const APP_SYSTEM = "app_system";
+export const SENDER = "sender";
+export const RECEIVER = "receiver";
+
+export const STICKERS = "stickers";
+
+export const GET = "GET";
+export const POST = "POST";
+export const V1_FETCH = "v1/fetch";
+export const V1_CREATE = "v1/create";
+export const V1_VOTE = "v1/vote";
+export const V1_REACT = "v1/react";
+
+export const POLLS = "polls";
+export const REACTIONS = "reactions";
+export const LINKS = "links";
+export const LINK_PREVIEW = "link-preview";
+
+export const EXTENSIONS = "extensions";
+export const VOTERS = "voters";
+export const DATA = "data";
+export const STICKER_URL = "sticker_url";
+export const STICKER_NAME = "sticker_name";
+export const STICKER = "Sticker";
+export const CUSTOM_DATA = "customData";
+export const SMART_REPLY = "smart-reply";
+export const REPLY_POSITIVE = "reply_positive";
+export const REPLY_NEUTRAL = "reply_neutral";
+export const REPLY_NEGATIVE = "reply_negative";
+export const READ_AT = "readAt";
+export const STATUS = "status";
+export const GUID = "guid";
+export const UID = "uid";
+
+export const DECREMENT = "decrement";
+export const SUCCESS = "success";
+
+export const CONVERSATION_LIST = "conversationList";
+export const GROUP_LIST = "groupList";
+export const USER_LIST = "userList";
+export const INFO_SCREEN = "infoScreen";
+export const CONVERSATION_WITH = "conversationWith";
+
+export const INCOMING_CALL_ = "incoming_call_";
+export const Boolean = "boolean";
+export const ENDED = "ended";
+export const OUTGOING_CALL = "outgoingCall";
+export const INCOMING_CALL = "incomingCall";
+export const LEFT = "left";
+export const CALL_SCREEN_ = "callscreen_";
+export const CHAT_LIST_ = "chatlist_";
+export const CHAT_LIST_USER_ = "chatlist_user_";
+export const CHAT_LIST_GROUP_ = "chatlist_group_";
+export const CHAT_LIST_CALL_ = "chatlist_call_";
+export const DESTROYED = "destroyed";
+export const ITEM = "item";
+export const GROUP_TO_UPDATE = "groupToUpdate";
+export const SCOPE = "scope";
+export const MEMBERS_COUNT = "membersCount";
+export const GROUP_TO_LEAVE = "groupToLeave";
+export const GROUP_TO_DELETE = "groupToDelete";
+export const LAST_MESSAGE = "lastMessage";
+export const CONVERSATION_DETAILS = "conversationDetails";
+export const DELETED_AT = "deletedAt";
+export const SENT_AT = "sentAt";
+export const USER_LIST_ = "userlist_";
+export const TYPE = "type";
+export const ADD = "add";
+export const GROUP_DETAIL_USER_ = "group_detail_user_";
+export const GROUP_DETAIL_GROUP_ = "group_detail_group_";
+export const GROUP_LIST_ = "grouplist_";
+export const HAS_JOINED = "hasJoined";
+export const PARENT_MESSAGE_ID = "parentMessageId";
+export const MESSAGE_TO_BE_EDITED = "messageToBeEdited";
+export const MESSAGE_TO_REACT = "messageToReact";
+export const LOAD = "load";
+export const HEAD_USER_ = "head_user_";
+export const HEAD_MESSAGE_ = "head_message_";
+export const HEAD_GROUP_ = "head_group_";
+
+export const MESSAGE_ = "message_";
+export const GROUP_ = "group_";
+export const CALL_ = "call_";
+export const REACHED_TOP_OF_CONVERSATION = "reachedTopOfConversation";
+export const MESSAGED = "messages";
+export const DELIVERY = "delivery";
+export const READ = "read";
+export const METADATA = "metadata";
+export const INJECTED = "@injected";
+export const ERROR = "error";
+export const PARENT_MESSAGE = "parentMessage";
+export const REPLY_COUNT = "replyCount";
+export const COMPOSED_THREAD_MESSAGE = "composedThreadMessage";
+export const GROUP_MESSAGE = "groupMessage";
+export const CALL_MESSAGE = "callMessage";
+export const REACTION = "reaction";
+export const DELIVERED_AT = "deliveredAt";
+export const THUMBNAIL_GENERATION = "thumbnail-generation";
+export const URL_SMALL = "url_small";
+export const URL_MEDIUM = "url_medium";
+export const BLOB = "blob";
+export const CUSTOM_STICKERS = "customStickers";
+export const DEFAULT_STICKERS = "defaultStickers";
+export const OPTION_ITEMS = "optionItems";
+export const MESSAGE_DETAILS = "messageDetails";
+export const NAME = "name";
+export const COUNT = "count";
+export const REPLY_PREVIEW = "replyPreview";
+
+export const BREAKPOINT_MIN_WIDTH = "320";
+export const BREAKPOINT_MAX_WIDTH = "767";

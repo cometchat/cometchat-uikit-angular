@@ -14,17 +14,17 @@
       <h6 class="chatNameStyle">{{ item.name }}</h6>
       <div class="chatStatusStyle typing" *ngIf="isTyping">{{ status }}</div>
       <!-- Add Mouse Event to status -->
-      <div *ngIf="item.status === 'online' && !isTyping">
+      <div *ngIf="item.status === ONLINE && !isTyping">
         <span class="chatStatusStyle">{{ item.status }}</span>
       </div>
 
-      <div *ngIf="item.status === 'offline'">
+      <div *ngIf="item.status === OFFLINE">
         <span class="chatStatusStyle lastActive">{{
-          getDate(item.lastActiveAt)
+          getLastActiveDate(item.lastActiveAt)
         }}</span>
       </div>
 
-      <div *ngIf="type === 'group' && !isTyping">
+      <div *ngIf="type === GROUP && !isTyping">
         <span class="chatStatusStyle groupMemberCountStatusStyle">{{
           status
         }}</span>

@@ -1,4 +1,5 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-group-list-item",
@@ -20,6 +21,10 @@ export class CometChatGroupListItemComponent implements OnInit {
    * @param Any group
    */
   groupClicked(group) {
-    this.onGroupClick.emit(group);
+    try {
+      this.onGroupClick.emit(group);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

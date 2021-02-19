@@ -7,8 +7,12 @@ import {
   SimpleChanges,
   OnChanges,
 } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../../utils/common";
-import { STRING_MESSAGES } from "../../../../utils/messageConstants";
+import {
+  checkMessageForExtensionsData,
+  logger,
+} from "../../../../../utils/common";
+import * as enums from "../../../../../utils/enums";
+import { CometChat } from "@cometchat-pro/chat";
 
 @Component({
   selector: "cometchat-receiver-sticker-message-bubble",
@@ -17,7 +21,7 @@ import { STRING_MESSAGES } from "../../../../utils/messageConstants";
 })
 export class CometChatReceiverStickerMessageBubbleComponent
   implements OnInit, OnChanges {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() loggedInUser;
 
@@ -26,76 +30,87 @@ export class CometChatReceiverStickerMessageBubbleComponent
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   avatar = null;
-  //Sets Username of Avatar
   name: string = null;
-  //If Group then only show avatar
-  //If Group then only show avatar
   avatarIfGroup: boolean = false;
 
   stickerName: string;
   stickerUrl: string;
 
-  checkReaction: boolean = false;
+  checkReaction = [];
 
-  messageFrom = "receiver";
+  messageFrom = enums.RECEIVER;
+
+  GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["MessageDetails"]) {
-      if (
-        change["MessageDetails"].previousValue !==
-        change["MessageDetails"].currentValue
-      ) {
-        const message = Object.assign({}, this.MessageDetails, {
-          messageFrom: this.messageFrom,
-        });
-        this.MessageDetails = message;
+    try {
+      if (change[enums.MESSAGE_DETAILS]) {
+        if (
+          change[enums.MESSAGE_DETAILS].previousValue !==
+          change[enums.MESSAGE_DETAILS].currentValue
+        ) {
+          const message = Object.assign({}, this.messageDetails, {
+            messageFrom: this.messageFrom,
+          });
+          this.messageDetails = message;
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
   ngOnInit() {
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
 
-    /**
-     *  If Group then displays Avatar And Name
-     */
-    if (this.MessageDetails.receiverType === "group") {
-      this.avatarIfGroup = true;
+      /**
+       *  If Group then displays Avatar And Name
+       */
+      if (this.messageDetails.receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+        this.avatarIfGroup = true;
 
-      if (!this.MessageDetails.sender.avatar) {
-        const uid = this.MessageDetails.sender.getUid();
-        const char = this.MessageDetails.sender
-          .getName()
-          .charAt(0)
-          .toUpperCase();
+        if (!this.messageDetails.sender.avatar) {
+          const uid = this.messageDetails.sender.getUid();
+          const char = this.messageDetails.sender
+            .getName()
+            .charAt(0)
+            .toUpperCase();
+        }
+        this.name = this.messageDetails.sender.name;
+        this.avatar = this.messageDetails.sender.avatar;
       }
-      this.name = this.MessageDetails.sender.name;
-      this.avatar = this.MessageDetails.sender.avatar;
+      this.getSticker();
+    } catch (error) {
+      logger(error);
     }
-    this.getSticker();
   }
 
   /**
    * Get Sticker Details
    */
   getSticker() {
-    let stickerData = null;
-    if (
-      this.MessageDetails.hasOwnProperty("data") &&
-      this.MessageDetails.data.hasOwnProperty("customData")
-    ) {
-      stickerData = this.MessageDetails.data.customData;
-      if (stickerData.hasOwnProperty("sticker_url")) {
-        this.stickerName = stickerData.hasOwnProperty("sticker_name")
-          ? stickerData.sticker_name
-          : "Sticker";
-        this.stickerUrl = stickerData.sticker_url;
+    try {
+      let stickerData = null;
+      if (
+        this.messageDetails.hasOwnProperty(enums.DATA) &&
+        this.messageDetails.data.hasOwnProperty(enums.CUSTOM_DATA)
+      ) {
+        stickerData = this.messageDetails.data.customData;
+        if (stickerData.hasOwnProperty(enums.STICKER_URL)) {
+          this.stickerName = stickerData.hasOwnProperty(enums.STICKER_NAME)
+            ? stickerData.sticker_name
+            : enums.STICKER;
+          this.stickerUrl = stickerData.sticker_url;
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -104,6 +119,10 @@ export class CometChatReceiverStickerMessageBubbleComponent
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

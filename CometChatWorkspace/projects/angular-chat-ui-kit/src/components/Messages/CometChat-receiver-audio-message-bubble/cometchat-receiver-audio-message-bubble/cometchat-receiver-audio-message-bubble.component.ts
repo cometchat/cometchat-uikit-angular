@@ -1,13 +1,16 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../utils/common";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import { checkMessageForExtensionsData } from "../../../../utils/common";
+import * as enums from "../../../../utils/enums";
+import { logger } from "../../../../utils/common";
+import { CometChat } from "@cometchat-pro/chat";
+
 @Component({
   selector: "cometchat-receiver-audio-message-bubble",
   templateUrl: "./cometchat-receiver-audio-message-bubble.component.html",
   styleUrls: ["./cometchat-receiver-audio-message-bubble.component.css"],
 })
 export class CometChatReceiverAudioMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
   @Input() loggedInUser;
@@ -15,46 +18,53 @@ export class CometChatReceiverAudioMessageBubbleComponent implements OnInit {
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   audioUrl: string;
-  //Sets the User Avatar if group
   avatar = null;
-  //Sets Username of Avatar
   name: string = null;
-  //If Group then only show avatar
   avatarIfGroup: boolean = false;
 
-  checkReaction: boolean = false;
+  checkReaction = [];
+
+  GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
   constructor() {}
 
   ngOnInit() {
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
 
-    /**
-     *  If Group then displays Avatar And Name
-     */
-    if (this.MessageDetails.receiverType === "group") {
-      this.avatarIfGroup = true;
-      if (!this.MessageDetails.sender.avatar) {
-        const uid = this.MessageDetails.sender.getUid();
-        const char = this.MessageDetails.sender
-          .getName()
-          .charAt(0)
-          .toUpperCase();
+      /**
+       *  If Group then displays Avatar And Name
+       */
+      if (this.messageDetails.receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+        this.avatarIfGroup = true;
+        if (!this.messageDetails.sender.avatar) {
+          const uid = this.messageDetails.sender.getUid();
+          const char = this.messageDetails.sender
+            .getName()
+            .charAt(0)
+            .toUpperCase();
+        }
+        this.name = this.messageDetails.sender.name;
+        this.avatar = this.messageDetails.sender.avatar;
       }
-      this.name = this.MessageDetails.sender.name;
-      this.avatar = this.MessageDetails.sender.avatar;
+      this.getUrl();
+    } catch (error) {
+      logger(error);
     }
-    this.getUrl();
   }
 
   /**
    * Gets the url of audio to be displayed
    */
   getUrl() {
-    this.audioUrl = this.MessageDetails.data.url;
+    try {
+      this.audioUrl = this.messageDetails.data.url;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -62,6 +72,10 @@ export class CometChatReceiverAudioMessageBubbleComponent implements OnInit {
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

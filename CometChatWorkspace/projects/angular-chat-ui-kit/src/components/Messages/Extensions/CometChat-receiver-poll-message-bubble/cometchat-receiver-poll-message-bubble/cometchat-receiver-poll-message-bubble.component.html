@@ -2,9 +2,9 @@
   <cometchat-message-actions
     class="tool"
     [ngClass]="{
-      toolGroup: MessageDetails?.receiverType == 'group'
+      toolGroup: messageDetails?.receiverType == GROUP
     }"
-    [MessageDetails]="MessageDetails"
+    [messageDetails]="messageDetails"
     (actionGenerated)="actionHandler($event)"
     *ngIf="showToolTip"
   ></cometchat-message-actions>
@@ -12,10 +12,10 @@
     <!-- Avatar for group -->
     <div
       class="messageThumbnailStyle"
-      *ngIf="MessageDetails?.receiverType == 'group'"
+      *ngIf="messageDetails?.receiverType == GROUP"
     >
       <cometchat-avatar
-        [item]="MessageDetails?.sender"
+        [item]="messageDetails?.sender"
         [enableUserStatus]="false"
         class="avatarStyle"
       ></cometchat-avatar>
@@ -24,10 +24,10 @@
       <!-- Name -->
       <div
         class="nameWrapperStyle"
-        *ngIf="MessageDetails?.receiverType == 'group'"
+        *ngIf="messageDetails?.receiverType == GROUP"
       >
         <span class="nameStyle">
-          {{ MessageDetails?.sender?.name }}
+          {{ messageDetails?.sender?.name }}
         </span>
       </div>
       <div class="messageTxtContainerStyle">
@@ -72,19 +72,19 @@
       </div>
       <cometchat-message-reactions
         *ngIf="checkReaction"
-        [MessageDetails]="MessageDetails"
+        [messageDetails]="messageDetails"
         [loggedInUser]="loggedInUser"
         (actionGenerated)="actionHandler($event)"
       ></cometchat-message-reactions>
       <div class="messageInfoWrapperStyle">
-        <cometchat-read-reciept
-          [MessageDetails]="MessageDetails"
+        <cometchat-read-receipt
+          [messageDetails]="messageDetails"
           [displayReadReciept]="false"
-        ></cometchat-read-reciept>
+        ></cometchat-read-receipt>
         <!--ReplyCount-->
         <cometchat-threaded-message-reply-count
           *ngIf="showReplyCount"
-          [MessageDetails]="MessageDetails"
+          [messageDetails]="messageDetails"
           (actionGenerated)="actionHandler($event)"
         >
         </cometchat-threaded-message-reply-count>

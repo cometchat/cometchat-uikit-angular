@@ -1,4 +1,4 @@
-export const STRING_MESSAGES = {
+export const COMETCHAT_CONSTANTS = {
   NO_ITEM_SELECTED_MESSAGE: "Select a chat to start messaging",
   LOADING_MESSSAGE: "Loading...",
   ADDING_MESSSAGE: "Adding...",
@@ -21,6 +21,8 @@ export const STRING_MESSAGES = {
   CUSTOM_MESSAGE: "You have a message",
   MISSED_VOICE_CALL: "Missed voice call",
   MISSED_VIDEO_CALL: "Missed video call",
+  CALL_UNANSWERED: "Call unanswered",
+  MISSED_AUDIO_CALL: "Missed audio call",
   CUSTOM_MESSAGE_POLL: "📊 Poll",
   CUSTOM_MESSAGE_STICKER: "💟 Sticker",
   CUSTOM_MESSAGE_DOCUMENT: "📃 Document",
@@ -132,6 +134,7 @@ export const STRING_MESSAGES = {
   COLLABORATIVE_DOCUMENT: "Collaborative Document",
   COLLABORATIVE_WHITEBOARD: "Collaborative Whiteboard",
   ADD_REACTION: "Add reaction",
+  HEART: "heart",
   NO_STICKERS_FOUND: "No stickers found",
   REPLY_TO_THREAD: "Reply to thread",
   REPLY_IN_THREAD: "Reply in thread",
@@ -152,7 +155,6 @@ export const STRING_MESSAGES = {
   OWNER: "owner",
   CALLS: "Calls",
   CUSTOM_MESSAGE_LOCATION: "📍Location",
-  OFFLINE: "Offline",
   YOU: "You",
   PRIVACY: "Privacy",
   BLOCKED_USERS: "Blocked Users",
@@ -162,7 +164,9 @@ export const STRING_MESSAGES = {
   NO_DOCUMENTS: "No Documents",
   NO_RECORDS_FOUND: "No records found.",
   JOIN: "Join",
-  REACTIONS: "reactions",
-  POST: "POST",
-  V1_REACT: "v1/react",
+  SENT: "sent",
+  DELIVERED: "deliv",
+  ENTER_YOUR_PASSWORD: "Enter your password",
+  LAST_ACTIVE_AT: "Last Active At: ",
+  REACTED: "reacted",
 };

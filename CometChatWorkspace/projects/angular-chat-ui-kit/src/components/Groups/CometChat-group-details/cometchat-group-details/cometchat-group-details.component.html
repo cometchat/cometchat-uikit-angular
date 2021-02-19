@@ -15,7 +15,7 @@
         </div>
       </div>
 
-      <div class="sectionContentStyle" *ngIf="currentMemberScope == 'admin'">
+      <div class="sectionContentStyle" *ngIf="currentMemberScope == ADMIN">
         <div class="contentItemStyle">
           <div class="itemLinkStyle" (click)="toggleAddMemberView(true)">
             {{ ADD_MEMBERS }}
@@ -25,9 +25,7 @@
 
       <div
         class="sectionContentStyle"
-        *ngIf="
-          currentMemberScope == 'admin' || currentMemberScope == 'moderator'
-        "
+        *ngIf="currentMemberScope == ADMIN || currentMemberScope == MODERATOR"
       >
         <div class="contentItemStyle">
           <div class="itemLinkStyle" (click)="toggleBanMember()">
@@ -49,7 +47,7 @@
         </div>
       </div>
 
-      <div class="sectionContentStyle" *ngIf="currentMemberScope == 'admin'">
+      <div class="sectionContentStyle" *ngIf="currentMemberScope == ADMIN">
         <div class="contentItemStyle">
           <div
             class="itemLinkStyle itemDeleteLinkStyle"
@@ -76,7 +74,7 @@
     *ngIf="openViewMember"
     [item]="item"
     [type]="type"
-    [memberlist]="memberlist"
+    [memberList]="memberList"
     [loggedInUser]="loggedInUser"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-view-group-member-list>
@@ -87,8 +85,8 @@
     [item]="item"
     [type]="type"
     [friendsOnly]="false"
-    [memberlist]="memberlist"
-    [bannedmemberlist]="bannedmemberlist"
+    [memberList]="memberList"
+    [bannedMemberList]="bannedMemberList"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-add-group-member-list>
 
@@ -96,7 +94,7 @@
   <cometchat-ban-group-member-list-item
     *ngIf="openBanMember"
     [item]="item"
-    [bannedmemberlist]="bannedmemberlist"
+    [bannedMemberList]="bannedMemberList"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-ban-group-member-list-item>
 </div>

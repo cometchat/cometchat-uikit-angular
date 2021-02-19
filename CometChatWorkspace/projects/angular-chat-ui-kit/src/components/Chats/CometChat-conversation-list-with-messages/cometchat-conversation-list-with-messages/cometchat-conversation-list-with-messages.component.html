@@ -23,7 +23,7 @@
       [type]="type"
       [callMessage]="callMessage"
       [groupMessage]="groupMessage"
-      [composedthreadmessage]="composedthreadmessage"
+      [composedThreadMessage]="composedThreadMessage"
       (actionGenerated)="actionHandler($event)"
     >
     </cometchat-messages>
@@ -38,7 +38,7 @@
   >
     <!--IF USER-->
     <div
-      *ngIf="type === 'user'"
+      *ngIf="type === USER"
       [ngClass]="{
         detailScreenStyle: viewDetailScreen
       }"
@@ -54,7 +54,7 @@
     <!--IF USER ENDS-->
 
     <!--IF GROUP-->
-    <div *ngIf="type === 'group'">
+    <div *ngIf="type === GROUP">
       <cometchat-group-details
         *ngIf="viewDetailScreen"
         [item]="item"
@@ -78,7 +78,7 @@
   </div>
   <cometchat-image-viewer
     *ngIf="fullScreenViewImage"
-    [MessageDetails]="imageView"
+    [messageDetails]="imageView"
     [open]="true"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-image-viewer>

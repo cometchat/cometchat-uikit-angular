@@ -1,7 +1,7 @@
 .messageContainerStyle {
   align-self: flex-start;
   margin-bottom: 16px;
-  /* padding-left: 16px; */
+
   padding-right: 16px;
   max-width: 65%;
   clear: both;
@@ -43,9 +43,7 @@
   display: flex;
   flex-direction: column;
 }
-/*
-Styling for name will come
-*/
+
 .nameWrapperStyle {
   padding: 3px 5px;
   align-self: flex-start;
@@ -86,13 +84,11 @@ Styling for name will come
   font-weight: 500;
   line-height: 12px;
   text-transform: uppercase;
-  /* color: `${props.theme.color.helpText}`; */
 }
 
 .avatarStyle {
   border-radius: 50%;
   border-width: 1px;
-  /* border-color: props.theme.color.secondary; */
 }
 
 .messageThumbnailStyle {

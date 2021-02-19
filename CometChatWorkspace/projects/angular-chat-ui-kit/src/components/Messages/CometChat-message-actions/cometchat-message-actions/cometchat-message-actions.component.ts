@@ -1,14 +1,15 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import * as enums from "../../../utils/enums";
-import { REACTION_ICON } from "../../../resources/icons/reaction";
+import * as enums from "../../../../utils/enums";
+import { REACTION_ICON } from "./resources/reaction";
+import { logger } from "../../../../utils/common";
 @Component({
   selector: "cometchat-message-actions",
   templateUrl: "./cometchat-message-actions.component.html",
   styleUrls: ["./cometchat-message-actions.component.css"],
 })
 export class CometChatMessageActionsComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -24,24 +25,30 @@ export class CometChatMessageActionsComponent implements OnInit {
   threadView: boolean = false;
   reactionIcon = REACTION_ICON;
 
+  MESSAGE_TYPE_TEXT: String = CometChat.MESSAGE_TYPE.TEXT;
+
   constructor() {}
 
   ngOnInit() {
-    if (this.MessageDetails.hasOwnProperty("parentMessageId")) {
-      //you cannot reply any message inside thread window
-      this.showReplyOption = false;
-      this.threadView = true;
-    }
-
-    let user = CometChat.getLoggedinUser().then((user) => {
-      this.loggedInUser = user;
-
-      //for the message that is received , only show the reply button in tooltip
-      if (this.MessageDetails.sender.uid !== this.loggedInUser.uid) {
-        this.showOnlyReplyButton = true;
-        this.receivedMessage = true;
+    try {
+      if (this.messageDetails.hasOwnProperty(enums.PARENT_MESSAGE_ID)) {
+        //you cannot reply any message inside thread window
+        this.showReplyOption = false;
+        this.threadView = true;
       }
-    });
+
+      let user = CometChat.getLoggedinUser().then((user) => {
+        this.loggedInUser = user;
+
+        //for the message that is received , only show the reply button in tooltip
+        if (this.messageDetails.sender.uid !== this.loggedInUser.uid) {
+          this.showOnlyReplyButton = true;
+          this.receivedMessage = true;
+        }
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -49,10 +56,14 @@ export class CometChatMessageActionsComponent implements OnInit {
    *
    */
   replyToMessage() {
-    this.actionGenerated.emit({
-      type: enums.VIEW_MESSAGE_THREAD,
-      payLoad: this.MessageDetails,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.VIEW_MESSAGE_THREAD,
+        payLoad: this.messageDetails,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -60,10 +71,14 @@ export class CometChatMessageActionsComponent implements OnInit {
    *
    */
   editMessage() {
-    this.actionGenerated.emit({
-      type: enums.EDIT_MESSAGE,
-      payLoad: this.MessageDetails,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.EDIT_MESSAGE,
+        payLoad: this.messageDetails,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -71,10 +86,14 @@ export class CometChatMessageActionsComponent implements OnInit {
    *
    */
   deleteMessage() {
-    this.actionGenerated.emit({
-      type: enums.DELETE_MESSAGE,
-      payLoad: this.MessageDetails,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.DELETE_MESSAGE,
+        payLoad: this.messageDetails,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -82,9 +101,13 @@ export class CometChatMessageActionsComponent implements OnInit {
    *
    */
   sendReaction() {
-    this.actionGenerated.emit({
-      type: enums.REACT_TO_MESSAGE,
-      payLoad: this.MessageDetails,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.REACT_TO_MESSAGE,
+        payLoad: this.messageDetails,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

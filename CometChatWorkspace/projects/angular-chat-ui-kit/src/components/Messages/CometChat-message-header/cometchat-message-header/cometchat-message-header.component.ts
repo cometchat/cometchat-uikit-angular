@@ -9,9 +9,10 @@ import {
   SimpleChanges,
 } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import * as enums from "../../../utils/enums";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 import { DatePipe } from "@angular/common";
+import { logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-message-header",
@@ -25,12 +26,16 @@ export class CometChatMessageHeaderComponent
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  userListenerId = "head_user_" + new Date().getTime();
-  msgListenerId = "head_message_" + new Date().getTime();
-  groupListenerId = "head_group_" + new Date().getTime();
+  userListenerId = enums.HEAD_USER_ + new Date().getTime();
+  msgListenerId = enums.HEAD_MESSAGE_ + new Date().getTime();
+  groupListenerId = enums.HEAD_GROUP_ + new Date().getTime();
   status: string = "";
   isTyping: boolean = false;
   loggedInUser = null;
+  GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
+  USER: String = CometChat.RECEIVER_TYPE.USER;
+  ONLINE: String = CometChat.USER_STATUS.ONLINE;
+  OFFLINE: String = CometChat.USER_STATUS.OFFLINE;
 
   //displays audio and video call options
   checkNotBlocked: boolean = true;
@@ -38,56 +43,68 @@ export class CometChatMessageHeaderComponent
   constructor(public datepipe: DatePipe) {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["item"]) {
-      //Check if user is blocked/unblocked
-      this.checkBlocked();
+    try {
+      if (change[enums.ITEM]) {
+        //Check if user is blocked/unblocked
+        this.checkBlocked();
 
-      // if the person you are chatting with changes
-      //Removing User Presence , typing and Group Listeners
-      this.removeListeners();
+        // if the person you are chatting with changes
+        //Removing User Presence , typing and Group Listeners
+        this.removeListeners();
 
-      if (this.type == "group") {
-        let prevProps = {
-          item:
-            change["item"].previousValue == null
-              ? { guid: "" }
-              : change["item"].previousValue,
-        };
-        let props = { item: change["item"].currentValue };
+        if (this.type == CometChat.RECEIVER_TYPE.GROUP) {
+          let prevProps = {
+            item:
+              change[enums.ITEM].previousValue == null
+                ? { guid: "" }
+                : change[enums.ITEM].previousValue,
+          };
+          let props = { item: change[enums.ITEM].currentValue };
 
-        if (
-          prevProps.item.guid === props.item.guid &&
-          prevProps.item.membersCount !== props.item.membersCount
-        ) {
-          this.updateHeader(enums.GROUP_MEMBER_ADDED, props.item);
+          if (
+            prevProps.item.guid === props.item.guid &&
+            prevProps.item.membersCount !== props.item.membersCount
+          ) {
+            this.updateHeader(enums.GROUP_MEMBER_ADDED, props.item);
+          }
+
+          if (prevProps.item.guid !== props.item.guid) {
+            this.setGroupMemeberCountStatus(this.item.membersCount);
+          }
         }
 
-        if (prevProps.item.guid !== props.item.guid) {
-          this.setGroupMemeberCountStatus(this.item.membersCount);
-        }
+        //Attaching new listeners
+        this.userListenerId = enums.HEAD_USER_ + new Date().getTime();
+        this.msgListenerId = enums.HEAD_MESSAGE_ + new Date().getTime();
+        this.groupListenerId = enums.HEAD_GROUP_ + new Date().getTime();
+        this.attachListeners();
       }
-
-      //Attaching new listeners
-      this.userListenerId = "head_user_" + new Date().getTime();
-      this.msgListenerId = "head_message_" + new Date().getTime();
-      this.groupListenerId = "head_group_" + new Date().getTime();
-      this.attachListeners();
+    } catch (error) {
+      logger(error);
     }
   }
 
   ngOnInit() {
-    this.attachListeners();
+    try {
+      this.attachListeners();
 
-    this.getLoggedInUserInfo();
+      this.getLoggedInUserInfo();
 
-    if (this.type == "group") {
-      this.setGroupMemeberCountStatus(this.item.membersCount);
+      if (this.type == CometChat.RECEIVER_TYPE.GROUP) {
+        this.setGroupMemeberCountStatus(this.item.membersCount);
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
   ngOnDestroy() {
-    //Removing User Presence , typing and Group Listeners
-    this.removeListeners();
+    try {
+      //Removing User Presence , typing and Group Listeners
+      this.removeListeners();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -95,183 +112,228 @@ export class CometChatMessageHeaderComponent
    * @param
    */
   getLoggedInUserInfo() {
-    CometChat.getLoggedinUser()
-      .then((user) => {
-        this.loggedInUser = user;
-      })
-      .catch((error) => {
-        console.log(
-          "[CometChatGroupList] getUsers getLoggedInUser error",
-          error
-        );
-      });
+    try {
+      CometChat.getLoggedinUser()
+        .then((user) => {
+          this.loggedInUser = user;
+        })
+        .catch((error) => {
+          logger("[CometChatGroupList] getUsers getLoggedInUser error", error);
+        });
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * attaches Listeners for user activity , group activities and calling
+   * @param callback
+   */
   attachListeners() {
-    CometChat.addUserListener(
-      this.userListenerId,
-      new CometChat.UserListener({
-        onUserOnline: (onlineUser) => {
-          /* when someuser/friend comes online, user will be received here */
+    try {
+      CometChat.addUserListener(
+        this.userListenerId,
+        new CometChat.UserListener({
+          onUserOnline: (onlineUser) => {
+            /* when someuser/friend comes online, user will be received here */
 
-          this.updateHeader(enums.USER_ONLINE, onlineUser);
-        },
-        onUserOffline: (offlineUser) => {
-          /* when someuser/friend went offline, user will be received here */
+            this.updateHeader(enums.USER_ONLINE, onlineUser);
+          },
+          onUserOffline: (offlineUser) => {
+            /* when someuser/friend went offline, user will be received here */
 
-          this.updateHeader(enums.USER_OFFLINE, offlineUser);
-        },
-      })
-    );
+            this.updateHeader(enums.USER_OFFLINE, offlineUser);
+          },
+        })
+      );
 
-    CometChat.addMessageListener(
-      this.msgListenerId,
-      new CometChat.MessageListener({
-        onTypingStarted: (typingIndicator) => {
-          this.updateHeader(enums.TYPING_STARTED, typingIndicator);
-        },
-        onTypingEnded: (typingIndicator) => {
-          this.updateHeader(enums.TYPING_ENDED, typingIndicator);
-        },
-      })
-    );
+      CometChat.addMessageListener(
+        this.msgListenerId,
+        new CometChat.MessageListener({
+          onTypingStarted: (typingIndicator) => {
+            this.updateHeader(enums.TYPING_STARTED, typingIndicator);
+          },
+          onTypingEnded: (typingIndicator) => {
+            this.updateHeader(enums.TYPING_ENDED, typingIndicator);
+          },
+        })
+      );
 
-    CometChat.addGroupListener(
-      this.groupListenerId,
-      new CometChat.GroupListener({
-        onGroupMemberKicked: (message, kickedUser, kickedBy, kickedFrom) => {
-          this.updateHeader(enums.GROUP_MEMBER_KICKED, kickedFrom, kickedUser);
-        },
-        onGroupMemberBanned: (message, bannedUser, bannedBy, bannedFrom) => {
-          this.updateHeader(enums.GROUP_MEMBER_BANNED, bannedFrom, bannedUser);
-        },
-        onMemberAddedToGroup: (
-          message,
-          userAdded,
-          userAddedBy,
-          userAddedIn
-        ) => {
-          this.updateHeader(enums.GROUP_MEMBER_ADDED, userAddedIn);
-        },
-        onGroupMemberLeft: (message, leavingUser, group) => {
-          this.updateHeader(enums.GROUP_MEMBER_LEFT, group, leavingUser);
-        },
-        onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
-          this.updateHeader(enums.GROUP_MEMBER_JOINED, joinedGroup);
-        },
-      })
-    );
+      CometChat.addGroupListener(
+        this.groupListenerId,
+        new CometChat.GroupListener({
+          onGroupMemberKicked: (message, kickedUser, kickedBy, kickedFrom) => {
+            this.updateHeader(
+              enums.GROUP_MEMBER_KICKED,
+              kickedFrom,
+              kickedUser
+            );
+          },
+          onGroupMemberBanned: (message, bannedUser, bannedBy, bannedFrom) => {
+            this.updateHeader(
+              enums.GROUP_MEMBER_BANNED,
+              bannedFrom,
+              bannedUser
+            );
+          },
+          onMemberAddedToGroup: (
+            message,
+            userAdded,
+            userAddedBy,
+            userAddedIn
+          ) => {
+            this.updateHeader(enums.GROUP_MEMBER_ADDED, userAddedIn);
+          },
+          onGroupMemberLeft: (message, leavingUser, group) => {
+            this.updateHeader(enums.GROUP_MEMBER_LEFT, group, leavingUser);
+          },
+          onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
+            this.updateHeader(enums.GROUP_MEMBER_JOINED, joinedGroup);
+          },
+        })
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * Removes all listeners
+   */
   removeListeners() {
-    CometChat.removeUserListener(this.userListenerId);
-    CometChat.removeMessageListener(this.msgListenerId);
-    CometChat.removeGroupListener(this.groupListenerId);
+    try {
+      CometChat.removeUserListener(this.userListenerId);
+      CometChat.removeMessageListener(this.msgListenerId);
+      CometChat.removeGroupListener(this.groupListenerId);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * If user blocked then doesnot display audio and video call else displays
    */
   checkBlocked() {
-    if (this.item.blockedByMe === true) {
-      this.checkNotBlocked = false;
-    } else {
-      this.checkNotBlocked = true;
+    try {
+      if (this.item.blockedByMe === true) {
+        this.checkNotBlocked = false;
+      } else {
+        this.checkNotBlocked = true;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
+  /**
+   * Updates header such as typing indicator, count of group members, user status
+   * @param
+   */
   updateHeader(key = null, item = null, groupUser = null) {
-    switch (key) {
-      case enums.USER_ONLINE:
-      case enums.USER_OFFLINE: {
-        if (this.type === "user" && this.item.uid === item.uid) {
-          this.item = { ...item };
-        }
-        break;
-      }
-      case enums.GROUP_MEMBER_KICKED:
-      case enums.GROUP_MEMBER_BANNED:
-      case enums.GROUP_MEMBER_LEFT:
-        if (
-          this.type === "group" &&
-          this.item.guid === item.guid &&
-          this.loggedInUser.uid !== groupUser.uid
-        ) {
-          let membersCount = parseInt(item.membersCount);
-          this.item.membersCount = membersCount;
-          this.setGroupMemeberCountStatus(membersCount);
-        }
-        break;
-      case enums.GROUP_MEMBER_JOINED:
-        if (this.type === "group" && this.item.guid === item.guid) {
-          let membersCount = parseInt(item.membersCount);
-          this.item.membersCount = membersCount;
-          this.setGroupMemeberCountStatus(membersCount);
-        }
-        break;
-      case enums.GROUP_MEMBER_ADDED:
-        if (this.type === "group" && this.item.guid === item.guid) {
-          let membersCount = parseInt(item.membersCount);
-          this.item.membersCount = membersCount;
-          this.setGroupMemeberCountStatus(membersCount);
-        }
-        break;
-      case enums.TYPING_STARTED: {
-        if (
-          this.type === "group" &&
-          this.type === item.receiverType &&
-          this.item.guid === item.receiverId
-        ) {
-          this.status = item.sender.name + STRING_MESSAGES.IS_TYPING;
-          this.actionGenerated.emit({
-            type: enums.SHOW_REACTION,
-            payLoad: item,
-          });
-        } else if (
-          this.type === "user" &&
-          this.type === item.receiverType &&
-          this.item.uid === item.sender.uid
-        ) {
-          this.isTyping = true;
-          this.status = STRING_MESSAGES.TYPING;
-          this.actionGenerated.emit({
-            type: enums.SHOW_REACTION,
-            payLoad: item,
-          });
-        }
-        break;
-      }
-      case enums.TYPING_ENDED: {
-        if (
-          this.type === "group" &&
-          this.type === item.receiverType &&
-          this.item.guid === item.receiverId
-        ) {
-          this.setGroupMemeberCountStatus(this.item.membersCount);
-
-          // this.setStatusForGroup();
-          this.actionGenerated.emit({
-            type: enums.STOP_REACTION,
-            payLoad: item,
-          });
-        } else if (
-          this.type === "user" &&
-          this.type === item.receiverType &&
-          this.item.uid === item.sender.uid
-        ) {
-          if (this.item.status === "online") {
-            this.status = null;
-            this.isTyping = false;
-          } else {
-            this.getDate(item.lastActiveAt);
+    try {
+      switch (key) {
+        case enums.USER_ONLINE:
+        case enums.USER_OFFLINE: {
+          if (
+            this.type === CometChat.RECEIVER_TYPE.USER &&
+            this.item.uid === item.uid
+          ) {
+            this.item = { ...item };
           }
-          this.actionGenerated.emit({
-            type: enums.STOP_REACTION,
-            payLoad: item,
-          });
+          break;
         }
-        break;
+        case enums.GROUP_MEMBER_KICKED:
+        case enums.GROUP_MEMBER_BANNED:
+        case enums.GROUP_MEMBER_LEFT:
+          if (
+            this.type === CometChat.RECEIVER_TYPE.GROUP &&
+            this.item.guid === item.guid &&
+            this.loggedInUser.uid !== groupUser.uid
+          ) {
+            let membersCount = parseInt(item.membersCount);
+            this.item.membersCount = membersCount;
+            this.setGroupMemeberCountStatus(membersCount);
+          }
+          break;
+        case enums.GROUP_MEMBER_JOINED:
+          if (
+            this.type === CometChat.RECEIVER_TYPE.GROUP &&
+            this.item.guid === item.guid
+          ) {
+            let membersCount = parseInt(item.membersCount);
+            this.item.membersCount = membersCount;
+            this.setGroupMemeberCountStatus(membersCount);
+          }
+          break;
+        case enums.GROUP_MEMBER_ADDED:
+          if (
+            this.type === CometChat.RECEIVER_TYPE.GROUP &&
+            this.item.guid === item.guid
+          ) {
+            let membersCount = parseInt(item.membersCount);
+            this.item.membersCount = membersCount;
+            this.setGroupMemeberCountStatus(membersCount);
+          }
+          break;
+        case enums.TYPING_STARTED: {
+          if (
+            this.type === CometChat.RECEIVER_TYPE.GROUP &&
+            this.type === item.receiverType &&
+            this.item.guid === item.receiverId
+          ) {
+            this.status = item.sender.name + COMETCHAT_CONSTANTS.IS_TYPING;
+            this.actionGenerated.emit({
+              type: enums.SHOW_REACTION,
+              payLoad: item,
+            });
+          } else if (
+            this.type === CometChat.RECEIVER_TYPE.USER &&
+            this.type === item.receiverType &&
+            this.item.uid === item.sender.uid
+          ) {
+            this.isTyping = true;
+            this.status = COMETCHAT_CONSTANTS.TYPING;
+            this.actionGenerated.emit({
+              type: enums.SHOW_REACTION,
+              payLoad: item,
+            });
+          }
+          break;
+        }
+        case enums.TYPING_ENDED: {
+          if (
+            this.type === CometChat.RECEIVER_TYPE.GROUP &&
+            this.type === item.receiverType &&
+            this.item.guid === item.receiverId
+          ) {
+            this.setGroupMemeberCountStatus(this.item.membersCount);
+
+            // this.setStatusForGroup();
+            this.actionGenerated.emit({
+              type: enums.STOP_REACTION,
+              payLoad: item,
+            });
+          } else if (
+            this.type === CometChat.RECEIVER_TYPE.USER &&
+            this.type === item.receiverType &&
+            this.item.uid === item.sender.uid
+          ) {
+            if (this.item.status === CometChat.USER_STATUS.ONLINE) {
+              this.status = null;
+              this.isTyping = false;
+            } else {
+              this.getLastActiveDate(item.lastActiveAt);
+            }
+            this.actionGenerated.emit({
+              type: enums.STOP_REACTION,
+              payLoad: item,
+            });
+          }
+          break;
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -280,10 +342,14 @@ export class CometChatMessageHeaderComponent
    * @param number membersCount
    */
   setGroupMemeberCountStatus(membersCount) {
-    if (membersCount > 1) {
-      this.status = membersCount + " members";
-    } else {
-      this.status = membersCount + " member";
+    try {
+      if (membersCount > 1) {
+        this.status = membersCount + " members";
+      } else {
+        this.status = membersCount + " member";
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -291,18 +357,22 @@ export class CometChatMessageHeaderComponent
    * Get Last Active Date
    * @param
    */
-  getDate(date) {
-    let lastActiveDate = "Last Active At: ";
+  getLastActiveDate(date) {
+    try {
+      let lastActiveDate = COMETCHAT_CONSTANTS.LAST_ACTIVE_AT;
 
-    if (date === undefined) {
-      lastActiveDate = "Offline";
+      if (date === undefined) {
+        lastActiveDate = CometChat.USER_STATUS.OFFLINE;
+        return lastActiveDate;
+      }
+      date = date * 1000;
+      lastActiveDate =
+        lastActiveDate + this.datepipe.transform(date, "dd MMMM yyyy, h:mm a");
+
       return lastActiveDate;
+    } catch (error) {
+      logger(error);
     }
-    date = date * 1000;
-    lastActiveDate =
-      lastActiveDate + this.datepipe.transform(date, "dd MMMM yyyy, h:mm a");
-
-    return lastActiveDate;
   }
 
   /**
@@ -310,23 +380,43 @@ export class CometChatMessageHeaderComponent
    * @param
    */
   openUserDetail() {
-    this.actionGenerated.emit({ type: enums.VIEW_DETAIL, payLoad: null });
+    try {
+      this.actionGenerated.emit({ type: enums.VIEW_DETAIL, payLoad: null });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Starts audio call
    */
   audioCall() {
-    this.actionGenerated.emit({ type: enums.AUDIO_CALL });
+    try {
+      this.actionGenerated.emit({ type: enums.AUDIO_CALL });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Starts video call
    */
   videoCall() {
-    this.actionGenerated.emit({ type: enums.VIDEO_CALL });
+    try {
+      this.actionGenerated.emit({ type: enums.VIDEO_CALL });
+    } catch (error) {
+      logger(error);
+    }
   }
+
+  /**
+   * Closes Chat Window
+   */
   closeChatWindow() {
-    this.actionGenerated.emit({ type: enums.MENU_CLICKED });
+    try {
+      this.actionGenerated.emit({ type: enums.MENU_CLICKED });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

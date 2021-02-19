@@ -11,12 +11,12 @@
 
   <div class="messageContainerStyle">
     <div class="parentMessageStyle">
-      <div [ngSwitch]="parentMessage?.type">
+      <div [ngSwitch]="typeOfMessage">
         <!--CASE FOR STICKER -->
         <div *ngSwitchCase="'extension_sticker'">
           <cometchat-sender-sticker-message-bubble
             *ngIf="parentMessage?.sender?.uid === loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -25,7 +25,7 @@
           </cometchat-sender-sticker-message-bubble>
           <cometchat-receiver-sticker-message-bubble
             *ngIf="parentMessage?.sender?.uid !== loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -39,7 +39,7 @@
         <div *ngSwitchCase="'extension_poll'">
           <cometchat-sender-poll-message-bubble
             *ngIf="parentMessage?.sender?.uid === loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -49,7 +49,7 @@
           <cometchat-receiver-poll-message-bubble
             *ngIf="parentMessage?.sender?.uid !== loggedInUser?.uid"
             [loggedInUserUid]="loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -60,10 +60,10 @@
         <!--CASE FOR POLL ENDS -->
 
         <!-- CASE FOR TEXT -->
-        <div *ngSwitchCase="'text'">
+        <div *ngSwitchCase="MESSAGE_TYPE_TEXT">
           <cometchat-receiver-text-message-bubble
             *ngIf="parentMessage?.sender?.uid !== loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -72,7 +72,7 @@
 
           <cometchat-sender-text-message-bubble
             *ngIf="parentMessage?.sender?.uid === loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -82,10 +82,10 @@
         <!--CASE FOR TEXT ENDS -->
 
         <!-- CASE FOR FILE -->
-        <div *ngSwitchCase="'file'">
+        <div *ngSwitchCase="MESSAGE_TYPE_FILE">
           <cometchat-receiver-file-message-bubble
             *ngIf="parentMessage?.sender?.uid !== loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -94,7 +94,7 @@
 
           <cometchat-sender-file-message-bubble
             *ngIf="parentMessage?.sender?.uid === loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -104,10 +104,10 @@
         <!--CASE FOR FILE ENDS -->
 
         <!-- CASE FOR IMAGE -->
-        <div *ngSwitchCase="'image'">
+        <div *ngSwitchCase="MESSAGE_TYPE_IMAGE">
           <cometchat-receiver-image-message-bubble
             *ngIf="parentMessage?.sender?.uid !== loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -116,7 +116,7 @@
 
           <cometchat-sender-image-message-bubble
             *ngIf="parentMessage?.sender?.uid === loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -126,10 +126,10 @@
         <!--CASE FOR IMAGE ENDS -->
 
         <!-- CASE FOR VIDEO -->
-        <div *ngSwitchCase="'video'">
+        <div *ngSwitchCase="MESSAGE_TYPE_VIDEO">
           <cometchat-receiver-video-message-bubble
             *ngIf="parentMessage?.sender?.uid !== loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -138,7 +138,7 @@
 
           <cometchat-sender-video-message-bubble
             *ngIf="parentMessage?.sender?.uid === loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -148,10 +148,10 @@
         <!--CASE FOR VIDEO ENDS -->
 
         <!-- CASE FOR AUDIO -->
-        <div *ngSwitchCase="'audio'">
+        <div *ngSwitchCase="MESSAGE_TYPE_AUDIO">
           <cometchat-receiver-audio-message-bubble
             *ngIf="parentMessage?.sender?.uid !== loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"
@@ -160,7 +160,7 @@
 
           <cometchat-sender-audio-message-bubble
             *ngIf="parentMessage?.sender?.uid === loggedInUser?.uid"
-            [MessageDetails]="parentMessage"
+            [messageDetails]="parentMessage"
             [showToolTip]="false"
             [showReplyCount]="false"
             [loggedInUser]="loggedInUser"

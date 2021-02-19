@@ -7,8 +7,9 @@ import {
   SimpleChanges,
   OnChanges,
 } from "@angular/core";
-import * as enums from "../../../utils/enums";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import { logger } from "../../../../utils/common";
 @Component({
   selector: "cometchat-user-details",
   templateUrl: "./cometchat-user-details.component.html",
@@ -19,37 +20,55 @@ export class CometChatUserDetailsComponent implements OnInit, OnChanges {
   @Input() type = null;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  OPTIONS: String = STRING_MESSAGES.OPTIONS;
-  DETAILS: String = STRING_MESSAGES.DETAILS;
+  OPTIONS: String = COMETCHAT_CONSTANTS.OPTIONS;
+  DETAILS: String = COMETCHAT_CONSTANTS.DETAILS;
 
   blockUserText: string;
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["item"]) {
-      this.getBlockStatus(change["item"].currentValue);
+    try {
+      if (change[enums.ITEM]) {
+        this.getBlockStatus(change[enums.ITEM].currentValue);
+      }
+    } catch (error) {
+      logger(error);
     }
   }
   ngOnInit() {}
 
+  /**
+   * Gets Status If user is Blocked/Unblocked
+   * @param
+   */
   getBlockStatus(item) {
-    if (item.blockedByMe) {
-      this.blockUserText = STRING_MESSAGES.UNBLOCK_USER;
-    } else {
-      this.blockUserText = STRING_MESSAGES.BLOCK_USER;
+    try {
+      if (item.blockedByMe) {
+        this.blockUserText = COMETCHAT_CONSTANTS.UNBLOCK_USER;
+      } else {
+        this.blockUserText = COMETCHAT_CONSTANTS.BLOCK_USER;
+      }
+    } catch (error) {
+      logger(error);
     }
-    // return this.blockUserText;
   }
 
+  /**
+   * Toggle Block/Unblock
+   */
   toggleBlockUser() {
-    if (this.blockUserText === STRING_MESSAGES.BLOCK_USER) {
-      this.actionGenerated.emit({
-        type: enums.BLOCK_USER,
-      });
-    } else if (this.blockUserText === STRING_MESSAGES.UNBLOCK_USER) {
-      this.actionGenerated.emit({
-        type: enums.UNBLOCK_USER,
-      });
+    try {
+      if (this.blockUserText === COMETCHAT_CONSTANTS.BLOCK_USER) {
+        this.actionGenerated.emit({
+          type: enums.BLOCK_USER,
+        });
+      } else if (this.blockUserText === COMETCHAT_CONSTANTS.UNBLOCK_USER) {
+        this.actionGenerated.emit({
+          type: enums.UNBLOCK_USER,
+        });
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -57,8 +76,12 @@ export class CometChatUserDetailsComponent implements OnInit, OnChanges {
    * Close thread when opened in small screen
    */
   closeThreadView() {
-    this.actionGenerated.emit({
-      type: enums.CLOSE_DETAIL_CLICKED,
-    });
+    try {
+      this.actionGenerated.emit({
+        type: enums.CLOSE_DETAIL_CLICKED,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 }

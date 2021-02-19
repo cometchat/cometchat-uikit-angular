@@ -1,6 +1,9 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../utils/common";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import {
+  checkMessageForExtensionsData,
+  logger,
+} from "../../../../utils/common";
+import * as enums from "../../../../utils/enums";
 
 @Component({
   selector: "cometchat-sender-video-message-bubble",
@@ -8,7 +11,7 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-sender-video-message-bubble.component.css"],
 })
 export class CometChatSenderVideoMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
   @Input() loggedInUser;
@@ -16,33 +19,46 @@ export class CometChatSenderVideoMessageBubbleComponent implements OnInit {
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
   //Sets Video Url to be displayed
   videoUrl: string;
-  messageFrom = "sender";
+  messageFrom = enums.SENDER;
 
-  message = Object.assign({}, this.MessageDetails, {
+  message = Object.assign({}, this.messageDetails, {
     messageFrom: this.messageFrom,
   });
-  checkReaction: boolean = false;
+  checkReaction = [];
 
   constructor() {}
 
   ngOnInit() {
-    this.getUrl();
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.getUrl();
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
+
   /**
    * Gets the url of video to be displayed
    */
   getUrl() {
-    this.videoUrl = this.MessageDetails.data.url;
+    try {
+      this.videoUrl = this.messageDetails.data.url;
+    } catch (error) {
+      logger(error);
+    }
   }
   /**
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

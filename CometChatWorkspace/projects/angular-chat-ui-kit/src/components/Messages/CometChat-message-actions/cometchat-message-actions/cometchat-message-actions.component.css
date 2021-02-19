@@ -1,7 +1,7 @@
 .messageActionStyle {
   position: absolute;
   z-index: 4;
-  /* this display is use to show and hide */
+
   display: flex;
   list-style-type: none;
   padding: 0;

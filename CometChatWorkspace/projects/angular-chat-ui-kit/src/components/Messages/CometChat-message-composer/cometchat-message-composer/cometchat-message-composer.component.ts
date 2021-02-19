@@ -10,9 +10,7 @@ import {
   ElementRef,
 } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import * as enums from "../../../utils/enums";
-
-// import {SEND_SMART_REPLY,SEND_STICKER,CLOSE_STICKER} from '../../utils/enums'
+import * as enums from "../../../../utils/enums";
 
 import {
   trigger,
@@ -21,9 +19,10 @@ import {
   transition,
   animate,
 } from "@angular/animations";
+import { logger } from "../../../../utils/common";
 
-import { OUTGOING_MESSAGE_SOUND } from "../../../resources/audio/outgoingMessageSound";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import { OUTGOING_MESSAGE_SOUND } from "../../../../resources/audio/outgoingMessageSound";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 @Component({
   selector: "cometchat-message-composer",
   templateUrl: "./cometchat-message-composer.component.html",
@@ -65,13 +64,13 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  @ViewChild("imgPicker", { static: false }) imgPicker: ElementRef;
-  @ViewChild("vidPicker", { static: false }) vidPicker: ElementRef;
-  @ViewChild("audPicker", { static: false }) audPicker: ElementRef;
+  @ViewChild("imagePicker", { static: false }) imagePicker: ElementRef;
+  @ViewChild("videoPicker", { static: false }) videoPicker: ElementRef;
+  @ViewChild("audioPicker", { static: false }) audioPicker: ElementRef;
   @ViewChild("filePicker", { static: false }) filePicker: ElementRef;
 
-  senddisable = false;
-  reactdisable = true;
+  enableSendButton = false;
+  enableReaction = true;
   messageSending: boolean = false;
   messageInput = "";
   messageType = "";
@@ -86,35 +85,42 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   isTyping: any;
   userBlocked: boolean = false;
 
-  PICK_YOUR_EMOJI: String = STRING_MESSAGES.PICK_YOUR_EMOJI;
-  ATTACH_FILE: String = STRING_MESSAGES.ATTACH_FILE;
-  ATTACH_VIDEO: String = STRING_MESSAGES.ATTACH_VIDEO;
-  ATTACH_AUDIO: String = STRING_MESSAGES.ATTACH_AUDIO;
-  ATTACH_IMAGE: String = STRING_MESSAGES.ATTACH_IMAGE;
-  ADD_EMOJI: String = STRING_MESSAGES.ADD_EMOJI;
-  ENTER_YOUR_MESSAGE_HERE: String = STRING_MESSAGES.ENTER_YOUR_MESSAGE_HERE;
-  EDIT_MESSAGE: String = STRING_MESSAGES.EDIT_MESSAGE;
+  PICK_YOUR_EMOJI: String = COMETCHAT_CONSTANTS.PICK_YOUR_EMOJI;
+  ATTACH_FILE: String = COMETCHAT_CONSTANTS.ATTACH_FILE;
+  ATTACH_VIDEO: String = COMETCHAT_CONSTANTS.ATTACH_VIDEO;
+  ATTACH_AUDIO: String = COMETCHAT_CONSTANTS.ATTACH_AUDIO;
+  ATTACH_IMAGE: String = COMETCHAT_CONSTANTS.ATTACH_IMAGE;
+  ADD_EMOJI: String = COMETCHAT_CONSTANTS.ADD_EMOJI;
+  ENTER_YOUR_MESSAGE_HERE: String = COMETCHAT_CONSTANTS.ENTER_YOUR_MESSAGE_HERE;
+  EDIT_MESSAGE: String = COMETCHAT_CONSTANTS.EDIT_MESSAGE;
 
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
-    if (change["item"]) {
-      this.checkBlocked();
-    }
-    if (change["messageToBeEdited"]) {
-      //edit message only if its not null or undefined
-      if (change["messageToBeEdited"].currentValue) {
-        this.openEditPreview();
+    try {
+      if (change[enums.ITEM]) {
+        this.checkBlocked();
       }
-    }
-    if (change["messageToReact"] && change["messageToReact"].currentValue) {
-      const previousMessage = change["messageToReact"].previousValue;
-      const currentMessage = change["messageToReact"].currentValue;
-      if (previousMessage !== currentMessage) {
-        this.messageToReact = change["messageToReact"].currentValue;
+      if (change[enums.MESSAGE_TO_BE_EDITED]) {
+        //edit message only if its not null or undefined
+        if (change[enums.MESSAGE_TO_BE_EDITED].currentValue) {
+          this.openEditPreview();
+        }
+      }
+      if (
+        change[enums.MESSAGE_TO_REACT] &&
+        change[enums.MESSAGE_TO_REACT].currentValue
+      ) {
+        const previousMessage = change[enums.MESSAGE_TO_REACT].previousValue;
+        const currentMessage = change[enums.MESSAGE_TO_REACT].currentValue;
+        if (previousMessage !== currentMessage) {
+          this.messageToReact = change[enums.MESSAGE_TO_REACT].currentValue;
 
-        this.toggleEmoji();
+          this.toggleEmoji();
+        }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -125,42 +131,41 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param Event action
    */
   actionHandler(action) {
-    let message = action.payLoad;
+    try {
+      let message = action.payLoad;
 
-    // console.log("Message Composer --> action generation is ", action);
+      // logger("Message Composer --> action generation is ", action);
 
-    switch (action.type) {
-      case enums.SEND_SMART_REPLY: {
-        this.sendTextMessage(message);
+      switch (action.type) {
+        case enums.SEND_SMART_REPLY: {
+          this.sendTextMessage(message);
 
-        //closing smartReply preview window
-        this.replyPreview = null;
-        break;
+          //closing smartReply preview window
+          this.replyPreview = null;
+          break;
+        }
+        case enums.CLOSE_POLL_VIEW: {
+          this.closeCreatePollPreview();
+          break;
+        }
+        case enums.POLL_CREATED: {
+          this.closeCreatePollPreview();
+          this.actionGenerated.emit({
+            type: enums.POLL_CREATED,
+            payLoad: [message],
+          });
+
+          break;
+        }
+        case enums.SEND_STICKER:
+          this.sendSticker(message);
+          break;
+        case enums.CLOSE_STICKER:
+          this.toggleStickerPicker();
+          break;
       }
-      case enums.CLOSE_POLL_VIEW: {
-        this.closeCreatePollPreview();
-        break;
-      }
-      case enums.POLL_CREATED: {
-        this.closeCreatePollPreview();
-        this.actionGenerated.emit({
-          type: enums.POLL_CREATED,
-          payLoad: [message],
-        });
-
-        //temporary check; custom data listener working for sender too
-        // if (this.type === "user") {
-        //   this.actionGenerated.emit({ type :  "pollCreated", payLoad : [message]});
-        // }
-
-        break;
-      }
-      case enums.SEND_STICKER:
-        this.sendSticker(message);
-        break;
-      case enums.CLOSE_STICKER:
-        this.toggleStickerPicker();
-        break;
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -168,10 +173,14 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * Check If user Blocked then disable input box
    */
   checkBlocked() {
-    if (this.item.blockedByMe) {
-      this.userBlocked = true;
-    } else {
-      this.userBlocked = false;
+    try {
+      if (this.item.blockedByMe) {
+        this.userBlocked = true;
+      } else {
+        this.userBlocked = false;
+      }
+    } catch (error) {
+      logger(error);
     }
   }
   /**
@@ -179,18 +188,22 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   getReceiverDetails() {
-    let receiverId;
-    let receiverType;
+    try {
+      let receiverId;
+      let receiverType;
 
-    if (this.type == "user") {
-      receiverId = this.item.uid;
-      receiverType = CometChat.RECEIVER_TYPE.USER;
-    } else if (this.type == "group") {
-      receiverId = this.item.guid;
-      receiverType = CometChat.RECEIVER_TYPE.GROUP;
+      if (this.type == CometChat.RECEIVER_TYPE.USER) {
+        receiverId = this.item.uid;
+        receiverType = CometChat.RECEIVER_TYPE.USER;
+      } else if (this.type == CometChat.RECEIVER_TYPE.GROUP) {
+        receiverId = this.item.guid;
+        receiverType = CometChat.RECEIVER_TYPE.GROUP;
+      }
+
+      return { receiverId: receiverId, receiverType: receiverType };
+    } catch (error) {
+      logger(error);
     }
-
-    return { receiverId: receiverId, receiverType: receiverType };
   }
 
   /**
@@ -198,16 +211,20 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param event
    */
   changeHandler(event) {
-    this.startTyping();
-    if (event.target.value.length > 0) {
-      this.messageInput = event.target.value;
-      this.senddisable = true;
-      this.reactdisable = false;
-    }
-    if (event.target.value.length == 0) {
-      this.senddisable = false;
-      this.reactdisable = true;
-      this.messageInput = "";
+    try {
+      this.startTyping();
+      if (event.target.value.length > 0) {
+        this.messageInput = event.target.value;
+        this.enableSendButton = true;
+        this.enableReaction = false;
+      }
+      if (event.target.value.length == 0) {
+        this.enableSendButton = false;
+        this.enableReaction = true;
+        this.messageInput = "";
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -216,50 +233,59 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param Event e
    */
   sendMessageOnEnter(event) {
-    if (event.keyCode === 13 && !event.shiftKey) {
-      event.preventDefault();
-      this.sendTextMessage(event.target.value);
-      this.playAudio();
+    try {
+      if (event.keyCode === 13 && !event.shiftKey) {
+        event.preventDefault();
+        this.sendTextMessage(event.target.value);
+        this.playAudio();
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
   /**
-   * Edit and Sent a Text message
+   * Edit and Send a Text message
    * @param
    */
   editMessage() {
-    const messageToBeEdited = this.messageToBeEdited;
+    try {
+      const messageToBeEdited = this.messageToBeEdited;
 
-    let { receiverId, receiverType } = this.getReceiverDetails();
+      let { receiverId, receiverType } = this.getReceiverDetails();
 
-    let messageText = this.messageInput.trim();
-    let textMessage = new CometChat.TextMessage(
-      receiverId,
-      messageText,
-      receiverType
-    );
-    textMessage.setId(messageToBeEdited.id);
+      let messageText = this.messageInput.trim();
+      let textMessage = new CometChat.TextMessage(
+        receiverId,
+        messageText,
+        receiverType
+      );
+      textMessage.setId(messageToBeEdited.id);
 
-    this.endTyping();
+      this.endTyping();
 
-    CometChat.editMessage(textMessage)
-      .then((message) => {
-        this.messageInput = "";
-        this.messageSending = false;
+      CometChat.editMessage(textMessage)
+        .then((message) => {
+          this.messageInput = "";
+          this.messageSending = false;
 
-        //this.playAudio();
+          this.closeEditPreview();
 
-        this.closeEditPreview();
+          this.enableSendButton = false;
+          this.enableReaction = true;
 
-        this.actionGenerated.emit({
-          type: enums.MESSAGE_EDIT,
-          payLoad: message,
+          this.actionGenerated.emit({
+            type: enums.MESSAGE_EDIT,
+            payLoad: message,
+          });
+        })
+        .catch((error) => {
+          this.messageSending = false;
+          logger("Message editing failed with error:", error);
         });
-      })
-      .catch((error) => {
-        this.messageSending = false;
-        console.log("Message editing failed with error:", error);
-      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -267,247 +293,320 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   sendTextMessage(textMsg: String = "") {
-    //If user you are chatting with is blocked then return false
-    if (this.userBlocked) {
-      return false;
-    }
+    try {
+      //If user you are chatting with is blocked then return false
+      if (this.userBlocked) {
+        return false;
+      }
 
-    // Close Emoji Viewer if it is open while sending the message
-    if (this.emojiToggled) {
-      this.emojiToggled = false;
-    }
+      // Close Emoji Viewer if it is open while sending the message
+      if (this.emojiToggled) {
+        this.emojiToggled = false;
+      }
 
-    // Dont Send Blank text messages -- i.e --- messages that only contain spaces
-    if (this.messageInput.trim().length == 0 && textMsg.trim().length == 0) {
-      return false;
-    }
+      // Dont Send Blank text messages -- i.e --- messages that only contain spaces
+      if (this.messageInput.trim().length == 0 && textMsg.trim().length == 0) {
+        return false;
+      }
 
-    // wait for the previous message to be sent before sending the current message
-    if (this.messageSending) {
-      return false;
-    }
+      // wait for the previous message to be sent before sending the current message
+      if (this.messageSending) {
+        return false;
+      }
 
-    this.messageSending = true;
+      this.messageSending = true;
 
-    // If its an Edit and Send Message Operation , use Edit Message Function
-    if (this.messageToBeEdited) {
-      this.editMessage();
-      return false;
-    }
+      // If its an Edit and Send Message Operation , use Edit Message Function
+      if (this.messageToBeEdited) {
+        this.editMessage();
+        return false;
+      }
 
-    let { receiverId, receiverType } = this.getReceiverDetails();
+      let { receiverId, receiverType } = this.getReceiverDetails();
 
-    let messageInput;
+      let messageInput;
 
-    if (textMsg !== null) {
-      messageInput = textMsg.trim();
-    } else {
-      messageInput = this.messageInput.trim();
-    }
+      if (textMsg !== null) {
+        messageInput = textMsg.trim();
+      } else {
+        messageInput = this.messageInput.trim();
+      }
 
-    let textMessage = new CometChat.TextMessage(
-      receiverId,
-      messageInput,
-      receiverType
-    );
+      let textMessage = new CometChat.TextMessage(
+        receiverId,
+        messageInput,
+        receiverType
+      );
 
-    if (this.parentMessageId) {
-      textMessage.setParentMessageId(this.parentMessageId);
-    }
+      if (this.parentMessageId) {
+        textMessage.setParentMessageId(this.parentMessageId);
+      }
 
-    // End Typing Indicator Function
-    this.endTyping();
+      // End Typing Indicator Function
+      this.endTyping();
 
-    CometChat.sendMessage(textMessage)
-      .then((message) => {
-        this.messageInput = "";
-        this.messageSending = false;
+      CometChat.sendMessage(textMessage)
+        .then((message) => {
+          this.messageInput = "";
+          this.messageSending = false;
 
-        // Clear Message Input Box Logic
-        // this.messageInputRef.current.textContent = "";
+          // this Message Emitted will Be Appended to the existing Message List
+          this.actionGenerated.emit({
+            type: enums.MESSAGE_COMPOSED,
+            payLoad: [message],
+          });
 
-        // Play Message Sent Successfully Audio
-        // this.playAudio();
+          //clearing Message Input Box
+          this.messageInput = "";
 
-        // this Message Emitted will Be Appended to the existing Message List
-        this.actionGenerated.emit({
-          type: enums.MESSAGE_COMPOSED,
-          payLoad: [message],
+          // Change the send button to reaction button
+          setTimeout(() => {
+            this.enableReaction = true;
+            this.enableSendButton = false;
+          }, 500);
+        })
+        .catch((error) => {
+          logger("Message sending failed with error:", error);
+          this.messageSending = false;
         });
-
-        //clearing Message Input Box
-        this.messageInput = "";
-
-        // Change the send button to reaction button
-        setTimeout(() => {
-          this.reactdisable = true;
-          this.senddisable = false;
-        }, 500);
-      })
-      .catch((error) => {
-        console.log("Message sending failed with error:", error);
-        this.messageSending = false;
-      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * Opens drawer to send media files and sets animation state
+   */
   toggleFilePicker() {
-    //If user you are chatting with is blocked then return false
-    if (this.userBlocked) {
-      return false;
+    try {
+      //If user you are chatting with is blocked then return false
+      if (this.userBlocked) {
+        return false;
+      }
+      this.checkAnimatedState == "normal"
+        ? (this.checkAnimatedState = "animated")
+        : (this.checkAnimatedState = "normal");
+    } catch (error) {
+      logger(error);
     }
-    this.checkAnimatedState == "normal"
-      ? (this.checkAnimatedState = "animated")
-      : (this.checkAnimatedState = "normal");
   }
 
+  /**
+   * Opens window to select and upload video
+   */
   getVideo() {
-    this.vidPicker.nativeElement.click();
+    try {
+      this.videoPicker.nativeElement.click();
+    } catch (error) {
+      logger(error);
+    }
   }
+
+  /**
+   * Opens window to select and upload audio
+   */
   getAudio() {
-    this.audPicker.nativeElement.click();
+    try {
+      this.audioPicker.nativeElement.click();
+    } catch (error) {
+      logger(error);
+    }
   }
+
+  /**
+   * Opens window to select and upload image
+   */
   getImage() {
-    this.imgPicker.nativeElement.click();
+    try {
+      this.imagePicker.nativeElement.click();
+    } catch (error) {
+      logger(error);
+    }
   }
+
+  /**
+   * Opens window to select and upload file
+   */
   getFile() {
-    this.filePicker.nativeElement.click();
+    try {
+      this.filePicker.nativeElement.click();
+    } catch (error) {
+      logger(error);
+    }
   }
 
+  /**
+   * Loads and upload the video
+   * @param
+   */
   onVideoChange(event) {
-    if (!event.target.files[0]) {
-      return false;
+    try {
+      if (!event.target.files[0]) {
+        return false;
+      }
+      const uploadedFile = event.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener(
+        enums.LOAD,
+        () => {
+          const newFile = new File(
+            [reader.result],
+            uploadedFile.name,
+            uploadedFile
+          );
+          this.sendMediaMessage(newFile, CometChat.MESSAGE_TYPE.VIDEO);
+        },
+        false
+      );
+
+      reader.readAsArrayBuffer(uploadedFile);
+
+      this.videoPicker.nativeElement.value = "";
+    } catch (error) {
+      logger(error);
     }
-    const uploadedFile = event.target.files[0];
-    const reader = new FileReader();
-    reader.addEventListener(
-      "load",
-      () => {
-        const newFile = new File(
-          [reader.result],
-          uploadedFile.name,
-          uploadedFile
-        );
-        this.sendMediaMessage(newFile, "video");
-      },
-      false
-    );
-
-    reader.readAsArrayBuffer(uploadedFile);
-
-    this.vidPicker.nativeElement.value = "";
   }
 
+  /**
+   * Loads and upload the audio
+   * @param
+   */
   onAudChange(event) {
-    if (!event.target.files[0]) {
-      return false;
+    try {
+      if (!event.target.files[0]) {
+        return false;
+      }
+      const uploadedFile = event.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener(
+        enums.LOAD,
+        () => {
+          const newFile = new File(
+            [reader.result],
+            uploadedFile.name,
+            uploadedFile
+          );
+          this.sendMediaMessage(newFile, CometChat.MESSAGE_TYPE.AUDIO);
+        },
+        false
+      );
+
+      reader.readAsArrayBuffer(uploadedFile);
+
+      this.audioPicker.nativeElement.value = "";
+    } catch (error) {
+      logger(error);
     }
-    const uploadedFile = event.target.files[0];
-    const reader = new FileReader();
-    reader.addEventListener(
-      "load",
-      () => {
-        const newFile = new File(
-          [reader.result],
-          uploadedFile.name,
-          uploadedFile
-        );
-        this.sendMediaMessage(newFile, "audio");
-      },
-      false
-    );
-
-    reader.readAsArrayBuffer(uploadedFile);
-
-    this.audPicker.nativeElement.value = "";
   }
 
+  /**
+   * Loads and upload the image
+   * @param
+   */
   onImgChange(event) {
-    if (!event.target.files[0]) {
-      return false;
+    try {
+      if (!event.target.files[0]) {
+        return false;
+      }
+      const uploadedFile = event.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener(
+        enums.LOAD,
+        () => {
+          const newFile = new File(
+            [reader.result],
+            uploadedFile.name,
+            uploadedFile
+          );
+          this.sendMediaMessage(newFile, CometChat.MESSAGE_TYPE.IMAGE);
+        },
+        false
+      );
+
+      reader.readAsArrayBuffer(uploadedFile);
+
+      this.imagePicker.nativeElement.value = "";
+    } catch (error) {
+      logger(error);
     }
-    const uploadedFile = event.target.files[0];
-    const reader = new FileReader();
-    reader.addEventListener(
-      "load",
-      () => {
-        const newFile = new File(
-          [reader.result],
-          uploadedFile.name,
-          uploadedFile
-        );
-        this.sendMediaMessage(newFile, "image");
-      },
-      false
-    );
-
-    reader.readAsArrayBuffer(uploadedFile);
-
-    this.imgPicker.nativeElement.value = "";
   }
 
+  /**
+   * Loads and upload the file
+   * @param
+   */
   onFileChange(event) {
-    if (!event.target.files["0"]) {
-      return false;
+    try {
+      if (!event.target.files["0"]) {
+        return false;
+      }
+
+      const uploadedFile = event.target.files["0"];
+      var reader = new FileReader();
+      reader.addEventListener(
+        enums.LOAD,
+        () => {
+          const newFile = new File(
+            [reader.result],
+            uploadedFile.name,
+            uploadedFile
+          );
+          this.sendMediaMessage(newFile, CometChat.MESSAGE_TYPE.FILE);
+        },
+        false
+      );
+
+      reader.readAsArrayBuffer(uploadedFile);
+
+      this.filePicker.nativeElement.value = "";
+    } catch (error) {
+      logger(error);
     }
-
-    const uploadedFile = event.target.files["0"];
-    var reader = new FileReader();
-    reader.addEventListener(
-      "load",
-      () => {
-        const newFile = new File(
-          [reader.result],
-          uploadedFile.name,
-          uploadedFile
-        );
-        this.sendMediaMessage(newFile, "file");
-      },
-      false
-    );
-
-    reader.readAsArrayBuffer(uploadedFile);
-
-    this.filePicker.nativeElement.value = "";
   }
 
+  /**
+   * Sends media messages eg. image,audio,file etc.
+   * @param
+   */
   sendMediaMessage(messageInput, messageType) {
-    this.toggleFilePicker();
-    if (this.messageSending) {
-      return false;
-    }
-    this.messageSending = true;
+    try {
+      this.toggleFilePicker();
+      if (this.messageSending) {
+        return false;
+      }
+      this.messageSending = true;
 
-    const { receiverId, receiverType } = this.getReceiverDetails();
+      const { receiverId, receiverType } = this.getReceiverDetails();
 
-    let mediaMessage = new CometChat.MediaMessage(
-      receiverId,
-      messageInput,
-      messageType,
-      receiverType
-    );
+      let mediaMessage = new CometChat.MediaMessage(
+        receiverId,
+        messageInput,
+        messageType,
+        receiverType
+      );
 
-    if (this.parentMessageId) {
-      mediaMessage.setParentMessageId(this.parentMessageId);
-    }
+      if (this.parentMessageId) {
+        mediaMessage.setParentMessageId(this.parentMessageId);
+      }
 
-    this.endTyping();
+      this.endTyping();
 
-    CometChat.sendMessage(mediaMessage)
-      .then((response) => {
-        this.messageSending = false;
-        this.playAudio();
-        this.actionGenerated.emit({
-          type: enums.MESSAGE_COMPOSED,
-          payLoad: [response],
+      CometChat.sendMessage(mediaMessage)
+        .then((response) => {
+          this.messageSending = false;
+          this.playAudio();
+          this.actionGenerated.emit({
+            type: enums.MESSAGE_COMPOSED,
+            payLoad: [response],
+          });
+        })
+        .catch((error) => {
+          this.messageSending = false;
+          logger("message sending failed with error Message_Composer ", error);
         });
-      })
-      .catch((error) => {
-        this.messageSending = false;
-        console.log(
-          "message sending failed with error Message_Composer ",
-          error
-        );
-      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -515,14 +614,18 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   addEmoji($event) {
-    if (this.messageToReact) {
-      this.reactToMessages($event.emoji);
-      return;
+    try {
+      if (this.messageToReact) {
+        this.reactToMessages($event.emoji);
+        return;
+      }
+      this.enableSendButton = true;
+      this.enableReaction = false;
+      let emoji = $event.emoji.native;
+      this.messageInput = this.messageInput + emoji;
+    } catch (error) {
+      logger(error);
     }
-    this.senddisable = true;
-    this.reactdisable = false;
-    let emoji = $event.emoji.native;
-    this.messageInput = this.messageInput + emoji;
   }
 
   /**
@@ -530,8 +633,12 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   openEditPreview() {
-    this.openEditMessageWindow = true;
-    this.messageInput = this.messageToBeEdited.data.text;
+    try {
+      this.openEditMessageWindow = true;
+      this.messageInput = this.messageToBeEdited.data.text;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -539,13 +646,17 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   closeEditPreview() {
-    this.openEditMessageWindow = false;
-    this.messageToBeEdited = null;
-    this.messageInput = "";
-    this.actionGenerated.emit({
-      type: enums.CLEAR_MESSAGE_TO_BE_UPDATED,
-      payLoad: null,
-    });
+    try {
+      this.openEditMessageWindow = false;
+      this.messageToBeEdited = null;
+      this.messageInput = "";
+      this.actionGenerated.emit({
+        type: enums.CLEAR_MESSAGE_TO_BE_UPDATED,
+        payLoad: null,
+      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -553,7 +664,11 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   openCreatePollPreview() {
-    this.createPollView = true;
+    try {
+      this.createPollView = true;
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -561,98 +676,122 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   closeCreatePollPreview() {
-    this.createPollView = false;
+    try {
+      this.createPollView = false;
+    } catch (error) {
+      logger(error);
+    }
   }
   /**
    * Plays Audio When Message is Sent
    */
   playAudio() {
-    let audio = new Audio();
-    audio.src = OUTGOING_MESSAGE_SOUND;
-    audio.play();
+    try {
+      let audio = new Audio();
+      audio.src = OUTGOING_MESSAGE_SOUND;
+      audio.play();
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
-   *  When user starts typing
+   *  When user starts typing sets typing indicator
    */
   startTyping(timer = null, metadata = null) {
-    let typingInterval = timer || 5000;
+    try {
+      let typingInterval = timer || 5000;
 
-    if (this.isTyping > 0) {
-      return false;
+      if (this.isTyping > 0) {
+        return false;
+      }
+      let { receiverId, receiverType } = this.getReceiverDetails();
+      let typingMetadata = metadata || undefined;
+
+      let typingNotification = new CometChat.TypingIndicator(
+        receiverId,
+        receiverType,
+        typingMetadata
+      );
+      CometChat.startTyping(typingNotification);
+
+      this.isTyping = setTimeout(() => {
+        this.endTyping();
+      }, typingInterval);
+    } catch (error) {
+      logger(error);
     }
-    let { receiverId, receiverType } = this.getReceiverDetails();
-    let typingMetadata = metadata || undefined;
-
-    let typingNotification = new CometChat.TypingIndicator(
-      receiverId,
-      receiverType,
-      typingMetadata
-    );
-    CometChat.startTyping(typingNotification);
-
-    this.isTyping = setTimeout(() => {
-      this.endTyping();
-    }, typingInterval);
   }
 
   /**
    * When user stops writing
    */
   endTyping(metadata = null) {
-    let { receiverId, receiverType } = this.getReceiverDetails();
+    try {
+      let { receiverId, receiverType } = this.getReceiverDetails();
 
-    let typingMetadata = metadata || undefined;
+      let typingMetadata = metadata || undefined;
 
-    let typingNotification = new CometChat.TypingIndicator(
-      receiverId,
-      receiverType,
-      typingMetadata
-    );
-    CometChat.endTyping(typingNotification);
+      let typingNotification = new CometChat.TypingIndicator(
+        receiverId,
+        receiverType,
+        typingMetadata
+      );
+      CometChat.endTyping(typingNotification);
 
-    clearTimeout(this.isTyping);
-    this.isTyping = null;
+      clearTimeout(this.isTyping);
+      this.isTyping = null;
+    } catch (error) {
+      logger(error);
+    }
   }
+
   /**
    * Sends Live Reaction
    */
-
   sendReaction(event) {
-    //If user you are chatting with is blocked then return false
-    if (this.userBlocked) {
-      return false;
-    }
-    const typingInterval = 1000;
+    try {
+      //If user you are chatting with is blocked then return false
+      if (this.userBlocked) {
+        return false;
+      }
+      const typingInterval = 1000;
 
-    const typingMetadata = {
-      type: enums.LIVE_REACTION_KEY,
-      reaction: "heart",
-    };
+      const typingMetadata = {
+        type: enums.LIVE_REACTION_KEY,
+        reaction: COMETCHAT_CONSTANTS.HEART,
+      };
 
-    this.startTyping(typingInterval, typingMetadata);
-    this.actionGenerated.emit({
-      type: enums.SEND_REACTION,
-    });
-    // event.persist();
-    setTimeout(() => {
-      this.endTyping(typingMetadata);
+      this.startTyping(typingInterval, typingMetadata);
       this.actionGenerated.emit({
-        type: enums.STOP_REACTION,
+        type: enums.SEND_REACTION,
       });
-    }, typingInterval);
+      // event.persist();
+      setTimeout(() => {
+        this.endTyping(typingMetadata);
+        this.actionGenerated.emit({
+          type: enums.STOP_REACTION,
+        });
+      }, typingInterval);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Toggles Sticker Window
    */
   toggleStickerPicker() {
-    //If user you are chatting with is blocked then return false
-    if (this.userBlocked) {
-      return false;
+    try {
+      //If user you are chatting with is blocked then return false
+      if (this.userBlocked) {
+        return false;
+      }
+      const stickerViewer = this.stickerViewer;
+      this.stickerViewer = !stickerViewer;
+    } catch (error) {
+      logger(error);
     }
-    const stickerViewer = this.stickerViewer;
-    this.stickerViewer = !stickerViewer;
   }
 
   /**
@@ -660,77 +799,88 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   sendSticker(stickerMessage) {
-    this.messageSending = true;
-    const { receiverId, receiverType } = this.getReceiverDetails();
-    const customData = {
-      sticker_url: stickerMessage.stickerUrl,
-      sticker_name: stickerMessage.stickerName,
-    };
-    const customType = enums.CUSTOM_TYPE_STICKER;
-    const customMessage = new CometChat.CustomMessage(
-      receiverId,
-      receiverType,
-      customType,
-      customData
-    );
+    try {
+      this.messageSending = true;
+      const { receiverId, receiverType } = this.getReceiverDetails();
+      const customData = {
+        sticker_url: stickerMessage.stickerUrl,
+        sticker_name: stickerMessage.stickerName,
+      };
+      const customType = enums.CUSTOM_TYPE_STICKER;
+      const customMessage = new CometChat.CustomMessage(
+        receiverId,
+        receiverType,
+        customType,
+        customData
+      );
 
-    if (this.parentMessageId) {
-      customMessage.setParentMessageId(this.parentMessageId);
-    }
+      if (this.parentMessageId) {
+        customMessage.setParentMessageId(this.parentMessageId);
+      }
 
-    CometChat.sendCustomMessage(customMessage)
-      .then((message) => {
-        this.messageSending = false;
-        this.playAudio();
-        this.actionGenerated.emit({
-          type: enums.MESSAGE_COMPOSED,
-          payLoad: [message],
+      CometChat.sendCustomMessage(customMessage)
+        .then((message) => {
+          this.messageSending = false;
+          this.playAudio();
+          this.actionGenerated.emit({
+            type: enums.MESSAGE_COMPOSED,
+            payLoad: [message],
+          });
+        })
+        .catch((error) => {
+          this.messageSending = false;
+          logger("custom message sending failed with error", error);
         });
-      })
-      .catch((error) => {
-        this.messageSending = false;
-        console.log("custom message sending failed with error", error);
-      });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Toggle emoji window when emoji button is clicked
    */
   toggleEmoji() {
-    //If user you are chatting with is blocked then return false
-    if (this.userBlocked) {
-      return false;
-    }
-    this.emojiToggled = !this.emojiToggled;
-    if (!this.emojiToggled) {
-      this.actionGenerated.emit({
-        type: enums.REACT_TO_MESSAGE,
-        payLoad: null,
-      });
+    try {
+      //If user you are chatting with is blocked then return false
+      if (this.userBlocked) {
+        return false;
+      }
+      this.emojiToggled = !this.emojiToggled;
+      if (!this.emojiToggled) {
+        this.actionGenerated.emit({
+          type: enums.REACT_TO_MESSAGE,
+          payLoad: null,
+        });
+      }
+    } catch (error) {
+      logger(error);
     }
   }
 
+  /**
+   * React to message with emoji
+   * @param
+   */
   reactToMessages(emoji) {
-    CometChat.callExtension(
-      STRING_MESSAGES.REACTIONS,
-      STRING_MESSAGES.POST,
-      STRING_MESSAGES.V1_REACT,
-      {
+    try {
+      CometChat.callExtension(enums.REACTIONS, enums.POST, enums.V1_REACT, {
         msgId: this.messageToReact.id,
         emoji: emoji.colons,
-      }
-    )
-      .then((response) => {
-        if (
-          response.hasOwnProperty("success") &&
-          response["success"] === true
-        ) {
-          this.toggleEmoji();
-        }
       })
-      .catch((error) => {
-        // Some error occured
-      });
+        .then((response) => {
+          if (
+            response.hasOwnProperty(enums.SUCCESS) &&
+            response[enums.SUCCESS] === true
+          ) {
+            this.toggleEmoji();
+          }
+        })
+        .catch((error) => {
+          // Some error occured
+        });
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
@@ -738,20 +888,24 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   emojiStyle(val) {
-    return val
-      ? {
-          position: "absolute",
-          bottom: "20px",
-          right: "15px",
-          width: "285px",
-          zIndex: "1",
-        }
-      : {
-          position: "absolute",
-          bottom: "20px",
-          right: "45px",
-          width: "285px",
-          zIndex: "1",
-        };
+    try {
+      return val
+        ? {
+            position: "absolute",
+            bottom: "20px",
+            right: "15px",
+            width: "285px",
+            zIndex: "1",
+          }
+        : {
+            position: "absolute",
+            bottom: "20px",
+            right: "45px",
+            width: "285px",
+            zIndex: "1",
+          };
+    } catch (error) {
+      logger(error);
+    }
   }
 }

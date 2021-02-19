@@ -27,7 +27,7 @@
         <tbody class="tableBodyStyle" (scroll)="handleScroll($event)">
           <!--banned members-->
           <cometchat-ban-group-member-list
-            *ngFor="let member of bannedmemberlist"
+            *ngFor="let member of bannedMemberList"
             [member]="member"
             [item]="item"
             (actionGenerated)="actionHandler($event)"

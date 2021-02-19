@@ -1,6 +1,10 @@
 import { Component, OnInit, Input, Output, EventEmitter } from "@angular/core";
-import { checkMessageForExtensionsData } from "../../../utils/common";
-import { STRING_MESSAGES } from "../../../utils/messageConstants";
+import {
+  checkMessageForExtensionsData,
+  logger,
+} from "../../../../utils/common";
+import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
+import * as enums from "../../../../utils/enums";
 
 @Component({
   selector: "cometchat-sender-text-message-bubble",
@@ -8,7 +12,7 @@ import { STRING_MESSAGES } from "../../../utils/messageConstants";
   styleUrls: ["./cometchat-sender-text-message-bubble.component.css"],
 })
 export class CometChatSenderTextMessageBubbleComponent implements OnInit {
-  @Input() MessageDetails = null;
+  @Input() messageDetails = null;
   @Input() showReplyCount = true;
   @Input() loggedInUser;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
@@ -21,57 +25,64 @@ export class CometChatSenderTextMessageBubbleComponent implements OnInit {
   linkUrl: string;
   linkText: string;
   linkImage: string;
-  checkReaction: boolean = false;
+  checkReaction = [];
   constructor() {}
 
   ngOnInit() {
-    this.checkLinkPreview();
-    this.checkReaction = checkMessageForExtensionsData(
-      this.MessageDetails,
-      STRING_MESSAGES.REACTIONS
-    );
+    try {
+      this.checkLinkPreview();
+      this.checkReaction = checkMessageForExtensionsData(
+        this.messageDetails,
+        enums.REACTIONS
+      );
+    } catch (error) {
+      logger(error);
+    }
   }
 
   /**
    * Check If extension has enabled LinkPreview
    */
   checkLinkPreview() {
-    if (this.MessageDetails.hasOwnProperty("metadata")) {
-      const metadata = this.MessageDetails.metadata;
-      const injectedObject = metadata["@injected"];
-      if (injectedObject && injectedObject.hasOwnProperty("extensions")) {
-        const extensionsObject = injectedObject["extensions"];
-        if (
-          extensionsObject &&
-          extensionsObject.hasOwnProperty("link-preview")
-        ) {
-          const linkPreviewObject = extensionsObject["link-preview"];
+    try {
+      if (this.messageDetails.hasOwnProperty(enums.METADATA)) {
+        const metadata = this.messageDetails[enums.METADATA];
+        const injectedObject = metadata[enums.INJECTED];
+        if (injectedObject && injectedObject.hasOwnProperty(enums.EXTENSIONS)) {
+          const extensionsObject = injectedObject[enums.EXTENSIONS];
           if (
-            linkPreviewObject &&
-            linkPreviewObject.hasOwnProperty("links") &&
-            linkPreviewObject["links"].length
+            extensionsObject &&
+            extensionsObject.hasOwnProperty(enums.LINK_PREVIEW)
           ) {
-            this.linkPreview = true;
-            const linkObject = linkPreviewObject["links"][0];
-            this.linkTitle = linkObject.title;
-            this.linkDescription = linkObject.description;
+            const linkPreviewObject = extensionsObject[enums.LINK_PREVIEW];
+            if (
+              linkPreviewObject &&
+              linkPreviewObject.hasOwnProperty(enums.LINKS) &&
+              linkPreviewObject[enums.LINKS].length
+            ) {
+              this.linkPreview = true;
+              const linkObject = linkPreviewObject[enums.LINKS][0];
+              this.linkTitle = linkObject.title;
+              this.linkDescription = linkObject.description;
 
-            if (linkObject.url !== this.MessageDetails.data.text) {
-              this.linkUrl = this.MessageDetails.data.text;
-            } else {
-              this.linkUrl = linkObject.url;
+              if (linkObject.url !== this.messageDetails.data.text) {
+                this.linkUrl = this.messageDetails.data.text;
+              } else {
+                this.linkUrl = linkObject.url;
+              }
+
+              this.linkImage = linkObject.image;
+              const pattern = /(http:|https:)?\/\/(www\.)?(youtube.com|youtu.be)(\S+)?/;
+              const linkText = linkObject["url"].match(pattern)
+                ? COMETCHAT_CONSTANTS.VIEW_ON_YOUTUBE
+                : COMETCHAT_CONSTANTS.VISIT;
+              this.linkText = linkText;
             }
-
-            this.linkImage = linkObject.image;
-            const pattern = /(http:|https:)?\/\/(www\.)?(youtube.com|youtu.be)(\S+)?/;
-            const linkText = linkObject["url"].match(pattern)
-              ? STRING_MESSAGES.VIEW_ON_YOUTUBE
-              : STRING_MESSAGES.VISIT;
-            this.linkText = linkText;
-            // const actualMessage = messageText;
           }
         }
       }
+    } catch (error) {
+      logger(error);
     }
   }
 
@@ -80,6 +91,10 @@ export class CometChatSenderTextMessageBubbleComponent implements OnInit {
    * @param Event action
    */
   actionHandler(action) {
-    this.actionGenerated.emit(action);
+    try {
+      this.actionGenerated.emit(action);
+    } catch (error) {
+      logger(error);
+    }
   }
 }

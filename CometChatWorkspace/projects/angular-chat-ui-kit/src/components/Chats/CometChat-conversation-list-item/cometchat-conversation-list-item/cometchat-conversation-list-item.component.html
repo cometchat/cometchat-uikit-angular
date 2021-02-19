@@ -1,9 +1,9 @@
-<div class="listItem" (click)="onUserClicked(ConversationDetails)">
+<div class="listItem" (click)="onUserClicked(conversationDetails)">
   <div class="itemThumbnailStyle">
     <!--Avatar-->
     <cometchat-avatar
-      [item]="getAvatar(ConversationDetails)"
-      [userStatus]="ConversationDetails.conversationWith.status"
+      [item]="getAvatar(conversationDetails)"
+      [userStatus]="conversationDetails.conversationWith.status"
     ></cometchat-avatar>
   </div>
   <div class="itemDetailStyle">
@@ -23,8 +23,8 @@
       </div>
       <!--BadgeCount-->
       <cometchat-badge-count
-        *ngIf="ConversationDetails.unreadMessageCount > 0"
-        [count]="ConversationDetails.unreadMessageCount"
+        *ngIf="conversationDetails.unreadMessageCount > 0"
+        [count]="conversationDetails.unreadMessageCount"
       ></cometchat-badge-count>
     </div>
   </div>
