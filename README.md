@@ -156,14 +156,16 @@ CometChat.login(uid, authKey).then(
 
 ## 3. Add UI Kit to your project
 
-- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git`
-- Copy the cloned repository into your project src folder.
+- Clone this repository
+
+`git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git`
+
+- Copy the folder to your source folder.
 
 <div style="width:100%">
     <img width="200px" height="400px" src="./Screenshots/folder_struc.png">
 </div>
 
-- Copy all the dependencies from package.json into your project's package.js and install them
 - Import the Components in the respective module where the component will be used.
 - Install @ctrl/ngx-emoji-mart according to the angular version of your project [@ctrl/ngx-emoji-mart](https://www.npmjs.com/package/@ctrl/ngx-emoji-mart)
 - Add this styles to your `angular.json`
