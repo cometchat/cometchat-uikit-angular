@@ -26,7 +26,7 @@
 </div>
 
 </br></br>
-CometChat Angular UI Kit is a collection of custom UI Components designed to build text chat and voice/video callings features in your application. 
+CometChat Angular UI Kit is a collection of custom UI Components designed to build text chat and voice/video calling features in your application. 
 
 The UI Kit is developed to keep developers in mind and aims to reduce development efforts significantly. 
 
