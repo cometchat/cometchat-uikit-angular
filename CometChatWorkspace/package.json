@@ -1,6 +1,6 @@
 {
   "name": "comet-chat-workspace",
-  "version": "1.0.1",
+  "version": "2.2.1-1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -19,7 +19,7 @@
     "@angular/platform-browser": "~8.2.14",
     "@angular/platform-browser-dynamic": "~8.2.14",
     "@angular/router": "~8.2.14",
-    "@cometchat-pro/chat": "2.2.0",
+    "@cometchat-pro/chat": "2.2.1",
     "@ctrl/ngx-emoji-mart": "^1.0.6",
     "rxjs": "~6.4.0",
     "tslib": "^1.10.0",
