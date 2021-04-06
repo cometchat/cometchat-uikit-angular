@@ -411,19 +411,11 @@ export class CometChatMessageListComponent
                   if (
                     message.getReceiverType() === CometChat.RECEIVER_TYPE.USER
                   ) {
-                    CometChat.markAsRead(
-                      message.getId().toString(),
-                      message.getSender().getUid(),
-                      message.getReceiverType()
-                    );
+                    CometChat.markAsRead(message);
                   } else if (
                     message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP
                   ) {
-                    CometChat.markAsRead(
-                      message.getId().toString(),
-                      message.getReceiverId(),
-                      message.getReceiverType()
-                    );
+                    CometChat.markAsRead(message);
                   }
 
                   this.actionGenerated.emit({
@@ -540,11 +532,7 @@ export class CometChatMessageListComponent
         message.getReceiverId() === this.item.guid
       ) {
         if (!message.getReadAt()) {
-          CometChat.markAsRead(
-            message.getId().toString(),
-            message.getReceiverId(),
-            message.getReceiverType()
-          );
+          CometChat.markAsRead(message);
         }
 
         this.actionGenerated.emit({
@@ -557,11 +545,7 @@ export class CometChatMessageListComponent
         message.getSender().uid === this.item.uid
       ) {
         if (!message.getReadAt()) {
-          CometChat.markAsRead(
-            message.getId().toString(),
-            message.getSender().uid,
-            message.getReceiverType()
-          );
+          CometChat.markAsRead(message);
         }
 
         this.actionGenerated.emit({
@@ -772,11 +756,7 @@ export class CometChatMessageListComponent
         message.getReceiverId() === this.item.guid
       ) {
         if (!message.getReadAt()) {
-          CometChat.markAsRead(
-            message.getId().toString(),
-            message.getReceiverId(),
-            message.getReceiverType()
-          );
+          CometChat.markAsRead(message);
         }
 
         if (
@@ -814,11 +794,7 @@ export class CometChatMessageListComponent
         message.getSender().uid === this.item.uid
       ) {
         if (!message.getReadAt()) {
-          CometChat.markAsRead(
-            message.getId().toString(),
-            message.getSender().uid,
-            message.getReceiverType()
-          );
+          CometChat.markAsRead(message);
         }
 
         if (
@@ -899,11 +875,7 @@ export class CometChatMessageListComponent
         message.getReceiverId() === this.item.guid
       ) {
         if (!message.getReadAt()) {
-          CometChat.markAsRead(
-            message.getId().toString(),
-            message.getReceiverId(),
-            message.getReceiverType()
-          );
+          CometChat.markAsRead(message);
         }
 
         this.actionGenerated.emit({
@@ -916,11 +888,7 @@ export class CometChatMessageListComponent
         message.getSender().uid === this.item.uid
       ) {
         if (!message.getReadAt()) {
-          CometChat.markAsRead(
-            message.getId().toString(),
-            message.getSender().uid,
-            message.getReceiverType()
-          );
+          CometChat.markAsRead(message);
         }
 
         this.actionGenerated.emit({
