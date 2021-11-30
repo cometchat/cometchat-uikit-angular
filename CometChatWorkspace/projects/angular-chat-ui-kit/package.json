@@ -1,9 +1,0 @@
-{
-  "name": "angular-chat-ui-kit",
-  "version": "2.2.1-1",
-  "peerDependencies": {
-    "@angular/common": "^8.2.14",
-    "@angular/core": "^8.2.14",
-    "@ctrl/ngx-emoji-mart": "^1.0.6"
-  }
-}

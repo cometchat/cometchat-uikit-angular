@@ -1,0 +1,33 @@
+<div class="chatWrapperStyle">
+  <div class="chatsHeaderStyle">
+    <!--Close Btn-->
+    <h4 class="chatsHeaderTitleStyle">{{ CHATS }}</h4>
+    <div></div>
+  </div>
+  <!--Message Container-->
+  <div class="chatsMsgStyle" *ngIf="decoratorMessage !== ''">
+    <p class="chatsMsgTxtStyle">
+      {{ decoratorMessage }}
+    </p>
+  </div>
+  <div class="chatsListStyle" (scroll)="handleScroll($event)">
+    <!-- Confirmation Dialog -->
+    <cometchat-confirm-dialog
+    *ngIf="showConfirmDialog"
+    [message]="message"
+    [confirmationButtonText]="confirmationButtonText"
+    [cancelButtonText]="cancelButtonText"
+    >
+    </cometchat-confirm-dialog>
+    <!--Conversation List-->
+    <div *ngFor="let conversation of conversationList">
+      <cometchat-conversation-list-item
+        [conversationDetails]="conversation"
+        [loggedInUser]="loggedInUser"
+        (onUserClick)="userClicked($event)"
+        (onDeleteConversation)="showConfirmationDialog($event)"
+      >
+      </cometchat-conversation-list-item>
+    </div>
+  </div>
+</div>
