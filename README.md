@@ -74,7 +74,7 @@ Before you begin, ensure you have met the following requirements:
 
 ### i. Register on CometChat 🔧
 
-To install Angular UI Kit, you need to first register on CometChat Dashboard. <a href="https://app.cometchat.com/" target="_blank">Click here to sign up</a>
+To install Angular UI Kit, you need to first register on CometChat Dashboard. <a href="https://app.cometchat.com/signup" target="_blank">Click here to sign up</a>
 
 ### ii. Get your Application Keys :key:
 
