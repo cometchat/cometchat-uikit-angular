@@ -1,0 +1,45 @@
+.confirm_dialog {
+  width: calc(100% - 32px);
+  height: auto;
+  background-color: #fff;
+  position: absolute;
+  margin: 0 auto;
+  padding: 16px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  z-index: 4000;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.confirm_message {
+  text-align: center;
+}
+
+.confirm_buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin: 24px 0 0 0;
+}
+.confirm_buttons > button {
+  padding: 5px 24px;
+  margin: 0 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #39f;
+}
+
+.yes {
+  background-color: #39f;
+  color: white;
+}
+
+.no {
+  background-color: #f6f6f6;
+}
