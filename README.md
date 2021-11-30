@@ -50,7 +50,7 @@ The UI Kit is developed to keep developers in mind and aims to reduce developmen
 
 ## Extensions
 
-[Thumbnail Generation](https://prodocs.cometchat.com/docs/extensions-thumbnail-generation) | [Link Preview](https://prodocs.cometchat.com/docs/extensions-link-preview) | [Rich Media Preview](https://prodocs.cometchat.com/docs/extensions-rich-media-preview) | [Smart Reply](https://prodocs.cometchat.com/docs/extensions-smart-reply)| [Emojis](https://prodocs.cometchat.com/docs/extensions-emojis) | [Polls](https://prodocs.cometchat.com/docs/extensions-polls) | [Reactions](https://prodocs.cometchat.com/docs/extensions-reactions) | [Stickers](https://prodocs.cometchat.com/docs/extensions-stickers)
+[Thumbnail Generation](https://www.cometchat.com/docs/extensions/thumbnail-generation) | [Link Preview](https://www.cometchat.com/docs/extensions/link-preview) | [Rich Media Preview](https://www.cometchat.com/docs/extensions/rich-media-preview) | [Smart Reply](https://www.cometchat.com/docs/extensions/smart-replies) | [Emojis](https://www.cometchat.com/docs/extensions/emojis) | [Polls](https://www.cometchat.com/docs/extensions/polls) | [Reactions](https://www.cometchat.com/docs/extensions/reactions) | [Stickers](https://www.cometchat.com/docs/extensions/stickers)
 
 ---
 
@@ -156,7 +156,7 @@ CometChat.login(uid, authKey).then(
 
 ## 3. Add UI Kit to your project
 
-- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git`
+- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git -b v2`
 - Copy the cloned repository into your project src folder.
 
 <div style="width:100%">
@@ -203,13 +203,13 @@ import { CometChatUI } from
 
 # Checkout our sample app
 
-Visit our [Angular sample app](https://github.com/cometchat-pro/cometchat-pro-angular-sample-app) repo to run the Angular sample app.
+Visit our [Angular sample app](https://github.com/cometchat-pro/cometchat-pro-angular-sample-app/tree/v2) repo to run the Angular sample app.
 
 ---
 
 # Troubleshooting
 
-- To read the full documentation on UI Kit integration visit our [Documentation](https://prodocs.cometchat.com/docs/js-angular-ui-kit).
+- To read the full documentation on UI Kit integration visit our [Documentation](https://www.cometchat.com/docs/v2/angular-chat-ui-kit/overview).
 
 - Facing any issues while integrating or installing the UI Kit please connect with us via real time support present in <a href="https://app.cometchat.com/" target="_blank">CometChat Dashboard.</a>
 
