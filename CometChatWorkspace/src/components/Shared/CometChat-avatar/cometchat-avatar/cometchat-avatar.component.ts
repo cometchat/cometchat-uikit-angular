@@ -15,9 +15,9 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-avatar.component.scss"],
 })
 export class CometChatAvatarComponent implements OnInit, OnChanges {
-  @Input() item = null;
+  @Input() item: any = null;
 
-  @Input() avatar: any =
+  @Input() avatar: any = 
     "https://data-eu.cometchat.io/assets/images/avatars/spiderman.png";
   @Input() userStatus = "";
   @Input() enableUserStatus: boolean = true;
@@ -82,8 +82,7 @@ export class CometChatAvatarComponent implements OnInit, OnChanges {
    * if a user doesn't have an avatar , it take the first character of username in data paramter and converts it into an svg image
    * @param
    */
-  getAvatar = (generator, data) => {
-    try {
+  getAvatar (generator: any, data: string) {
       const svg1 = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "svg"
@@ -122,17 +121,13 @@ export class CometChatAvatarComponent implements OnInit, OnChanges {
 
       let imgSource = `data:image/svg+xml;base64,${base64}`;
       return imgSource;
-    } catch (error) {
-      logger(error);
-    }
   };
 
   /**
    * Sets Color to String
    * @param str
    */
-  stringToColour = function (str) {
-    try {
+  stringToColour (str: string) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -143,8 +138,5 @@ export class CometChatAvatarComponent implements OnInit, OnChanges {
         colour += ("00" + value.toString(16)).substr(-2);
       }
       return colour;
-    } catch (error) {
-      logger(error);
-    }
   };
 }

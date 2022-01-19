@@ -17,13 +17,13 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatUserDetailsComponent implements OnInit, OnChanges {
   @Input() item = null;
-  @Input() type = null;
+  @Input() type: string = '';
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   OPTIONS: String = COMETCHAT_CONSTANTS.OPTIONS;
   DETAILS: String = COMETCHAT_CONSTANTS.DETAILS;
 
-  blockUserText: string;
+  blockUserText: string = '';
   constructor() {}
 
   ngOnChanges(change: SimpleChanges) {
@@ -41,7 +41,7 @@ export class CometChatUserDetailsComponent implements OnInit, OnChanges {
    * Gets Status If user is Blocked/Unblocked
    * @param
    */
-  getBlockStatus(item) {
+  getBlockStatus(item: any) {
     try {
       if (item.blockedByMe) {
         this.blockUserText = COMETCHAT_CONSTANTS.UNBLOCK_USER;

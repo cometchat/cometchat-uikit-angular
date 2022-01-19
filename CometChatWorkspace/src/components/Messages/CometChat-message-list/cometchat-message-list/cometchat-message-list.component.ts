@@ -22,25 +22,25 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatMessageListComponent
   implements OnInit, OnDestroy, OnChanges {
-  @Input() item = null;
-  @Input() type = null;
-  @Input() parentMessageId = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() parentMessageId: number = 0;
 
-  @Input() messages = [];
-  @Input() reachedTopOfConversation = [];
+  @Input() messages: any = [];
+  @Input() reachedTopOfConversation: boolean = false;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  messagesRequest;
+  messagesRequest: any;
   limit = 50;
   decoratorMessage = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
   times = 0;
   lastScrollTop = 0;
-  loggedInUser;
+  loggedInUser: any;
   msgListenerId = enums.MESSAGE_ + new Date().getTime();
   groupListenerId = enums.GROUP_ + new Date().getTime();
   callListenerId = enums.CALL_ + new Date().getTime();
-  prevUser;
+  prevUser: any;
 
   MESSAGE_TYPE_TEXT: String = CometChat.MESSAGE_TYPE.TEXT;
   MESSAGE_TYPE_IMAGE: String = CometChat.MESSAGE_TYPE.IMAGE;
@@ -76,10 +76,10 @@ export class CometChatMessageListComponent
   constructor(private ref: ChangeDetectorRef, public datepipe: DatePipe) {
     try {
       setInterval(() => {
-        if (!this.ref[enums.DESTROYED]) {
+        if (!this.ref.hasOwnProperty(enums.DESTROYED)) {
           this.ref.detectChanges();
         }
-      }, 2500);
+      }, 2000);
     } catch (error) {
       logger(error);
     }
@@ -167,7 +167,8 @@ export class CometChatMessageListComponent
       } else {
         this.messagesRequest = this.buildMessageRequestObject(
           this.item,
-          this.type
+          this.type,
+          this.parentMessageId
         );
       }
 
@@ -186,25 +187,25 @@ export class CometChatMessageListComponent
       CometChat.addMessageListener(
         this.msgListenerId,
         new CometChat.MessageListener({
-          onTextMessageReceived: (textMessage) => {
+          onTextMessageReceived: (textMessage: any) => {
             this.messageUpdated(enums.TEXT_MESSAGE_RECEIVED, textMessage);
           },
-          onMediaMessageReceived: (mediaMessage) => {
+          onMediaMessageReceived: (mediaMessage: any) => {
             this.messageUpdated(enums.MEDIA_MESSAGE_RECEIVED, mediaMessage);
           },
-          onCustomMessageReceived: (customMessage) => {
+          onCustomMessageReceived: (customMessage: any) => {
             this.messageUpdated(enums.CUSTOM_MESSAGE_RECEIVED, customMessage);
           },
-          onMessagesDelivered: (messageReceipt) => {
+          onMessagesDelivered: (messageReceipt: any) => {
             this.messageUpdated(enums.MESSAGE_DELIVERED, messageReceipt);
           },
-          onMessagesRead: (messageReceipt) => {
+          onMessagesRead: (messageReceipt: any) => {
             this.messageUpdated(enums.MESSAGE_READ, messageReceipt);
           },
-          onMessageDeleted: (deletedMessage) => {
+          onMessageDeleted: (deletedMessage: any) => {
             this.messageUpdated(enums.MESSAGE_DELETED, deletedMessage);
           },
-          onMessageEdited: (editedMessage) => {
+          onMessageEdited: (editedMessage: any) => {
             this.messageUpdated(enums.MESSAGE_EDITED, editedMessage);
           },
         })
@@ -214,11 +215,11 @@ export class CometChatMessageListComponent
         this.groupListenerId,
         new CometChat.GroupListener({
           onGroupMemberScopeChanged: (
-            message,
-            changedUser,
-            newScope,
-            oldScope,
-            changedGroup
+            message: null | undefined,
+            changedUser: any,
+            newScope: any,
+            oldScope: any,
+            changedGroup: null | undefined
           ) => {
             this.messageUpdated(
               enums.GROUP_MEMBER_SCOPE_CHANGED,
@@ -227,7 +228,7 @@ export class CometChatMessageListComponent
               { user: changedUser, scope: newScope }
             );
           },
-          onGroupMemberKicked: (message, kickedUser, kickedBy, kickedFrom) => {
+          onGroupMemberKicked: (message: null | undefined, kickedUser: any, kickedBy: any, kickedFrom: null | undefined) => {
             this.messageUpdated(
               enums.GROUP_MEMBER_KICKED,
               message,
@@ -238,7 +239,7 @@ export class CometChatMessageListComponent
               }
             );
           },
-          onGroupMemberBanned: (message, bannedUser, bannedBy, bannedFrom) => {
+          onGroupMemberBanned: (message: null | undefined, bannedUser: any, bannedBy: any, bannedFrom: null | undefined) => {
             this.messageUpdated(
               enums.GROUP_MEMBER_BANNED,
               message,
@@ -249,10 +250,10 @@ export class CometChatMessageListComponent
             );
           },
           onGroupMemberUnbanned: (
-            message,
-            unbannedUser,
-            unbannedBy,
-            unbannedFrom
+            message: null | undefined,
+            unbannedUser: any,
+            unbannedBy: any,
+            unbannedFrom: null | undefined
           ) => {
             this.messageUpdated(
               enums.GROUP_MEMBER_UNBANNED,
@@ -262,10 +263,10 @@ export class CometChatMessageListComponent
             );
           },
           onMemberAddedToGroup: (
-            message,
-            userAdded,
-            userAddedBy,
-            userAddedIn
+            message: null | undefined,
+            userAdded: any,
+            userAddedBy: any,
+            userAddedIn: null | undefined
           ) => {
             this.messageUpdated(
               enums.GROUP_MEMBER_ADDED,
@@ -277,12 +278,12 @@ export class CometChatMessageListComponent
               }
             );
           },
-          onGroupMemberLeft: (message, leavingUser, group) => {
+          onGroupMemberLeft: (message: any, leavingUser: any, group: any) => {
             this.messageUpdated(enums.GROUP_MEMBER_LEFT, message, group, {
               user: leavingUser,
             });
           },
-          onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
+          onGroupMemberJoined: (message: any, joinedUser: any, joinedGroup: any) => {
             this.messageUpdated(
               enums.GROUP_MEMBER_JOINED,
               message,
@@ -298,16 +299,16 @@ export class CometChatMessageListComponent
       CometChat.addCallListener(
         this.callListenerId,
         new CometChat.CallListener({
-          onIncomingCallReceived: (call) => {
+          onIncomingCallReceived: (call: any) => {
             this.messageUpdated(enums.INCOMING_CALL_RECEIVED, call);
           },
-          onIncomingCallCancelled: (call) => {
+          onIncomingCallCancelled: (call: any) => {
             this.messageUpdated(enums.INCOMING_CALL_CANCELLED, call);
           },
-          onOutgoingCallAccepted: (call) => {
+          onOutgoingCallAccepted: (call: any) => {
             this.messageUpdated(enums.OUTGOING_CALL_ACCEPTED, call);
           },
-          onOutgoingCallRejected: (call) => {
+          onOutgoingCallRejected: (call: any) => {
             this.messageUpdated(enums.OUTGOING_CALL_REJECTED, call);
           },
         })
@@ -321,8 +322,7 @@ export class CometChatMessageListComponent
    * This Build Message Request Configuration Object , that helps in getting messages of a particular conversation
    * @param
    */
-  buildMessageRequestObject(item = null, type = null, parentMessageId = null) {
-    try {
+  buildMessageRequestObject(item: any = null, type: string = '', parentMessageId: number) {
       let messageRequestBuilt;
 
       if (type === CometChat.RECEIVER_TYPE.USER) {
@@ -364,9 +364,6 @@ export class CometChatMessageListComponent
       }
 
       return messageRequestBuilt;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
@@ -383,11 +380,11 @@ export class CometChatMessageListComponent
       const actionMessages = [];
 
       let user = CometChat.getLoggedinUser().then(
-        (user) => {
+        (user: any) => {
           this.loggedInUser = user;
 
           this.messagesRequest.fetchPrevious().then(
-            (messageList) => {
+            (messageList: any) => {
               // No Messages Found
               if (messageList.length === 0 && this.messages.length === 0) {
                 this.decoratorMessage = COMETCHAT_CONSTANTS.NO_MESSAGES_FOUND;
@@ -395,7 +392,7 @@ export class CometChatMessageListComponent
                 this.decoratorMessage = "";
               }
 
-              messageList.forEach((message) => {
+              messageList.forEach((message: any) => {
                 if (
                   message.category === CometChat.CATEGORY_ACTION &&
                   message.sender.uid === enums.APP_SYSTEM
@@ -404,26 +401,32 @@ export class CometChatMessageListComponent
                 }
 
                 //if the sender of the message is not the loggedin user, mark it as read.
-                if (
-                  message.getSender().getUid() !== user.getUid() &&
-                  !message.getReadAt()
-                ) {
+                if (message.getSender().getUid() !== this.loggedInUser.uid) {
+                  //mark the message as delivered
+                  this.markMessageAsDelivered(message);
+      
+                
                   if (
-                    message.getReceiverType() === CometChat.RECEIVER_TYPE.USER
+                    message.getSender().getUid() !== user.getUid() &&
+                    !message.getReadAt()
                   ) {
+                    if (
+                      message.getReceiverType() === CometChat.RECEIVER_TYPE.USER
+                    ) {
                     CometChat.markAsRead(message);
-                  } else if (
-                    message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP
-                  ) {
-                    CometChat.markAsRead(message);
-                  }
+                    } else if (
+                      message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP
+                    ) {
+                      CometChat.markAsRead(message);
+                    }
 
-                  this.actionGenerated.emit({
-                    type: enums.MESSAGE__READ,
-                    payLoad: message,
-                  });
-                }
-              });
+                    this.actionGenerated.emit({
+                      type: enums.MESSAGE__READ,
+                      payLoad: message,
+                    });
+                  }
+                  }
+                });
 
               ++this.times;
 
@@ -458,7 +461,7 @@ export class CometChatMessageListComponent
                 });
               }
             },
-            (error) => {
+            (error: any) => {
               // logger("Message fetching failed with error:", error);
             }
           );
@@ -476,7 +479,7 @@ export class CometChatMessageListComponent
    * Updates messageList on basis of user activity or group activity or calling activity
    * @param
    */
-  messageUpdated(key = null, message = null, group = null, options = null) {
+  messageUpdated(key: any = null, message: CometChat.MessageReceipt | any = null, group: any = null, options: any = null) {
     try {
       switch (key) {
         case enums.TEXT_MESSAGE_RECEIVED:
@@ -520,12 +523,20 @@ export class CometChatMessageListComponent
     }
   }
 
+  markMessageAsDelivered = (message: any) => {
+
+		if (message.sender.uid !== this.loggedInUser.uid && message.hasOwnProperty("deliveredAt") === false) {
+			CometChat.markAsDelivered(message);
+		}
+	};
+
   /**
    * When Message is Received
    * @param message
    */
-  messageReceived(message) {
+  messageReceived(message: any) {
     try {
+      this.markMessageAsDelivered(message);
       if (
         this.type === CometChat.RECEIVER_TYPE.GROUP &&
         message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
@@ -562,7 +573,7 @@ export class CometChatMessageListComponent
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {
@@ -574,41 +585,37 @@ export class CometChatMessageListComponent
    * Sets Status of messages i.e sent/delivered/read
    * @param message
    */
-  messageReadAndDelivered(message) {
+   messageReadAndDelivered(message: CometChat.MessageReceipt) {
     try {
       if (
         message.getReceiverType() === CometChat.RECEIVER_TYPE.USER &&
         message.getSender().getUid() === this.item.uid &&
         message.getReceiver() === this.loggedInUser.uid
       ) {
-        let messageList = [...this.messages];
-
+        let messageList: CometChat.BaseMessage[] = [...this.messages];
         if (message.getReceiptType() === enums.DELIVERY) {
           //search for message
           let messageKey = messageList.findIndex(
-            (m) => m.id === message.messageId
+            (m: any) => m.id === message.getMessageId()
           );
-
           if (messageKey > -1) {
-            let messageObj = { ...messageList[messageKey] };
+            let messageObj: CometChat.BaseMessage = messageList[messageKey];
             let newMessageObj = Object.assign({}, messageObj, {
               deliveredAt: message.getDeliveredAt(),
             });
             messageList.splice(messageKey, 1, newMessageObj);
-
-            this.actionGenerated.emit({
-              type: enums.MESSAGE_UPDATED,
-              payLoad: messageList,
-            });
+              this.actionGenerated.emit({
+                type: enums.MESSAGE_UPDATED,
+                payLoad: messageList,
+              });
           }
         } else if (message.getReceiptType() === enums.READ) {
           //search for message
           let messageKey = messageList.findIndex(
-            (m) => m.id === message.messageId
+            (m: any) => m.id === message.getMessageId()
           );
-
           if (messageKey > -1) {
-            let messageObj = { ...messageList[messageKey] };
+            let messageObj = messageList[messageKey];
             let newMessageObj = Object.assign({}, messageObj, {
               readAt: message.getReadAt(),
             });
@@ -622,7 +629,7 @@ export class CometChatMessageListComponent
         }
       } else if (
         message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
-        message.getReceiver().guid === this.item.guid
+        message.getReceiver() === this.item.guid
       ) {
       }
     } catch (error) {
@@ -634,7 +641,7 @@ export class CometChatMessageListComponent
    * Emits an Action Indicating that a message was deleted by the user/person you are chatting with
    * @param Any message
    */
-  messageDeleted(message) {
+  messageDeleted(message: any) {
     try {
       if (
         this.type === CometChat.RECEIVER_TYPE.GROUP &&
@@ -664,7 +671,7 @@ export class CometChatMessageListComponent
    * Detects if the message that was edit is you current open conversation window
    * @param Any message
    */
-  messageEdited = (message) => {
+  messageEdited = (message: any) => {
     try {
       if (
         this.type === CometChat.RECEIVER_TYPE.GROUP &&
@@ -696,7 +703,7 @@ export class CometChatMessageListComponent
    * Emits an Action Indicating that a message was deleted by the user/person you are chatting with
    * @param Any message
    */
-  updateEditedMessage = (message) => {
+  updateEditedMessage = (message: any) => {
     try {
       //If the updated message is the current message that is opened in thread view then update thread view also
       if (message.id == this.parentMessageId) {
@@ -706,7 +713,7 @@ export class CometChatMessageListComponent
         });
       }
       const messageList = [...this.messages];
-      let messageKey = messageList.findIndex((m, k) => m.id === message.id);
+      let messageKey = messageList.findIndex((m: any, k) => m.id === message.id);
 
       if (messageKey > -1) {
         const messageObj = messageList[messageKey];
@@ -727,7 +734,7 @@ export class CometChatMessageListComponent
    * Emits an Action Indicating that Group Data has been updated
    * @param
    */
-  groupUpdated = (key, message, group, options) => {
+  groupUpdated = (key: any, message: any, group: any, options: any) => {
     try {
       if (
         this.type === CometChat.RECEIVER_TYPE.GROUP &&
@@ -748,8 +755,9 @@ export class CometChatMessageListComponent
    * When custom messages are received eg. Poll, Stickers emits action to update message list
    * @param message
    */
-  customMessageReceived(message) {
+  customMessageReceived(message: any): boolean {
     try {
+      this.markMessageAsDelivered(message);
       if (
         this.type === CometChat.RECEIVER_TYPE.GROUP &&
         message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
@@ -778,20 +786,20 @@ export class CometChatMessageListComponent
 
           //The poll message that  is received by the message listeners , will not be appended to message list
           //if the current loggedIn user is the sender/creator of the poll message
-          if (message.sender.uid === this.loggedInUser.uid) {
-            return false;
-          }
-
-          const newMessage = this.addMetadataToCustomData(message);
-          this.actionGenerated.emit({
-            type: enums.CUSTOM_MESSAGE_RECEIVE,
-            payLoad: [newMessage],
-          });
+            this.actionGenerated.emit({
+              type: enums.CUSTOM_MESSAGE_RECEIVE,
+              payLoad: [message],
+            });
         }
       } else if (
         this.type === CometChat.RECEIVER_TYPE.USER &&
         message.getReceiverType() === CometChat.RECEIVER_TYPE.USER &&
-        message.getSender().uid === this.item.uid
+        ((message.getSender().uid === this.item.uid && 
+          message.getReceiverId() === this.loggedInUser.uid)
+           || (
+          this.loggedInUser.uid === message.getSender().uid &&
+			    message.getReceiverId() === this.item.uid
+        )) 
       ) {
         if (!message.getReadAt()) {
           CometChat.markAsRead(message);
@@ -813,61 +821,23 @@ export class CometChatMessageListComponent
           });
         } else if (message.type === enums.CUSTOM_TYPE_POLL) {
           //customdata (poll extension) does not have metadata
-
-          const newMessage = this.addMetadataToCustomData(message);
           this.actionGenerated.emit({
             type: enums.CUSTOM_MESSAGE_RECEIVE,
-            payLoad: [newMessage],
+            payLoad: [message],
           });
         }
       }
     } catch (error) {
       logger(error);
     }
+    return true;
   }
-
-  /**
-   * Adds Metadata to Poll
-   * @param message
-   */
-  addMetadataToCustomData = (message) => {
-    try {
-      const customData = message.data.customData;
-      const options = customData.options;
-
-      const resultOptions = {};
-      for (const option in options) {
-        resultOptions[option] = {
-          text: options[option],
-          count: 0,
-        };
-      }
-
-      const polls = {
-        id: message.id,
-        options: options,
-        results: {
-          total: 0,
-          options: resultOptions,
-          question: customData.question,
-        },
-        question: customData.question,
-      };
-
-      return {
-        ...message,
-        metadata: { "@injected": { extensions: { polls: polls } } },
-      };
-    } catch (error) {
-      logger(error);
-    }
-  };
 
   /**
    * Updates the callMessage
    * @param message
    */
-  callUpdated(message) {
+  callUpdated(message: any) {
     try {
       if (
         this.type === CometChat.RECEIVER_TYPE.GROUP &&
@@ -904,8 +874,7 @@ export class CometChatMessageListComponent
   /**
    * Compares two dates and sets Date on a a new day
    */
-  isDateDifferent(firstDate, secondDate) {
-    try {
+  isDateDifferent(firstDate: number, secondDate: number) {
       let firstDateObj: Date, secondDateObj: Date;
       firstDateObj = new Date(firstDate * 1000);
       secondDateObj = new Date(secondDate * 1000);
@@ -917,8 +886,5 @@ export class CometChatMessageListComponent
         return false;
       }
       return true;
-    } catch (error) {
-      logger(error);
-    }
   }
 }

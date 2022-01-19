@@ -11,8 +11,8 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatActionMessageBubbleComponent implements OnInit {
   @Input() messageDetails = null;
-  @Input() loggedInUserUid;
-  message;
+  @Input() loggedInUserUid: any;
+  message: any;
   constructor() {}
 
   ngOnInit() {
@@ -28,7 +28,7 @@ export class CometChatActionMessageBubbleComponent implements OnInit {
    */
   getMessage() {
     try {
-      const call = this.messageDetails;
+      const call: any = this.messageDetails;
       switch (call.status) {
         case CometChat.CALL_STATUS.INITIATED: {
           this.message = COMETCHAT_CONSTANTS.CALL_INITIATED;

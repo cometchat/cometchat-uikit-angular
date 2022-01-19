@@ -21,14 +21,15 @@ import { logger } from "../../../../utils/common";
   ],
 })
 export class CometChatIncomingCallComponent implements OnInit {
-  incomingCall = null;
+  incomingCall: any = null;
   callInProgress = null;
   callListenerId = enums.INCOMING_CALL_ + new Date().getTime();
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  user;
-  name: string;
-  audio;
+  user: any;
+  name: any;
+  audio: any;
+  currentTime: any;
 
   INCOMING_AUDIO_CALL: String = COMETCHAT_CONSTANTS.INCOMING_AUDIO_CALL;
   INCOMING_VIDEO_CALL: String = COMETCHAT_CONSTANTS.INCOMING_VIDEO_CALL;
@@ -58,10 +59,10 @@ export class CometChatIncomingCallComponent implements OnInit {
       CometChat.addCallListener(
         this.callListenerId,
         new CometChat.CallListener({
-          onIncomingCallReceived: (call) => {
+          onIncomingCallReceived: (call: any) => {
             this.callScreenUpdated(enums.INCOMING_CALL_RECEIVED, call);
           },
-          onIncomingCallCancelled: (call) => {
+          onIncomingCallCancelled: (call: any) => {
             this.callScreenUpdated(enums.INCOMING_CALL_CANCELLED, call);
           },
         })
@@ -87,7 +88,7 @@ export class CometChatIncomingCallComponent implements OnInit {
    * Updates the call screen and opens/closes outgoing callScreen , depending on action taken by user
    * @param
    */
-  callScreenUpdated(key, call) {
+  callScreenUpdated(key: any, call: any) {
     try {
       switch (key) {
         case enums.INCOMING_CALL_RECEIVED: {
@@ -97,7 +98,7 @@ export class CometChatIncomingCallComponent implements OnInit {
         }
         case enums.INCOMING_CALL_CANCELLED: {
           //occurs(call dismissed) at the callee end, caller cancels the call
-          this.incomingCallCancelled(call);
+          this.incomingCallCancelled();
           break;
         }
 
@@ -114,7 +115,7 @@ export class CometChatIncomingCallComponent implements OnInit {
    * If the user is on another call , it show busy to the person that is calling the current user
    * @param
    */
-  incomingCallReceived(incomingCall) {
+  incomingCallReceived(incomingCall: any) {
     try {
       this.user = incomingCall.sender;
       this.name = incomingCall.sender.name;
@@ -154,7 +155,7 @@ export class CometChatIncomingCallComponent implements OnInit {
    * marks the message as read by the current loggedInUser
    * @param
    */
-  markMessageAsRead(message) {
+  markMessageAsRead(message: any) {
     try {
       const receiverType = message.receiverType;
       const receiverId =
@@ -174,7 +175,7 @@ export class CometChatIncomingCallComponent implements OnInit {
    * When call is cancelled
    * @param
    */
-  incomingCallCancelled(call) {
+  incomingCallCancelled() {
     //we are not marking this as read as it will done in messagelist component
     this.pauseAudio();
     this.incomingCall = null;
@@ -249,9 +250,9 @@ export class CometChatIncomingCallComponent implements OnInit {
       } else {
         this.audio.addEventListener(
           enums.ENDED,
-          function () {
+          () => {
             this.currentTime = 0;
-            this.play();
+            this.playAudio();
           },
           false
         );

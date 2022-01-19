@@ -20,18 +20,18 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-messages.component.css"],
 })
 export class CometChatMessagesComponent implements OnInit, OnChanges {
-  @ViewChild("messageWindow", { static: false }) chatWindow: ElementRef;
+  @ViewChild("messageWindow", { static: false }) chatWindow!: ElementRef;
 
   @Input() item = null;
-  @Input() type = null;
+  @Input() type: string = '';
   @Input() composedThreadMessage = null;
-  @Input() groupMessage = null;
+  @Input() groupMessage: object = {};
   @Input() callMessage = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  messageList = [];
-  scrollToBottom: true;
+  messageList: any = [];
+  scrollToBottom: boolean = true;
   messageToBeEdited = null;
   replyPreview = null;
   liveReaction = false;
@@ -39,7 +39,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   reachedTopOfConversation = false;
   scrollVariable = 0;
 
-  reactionName = COMETCHAT_CONSTANTS.HEART;
+  reactionName: string = COMETCHAT_CONSTANTS.HEART;
   messageToReact = null;
 
   constructor() {}
@@ -88,7 +88,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Updating the reply count of Thread Parent Message
    * @param Any message
    */
-  updateReplyCount(messages) {
+  updateReplyCount(messages: any) {
     try {
       const receivedMessage = messages[0];
 
@@ -116,7 +116,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let messages = action.payLoad;
 
@@ -250,16 +250,13 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
         case enums.GROUP_UPDATED:
           this.groupUpdated(data.message, data.key, data.group, data.options);
           break;
-        case enums.POLL_CREATED: {
-          this.appendPollMessage(messages);
-          break;
-        }
         case enums.POLL_ANSWERED: {
           this.updatePollMessage(messages);
           break;
         }
         case enums.CALL_UPDATED: {
           this.callUpdated(messages);
+          break;
         }
         case enums.AUDIO_CALL:
         case enums.VIDEO_CALL:
@@ -281,7 +278,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Sets the message to which reaction has to be set
    * @param
    */
-  reactToMessage(message) {
+  reactToMessage(message: any) {
     try {
       this.messageToReact = message;
     } catch (error) {
@@ -306,7 +303,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * set Messages Directly , coz new conversation is opened , hence no need to prepend or append
    * @param Any messages
    */
-  setMessages(messages) {
+  setMessages(messages: any) {
     try {
       this.messageList = [...messages];
 
@@ -320,7 +317,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * prepend Fetched Messages
    * @param Any messages
    */
-  prependMessages(messages) {
+  prependMessages(messages: any) {
     try {
       this.messageList = [...messages, ...this.messageList];
     } catch (error) {
@@ -332,7 +329,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * append Messages that are sent
    * @param Any messages
    */
-  appendMessage(messages) {
+  appendMessage(messages: any) {
     try {
       let dummy = [...this.messageList];
 
@@ -345,28 +342,16 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   }
 
   /**
-   * append Poll Messages that are sent
-   * @param Any messages
-   */
-  appendPollMessage(messages) {
-    try {
-      this.appendMessage(messages);
-    } catch (error) {
-      logger(error);
-    }
-  }
-
-  /**
    * updates Poll Messages depending on answer given by user
    * @param Any messages
    */
-  updatePollMessage(message) {
+  updatePollMessage(message: any) {
     try {
       const messageList = [...this.messageList];
       const messageId = message.poll.id;
-      let messageKey = messageList.findIndex((m, k) => m.id === messageId);
+      let messageKey = messageList.findIndex((m: any, k) => m.id === messageId);
       if (messageKey > -1) {
-        const messageObj = messageList[messageKey];
+        const messageObj: object = messageList[messageKey];
 
         const metadataObj = {
           "@injected": { extensions: { polls: message.poll } },
@@ -385,7 +370,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * update status of message ie. read or deliv
    * @param Any messages
    */
-  updateMessages = (messages) => {
+  updateMessages = (messages: any) => {
     try {
       this.messageList = [...messages];
     } catch (error) {
@@ -397,7 +382,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Delete the message
    * @param Any message
    */
-  deleteMessage = (message) => {
+  deleteMessage = (message: any) => {
     try {
       const messageId = message.id;
       CometChat.deleteMessage(messageId)
@@ -405,7 +390,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
           this.removeMessages([deletedMessage]);
 
           const messageList = [...this.messageList];
-          let messageKey = messageList.findIndex((m) => m.id === message.id);
+          let messageKey = messageList.findIndex((m: any) => m.id === message.id);
 
           this.actionGenerated.emit({
             type: enums.THREAD_PARENT_MESSAGE_UPDATED,
@@ -432,7 +417,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Sets The message to be edited to pass it to the message composer
    * @param Any messages
    */
-  editMessage(messages) {
+  editMessage(messages: any) {
     try {
       this.messageToBeEdited = messages;
     } catch (error) {
@@ -444,10 +429,10 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Render The Message List after Message has been successfullly edited
    * @param Any message
    */
-  messageEdited(message) {
+  messageEdited(message: any) {
     try {
       const messageList = [...this.messageList];
-      let messageKey = messageList.findIndex((m) => m.id === message.id);
+      let messageKey = messageList.findIndex((m: any) => m.id === message.id);
       if (messageKey > -1) {
         const messageObj = messageList[messageKey];
 
@@ -478,16 +463,16 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * If the message gets deleted successfull , remove the deleted message in frontend using this function
    * @param Any messages
    */
-  removeMessages = (messages) => {
+  removeMessages = (messages: any) => {
     try {
       const deletedMessage = messages[0];
       const messagelist = [...this.messageList];
 
       let messageKey = messagelist.findIndex(
-        (message) => message.id === deletedMessage.id
+        (message: any) => message.id === deletedMessage.id
       );
       if (messageKey > -1) {
-        let messageObj = { ...messagelist[messageKey] };
+        let messageObj = { ...messagelist[messageKey] as {} };
         let newMessageObj = Object.assign({}, messageObj, deletedMessage);
 
         messagelist.splice(messageKey, 1, newMessageObj);
@@ -503,7 +488,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Checks extension smartReplyPreview
    * @param messages
    */
-  smartReplyPreview(messages) {
+  smartReplyPreview(messages: any) {
     try {
       const message = messages[0];
 
@@ -533,7 +518,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Handles scroll of window
    * @param e
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const bottom =
         Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
@@ -568,7 +553,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Toggle Reaction -> true/false
    * @param
    */
-  toggleReaction(flag) {
+  toggleReaction(flag: any) {
     try {
       this.liveReaction = flag;
     } catch (error) {
@@ -580,7 +565,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Shows Reaction on receiving end
    * @param
    */
-  showReaction(reaction) {
+  showReaction(reaction: any): boolean {
     try {
       if (!reaction.hasOwnProperty(enums.METADATA)) {
         return false;
@@ -609,13 +594,14 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Appends call message
    * @param message
    */
-  callUpdated(message) {
+  callUpdated(message: any) {
     try {
       this.appendMessage([message]);
     } catch (error) {
@@ -640,7 +626,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * Emits an Action Indicating that Group Data has been updated
    * @param
    */
-  groupUpdated = (message, key, group, options) => {
+  groupUpdated = (message: any, key: any, group: any, options: any) => {
     try {
       this.appendMessage([message]);
 

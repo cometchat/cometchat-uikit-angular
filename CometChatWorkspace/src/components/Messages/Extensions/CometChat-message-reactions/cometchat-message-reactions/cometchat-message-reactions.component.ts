@@ -22,13 +22,15 @@ import { COMETCHAT_CONSTANTS } from "../../../../../utils/messageConstants";
   styleUrls: ["./cometchat-message-reactions.component.css"],
 })
 export class CometChatMessageReactionsComponent implements OnInit, OnChanges {
-  @Input() messageDetails = null;
-  @Input() loggedInUser;
+  @Input() messageDetails: any = null;
+  @Input() loggedInUser: any;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
-  extensionData;
-  reactionsName;
-  messageReactions = [];
+  extensionData: any;
+  reactionsName: any;
+  messageReactions: any;
   reactionIcon = REACTION_ICON;
+
+  emojiSize: number = 16;
 
   constructor() {}
 
@@ -66,12 +68,11 @@ export class CometChatMessageReactionsComponent implements OnInit, OnChanges {
   /**
    * fetches the reactions that are already present on the current message
    */
-  getMessageReactions(reaction) {
-    try {
+  getMessageReactions(reaction: any) {
       if (reaction === null) {
         return null;
       }
-      let messageReactions = [];
+      let messageReactions: any = [];
       Object.keys(reaction).map((data, key) => {
         const reactionData = reaction[data];
         const reactionCount = Object.keys(reactionData).length;
@@ -113,15 +114,12 @@ export class CometChatMessageReactionsComponent implements OnInit, OnChanges {
       });
       this.messageReactions = messageReactions;
       return;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * helps to react to a message
    */
-  reactToMessages(emoji = null) {
+  reactToMessages(emoji: any = null) {
     try {
       CometChat.callExtension(enums.REACTIONS, enums.POST, enums.V1_REACT, {
         msgId: this.messageDetails.id,
@@ -141,7 +139,7 @@ export class CometChatMessageReactionsComponent implements OnInit, OnChanges {
   /**
    * stops the emoji click even from bubbling
    */
-  triggerEmojiClick(event) {
+  triggerEmojiClick(event: any) {
     try {
       event.stopPropagation();
     } catch (error) {

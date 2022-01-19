@@ -26,7 +26,7 @@
       messageReactionsHoverStyle: !reaction?.showBlueOutline
     }"
   >
-    <ngx-emoji [emoji]="reaction?.reactionName" size="16"></ngx-emoji>
+    <ngx-emoji [emoji]="reaction?.reactionName" [size]="emojiSize"></ngx-emoji>
     <span class="reactionCountStyle">
       {{ reaction?.reactionCount }}
     </span>

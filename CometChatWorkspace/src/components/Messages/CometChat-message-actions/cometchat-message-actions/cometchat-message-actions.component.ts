@@ -9,7 +9,7 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-message-actions.component.css"],
 })
 export class CometChatMessageActionsComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -17,7 +17,7 @@ export class CometChatMessageActionsComponent implements OnInit {
 
   @Input() pollView: boolean = false;
 
-  loggedInUser;
+  loggedInUser: any;
 
   showOnlyReplyButton: boolean = false;
   receivedMessage: boolean = false;

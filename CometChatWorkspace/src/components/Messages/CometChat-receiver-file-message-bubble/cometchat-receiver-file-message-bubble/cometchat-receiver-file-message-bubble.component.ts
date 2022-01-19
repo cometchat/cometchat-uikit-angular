@@ -10,18 +10,18 @@ import { CometChat } from "@cometchat-pro/chat";
   styleUrls: ["./cometchat-receiver-file-message-bubble.component.css"],
 })
 export class CometChatReceiverFileMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
-  name: string;
-  url: string;
+  @Input() messageDetails: any = null;
+  name: string = '';
+  url: string = '';
   avatar = null;
-  avatarName: string = null;
+  avatarName: string = '';
   avatarIfGroup: boolean = false;
   checkReaction = [];
 
   @Input() showReplyCount = true;
 
   @Input() showToolTip = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
@@ -60,7 +60,7 @@ export class CometChatReceiverFileMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

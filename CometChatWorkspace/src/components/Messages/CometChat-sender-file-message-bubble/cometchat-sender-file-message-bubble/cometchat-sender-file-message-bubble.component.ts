@@ -11,15 +11,15 @@ import * as enums from "../../../../utils/enums";
   styleUrls: ["./cometchat-sender-file-message-bubble.component.css"],
 })
 export class CometChatSenderFileMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
   checkReaction = [];
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
-  url: string;
-  name: string;
+  url: string = '';
+  name: string = '';
   constructor() {}
 
   ngOnInit() {
@@ -39,7 +39,7 @@ export class CometChatSenderFileMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

@@ -10,16 +10,16 @@ import { CometChat } from "@cometchat-pro/chat";
   styleUrls: ["./cometchat-receiver-video-message-bubble.component.css"],
 })
 export class CometChatReceiverVideoMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   avatar = null;
-  name: string = null;
+  name: string = '';
 
-  videoUrl: string;
+  videoUrl: string = '';
 
   checkReaction = [];
 
@@ -73,7 +73,7 @@ export class CometChatReceiverVideoMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

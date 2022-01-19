@@ -11,14 +11,14 @@ import * as enums from "../../../../utils/enums";
   styleUrls: ["./cometchat-sender-video-message-bubble.component.css"],
 })
 export class CometChatSenderVideoMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
   //Sets Video Url to be displayed
-  videoUrl: string;
+  videoUrl: string = '';
   messageFrom = enums.SENDER;
 
   message = Object.assign({}, this.messageDetails, {
@@ -54,7 +54,7 @@ export class CometChatSenderVideoMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

@@ -9,8 +9,8 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-view-group-member-list.component.css"],
 })
 export class CometChatViewGroupMemberListComponent implements OnInit {
-  @Input() item = null;
-  @Input() type = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
   @Input() loggedInUser = null;
   @Input() memberList = [];
 
@@ -31,7 +31,7 @@ export class CometChatViewGroupMemberListComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let data = action.payLoad;
 
@@ -58,7 +58,7 @@ export class CometChatViewGroupMemberListComponent implements OnInit {
    * Changes the scope of a member of a group
    * @param Any member
    */
-  changeScope = (member, scope) => {
+  changeScope = (member: any, scope: any) => {
     try {
       const guid = this.item.guid;
 
@@ -85,7 +85,7 @@ export class CometChatViewGroupMemberListComponent implements OnInit {
    * Bans a  member of a group
    * @param Any memberToBan
    */
-  banMember = (memberToBan) => {
+  banMember = (memberToBan: any) => {
     try {
       const guid = this.item.guid;
       CometChat.banGroupMember(guid, memberToBan.uid)
@@ -110,7 +110,7 @@ export class CometChatViewGroupMemberListComponent implements OnInit {
    * kicks the member member of a group
    * @param Any memberToKick
    */
-  kickMember = (memberToKick) => {
+  kickMember = (memberToKick: any) => {
     try {
       const guid = this.item.guid;
       CometChat.kickGroupMember(guid, memberToKick.uid)

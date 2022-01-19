@@ -27,16 +27,16 @@ export class CometChatUserListComponent
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  userListenerId = enums.USER_LIST_ + new Date().getTime();
+  userListenerId: any = enums.USER_LIST_ + new Date().getTime();
 
   decoratorMsg: string = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
   userSearches: boolean = false;
   loader: Boolean = true;
   contactsNotFound: Boolean = false;
   contacts = [];
-  usersList = [];
-  usersRequest;
-  timeout;
+  usersList: any = [];
+  usersRequest: any;
+  timeout: any;
   defaultAvatarImage =
     "https://data-eu.cometchat.io/assets/images/avatars/spiderman.png";
 
@@ -44,15 +44,7 @@ export class CometChatUserListComponent
   SEARCH: String = COMETCHAT_CONSTANTS.SEARCH;
 
   constructor(private ref: ChangeDetectorRef) {
-    try {
-      setInterval(() => {
-        if (!this.ref[enums.DESTROYED]) {
-          this.ref.detectChanges();
-        }
-      }, 5000);
-    } catch (error) {
-      logger(error);
-    }
+   
   }
 
   ngOnChanges(change: SimpleChanges) {
@@ -105,12 +97,12 @@ export class CometChatUserListComponent
       CometChat.addUserListener(
         this.userListenerId,
         new CometChat.UserListener({
-          onUserOnline: (onlineUser) => {
+          onUserOnline: (onlineUser: any) => {
             /* when someuser/friend comes online, user will be received here */
 
             this.userUpdated(onlineUser);
           },
-          onUserOffline: (offlineUser) => {
+          onUserOffline: (offlineUser: any) => {
             /* when someuser/friend went offline, user will be received here */
 
             this.userUpdated(offlineUser);
@@ -139,7 +131,7 @@ export class CometChatUserListComponent
    * Search User Based on their Name
    * @param String searchKey
    */
-  searchUsers(searchKey) {
+  searchUsers(searchKey: any) {
     try {
       this.contactsNotFound = false;
       this.decoratorMsg = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
@@ -171,7 +163,7 @@ export class CometChatUserListComponent
    * If User scrolls to the bottom of the current Contact list than fetch next items of the contact list and append
    * @param Event e
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const bottom =
         Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
@@ -190,7 +182,7 @@ export class CometChatUserListComponent
   fetchNextContactList() {
     try {
       this.usersRequest.fetchNext().then(
-        (userList) => {
+        (userList: any) => {
           if (userList.length === 0 && this.userSearches === true) {
             this.contactsNotFound = true;
             this.decoratorMsg = COMETCHAT_CONSTANTS.NO_USERS_FOUND;
@@ -200,7 +192,7 @@ export class CometChatUserListComponent
             this.loader = false;
           }
         },
-        (error) => {
+        (error: any) => {
           logger("User list fetching failed with error:", error);
         }
       );
@@ -213,16 +205,16 @@ export class CometChatUserListComponent
    * This function updates the status ( online / offline ) , in real-time when getting signals from the listerners
    * @param Any user
    */
-  userUpdated = (user) => {
+  userUpdated = (user: any) => {
     try {
       let userlist = [...this.usersList];
 
       //search for user
-      let userKey = userlist.findIndex((u, k) => u.uid === user.uid);
+      let userKey = userlist.findIndex((u: any, k) => u.uid === user.uid);
 
       //if found in the list, update user object
       if (userKey > -1) {
-        let userObj = { ...userlist[userKey] };
+        let userObj = { ...userlist[userKey] as {} };
         let newUserObj = { ...userObj, ...user };
         userlist.splice(userKey, 1, newUserObj);
 
@@ -237,7 +229,7 @@ export class CometChatUserListComponent
    * Emitting the user clicked so that it can be used in the parent component
    * @param Any userToEmit
    */
-  onUserClicked(userToEmit) {
+  onUserClicked(userToEmit: object) {
     try {
       this.onUserClick.emit(userToEmit);
     } catch (error) {
@@ -249,7 +241,7 @@ export class CometChatUserListComponent
    * Emitting the close Menu action to be used in parent component to handle screen logic
    * @param
    */
-  handleMenuClose = () => {
+  handleMenuClose = (): boolean => {
     try {
       if (!this.hasActions) {
         return false;
@@ -259,5 +251,6 @@ export class CometChatUserListComponent
     } catch (error) {
       logger(error);
     }
+    return true;
   };
 }

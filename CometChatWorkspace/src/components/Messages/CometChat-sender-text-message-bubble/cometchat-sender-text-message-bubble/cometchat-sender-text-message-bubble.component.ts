@@ -12,19 +12,19 @@ import * as enums from "../../../../utils/enums";
   styleUrls: ["./cometchat-sender-text-message-bubble.component.css"],
 })
 export class CometChatSenderTextMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   @Input() showToolTip = true;
 
   linkPreview: boolean = false;
-  linkTitle: string;
-  linkDescription: string;
-  linkUrl: string;
-  linkText: string;
-  linkImage: string;
+  linkTitle: string = '';
+  linkDescription: string = '';
+  linkUrl: string = '';
+  linkText: string = '';
+  linkImage: string = '';
   checkReaction = [];
   constructor() {}
 
@@ -90,7 +90,7 @@ export class CometChatSenderTextMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

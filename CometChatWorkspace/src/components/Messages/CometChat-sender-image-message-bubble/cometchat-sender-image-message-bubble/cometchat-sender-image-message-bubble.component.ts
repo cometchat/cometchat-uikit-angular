@@ -18,17 +18,17 @@ import {
   styleUrls: ["./cometchat-sender-image-message-bubble.component.css"],
 })
 export class CometChatSenderImageMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
-  innerWidth;
+  innerWidth: any;
   checkScreenSize: boolean = false;
   checkReaction = [];
 
-  timer = null;
+  timer: any = null;
   messageFrom = enums.SENDER;
   imageLoader: boolean = false;
 
@@ -36,7 +36,7 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
     messageFrom: this.messageFrom,
   });
 
-  message = this.messageAssign;
+  message: object = this.messageAssign;
   imageUrl = "";
   fullScreenView = false;
   img: any;
@@ -125,7 +125,7 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
    * Sets image url ie. medium or small-size image
    * @param
    */
-  chooseImage(thumbnailGenerationObject) {
+  chooseImage(thumbnailGenerationObject: any) {
     try {
       const smallUrl = thumbnailGenerationObject[enums.URL_SMALL];
       const mediumUrl = thumbnailGenerationObject[enums.URL_MEDIUM];
@@ -178,7 +178,7 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {
@@ -190,8 +190,7 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
    * Downloads image from server
    * @param imgUrl
    */
-  downloadImage(imgUrl) {
-    try {
+  downloadImage(imgUrl: any) {
       const promise = new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open(enums.GET, imgUrl, true);
@@ -222,8 +221,5 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
       });
 
       return promise;
-    } catch (error) {
-      logger(error);
-    }
   }
 }

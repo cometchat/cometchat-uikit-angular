@@ -18,22 +18,22 @@ import { CometChatService } from "./../../../../utils/cometchat.service";
   styleUrls: ["./cometchat-group-details.component.css"],
 })
 export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
-  @Input() item = null;
-  @Input() type = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   guid = null;
-  groupMemberRequest = null;
-  bannedGroupMemberRequest = null;
+  groupMemberRequest: any = null;
+  bannedGroupMemberRequest: any = null;
 
   userListenerId = enums.GROUP_DETAIL_USER_ + new Date().getTime();
   groupListenerId = enums.GROUP_DETAIL_GROUP_ + new Date().getTime();
 
-  memberList = [];
-  bannedMemberList = [];
-  administratorsList = [];
-  moderatorsList = [];
+  memberList: any = [];
+  bannedMemberList: any = [];
+  administratorsList: any = [];
+  moderatorsList: any = [];
   loggedInUser = null;
 
   openViewMember: boolean = false;
@@ -85,7 +85,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let data = action.payLoad;
 
@@ -127,39 +127,39 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * Listener for activities happening in group in real time
    * @param
    */
-  addEventListeners(callback) {
+  addEventListeners(callback: any) {
     try {
       CometChat.addGroupListener(
         this.groupListenerId,
         new CometChat.GroupListener({
           onGroupMemberScopeChanged: (
-            message,
-            changedUser,
-            newScope,
-            oldScope,
-            changedGroup
+            message: any,
+            changedUser: any,
+            newScope: any,
+            oldScope: any,
+            changedGroup: any
           ) => {
             callback(enums.GROUP_MEMBER_SCOPE_CHANGED, message, changedGroup, {
               user: changedUser,
               scope: newScope,
             });
           },
-          onGroupMemberKicked: (message, kickedUser, kickedBy, kickedFrom) => {
+          onGroupMemberKicked: (message: any, kickedUser: any, kickedBy: any, kickedFrom: any) => {
             callback(enums.GROUP_MEMBER_KICKED, message, kickedFrom, {
               user: kickedUser,
               hasJoined: false,
             });
           },
-          onGroupMemberBanned: (message, bannedUser, bannedBy, bannedFrom) => {
+          onGroupMemberBanned: (message: any, bannedUser: any, bannedBy: any, bannedFrom: any) => {
             callback(enums.GROUP_MEMBER_BANNED, message, bannedFrom, {
               user: bannedUser,
             });
           },
           onGroupMemberUnbanned: (
-            message,
-            unbannedUser,
-            unbannedBy,
-            unbannedFrom
+            message: any,
+            unbannedUser: any,
+            unbannedBy: any,
+            unbannedFrom: any
           ) => {
             callback(enums.GROUP_MEMBER_UNBANNED, message, unbannedFrom, {
               user: unbannedUser,
@@ -167,22 +167,22 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
             });
           },
           onMemberAddedToGroup: (
-            message,
-            userAdded,
-            userAddedBy,
-            userAddedIn
+            message: any,
+            userAdded: any,
+            userAddedBy: any,
+            userAddedIn: any
           ) => {
             callback(enums.GROUP_MEMBER_ADDED, message, userAddedIn, {
               user: userAdded,
               hasJoined: true,
             });
           },
-          onGroupMemberLeft: (message, leavingUser, group) => {
+          onGroupMemberLeft: (message: any, leavingUser: any, group: any) => {
             callback(enums.GROUP_MEMBER_LEFT, message, group, {
               user: leavingUser,
             });
           },
-          onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
+          onGroupMemberJoined: (message: any, joinedUser: any, joinedGroup: any) => {
             callback(enums.GROUP_MEMBER_JOINED, message, joinedGroup, {
               user: joinedUser,
             });
@@ -193,7 +193,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
       CometChat.addUserListener(
         this.userListenerId,
         new CometChat.UserListener({
-          onUserOnline: (onlineUser) => {
+          onUserOnline: (onlineUser: object) => {
             /* when someuser/friend comes online, user will be received here */
             callback(
               enums.USER_ONLINE,
@@ -202,7 +202,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
               { user: onlineUser }
             );
           },
-          onUserOffline: (offlineUser) => {
+          onUserOffline: (offlineUser: object) => {
             /* when someuser/friend went offline, user will be received here */
             callback(
               enums.USER_OFFLINE,
@@ -235,16 +235,12 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * Creates a Group MemberList request object
    * @param
    */
-  createGroupMemberRequest(guid) {
-    try {
+  createGroupMemberRequest(guid: any) {
       let groupMemberRequest = new CometChat.GroupMembersRequestBuilder(guid)
         .setLimit(10)
         .build();
 
       return groupMemberRequest;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
@@ -253,14 +249,14 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    */
   getGroupMembers() {
     try {
-      const administratorsList = [],
-        moderatorsList = [];
+      const administratorsList: any = [],
+        moderatorsList: Array<any> = [];
       CometChat.getLoggedinUser()
-        .then((user) => {
+        .then((user: any) => {
           this.loggedInUser = user;
           this.fetchNextGroupMembers()
-            .then((groupMembers) => {
-              groupMembers.forEach((member) => {
+            .then((groupMembers: any) => {
+              groupMembers.forEach((member: any) => {
                 if (member.scope === CometChat.GROUP_MEMBER_SCOPE.ADMIN) {
                   administratorsList.push(member);
                 }
@@ -277,7 +273,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
               ];
               this.moderatorsList = [...this.moderatorsList, ...moderatorsList];
             })
-            .catch((error) => {
+            .catch((error: any) => {
               logger(
                 "[CometChatGroupDetail] getGroupMembers fetchNextGroupMembers error",
                 error
@@ -299,8 +295,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * Creates a Banned MemberList request object
    * @param
    */
-  createBannedMemberRequest(guid) {
-    try {
+  createBannedMemberRequest(guid: any) {
       let bannedGroupMemberRequest = new CometChat.BannedMembersRequestBuilder(
         guid
       )
@@ -308,16 +303,13 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
         .build();
 
       return bannedGroupMemberRequest;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Fetches list of Banned members accroding to the  banned members request object
    * @param
    */
-  getBannedGroupMembers = () => {
+  getBannedGroupMembers = (): boolean => {
     try {
       if (this.item.scope === CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT) {
         return false;
@@ -326,13 +318,13 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
       CometChat.getLoggedinUser()
         .then((user) => {
           this.fetchNextBannedGroupMembers()
-            .then((bannedMembers) => {
+            .then((bannedMembers: any) => {
               this.bannedMemberList = [
                 ...this.bannedMemberList,
                 ...bannedMembers,
               ];
             })
-            .catch((error) => {
+            .catch((error: any) => {
               logger(
                 "[CometChatGroupDetail] getGroupMembers fetchNextGroupMembers error",
                 error
@@ -348,12 +340,13 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
     } catch (error) {
       logger(error);
     }
+    return true;
   };
 
   /**
    * Updates group infomation based on activities happening in the group
    */
-  groupUpdated = (key = null, message = null, group = null, options = null) => {
+  groupUpdated = (key: any = null, message = null, group: any = null, options: any = null): boolean => {
     try {
       const guid = this.item.guid;
       if (guid !== group.guid) {
@@ -412,13 +405,14 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
     } catch (error) {
       logger(error);
     }
+    return true;
   };
 
   /**
    * Adds the members that are banned to bannedMemberList
    * @param any members
    */
-  banMembers = (members) => {
+  banMembers = (members: any) => {
     try {
       this.bannedMemberList = [...this.bannedMemberList, ...members];
     } catch (error) {
@@ -430,7 +424,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * Updates group member data and information based on group actions
    * @param any member
    */
-  groupMemberUpdated = (member) => {
+  groupMemberUpdated = (member: any) => {
     try {
       let memberList = [...this.memberList];
       //search for user
@@ -447,7 +441,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
       let bannedMemberList = [...this.bannedMemberList];
       //search for user
       let bannedMemberKey = bannedMemberList.findIndex(
-        (m, k) => m.uid === member.uid
+        (m: any, k) => m.uid === member.uid
       );
       //if found in the list, update user object
       if (bannedMemberKey > -1) {
@@ -489,7 +483,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
   /**
    * Helps to Add Particpants to the current group
    */
-  addParticipants = (members, triggerUpdate = true) => {
+  addParticipants = (members: any, triggerUpdate = true) => {
     try {
       const memberList = [...this.memberList, ...members];
 
@@ -513,12 +507,12 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
   /**
    * Updates Group Participant's data according to the group activities
    */
-  updateParticipants = (updatedMember) => {
+  updateParticipants = (updatedMember: any) => {
     try {
       const memberList = [...this.memberList];
 
       const memberKey = memberList.findIndex(
-        (member) => member.uid === updatedMember.uid
+        (member: any) => member.uid === updatedMember.uid
       );
       if (memberKey > -1) {
         const memberObj = memberList[memberKey];
@@ -543,10 +537,10 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
   /**
    * Removes the participant from the group member list , when the member is banned
    */
-  removeParticipants = (member, triggerUpdate = true) => {
+  removeParticipants = (member: any, triggerUpdate = true) => {
     try {
       const groupmembers = [...this.memberList];
-      const filteredMembers = groupmembers.filter((groupmember) => {
+      const filteredMembers = groupmembers.filter((groupmember: any) => {
         if (groupmember.uid === member.uid) {
           return false;
         }
@@ -573,13 +567,13 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * Removes the participant from the banned member list , when the member is unbanned
    * @param
    */
-  unbanMembers(members) {
+  unbanMembers(members: any) {
     try {
       const bannedMembers = [...this.bannedMemberList];
-      const unbannedMembers = [];
+      const unbannedMembers: any = [];
 
-      const filteredBannedMembers = bannedMembers.filter((bannedmember) => {
-        const found = members.find((member) => bannedmember.uid === member.uid);
+      const filteredBannedMembers = bannedMembers.filter((bannedmember: any) => {
+        const found = members.find((member: any) => bannedmember.uid === member.uid);
         if (found) {
           unbannedMembers.push(found);
           return false;
@@ -643,8 +637,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * Returns the role/scope that the current user has , for the group that is currently opened
    * @param Any member
    */
-  checkMemberScope = (group) => {
-    try {
+  checkMemberScope (group: any) {
       //group.scope is key which holds the role of the current user in this group
 
       if (group.scope == COMETCHAT_CONSTANTS.OWNER) {
@@ -658,9 +651,6 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
       } else {
         return this.PARTICIPANT;
       }
-    } catch (error) {
-      logger(error);
-    }
   };
 
   /**
@@ -688,7 +678,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
   /**
    * opens/closes add member view
    */
-  toggleAddMemberView(show) {
+  toggleAddMemberView(show: boolean) {
     try {
       this.openAddMemberView = show;
     } catch (error) {

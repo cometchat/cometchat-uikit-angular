@@ -34,15 +34,15 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatUserListWithMessagesComponent implements OnInit {
   //It can be a user or a group
-  curentItem = null;
-  item;
+  curentItem: any = null;
+  item: any;
   // Defines the types of item that was clicked --> that is .. if its a user or a group
-  type = null;
+  type: string = '';
 
   threadMessageView: boolean = false;
-  threadMessageParent = null;
+  threadMessageParent: any = null;
   threadMessageItem = null;
-  threadMessageType = "";
+  threadMessageType: any = '';
   composedThreadMessage = null;
   viewDetailScreen: boolean = false;
   // To display image in full screen
@@ -54,22 +54,22 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
   //for audio calling
   outgoingCall = null;
   incomingCall = null;
-  loggedInUser;
+  loggedInUser: object = {};
   callMessage = null;
-  messageToMarkRead;
+  messageToMarkRead: any;
 
   callInitialised: boolean = false;
-  checkAnimatedState;
+  checkAnimatedState: any;
   checkIfAnimated: boolean = false;
 
-  innerWidth;
+  innerWidth: any;
 
   constructor() {}
 
   ngOnInit() {
     try {
       this.onResize();
-      CometChat.getLoggedinUser().then((user) => {
+      CometChat.getLoggedinUser().then((user: any) => {
         this.loggedInUser = user;
       });
     } catch (error) {
@@ -81,7 +81,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
    * Checks when window size is changed in realtime
    */
   @HostListener("window:resize", [])
-  onResize() {
+  onResize():boolean {
     try {
       this.innerWidth = window.innerWidth;
       if (
@@ -101,13 +101,14 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Listen to the user emitted by the userList component
    * @param Event user
    */
-  userClicked(user) {
+  userClicked(user: any) {
     try {
       if (this.checkAnimatedState !== null) {
         this.checkAnimatedState == "normal"
@@ -134,7 +135,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let message = action.payLoad;
 
@@ -234,7 +235,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
    * Sets All the Intial Conditions for the threaded View of Messages and Opens thread View
    * @param Any parentMessage
    */
-  viewMessageThread(parentMessage) {
+  viewMessageThread(parentMessage: object) {
     try {
       //Open Thread Screen
       this.threadMessageView = true;
@@ -253,7 +254,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
   /**
    * Updates the thread message , it the currently open thread parent is deleted or is edited
    */
-  updateThreadMessage = (message, action) => {
+  updateThreadMessage = (message: object, action: string):boolean => {
     try {
       if (this.threadMessageView === false) {
         return false;
@@ -268,6 +269,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+    return true;
   };
 
   /**
@@ -290,7 +292,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
    * Opens the clicked Image in full screen mode
    * @param Any message
    */
-  toggleImageView(message) {
+  toggleImageView(message: any) {
     try {
       this.imageView = message;
       this.fullScreenViewImage = !this.fullScreenViewImage;
@@ -367,7 +369,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
       }
 
       CometChatManager.call(receiverId, receiverType, CometChat.CALL_TYPE.AUDIO)
-        .then((call) => {
+        .then((call: any) => {
           this.appendCallMessage(call);
           this.outgoingCall = call;
         })
@@ -394,7 +396,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
       }
 
       CometChatManager.call(receiverId, receiverType, CometChat.CALL_TYPE.VIDEO)
-        .then((call) => {
+        .then((call: any) => {
           this.appendCallMessage(call);
 
           this.outgoingCall = call;
@@ -411,7 +413,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
    * Appends Call Messages
    * @param
    */
-  appendCallMessage(call) {
+  appendCallMessage(call: any) {
     try {
       this.callMessage = call;
     } catch (error) {
@@ -423,7 +425,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
    * When Outgoing call is ended append Call Message
    * @param message
    */
-  outgoingCallEnded(message) {
+  outgoingCallEnded(message: object) {
     try {
       this.outgoingCall = null;
       this.incomingCall = null;
@@ -436,7 +438,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
   /**
    * ACCPETS INCOMING CALL
    */
-  acceptIncomingCall(call) {
+  acceptIncomingCall(call: any) {
     try {
       this.incomingCall = call;
 
@@ -463,7 +465,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
    * When call is accepted and connected append call message
    * @param
    */
-  callInitiated(message) {
+  callInitiated(message: any) {
     try {
       this.appendCallMessage(message);
     } catch (error) {
@@ -474,7 +476,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
   /**
    * IncomingCall Rejected
    */
-  rejectedIncomingCall(call) {
+  rejectedIncomingCall(call: any) {
     try {
       let incomingCallMessage = call.incomingCall;
       let rejectedCallMessage = call.rejectedCall;

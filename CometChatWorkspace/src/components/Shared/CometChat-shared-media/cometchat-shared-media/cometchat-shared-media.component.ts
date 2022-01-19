@@ -10,25 +10,25 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-shared-media.component.css"],
 })
 export class CometChatSharedMediaComponent implements OnInit {
-  @ViewChild("mediaContainer", { static: false }) mediaWindow: ElementRef;
+  @ViewChild("mediaContainer", { static: false }) mediaWindow!: ElementRef;
 
-  @Input() type = null;
-  @Input() item = null;
+  @Input() type: string = '';
+  @Input() item: any = null;
   messageType: string = CometChat.MESSAGE_TYPE.IMAGE; //Sets type of media message to be fetched
-  messageList = [];
+  messageList: any = [];
 
   displaySharedMedia: any;
-  messageContainer;
+  messageContainer: any;
   mediaMessageListenerId = "messages_" + new Date().getTime();
-  mediaMessageRequest = null;
-  loggedInUser;
+  mediaMessageRequest: any = null;
+  loggedInUser: any;
 
   //If No speciifc type of media message is sent/received
   checkMediaMessage: boolean = false;
-  displayMessage: string;
+  displayMessage: string = '';
 
   scrollVariable = 0;
-  scrolltoBottom: boolean;
+  scrolltoBottom: boolean = false;
 
   imageClick: boolean = true;
   videoClick: boolean = false;
@@ -42,7 +42,8 @@ export class CometChatSharedMediaComponent implements OnInit {
   MESSAGE_TYPE_VIDEO: String = CometChat.MESSAGE_TYPE.VIDEO;
   MESSAGE_TYPE_FILE: String = CometChat.MESSAGE_TYPE.FILE;
 
-  constructor() {}
+  constructor() {
+  }
 
   ngOnInit() {
     try {
@@ -72,7 +73,7 @@ export class CometChatSharedMediaComponent implements OnInit {
   /**
    * Builds the user request
    */
-  mediaMessageRequestBuilder(item, type, messageType) {
+  mediaMessageRequestBuilder(item: any, type: any, messageType: any) {
     try {
       if (type === CometChat.RECEIVER_TYPE.USER) {
         this.mediaMessageRequest = new CometChat.MessagesRequestBuilder()
@@ -98,15 +99,15 @@ export class CometChatSharedMediaComponent implements OnInit {
    * Listener To Receive Media Messages in Real Time
    *  @param
    */
-  addMediaMessageEventListeners(callback) {
+  addMediaMessageEventListeners(callback: any) {
     try {
       CometChat.addMessageListener(
         this.mediaMessageListenerId,
         new CometChat.MessageListener({
-          onMediaMessageReceived: (mediaMessage) => {
+          onMediaMessageReceived: (mediaMessage: any) => {
             callback(enums.MEDIA_MESSAGE_RECEIVED, mediaMessage);
           },
-          onMessageDeleted: (deletedMessage) => {
+          onMessageDeleted: (deletedMessage: any) => {
             callback(enums.MESSAGE_DELETED, deletedMessage);
           },
         })
@@ -119,7 +120,7 @@ export class CometChatSharedMediaComponent implements OnInit {
   /**
    * Updates sharedMediaView on basis of user activity or group activity
    */
-  messageUpdated(key, message) {
+  messageUpdated(key: any, message: any) {
     try {
       switch (key) {
         case enums.MESSAGE_DELETED:
@@ -140,7 +141,7 @@ export class CometChatSharedMediaComponent implements OnInit {
    * If User Deletes Message
    * @param
    */
-  messageDeleted(deletedMessage) {
+  messageDeleted(deletedMessage: any ) {
     try {
       const messageType = deletedMessage.data.type;
       if (
@@ -164,7 +165,7 @@ export class CometChatSharedMediaComponent implements OnInit {
    * When a message is recieved
    * @param
    */
-  messageReceived(message) {
+  messageReceived(message: any) {
     try {
       const messageType = message.data.type;
       if (
@@ -194,7 +195,7 @@ export class CometChatSharedMediaComponent implements OnInit {
           this.loggedInUser = user;
 
           this.fetchPreviousMessages()
-            .then((messages) => {
+            .then((messages: any) => {
               const messageList = [...messages, ...this.messageList];
 
               if (messageList.length === 0) {
@@ -221,7 +222,7 @@ export class CometChatSharedMediaComponent implements OnInit {
                 }
               }
             })
-            .catch((error) => {
+            .catch((error: any) => {
               //TODO Handle the erros in contact list.
               logger(
                 "[SharedMediaView] getMessages fetchPrevious error",
@@ -267,7 +268,7 @@ export class CometChatSharedMediaComponent implements OnInit {
    * Handles the scroll
    * @param
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const top = Math.round(e.currentTarget.scrollTop) === 0;
       if (top && this.messageList.length) {
@@ -282,7 +283,7 @@ export class CometChatSharedMediaComponent implements OnInit {
    * Sets the type of message i.e image,video or file
    * @param
    */
-  mediaClickHandler(type) {
+  mediaClickHandler(type: any) {
     try {
       if (type === CometChat.MESSAGE_TYPE.IMAGE) {
         this.imageClick = true;
