@@ -36,11 +36,11 @@ export const CUSTOM_TYPE_STICKER = "extension_sticker";
 export const ACTION_TYPE_GROUPMEMBER = "groupMember";
 
 export const LIVE_REACTION_KEY = "live_reaction";
-export const LIVE_REACTIONS = {
-  heart: "./resources/heart.png",
-  thumbsup: "👍",
-  clap: "👏",
-  wink: "😉",
+export const LIVE_REACTIONS: { [key: string]: string} = {
+  'heart': "./resources/heart.png",
+  'thumbsup': "👍",
+  'clap': "👏",
+  'wink': "😉",
 };
 
 export const LEFT_GROUP = "leftGroup";
@@ -150,6 +150,8 @@ export const V1_FETCH = "v1/fetch";
 export const V1_CREATE = "v1/create";
 export const V1_VOTE = "v1/vote";
 export const V1_REACT = "v1/react";
+export const V2_CREATE = "v2/create";
+export const V2_VOTE = "v2/vote";
 
 export const POLLS = "polls";
 export const REACTIONS = "reactions";

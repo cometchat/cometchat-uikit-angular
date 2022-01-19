@@ -10,10 +10,10 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-create-group.component.css"],
 })
 export class CometChatCreateGroupComponent implements OnInit {
-  error = null;
+  error: any = null;
   passwordInput: boolean = false;
   name: String = "";
-  type: String = "";
+  type: string = "";
   password = "";
 
   createBtnText: String = COMETCHAT_CONSTANTS.CREATE;
@@ -35,7 +35,7 @@ export class CometChatCreateGroupComponent implements OnInit {
    * Changes the password according to the text entered by the user
    * @param Event event
    */
-  passwordChangeHandler(event) {
+  passwordChangeHandler(event: any) {
     try {
       this.password = event.target.value;
     } catch (error) {
@@ -47,7 +47,7 @@ export class CometChatCreateGroupComponent implements OnInit {
    * Changes the Group Name according to the text entered by the user
    * @param Event event
    */
-  nameChangeHandler(event) {
+  nameChangeHandler(event: any) {
     try {
       this.name = event.target.value;
     } catch (error) {
@@ -59,7 +59,7 @@ export class CometChatCreateGroupComponent implements OnInit {
    * Changes the Type of group ,   according to the option seletced by the user by the user
    * @param Event event
    */
-  typeChangeHandler(event) {
+  typeChangeHandler(event: any) {
     try {
       this.type = event.target.value;
 
@@ -77,8 +77,7 @@ export class CometChatCreateGroupComponent implements OnInit {
    * Validates all the group details that were entered before creating the group
    * @param
    */
-  validate = () => {
-    try {
+  validate() {
       const groupName = this.name.trim();
       const groupType = this.type.trim();
 
@@ -103,23 +102,20 @@ export class CometChatCreateGroupComponent implements OnInit {
         }
       }
       return true;
-    } catch (error) {
-      logger(error);
-    }
   };
 
   /**
    * If the Group Data is successfully validated , below function creates the group
    * @param
    */
-  createGroup() {
+  createGroup(): boolean {
     try {
       if (!this.validate()) {
         return false;
       }
 
       if (this.createBtnText == COMETCHAT_CONSTANTS.CREATING_MESSSAGE) {
-        return;
+        return true;
       }
 
       this.createBtnText = COMETCHAT_CONSTANTS.CREATING_MESSSAGE;
@@ -164,6 +160,7 @@ export class CometChatCreateGroupComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**

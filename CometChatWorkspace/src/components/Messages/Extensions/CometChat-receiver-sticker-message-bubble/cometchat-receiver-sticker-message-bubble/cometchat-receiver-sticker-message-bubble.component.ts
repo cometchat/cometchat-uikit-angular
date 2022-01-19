@@ -21,20 +21,20 @@ import { CometChat } from "@cometchat-pro/chat";
 })
 export class CometChatReceiverStickerMessageBubbleComponent
   implements OnInit, OnChanges {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   @Input() showReplyCount = true;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   avatar = null;
-  name: string = null;
+  name: string = '';
   avatarIfGroup: boolean = false;
 
-  stickerName: string;
-  stickerUrl: string;
+  stickerName: string = '';
+  stickerUrl: string = '';
 
   checkReaction = [];
 
@@ -118,7 +118,7 @@ export class CometChatReceiverStickerMessageBubbleComponent
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

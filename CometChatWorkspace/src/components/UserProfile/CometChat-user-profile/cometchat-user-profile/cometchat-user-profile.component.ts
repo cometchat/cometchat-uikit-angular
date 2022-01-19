@@ -8,8 +8,8 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-user-profile.component.css"],
 })
 export class CometChatUserProfileComponent implements OnInit {
-  user;
-  name: string;
+  user: any;
+  name: any;
 
   MORE: String = COMETCHAT_CONSTANTS.MORE;
   ONLINE: String = COMETCHAT_CONSTANTS.ONLINE;

@@ -21,8 +21,8 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatMessageHeaderComponent
   implements OnInit, OnChanges, OnDestroy {
-  @Input() item = null;
-  @Input() type = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -31,7 +31,7 @@ export class CometChatMessageHeaderComponent
   groupListenerId = enums.HEAD_GROUP_ + new Date().getTime();
   status: string = "";
   isTyping: boolean = false;
-  loggedInUser = null;
+  loggedInUser: any = null;
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
   USER: String = CometChat.RECEIVER_TYPE.USER;
   ONLINE: String = CometChat.USER_STATUS.ONLINE;
@@ -114,7 +114,7 @@ export class CometChatMessageHeaderComponent
   getLoggedInUserInfo() {
     try {
       CometChat.getLoggedinUser()
-        .then((user) => {
+        .then((user: any) => {
           this.loggedInUser = user;
         })
         .catch((error) => {
@@ -134,12 +134,12 @@ export class CometChatMessageHeaderComponent
       CometChat.addUserListener(
         this.userListenerId,
         new CometChat.UserListener({
-          onUserOnline: (onlineUser) => {
+          onUserOnline: (onlineUser: any) => {
             /* when someuser/friend comes online, user will be received here */
 
             this.updateHeader(enums.USER_ONLINE, onlineUser);
           },
-          onUserOffline: (offlineUser) => {
+          onUserOffline: (offlineUser: any) => {
             /* when someuser/friend went offline, user will be received here */
 
             this.updateHeader(enums.USER_OFFLINE, offlineUser);
@@ -150,10 +150,10 @@ export class CometChatMessageHeaderComponent
       CometChat.addMessageListener(
         this.msgListenerId,
         new CometChat.MessageListener({
-          onTypingStarted: (typingIndicator) => {
+          onTypingStarted: (typingIndicator: any) => {
             this.updateHeader(enums.TYPING_STARTED, typingIndicator);
           },
-          onTypingEnded: (typingIndicator) => {
+          onTypingEnded: (typingIndicator: any) => {
             this.updateHeader(enums.TYPING_ENDED, typingIndicator);
           },
         })
@@ -162,14 +162,14 @@ export class CometChatMessageHeaderComponent
       CometChat.addGroupListener(
         this.groupListenerId,
         new CometChat.GroupListener({
-          onGroupMemberKicked: (message, kickedUser, kickedBy, kickedFrom) => {
+          onGroupMemberKicked: (message: any, kickedUser: any, kickedBy: any, kickedFrom: any) => {
             this.updateHeader(
               enums.GROUP_MEMBER_KICKED,
               kickedFrom,
               kickedUser
             );
           },
-          onGroupMemberBanned: (message, bannedUser, bannedBy, bannedFrom) => {
+          onGroupMemberBanned: (message: any, bannedUser: any, bannedBy: any, bannedFrom: any) => {
             this.updateHeader(
               enums.GROUP_MEMBER_BANNED,
               bannedFrom,
@@ -177,17 +177,17 @@ export class CometChatMessageHeaderComponent
             );
           },
           onMemberAddedToGroup: (
-            message,
-            userAdded,
-            userAddedBy,
-            userAddedIn
+            message: any,
+            userAdded: any,
+            userAddedBy: any,
+            userAddedIn: any
           ) => {
             this.updateHeader(enums.GROUP_MEMBER_ADDED, userAddedIn);
           },
-          onGroupMemberLeft: (message, leavingUser, group) => {
+          onGroupMemberLeft: (message: any, leavingUser: any, group: any) => {
             this.updateHeader(enums.GROUP_MEMBER_LEFT, group, leavingUser);
           },
-          onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
+          onGroupMemberJoined: (message: any, joinedUser: any, joinedGroup: any) => {
             this.updateHeader(enums.GROUP_MEMBER_JOINED, joinedGroup);
           },
         })
@@ -229,7 +229,7 @@ export class CometChatMessageHeaderComponent
    * Updates header such as typing indicator, count of group members, user status
    * @param
    */
-  updateHeader(key = null, item = null, groupUser = null) {
+  updateHeader(key: any = null, item: any = null, groupUser: any = null) {
     try {
       switch (key) {
         case enums.USER_ONLINE:
@@ -319,7 +319,7 @@ export class CometChatMessageHeaderComponent
             this.item.uid === item.sender.uid
           ) {
             if (this.item.status === CometChat.USER_STATUS.ONLINE) {
-              this.status = null;
+              this.status = '';
               this.isTyping = false;
             } else {
               this.getLastActiveDate(item.lastActiveAt);
@@ -341,7 +341,7 @@ export class CometChatMessageHeaderComponent
    * Sets status of the group according to its member count
    * @param number membersCount
    */
-  setGroupMemeberCountStatus(membersCount) {
+  setGroupMemeberCountStatus(membersCount: number) {
     try {
       if (membersCount > 1) {
         this.status = membersCount + " members";
@@ -357,22 +357,24 @@ export class CometChatMessageHeaderComponent
    * Get Last Active Date
    * @param
    */
-  getLastActiveDate(date) {
-    try {
+  getLastActiveDate(date: any) {
       let lastActiveDate = COMETCHAT_CONSTANTS.LAST_ACTIVE_AT;
 
       if (date === undefined) {
         lastActiveDate = CometChat.USER_STATUS.OFFLINE;
         return lastActiveDate;
       }
-      date = date * 1000;
-      lastActiveDate =
-        lastActiveDate + this.datepipe.transform(date, "dd MMMM yyyy, h:mm a");
+
+      if(this.item.conversationId) {
+        date = date * 1000;
+        lastActiveDate =
+          lastActiveDate + this.datepipe.transform(date, "dd MMMM y, h:mm a");
+      } else {
+        lastActiveDate =
+          lastActiveDate + this.datepipe.transform(date, "dd MMMM y, h:mm a");
+      }
 
       return lastActiveDate;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**

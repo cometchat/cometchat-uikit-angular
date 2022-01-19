@@ -10,14 +10,14 @@ import { CometChat } from "@cometchat-pro/chat";
   styleUrls: ["./cometchat-sender-audio-message-bubble.component.css"],
 })
 export class CometChatSenderAudioMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   checkReaction = [];
 
-  audioUrl: string;
+  audioUrl: string = '';
   message = Object.assign({}, this.messageDetails, {
     messageFrom: enums.SENDER,
   });
@@ -54,7 +54,7 @@ export class CometChatSenderAudioMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

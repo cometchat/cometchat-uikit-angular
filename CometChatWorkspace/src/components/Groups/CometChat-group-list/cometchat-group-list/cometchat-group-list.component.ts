@@ -23,16 +23,16 @@ import { CometChatService } from "./../../../../utils/cometchat.service";
 export class CometChatGroupListComponent
   implements OnInit, OnDestroy, OnChanges {
   @Input() enableSelectedGroupStyling = false;
-  @Input() groupToUpdate = null;
-  @Input() groupToDelete = null;
+  @Input() groupToUpdate: any = null;
+  @Input() groupToDelete: any = null;
 
-  timeout;
-  loggedInUser = null;
+  timeout: any;
+  loggedInUser: any = null;
   decoratorMessage = "";
   searchKey = "";
-  selectedGroup = null;
-  groupList = [];
-  groupRequest = null;
+  selectedGroup: { [key: string]: string | any} = {};
+  groupList: any = [];
+  groupRequest: any = null;
   groupListenerId = enums.GROUP_LIST_ + new Date().getTime();
 
   openCreateGroupView: boolean = false;
@@ -41,19 +41,15 @@ export class CometChatGroupListComponent
 
   @Output() onGroupClick: EventEmitter<any> = new EventEmitter();
 
-  constructor(private ref: ChangeDetectorRef, private CometChatService: CometChatService) {
-    setInterval(() => {
-      if (!this.ref[enums.DESTROYED]) {
-        this.ref.detectChanges();
-      }
-    }, 5000);
+  constructor(private CometChatService: CometChatService) {
+    
   }
 
   ngOnChanges(change: SimpleChanges) {
     try {
       if (change[enums.GROUP_TO_UPDATE]) {
-        let prevProps = { groupToUpdate: null };
-        let props = { groupToUpdate: null };
+        let prevProps: any = { groupToUpdate: null };
+        let props: any = { groupToUpdate: null };
 
         prevProps[enums.GROUP_TO_UPDATE] =
           change[enums.GROUP_TO_UPDATE].previousValue;
@@ -103,8 +99,8 @@ export class CometChatGroupListComponent
       })
 
       if (change[enums.GROUP_TO_DELETE]) {
-        let prevProps = { groupToDelete: null };
-        let props = { groupToDelete: null };
+        let prevProps: any = { groupToDelete: null };
+        let props: any = { groupToDelete: null };
 
         prevProps[enums.GROUP_TO_DELETE] =
           change[enums.GROUP_TO_DELETE].previousValue;
@@ -160,40 +156,40 @@ export class CometChatGroupListComponent
    * Listener for group activities happening in real time
    * @param function callback
    */
-  attachListeners(callback) {
+  attachListeners(callback: any) {
     try {
       CometChat.addGroupListener(
         this.groupListenerId,
         new CometChat.GroupListener({
           onGroupMemberScopeChanged: (
-            message,
-            changedUser,
-            newScope,
-            oldScope,
-            changedGroup
+            message: any,
+            changedUser: any,
+            newScope: any,
+            oldScope: any,
+            changedGroup: any
           ) => {
             callback(enums.GROUP_MEMBER_SCOPE_CHANGED, message, changedGroup, {
               user: changedUser,
               scope: newScope,
             });
           },
-          onGroupMemberKicked: (message, kickedUser, kickedBy, kickedFrom) => {
+          onGroupMemberKicked: (message: any, kickedUser: any, kickedBy: any, kickedFrom: any) => {
             callback(enums.GROUP_MEMBER_KICKED, message, kickedFrom, {
               user: kickedUser,
               hasJoined: false,
             });
           },
-          onGroupMemberBanned: (message, bannedUser, bannedBy, bannedFrom) => {
+          onGroupMemberBanned: (message: any, bannedUser: any, bannedBy: any, bannedFrom: any) => {
             callback(enums.GROUP_MEMBER_BANNED, message, bannedFrom, {
               user: bannedUser,
               hasJoined: false,
             });
           },
           onGroupMemberUnbanned: (
-            message,
-            unbannedUser,
-            unbannedBy,
-            unbannedFrom
+            message: any,
+            unbannedUser: any,
+            unbannedBy: any,
+            unbannedFrom: any
           ) => {
             callback(enums.GROUP_MEMBER_UNBANNED, message, unbannedFrom, {
               user: unbannedUser,
@@ -201,22 +197,22 @@ export class CometChatGroupListComponent
             });
           },
           onMemberAddedToGroup: (
-            message,
-            userAdded,
-            userAddedBy,
-            userAddedIn
+            message: any,
+            userAdded: any,
+            userAddedBy: any,
+            userAddedIn: any
           ) => {
             callback(enums.GROUP_MEMBER_ADDED, message, userAddedIn, {
               user: userAdded,
               hasJoined: true,
             });
           },
-          onGroupMemberLeft: (message, leavingUser, group) => {
+          onGroupMemberLeft: (message: any, leavingUser: any, group: any) => {
             callback(enums.GROUP_MEMBER_LEFT, message, group, {
               user: leavingUser,
             });
           },
-          onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
+          onGroupMemberJoined: (message: any, joinedUser: any, joinedGroup: any) => {
             callback(enums.GROUP_MEMBER_JOINED, message, joinedGroup, {
               user: joinedUser,
             });
@@ -233,7 +229,6 @@ export class CometChatGroupListComponent
    * @param String searchKey
    */
   groupListRequestBuilder(searchKey = "") {
-    try {
       let groupRequest = null;
 
       if (searchKey !== "") {
@@ -247,9 +242,6 @@ export class CometChatGroupListComponent
           .build();
       }
       return groupRequest;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
@@ -263,7 +255,7 @@ export class CometChatGroupListComponent
         .then((user) => {
           this.loggedInUser = user;
           this.fetchNextGroups()
-            .then((groupList) => {
+            .then((groupList: any) => {
               if (groupList.length === 0) {
                 this.decoratorMessage = COMETCHAT_CONSTANTS.NO_GROUPS_FOUND;
               }
@@ -276,7 +268,7 @@ export class CometChatGroupListComponent
                 this.decoratorMessage = COMETCHAT_CONSTANTS.NO_GROUPS_FOUND;
               }
             })
-            .catch((error) => {
+            .catch((error: any) => {
               this.decoratorMessage = COMETCHAT_CONSTANTS.ERROR;
               logger(
                 "[CometChatGroupList] getGroups fetchNextGroups error",
@@ -309,7 +301,7 @@ export class CometChatGroupListComponent
    * Fetches list of groups according to the group request config
    * @param Event action
    */
-  createGroupActionHandler = (group) => {
+  createGroupActionHandler = (group: object) => {
     try {
       const groupList = [group, ...this.groupList];
       this.groupList = groupList;
@@ -322,10 +314,10 @@ export class CometChatGroupListComponent
    * Emitting the Group clicked so that it can be used in the parent component
    * @param Any group
    */
-  groupClicked(group) {
+  groupClicked(group: any) {
     try {
       if (group.hasJoined === false) {
-        let password = "";
+        let password: any;
         if (group.type === CometChat.GROUP_TYPE.PASSWORD) {
           password = prompt(COMETCHAT_CONSTANTS.ENTER_YOUR_PASSWORD);
         }
@@ -387,7 +379,7 @@ export class CometChatGroupListComponent
    * Searches for a list of groups matching the search key
    * @param Event event
    */
-  searchGroup(event) {
+  searchGroup(event: any) {
     try {
       if (this.timeout) {
         clearTimeout(this.timeout);
@@ -408,7 +400,7 @@ export class CometChatGroupListComponent
   /**
    * Updates group information based on activities in the group
    */
-  groupUpdated = (key, message, group, options) => {
+  groupUpdated = (key: string, message: any, group: any, options: any) => {
     try {
       switch (key) {
         case enums.GROUP_MEMBER_SCOPE_CHANGED:
@@ -439,7 +431,7 @@ export class CometChatGroupListComponent
   /**
    * Updates the member count of a group when a person is removed from the group
    */
-  updateMemberRemoved = (group, options) => {
+  updateMemberRemoved = (group: any, options: any) => {
     try {
       let groupList = [...this.groupList];
 
@@ -475,7 +467,7 @@ export class CometChatGroupListComponent
   /**
    * Updates the member count of a group when a person (  or group of people  ) is added to the group
    */
-  updateMemberAdded = (group, options) => {
+  updateMemberAdded = (group: any, options: any) => {
     try {
       let groupList = [...this.groupList];
 
@@ -536,7 +528,7 @@ export class CometChatGroupListComponent
   /**
    * Updates the member count of a group based when a user joins the group
    */
-  updateMemberJoined = (group, options) => {
+  updateMemberJoined = (group: any, options: any) => {
     try {
       let groupList = [...this.groupList];
 
@@ -569,15 +561,15 @@ export class CometChatGroupListComponent
   /**
    * Updates the member count of a group based on activities happening in the group
    */
-  updateMemberChanged = (group, options) => {
+  updateMemberChanged = (group: any, options: any) => {
     try {
       let groupList = [...this.groupList];
 
       //search for group
-      let groupKey = groupList.findIndex((g, k) => g.guid === group.guid);
+      let groupKey = groupList.findIndex((g: any, k) => g.guid === group.guid);
 
       if (groupKey > -1) {
-        let groupObj = { ...groupList[groupKey] };
+        let groupObj = { ...groupList[groupKey] as {} };
         if (options && this.loggedInUser.uid === options.user.uid) {
           let newgroupObj = Object.assign({}, groupObj, {
             scope: options.scope,
@@ -596,7 +588,7 @@ export class CometChatGroupListComponent
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let data = action.payLoad;
 
@@ -620,7 +612,7 @@ export class CometChatGroupListComponent
    * Handles scroll action on GroupList and fetches more groups if user scrolls to bottom of group list
    * @param Event action
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const bottom =
         Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===

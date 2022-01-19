@@ -8,10 +8,10 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-add-group-member-list-item.component.css"],
 })
 export class CometChatAddGroupMemberListItemComponent implements OnInit {
-  @Input() item = null;
-  @Input() type = null;
-  @Input() user = null;
-  @Input() members = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() user: any = null;
+  @Input() members: any = null;
 
   checked: boolean = false;
 
@@ -22,7 +22,7 @@ export class CometChatAddGroupMemberListItemComponent implements OnInit {
   ngOnInit() {
     try {
       this.checked = this.members.find(
-        (member) => member.uid === this.user.uid
+        (member: any) => member.uid === this.user.uid
       );
     } catch (error) {
       logger(error);
@@ -33,7 +33,7 @@ export class CometChatAddGroupMemberListItemComponent implements OnInit {
    * toggle the checkbox for each users , that is, to add them or not to add them in the group
    * @param Event event
    */
-  handleCheck(event) {
+  handleCheck(event: object) {
     try {
       this.checked = !this.checked;
 

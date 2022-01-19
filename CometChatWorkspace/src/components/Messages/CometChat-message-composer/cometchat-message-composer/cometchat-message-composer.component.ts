@@ -53,21 +53,21 @@ import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
   ],
 })
 export class CometChatMessageComposerComponent implements OnInit, OnChanges {
-  @Input() parentMessageId = null;
+  @Input() parentMessageId: number = 0;
 
   // can be user or a group
-  @Input() item = null;
-  @Input() type = null;
-  @Input() messageToBeEdited = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() messageToBeEdited: any = null;
   @Input() replyPreview = null;
-  @Input() messageToReact = null;
+  @Input() messageToReact: any = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  @ViewChild("imagePicker", { static: false }) imagePicker: ElementRef;
-  @ViewChild("videoPicker", { static: false }) videoPicker: ElementRef;
-  @ViewChild("audioPicker", { static: false }) audioPicker: ElementRef;
-  @ViewChild("filePicker", { static: false }) filePicker: ElementRef;
+  @ViewChild("imagePicker", { static: false }) imagePicker!: ElementRef;
+  @ViewChild("videoPicker", { static: false }) videoPicker!: ElementRef;
+  @ViewChild("audioPicker", { static: false }) audioPicker!: ElementRef;
+  @ViewChild("filePicker", { static: false }) filePicker!: ElementRef;
 
   enableSendButton = false;
   enableReaction = true;
@@ -85,14 +85,14 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   isTyping: any;
   userBlocked: boolean = false;
 
-  PICK_YOUR_EMOJI: String = COMETCHAT_CONSTANTS.PICK_YOUR_EMOJI;
-  ATTACH_FILE: String = COMETCHAT_CONSTANTS.ATTACH_FILE;
-  ATTACH_VIDEO: String = COMETCHAT_CONSTANTS.ATTACH_VIDEO;
-  ATTACH_AUDIO: String = COMETCHAT_CONSTANTS.ATTACH_AUDIO;
-  ATTACH_IMAGE: String = COMETCHAT_CONSTANTS.ATTACH_IMAGE;
-  ADD_EMOJI: String = COMETCHAT_CONSTANTS.ADD_EMOJI;
-  ENTER_YOUR_MESSAGE_HERE: String = COMETCHAT_CONSTANTS.ENTER_YOUR_MESSAGE_HERE;
-  EDIT_MESSAGE: String = COMETCHAT_CONSTANTS.EDIT_MESSAGE;
+  PICK_YOUR_EMOJI: string = COMETCHAT_CONSTANTS.PICK_YOUR_EMOJI;
+  ATTACH_FILE: string = COMETCHAT_CONSTANTS.ATTACH_FILE;
+  ATTACH_VIDEO: string = COMETCHAT_CONSTANTS.ATTACH_VIDEO;
+  ATTACH_AUDIO: string = COMETCHAT_CONSTANTS.ATTACH_AUDIO;
+  ATTACH_IMAGE: string = COMETCHAT_CONSTANTS.ATTACH_IMAGE;
+  ADD_EMOJI: string = COMETCHAT_CONSTANTS.ADD_EMOJI;
+  ENTER_YOUR_MESSAGE_HERE: string = COMETCHAT_CONSTANTS.ENTER_YOUR_MESSAGE_HERE;
+  EDIT_MESSAGE: string = COMETCHAT_CONSTANTS.EDIT_MESSAGE;
 
   constructor() {}
 
@@ -130,7 +130,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let message = action.payLoad;
 
@@ -146,15 +146,6 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
         }
         case enums.CLOSE_POLL_VIEW: {
           this.closeCreatePollPreview();
-          break;
-        }
-        case enums.POLL_CREATED: {
-          this.closeCreatePollPreview();
-          this.actionGenerated.emit({
-            type: enums.POLL_CREATED,
-            payLoad: [message],
-          });
-
           break;
         }
         case enums.SEND_STICKER:
@@ -188,9 +179,8 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param
    */
   getReceiverDetails() {
-    try {
       let receiverId;
-      let receiverType;
+      let receiverType: any;
 
       if (this.type == CometChat.RECEIVER_TYPE.USER) {
         receiverId = this.item.uid;
@@ -201,16 +191,13 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
       }
 
       return { receiverId: receiverId, receiverType: receiverType };
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Update the Message to be sent on every key press
    * @param event
    */
-  changeHandler(event) {
+  changeHandler(event: any) {
     try {
       this.startTyping();
       if (event.target.value.length > 0) {
@@ -232,7 +219,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * Send the message if user hits ENTER-key
    * @param Event e
    */
-  sendMessageOnEnter(event) {
+  sendMessageOnEnter(event: any) {
     try {
       if (event.keyCode === 13 && !event.shiftKey) {
         event.preventDefault();
@@ -292,7 +279,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * Send Text Message
    * @param
    */
-  sendTextMessage(textMsg: String = "") {
+  sendTextMessage(textMsg: String = "") : boolean {
     try {
       //If user you are chatting with is blocked then return false
       if (this.userBlocked) {
@@ -372,12 +359,13 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Opens drawer to send media files and sets animation state
    */
-  toggleFilePicker() {
+  toggleFilePicker(): boolean {
     try {
       //If user you are chatting with is blocked then return false
       if (this.userBlocked) {
@@ -389,6 +377,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
@@ -439,13 +428,13 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * Loads and upload the video
    * @param
    */
-  onVideoChange(event) {
+  onVideoChange(event: any) : boolean {
     try {
       if (!event.target.files[0]) {
         return false;
       }
       const uploadedFile = event.target.files[0];
-      const reader = new FileReader();
+      const reader: any = new FileReader();
       reader.addEventListener(
         enums.LOAD,
         () => {
@@ -465,19 +454,20 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Loads and upload the audio
    * @param
    */
-  onAudChange(event) {
+  onAudChange(event: any) : boolean {
     try {
       if (!event.target.files[0]) {
         return false;
       }
       const uploadedFile = event.target.files[0];
-      const reader = new FileReader();
+      const reader: any = new FileReader();
       reader.addEventListener(
         enums.LOAD,
         () => {
@@ -497,19 +487,20 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Loads and upload the image
    * @param
    */
-  onImgChange(event) {
+  onImgChange(event: any) :boolean {
     try {
       if (!event.target.files[0]) {
         return false;
       }
       const uploadedFile = event.target.files[0];
-      const reader = new FileReader();
+      const reader: any = new FileReader();
       reader.addEventListener(
         enums.LOAD,
         () => {
@@ -529,20 +520,21 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Loads and upload the file
    * @param
    */
-  onFileChange(event) {
+  onFileChange(event: any) :boolean {
     try {
       if (!event.target.files["0"]) {
         return false;
       }
 
       const uploadedFile = event.target.files["0"];
-      var reader = new FileReader();
+      var reader: any = new FileReader();
       reader.addEventListener(
         enums.LOAD,
         () => {
@@ -562,13 +554,14 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Sends media messages eg. image,audio,file etc.
    * @param
    */
-  sendMediaMessage(messageInput, messageType) {
+  sendMediaMessage(messageInput: any, messageType: any) :boolean {
     try {
       this.toggleFilePicker();
       if (this.messageSending) {
@@ -607,13 +600,14 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Add emoji to the input when user clicks on emoji
    * @param
    */
-  addEmoji($event) {
+  addEmoji($event: any) {
     try {
       if (this.messageToReact) {
         this.reactToMessages($event.emoji);
@@ -698,7 +692,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   /**
    *  When user starts typing sets typing indicator
    */
-  startTyping(timer = null, metadata = null) {
+  startTyping(timer = null, metadata = null) :boolean {
     try {
       let typingInterval = timer || 5000;
 
@@ -721,6 +715,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
@@ -749,15 +744,15 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   /**
    * Sends Live Reaction
    */
-  sendReaction(event) {
+  sendReaction(event: any): boolean {
     try {
       //If user you are chatting with is blocked then return false
       if (this.userBlocked) {
         return false;
       }
-      const typingInterval = 1000;
+      const typingInterval: any = 1000;
 
-      const typingMetadata = {
+      const typingMetadata: any = {
         type: enums.LIVE_REACTION_KEY,
         reaction: COMETCHAT_CONSTANTS.HEART,
       };
@@ -776,12 +771,13 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Toggles Sticker Window
    */
-  toggleStickerPicker() {
+  toggleStickerPicker(): boolean {
     try {
       //If user you are chatting with is blocked then return false
       if (this.userBlocked) {
@@ -792,13 +788,14 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Sends Sticker Message
    * @param
    */
-  sendSticker(stickerMessage) {
+  sendSticker(stickerMessage: any) {
     try {
       this.messageSending = true;
       const { receiverId, receiverType } = this.getReceiverDetails();
@@ -839,7 +836,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   /**
    * Toggle emoji window when emoji button is clicked
    */
-  toggleEmoji() {
+  toggleEmoji(): boolean {
     try {
       //If user you are chatting with is blocked then return false
       if (this.userBlocked) {
@@ -855,19 +852,20 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * React to message with emoji
    * @param
    */
-  reactToMessages(emoji) {
+  reactToMessages(emoji: any) {
     try {
       CometChat.callExtension(enums.REACTIONS, enums.POST, enums.V1_REACT, {
         msgId: this.messageToReact.id,
         emoji: emoji.colons,
       })
-        .then((response) => {
+        .then((response: any) => {
           if (
             response.hasOwnProperty(enums.SUCCESS) &&
             response[enums.SUCCESS] === true
@@ -887,8 +885,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * To set style for emoji selector
    * @param
    */
-  emojiStyle(val) {
-    try {
+  emojiStyle(val: any) {
       return val
         ? {
             position: "absolute",
@@ -904,8 +901,5 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
             width: "285px",
             zIndex: "1",
           };
-    } catch (error) {
-      logger(error);
-    }
   }
 }

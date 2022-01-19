@@ -28,7 +28,7 @@ export class CometChatSmartReplyPreviewComponent implements OnInit {
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  options = [];
+  options: any = [];
 
   constructor() {}
 
@@ -59,7 +59,7 @@ export class CometChatSmartReplyPreviewComponent implements OnInit {
    * Generate the quick replies that the current user can use
    * @param Any message
    */
-  generateSmartReplyOptions(message) {
+  generateSmartReplyOptions(message: any) {
     try {
       if (message.hasOwnProperty(enums.METADATA)) {
         const metadata = message[enums.METADATA];
@@ -90,7 +90,7 @@ export class CometChatSmartReplyPreviewComponent implements OnInit {
    * Sends the selected option as reply
    * @param
    */
-  sendReplyMessage(message) {
+  sendReplyMessage(message: any) {
     try {
       this.actionGenerated.emit({
         type: enums.SEND_SMART_REPLY,

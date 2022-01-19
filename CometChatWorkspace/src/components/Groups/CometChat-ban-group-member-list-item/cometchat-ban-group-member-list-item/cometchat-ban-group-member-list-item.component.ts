@@ -10,7 +10,7 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-ban-group-member-list-item.component.css"],
 })
 export class CometChatBanGroupMemberListItemComponent implements OnInit {
-  @Input() item = null;
+  @Input() item: any = null;
   @Input() bannedMemberList = [];
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -42,7 +42,7 @@ export class CometChatBanGroupMemberListItemComponent implements OnInit {
    * Get the detail of member to be unbanned
    * @param
    */
-  unbanMember(memberToUnBan) {
+  unbanMember(memberToUnBan: any) {
     try {
       const guid = this.item.guid;
       CometChat.unbanGroupMember(guid, memberToUnBan.uid)
@@ -67,7 +67,7 @@ export class CometChatBanGroupMemberListItemComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let data = action.payLoad;
 
@@ -87,7 +87,7 @@ export class CometChatBanGroupMemberListItemComponent implements OnInit {
    * If User scrolls to the bottom of the current Contact list than fetch next items of the contact list and append
    * @param Event e
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const bottom =
         Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===

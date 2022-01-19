@@ -33,16 +33,16 @@ import { logger } from "../../../../utils/common";
   ],
 })
 export class CometChatLiveReactionsComponent implements OnInit {
-  @Input() reactionName = null;
-  counter;
-  verticalSpeed;
-  horizontalSpeed;
-  before;
-  items = [];
-  timer;
+  @Input() reactionName: string = '';
+  counter: any;
+  verticalSpeed: any;
+  horizontalSpeed: any;
+  before: any;
+  items: any = [];
+  timer: any;
   checkAnimatedState = "normal";
 
-  @ViewChild("emoji", { static: true }) emojiWindow: ElementRef;
+  @ViewChild("emoji", { static: true }) emojiWindow!: ElementRef;
 
   constructor() {}
 
@@ -64,7 +64,7 @@ export class CometChatLiveReactionsComponent implements OnInit {
       this.before = Date.now();
       const reaction = this.reactionName
         ? enums.LIVE_REACTIONS[this.reactionName]
-        : enums.LIVE_REACTIONS[COMETCHAT_CONSTANTS.HEART];
+        : enums.LIVE_REACTIONS.hasOwnProperty(COMETCHAT_CONSTANTS.HEART);
 
       this.setItems();
       this.requestAnimation();
@@ -100,7 +100,7 @@ export class CometChatLiveReactionsComponent implements OnInit {
           ySpeed: -this.verticalSpeed,
           omega: (2 * Math.PI * this.horizontalSpeed) / (width * 60), //omega= 2Pi*frequency
           random: (Math.random() / 2 + 0.5) * i * 10000, //random time offset
-          x: function (time) {
+          x: function (time: number) {
             return (
               ((Math.sin(this.omega * (time + this.random)) + 1) / 2) *
               (width - elementWidth)
@@ -131,7 +131,7 @@ export class CometChatLiveReactionsComponent implements OnInit {
   /**
    * Animates the reactions
    */
-  animate() {
+  animate(): boolean {
     try {
       if (!this.emojiWindow.nativeElement.parentElement) {
         return false;
@@ -153,5 +153,6 @@ export class CometChatLiveReactionsComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 }

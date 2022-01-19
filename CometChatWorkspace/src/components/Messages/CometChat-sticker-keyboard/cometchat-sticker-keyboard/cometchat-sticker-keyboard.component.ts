@@ -13,11 +13,11 @@ export class CometChatStickerKeyboardComponent implements OnInit {
 
   decoratorMessage: string = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
   loading: boolean = true;
-  stickerList = [];
-  stickerSet = {};
-  activeStickerList = [];
-  activeStickerSet = null;
-  categoryStickerUrl = [];
+  stickerList: any = [];
+  stickerSet: any = {};
+  activeStickerList: any = [];
+  activeStickerSet: any ;
+  categoryStickerUrl: any;
   constructor() {}
 
   ngOnInit() {
@@ -33,23 +33,24 @@ export class CometChatStickerKeyboardComponent implements OnInit {
    */
   getStickers() {
     try {
-      CometChat.callExtension(enums.STICKERS, enums.GET, enums.V1_FETCH, null)
-        .then((stickers) => {
+      CometChat.callExtension(enums.STICKERS, enums.GET, enums.V1_FETCH, '')
+        .then((stickers: any) => {
           // Stickers received
           let activeStickerSet = null;
-          const customStickers = stickers.hasOwnProperty(enums.CUSTOM_STICKERS)
-            ? stickers[enums.CUSTOM_STICKERS]
-            : [];
+          const customStickers = [];
+          if(stickers.hasOwnProperty(enums.CUSTOM_STICKERS)) {
+            customStickers.push(stickers[enums.CUSTOM_STICKERS]);
+          }
           const defaultStickers = stickers.hasOwnProperty(
             enums.DEFAULT_STICKERS
           )
             ? stickers[enums.DEFAULT_STICKERS]
             : [];
-          defaultStickers.sort(function (a, b) {
+          defaultStickers.sort(function (a: any, b: any) {
             return a.stickerSetOrder - b.stickerSetOrder;
           });
 
-          customStickers.sort(function (a, b) {
+          customStickers.sort(function (a: any, b: any) {
             return a.stickerSetOrder - b.stickerSetOrder;
           });
 
@@ -72,12 +73,13 @@ export class CometChatStickerKeyboardComponent implements OnInit {
           let activeStickerList = [];
           if (Object.keys(stickerSet).length) {
             Object.keys(stickerSet).forEach((key) => {
-              stickerSet[key].sort(function (a, b) {
+              stickerSet[key].sort(function (a: any, b: any) {
                 return a.stickerOrder - b.stickerOrder;
               });
             });
-
+          if(activeStickerSet !== null) {
             activeStickerList = stickerSet[activeStickerSet];
+          }
           }
 
           this.stickerList = stickerList;
@@ -109,10 +111,10 @@ export class CometChatStickerKeyboardComponent implements OnInit {
    * Gets The sticker collection when sticker category is changed
    * @param
    */
-  stickerSetClicked(sectionItem) {
+  stickerSetClicked(sectionItem: any) {
     try {
       this.activeStickerList = [];
-      const stickerSet = { ...this.stickerSet };
+      const stickerSet: any = { ...this.stickerSet };
       const activeStickerList = stickerSet[sectionItem];
       this.activeStickerSet = sectionItem;
       this.activeStickerList = activeStickerList;
@@ -125,7 +127,7 @@ export class CometChatStickerKeyboardComponent implements OnInit {
    * Sends Sticker as Message
    * @param
    */
-  sendStickerMessage(stickerItem) {
+  sendStickerMessage(stickerItem: any) {
     try {
       this.actionGenerated.emit({
         type: enums.SEND_STICKER,
@@ -140,7 +142,7 @@ export class CometChatStickerKeyboardComponent implements OnInit {
    * Close Sticker Window
    * @param
    */
-  closeStickerWindow(message) {
+  closeStickerWindow(message: any) {
     try {
       this.actionGenerated.emit({
         type: message,

@@ -17,23 +17,23 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-add-group-member-list.component.css"],
 })
 export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
-  @Input() item = null;
-  @Input() type = null;
-  @Input() memberList = [];
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() memberList: any  = [];
   @Input() bannedMemberList = [];
   @Input() friendsOnly: boolean = false;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   decoratorMessage = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
-  userlist = [];
-  membersToAdd = [];
+  userlist: any = [];
+  membersToAdd: any = [];
   membersToRemove = [];
-  filteredList = [];
-  timeout;
+  filteredList: any = [];
+  timeout: any;
   addBtnText: String = COMETCHAT_CONSTANTS.ADD;
 
-  membersRequest = null;
+  membersRequest: any = null;
   userListenerId = enums.USER_LIST_ + new Date().getTime();
 
   USERS: String = COMETCHAT_CONSTANTS.USERS;
@@ -63,16 +63,16 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * Attaches the user listeners
    * @param function callback
    */
-  attachListeners(callback) {
+  attachListeners(callback: any) {
     try {
       CometChat.addUserListener(
         this.userListenerId,
         new CometChat.UserListener({
-          onUserOnline: (onlineUser) => {
+          onUserOnline: (onlineUser: any) => {
             /* when someuser/friend comes online, user will be received here */
             callback(onlineUser);
           },
-          onUserOffline: (offlineUser) => {
+          onUserOffline: (offlineUser: any) => {
             /* when someuser/friend went offline, user will be received here */
             callback(offlineUser);
           },
@@ -99,7 +99,7 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * Updates user , based on user activity detected through listeners
    * @param Any user
    */
-  userUpdated = (user) => {
+  userUpdated = (user: any) => {
     try {
       let userlist = [...this.userlist];
 
@@ -124,7 +124,6 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * @param String searchKey
    */
   createMemberRequest(searchKey = "") {
-    try {
       let membersRequest = null;
 
       if (searchKey !== "") {
@@ -140,16 +139,13 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
           .build();
       }
       return membersRequest;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Searches for a list of users matching the search key
    * @param Event e
    */
-  searchUsers = (e) => {
+  searchUsers = (e: any) => {
     try {
       if (this.timeout) {
         clearTimeout(this.timeout);
@@ -181,13 +177,13 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
       CometChat.getLoggedinUser()
         .then((user) => {
           this.fetchNextUsers()
-            .then((userList) => {
-              const filteredUserList = userList.filter((user) => {
+            .then((userList: any) => {
+              const filteredUserList = userList.filter((user: any) => {
                 const found = this.memberList.find(
-                  (member) => user.uid === member.uid
+                  (member: any) => user.uid === member.uid
                 );
                 const foundBanned = this.bannedMemberList.find(
-                  (member) => user.uid === member.uid
+                  (member: any) => user.uid === member.uid
                 );
                 if (found || foundBanned) {
                   return false;
@@ -205,7 +201,7 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
                 this.decoratorMessage = "";
               }
             })
-            .catch((error) => {
+            .catch((error: any) => {
               this.decoratorMessage = COMETCHAT_CONSTANTS.ERROR;
               logger("[CometChatAddMembers] getUsers fetchNext error", error);
             });
@@ -223,7 +219,7 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * Handles all the events emitted by child components
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let data = action.payLoad;
 
@@ -242,16 +238,16 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * Updates the memberToAdd list
    * @param Any user
    */
-  membersUpdated = (user, userState) => {
+  membersUpdated = (user: any, userState: any) => {
     try {
       if (userState) {
-        const members = [...this.membersToAdd];
+        const members: any = [...this.membersToAdd];
         members.push(user);
         this.membersToAdd = [...members];
       } else {
         const membersToAdd = [...this.membersToAdd];
         const IndexFound = membersToAdd.findIndex(
-          (member) => member.uid === user.uid
+          (member: any) => member.uid === user.uid
         );
         if (IndexFound > -1) {
           membersToAdd.splice(IndexFound, 1);
@@ -276,12 +272,12 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
       this.addBtnText = COMETCHAT_CONSTANTS.ADDING_MESSSAGE;
 
       const guid = this.item.guid;
-      const membersList = [];
+      const membersList: CometChat.GroupMember[] = [];
 
-      this.membersToAdd.forEach((newmember) => {
+      this.membersToAdd.forEach((newmember: any) => {
         //if a selected member is already part of the member list, don't add
         const IndexFound = this.memberList.findIndex(
-          (member) => member.uid === newmember.uid
+          (member: any) => member.uid === newmember.uid
         );
         if (IndexFound === -1) {
           const newMember = new CometChat.GroupMember(
@@ -295,14 +291,14 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
       });
 
       if (membersList.length) {
-        const membersToAdd = [];
+        const membersToAdd: any = [];
         CometChat.addMembersToGroup(guid, membersList, [])
-          .then((response) => {
+          .then((response: any) => {
             if (Object.keys(response).length) {
               for (const member in response) {
                 if (response[member] === enums.SUCCESS) {
                   const found = this.userlist.find(
-                    (user) => user.uid === member
+                    (user: any) => user.uid === member
                   );
                   found[enums.SCOPE] = CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT;
                   membersToAdd.push(found);
@@ -343,7 +339,7 @@ export class CometChatAddGroupMemberListComponent implements OnInit, OnDestroy {
    * Handles scroll action on addMemberList and fetches more members that can be added to group ,  if user scrolls to bottom of memberList
    * @param Event action
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const bottom =
         Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===

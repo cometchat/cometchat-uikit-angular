@@ -9,16 +9,16 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-threaded-message-reply-count.component.css"],
 })
 export class CometChatThreadedMessageReplyCountComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   replies = null;
-  reply: string;
+  reply: string = '';
   constructor() {}
 
   ngOnInit() {
     try {
-      let replyCount = this.getReplyCount();
+      let replyCount: any = this.getReplyCount();
       if (replyCount === 1) {
         this.reply = replyCount + " " + COMETCHAT_CONSTANTS.REPLY;
       } else if (replyCount > 1) {
@@ -33,16 +33,12 @@ export class CometChatThreadedMessageReplyCountComponent implements OnInit {
    * get reply count for thread
    */
   getReplyCount() {
-    try {
       if (this.messageDetails.hasOwnProperty(enums.REPLY_COUNT) === false) {
         this.replies = null;
       }
 
       this.replies = this.messageDetails.replyCount;
       return this.replies;
-    } catch (error) {
-      logger(error);
-    }
   }
   /**
    * Open thread when clicked

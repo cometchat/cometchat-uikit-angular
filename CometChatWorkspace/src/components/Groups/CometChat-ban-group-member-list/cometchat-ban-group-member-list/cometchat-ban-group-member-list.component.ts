@@ -10,12 +10,11 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatBanGroupMemberListComponent implements OnInit {
   @Input() item = null;
-  @Input() member = null;
+  @Input() member: any = null;
   @Input() loggedInUser = null;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  name: string;
-  unban;
+  name: string = '';
   banIcon = BAN_ICON;
 
   constructor() {}

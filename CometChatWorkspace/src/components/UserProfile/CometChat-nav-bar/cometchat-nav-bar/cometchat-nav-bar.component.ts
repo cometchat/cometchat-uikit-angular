@@ -9,12 +9,12 @@ import { CometChat } from "@cometchat-pro/chat";
   styleUrls: ["./cometchat-nav-bar.component.css"],
 })
 export class CometChatNavBarComponent implements OnInit {
-  @Input() item = null;
-  @Input() type = null;
-  @Input() lastMessage;
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() lastMessage: any;
   @Input() enableSelectedGroupStyling = false;
-  @Input() groupToUpdate = null;
-  @Input() groupToDelete = null;
+  @Input() groupToUpdate: object = {};
+  @Input() groupToDelete: object = {};
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
@@ -25,7 +25,7 @@ export class CometChatNavBarComponent implements OnInit {
   displayUserInfoScreen: boolean = false;
 
   groupMessage = [];
-  curentItem;
+  curentItem: any;
   constructor() {}
 
   ngOnInit() {}
@@ -34,7 +34,7 @@ export class CometChatNavBarComponent implements OnInit {
    * Toggles the List to be opened on user clicked
    * @param
    */
-  checkScreen(type) {
+  checkScreen(type: string) {
     try {
       this.displayConversationList =
         type === enums.CONVERSATION_LIST ? true : false;
@@ -76,7 +76,7 @@ export class CometChatNavBarComponent implements OnInit {
   openUserList() {
     try {
       this.checkScreen(enums.USER_LIST);
-      this.closeDetailView();
+      //this.closeDetailView();
     } catch (error) {
       logger(error);
     }
@@ -111,7 +111,7 @@ export class CometChatNavBarComponent implements OnInit {
    * Listen to the user emitted by the userList component
    * @param Event user
    */
-  userClicked(user) {
+  userClicked(user: any) {
     try {
       if (user.hasOwnProperty(enums.CONVERSATION_WITH)) {
         this.item = user.conversationWith;
@@ -136,7 +136,7 @@ export class CometChatNavBarComponent implements OnInit {
    * Listen to the group emitted by the groupList component
    * @param Event user
    */
-  groupClicked(group) {
+  groupClicked(group: any) {
     try {
       this.item = group;
       this.curentItem = this.item;

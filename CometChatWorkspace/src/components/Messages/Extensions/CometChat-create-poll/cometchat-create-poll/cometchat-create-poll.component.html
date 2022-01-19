@@ -1,6 +1,5 @@
 <div>
   <cometchat-backdrop></cometchat-backdrop>
-  <form [formGroup]="pollFormData" (ngSubmit)="createPoll(pollFormData.value)">
     <div class="modalWrapperStyle">
       <span class="modalCloseStyle" (click)="closePollView()"></span>
       <div class="modalBodyStyle">
@@ -28,7 +27,7 @@
                   autoFocus
                   tabIndex="1"
                   [placeholder]="ENTER_YOUR_QUESTION"
-                  formControlName="question"
+                  [(ngModel)]="inputQuestion"
                 />
               </td>
             </tr>
@@ -41,36 +40,36 @@
                   class="tableDataInputStyle"
                   type="text"
                   [placeholder]="ENTER_YOUR_OPTION"
-                  formControlName="firstOption"
+                  [(ngModel)]="inputOptionOne"
                 />
               </td>
             </tr>
-
             <tr class="tableRowStyle">
-              <td class="tableDataStyle tableDataWidthStyle">&nbsp;</td>
+              <td class="tableDataStyle tableDataWidthStyle">
+                &nbsp;
+              </td>
               <td colSpan="2" class="tableDataStyle">
                 <input
-                  class="tableDataInputStyle"
-                  type="text"
-                  [placeholder]="ENTER_YOUR_OPTION"
-                  formControlName="secondOption"
-                />
+                class="tableDataInputStyle"
+                type="text"
+                [placeholder]="ENTER_YOUR_OPTION"
+                [(ngModel)]="inputOptionTwo"
+              />
               </td>
             </tr>
 
-            <!--  POLL OPTION VIEW BELOW -->
-            <tr
-              class="tableRowStyle"
-              *ngFor="let option of getOptionsFormControls(); let i = index"
+            <tr 
+              class="tableRowStyle" 
+              *ngFor="let option of inputOptionItems;let i = index"
             >
               <td class="tableDataStyle tableDataWidthStyle">&nbsp;</td>
-              <td colSpan="2" class="tableDataStyle">
+              <td class="tableDataStyle">
                 <input
-                  class="tableDataInputStyle"
-                  type="text"
-                  [placeholder]="ENTER_YOUR_OPTION"
-                  [formControl]="option"
-                />
+                class="tableDataInputStyle"
+                type="text"
+                [placeholder]="ENTER_YOUR_OPTION"
+                [(ngModel)]="option.value"
+              />
               </td>
               <td class="iconWrapperStyle tableDataStyle">
                 <!-- Remove Icon -->
@@ -80,6 +79,7 @@
                 ></span>
               </td>
             </tr>
+
             <!--  POLL OPTION VIEW ABOVE -->
             <tr class="tableRowStyle">
               <td class="tableDataStyle tableDataWidthStyle">&nbsp;</td>
@@ -98,12 +98,11 @@
           <tfoot class="tableFootStyle">
             <tr>
               <td colSpan="2">
-                <button type="submit">{{ createBtnText }}</button>
+                <button type="button" (click)="createPoll()">{{ createBtnText }}</button>
               </td>
             </tr>
           </tfoot>
         </table>
       </div>
     </div>
-  </form>
 </div>

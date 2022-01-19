@@ -35,17 +35,17 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatGroupListWithMessagesComponent implements OnInit {
   //It can be a user or a group
-  item = null;
+  item: any = null;
 
   // Defines the types of item that was clicked --> that is .. if its a user or a group
-  type = null;
+  type: string = "";
 
-  loggedInUser = null;
+  loggedInUser: any = null;
 
   threadMessageView: boolean = false;
-  threadMessageParent = null;
+  threadMessageParent: any = null;
   threadMessageItem = null;
-  threadMessageType = "";
+  threadMessageType: any = "";
   composedThreadMessage = null;
   viewDetailScreen: boolean = false;
   // To display image in full screen
@@ -57,18 +57,18 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
   groupToUpdate = {};
   groupToLeave = {};
   groupToDelete = {};
-  groupMessage = [];
+  groupMessage: any[] = [];
 
   //for audio calling
   outgoingCall = null;
   incomingCall = null;
   callMessage = null;
-  messageToMarkRead;
+  messageToMarkRead: any;
 
   callInitialised: boolean = false;
-  checkAnimatedState;
+  checkAnimatedState: any;
   checkIfAnimated: boolean = false;
-  innerWidth;
+  innerWidth: any;
 
   constructor() {}
 
@@ -88,7 +88,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * Listen to the group emitted by the groupList component
    * @param Event user
    */
-  groupClicked(group) {
+  groupClicked(group: any) {
     try {
       if (this.checkAnimatedState !== null) {
         this.checkAnimatedState == "normal"
@@ -115,7 +115,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * Checks when window size is changed in realtime
    */
   @HostListener("window:resize", [])
-  onResize() {
+  onResize(): boolean {
     try {
       this.innerWidth = window.innerWidth;
       if (
@@ -135,13 +135,14 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let message = action.payLoad;
 
@@ -244,6 +245,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
             "User List screen --> call couldn't complete due to error",
             action.payLoad
           );
+          break;
         }
         case enums.MENU_CLICKED: {
           this.checkAnimatedState = "normal";
@@ -260,7 +262,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * Sets All the Intial Conditions for the threaded View of Messages and Opens thread View
    * @param Any parentMessage
    */
-  viewMessageThread(parentMessage) {
+  viewMessageThread(parentMessage: object) {
     try {
       //Open Thread Screen
       this.threadMessageView = true;
@@ -279,7 +281,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
   /**
    * Updates the thread message , it the currently open thread parent is deleted or is edited
    */
-  updateThreadMessage = (message, action) => {
+  updateThreadMessage = (message: any, action: string): boolean => {
     try {
       if (this.threadMessageView === false) {
         return false;
@@ -294,6 +296,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+    return true;
   };
 
   /**
@@ -316,7 +319,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * Opens the clicked Image in full screen mode
    * @param Any message
    */
-  toggleImageView(message) {
+  toggleImageView(message: any) {
     try {
       this.imageView = message;
       this.fullScreenViewImage = !this.fullScreenViewImage;
@@ -342,11 +345,11 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * updates the message list with a message notifying that , scope a some user is changed
    * @param Any members
    */
-  memberScopeChanged = (members) => {
+  memberScopeChanged = (members: any) => {
     try {
-      const messageList = [];
+      const messageList: any[] = [];
 
-      members.forEach((eachMember) => {
+      members.forEach((eachMember: any) => {
         const message = `${this.loggedInUser.name} made ${eachMember.name} ${eachMember.scope}`;
         const date: any = new Date();
         const sentAt: any = (date / 1000) | 0;
@@ -369,10 +372,10 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * updates the messageList with messages about the members that were added
    * @param Any members
    */
-  membersAdded = (members) => {
+  membersAdded = (members: any) => {
     try {
-      const messageList = [];
-      members.forEach((eachMember) => {
+      const messageList: any[] = [];
+      members.forEach((eachMember: any) => {
         const message = `${this.loggedInUser.name} added ${eachMember.name}`;
         const date: any = new Date();
         const sentAt: any = (date / 1000) | 0;
@@ -395,7 +398,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * updates The count of  number of members present in a group based on group activities , like adding a member or kicking a member
    * @param Any members
    */
-  updateMembersCount = (item, count) => {
+  updateMembersCount = (item: any, count: any) => {
     try {
       const group = Object.assign({}, this.item, { membersCount: count });
 
@@ -410,7 +413,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * Updates Current Group Information
    * @param
    */
-  groupUpdated = (message, key, group, options) => {
+  groupUpdated = (message: any, key: any, group: any, options: { [x: string]: any; user: { uid: any; }; }) => {
     try {
       switch (key) {
         case enums.GROUP_MEMBER_BANNED:
@@ -446,10 +449,10 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    *  Unbans the user
    * @param
    */
-  memberUnbanned(members) {
+  memberUnbanned(members: any) {
     try {
-      const messageList = [];
-      members.forEach((eachMember) => {
+      const messageList: any[] = [];
+      members.forEach((eachMember: any) => {
         const message = `${this.loggedInUser.name} unbanned ${eachMember.name}`;
         const date: any = new Date();
         const sentAt: any = (date / 1000) | 0;
@@ -470,7 +473,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
   /* Closes group screen and all , after user has left the group
    * @param
    */
-  leaveGroup = (group) => {
+  leaveGroup = (group: object) => {
     try {
       this.toggleDetailView();
       this.item = null;
@@ -483,7 +486,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * Closes group screen and all , after user has deleted the group
    * @param
    */
-  deleteGroup = (group) => {
+  deleteGroup = (group: object) => {
     try {
       this.groupToDelete = group;
       this.toggleDetailView();
@@ -508,7 +511,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
       }
 
       CometChatManager.call(receiverId, receiverType, CometChat.CALL_TYPE.AUDIO)
-        .then((call) => {
+        .then((call: any) => {
           this.appendCallMessage(call);
           this.outgoingCall = call;
         })
@@ -535,7 +538,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
       }
 
       CometChatManager.call(receiverId, receiverType, CometChat.CALL_TYPE.VIDEO)
-        .then((call) => {
+        .then((call: any) => {
           this.appendCallMessage(call);
 
           this.outgoingCall = call;
@@ -551,7 +554,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
   /**
    * Appends call activities as messages to messageList
    */
-  appendCallMessage(call) {
+  appendCallMessage(call: any) {
     try {
       this.callMessage = call;
     } catch (error) {
@@ -562,7 +565,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
   /**
    * closes call screen
    */
-  outgoingCallEnded(message) {
+  outgoingCallEnded(message: object) {
     try {
       this.outgoingCall = null;
       this.incomingCall = null;
@@ -575,7 +578,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
   /**
    * opens call screen when user accepts the incoming call
    */
-  acceptIncomingCall(call) {
+  acceptIncomingCall(call: any) {
     try {
       this.incomingCall = call;
 
@@ -602,7 +605,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
    * appends call accepted message , When call is accepted and connected
    * @param
    */
-  callInitiated(message) {
+  callInitiated(message: object) {
     try {
       this.appendCallMessage(message);
     } catch (error) {
@@ -613,7 +616,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
   /**
    * closes call screen and sets call settings to initial when IncomingCall Rejected
    */
-  rejectedIncomingCall(call) {
+  rejectedIncomingCall(call: any) {
     try {
       let incomingCallMessage = call.incomingCall;
       let rejectedCallMessage = call.rejectedCall;

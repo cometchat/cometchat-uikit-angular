@@ -17,10 +17,10 @@ import { CometChat } from "@cometchat-pro/chat";
   styleUrls: ["./cometchat-receiver-image-message-bubble.component.css"],
 })
 export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
   messageFrom = enums.RECEIVER;
 
@@ -28,16 +28,16 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
     messageFrom: this.messageFrom,
   });
   imageLoader: boolean = false;
-  innerWidth;
+  innerWidth: any;
   checkScreenSize: boolean = false;
   checkReaction = [];
   avatar = null;
-  name: string = null;
+  name: string = '';
   avatarIfGroup: boolean = false;
 
-  message = this.messageAssign;
+  message: object = this.messageAssign;
   imageUrl = "";
-  timer = null;
+  timer: any = null;
 
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
@@ -120,7 +120,11 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
                 URL.revokeObjectURL(img.src);
               };
             });
+          } else {
+            this.setMessageImageUrl();
           }
+        } else {
+          this.setMessageImageUrl();
         }
       } else {
         this.setMessageImageUrl();
@@ -150,7 +154,7 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
    * Sets image url i.e medium-size or small-size
    * @param
    */
-  chooseImage(thumbnailGenerationObject) {
+  chooseImage(thumbnailGenerationObject: any) {
     try {
       const smallUrl = thumbnailGenerationObject[enums.URL_SMALL];
       const mediumUrl = thumbnailGenerationObject[enums.URL_MEDIUM];
@@ -184,7 +188,7 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {
@@ -196,8 +200,7 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
    * Downloads image from server
    * @param imgUrl
    */
-  downloadImage(imgUrl) {
-    try {
+  downloadImage(imgUrl: string) {
       const promise = new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open(enums.GET, imgUrl, true);
@@ -228,8 +231,5 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
       });
 
       return promise;
-    } catch (error) {
-      logger(error);
-    }
   }
 }
