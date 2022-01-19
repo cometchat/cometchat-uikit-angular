@@ -11,9 +11,9 @@ import * as enums from "../../../../../utils/enums";
   styleUrls: ["./cometchat-sender-poll-message-bubble.component.css"],
 })
 export class CometChatSenderPollMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -22,8 +22,8 @@ export class CometChatSenderPollMessageBubbleComponent implements OnInit {
   isPollExtensionEnabled: boolean = false;
   checkReaction = [];
 
-  pollExtensionData = null;
-  pollOptions = [];
+  pollExtensionData: any = null;
+  pollOptions: any = [];
   totalVotes = 0;
 
   constructor() {}
@@ -85,7 +85,7 @@ export class CometChatSenderPollMessageBubbleComponent implements OnInit {
 
       let optionKeys = Object.keys(this.pollExtensionData.options);
 
-      let optionList = [];
+      let optionList: any = [];
       optionKeys.forEach((currentItem) => {
         const optionData = this.pollExtensionData.results.options[currentItem];
         const vote = optionData[enums.COUNT];
@@ -112,7 +112,7 @@ export class CometChatSenderPollMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

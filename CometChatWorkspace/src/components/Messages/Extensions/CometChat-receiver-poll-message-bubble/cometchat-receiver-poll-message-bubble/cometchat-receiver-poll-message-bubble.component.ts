@@ -9,11 +9,11 @@ import { logger } from "../../../../../utils/common";
   styleUrls: ["./cometchat-receiver-poll-message-bubble.component.css"],
 })
 export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showReplyCount = true;
 
   @Input() loggedInUserUid = "";
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -21,10 +21,10 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
 
   isPollExtensionEnabled: boolean = false;
   pollId = "";
-  pollExtensionData = null;
-  pollOptions = [];
+  pollExtensionData: any = null;
+  pollOptions: any = [];
   totalVotes = 0;
-  selectedOption = null;
+  selectedOption: any = null;
   checkReaction = [];
 
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
@@ -90,7 +90,7 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
 
       let optionKeys = Object.keys(this.pollExtensionData.options);
 
-      let optionList = [];
+      let optionList: any = [];
       optionKeys.forEach((currentItem) => {
         const optionData = this.pollExtensionData.results.options[currentItem];
         const vote = optionData[enums.COUNT];
@@ -125,11 +125,11 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
    * sends the  answer selected by the user for the  the poll question
    * @param Any selectedOption
    */
-  answerPollQuestion(selectedOption) {
+  answerPollQuestion(selectedOption: any) {
     try {
       this.selectedOption = selectedOption;
 
-      CometChat.callExtension(enums.POLLS, enums.POST, enums.V1_VOTE, {
+      CometChat.callExtension(enums.POLLS, enums.POST, enums.V2_VOTE, {
         vote: selectedOption.id,
         id: this.pollId,
       })
@@ -151,7 +151,7 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {
@@ -163,8 +163,7 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
    * dynamically applies styles based on coditions
    * @param Event action
    */
-  getStyles(key = null, data = null) {
-    try {
+  getStyles(key: any = null, data: any = null) {
       switch (key) {
         case enums.ANSWER_WRAPPER_STYLE: {
           if (data.id !== this.selectedOption.id) {
@@ -176,8 +175,5 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
       }
 
       return {};
-    } catch (error) {
-      logger(error);
-    }
   }
 }

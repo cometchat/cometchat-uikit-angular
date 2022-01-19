@@ -19,16 +19,16 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatConversationListItemComponent
   implements OnInit, OnChanges {
-  @Input() conversationDetails = null;
-  @Input() loggedInUser = null;
+  @Input() conversationDetails: any = null;
+  @Input() loggedInUser: any = null;
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
 
   @Output() onDeleteConversation: EventEmitter<any> = new EventEmitter();
 
-  setAvatar: string;
-  lastMessage: string;
-  lastMessageTimestamp: string;
-  lastMessageName: string;
+  setAvatar: string = "";
+  lastMessage: string = "";
+  lastMessageTimestamp: string = "";
+  lastMessageName: string = "";
 
   constructor() {}
 
@@ -65,38 +65,29 @@ export class CometChatConversationListItemComponent
    * Sets Avatar According to user type ie. user or group
    * @param
    */
-  getAvatar(data) {
-    try {
+  getAvatar(data: any) {
       if (data.conversationType === CometChat.RECEIVER_TYPE.USER) {
         this.setAvatar = data.conversationWith;
       } else if (data.conversationType === CometChat.RECEIVER_TYPE.GROUP) {
         this.setAvatar = data.conversationWith;
       }
       return this.setAvatar;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Gets Name of Last Conversation User
    * @param
    */
-  getName(data) {
-    try {
+  getName(data: any) {
       this.lastMessageName = data.conversationWith.name;
       return this.lastMessageName;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Gets the Last Conversation with user
    * @param
    */
-  getLastMessage(data) {
-    try {
+  getLastMessage(data: any) {
       if (data === null) {
         return false;
       }
@@ -131,17 +122,13 @@ export class CometChatConversationListItemComponent
       }
       this.lastMessage = message;
       return this.lastMessage;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Gets Time when the last conversation was done
    * @param
    */
-  getLastMessageTimestamp(data) {
-    try {
+  getLastMessageTimestamp(data: any) {
       if (data === null) {
         return false;
       }
@@ -178,16 +165,13 @@ export class CometChatConversationListItemComponent
       }
       this.lastMessageTimestamp = timestamp;
       return this.lastMessageTimestamp;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Gets the MessageType i.e if text then display text else displays image,video,etc
    * @param
    */
-  getMessage(lastMessage) {
+  getMessage(lastMessage: any) {
     try {
       let message = null;
       switch (lastMessage.type) {
@@ -225,8 +209,7 @@ export class CometChatConversationListItemComponent
    * Displays if lastMessage was Video or Audio Call
    * @param
    */
-  getCallMessage(lastMessage) {
-    try {
+  getCallMessage(lastMessage: any) {
       let message = null;
       switch (lastMessage.type) {
         case CometChat.MESSAGE_TYPE.VIDEO:
@@ -240,17 +223,13 @@ export class CometChatConversationListItemComponent
       }
 
       return message;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Displays lastMessage was Custom Message i.e Poll or Sticker
    * @param
    */
-  getCustomMessage = (lastMessage) => {
-    try {
+  getCustomMessage = (lastMessage: any) => {
       let message = null;
       switch (lastMessage.type) {
         case enums.CUSTOM_TYPE_POLL:
@@ -264,16 +243,13 @@ export class CometChatConversationListItemComponent
       }
 
       return message;
-    } catch (error) {
-      logger(error);
-    }
   };
 
   /**
    * Emitting the user clicked so that it can be used in the parent component
    * @param Any userToEmit
    */
-  onUserClicked(userToEmit) {
+  onUserClicked(userToEmit: object) {
     try {
       this.onUserClick.emit(userToEmit);
     } catch (error) {
@@ -284,7 +260,7 @@ export class CometChatConversationListItemComponent
   /*
    * Emitting the conversation to delete to the cometchat-conversation-list component
    */
-  deleteConversation(conversation) { 
+  deleteConversation(conversation: object) { 
     this.onDeleteConversation.emit(conversation); 
   }
 }

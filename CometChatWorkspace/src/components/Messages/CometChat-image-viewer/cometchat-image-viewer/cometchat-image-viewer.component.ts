@@ -8,11 +8,11 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-image-viewer.component.css"],
 })
 export class CometChatImageViewerComponent implements OnInit {
-  @Input() messageDetails;
-  @Input() open;
+  @Input() messageDetails: any;
+  @Input() open: any;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  imageUrl: string;
+  imageUrl: string = '';
   constructor() {}
 
   ngOnInit() {

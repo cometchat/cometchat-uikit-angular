@@ -21,27 +21,27 @@ import { CometChatService } from "./../../../../utils/cometchat.service";
   styleUrls: ["./cometchat-conversation-list.component.css"],
 })
 export class CometChatConversationListComponent implements OnInit, OnChanges {
-  @Input() item = null;
-  @Input() type = null;
-  @Input() lastMessage;
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() lastMessage: object = {};
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
-  @Input() groupToUpdate = null;
+  @Input() groupToUpdate: object = {};
   @Input() groupToDelete = null;
 
   decoratorMessage: string = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
   loggedInUser = null;
   conversationList = [];
   onItemClick = null;
-  selectedConversation = undefined;
-  ConversationListManager;
+  selectedConversation: any;
+  ConversationListManager: object = {};
   checkItemChange: boolean = false;
   message = COMETCHAT_CONSTANTS.DELETE_CONVERSATION;
   confirmationButtonText = COMETCHAT_CONSTANTS.DELETE_BUTTON_TEXT;
   cancelButtonText = COMETCHAT_CONSTANTS.CANCEL_BUTTON_TEXT;
   showConfirmDialog: boolean = false;
 
-  conversationRequest = null;
-  conversationToBeDeleted = null;
+  conversationRequest: any = null;
+  conversationToBeDeleted : any = null;
 
   conversationListenerId = enums.CHAT_LIST_ + new Date().getTime();
   userListenerId = enums.CHAT_LIST_USER_ + new Date().getTime();
@@ -52,7 +52,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
 
   constructor(private ref: ChangeDetectorRef, private CometChatService: CometChatService) {
     setInterval(() => {
-      if (!this.ref[enums.DESTROYED]) {
+      if (!this.ref.hasOwnProperty(enums.DESTROYED)) {
         this.ref.detectChanges();
       }
     }, 1500);
@@ -78,9 +78,9 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
           if (Object.keys(change[enums.ITEM].currentValue).length === 0) {
             this.selectedConversation = {};
           } else {
-            const conversationlist = [...this.conversationList];
+            const conversationlist: any = [...this.conversationList];
 
-            const conversationObj = conversationlist.find((c) => {
+            const conversationObj = conversationlist.find((c: any) => {
               if (
                 (c.conversationType === this.type &&
                   this.type === CometChat.RECEIVER_TYPE.USER &&
@@ -118,7 +118,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
 
             //search for user
             let convKey = conversationlist.findIndex(
-              (c, k) =>
+              (c: any, k) =>
                 c.conversationType === CometChat.RECEIVER_TYPE.USER &&
                 c.conversationWith.uid === change[enums.ITEM].currentValue.uid
             );
@@ -131,8 +131,8 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
       }
 
       if (change[enums.GROUP_TO_UPDATE]) {
-        let prevProps = { groupToUpdate: null };
-        let props = { groupToUpdate: null };
+        let prevProps: any = { groupToUpdate: null };
+        let props: any = { groupToUpdate: null };
 
         prevProps[enums.GROUP_TO_UPDATE] =
           change[enums.GROUP_TO_UPDATE].previousValue;
@@ -148,10 +148,10 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
                 prevProps.groupToUpdate.scope !== props.groupToUpdate.scope)))
         ) {
           const conversationList = [...this.conversationList];
-          const groupToUpdate = this.groupToUpdate;
+          const groupToUpdate: any = this.groupToUpdate;
 
           const groupKey = conversationList.findIndex(
-            (group) => group.conversationWith.guid === groupToUpdate.guid
+            (group: any) => group.conversationWith.guid === groupToUpdate.guid
           );
           if (groupKey > -1) {
             const groupObj = conversationList[groupKey];
@@ -168,8 +168,8 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
       }
 
       if (change[enums.GROUP_TO_DELETE]) {
-        let prevProps = { groupToDelete: null };
-        let props = { groupToDelete: null };
+        let prevProps: any = { groupToDelete: null };
+        let props: any = { groupToDelete: null };
 
         prevProps[enums.GROUP_TO_DELETE] =
           change[enums.GROUP_TO_DELETE].previousValue;
@@ -182,7 +182,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
         ) {
           const conversationList = [...this.conversationList];
           const groupKey = conversationList.findIndex(
-            (group) => group.conversationWith.guid === props.groupToDelete.guid
+            (group: any) => group.conversationWith.guid === props.groupToDelete.guid
           );
 
           if (groupKey > -1) {
@@ -209,8 +209,8 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
           ) {
             const lastMessage = change[enums.LAST_MESSAGE].currentValue[0];
 
-            const conversationList = [...this.conversationList];
-            const conversationKey = conversationList.findIndex((c) => {
+            const conversationList: any = [...this.conversationList];
+            const conversationKey = conversationList.findIndex((c: any) => {
               if (lastMessage === undefined) {
                 return false;
               }
@@ -218,7 +218,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
             });
 
             if (conversationKey > -1) {
-              const conversationObj = conversationList[conversationKey];
+              const conversationObj: any = conversationList[conversationKey];
               let newConversationObj = {
                 ...conversationObj,
                 lastMessage: lastMessage,
@@ -255,7 +255,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     this.CometChatService.onConfirmDialogClick.subscribe((value: any) => {
       this.showConfirmDialog = false;
       if(value === "yes") {
-        let conversationWith; 
+        let conversationWith: any; 
         if(this.conversationToBeDeleted) {
           let conversationType = this.conversationToBeDeleted.conversationType;
           if(conversationType === CometChat.RECEIVER_TYPE.USER) {
@@ -281,7 +281,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
      * Updating the conversation list on leaving group.
      */
     this.CometChatService.onLeaveGroup.subscribe((group : any) => {
-      this.conversationList.forEach((conversation , index) => {
+      this.conversationList.forEach((conversation: any , index) => {
         if(conversation.conversationType === CometChat.RECEIVER_TYPE.GROUP && 
           conversation.conversationWith.guid === group.guid) {
           this.conversationList.splice(index, 1);
@@ -305,16 +305,16 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * attaches Listeners for user activity , group activities and calling
    * @param callback
    */
-  attachListeners(callback) {
+  attachListeners(callback: any) {
     try {
       CometChat.addUserListener(
         this.userListenerId,
         new CometChat.UserListener({
-          onUserOnline: (onlineUser) => {
+          onUserOnline: (onlineUser: any) => {
             /* when someuser/friend comes online, user will be received here */
             callback(enums.USER_ONLINE, onlineUser);
           },
-          onUserOffline: (offlineUser) => {
+          onUserOffline: (offlineUser: any) => {
             /* when someuser/friend went offline, user will be received here */
             callback(enums.USER_OFFLINE, offlineUser);
           },
@@ -325,55 +325,55 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
         this.groupListenerId,
         new CometChat.GroupListener({
           onGroupMemberScopeChanged: (
-            message,
-            changedUser,
-            newScope,
-            oldScope,
-            changedGroup
+            message: any,
+            changedUser: any,
+            newScope: any,
+            oldScope: any,
+            changedGroup: any
           ) => {
             callback(enums.GROUP_MEMBER_SCOPE_CHANGED, changedGroup, message, {
               user: changedUser,
               scope: newScope,
             });
           },
-          onGroupMemberKicked: (message, kickedUser, kickedBy, kickedFrom) => {
+          onGroupMemberKicked: (message: any, kickedUser: any, kickedBy: any, kickedFrom: any) => {
             callback(enums.GROUP_MEMBER_KICKED, kickedFrom, message, {
               user: kickedUser,
               hasJoined: false,
             });
           },
-          onGroupMemberBanned: (message, bannedUser, bannedBy, bannedFrom) => {
+          onGroupMemberBanned: (message: any, bannedUser: any, bannedBy: any, bannedFrom: any) => {
             callback(enums.GROUP_MEMBER_BANNED, bannedFrom, message, {
               user: bannedUser,
             });
           },
           onGroupMemberUnbanned: (
-            message,
-            unbannedUser,
-            unbannedBy,
-            unbannedFrom
+            message: any,
+            unbannedUser: any,
+            unbannedBy: any,
+            unbannedFrom: any
           ) => {
             callback(enums.GROUP_MEMBER_UNBANNED, unbannedFrom, message, {
               user: unbannedUser,
             });
           },
           onMemberAddedToGroup: (
-            message,
-            userAdded,
-            userAddedBy,
-            userAddedIn
+            message: any,
+            userAdded: any,
+            userAddedBy: any,
+            userAddedIn: any
           ) => {
             callback(enums.GROUP_MEMBER_ADDED, userAddedIn, message, {
               user: userAdded,
               hasJoined: true,
             });
           },
-          onGroupMemberLeft: (message, leavingUser, group) => {
+          onGroupMemberLeft: (message: any, leavingUser: any, group: any) => {
             callback(enums.GROUP_MEMBER_LEFT, group, message, {
               user: leavingUser,
             });
           },
-          onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
+          onGroupMemberJoined: (message: any, joinedUser: any, joinedGroup: any) => {
             callback(enums.GROUP_MEMBER_JOINED, joinedGroup, message, {
               user: joinedUser,
             });
@@ -384,19 +384,19 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
       CometChat.addMessageListener(
         this.conversationListenerId,
         new CometChat.MessageListener({
-          onTextMessageReceived: (textMessage) => {
+          onTextMessageReceived: (textMessage: object) => {
             callback(enums.TEXT_MESSAGE_RECEIVED, null, textMessage);
           },
-          onMediaMessageReceived: (mediaMessage) => {
+          onMediaMessageReceived: (mediaMessage: object) => {
             callback(enums.MEDIA_MESSAGE_RECEIVED, null, mediaMessage);
           },
-          onCustomMessageReceived: (customMessage) => {
+          onCustomMessageReceived: (customMessage: object) => {
             callback(enums.CUSTOM_MESSAGE_RECEIVED, null, customMessage);
           },
-          onMessageDeleted: (deletedMessage) => {
+          onMessageDeleted: (deletedMessage: object) => {
             callback(enums.MESSAGE_DELETED, null, deletedMessage);
           },
-          onMessageEdited: (editedMessage) => {
+          onMessageEdited: (editedMessage: object) => {
             callback(enums.MESSAGE_EDITED, null, editedMessage);
           },
         })
@@ -405,10 +405,10 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
       CometChat.addCallListener(
         this.callListenerId,
         new CometChat.CallListener({
-          onIncomingCallReceived: (call) => {
+          onIncomingCallReceived: (call: object) => {
             callback(enums.INCOMING_CALL_RECEIVED, null, call);
           },
-          onIncomingCallCancelled: (call) => {
+          onIncomingCallCancelled: (call: object) => {
             callback(enums.INCOMING_CALL_CANCELLED, null, call);
           },
         })
@@ -437,11 +437,11 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   getConversation() {
     try {
       CometChat.getLoggedinUser()
-        .then((user) => {
+        .then((user: any) => {
           this.loggedInUser = user;
           this.fetchNextConversation()
-            .then((conversationList) => {
-              conversationList.forEach((conversation) => {
+            .then((conversationList: []) => {
+              conversationList.forEach((conversation: any) => {
                 if (
                   this.type !== null &&
                   this.item !== null &&
@@ -469,7 +469,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
                 this.decoratorMessage = "";
               }
             })
-            .catch((error) => {
+            .catch((error: any) => {
               this.decoratorMessage = COMETCHAT_CONSTANTS.ERROR;
               logger(
                 "[CometChatConversationList] getConversations fetchNext error",
@@ -493,9 +493,9 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * Updates the conversation list's last message , badgeCount , user presence based on activities propagated by listeners
    */
   conversationUpdated = (
-    key = null,
+    key:any,
     item = null,
-    message = null,
+    message: object,
     options = null
   ) => {
     try {
@@ -508,6 +508,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
         case enums.TEXT_MESSAGE_RECEIVED:
         case enums.MEDIA_MESSAGE_RECEIVED:
         case enums.CUSTOM_MESSAGE_RECEIVED:
+          this.markMessageAsDelivered(message);
           this.updateConversation(message);
           break;
         case enums.MESSAGE_EDITED:
@@ -520,25 +521,33 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     }
   };
 
+  markMessageAsDelivered = (message: any) => {
+		//if chat window is not open, mark message as delivered
+		if ((this.item === null || this.item.uid !== message.sender.uid) 
+		&& !message.hasOwnProperty("deliveredAt")) {
+		  CometChat.markAsDelivered(message);
+		}
+	};
+
   /**
    * Updates Detail when user comes online/offline
    * @param
    */
-  updateUser(user) {
+  updateUser(user: any) {
     try {
       //when user updates
-      const conversationlist = [...this.conversationList];
+      const conversationlist: any = [...this.conversationList];
 
       //Gets the index of user which comes offline/online
       const conversationKey = conversationlist.findIndex(
-        (conversationObj) =>
+        (conversationObj: any) =>
           conversationObj.conversationType === CometChat.RECEIVER_TYPE.USER &&
           conversationObj.conversationWith.uid === user.uid
       );
       if (conversationKey > -1) {
-        let conversationObj = { ...conversationlist[conversationKey] };
+        let conversationObj = { ...conversationlist[conversationKey] as any };
         let conversationWithObj = {
-          ...conversationObj.conversationWith,
+          ...conversationObj.conversationWith ,
           status: user.getStatus(),
         };
 
@@ -560,13 +569,9 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * Gets the last message
    * @param conversation
    */
-  makeLastMessage(message, conversation = {}) {
-    try {
+  makeLastMessage(message: object, conversation = {}) {
       const newMessage = Object.assign({}, message);
       return newMessage;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
@@ -575,12 +580,12 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * @param
    *
    */
-  updateConversation(message, notification = true) {
+  updateConversation(message: object, notification = true) {
     try {
       this.makeConversation(message)
         .then((response: any) => {
           const conversationKey = response.conversationKey;
-          const conversationObj = response.conversationObj;
+          const conversationObj: any = response.conversationObj;
           const conversationList = response.conversationList;
 
           if (conversationKey > -1) {
@@ -633,7 +638,6 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * @param
    */
   makeUnreadMessageCount(conversation: any = {}, operator = null) {
-    try {
       if (Object.keys(conversation).length === 0) {
         return 1;
       }
@@ -664,28 +668,24 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
       }
 
       return unreadMessageCount;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Changes detail of conversations
    * @param
    */
-  makeConversation(message) {
-    try {
+  makeConversation(message: object) {
       const promise = new Promise((resolve, reject) => {
         CometChat.CometChatHelper.getConversationFromMessage(message)
           .then((conversation: any) => {
             let conversationList = [...this.conversationList];
             let conversationKey = conversationList.findIndex(
-              (c) => c.conversationId === conversation.conversationId
+              (c: any) => c.conversationId === conversation.conversationId
             );
 
             let conversationObj = { ...conversation };
             if (conversationKey > -1) {
-              conversationObj = { ...conversationList[conversationKey] };
+              conversationObj = { ...conversationList[conversationKey] as {} };
             }
 
             resolve({
@@ -697,15 +697,12 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
           .catch((error) => reject(error));
       });
       return promise;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
    * Updates Conversation View when message is edited or deleted
    */
-  conversationEditedDeleted(message) {
+  conversationEditedDeleted(message: any) {
     try {
       this.makeConversation(message)
         .then((response: any) => {
@@ -744,7 +741,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * If User scrolls to the bottom of the current Conversation list than fetch next items of the Conversation list and append
    * @param Event e
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const bottom =
         Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
@@ -762,7 +759,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * Emits User on User Click
    * @param user
    */
-  userClicked(user) {
+  userClicked(user: object) {
     try {
       this.onUserClick.emit(user);
     } catch (error) {
@@ -786,13 +783,13 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * Updates the convesation list when deleted.
    * Adding Conversation Object to CometchatService
    */ 
-  updateConversationList(conversation) {
+  updateConversationList(conversation: object) {
     let index = this.conversationList.findIndex((element) => element == conversation);
     this.conversationList.splice(index, 1);
     this.CometChatService.conversationDeleted.next(conversation);
   }
 
-  showConfirmationDialog(conversation) {
+  showConfirmationDialog(conversation: object) {
     this.showConfirmDialog = true;
     this.conversationToBeDeleted = conversation;
   }

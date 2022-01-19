@@ -14,17 +14,17 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-view-group-member-list-item.component.css"],
 })
 export class CometChatViewGroupMemberListItemComponent implements OnInit {
-  @Input() item = null;
-  @Input() type = null;
-  @Input() member = null;
-  @Input() loggedInUser = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() member: any = null;
+  @Input() loggedInUser: any = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  scope;
+  scope: any;
   showChangeScope: boolean = false;
-  roles = {};
-  roleCodes = [];
+  roles: any = {};
+  roleCodes: any = [];
   hasGreaterRole: boolean = false;
 
   PARTICIPANT = CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT;
@@ -69,8 +69,7 @@ export class CometChatViewGroupMemberListItemComponent implements OnInit {
    * returns the level of authority on current item on the group
    * @param
    */
-  checkRoleAuthorityLevel(item) {
-    try {
+  checkRoleAuthorityLevel(item: any) {
       if (item.scope == COMETCHAT_CONSTANTS.OWNER) {
         return 4;
       }
@@ -88,9 +87,6 @@ export class CometChatViewGroupMemberListItemComponent implements OnInit {
       }
 
       return 1;
-    } catch (error) {
-      logger(error);
-    }
   }
 
   /**
@@ -120,7 +116,7 @@ export class CometChatViewGroupMemberListItemComponent implements OnInit {
    * Closes or opens  the edit scope dropdown field
    * @param
    */
-  toggleChangeScope(show) {
+  toggleChangeScope(show: any) {
     try {
       this.showChangeScope = show;
     } catch (error) {
@@ -132,7 +128,7 @@ export class CometChatViewGroupMemberListItemComponent implements OnInit {
    * Closes or opens  the edit scope dropdown field
    * @param Event event
    */
-  scopeChangeHandler(event) {
+  scopeChangeHandler(event: any) {
     try {
       this.scope = event.target.value;
     } catch (error) {

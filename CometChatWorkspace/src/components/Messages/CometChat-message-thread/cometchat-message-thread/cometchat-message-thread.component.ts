@@ -20,15 +20,15 @@ import { logger } from "../../../../utils/common";
   styleUrls: ["./cometchat-message-thread.component.css"],
 })
 export class CometChatMessageThreadComponent implements OnInit, OnChanges {
-  @ViewChild("messageWindow", { static: false }) chatWindow: ElementRef;
+  @ViewChild("messageWindow", { static: false }) chatWindow!: ElementRef;
 
-  @Input() item = null;
-  @Input() type = null;
-  @Input() parentMessage = null;
-  @Input() loggedInUser = null;
+  @Input() item: any = null;
+  @Input() type: string = '';
+  @Input() parentMessage: any = null;
+  @Input() loggedInUser: any = null;
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
-  messageList = [];
+  messageList: any = [];
   replyCount: number = 0;
   reachedTopOfConversation = false;
   scrollVariable = 0;
@@ -110,7 +110,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       let messages = action.payLoad;
 
@@ -227,7 +227,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * set Messages Directly , coz new conversation is opened , hence no need to prepend or append
    * @param Any messages
    */
-  setMessages(messages) {
+  setMessages(messages: any) {
     try {
       this.messageList = [...messages];
 
@@ -241,7 +241,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * append Messages that are sent
    * @param Any messages
    */
-  appendMessage = (messages) => {
+  appendMessage = (messages: any) => {
     try {
       let dummy = [...this.messageList];
 
@@ -257,7 +257,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * prepend Fetched Messages
    * @param Any messages
    */
-  prependMessages(messages) {
+  prependMessages(messages: any) {
     try {
       this.messageList = [...messages, ...this.messageList];
     } catch (error) {
@@ -269,7 +269,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * update status of message ie. read or deliv
    * @param Any messages
    */
-  updateMessages = (messages) => {
+  updateMessages = (messages: any) => {
     try {
       this.messageList = [...messages];
     } catch (error) {
@@ -281,7 +281,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Sets The message to be edited to pass it to the message composer
    * @param Any messages
    */
-  editMessage(messages) {
+  editMessage(messages: any) {
     try {
       this.messageToBeEdited = messages;
     } catch (error) {
@@ -293,10 +293,10 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Render The Message List after Message has been successfullly edited
    * @param Any message
    */
-  messageEdited(message) {
+  messageEdited(message: any) {
     try {
       const messageList = [...this.messageList];
-      let messageKey = messageList.findIndex((m) => m.id === message.id);
+      let messageKey = messageList.findIndex((m: any) => m.id === message.id);
       if (messageKey > -1) {
         const messageObj = messageList[messageKey];
 
@@ -321,7 +321,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Delete the message
    * @param Any message
    */
-  deleteMessage = (message) => {
+  deleteMessage = (message: any) => {
     try {
       const messageId = message.id;
       CometChat.deleteMessage(messageId)
@@ -329,7 +329,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
           this.removeMessages([deletedMessage]);
 
           const messageList = [...this.messageList];
-          let messageKey = messageList.findIndex((m) => m.id === message.id);
+          let messageKey = messageList.findIndex((m: any) => m.id === message.id);
 
           if (messageList.length - messageKey === 1 && !message.replyCount) {
             this.actionGenerated.emit({
@@ -350,16 +350,16 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * If the message gets deleted successfull , remove the deleted message in frontend using this function
    * @param Any messages
    */
-  removeMessages = (messages) => {
+  removeMessages = (messages: any) => {
     try {
       const deletedMessage = messages[0];
       const messagelist = [...this.messageList];
 
       let messageKey = messagelist.findIndex(
-        (message) => message.id === deletedMessage.id
+        (message: any) => message.id === deletedMessage.id
       );
       if (messageKey > -1) {
-        let messageObj = { ...messagelist[messageKey] };
+        let messageObj = { ...messagelist[messageKey] as {} };
         let newMessageObj = Object.assign({}, messageObj, deletedMessage);
 
         messagelist.splice(messageKey, 1, newMessageObj);
@@ -374,7 +374,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Checks smartReplyPreview Extension
    * @param messages
    */
-  smartReplyPreview(messages) {
+  smartReplyPreview(messages: any) {
     try {
       const message = messages[0];
 
@@ -404,7 +404,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Opens the clicked Image in full screen mode
    * @param Any message
    */
-  toggleImageView(message) {
+  toggleImageView(message: any) {
     try {
       this.imageView = message;
       this.fullScreenViewImage = !this.fullScreenViewImage;
@@ -417,7 +417,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Handles Scroll of window
    * @param e
    */
-  handleScroll(e) {
+  handleScroll(e: any) {
     try {
       const bottom =
         Math.round(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) ===
@@ -437,7 +437,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Sets the text for Reply Count
    * @param
    */
-  getReplyCountText(replyCount) {
+  getReplyCountText(replyCount: any): string {
     try {
       if (replyCount === 1) {
         return replyCount + " " + COMETCHAT_CONSTANTS.REPLY;
@@ -447,6 +447,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
     } catch (error) {
       logger(error);
     }
+    return '';
   }
 
   /**
@@ -468,7 +469,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
    * Sets reaction to message
    * @param message
    */
-  reactToMessage(message) {
+  reactToMessage(message: any) {
     try {
       this.messageToReact = message;
     } catch (error) {

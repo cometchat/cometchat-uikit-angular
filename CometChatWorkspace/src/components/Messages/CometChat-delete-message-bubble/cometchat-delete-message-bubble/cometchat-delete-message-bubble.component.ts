@@ -9,13 +9,13 @@ import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
   styleUrls: ["./cometchat-delete-message-bubble.component.css"],
 })
 export class CometChatDeleteMessageBubbleComponent implements OnInit {
-  @Input() messageDetails = null;
+  @Input() messageDetails:any = null;
 
-  @Input() loggedInUser = null;
+  @Input() loggedInUser:any = null;
 
   loggedInUserDeletedThisMessage: boolean = false;
 
-  time;
+  time: any;
 
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
   THIS_MESSAGE_DELETED: String = COMETCHAT_CONSTANTS.THIS_MESSAGE_DELETED;

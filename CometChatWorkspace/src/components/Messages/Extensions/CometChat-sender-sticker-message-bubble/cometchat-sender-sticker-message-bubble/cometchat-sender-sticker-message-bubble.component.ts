@@ -20,18 +20,18 @@ import * as enums from "../../../../../utils/enums";
 })
 export class CometChatSenderStickerMessageBubbleComponent
   implements OnInit, OnChanges {
-  @Input() messageDetails = null;
+  @Input() messageDetails: any = null;
   @Input() showToolTip = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   @Input() showReplyCount = true;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   messageFrom = enums.SENDER;
-  message;
-  stickerUrl: string;
-  stickerName: string;
+  message: any;
+  stickerUrl: string = '';
+  stickerName: string = '';
   checkReaction = [];
 
   constructor() {}
@@ -81,7 +81,7 @@ export class CometChatSenderStickerMessageBubbleComponent
   /**
    * Handles all the events emitted by child components
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

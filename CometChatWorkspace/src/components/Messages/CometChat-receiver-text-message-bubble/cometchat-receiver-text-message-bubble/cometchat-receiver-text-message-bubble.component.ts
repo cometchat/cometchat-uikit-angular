@@ -12,21 +12,21 @@ import { CometChat } from "@cometchat-pro/chat";
 })
 export class CometChatReceiverTextMessageBubbleComponent implements OnInit {
   @Input() item = null;
-  @Input() type: String = "";
-  @Input() messageDetails = null;
+  @Input() type: string = "";
+  @Input() messageDetails: any = null;
   @Input() showReplyCount = true;
-  @Input() loggedInUser;
+  @Input() loggedInUser: any;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   @Input() showToolTip = true;
 
   linkPreview: boolean = false;
-  linkTitle: string;
-  linkDescription: string;
-  linkUrl: string;
-  linkText: string;
-  linkImage: string;
+  linkTitle: string = '';
+  linkDescription: string = '';
+  linkUrl: string = '';
+  linkText: string = '';
+  linkImage: string = '';
   checkReaction = [];
 
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
@@ -89,7 +89,7 @@ export class CometChatReceiverTextMessageBubbleComponent implements OnInit {
    * Handles all the actions emitted by the child components that make the current component
    * @param Event action
    */
-  actionHandler(action) {
+  actionHandler(action: any) {
     try {
       this.actionGenerated.emit(action);
     } catch (error) {

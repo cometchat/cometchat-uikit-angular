@@ -4,6 +4,8 @@ import {
   FormGroup,
   FormArray,
   AbstractControl,
+  FormControl,
+  NgControl,
 } from "@angular/forms";
 
 import { CometChat } from "@cometchat-pro/chat";
@@ -18,8 +20,13 @@ import { logger } from "../../../../../utils/common";
 export class CometChatCreatePollComponent implements OnInit {
   pollFormData: FormGroup;
   errorText = "";
-  @Input() item = null;
-  @Input() type = null;
+  @Input() item: any = null;
+  @Input() type: string = "";
+  inputQuestion: string = ""; 
+  inputOptionOne: string = "";
+  inputOptionTwo: string = "";
+  inputOptionItems: {key: string, value: string}[] = [];
+  
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -48,9 +55,8 @@ export class CometChatCreatePollComponent implements OnInit {
    */
   addPollOption() {
     try {
-      (this.pollFormData.get(enums.OPTION_ITEMS) as FormArray).push(
-        this.fb.control(null)
-      );
+      this.inputOptionItems.push({ key: '',
+      value: ''});
     } catch (error) {
       logger(error);
     }
@@ -60,20 +66,9 @@ export class CometChatCreatePollComponent implements OnInit {
    * Used to remove an extra option
    * @param number index
    */
-  removePollOption(index) {
+  removePollOption(index: any) {
     try {
-      (this.pollFormData.get(enums.OPTION_ITEMS) as FormArray).removeAt(index);
-    } catch (error) {
-      logger(error);
-    }
-  }
-
-  /**
-   * used to add options in poll dynamically as form control
-   */
-  getOptionsFormControls(): AbstractControl[] {
-    try {
-      return (<FormArray>this.pollFormData.get(enums.OPTION_ITEMS)).controls;
+      this.inputOptionItems.splice(index, 1);
     } catch (error) {
       logger(error);
     }
@@ -83,26 +78,21 @@ export class CometChatCreatePollComponent implements OnInit {
    * Creates the poll
    * @param Any values
    */
-  createPoll(values) {
+  createPoll(): boolean {
     try {
-      if (values.question.trim().length === 0) {
+      let inputValue = this.inputOptionItems.map(item => item.value);
+      if (this.inputQuestion.trim().length === 0) {
         this.errorText = COMETCHAT_CONSTANTS.POLL_QUESTION_BLANK;
         return false;
       }
 
       if (
-        values.firstOption.trim().length === 0 ||
-        values.secondOption.trim().length === 0
+        this.inputOptionOne.trim().length === 0 ||
+        this.inputOptionTwo.trim().length === 0
       ) {
         this.errorText = COMETCHAT_CONSTANTS.POLL_OPTION_BLANK;
         return false;
       }
-
-      let optionList = [
-        values.firstOption,
-        values.secondOption,
-        ...values.optionItems,
-      ];
 
       let receiverId;
       let receiverType = this.type;
@@ -113,52 +103,27 @@ export class CometChatCreatePollComponent implements OnInit {
       }
 
       if (this.createBtnText == COMETCHAT_CONSTANTS.CREATING_MESSSAGE) {
-        return;
+        return false;
       }
+
+      let optionList: any[] = [
+        this.inputOptionOne,
+        this.inputOptionTwo,
+        ...inputValue
+      ];
 
       this.createBtnText = COMETCHAT_CONSTANTS.CREATING_MESSSAGE;
 
-      CometChat.callExtension(enums.POLLS, enums.POST, enums.V1_CREATE, {
-        question: values.question,
+      CometChat.callExtension(enums.POLLS, enums.POST, enums.V2_CREATE, {
+        question: this.inputQuestion,
         options: optionList,
         receiver: receiverId,
         receiverType: receiverType,
       })
         .then((response: any) => {
-          const data = response.message.data;
-          const customData = data.data.customData;
-          const options = customData.options;
-
-          const resultOptions = {};
-          for (const option in options) {
-            resultOptions[option] = {
-              text: options[option],
-              count: 0,
-            };
+          if (response && response.hasOwnProperty("success") && response["success"] === true) {
+            this.closePollView();
           }
-
-          const polls = {
-            id: data.id,
-            options: options,
-            results: {
-              total: 0,
-              options: resultOptions,
-              question: customData.question,
-            },
-            question: customData.question,
-          };
-
-          const message = {
-            ...data,
-            sender: { uid: data.sender },
-            metadata: { "@injected": { extensions: { polls: polls } } },
-          };
-
-          this.actionGenerated.emit({
-            type: enums.POLL_CREATED,
-            payLoad: message,
-          });
-          this.errorText = "";
         })
         .catch((error) => {
           logger(enums.ERROR, error);
@@ -170,6 +135,7 @@ export class CometChatCreatePollComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+    return true;
   }
 
   /**

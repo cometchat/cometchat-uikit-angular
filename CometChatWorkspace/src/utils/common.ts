@@ -1,6 +1,6 @@
 import * as enums from "./enums";
 
-export const checkMessageForExtensionsData = (message, extensionKey) => {
+export const checkMessageForExtensionsData = (message: any, extensionKey: any) => {
   try {
     let output = [];
 
@@ -24,7 +24,7 @@ export const checkMessageForExtensionsData = (message, extensionKey) => {
 /**
  * Get Time when message was sent
  */
-export const getSentAtTime = (message) => {
+export const getSentAtTime = (message: any) => {
   try {
     let msgSentAt = message.sentAt;
     msgSentAt = msgSentAt * 1000;
@@ -38,7 +38,7 @@ export const getSentAtTime = (message) => {
 /**
  * Get Time when message was sent
  */
-export const logger = (...data) => {
+export const logger = (...data: any) => {
   try {
     console.log(...data);
   } catch (error) {

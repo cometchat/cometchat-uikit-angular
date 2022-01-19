@@ -7,9 +7,9 @@ import { CometChatService } from './../../../../utils/cometchat.service';
   styleUrls: ['./cometchat-confirm-dialog.component.css']
 })
 export class CometChatConfirmDialogComponent implements OnInit {
-  @Input() message: string = null;
-  @Input() confirmationButtonText: string = null;
-  @Input() cancelButtonText: string = null;
+  @Input() message: string = '';
+  @Input() confirmationButtonText: string = '';
+  @Input() cancelButtonText: string = '';
 
   constructor(private CometChatService: CometChatService) { }
 
@@ -17,7 +17,7 @@ export class CometChatConfirmDialogComponent implements OnInit {
 
   }
 
-  onButtonClick(value) {
+  onButtonClick(value: string) {
     this.CometChatService.onConfirmDialogClick.next(value);
   }
 
