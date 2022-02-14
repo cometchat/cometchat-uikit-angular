@@ -17,7 +17,7 @@ export class CometChatStickerKeyboardComponent implements OnInit {
   stickerSet: any = {};
   activeStickerList: any = [];
   activeStickerSet: any ;
-  categoryStickerUrl: any;
+  categoryStickerUrl: any = [];
   constructor() {}
 
   ngOnInit() {

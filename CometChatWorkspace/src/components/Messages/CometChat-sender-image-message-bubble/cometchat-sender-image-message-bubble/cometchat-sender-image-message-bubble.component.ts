@@ -85,36 +85,41 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
    */
   setImage() {
     try {
-      this.imageLoader = true;
       if (this.messageDetails.hasOwnProperty(enums.METADATA)) {
         const metadata = this.messageDetails[enums.METADATA];
-        const injectedObject = metadata[enums.INJECTED];
-        if (injectedObject && injectedObject.hasOwnProperty(enums.EXTENSIONS)) {
-          const extensionsObject = injectedObject[enums.EXTENSIONS];
-          if (
-            extensionsObject &&
-            extensionsObject.hasOwnProperty(enums.THUMBNAIL_GENERATION)
-          ) {
-            const thumbnailGenerationObject =
-              extensionsObject[enums.THUMBNAIL_GENERATION];
-            const imageToDownload = this.chooseImage(thumbnailGenerationObject);
-            this.downloadImage(imageToDownload)
-              .then((response) => {
-                this.img = new Image();
-                this.img.src = imageToDownload;
-                this.img.onload = () => {
-                  this.imageLoader = false;
-                  this.imageUrl = this.img.src;
-                  URL.revokeObjectURL(this.img.src);
-                };
-              })
-              .catch((err) => {
-                logger(err);
-              });
-          }
+
+        if(metadata.hasOwnProperty(enums.INJECTED)) {
+          const injectedObject = metadata[enums.INJECTED];
+          if (injectedObject && injectedObject.hasOwnProperty(enums.EXTENSIONS)) {
+            const extensionsObject = injectedObject[enums.EXTENSIONS];
+            if (
+                extensionsObject &&
+                extensionsObject.hasOwnProperty(enums.THUMBNAIL_GENERATION)
+               ) {
+                const thumbnailGenerationObject = extensionsObject[enums.THUMBNAIL_GENERATION];
+
+                const mq = window.matchMedia(
+                        "(min-width:360px) and (max-width: 767px)"
+                );
+
+                const imageToDownload = this.chooseImage(thumbnailGenerationObject);
+                this.downloadImage(imageToDownload).then((response) => {
+                  let img = new Image();
+                  img.src = imageToDownload;
+                  img.onload = () => {
+                      this.imageLoader = false;
+                      this.imageUrl = img.src;
+                      URL.revokeObjectURL(img.src);
+                  };
+                })
+               } 
+          } else {
+            this.setMessageImageUrl();
+          } 
         }
-      } else {
-        this.setMessageImageUrl();
+        else {
+          this.setMessageImageUrl();
+        }
       }
     } catch (error) {
       logger(error);
@@ -129,14 +134,13 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
     try {
       const smallUrl = thumbnailGenerationObject[enums.URL_SMALL];
       const mediumUrl = thumbnailGenerationObject[enums.URL_MEDIUM];
-
+    
       const mq = window.matchMedia("(min-width:360px) and (max-width: 767px)");
 
       let imageToShow = mediumUrl;
       if (mq.matches) {
         imageToShow = smallUrl;
       }
-
       return imageToShow;
     } catch (error) {
       logger(error);
@@ -148,17 +152,50 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
    * @param
    */
   setMessageImageUrl() {
-    try {
-      let img = new Image();
-      img.src = this.messageDetails.data.url;
+    const metadataKey = enums.FILE_METADATA;
+		const fileMetadata = this.getMessageFileMetadata (this.messageDetails, metadataKey);
+
+		let img: any = new Image();
+		let imageName;
+
+    if (fileMetadata instanceof Blob) {
+
+			const reader = new FileReader();
+			reader.onload = function() {
+				img.src = reader.result;
+			};
+			imageName = fileMetadata["name"];
+			reader.readAsDataURL(fileMetadata);
+    }
+
+    else {
+      img.src = this.messageDetails.data.attachments[0].url;
       img.onload = () => {
         this.imageLoader = false;
         this.imageUrl = img.src;
       };
-    } catch (error) {
-      logger(error);
+    } 
+
+		img.onload = () => {
+			//only if there is a change in the image path, update state
+			if (this.imageUrl !== img.src) {
+				this.imageUrl = img.src,
+        imageName = imageName;
+			}
+		};
+	};
+  
+
+  getMessageFileMetadata(message, metadataKey) {
+    let fileMetadata;
+    if(message.hasOwnProperty("metadata")) {
+        const metadata = message["metadata"];
+        if (metadata.hasOwnProperty(metadataKey)) {
+            fileMetadata = metadata[metadataKey];
+        }
     }
-  }
+    return fileMetadata;
+}
 
   /**
    * Emits action to open image in full-screen view

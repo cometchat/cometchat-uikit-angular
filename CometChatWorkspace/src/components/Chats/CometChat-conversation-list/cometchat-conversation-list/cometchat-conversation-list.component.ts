@@ -25,6 +25,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   @Input() type: string = '';
   @Input() lastMessage: object = {};
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
+  @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
   @Input() groupToUpdate: object = {};
   @Input() groupToDelete = null;
 
@@ -51,11 +52,15 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   CHATS: String = COMETCHAT_CONSTANTS.CHATS;
 
   constructor(private ref: ChangeDetectorRef, private CometChatService: CometChatService) {
-    setInterval(() => {
-      if (!this.ref.hasOwnProperty(enums.DESTROYED)) {
-        this.ref.detectChanges();
-      }
-    }, 1500);
+    try {
+      setInterval(() => {
+        if (!this.ref.hasOwnProperty(enums.DESTROYED)) {
+          this.ref.markForCheck();
+        }
+      }, 2000);
+    } catch (error) {
+      logger(error);
+    }
   }
 
   ngOnDestroy() {
@@ -391,6 +396,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
             callback(enums.MEDIA_MESSAGE_RECEIVED, null, mediaMessage);
           },
           onCustomMessageReceived: (customMessage: object) => {
+            
             callback(enums.CUSTOM_MESSAGE_RECEIVED, null, customMessage);
           },
           onMessageDeleted: (deletedMessage: object) => {
@@ -582,6 +588,14 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    */
   updateConversation(message: object, notification = true) {
     try {
+      if((message as any).type == enums.CALL_TYPE_DIRECT){
+        this.actionGenerated.emit({
+          type:enums.CALL_TYPE_DIRECT,
+          payLoad:message
+
+        })
+     
+      }
       this.makeConversation(message)
         .then((response: any) => {
           const conversationKey = response.conversationKey;

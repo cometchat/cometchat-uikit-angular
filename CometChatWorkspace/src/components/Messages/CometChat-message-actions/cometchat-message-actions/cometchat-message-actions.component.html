@@ -9,7 +9,7 @@
     }"
   >
     <div [class.tool]="!receivedMessage" class="toolTip">
-      <li class="actionGroupStyle" *ngIf="!receivedMessage">
+      <li class="actionGroupStyle" *ngIf="!receivedMessage && messageDetails?.type !== DIRECT_CALL">
         <button type="button" class="groupButtonStyle" (click)="sendReaction()">
           <img [src]="reactionIcon" class="regularReactionIcon" />
         </button>
@@ -41,7 +41,7 @@
         ></button>
       </li>
 
-      <li class="actionGroupStyle" *ngIf="receivedMessage">
+      <li class="actionGroupStyle" *ngIf="receivedMessage && messageDetails?.type !== DIRECT_CALL">
         <button type="button" class="groupButtonStyle" (click)="sendReaction()">
           <img [src]="reactionIcon" class="regularReactionIcon" />
         </button>

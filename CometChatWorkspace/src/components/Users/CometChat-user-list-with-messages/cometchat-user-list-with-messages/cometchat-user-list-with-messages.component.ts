@@ -63,6 +63,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
   checkIfAnimated: boolean = false;
 
   innerWidth: any;
+  
 
   constructor() {}
 
@@ -140,6 +141,9 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
       let message = action.payLoad;
 
       switch (action.type) {
+        case enums.INCOMING_DIRECT_CALL: {
+          break;
+        }
         case enums.VIEW_MESSAGE_THREAD: {
           this.viewMessageThread(message);
           break;
@@ -156,6 +160,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
           this.toggleImageView(action.payLoad);
           break;
         }
+        
         case enums.CLOSE_FULL_SCREEN_IMAGE: {
           this.toggleImageView(null);
           break;
@@ -190,6 +195,12 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
           this.audioCall();
           break;
         }
+        case enums.DIRECT_CALL: {
+          // this.directVideoCall()
+        
+          break;
+        }
+   
         case enums.VIDEO_CALL:
           this.videoCall();
           break;
@@ -230,6 +241,7 @@ export class CometChatUserListWithMessagesComponent implements OnInit {
       logger(error);
     }
   }
+ 
 
   /**
    * Sets All the Intial Conditions for the threaded View of Messages and Opens thread View

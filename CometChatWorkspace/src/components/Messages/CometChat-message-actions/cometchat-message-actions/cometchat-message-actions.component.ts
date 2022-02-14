@@ -10,6 +10,7 @@ import { logger } from "../../../../utils/common";
 })
 export class CometChatMessageActionsComponent implements OnInit {
   @Input() messageDetails: any = null;
+  
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -18,6 +19,7 @@ export class CometChatMessageActionsComponent implements OnInit {
   @Input() pollView: boolean = false;
 
   loggedInUser: any;
+  DIRECT_CALL = "DIRECT_CALL"
 
   showOnlyReplyButton: boolean = false;
   receivedMessage: boolean = false;

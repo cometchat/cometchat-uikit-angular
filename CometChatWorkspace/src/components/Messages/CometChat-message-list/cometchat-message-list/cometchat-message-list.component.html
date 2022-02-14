@@ -7,8 +7,8 @@
   </div>
   <div class="listWrapperStyle">
     <!--message-->
-    <div *ngFor="let msg of messages; let i = index">
-      <div class="messageDateContainerStyle" *ngIf="i === 0">
+    <div *ngFor="let msg of messages; trackBy: messageID; let i = index">
+      <div class="messageDateContainerStyle" *ngIf="(i === 0) && !msg._composedAt">
         <span class="messageDateStyle">{{
           msg?.sentAt * 1000 | date: "dd/MM/yyyy"
         }}</span>
@@ -16,11 +16,11 @@
       <div
         class="messageDateContainerStyle"
         *ngIf="
-          i > 0 && isDateDifferent(messages[i - 1]?.sentAt, messages[i]?.sentAt)
+          (i > 0 && isDateDifferent(messages[i - 1]?.sentAt, messages[i]?.sentAt) && !msg._composedAt)
         "
       >
         <span class="messageDateStyle">{{
-          msg?.sentAt * 1000 | date: "dd/MM/yyyy"
+          (msg?.sentAt)  * 1000 | date: "dd/MM/yyyy"
         }}</span>
       </div>
       <!--CASE FOR CALL MESSAGES-->
@@ -30,6 +30,7 @@
           [loggedInUserUid]="loggedInUser?.uid"
         ></cometchat-action-message-bubble>
       </div>
+   
       <!--CASE FOR CALL MESSAGES ENDS-->
       <!-- CASE FOR DELETED MESSAGES -->
       <div *ngIf="msg?.deletedAt; else elseBlock">
@@ -60,6 +61,20 @@
               (actionGenerated)="actionHandler($event)"
             ></cometchat-sender-text-message-bubble>
           </div>
+             <!-- direct call message -->
+      <div *ngSwitchCase="DIRECT_CALL">
+        <cometchat-receiver-directcall-bubble
+        *ngIf="msg.sender.uid !== loggedInUser.uid"
+        [messageDetails]="msg"
+         (actionGenerated)="actionHandler($event)"
+        ></cometchat-receiver-directcall-bubble>
+        <cometchat-sender-directcall-bubble
+        *ngIf="msg.sender.uid === loggedInUser.uid"
+        [messageDetails]="msg"
+        (actionGenerated)="actionHandler($event)"
+      ></cometchat-sender-directcall-bubble>
+
+      </div>
           <!--CASE FOR TEXT ENDS -->
           <!--CASE FOR FILE-->
           <div *ngSwitchCase="MESSAGE_TYPE_FILE">
@@ -184,5 +199,3 @@
         </div>
       </ng-template>
     </div>
-  </div>
-</div>

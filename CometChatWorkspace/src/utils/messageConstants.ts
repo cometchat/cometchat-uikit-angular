@@ -13,6 +13,7 @@ export const COMETCHAT_CONSTANTS = {
   USERS: "Users",
   CHATS: "Chats",
   GROUPS: "Groups",
+  IGNORE:"Ignore",
   MORE: "More",
   MESSAGE_IMAGE: "📷 Image",
   MESSAGE_FILE: "📁 File",

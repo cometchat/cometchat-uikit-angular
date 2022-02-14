@@ -117,6 +117,7 @@ export class CometChatConversationListWithMessagesComponent implements OnInit {
    * Handles all the action propagated by the child components
    */
   actionHandler(action: any = null, item = null, count = null) {
+   
     try {
       let message = action.payLoad;
 
@@ -203,6 +204,10 @@ export class CometChatConversationListWithMessagesComponent implements OnInit {
           this.audioCall();
           break;
         }
+        case enums.DIRECT_CALL: {
+          break;
+        }
+   
         case enums.VIDEO_CALL:
           this.videoCall();
           break;
@@ -591,6 +596,7 @@ export class CometChatConversationListWithMessagesComponent implements OnInit {
           this.outgoingCall = call;
         })
         .catch((error) => {
+          
           logger("Call initialization failed with exception:", error);
         });
     } catch (error) {
@@ -729,4 +735,5 @@ export class CometChatConversationListWithMessagesComponent implements OnInit {
       logger(error);
     }
   }
+ 
 }

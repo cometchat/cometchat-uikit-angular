@@ -42,6 +42,7 @@ export class CometChatIncomingCallComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
+    
     try {
       this.attachListeners();
       this.loadAudio();

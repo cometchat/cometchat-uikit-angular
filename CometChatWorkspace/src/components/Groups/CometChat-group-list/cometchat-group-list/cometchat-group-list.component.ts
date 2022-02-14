@@ -25,6 +25,7 @@ export class CometChatGroupListComponent
   @Input() enableSelectedGroupStyling = false;
   @Input() groupToUpdate: any = null;
   @Input() groupToDelete: any = null;
+  msgListenerId = enums.MESSAGE_ + new Date().getTime();
 
   timeout: any;
   loggedInUser: any = null;
@@ -40,6 +41,7 @@ export class CometChatGroupListComponent
   SEARCH: String = COMETCHAT_CONSTANTS.SEARCH;
 
   @Output() onGroupClick: EventEmitter<any> = new EventEmitter();
+  @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   constructor(private CometChatService: CometChatService) {
     
@@ -217,12 +219,35 @@ export class CometChatGroupListComponent
               user: joinedUser,
             });
           },
+        
+        })
+      );
+      CometChat.addMessageListener(
+        this.msgListenerId,
+        new CometChat.MessageListener({
+          onTextMessageReceived: (textMessage: any) => {
+            // this.messageUpdated(enums.TEXT_MESSAGE_RECEIVED, textMessage);
+    
+          },
+          onCustomMessageReceived: (customMessage: any) => {
+            if(customMessage.type == enums.CALL_TYPE_DIRECT){
+          
+              this.actionGenerated.emit({
+                type:enums.CALL_TYPE_DIRECT,
+                payLoad:customMessage
+              })
+            }
+            // this.messageUpdated(enums.CUSTOM_MESSAGE_RECEIVED, customMessage);
+          },
+       
         })
       );
     } catch (error) {
+
       logger(error);
     }
   }
+  
 
   /**
    * Builds a request for fetching a list of group matching the serach key

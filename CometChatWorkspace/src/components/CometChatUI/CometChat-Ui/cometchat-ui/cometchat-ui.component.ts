@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from "@angular/core";
+import { Component, OnInit, HostListener, Output, EventEmitter, ViewChild } from "@angular/core";
 import { CometChatManager } from "../../../../utils/controller";
 import * as enums from "../../../../utils/enums";
 import { CometChat } from "@cometchat-pro/chat";
@@ -9,7 +9,7 @@ import {
   transition,
   animate,
 } from "@angular/animations";
-import { logger } from "../../../../utils/common";
+import { getUnixTimestamp, ID, logger } from "../../../../utils/common";
 import { CometChatService } from "./../../../../utils/cometchat.service";
 
 @Component({
@@ -36,6 +36,7 @@ import { CometChatService } from "./../../../../utils/cometchat.service";
   ],
 })
 export class CometChatUIComponent implements OnInit {
+  // emit listener for direct call
   item: any = null;
   curentItem: any;
   type: string = '';
@@ -53,12 +54,16 @@ export class CometChatUIComponent implements OnInit {
   composedThreadMessage: any = null;
   fullScreenViewImage: boolean = false;
   imageView: object = {};
+  // for direct call
+  joinDirectCall;
+  incomingDirectCall;
 
   //for audio calling
   outgoingCall = null;
   incomingCall = null;
   callMessage = null;
   messageToMarkRead: any;
+
 
   checkAnimatedState: any;
   checkIfAnimated: boolean = false;
@@ -67,9 +72,15 @@ export class CometChatUIComponent implements OnInit {
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
   USER: String = CometChat.RECEIVER_TYPE.USER;
 
-  constructor(private CometChatService: CometChatService) {}
+  constructor(private CometChatService: CometChatService) { }
 
   ngOnInit() {
+    // if(this.item.guid){
+    //   this.fetchCustomMessage()
+
+    // }
+
+
     try {
       this.onResize();
       CometChat.getLoggedinUser()
@@ -79,34 +90,35 @@ export class CometChatUIComponent implements OnInit {
         .catch((error) => {
           logger("[CometChatUnified] getLoggedInUser error", error);
         });
-        
-        /*
-         * Updating cometchat-messages component on deletion of conversation.
-         */ 
-        this.CometChatService.conversationDeleted.subscribe((conversation: any) => {
-          if(this.item && this.type === CometChat.RECEIVER_TYPE.USER 
-            && conversation.conversationType === CometChat.RECEIVER_TYPE.USER 
-            && this.item.uid === conversation.conversationWith.uid) {
-              this.item = null;   
-          } else if (this.item && this.type === CometChat.RECEIVER_TYPE.GROUP 
-            && conversation.conversationType === CometChat.RECEIVER_TYPE.GROUP 
-            && this.item.guid === conversation.conversationWith.guid) {
-              this.item = null;
-          }
-        })
+
+      /*
+       * Updating cometchat-messages component on deletion of conversation.
+       */
+      this.CometChatService.conversationDeleted.subscribe((conversation: any) => {
+        if (this.item && this.type === CometChat.RECEIVER_TYPE.USER
+          && conversation.conversationType === CometChat.RECEIVER_TYPE.USER
+          && this.item.uid === conversation.conversationWith.uid) {
+          this.item = null;
+        } else if (this.item && this.type === CometChat.RECEIVER_TYPE.GROUP
+          && conversation.conversationType === CometChat.RECEIVER_TYPE.GROUP
+          && this.item.guid === conversation.conversationWith.guid) {
+          this.item = null;
+        }
+      })
 
 
-        /*
-         * Updating view on leaving group
-         */
-        this.CometChatService.onLeaveGroup.subscribe((group: any) => {
-            this.toggleDetailView();
-            this.item = null;
-        })
+      /*
+       * Updating view on leaving group
+       */
+      this.CometChatService.onLeaveGroup.subscribe((group: any) => {
+        this.toggleDetailView();
+        this.item = null;
+      })
     } catch (error) {
       logger(error);
     }
   }
+
 
   /**
    * Checks when window size is changed in realtime
@@ -138,6 +150,7 @@ export class CometChatUIComponent implements OnInit {
    * Handles all the actions propagated from the child component
    */
   actionHandler(action: any = null, item = null, count = null) {
+
     try {
       let message = action.payLoad;
 
@@ -147,6 +160,10 @@ export class CometChatUIComponent implements OnInit {
         case enums.BLOCK_USER:
           this.blockUser();
           break;
+        case enums.DIRECT_CALL_STARTED:
+          this.appendCallMessage(message)
+          break;
+
         case enums.UNBLOCK_USER:
           this.unblockUser();
           break;
@@ -208,9 +225,22 @@ export class CometChatUIComponent implements OnInit {
           break;
         }
         case enums.AUDIO_CALL: {
+
           this.audioCall();
           break;
         }
+        case enums.DIRECT_CALL: {
+          this.directVideoCall()
+          break;
+        }
+
+        case enums.INCOMING_DIRECT_CALL: {
+
+          this.startIncomingCall(message)
+          break;
+        }
+
+
         case enums.VIDEO_CALL:
           this.videoCall();
           break;
@@ -222,6 +252,12 @@ export class CometChatUIComponent implements OnInit {
           this.outgoingCallEnded(message);
           break;
         }
+        case enums.DIRECT_CALL_ENDED:
+
+          this.updateDirectCall()
+
+          break;
+
         case enums.USER_JOINED_CALL:
         case enums.USER_LEFT_CALL: {
           break;
@@ -230,6 +266,7 @@ export class CometChatUIComponent implements OnInit {
           this.acceptIncomingCall(message);
           break;
         }
+
         case enums.ACCEPTED_INCOMING_CALL: {
           this.callInitiated(message);
           break;
@@ -254,6 +291,11 @@ export class CometChatUIComponent implements OnInit {
           this.viewDetailScreen = false;
           break;
         }
+        case enums.SESSION_ID: {
+
+          this.sendSessionId(action)
+        }
+
         default:
           break;
       }
@@ -261,6 +303,7 @@ export class CometChatUIComponent implements OnInit {
       logger(error);
     }
   }
+
 
   /**
    * updates lastMessage , so that it can be updated in the conversationList
@@ -271,6 +314,12 @@ export class CometChatUIComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+  }
+  updateDirectCall() {
+    this.joinDirectCall = null;
+    this.outgoingCall = null
+    this.type = "group"
+
   }
 
   /**
@@ -290,6 +339,12 @@ export class CometChatUIComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+  }
+  // incoming direct call
+  startIncomingCall(message) {
+    this.type = enums.INCOMING_DIRECT_CALL
+    this.incomingDirectCall = message
+
   }
   /**
    * Updates the thread message , it the currently open thread parent is deleted or is edited
@@ -311,6 +366,11 @@ export class CometChatUIComponent implements OnInit {
     }
     return true;
   };
+  // session id join data
+  sendSessionId(action) {
+    this.type = action.type;
+    this.joinDirectCall = action.sessionid ? action.sessionid : action.payLoad
+  }
 
   /*
    * Close the thread window
@@ -417,7 +477,7 @@ export class CometChatUIComponent implements OnInit {
    * updates the message list with a message notifying that , scope a some user is changed
    * @param Any members
    */
-  memberScopeChanged = (members:any) => {
+  memberScopeChanged = (members: any) => {
     try {
       const messageList: any[] = [];
 
@@ -717,5 +777,27 @@ export class CometChatUIComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+  }
+  directVideoCall() {
+    this.type = enums.DIRECT_CALL
+
+  }
+  outgoingDirectCall(action) {
+    this.appendCallMessage(this.makeCustomMessage(action))
+
+  }
+  makeCustomMessage(action) {
+    const receiverType = CometChat.RECEIVER_TYPE.GROUP;
+    const customData = { "sessionID": action.sessionid, "sessionId": action.sessionid, "callType": CometChat.CALL_TYPE.VIDEO };
+    const customType = enums.DIRECT_CALL;
+    const conversationId = `group_${action.sessionid}`;
+
+    const customMessage: any = new CometChat.CustomMessage(action.sessionid, receiverType, customType, customData);
+    customMessage.setSender(this.loggedInUser);
+    customMessage.setReceiver((receiverType as any));
+    customMessage.setConversationId(conversationId);
+    customMessage.composedAt = getUnixTimestamp();
+    customMessage.id = ID();
+    return customMessage
   }
 }

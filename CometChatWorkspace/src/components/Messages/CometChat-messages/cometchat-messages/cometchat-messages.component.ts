@@ -14,6 +14,7 @@ import { INCOMING_MESSAGE_SOUND } from "../../../../resources/audio/incomingMess
 import * as enums from "../../../../utils/enums";
 import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 import { logger } from "../../../../utils/common";
+import CometChatManager from "src/cometchat-pro-angular-ui-kit/CometChatWorkspace/src/utils/controller";
 @Component({
   selector: "cometchat-messages",
   templateUrl: "./cometchat-messages.component.html",
@@ -27,6 +28,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   @Input() composedThreadMessage = null;
   @Input() groupMessage: object = {};
   @Input() callMessage = null;
+  @Input() loggedInUser = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -71,6 +73,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
         props[enums.CALL_MESSAGE] = change[enums.CALL_MESSAGE].currentValue;
 
         if (prevProps.callMessage !== props.callMessage && props.callMessage) {
+
           this.actionHandler({
             type: enums.CALL_UPDATED,
             payLoad: change[enums.CALL_MESSAGE].currentValue,
@@ -82,7 +85,11 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     }
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    let user = CometChat.getLoggedinUser().then((user) => {
+      this.loggedInUser = user;
+    });
+  }
 
   /**
    * Updating the reply count of Thread Parent Message
@@ -117,12 +124,15 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * @param Event action
    */
   actionHandler(action: any) {
+
+    
     try {
       let messages = action.payLoad;
 
       let data = action.payLoad;
 
       switch (action.type) {
+       
         case enums.CUSTOM_MESSAGE_RECEIVE:
         case enums.MESSAGE_RECEIVED: {
           const message = messages[0];
@@ -142,12 +152,15 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
 
           break;
         }
+       
 
         case enums.MESSAGE_FETCHED: {
+    
           this.prependMessages(messages);
           break;
         }
         case enums.OLDER_MESSAGES_FETCHED: {
+          
           this.reachedTopOfConversation = false;
 
           //No Need for below actions if there is nothing to prepend
@@ -166,10 +179,10 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
         }
         case enums.MESSAGE_COMPOSED: {
           this.appendMessage(messages);
-          this.actionGenerated.emit({
-            type: enums.MESSAGE_COMPOSED,
-            payLoad: messages,
-          });
+          break;
+        }
+        case enums.MESSAGE_SENT: {
+          this.messageSent(messages);
           break;
         }
         case enums.MESSAGE_UPDATED: {
@@ -218,10 +231,17 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
         case enums.AUDIO_CALL:
         case enums.VIDEO_CALL:
         case enums.VIEW_DETAIL:
+          case enums.DIRECT_CALL:
         case enums.MENU_CLICKED: {
+    
           this.actionGenerated.emit(action);
           break;
         }
+        // case enums.DIRECT_CALL: {
+        //   this.directCall()
+        //   break;
+        // }
+
         case enums.SEND_REACTION: {
           this.toggleReaction(true);
           break;
@@ -265,9 +285,29 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
           this.actionGenerated.emit(action);
           break;
         }
+        
         case enums.REACT_TO_MESSAGE:
           this.reactToMessage(messages);
           break;
+          case enums.SESSION_ID:
+          this.actionGenerated.emit({
+            type:"sessionid",
+            sessionid:action.sessionid
+          })
+          break;
+          case enums.DIRECT_CALL_STARTED:
+    
+        
+            this.appendMessage(messages);
+         
+            break;
+            case enums.INCOMING_DIRECT_CALL:
+             this.actionGenerated.emit({
+              
+               type:enums.INCOMING_DIRECT_CALL,
+               payLoad:messages
+             })
+            
       }
     } catch (error) {
       logger(error);
@@ -285,6 +325,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
       logger(error);
     }
   }
+
 
   /**
    * Resets The component to initial conditions
@@ -334,11 +375,30 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
       let dummy = [...this.messageList];
 
       this.messageList = [...dummy, ...messages];
+      setTimeout(() => {
+        this.scrollToBottomOfChatWindow();
+      }, 1000);
+      
 
-      this.scrollToBottomOfChatWindow();
+      // this.scrollToBottomOfChatWindow();
+     
     } catch (error) {
       logger(error);
     }
+  }
+
+  messageSent(messages) {
+    const message = messages[0];
+		const messageList = [...this.messageList];
+
+		let messageKey = messageList.findIndex(m => m._id === message._id);
+		if (messageKey > -1) {
+			const newMessageObj = { ...message };
+			messageList.splice(messageKey, 1, newMessageObj);
+			messageList.sort((a, b) => a.id - b.id);
+		}
+    this.messageList = messageList;
+		this.scrollToBottomOfChatWindow();
   }
 
   /**
@@ -638,4 +698,5 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
       logger(error);
     }
   };
+ 
 }

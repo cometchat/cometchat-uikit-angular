@@ -16,6 +16,7 @@
       [messages]="messageList"
       [reachedTopOfConversation]="reachedTopOfConversation"
       (actionGenerated)="actionHandler($event)"
+   
     ></cometchat-message-list>
   </div>
   <cometchat-live-reactions
@@ -28,6 +29,9 @@
     [replyPreview]="replyPreview"
     [messageToBeEdited]="messageToBeEdited"
     [messageToReact]="messageToReact"
+    [loggedInUser]="loggedInUser"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-message-composer>
+
 </div>
+

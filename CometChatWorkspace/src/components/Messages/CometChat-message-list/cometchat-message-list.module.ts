@@ -18,7 +18,8 @@ import { CometChatSenderStickerMessageBubble } from "../Extensions/CometChat-sen
 import { CometChatReceiverStickerMessageBubble } from "../Extensions/CometChat-receiver-sticker-message-bubble/cometchat-receiver-sticker-message-bubble.module";
 import { CometChatActionMessageBubble } from "../CometChat-action-message-bubble/cometchat-action-message-bubble.module";
 import { DatePipe } from "@angular/common";
-
+import { CometChatSenderDirectCallBubble } from "../CometChat-sender-directcall-bubble/cometchat-sender-directcall-bubble.module";
+import { CometChatReceiverDirectCallBubble } from "../CometChat-receiver-directcall-bubble/cometchat-receiver-directcall-bubble.module";
 @NgModule({
   declarations: [CometChatMessageListComponent],
   imports: [
@@ -39,6 +40,8 @@ import { DatePipe } from "@angular/common";
     CometChatSenderStickerMessageBubble,
     CometChatReceiverStickerMessageBubble,
     CometChatActionMessageBubble,
+    CometChatSenderDirectCallBubble,
+    CometChatReceiverDirectCallBubble
   ],
   exports: [CometChatMessageListComponent],
   providers: [DatePipe],

@@ -23,6 +23,7 @@
       [callMessage]="callMessage"
       [composedThreadMessage]="composedThreadMessage"
       [groupMessage]="groupMessage"
+      [loggedInUser]="loggedInUser"
       (actionGenerated)="actionHandler($event)"
     >
     </cometchat-messages>
@@ -80,4 +81,18 @@
     [outgoingCall]="outgoingCall"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-outgoing-call>
+  <cometchat-outgoing-direct-call
+  [item]="item"
+  [type]="type"
+  [joinCall]="joinDirectCall"
+  [incomingDirectCall]="incomingCall"
+  [outgoingDirectCall]="outgoingCall"
+  (actionGenerated)="actionHandler($event)"
+  ></cometchat-outgoing-direct-call>
+  <cometchat-incoming-direct-call
+  (actionGenerated)="actionHandler($event)"
+  [incomingDirectCall]="incomingDirectCall"
+  
+  ></cometchat-incoming-direct-call>
+
 </div>
