@@ -227,6 +227,7 @@ export class CometChatOutgoingCallComponent
    * @param any call
    */
   startCall(call: any) {
+   
     try {
       const el = (this.callScreenFrame.nativeElement) ? this.callScreenFrame.nativeElement : null;
       const sessionId = call.getSessionId();
@@ -323,6 +324,7 @@ export class CometChatOutgoingCallComponent
     } catch (error) {
       logger(error);
     }
+   
   }
 
   /**
@@ -350,6 +352,7 @@ export class CometChatOutgoingCallComponent
    * @param
    */
   acceptCall() {
+   
     try {
       CometChatManager.acceptCall(this.incomingCall.sessionId)
         .then((call) => {

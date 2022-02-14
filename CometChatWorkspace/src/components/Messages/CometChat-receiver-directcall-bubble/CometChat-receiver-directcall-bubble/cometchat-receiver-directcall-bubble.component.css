@@ -1,0 +1,203 @@
+.messageContainerStyle {
+  align-self: flex-start;
+  margin-bottom: 16px;
+
+  padding-right: 16px;
+  max-width: 65%;
+  clear: both;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  float: left;
+}
+.messageContainerStyle:hover > .tool {
+  display: flex;
+}
+.tool {
+  display: none;
+}
+
+.toolGroup {
+  padding-left: 45px;
+}
+
+.messageWrapperStyle {
+  width: auto;
+  flex: 1 1;
+  align-self: flex-start;
+  display: flex;
+}
+
+.messageDetailStyle {
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.messageTxtContainerStyle {
+  width: auto;
+  flex: 1 1;
+  align-self: flex-start;
+  display: flex;
+}
+
+.messageInfoWrapperStyle {
+  align-self: flex-start;
+  padding: 3px 5px;
+  display: inherit;
+}
+
+.messageTimestampStyle {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 12px;
+  text-transform: uppercase;
+  color: rgba(20, 20, 20, 0.6);
+}
+
+.messageTxtWrapperStyle {
+  display: inline-block;
+  border-radius: 12px;
+  background-color: #f6f6f6;
+  padding: 8px 12px;
+  align-self: flex-start;
+  width: auto;
+}
+
+.messageTxtStyle {
+  margin: 5px 0;
+  font-size: 14px;
+  word-break: break-word;
+  text-align: left;
+  width: auto;
+ 
+}
+.messageTxtWrapperStyle > button {
+  border-radius: 8px;
+  align-items: center;
+  width: 100%;
+  border: none;
+  position: relative;
+  padding: 8px;
+  margin: 5px 0;
+  background: white;
+  cursor: pointer;
+  text-align: center;
+  color: #39f;
+  width: 100%;
+  font-weight: 600;
+  display: inline-block;
+  font-size: 14px;
+}
+.messageTxtStyle a:hover {
+  color: #0432ff;
+}
+
+.messagePreviewContainerStyle {
+  display: inline-block;
+  border-radius: 12px;
+  background-color: white;
+  box-shadow: 0px 1px 2px 1px rgba(0, 0, 0, 0.18);
+  align-self: flex-start;
+  width: auto;
+}
+
+.messagePreviewWrapperStyle {
+  display: flex;
+  flex-direction: column;
+}
+
+.previewImageStyle {
+  align-self: center;
+  height: 150px;
+  margin: 12px 0;
+}
+.previewImageStyle > img {
+  background-size: contain;
+  height: 150px;
+  margin: 12px 0;
+}
+
+.previewDataStyle {
+  border-top: 1px solid #eaeaea;
+  border-bottom: 1px solid #eaeaea;
+
+  padding: 12px;
+}
+
+.previewTitleStyle {
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  width: auto;
+  color: rgba(20, 20, 20, 0.6);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.previewDescStyle {
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  width: auto;
+  color: rgba(20, 20, 20, 0.6);
+
+  font-size: italic;
+  font-size: 13px;
+}
+
+.previewTextStyle {
+  margin-top: 5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  width: auto;
+  color: #0432ff;
+}
+.previewTextStyle + .messageTxtWrapperStyle {
+  background-color: transparent;
+  color: rgba(20, 20, 20, 0.6);
+
+  font-style: normal;
+  padding: 8px 0;
+}
+.previewTextStyle > a {
+  text-decoration: none;
+  color: #0432ff;
+}
+.previewTextStyle > a:hover {
+  color: #04009d;
+}
+
+.previewLinkStyle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+.previewLinkStyle > a {
+  display: inline-block;
+  color: #39f;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.nameWrapperStyle {
+  align-self: flex-start;
+  padding: 3px 5px;
+}
+
+.nameStyle {
+  font-size: 10px;
+  color: rgba(20, 20, 20, 0.6);
+}
+
+.messageThumbnailStyle {
+  width: 36px;
+  height: 36px;
+  margin: 10px 5px;
+  float: left;
+  flex-shrink: 0;
+}

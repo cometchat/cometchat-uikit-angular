@@ -32,7 +32,8 @@ export class CometChatMessageListComponent
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
   messagesRequest: any;
-  limit = 50;
+  limit = 30;
+
   decoratorMessage = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
   times = 0;
   lastScrollTop = 0;
@@ -53,6 +54,7 @@ export class CometChatMessageListComponent
   CATEGORY_MESSAGE: String = CometChat.CATEGORY_MESSAGE;
   CATEGORY_ACTION: String = CometChat.CATEGORY_ACTION;
   CATEGORY_CALL: String = CometChat.CATEGORY_CALL;
+  DIRECT_CALL: String = enums.CALL_TYPE_DIRECT;
 
   categories = [
     CometChat.CATEGORY_MESSAGE,
@@ -69,6 +71,7 @@ export class CometChatMessageListComponent
     enums.CUSTOM_TYPE_POLL,
     enums.CUSTOM_TYPE_STICKER,
     enums.ACTION_TYPE_GROUPMEMBER,
+    enums.CALL_TYPE_DIRECT,
     CometChat.CALL_TYPE.AUDIO,
     CometChat.CALL_TYPE.VIDEO,
   ];
@@ -77,7 +80,7 @@ export class CometChatMessageListComponent
     try {
       setInterval(() => {
         if (!this.ref.hasOwnProperty(enums.DESTROYED)) {
-          this.ref.detectChanges();
+          this.ref.markForCheck();
         }
       }, 2000);
     } catch (error) {
@@ -86,6 +89,7 @@ export class CometChatMessageListComponent
   }
 
   ngOnChanges(change: SimpleChanges) {
+
     try {
       if (change[enums.ITEM]) {
         //Removing Previous Conversation Listeners
@@ -131,6 +135,7 @@ export class CometChatMessageListComponent
   }
 
   ngOnInit() {
+    // this.fetchCustomMessage()
     try {
       this.createMessageRequestObjectAndGetMessages();
 
@@ -140,6 +145,7 @@ export class CometChatMessageListComponent
       logger(error);
     }
   }
+
 
   ngOnDestroy() {
     try {
@@ -176,6 +182,7 @@ export class CometChatMessageListComponent
     } catch (error) {
       logger(error);
     }
+
   }
 
   /**
@@ -189,11 +196,18 @@ export class CometChatMessageListComponent
         new CometChat.MessageListener({
           onTextMessageReceived: (textMessage: any) => {
             this.messageUpdated(enums.TEXT_MESSAGE_RECEIVED, textMessage);
+    
           },
           onMediaMessageReceived: (mediaMessage: any) => {
             this.messageUpdated(enums.MEDIA_MESSAGE_RECEIVED, mediaMessage);
           },
           onCustomMessageReceived: (customMessage: any) => {
+            if(customMessage.type == enums.CALL_TYPE_DIRECT){
+              this.actionGenerated.emit({
+                type:enums.INCOMING_DIRECT_CALL,
+                payLoad:customMessage
+              })
+            }
             this.messageUpdated(enums.CUSTOM_MESSAGE_RECEIVED, customMessage);
           },
           onMessagesDelivered: (messageReceipt: any) => {
@@ -393,6 +407,8 @@ export class CometChatMessageListComponent
               }
 
               messageList.forEach((message: any) => {
+                
+                
                 if (
                   message.category === CometChat.CATEGORY_ACTION &&
                   message.sender.uid === enums.APP_SYSTEM
@@ -490,6 +506,7 @@ export class CometChatMessageListComponent
         case enums.MESSAGE_READ:
           this.messageReadAndDelivered(message);
           break;
+         
         case enums.MESSAGE_DELETED: {
           this.messageDeleted(message);
           break;
@@ -515,6 +532,7 @@ export class CometChatMessageListComponent
         case enums.INCOMING_CALL_CANCELLED:
         case enums.OUTGOING_CALL_ACCEPTED:
         case enums.OUTGOING_CALL_REJECTED:
+        
           this.callUpdated(message);
           break;
       }
@@ -574,12 +592,20 @@ export class CometChatMessageListComponent
    * @param Event action
    */
   actionHandler(action: any) {
+    
     try {
       this.actionGenerated.emit(action);
     } catch (error) {
       logger(error);
     }
   }
+  // emitSessionDataToMsgComp(action){
+  //   this.actionGenerated.emit({
+  //     type:"sessionid",
+  //     sessionid:action.sessionid
+  //   })
+
+  // }
 
   /**
    * Sets Status of messages i.e sent/delivered/read
@@ -756,6 +782,8 @@ export class CometChatMessageListComponent
    * @param message
    */
   customMessageReceived(message: any): boolean {
+
+
     try {
       this.markMessageAsDelivered(message);
       if (
@@ -765,6 +793,13 @@ export class CometChatMessageListComponent
       ) {
         if (!message.getReadAt()) {
           CometChat.markAsRead(message);
+        }
+         if (message.type === enums.CALL_TYPE_DIRECT) {
+          this.actionGenerated.emit({
+            type: enums.DIRECT_CALL_STARTED,
+            payLoad: [message],
+          });
+         
         }
 
         if (
@@ -781,7 +816,9 @@ export class CometChatMessageListComponent
             type: enums.CUSTOM_MESSAGE_RECEIVE,
             payLoad: [message],
           });
-        } else if (message.type === enums.CUSTOM_TYPE_POLL) {
+        } 
+        
+        else if (message.type === enums.CUSTOM_TYPE_POLL) {
           //customdata (poll extension) does not have metadata
 
           //The poll message that  is received by the message listeners , will not be appended to message list
@@ -791,7 +828,8 @@ export class CometChatMessageListComponent
               payLoad: [message],
             });
         }
-      } else if (
+      } 
+      else if (
         this.type === CometChat.RECEIVER_TYPE.USER &&
         message.getReceiverType() === CometChat.RECEIVER_TYPE.USER &&
         ((message.getSender().uid === this.item.uid && 
@@ -826,6 +864,7 @@ export class CometChatMessageListComponent
             payLoad: [message],
           });
         }
+       
       }
     } catch (error) {
       logger(error);
@@ -844,6 +883,7 @@ export class CometChatMessageListComponent
         message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
         message.getReceiverId() === this.item.guid
       ) {
+
         if (!message.getReadAt()) {
           CometChat.markAsRead(message);
         }
@@ -869,6 +909,13 @@ export class CometChatMessageListComponent
     } catch (error) {
       logger(error);
     }
+  }
+
+  /** 
+   * TrackBy by id's 
+   */
+  messageID(index, item) {
+    return item._id || item.id;
   }
 
   /**

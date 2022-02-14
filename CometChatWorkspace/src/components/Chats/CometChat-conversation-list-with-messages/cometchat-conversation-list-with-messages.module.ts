@@ -11,6 +11,7 @@ import { CometChatImageViewer } from "../../Messages/CometChat-image-viewer/come
 import { CometChatGroupDetails } from "../../Groups/CometChat-group-details/cometchat-group-details.module";
 import { CometChatIncomingCall } from "../../Calls/CometChat-incoming-call/cometchat-incoming-call.module";
 import { CometChatOutgoingCall } from "../../Calls/CometChat-outgoing-call/cometchat-outgoing-call.module";
+import { CometChatOutgoingDirectCall } from "../../Calls/CometChatOutgoingDirectCall/cometchat-outgoing-direct-call.module";
 @NgModule({
   declarations: [CometChatConversationListWithMessagesComponent],
   imports: [
@@ -23,6 +24,7 @@ import { CometChatOutgoingCall } from "../../Calls/CometChat-outgoing-call/comet
     CometChatImageViewer,
     CometChatIncomingCall,
     CometChatOutgoingCall,
+    CometChatOutgoingDirectCall,
     BrowserModule,
     BrowserAnimationsModule,
   ],

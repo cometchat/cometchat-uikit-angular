@@ -92,4 +92,12 @@
     [outgoingCall]="outgoingCall"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-outgoing-call>
+  <cometchat-outgoing-direct-call
+  [item]="item"
+  [type]="type"
+  [incomingDirectCall]="incomingCall"
+  [outgoingDirectCall]="outgoingCall"
+  (actionGenerated)="actionHandler($event)"
+  ></cometchat-outgoing-direct-call>
+
 </div>

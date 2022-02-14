@@ -81,6 +81,16 @@ export class CometChatNavBarComponent implements OnInit {
       logger(error);
     }
   }
+  actionHandler(action){
+    if(action.type == enums.CALL_TYPE_DIRECT){
+      this.actionGenerated.emit({
+        type:enums.INCOMING_DIRECT_CALL,
+        payLoad:action.payLoad
+      })
+     
+    }
+
+  }
 
   /**
    * Opens User Info Screnn

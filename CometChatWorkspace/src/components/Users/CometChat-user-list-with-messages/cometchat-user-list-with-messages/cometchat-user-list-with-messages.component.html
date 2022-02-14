@@ -58,6 +58,17 @@
     [outgoingCall]="outgoingCall"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-outgoing-call>
+  <cometchat-outgoing-direct-call
+  [item]="curentItem"
+  [type]="type"
+  [incomingDirectCall]="incomingCall"
+  [outgoingDirectCall]="outgoingCall"
+  (actionGenerated)="actionHandler($event)"
+  ></cometchat-outgoing-direct-call>
+  <cometchat-incoming-direct-call
+  (actionGenerated)="actionHandler($event)"
+  
+  ></cometchat-incoming-direct-call>
   <cometchat-image-viewer
     *ngIf="fullScreenViewImage"
     [messageDetails]="imageView"
