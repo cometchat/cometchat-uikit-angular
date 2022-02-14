@@ -5,6 +5,7 @@
       [item]="item"
       [lastMessage]="lastMessage"
       [type]="type"
+      (actionGenerated)="actionHandler($event)"
     ></cometchat-conversation-list>
   </div>
 
@@ -14,6 +15,7 @@
       [groupToUpdate]="groupToUpdate"
       [groupToDelete]="groupToDelete"
       (onGroupClick)="groupClicked($event)"
+      (actionGenerated)="actionHandler($event)"
     ></cometchat-group-list>
   </div>
 
@@ -21,11 +23,15 @@
     <cometchat-user-list
       [item]="curentItem"
       (onUserClick)="userClicked($event)"
+      (actionGenerated)="actionHandler($event)"
+    
     ></cometchat-user-list>
   </div>
 
   <div class="userInfoScreenStyle" *ngIf="displayUserInfoScreen">
-    <cometchat-user-profile></cometchat-user-profile>
+    <cometchat-user-profile
+    (actionGenerated)="actionHandler($event)"
+    ></cometchat-user-profile>
   </div>
 </div>
 

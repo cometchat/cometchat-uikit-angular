@@ -213,6 +213,13 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
           this.audioCall();
           break;
         }
+        case enums.DIRECT_CALL: {
+          // this.directVideoCall()
+      
+          break;
+        }
+   
+        
         case enums.VIDEO_CALL:
           this.videoCall();
           break;
@@ -257,6 +264,7 @@ export class CometChatGroupListWithMessagesComponent implements OnInit {
       logger(error);
     }
   }
+  
 
   /**
    * Sets All the Intial Conditions for the threaded View of Messages and Opens thread View

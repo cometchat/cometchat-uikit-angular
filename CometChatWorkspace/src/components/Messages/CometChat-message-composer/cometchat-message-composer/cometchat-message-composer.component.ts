@@ -60,7 +60,9 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   @Input() type: string = '';
   @Input() messageToBeEdited: any = null;
   @Input() replyPreview = null;
-  @Input() messageToReact: any = null;
+
+  @Input() messageToReact = null;
+  @Input() loggedInUser = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -131,6 +133,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    * @param Event action
    */
   actionHandler(action: any) {
+    
     try {
       let message = action.payLoad;
 
@@ -224,7 +227,6 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
       if (event.keyCode === 13 && !event.shiftKey) {
         event.preventDefault();
         this.sendTextMessage(event.target.value);
-        this.playAudio();
       }
     } catch (error) {
       logger(error);
@@ -275,6 +277,17 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     }
   }
 
+  getUnixTimestamp() {
+    return Math.round(+new Date() / 1000);
+  }
+
+  ID() {
+    // Math.random should be unique because of its seeding algorithm.
+    // Convert it to base 36 (numbers + letters), and grab the first 9 characters
+    // after the decimal.
+    return '_' + Math.random().toString(36).substr(2, 9);
+  }
+
   /**
    * Send Text Message
    * @param
@@ -319,7 +332,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
         messageInput = this.messageInput.trim();
       }
 
-      let textMessage = new CometChat.TextMessage(
+      let textMessage: any = new CometChat.TextMessage(
         receiverId,
         messageInput,
         receiverType
@@ -329,22 +342,34 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
         textMessage.setParentMessageId(this.parentMessageId);
       }
 
+      textMessage.setSender(this.loggedInUser);
+		  textMessage.setReceiver(this.type);
+      textMessage._composedAt = this.getUnixTimestamp();
+		  textMessage._id = this.ID()
+
+      this.actionGenerated.emit({
+        type: enums.MESSAGE_COMPOSED,
+        payLoad: [textMessage],
+      });
+
+      // play audio after action generation
+      this.playAudio();
+
+      //clearing Message Input Box
+      this.messageInput = "";
+
+      this.messageSending = false;
       // End Typing Indicator Function
       this.endTyping();
 
       CometChat.sendMessage(textMessage)
         .then((message) => {
-          this.messageInput = "";
-          this.messageSending = false;
 
           // this Message Emitted will Be Appended to the existing Message List
           this.actionGenerated.emit({
-            type: enums.MESSAGE_COMPOSED,
-            payLoad: [message],
+            type: enums.MESSAGE_SENT,
+            payLoad: [{...message, _id:textMessage._id}],
           });
-
-          //clearing Message Input Box
-          this.messageInput = "";
 
           // Change the send button to reaction button
           setTimeout(() => {
@@ -509,6 +534,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
             uploadedFile.name,
             uploadedFile
           );
+          
           this.sendMediaMessage(newFile, CometChat.MESSAGE_TYPE.IMAGE);
         },
         false
@@ -571,7 +597,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
 
       const { receiverId, receiverType } = this.getReceiverDetails();
 
-      let mediaMessage = new CometChat.MediaMessage(
+      let mediaMessage: any = new CometChat.MediaMessage(
         receiverId,
         messageInput,
         messageType,
@@ -582,15 +608,31 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
         mediaMessage.setParentMessageId(this.parentMessageId);
       }
 
+      mediaMessage.setSender(this.loggedInUser);
+		  mediaMessage.setReceiver(this.type);
+		  mediaMessage.setType(messageType);
+		  mediaMessage.setMetadata({
+			  [enums.FILE_METADATA]: messageInput,
+		  });
+		  mediaMessage._composedAt = this.getUnixTimestamp();
+		  mediaMessage._id = this.ID();
+
       this.endTyping();
+
+      this.actionGenerated.emit({
+        type: enums.MESSAGE_COMPOSED,
+        payLoad: [mediaMessage],
+      });
+
+      this.playAudio();
+      this.messageSending = false;
 
       CometChat.sendMessage(mediaMessage)
         .then((response) => {
           this.messageSending = false;
-          this.playAudio();
           this.actionGenerated.emit({
-            type: enums.MESSAGE_COMPOSED,
-            payLoad: [response],
+            type: enums.MESSAGE_SENT,
+            payLoad: [{... response, _id: mediaMessage._id}],
           });
         })
         .catch((error) => {
@@ -804,7 +846,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
         sticker_name: stickerMessage.stickerName,
       };
       const customType = enums.CUSTOM_TYPE_STICKER;
-      const customMessage = new CometChat.CustomMessage(
+      const customMessage: any = new CometChat.CustomMessage(
         receiverId,
         receiverType,
         customType,
@@ -815,13 +857,25 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
         customMessage.setParentMessageId(this.parentMessageId);
       }
 
+      customMessage.setSender(this.loggedInUser);
+		  customMessage.setReceiver(this.type);
+		  customMessage.setMetadata({ incrementUnreadCount: true });
+		  customMessage._composedAt = this.getUnixTimestamp();
+		  customMessage._id = this.ID();
+
+      this.actionGenerated.emit({
+        type: enums.MESSAGE_COMPOSED,
+        payLoad: [customMessage],
+      })
+
+      this.playAudio();
+
       CometChat.sendCustomMessage(customMessage)
         .then((message) => {
           this.messageSending = false;
-          this.playAudio();
           this.actionGenerated.emit({
-            type: enums.MESSAGE_COMPOSED,
-            payLoad: [message],
+            type: enums.MESSAGE_SENT,
+            payLoad: [{...message, _id: customMessage._id}],
           });
         })
         .catch((error) => {

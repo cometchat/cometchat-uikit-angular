@@ -1,0 +1,82 @@
+<div class="messageContainerStyle">
+  <!--ToolTip Component-->
+  <cometchat-message-actions
+    class="tool"
+    [ngClass]="{
+      toolGroup: type == GROUP
+    }"
+    [messageDetails]="messageDetails"
+    (actionGenerated)="actionHandler($event)"
+    *ngIf="showToolTip"
+  ></cometchat-message-actions>
+
+  <div class="messageWrapperStyle">
+    <!--avatar component-->
+    <div class="messageThumbnailStyle" >
+      <cometchat-avatar
+        [item]="messageDetails?.sender"
+        [enableUserStatus]="false"
+      ></cometchat-avatar>
+    </div>
+    <div class="messageDetailStyle">
+      <!--name--->
+      <div class="nameWrapperStyle" >
+        <span class="nameStyle"> {{ messageDetails?.sender?.name }} </span>
+      </div>
+
+      <div class="messageTxtContainerStyle">
+        <!--messageTxt-->
+
+        <div class="messageWrapperStyle" id="check">
+          
+          <div class="messageTxtWrapperStyle" *ngIf="linkPreview === false">
+            <p class="messageTxtStyle">
+              {{messageDetails.sender.name + " initiated a group call"}}
+            </p>
+            <button (click)="joinCallData(messageDetails.data.customData.sessionId)">JOIN</button>
+
+          </div>
+          <div class="messagePreviewContainerStyle" *ngIf="linkPreview">
+            <div class="messagePreviewWrapperStyle">
+              <div class="previewImageStyle">
+                <img [src]="linkImage" loading="lazy" />
+              </div>
+              <div class="previewDataStyle">
+                <div class="previewTitleStyle" *ngIf="linkTitle !== ''">
+                  <span>
+                    {{ linkTitle }}
+                  </span>
+                </div>
+                <div class="previewDescStyle" *ngIf="linkDescription !== ''">
+                  <span>
+                    {{ linkDescription }}
+                  </span>
+                </div>
+                <div class="previewTextStyle">
+                  <a [href]="linkUrl" target="_blank"> {{ linkUrl }} </a>
+                </div>
+              </div>
+              <div class="previewLinkStyle">
+                <a [href]="linkUrl" target="_blank">
+                  {{ linkText }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="messageInfoWrapperStyle">
+        <cometchat-read-receipt
+          [messageDetails]="messageDetails"
+          [displayReadReciept]="false"
+        ></cometchat-read-receipt>
+        <cometchat-threaded-message-reply-count
+          *ngIf="showReplyCount"
+          [messageDetails]="messageDetails"
+          (actionGenerated)="actionHandler($event)"
+        >
+        </cometchat-threaded-message-reply-count>
+      </div>
+    </div>
+  </div>
+</div>

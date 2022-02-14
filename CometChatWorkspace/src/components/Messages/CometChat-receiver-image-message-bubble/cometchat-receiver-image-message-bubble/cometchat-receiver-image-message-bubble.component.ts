@@ -129,6 +129,7 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
       } else {
         this.setMessageImageUrl();
       }
+      // this.setMessageImageUrl();
     } catch (error) {
       logger(error);
     }
@@ -140,7 +141,7 @@ export class CometChatReceiverImageMessageBubbleComponent implements OnInit {
   setMessageImageUrl = () => {
     try {
       let img = new Image();
-      img.src = this.messageDetails.data.url;
+      img.src = this.messageDetails.data.attachments[0].url;
       img.onload = () => {
         this.imageLoader = false;
         this.imageUrl = img.src;

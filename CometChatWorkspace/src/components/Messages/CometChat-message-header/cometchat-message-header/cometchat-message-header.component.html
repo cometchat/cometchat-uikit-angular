@@ -18,7 +18,7 @@
         <span class="chatStatusStyle">{{ item.status }}</span>
       </div>
 
-      <div *ngIf="item.status === OFFLINE">
+      <div *ngIf="item.status === OFFLINE && !isTyping">
         <span class="chatStatusStyle lastActive">{{
           getLastActiveDate(item.lastActiveAt)
         }}</span>
@@ -33,16 +33,23 @@
   </div>
   <div class="chatOptionWrapStyle">
     <!-- add action generated to call -->
-    <div
-      class="chatOptionStyle callOption"
-      *ngIf="checkNotBlocked"
+    <div 
+      class="chatOptionStyle callOption "
+      *ngIf="checkNotBlocked && type === USER"
       (click)="audioCall()"
     ></div>
     <div
       class="chatOptionStyle videoCallOption"
-      *ngIf="checkNotBlocked"
+      *ngIf="checkNotBlocked && type === USER"
       (click)="videoCall()"
     ></div>
+    <div
+    class="chatOptionStyle videoCallOption"
+    *ngIf="checkNotBlocked && type !== USER"
+    (click)="directVideoCall()"
+  ></div>
     <div class="chatOptionStyle detailsOption" (click)="openUserDetail()"></div>
   </div>
+
 </div>
+

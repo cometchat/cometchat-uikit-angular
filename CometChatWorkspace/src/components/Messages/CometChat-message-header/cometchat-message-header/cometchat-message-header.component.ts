@@ -13,7 +13,7 @@ import * as enums from "../../../../utils/enums";
 import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 import { DatePipe } from "@angular/common";
 import { logger } from "../../../../utils/common";
-
+import { CometChatService } from "src/cometchat-pro-angular-ui-kit/CometChatWorkspace/src/utils/cometchat.service";
 @Component({
   selector: "cometchat-message-header",
   templateUrl: "./cometchat-message-header.component.html",
@@ -36,11 +36,12 @@ export class CometChatMessageHeaderComponent
   USER: String = CometChat.RECEIVER_TYPE.USER;
   ONLINE: String = CometChat.USER_STATUS.ONLINE;
   OFFLINE: String = CometChat.USER_STATUS.OFFLINE;
+  isDirectCall = null
 
   //displays audio and video call options
   checkNotBlocked: boolean = true;
 
-  constructor(public datepipe: DatePipe) {}
+  constructor(public datepipe: DatePipe,private CometChatService: CometChatService) {}
 
   ngOnChanges(change: SimpleChanges) {
     try {
@@ -281,7 +282,7 @@ export class CometChatMessageHeaderComponent
             this.type === item.receiverType &&
             this.item.guid === item.receiverId
           ) {
-            this.status = item.sender.name + COMETCHAT_CONSTANTS.IS_TYPING;
+            this.status = item.sender.name + " " + COMETCHAT_CONSTANTS.IS_TYPING;
             this.actionGenerated.emit({
               type: enums.SHOW_REACTION,
               payLoad: item,
@@ -292,6 +293,7 @@ export class CometChatMessageHeaderComponent
             this.item.uid === item.sender.uid
           ) {
             this.isTyping = true;
+            this.item.status = CometChat.USER_STATUS.ONLINE;
             this.status = COMETCHAT_CONSTANTS.TYPING;
             this.actionGenerated.emit({
               type: enums.SHOW_REACTION,
@@ -393,17 +395,27 @@ export class CometChatMessageHeaderComponent
    * Starts audio call
    */
   audioCall() {
+ 
     try {
       this.actionGenerated.emit({ type: enums.AUDIO_CALL });
     } catch (error) {
       logger(error);
     }
   }
+  directVideoCall() {
+    try {
+      this.actionGenerated.emit({ type: enums.DIRECT_CALL });
+    } catch (error) {
+      logger(error);
+    }
+  
+  }
 
   /**
    * Starts video call
    */
   videoCall() {
+  
     try {
       this.actionGenerated.emit({ type: enums.VIDEO_CALL });
     } catch (error) {

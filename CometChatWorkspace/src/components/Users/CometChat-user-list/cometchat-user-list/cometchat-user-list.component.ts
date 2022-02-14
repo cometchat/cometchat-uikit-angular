@@ -23,6 +23,7 @@ export class CometChatUserListComponent
   @Input() friendsOnly = false;
   @Input() hasActions = false;
   @Input() item = null;
+  msgListenerId = enums.MESSAGE_ + new Date().getTime();
 
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
@@ -107,6 +108,26 @@ export class CometChatUserListComponent
 
             this.userUpdated(offlineUser);
           },
+        })
+      );
+      CometChat.addMessageListener(
+        this.msgListenerId,
+        new CometChat.MessageListener({
+          onTextMessageReceived: (textMessage: any) => {
+            // this.messageUpdated(enums.TEXT_MESSAGE_RECEIVED, textMessage);
+    
+          },
+          onCustomMessageReceived: (customMessage: any) => {
+            if(customMessage.type == enums.CALL_TYPE_DIRECT){
+          
+              this.actionGenerated.emit({
+                type:enums.CALL_TYPE_DIRECT,
+                payLoad:customMessage
+              })
+            }
+            // this.messageUpdated(enums.CUSTOM_MESSAGE_RECEIVED, customMessage);
+          },
+       
         })
       );
     } catch (error) {

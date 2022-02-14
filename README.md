@@ -82,7 +82,7 @@ To install Angular UI Kit, you need to first register on CometChat Dashboard. <a
 ### iii. Add the CometChat Dependency
 
 ```javascript
-  npm install @cometchat-pro/chat@3.0.5 --save
+  npm install @cometchat-pro/chat@3.0.6 --save
 ```
 
 <br/>

@@ -116,6 +116,7 @@ export class CometChatConversationListItemComponent
           case CometChat.MESSAGE_TYPE.CUSTOM:
             message = this.getCustomMessage(lastMessage);
             break;
+  
           default:
             break;
         }
@@ -178,6 +179,7 @@ export class CometChatConversationListItemComponent
         case CometChat.MESSAGE_TYPE.TEXT:
           message = lastMessage.text;
           break;
+          
         case CometChat.MESSAGE_TYPE.MEDIA:
           message = COMETCHAT_CONSTANTS.MEDIA_MESSAGE;
           break;
@@ -238,6 +240,9 @@ export class CometChatConversationListItemComponent
         case enums.CUSTOM_TYPE_STICKER:
           message = COMETCHAT_CONSTANTS.CUSTOM_MESSAGE_STICKER;
           break;
+          case enums.CALL_TYPE_DIRECT:
+            message = COMETCHAT_CONSTANTS.VIDEO_CALL;
+            break;
         default:
           break;
       }

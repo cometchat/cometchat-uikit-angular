@@ -74,7 +74,7 @@ export class CometChatManager {
     //  logger(error);
     //}
   }
-
+ 
   /**
    * Accepts a call
    * @param
