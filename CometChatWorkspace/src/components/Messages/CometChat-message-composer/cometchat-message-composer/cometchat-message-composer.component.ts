@@ -126,7 +126,15 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     }
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+         // add below code
+         if(!this.loggedInUser){
+          CometChat.getLoggedinUser()
+          .then(user=>{
+            this.loggedInUser = user
+          })
+        }
+  }
 
   /**
    * Handles all the actions emitted by the child components that make the current component

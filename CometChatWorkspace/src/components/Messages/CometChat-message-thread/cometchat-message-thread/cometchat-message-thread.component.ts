@@ -105,6 +105,20 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
       logger(error);
     }
   }
+   // update message receipt on message sent
+   messageSent(messages) {
+    const message = messages[0];
+		const messageList = [...this.messageList];
+
+		let messageKey = messageList.findIndex(m => m._id === message._id);
+		if (messageKey > -1) {
+			const newMessageObj = { ...message };
+			messageList.splice(messageKey, 1, newMessageObj);
+			messageList.sort((a, b) => a.id - b.id);
+		}
+    this.messageList = messageList;
+		this.scrollToBottomOfChatWindow();
+  }
 
   /**
    * Handles all the actions emitted by the child components that make the current component
@@ -136,6 +150,10 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
         }
         case enums.MESSAGE_UPDATED: {
           this.updateMessages(messages);
+          break;
+        }
+        case enums.MESSAGE_SENT: {
+          this.messageSent(messages);
           break;
         }
 

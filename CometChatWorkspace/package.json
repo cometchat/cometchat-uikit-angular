@@ -1,6 +1,6 @@
 {
   "name": "cometchat-pro-angular-ui-kit",
-  "version": "3.0.6-1",
+  "version": "3.0.6-2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
