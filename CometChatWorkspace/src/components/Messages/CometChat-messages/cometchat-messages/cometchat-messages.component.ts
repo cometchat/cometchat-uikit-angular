@@ -14,7 +14,7 @@ import { INCOMING_MESSAGE_SOUND } from "../../../../resources/audio/incomingMess
 import * as enums from "../../../../utils/enums";
 import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 import { logger } from "../../../../utils/common";
-import CometChatManager from "src/cometchat-pro-angular-ui-kit/CometChatWorkspace/src/utils/controller";
+import CometChatManager from "../../.././../utils/controller";
 @Component({
   selector: "cometchat-messages",
   templateUrl: "./cometchat-messages.component.html",
@@ -182,10 +182,15 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
           break;
         }
         case enums.MESSAGE_SENT: {
+          this.actionGenerated.emit({
+            type:enums.MESSAGE_COMPOSED,
+            payLoad:messages
+          })
           this.messageSent(messages);
           break;
         }
         case enums.MESSAGE_UPDATED: {
+      
           this.updateMessages(messages);
           break;
         }

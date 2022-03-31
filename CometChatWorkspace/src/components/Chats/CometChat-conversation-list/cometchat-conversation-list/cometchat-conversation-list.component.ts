@@ -212,7 +212,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
               change[enums.LAST_MESSAGE].currentValue &&
             change[enums.LAST_MESSAGE].currentValue !== undefined
           ) {
-            const lastMessage = change[enums.LAST_MESSAGE].currentValue[0];
+            const lastMessage = Object.assign({}, change[enums.LAST_MESSAGE].currentValue);
 
             const conversationList: any = [...this.conversationList];
             const conversationKey = conversationList.findIndex((c: any) => {

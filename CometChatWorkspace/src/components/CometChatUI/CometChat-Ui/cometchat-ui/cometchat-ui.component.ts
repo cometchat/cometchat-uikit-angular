@@ -192,7 +192,7 @@ export class CometChatUIComponent implements OnInit {
         case enums.MESSAGE_COMPOSED:
         case enums.MESSAGE_EDIT:
         case enums.MESSAGE_DELETE:
-          this.updateLastMessage(message);
+          this.updateLastMessage(message[0]);
           break;
         case enums.CHANGE_THREAD_PARENT_MESSAGE_REPLY_COUNT: {
           this.composedThreadMessage = {
@@ -309,7 +309,9 @@ export class CometChatUIComponent implements OnInit {
    * updates lastMessage , so that it can be updated in the conversationList
    */
   updateLastMessage(message: object) {
+
     try {
+
       this.lastMessage = message;
     } catch (error) {
       logger(error);
@@ -637,6 +639,7 @@ export class CometChatUIComponent implements OnInit {
 
       CometChatManager.call(receiverId, receiverType, CometChat.CALL_TYPE.AUDIO)
         .then((call: any) => {
+          console.log(CometChat.getActiveCall())
           this.appendCallMessage(call);
           this.outgoingCall = call;
         })
