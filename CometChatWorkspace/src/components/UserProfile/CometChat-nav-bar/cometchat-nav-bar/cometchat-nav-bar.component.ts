@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter, Input } from "@angular/core";
+import { Component, OnInit, Output, EventEmitter, Input, SimpleChanges, OnChanges } from "@angular/core";
 import * as enums from "../../../../utils/enums";
 import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 import { logger } from "../../../../utils/common";
@@ -8,7 +8,7 @@ import { CometChat } from "@cometchat-pro/chat";
   templateUrl: "./cometchat-nav-bar.component.html",
   styleUrls: ["./cometchat-nav-bar.component.css"],
 })
-export class CometChatNavBarComponent implements OnInit {
+export class CometChatNavBarComponent implements OnInit,OnChanges {
   @Input() item: any = null;
   @Input() type: string = '';
   @Input() lastMessage: any;
@@ -29,6 +29,17 @@ export class CometChatNavBarComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {}
+  ngOnChanges(changes: SimpleChanges){
+
+ 
+    if(changes[enums.ITEM]){
+      this.curentItem = Object.assign({}, this.item)
+    }
+    if(changes[enums.LAST_MESSAGE]){
+      this.lastMessage = changes[enums.LAST_MESSAGE].currentValue
+    }
+    
+  }
 
   /**
    * Toggles the List to be opened on user clicked

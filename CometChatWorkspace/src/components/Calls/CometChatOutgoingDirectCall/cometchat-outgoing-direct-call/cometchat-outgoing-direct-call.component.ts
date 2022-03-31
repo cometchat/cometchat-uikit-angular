@@ -129,6 +129,7 @@ export class CometChatOutgoingDirectCallComponent
     let defaultLayout = true;
     let callSettings = new CometChat.CallSettingsBuilder()
       .enableDefaultLayout(defaultLayout)
+      // .setMode(CometChat.CALL_MODE.DEFAULT)
       .setSessionID(sessionID)
       .setIsAudioOnlyCall(audioOnly)
       .build();
@@ -142,22 +143,22 @@ export class CometChatOutgoingDirectCallComponent
         onUserListUpdated: userList => {
           
 
-          console.log("user list:", userList);
+          // console.log("user list:", userList);
         },
         onCallEnded: call => {
           localStorage.removeItem("isIncomingCall")
-          console.log("Call ended:", call);
+          // console.log("Call ended:", call);
           this.stopDirectCall()
         },
         onError: error => {
           console.log("Error :", error);
         },
         onMediaDeviceListUpdated: deviceList => {
-          console.log("Device List:", deviceList);
+          // console.log("Device List:", deviceList);
         },
         onUserMuted: (userMuted, userMutedBy) => {
           // This event will work in JS SDK v3.0.2-beta1 & later.
-          console.log("Listener => onUserMuted:", userMuted, userMutedBy);
+          // console.log("Listener => onUserMuted:", userMuted, userMutedBy);
         },
         onScreenShareStarted: () => {
           // This event will work in JS SDK v3.0.3 & later.
@@ -207,6 +208,7 @@ export class CometChatOutgoingDirectCallComponent
       let callSettings = new CometChat.CallSettingsBuilder()
         .enableDefaultLayout(defaultLayout)
         .setSessionID(sessionID)
+        // .setMode(CometChat.CALL_MODE.DEFAULT)
         .setIsAudioOnlyCall(audioOnly)
         .build();
 
@@ -216,21 +218,21 @@ export class CometChatOutgoingDirectCallComponent
         new CometChat.OngoingCallListener({
 
           onUserListUpdated: userList => {
-            console.log("user list:", userList);
+            // console.log("user list:", userList);
           },
           onCallEnded: call => {
-            console.log("Call ended:", call);
+            // console.log("Call ended:", call);
             this.stopDirectCall()
           },
           onError: error => {
             console.log("Error :", error);
           },
           onMediaDeviceListUpdated: deviceList => {
-            console.log("Device List:", deviceList);
+            // console.log("Device List:", deviceList);
           },
           onUserMuted: (userMuted, userMutedBy) => {
             // This event will work in JS SDK v3.0.2-beta1 & later.
-            console.log("Listener => onUserMuted:", userMuted, userMutedBy);
+            // console.log("Listener => onUserMuted:", userMuted, userMutedBy);
           },
           onScreenShareStarted: () => {
             // This event will work in JS SDK v3.0.3 & later.

@@ -128,6 +128,7 @@ export class CometChatMessageListComponent
         if (change[enums.MESSAGED].currentValue.length > 0) {
           this.decoratorMessage = "";
         }
+   
       }
     } catch (error) {
       logger(error);
@@ -915,7 +916,7 @@ export class CometChatMessageListComponent
    * TrackBy by id's 
    */
   messageID(index, item) {
-    return item._id || item.id;
+    return item.replyCount || item._id || item.id;
   }
 
   /**

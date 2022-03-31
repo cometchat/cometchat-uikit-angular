@@ -275,6 +275,7 @@ export class CometChatOutgoingCallComponent
               });
             }
           },
+          
           onUserLeft: (user: any) => {
             /* Notification received here if another user left the call. */
 
@@ -319,11 +320,13 @@ export class CometChatOutgoingCallComponent
             });
             /* hiding/closing the call screen can be done here. */
           },
+          
         })
       );
     } catch (error) {
       logger(error);
     }
+
    
   }
 

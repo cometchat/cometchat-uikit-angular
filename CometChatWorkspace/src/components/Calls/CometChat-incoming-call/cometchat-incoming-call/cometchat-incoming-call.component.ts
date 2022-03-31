@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from "@angular/core";
+import { Component, OnInit, Output, EventEmitter, OnDestroy } from "@angular/core";
 import * as enums from "../../../../utils/enums";
 import { CometChat } from "@cometchat-pro/chat";
 import { CometChatManager } from "../../../../utils/controller";
@@ -20,7 +20,7 @@ import { logger } from "../../../../utils/common";
     ]),
   ],
 })
-export class CometChatIncomingCallComponent implements OnInit {
+export class CometChatIncomingCallComponent implements OnInit,OnDestroy {
   incomingCall: any = null;
   callInProgress = null;
   callListenerId = enums.INCOMING_CALL_ + new Date().getTime();
@@ -42,6 +42,7 @@ export class CometChatIncomingCallComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
+   
     
     try {
       this.attachListeners();
@@ -49,6 +50,11 @@ export class CometChatIncomingCallComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+  }
+  ngOnDestroy() {
+    this.pauseAudio()
+    this.removeListeners()
+  
   }
 
   /**
@@ -193,6 +199,7 @@ export class CometChatIncomingCallComponent implements OnInit {
         CometChat.CALL_STATUS.REJECTED
       )
         .then((rejectedCall) => {
+          this.pauseAudio();
           this.actionGenerated.emit({
             type: enums.REJECTED_INCOMING_CALL,
             payLoad: {
