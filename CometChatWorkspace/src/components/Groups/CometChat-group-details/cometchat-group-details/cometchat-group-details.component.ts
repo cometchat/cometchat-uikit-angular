@@ -414,6 +414,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    */
   banMembers = (members: any) => {
     try {
+      // this.bannedMemberList.push(members)
       this.bannedMemberList = [...this.bannedMemberList, ...members];
     } catch (error) {
       logger(error);

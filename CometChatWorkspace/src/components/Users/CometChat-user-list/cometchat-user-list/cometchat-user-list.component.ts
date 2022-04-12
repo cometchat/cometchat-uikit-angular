@@ -171,6 +171,7 @@ export class CometChatUserListComponent
           .friendsOnly(this.friendsOnly)
           .setSearchKeyword(searchKey)
           .setLimit(30)
+          
           .build();
 
         this.fetchNextContactList();

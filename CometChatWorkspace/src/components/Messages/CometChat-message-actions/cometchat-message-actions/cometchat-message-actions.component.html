@@ -10,7 +10,7 @@
   >
     <div [class.tool]="!receivedMessage" class="toolTip">
       <li class="actionGroupStyle" *ngIf="!receivedMessage && messageDetails?.type !== DIRECT_CALL">
-        <button type="button" class="groupButtonStyle" (click)="sendReaction()">
+        <button type="button" class="groupButtonStyle" (click)="sendReaction()" title="React">
           <img [src]="reactionIcon" class="regularReactionIcon" />
         </button>
       </li>
@@ -19,6 +19,7 @@
           type="button"
           class="groupButtonStyle replyIcon"
           (click)="replyToMessage()"
+          title="Thread"
         ></button>
       </li>
       <li
@@ -31,6 +32,7 @@
           type="button"
           class="groupButtonStyle editIcon"
           (click)="editMessage()"
+          title="Edit"
         ></button>
       </li>
       <li class="actionGroupStyle" *ngIf="!showOnlyReplyButton">
@@ -38,11 +40,12 @@
           type="button"
           class="groupButtonStyle deleteIcon"
           (click)="deleteMessage()"
+          title="Delete"
         ></button>
       </li>
 
       <li class="actionGroupStyle" *ngIf="receivedMessage && messageDetails?.type !== DIRECT_CALL">
-        <button type="button" class="groupButtonStyle" (click)="sendReaction()">
+        <button type="button" class="groupButtonStyle" (click)="sendReaction()" title="React">
           <img [src]="reactionIcon" class="regularReactionIcon" />
         </button>
       </li>

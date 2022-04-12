@@ -46,7 +46,7 @@
       <div class="inputStickyStyle">
         <div class="stickyAttachmentStyle">
           <!--All file upload options starts here-->
-          <div class="attachmentIconStyle" (click)="toggleFilePicker()">
+          <div class="attachmentIconStyle" (click)="toggleFilePicker()" title="Attach">
             <span>&nbsp;</span>
           </div>
 
@@ -151,6 +151,7 @@
             id="reaction"
             *ngIf="enableReaction && !parentMessageId"
             (click)="sendReaction($event)"
+            title="Live Reaction"
           >
           </span>
         </div>

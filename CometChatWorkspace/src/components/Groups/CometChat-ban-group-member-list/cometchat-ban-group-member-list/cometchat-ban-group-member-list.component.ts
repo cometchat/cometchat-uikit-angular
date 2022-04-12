@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
+import { Component, Input, OnInit, Output, EventEmitter, OnChanges, SimpleChanges } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
 import { BAN_ICON } from "./resources/banIcon";
 import * as enums from "../../../../utils/enums";
@@ -8,7 +8,7 @@ import { logger } from "../../../../utils/common";
   templateUrl: "./cometchat-ban-group-member-list.component.html",
   styleUrls: ["./cometchat-ban-group-member-list.component.css"],
 })
-export class CometChatBanGroupMemberListComponent implements OnInit {
+export class CometChatBanGroupMemberListComponent implements OnInit,OnChanges {
   @Input() item = null;
   @Input() member: any = null;
   @Input() loggedInUser = null;
@@ -18,6 +18,10 @@ export class CometChatBanGroupMemberListComponent implements OnInit {
   banIcon = BAN_ICON;
 
   constructor() {}
+  ngOnChanges(changes: SimpleChanges){
+  
+   
+  }
 
   ngOnInit() {}
 

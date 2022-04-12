@@ -27,8 +27,8 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   @Input() type: string = '';
   @Input() composedThreadMessage = null;
   @Input() groupMessage: object = {};
-  @Input() callMessage = null;
-  @Input() loggedInUser = null;
+  @Input() callMessage:Object | null = null;
+  @Input() loggedInUser:any = null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -124,6 +124,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * @param Event action
    */
   actionHandler(action: any) {
+
 
     
     try {
@@ -276,13 +277,18 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
           this.groupUpdated(data.message, data.key, data.group, data.options);
           break;
         case enums.POLL_ANSWERED: {
-          this.updatePollMessage(messages);
+          // this.updatePollMessage(messages);
           break;
         }
         case enums.CALL_UPDATED: {
           this.callUpdated(messages);
           break;
         }
+        // case enums.MESSAGE__READ: {
+        
+        //   this.messageEdited(messages)
+        //   break;
+        // }
         case enums.AUDIO_CALL:
         case enums.VIDEO_CALL:
         case enums.VIEW_DETAIL:
@@ -378,8 +384,8 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   appendMessage(messages: any) {
     try {
       let dummy = [...this.messageList];
-
-      this.messageList = [...dummy, ...messages];
+      this.messageList = [...new Set([...dummy, ...messages])];
+      // this.messageList = [...dummy, ...messages];
       setTimeout(() => {
         this.scrollToBottomOfChatWindow();
       }, 1000);
@@ -392,7 +398,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     }
   }
 
-  messageSent(messages) {
+  messageSent(messages:any) {
     const message = messages[0];
 		const messageList = [...this.messageList];
 
@@ -411,6 +417,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    * @param Any messages
    */
   updatePollMessage(message: any) {
+
     try {
       const messageList = [...this.messageList];
       const messageId = message.poll.id;

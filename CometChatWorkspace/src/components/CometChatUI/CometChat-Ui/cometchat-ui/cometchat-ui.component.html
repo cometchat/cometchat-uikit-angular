@@ -74,10 +74,13 @@
   <cometchat-incoming-call
     (actionGenerated)="actionHandler($event)"
   ></cometchat-incoming-call>
+  <!-- <cometchat-incoming-call
+  ></cometchat-incoming-call> -->
+<cometchat-incoming-direct-call></cometchat-incoming-direct-call>
   <cometchat-outgoing-call
     [item]="item"
     [type]="type"
-    [incomingCall]="incomingCall"
+   
     [outgoingCall]="outgoingCall"
     (actionGenerated)="actionHandler($event)"
   ></cometchat-outgoing-call>
@@ -89,10 +92,10 @@
   [outgoingDirectCall]="outgoingCall"
   (actionGenerated)="actionHandler($event)"
   ></cometchat-outgoing-direct-call>
-  <cometchat-incoming-direct-call
+  <!-- <cometchat-incoming-direct-call
   (actionGenerated)="actionHandler($event)"
   [incomingDirectCall]="incomingDirectCall"
   
-  ></cometchat-incoming-direct-call>
+  ></cometchat-incoming-direct-call> -->
 
 </div>

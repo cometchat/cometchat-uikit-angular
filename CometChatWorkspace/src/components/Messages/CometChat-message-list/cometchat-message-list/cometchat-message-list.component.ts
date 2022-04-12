@@ -89,6 +89,7 @@ export class CometChatMessageListComponent
   }
 
   ngOnChanges(change: SimpleChanges) {
+    
 
     try {
       if (change[enums.ITEM]) {
@@ -215,6 +216,7 @@ export class CometChatMessageListComponent
             this.messageUpdated(enums.MESSAGE_DELIVERED, messageReceipt);
           },
           onMessagesRead: (messageReceipt: any) => {
+            
             this.messageUpdated(enums.MESSAGE_READ, messageReceipt);
           },
           onMessageDeleted: (deletedMessage: any) => {
@@ -408,6 +410,7 @@ export class CometChatMessageListComponent
               }
 
               messageList.forEach((message: any) => {
+                // console.log(messageList)
                 
                 
                 if (
@@ -419,8 +422,10 @@ export class CometChatMessageListComponent
 
                 //if the sender of the message is not the loggedin user, mark it as read.
                 if (message.getSender().getUid() !== this.loggedInUser.uid) {
+                   
                   //mark the message as delivered
                   this.markMessageAsDelivered(message);
+                  
       
                 
                   if (
@@ -430,6 +435,8 @@ export class CometChatMessageListComponent
                     if (
                       message.getReceiverType() === CometChat.RECEIVER_TYPE.USER
                     ) {
+                      // console.log(message)
+                 
                     CometChat.markAsRead(message);
                     } else if (
                       message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP
@@ -561,7 +568,7 @@ export class CometChatMessageListComponent
         message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
         message.getReceiverId() === this.item.guid
       ) {
-        if (!message.getReadAt()) {
+        if ((!message.getReadAt()  && !message.parentMessageId) ||  (!message.getReadAt() && this.parentMessageId && message.parentMessageId)) {
           CometChat.markAsRead(message);
         }
 
@@ -574,7 +581,8 @@ export class CometChatMessageListComponent
         message.getReceiverType() === CometChat.RECEIVER_TYPE.USER &&
         message.getSender().uid === this.item.uid
       ) {
-        if (!message.getReadAt()) {
+        if ((!message.getReadAt()  && !message.parentMessageId) ||  (!message.getReadAt() && this.parentMessageId && message.parentMessageId)) {
+
           CometChat.markAsRead(message);
         }
 
@@ -593,6 +601,7 @@ export class CometChatMessageListComponent
    * @param Event action
    */
   actionHandler(action: any) {
+
     
     try {
       this.actionGenerated.emit(action);
@@ -792,7 +801,7 @@ export class CometChatMessageListComponent
         message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
         message.getReceiverId() === this.item.guid
       ) {
-        if (!message.getReadAt()) {
+        if ((!message.getReadAt()  && !message.parentMessageId) ||  (!message.getReadAt() && this.parentMessageId && message.parentMessageId)) {
           CometChat.markAsRead(message);
         }
          if (message.type === enums.CALL_TYPE_DIRECT) {
@@ -840,7 +849,7 @@ export class CometChatMessageListComponent
 			    message.getReceiverId() === this.item.uid
         )) 
       ) {
-        if (!message.getReadAt()) {
+        if ((!message.getReadAt()  && !message.parentMessageId) ||  (!message.getReadAt() && this.parentMessageId && message.parentMessageId)) {
           CometChat.markAsRead(message);
         }
 
@@ -915,8 +924,9 @@ export class CometChatMessageListComponent
   /** 
    * TrackBy by id's 
    */
-  messageID(index, item) {
-    return item.replyCount || item._id || item.id;
+  messageID(index:any, item:any) {
+    return item.replyCount || item.id || item._id;
+    // return item.replyCount || item.data || item.id;
   }
 
   /**
