@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
+import { Component, Input, OnInit, Output, EventEmitter, OnChanges, SimpleChanges } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
 import { checkMessageForExtensionsData } from "../../../../../utils/common";
 import * as enums from "../../../../../utils/enums";
@@ -8,7 +8,7 @@ import { logger } from "../../../../../utils/common";
   templateUrl: "./cometchat-receiver-poll-message-bubble.component.html",
   styleUrls: ["./cometchat-receiver-poll-message-bubble.component.css"],
 })
-export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
+export class CometChatReceiverPollMessageBubbleComponent implements OnInit,OnChanges {
   @Input() messageDetails: any = null;
   @Input() showReplyCount = true;
 
@@ -30,18 +30,34 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
   GROUP: String = CometChat.RECEIVER_TYPE.GROUP;
 
   constructor() {}
-
-  ngOnInit() {
+  ngOnChanges(changes: SimpleChanges){
     try {
+      this.checkPollExtension();
       this.checkReaction = checkMessageForExtensionsData(
         this.messageDetails,
         enums.REACTIONS
       );
 
-      this.checkPollExtension();
+     
     } catch (error) {
       logger(error);
     }
+   
+  
+  }
+
+  ngOnInit() {
+    // try {
+    //   this.checkPollExtension();
+    //   this.checkReaction = checkMessageForExtensionsData(
+    //     this.messageDetails,
+    //     enums.REACTIONS
+    //   );
+
+     
+    // } catch (error) {
+    //   logger(error);
+    // }
   }
 
   /**
@@ -134,10 +150,14 @@ export class CometChatReceiverPollMessageBubbleComponent implements OnInit {
         id: this.pollId,
       })
         .then((response) => {
+      
           this.actionGenerated.emit({
             type: enums.POLL_ANSWERED,
-            payLoad: response,
+            
+            payLoad: this.messageDetails,
+            
           });
+   
         })
         .catch((error) => {
           logger("answerPollQuestion error", error);

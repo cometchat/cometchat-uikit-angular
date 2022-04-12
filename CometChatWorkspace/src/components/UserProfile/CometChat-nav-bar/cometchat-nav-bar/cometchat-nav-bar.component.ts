@@ -92,7 +92,7 @@ export class CometChatNavBarComponent implements OnInit,OnChanges {
       logger(error);
     }
   }
-  actionHandler(action){
+  actionHandler(action:any){
     if(action.type == enums.CALL_TYPE_DIRECT){
       this.actionGenerated.emit({
         type:enums.INCOMING_DIRECT_CALL,

@@ -27,7 +27,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   @Output() onUserClick: EventEmitter<any> = new EventEmitter();
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
   @Input() groupToUpdate: object = {};
-  @Input() groupToDelete = null;
+  @Input() groupToDelete:object | null = null;
 
   decoratorMessage: string = COMETCHAT_CONSTANTS.LOADING_MESSSAGE;
   loggedInUser = null;

@@ -25,7 +25,7 @@ import { logger } from "../../../../utils/common";
 export class CometChatOutgoingDirectCallComponent
   implements OnInit, OnChanges {
   @Input() item: any = null;
-  @Input() type: string = '';
+  @Input() type: string | null= '';
   @Input() incomingDirectCall: any = null;
   @Input() outgoingDirectCall: any = null;
   @Input() joinCall: any = null
@@ -68,8 +68,9 @@ export class CometChatOutgoingDirectCallComponent
     try {
 
       if (change[enums.OUTGOING_DIRECT_CALL]) {
-        let prevProps = { outgoingDirectCall: null };
-        let props = { outgoingDirectCall: null };
+        
+        let prevProps:any = { outgoingDirectCall: null };
+        let props:any = { outgoingDirectCall: null };
 
         prevProps[enums.OUTGOING_DIRECT_CALL] =
           change[enums.OUTGOING_DIRECT_CALL].previousValue;
@@ -112,6 +113,7 @@ export class CometChatOutgoingDirectCallComponent
   }
 
   ngOnInit() {
+  
 
     try {
       this.setLoggedInUser();
@@ -122,7 +124,7 @@ export class CometChatOutgoingDirectCallComponent
       logger(error);
     }
   }
-  joinDirectCall(session) {
+  joinDirectCall(session:string) {
     localStorage.setItem("isIncomingCall","accepted")
     let sessionID = session;
     let audioOnly = false;
@@ -140,23 +142,23 @@ export class CometChatOutgoingDirectCallComponent
       this.callScreen.nativeElement,
       new CometChat.OngoingCallListener({
 
-        onUserListUpdated: userList => {
+        onUserListUpdated: (userList:object) => {
           
 
           // console.log("user list:", userList);
         },
-        onCallEnded: call => {
+        onCallEnded: (call:object) => {
           localStorage.removeItem("isIncomingCall")
           // console.log("Call ended:", call);
           this.stopDirectCall()
         },
-        onError: error => {
+        onError: (error:object) => {
           console.log("Error :", error);
         },
-        onMediaDeviceListUpdated: deviceList => {
+        onMediaDeviceListUpdated: (deviceList:object) => {
           // console.log("Device List:", deviceList);
         },
-        onUserMuted: (userMuted, userMutedBy) => {
+        onUserMuted: (userMuted:object, userMutedBy:object) => {
           // This event will work in JS SDK v3.0.2-beta1 & later.
           // console.log("Listener => onUserMuted:", userMuted, userMutedBy);
         },
@@ -217,20 +219,20 @@ export class CometChatOutgoingDirectCallComponent
         this.callScreen.nativeElement,
         new CometChat.OngoingCallListener({
 
-          onUserListUpdated: userList => {
+          onUserListUpdated: (userList:object) => {
             // console.log("user list:", userList);
           },
-          onCallEnded: call => {
+          onCallEnded: (call:object) => {
             // console.log("Call ended:", call);
             this.stopDirectCall()
           },
-          onError: error => {
+          onError: (error:object) => {
             console.log("Error :", error);
           },
-          onMediaDeviceListUpdated: deviceList => {
+          onMediaDeviceListUpdated: (deviceList:object) => {
             // console.log("Device List:", deviceList);
           },
-          onUserMuted: (userMuted, userMutedBy) => {
+          onUserMuted: (userMuted:object, userMutedBy:object) => {
             // This event will work in JS SDK v3.0.2-beta1 & later.
             // console.log("Listener => onUserMuted:", userMuted, userMutedBy);
           },

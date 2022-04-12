@@ -59,7 +59,7 @@ export class CometChatSenderDirectCallBubbleComponent implements OnInit {
     }
   }
   // join direct call
-  joinCallData(sessionid){
+  joinCallData(sessionid:string){
     // this.actionGenerated.emit({
     //   type:"joinDirectCall",
     //   sessionid:sessionid

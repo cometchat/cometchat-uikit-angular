@@ -61,8 +61,8 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   @Input() messageToBeEdited: any = null;
   @Input() replyPreview = null;
 
-  @Input() messageToReact = null;
-  @Input() loggedInUser = null;
+  @Input() messageToReact:any = null;
+  @Input() loggedInUser :any= null;
 
   @Output() actionGenerated: EventEmitter<any> = new EventEmitter();
 
@@ -563,6 +563,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
    */
   onFileChange(event: any) :boolean {
     try {
+  
       if (!event.target.files["0"]) {
         return false;
       }
@@ -577,6 +578,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
             uploadedFile.name,
             uploadedFile
           );
+    
           this.sendMediaMessage(newFile, CometChat.MESSAGE_TYPE.FILE);
         },
         false

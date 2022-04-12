@@ -58,7 +58,7 @@ export class CometChatReceiverDirectCallBubbleComponent implements OnInit {
       logger(error);
     }
   }
-  joinCallData(sessionid){
+  joinCallData(sessionid:string){
     this.actionGenerated.emit({
       type:"sessionid",
       sessionid:sessionid

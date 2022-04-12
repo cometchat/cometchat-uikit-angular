@@ -28,7 +28,7 @@
       </div>
     </div>
     <div class="headerButtonStyle">
-      <button class="ButtonStyle Decline" (click)="  ignoreCall()">
+      <button class="ButtonStyle Decline" (click)="ignoreCall()">
         {{ IGNORE }}
       </button>
       <button class="ButtonStyle Accept" (click)="acceptCall()">
@@ -36,4 +36,11 @@
       </button>
     </div>
   </div>
+</div>
+<div class="callScreenWrapperStyle" *ngIf="callInProgress" >
+  <!-- OUTGOING CALL SCREEN BELOW -->
+  <div class="callScreenContainerStyle "  #callScreen>
+  
+  </div>
+  <!-- OUTGOING CALL SCREEN ABOVE -->
 </div>

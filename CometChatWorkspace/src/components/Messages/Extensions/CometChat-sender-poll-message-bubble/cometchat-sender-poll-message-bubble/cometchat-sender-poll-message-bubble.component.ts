@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
+import { Component, Input, OnInit, Output, EventEmitter, SimpleChanges, OnChanges } from "@angular/core";
 import {
   checkMessageForExtensionsData,
   logger,
@@ -10,7 +10,7 @@ import * as enums from "../../../../../utils/enums";
   templateUrl: "./cometchat-sender-poll-message-bubble.component.html",
   styleUrls: ["./cometchat-sender-poll-message-bubble.component.css"],
 })
-export class CometChatSenderPollMessageBubbleComponent implements OnInit {
+export class CometChatSenderPollMessageBubbleComponent implements OnInit,OnChanges {
   @Input() messageDetails: any = null;
   @Input() showReplyCount = true;
   @Input() loggedInUser: any;
@@ -27,8 +27,7 @@ export class CometChatSenderPollMessageBubbleComponent implements OnInit {
   totalVotes = 0;
 
   constructor() {}
-
-  ngOnInit() {
+  ngOnChanges(changes: SimpleChanges){
     try {
       this.checkPollExtension();
       this.checkReaction = checkMessageForExtensionsData(
@@ -38,6 +37,19 @@ export class CometChatSenderPollMessageBubbleComponent implements OnInit {
     } catch (error) {
       logger(error);
     }
+  
+  }
+
+  ngOnInit() {
+    // try {
+    //   this.checkPollExtension();
+    //   this.checkReaction = checkMessageForExtensionsData(
+    //     this.messageDetails,
+    //     enums.REACTIONS
+    //   );
+    // } catch (error) {
+    //   logger(error);
+    // }
   }
 
   /**

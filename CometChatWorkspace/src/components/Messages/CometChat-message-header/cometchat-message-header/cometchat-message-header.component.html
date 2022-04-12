@@ -37,18 +37,21 @@
       class="chatOptionStyle callOption "
       *ngIf="checkNotBlocked && type === USER"
       (click)="audioCall()"
+      title="audio call"
     ></div>
     <div
       class="chatOptionStyle videoCallOption"
       *ngIf="checkNotBlocked && type === USER"
       (click)="videoCall()"
+      title="video call"
     ></div>
     <div
     class="chatOptionStyle videoCallOption"
     *ngIf="checkNotBlocked && type !== USER"
     (click)="directVideoCall()"
+    title="video call"
   ></div>
-    <div class="chatOptionStyle detailsOption" (click)="openUserDetail()"></div>
+    <div class="chatOptionStyle detailsOption" (click)="openUserDetail()"  title="view details"></div>
   </div>
 
 </div>

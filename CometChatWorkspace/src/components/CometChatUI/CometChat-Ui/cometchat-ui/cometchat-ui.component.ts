@@ -55,8 +55,8 @@ export class CometChatUIComponent implements OnInit {
   fullScreenViewImage: boolean = false;
   imageView: object = {};
   // for direct call
-  joinDirectCall;
-  incomingDirectCall;
+  joinDirectCall:any;
+  incomingDirectCall:any;
 
   //for audio calling
   outgoingCall = null;
@@ -292,8 +292,8 @@ export class CometChatUIComponent implements OnInit {
           break;
         }
         case enums.SESSION_ID: {
-
           this.sendSessionId(action)
+          break;
         }
 
         default:
@@ -343,7 +343,7 @@ export class CometChatUIComponent implements OnInit {
     }
   }
   // incoming direct call
-  startIncomingCall(message) {
+  startIncomingCall(message:object) {
     this.type = enums.INCOMING_DIRECT_CALL
     this.incomingDirectCall = message
 
@@ -369,7 +369,7 @@ export class CometChatUIComponent implements OnInit {
     return true;
   };
   // session id join data
-  sendSessionId(action) {
+  sendSessionId(action:any) {
     this.type = action.type;
     this.joinDirectCall = action.sessionid ? action.sessionid : action.payLoad
   }
@@ -639,7 +639,7 @@ export class CometChatUIComponent implements OnInit {
 
       CometChatManager.call(receiverId, receiverType, CometChat.CALL_TYPE.AUDIO)
         .then((call: any) => {
-          console.log(CometChat.getActiveCall())
+    
           this.appendCallMessage(call);
           this.outgoingCall = call;
         })
@@ -785,11 +785,11 @@ export class CometChatUIComponent implements OnInit {
     this.type = enums.DIRECT_CALL
 
   }
-  outgoingDirectCall(action) {
+  outgoingDirectCall(action:object) {
     this.appendCallMessage(this.makeCustomMessage(action))
 
   }
-  makeCustomMessage(action) {
+  makeCustomMessage(action:any) {
     const receiverType = CometChat.RECEIVER_TYPE.GROUP;
     const customData = { "sessionID": action.sessionid, "sessionId": action.sessionid, "callType": CometChat.CALL_TYPE.VIDEO };
     const customType = enums.DIRECT_CALL;

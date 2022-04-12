@@ -1,3 +1,25 @@
+.callScreenWrapperStyle {
+  opacity: 1;
+  width: inherit;
+  height: inherit;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(20, 20, 20, 0.9);
+  z-index: 999;
+  color: #fff;
+  text-align: center;
+  box-sizing: border-box;
+  font-family: Inter, sans-serif;
+}
+
+.callScreenWrapperStyle * {
+  font-family: Inter, sans-serif;
+  box-sizing: border-box;
+}
+
 .incomingCallWrapperStyle {
   position: absolute;
   top: 0;
