@@ -156,7 +156,7 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
 		const fileMetadata = this.getMessageFileMetadata (this.messageDetails, metadataKey);
 
 		let img: any = new Image();
-		let imageName;
+		let imageName:any;
 
     if (fileMetadata instanceof Blob) {
 
@@ -164,7 +164,7 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
 			reader.onload = function() {
 				img.src = reader.result;
 			};
-			imageName = fileMetadata["name"];
+			imageName = (fileMetadata as any)["name"];
 			reader.readAsDataURL(fileMetadata);
     }
 
@@ -186,7 +186,7 @@ export class CometChatSenderImageMessageBubbleComponent implements OnInit {
 	};
   
 
-  getMessageFileMetadata(message, metadataKey) {
+  getMessageFileMetadata(message:any, metadataKey:any) {
     let fileMetadata;
     if(message.hasOwnProperty("metadata")) {
         const metadata = message["metadata"];

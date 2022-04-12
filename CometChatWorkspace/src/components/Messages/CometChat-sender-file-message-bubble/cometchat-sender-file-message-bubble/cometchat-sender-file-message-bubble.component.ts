@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
+import { Component, Input, OnInit, Output, EventEmitter, OnChanges, SimpleChange, SimpleChanges } from "@angular/core";
 import {
   checkMessageForExtensionsData,
   logger,
@@ -10,7 +10,7 @@ import * as enums from "../../../../utils/enums";
   templateUrl: "./cometchat-sender-file-message-bubble.component.html",
   styleUrls: ["./cometchat-sender-file-message-bubble.component.css"],
 })
-export class CometChatSenderFileMessageBubbleComponent implements OnInit {
+export class CometChatSenderFileMessageBubbleComponent implements OnInit,OnChanges {
   @Input() messageDetails: any = null;
   @Input() showToolTip = true;
   @Input() showReplyCount = true;
@@ -21,6 +21,10 @@ export class CometChatSenderFileMessageBubbleComponent implements OnInit {
   url: string = '';
   name: string = '';
   constructor() {}
+  ngOnChanges(changes: SimpleChanges) {
+  //  this.messageDetails = changes.messageDetails.currentValue
+    
+  }
 
   ngOnInit() {
     try {
@@ -28,11 +32,33 @@ export class CometChatSenderFileMessageBubbleComponent implements OnInit {
         this.messageDetails,
         enums.REACTIONS
       );
-      this.url = this.messageDetails.data.attachments[0].url;
-      this.name = this.messageDetails.data.attachments[0].name;
+      this.setFile();
     } catch (error) {
       logger(error);
     }
+  }
+
+  setFile() {
+    if(this.messageDetails.data.hasOwnProperty("attachments")) {
+      this.url = this.messageDetails.data.attachments[0].url;
+      this.name = this.messageDetails.data.attachments[0].name;
+    }
+    else {
+      const metadataKey = enums.FILE_METADATA;
+		  const fileMetadata = this.getMessageFileMetadata (this.messageDetails, metadataKey);
+      this.name = fileMetadata["name"];
+    }
+  }
+
+  getMessageFileMetadata(message:any, metadataKey:any) {
+    let fileMetadata;
+    if(message.hasOwnProperty("metadata")) {
+        const metadata = message["metadata"];
+        if (metadata.hasOwnProperty(metadataKey)) {
+            fileMetadata = metadata[metadataKey];
+        }
+    }
+    return fileMetadata;
   }
 
   /**
@@ -47,3 +73,7 @@ export class CometChatSenderFileMessageBubbleComponent implements OnInit {
     }
   }
 }
+  
+
+
+

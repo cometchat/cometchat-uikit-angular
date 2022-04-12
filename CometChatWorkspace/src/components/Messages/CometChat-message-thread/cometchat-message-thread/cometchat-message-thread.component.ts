@@ -106,7 +106,7 @@ export class CometChatMessageThreadComponent implements OnInit, OnChanges {
     }
   }
    // update message receipt on message sent
-   messageSent(messages) {
+   messageSent(messages:any) {
     const message = messages[0];
 		const messageList = [...this.messageList];
 

@@ -39,7 +39,7 @@ export const getSentAtTime = (message: any) => {
 /**
  * Get Time when message was composed
  */
-export const getComposedAtTime = (message) => {
+export const getComposedAtTime = (message:any) => {
   try {
     let msgComposedAt = message._composedAt;
     msgComposedAt = msgComposedAt * 1000;
@@ -56,7 +56,7 @@ export const getComposedAtTime = (message) => {
 export const logger = (...data: any) => {
 
   try {
-    console.log(...data);
+    // console.log(...data);
   } catch (error) {
     logger(error);
   }

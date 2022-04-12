@@ -117,6 +117,7 @@ export class CometChatOutgoingCallComponent
             this.callScreenUpdated(enums.OUTGOING_CALL_ACCEPTED, call);
           },
           onOutgoingCallRejected: (call: any) => {
+            
             this.callScreenUpdated(enums.OUTGOING_CALL_REJECTED, call);
           },
           onIncomingCallCancelled: (call: any) => {

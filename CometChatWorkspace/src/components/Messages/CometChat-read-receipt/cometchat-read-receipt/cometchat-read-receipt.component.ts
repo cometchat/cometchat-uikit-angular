@@ -12,7 +12,7 @@ import * as enums from "../../../../utils/enums";
 })
 
 export class CometChatReadReceiptComponent implements OnInit, OnChanges{
-  @Input() messageDetails = null;
+  @Input() messageDetails : any = null;
   @Input() displayReadReciept = true;
 
   tickStatus: String = '';
@@ -48,16 +48,17 @@ export class CometChatReadReceiptComponent implements OnInit, OnChanges{
    */
   getDeliveryStatus() {
     try {
-      if(this.messageDetails.hasOwnProperty(enums.READ_AT)) {
+     
+      if(this.messageDetails.hasOwnProperty(enums.READ_AT) && !this.messageDetails.receiver.hasOwnProperty("guid")) {
         this.tickStatus = this.READ;
       }
-      else if (this.messageDetails.hasOwnProperty(enums.DELIVERED_AT)) {
+      else if (this.messageDetails.hasOwnProperty(enums.DELIVERED_AT) && !this.messageDetails.receiver.hasOwnProperty("guid")) {
         this.tickStatus = this.DELIVERED;
       } 
       else if (this.messageDetails.hasOwnProperty(enums.SENT_AT)) {
         this.tickStatus = this.SENT;
       } 
-      else if (this.messageDetails.hasOwnProperty(enums.COMPOSED_AT)) {
+      else if (this.messageDetails.hasOwnProperty(enums.COMPOSED_AT) ) {
         this.tickStatus = this.COMPOSED;
       }
     } catch (error) {
