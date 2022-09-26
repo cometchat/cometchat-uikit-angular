@@ -125,7 +125,7 @@ CometChat.init(appID, appSetting).then(
 - Install UIKit package from npm - npm install @cometchat-pro/angular-ui-kit
 
 <div style="width:100%">
-    <img width="200px" height="400px" src="./Screenshots/folder_structure.png">
+    <img width="200px" height="400px" src="./Screenshots/folder-structure.png">
 </div>
 
 - Import the Components in the respective module where the component will be used.
@@ -134,7 +134,7 @@ CometChat.init(appID, appSetting).then(
 
 ## 4. Launch Cometchat
 
-Using the CometChatConversationsWithMessages component from the UI Kit, you can launch a fully functional chat application.
+Using the  `CometChatConversationsWithMessages`  component from the UI Kit, you can launch a fully functional chat application.
 In this component Chats and Messages are  interlinked and work together to launch a fully functional chat on your website/application.
 
 **Import the CometChat in the required module**
@@ -147,7 +147,7 @@ import { CometChatConversationsWithMessages } from '@cometchat-pro/angular-ui-ki
     <cometchat-conversations-with-messages>
 
     </cometchat-conversations-with-messages>
-
+```
 ---
 
 # Checkout our sample app
