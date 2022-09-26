@@ -1,0 +1,29 @@
+<div class="regular__reaction" [ngClass]="{
+    regular__reaction__secondary:
+      messageObject?.sender?.uid === loggedInUser?.uid
+  }" >
+  <div class="message__reaction" *ngIf="
+      messageReactions?.length > 0 &&
+      messageObject?.sender?.uid === loggedInUser?.uid
+    ">
+    <button class="emoji__button" [ngStyle]="messageReactionStyle.emojiButtonStyle()"  (click)="updateReaction(messageObject,$event)">
+      <cometchat-list-item [style]="reactionIconStyle" [iconURL]="addReactionIconURL"
+       ></cometchat-list-item>
+ 
+    </button>
+  </div>
+  <div *ngFor="let reaction of messageReactions" class="message__reactions " (click)="reactToMessages(reaction)"
+    [title]="reaction?.reactionTitle"  [ngStyle]="messageReactionStyle.highlightBackground(reaction?.showBlueOutline,reaction?.reactionCount)" >
+    <cometchat-list-item [text]="reaction?.reactionCount" [emoji]="reaction?.reactionName" >
+    </cometchat-list-item>
+  </div>
+  <div class="message__reaction" *ngIf="
+      messageReactions?.length > 0 &&
+      messageObject?.sender?.uid !== loggedInUser?.uid
+    ">
+    <button class="emoji__button" [ngStyle]="messageReactionStyle.emojiButtonStyle()"   (click)="updateReaction(messageObject,$event)">
+      <cometchat-list-item [style]="reactionIconStyle" [iconURL]="addReactionIconURL"></cometchat-list-item>
+
+    </button>
+  </div>
+</div>

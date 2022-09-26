@@ -1,230 +1,96 @@
 <div style="width:100%">
     <div style="width:50%;">
         <div align="center">
-        <a href="#"><img align="center" width="180" height="180" alt="CometChat" src="./Screenshots/logo.png"> </a>   
+       <a> <img align="center" width="180" height="180" alt="CometChat" src="./Screenshots/logo.png"> </a>  
         </div>    
     </div>    
 </div>
 
-<br/><br/>
+</br></br>
 
-# CometChat Angular UI Kit
+# CometChat Kitchen Sink Sample App (Angular)
 
-![GitHub repo size](https://img.shields.io/github/repo-size/cometchat-pro/javascript-angular-chat-ui-kit)
-![GitHub contributors](https://img.shields.io/github/contributors/cometchat-pro/javascript-angular-chat-ui-kit)
-![GitHub stars](https://img.shields.io/github/stars/cometchat-pro/javascript-angular-chat-ui-kit?style=social)
+[![Platform](https://img.shields.io/badge/Platform-Javascript-brightgreen)](#)
+![GitHub repo size](https://img.shields.io/github/repo-size/cometchat-pro/javascript-angular-chat-app)
+![GitHub contributors](https://img.shields.io/github/contributors/cometchat-pro/javascript-angular-chat-app)
+![GitHub stars](https://img.shields.io/github/stars/cometchat-pro/javascript-angular-chat-app?style=social)
 ![Twitter Follow](https://img.shields.io/twitter/follow/cometchat?style=social)
-
 </br></br>
 
-<div style="width:100%">
-    <div style="width:50%; display:inline-block">
+<!--<div style="width:100%">
+    <div style="width:50%;">
         <div align="center">
-          <img align="left" alt="Main" src="./Screenshots/main.png">    
-        </div>    
-    </div>    
-</div>
+        <img align="center" width="180" height="180" alt="CometChat" src="./Screenshots/main.png">
+        </div>
+    </div>
+</div> -->
 
-</br></br>
-CometChat Angular UI Kit is a collection of custom UI Components designed to build text chat and voice/video calling features in your application.
+![alt text](./Screenshots/main.png "Main")
 
-The UI Kit is developed to keep developers in mind and aims to reduce development efforts significantly.
+<!-- <br/><br/> -->
 
----
+CometChat Kitchen Sink Sample App (built using **CometChat UI Kit**) is a fully functional real-time messaging app capable of private (one-on-one), group messaging, voice & video calling.
 
 ## Features
 
+- Login
 - Private(1-1) & Group Conversations
 - Voice & video calling & conferencing
-- Rich Media Attachments
 - Typing Indicators
 - Text, Media and Custom messages
 - Read receipts
 - Online Presence Indicators
 - Message History
 - Users & Friends List
-- Search by users and groups
 - Groups List
+- Search by users and groups
 - Conversations List
 - Threaded Conversations
 
 ## Extensions
 
-[Thumbnail Generation](https://www.cometchat.com/docs/extensions/thumbnail-generation) | [Link Preview](https://www.cometchat.com/docs/extensions/link-preview) | [Rich Media Preview](https://www.cometchat.com/docs/extensions/rich-media-preview) | [Smart Replies](https://www.cometchat.com/docs/extensions/smart-replies) | [Emojis](https://www.cometchat.com/docs/extensions/emojis) | [Polls](https://www.cometchat.com/docs/extensions/polls) | [Reactions](https://www.cometchat.com/docs/extensions/reactions) | [Stickers](https://www.cometchat.com/docs/extensions/stickers)
+[Thumbnail Generation](https://www.cometchat.com/docs/extensions/thumbnail-generation) | [Link Preview](https://www.cometchat.com/docs/extensions/link-preview)  | [Smart Replies ](https://www.cometchat.com/docs/extensions/smart-replies) | [Polls](https://www.cometchat.com/docs/extensions/polls) | [Reactions](https://www.cometchat.com/docs/extensions/reactions) | [Stickers](https://prodocs.cometchat.com/docs/extensions-stickers)
+
+<hr/>
 
 ## Prerequisites
 
-Before you begin, ensure you have met the following requirements:
+1. To run this app, you must have the **Node Package Manager (NPM)** and **Angular CLI** already installed and setup . If you don't, this documentation will help you in setting up **NPM** and **Angular CLI** <a href="https://jasonwatmore.com/post/2020/06/02/angular-setup-development-environment" target="_blank">Angular - Setup Development Environment (For Windows) </a> and <a href="https://www.zeolearn.com/magazine/setup-angular-mac" target="_blank">Angular - Setup Development Environment (For Mac) </a>
 
-- A text editor, to write code in. This could be a text editor (e.g. [Visual Studio Code](https://code.visualstudio.com/), [Notepad++](https://notepad-plus-plus.org/), [Sublime Text](https://www.sublimetext.com/), [Atom](https://atom.io/), or [VIM](https://www.vim.org/))
+2. To run this app, you must create an account with CometChat . If you don't have an account, you can create one from <a href="https://app.cometchat.com/signup" target="_blank">CometChat Dashboard</a>.
 
-- [Node](https://nodejs.org/)
+3. Create a new App in your Cometchat account and obtain your `App ID`, `Auth Key` and `Region`.
 
-- [npm](https://www.npmjs.com/get-npm)
+## Usage
 
-- Angular CLI `npm install -g @angular/cli`
+1. Install UIKit package from npm - npm install @cometchat-pro/angular-ui-kit
+2. Navigate to the examples/cometchat-angular-sample-app/src/CONST directory and replace APP_ID, REGION and AUTH_KEY with your CometChat App ID, Region and Auth Key in CONSTS.ts file
+
+![alt text](./Screenshots/constants.png "Constants")
+
+
+
+```javascript
+    npm install
+    ng serve
+```
+
 
 ---
 
-## Installing Angular UI Kit
+# Add UI Kit to your project
 
-## 1. Setup
-
-### i. Register on CometChat 🔧
-
-To install Angular UI Kit, you need to first register on CometChat Dashboard. <a href="https://app.cometchat.com/signup" target="_blank">Click here to sign up</a>
-
-### ii. Get your Application Keys :key:
-
-- Create a new app
-- Head over to the Quick Start or API & Auth Keys section and note the `App ID`, `Auth Key`, and `Region`.
-
-### iii. Add the CometChat Dependency
-
-```javascript
-  npm install @cometchat-pro/chat@3.0.6 --save
-```
-
-<br/>
-
-## 2. Configure CometChat inside your app
-
-### i. Import CometChat SDK
-
-```javascript
-import { CometChat } from "@cometchat-pro/chat";
-```
-
-### ii. Initialize CometChat 🌟
-
-The `init()` method initializes the settings required for CometChat.
-We suggest calling the `init()` method on app startup, preferably in the `main.ts`, wrapping the `platformBrowserDynamic().bootstrapModule(AppModule)` as shown below.
-
-```javascript
-const appID = "APP_ID";
-const region = "REGION";
-const appSetting = new CometChat.AppSettingsBuilder()
-  .subscribePresenceForAllUsers()
-  .setRegion(region)
-  .build();
-CometChat.init(appID, appSetting).then(
-  () => {
-    console.log("Initialization completed successfully");
-    // You can now call login function.
-    platformBrowserDynamic()
-      .bootstrapModule(AppModule)
-      .catch((err) => console.error(err));
-  },
-  (error) => {
-    console.log("Initialization failed with error:", error);
-    // Check the reason for error and take appropriate action.
-  }
-);
-```
-
-**Note:**</br>
-
-- Replace APP_ID and REGION with your CometChat `App ID` and `Region` in the above code.
-
-### iii. Login your user 👤
-
-This method takes `UID` and `Auth Key` as input parameters and returns the User object containing all the information of the logged-in user..
-
-```javascript
-const authKey = "AUTH_KEY";
-const uid = "SUPERHERO1";
-
-CometChat.login(uid, authKey).then(
-  (user) => {
-    console.log("Login Successful:", { user });
-  },
-  (error) => {
-    console.log("Login failed with exception:", { error });
-  }
-);
-```
-
-**Note:** </br>
-
-- Replace `AUTH_KEY` with your CometChat `Auth Key` in the above code.
-
-- We have setup 5 users for testing having UIDs: `SUPERHERO1`, `SUPERHERO2`, `SUPERHERO3`,`SUPERHERO4` and `SUPERHERO5`.
-
-<br/>
-
-## 3. Add UI Kit to your project
-
-- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git`
-- Copy the cloned repository into your project src folder.
-
-<div style="width:100%">
-    <img width="200px" height="400px" src="./Screenshots/folder_structure.png">
-</div>
-
-- Import the Components in the respective module where the component will be used.
-- Install @ctrl/ngx-emoji-mart according to the angular version of your project [@ctrl/ngx-emoji-mart](https://www.npmjs.com/package/@ctrl/ngx-emoji-mart)
-- Add this styles to your `angular.json`
-
-```
-"styles": [
-  "node_modules/@ctrl/ngx-emoji-mart/picker.css",
-  "src/cometchat-pro-angular-ui-kit/CometChatWorkspace/src/css/styles.scss"
-]
-```
-
-- Wrap all the selectors in a `div` with `class=responsive` as shown in next step
-
-<br/>
-
-## 4. Launch Cometchat
-
-Using the CometChatUI component from the UI Kit, you can launch a fully functional chat application.
-In this component all UI Components are interlinked and work together to launch a fully functional chat on your website/application.
-
-**Import the CometChat in the required module**
-
-```html
-import { CometChatUI } from
-"../components/CometChatUI/CometChat-Ui/cometchat-ui.module";
-```
-
-**Use this selector in your html file**
-
-```
-<div class="responsive">
-  <CometChatUI></CometChatUI>
-</div>
-
-```
-
----
-
-# Checkout our sample app
-
-Visit our [Angular sample app](https://github.com/cometchat-pro/javascript-angular-chat-app) repo to run the Angular sample app.
-
----
+Learn more about how to integrate [UI Kit](https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit) inside your app.
 
 # Troubleshooting
 
 - To read the full documentation on UI Kit integration visit our [Documentation](https://www.cometchat.com/docs/angular-chat-ui-kit/overview).
 
-- Facing any issues while integrating or installing the UI Kit please connect with us via real time support present in <a href="https://app.cometchat.com/" target="_blank">CometChat Dashboard.</a>
+- Facing any issues while integrating or installing the UI Kit please connect with us via real time support present in <a href="https://app.cometchat.com/"> CometChat Dashboard.</a>
 
----
-
-# Contributors
-
-Thanks to the following people who have contributed to this project:
-
-[👨‍💻 @priyadarshininadar](https://github.com/priyadarshininadar) <br>
-[👨‍💻 @ajaygajra](https://github.com/ajaygajra) <br>
-
-# Contact :mailbox:
+# Contact 📪
 
 Contact us via real time support present in [CometChat Dashboard](https://app.cometchat.com/).
-
----
 
 # License
 

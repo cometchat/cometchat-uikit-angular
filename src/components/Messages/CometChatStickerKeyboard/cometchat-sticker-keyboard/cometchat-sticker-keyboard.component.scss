@@ -1,0 +1,63 @@
+.sticker__wrapper {
+  margin-bottom: -15px;
+  min-height: 230px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.section__list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: uppercase;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 17px;
+  background: white;
+}
+.sticker__list::-webkit-scrollbar {
+  background: #ffffff00;
+  width: 8px;
+  height: 4px;
+}
+.sticker__list::-webkit-scrollbar-thumb {
+  background: #ccc;
+}
+.section__list__item {
+  height: 35px;
+  width: 35px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.section__list__item:not(:first-of-type) {
+  margin-left: 16px;
+}
+.sticker__list {
+  height: calc(100% - 50px);
+  display: flex;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  margin-left: 20px;
+}
+.sticker__item {
+  min-width: 50px;
+  min-height: 50px;
+  max-width: 70px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 20px;
+}
+.decorator__message {
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.decorator__message-text {
+  margin: 0;
+  height: 30px;
+}

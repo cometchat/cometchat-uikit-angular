@@ -1,0 +1,36 @@
+.list__menu__item {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin: 0;
+    padding-left: 0px;
+    border-radius: inherit;
+
+}
+.menu__options {
+    display: flex;
+    align-items: center;
+}
+.more__icon{
+    border-radius: inherit;
+}
+.moremenu__class{
+    border-radius: inherit;
+}
+.submenu_class {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    height: max-content;
+    padding: 5px;
+    width: max-content;
+    max-height: 192px;
+    z-index: 10;
+    border-radius: 8px;
+    overflow: visible;
+    margin-top: 2px;
+    right: 0;
+}
+.list__item__style{
+    border-radius: inherit;
+}

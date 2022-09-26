@@ -1,0 +1,69 @@
+.list__item {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 8px 12px;
+  position: relative;
+}
+.item__subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 24px !important;
+  margin: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+.item__subtitle__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 24px !important;
+  margin: 0;
+  display: inline;
+}
+.item__typingText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 24px;
+  margin: 0;
+}
+.item__thumbnail {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  height: auto;
+  flex-shrink: 0;
+  position: relative;
+}
+.item__details{
+  width: 70%;
+}
+.menu__list{
+  width: auto;
+}
+.item__title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.item__innerTitle {
+  display: block;
+  width: 75%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 22px;
+}
+.item__thread {
+  width: 100%;
+  line-height: 20px;
+  margin-top: -2px;
+}
+.time__stamp {
+  margin-top: -5px;
+}

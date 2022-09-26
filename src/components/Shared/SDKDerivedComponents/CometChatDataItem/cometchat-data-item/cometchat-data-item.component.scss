@@ -1,0 +1,22 @@
+ .list__item__name{
+    width: 100%;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    height: 100%;
+
+  }
+  .item__details__name{
+    display: flex;
+    align-items: center;
+    height: 22px;
+  }
+.list__item{
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+  padding: 8px;
+
+}

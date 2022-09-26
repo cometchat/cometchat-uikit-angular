@@ -1,0 +1,30 @@
+<div class="chatscreen__wrapper">
+  <div class="chatscreen__sidebar" [ngClass]="{mobile__view : isMobileView}">
+    <cometchat-conversation
+    #conversationRef
+    [activeConversation]="activeConversation"
+    [hideSearch]="hideSearch"
+    [backButtonIconURL]="backButtonIconURL"
+    [searchIconURL]="searchIconURL"
+    [searchPlaceHolder]="searchPlaceHolder"
+    [showBackButton]="showBackButton"
+    [style]="conversationStyle"
+    ></cometchat-conversation>
+  </div>
+  <div class="chatscreen__main" [ngClass]="{mobile__view : isMobileView}" *ngIf="user || group">
+    <!--Message List Screen-->
+    <cometchat-messages
+    #messagesRef
+    [user]="user!"
+    [group]="group!"
+    [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration"
+    [messageListConfiguration]="messagesConfiguration.messageListConfiguration"
+    [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration"
+    [style]="messagesStyle"
+    >
+    </cometchat-messages>
+    <!--Message List Screen ENDS-->
+  </div>
+  <div class="decorator__message--empty" *ngIf="!user && !group" [ngStyle]="emptyMessageStyle()">
+    {{messageText}}
+   </div>

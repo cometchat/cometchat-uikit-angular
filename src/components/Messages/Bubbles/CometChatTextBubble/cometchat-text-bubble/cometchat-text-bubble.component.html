@@ -1,0 +1,23 @@
+<div class="message__preview__container" *ngIf="linkPreview">
+  <div class="message__preview__wrapper" [ngStyle]="textBubbleStyle.linkPreviewContainer()">
+    <div class="preview__image"  *ngIf="linkImage">
+      <img [src]="linkImage" loading="lazy" />
+    </div>
+    <div class="preview__data">
+      <div class="preview__title" *ngIf="linkTitle !== ''" [ngStyle]="textBubbleStyle.linkPreviewTitleStyle()">
+        <span>
+          {{ linkTitle }}
+        </span>
+      </div>
+      <div class="preview__text" [ngStyle]="textBubbleStyle.linkPreviewUrlStyle()">
+        <a href="{{linkUrl}}" target="_blank"> {{ linkUrl }} </a>
+      </div>
+    </div>
+  </div>
+</div>
+<div [ngStyle]="textBubbleStyle.messageKitBlockStyle()" class="message__kit__blocks" *ngIf="!linkPreview">
+  <p *ngIf="textMessage" [ngStyle]="textBubbleStyle.messageBlockStyle()"
+    class="message__message__block">
+    {{textMessage }} 
+  </p>
+</div>

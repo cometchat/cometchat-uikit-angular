@@ -1,0 +1,21 @@
+export interface styles {
+    height?:string,
+    width?:string,
+    border?:string,
+    background?:string,
+   borderRadius?:string,
+    titleFont?:string,
+    titleColor?:string,
+    subTitleFont?:string,
+    subTitleColor?:string,
+    backIconTint?: string,
+    title?:string,
+    searchBorder?: string,
+    searchBorderRadius?: string,
+    searchBackground?: string,
+    searchTextFont?: string,
+    searchTextColor?: string,
+    startConversationIconTint?: string,
+    searchIconTint?: string,
+
+}

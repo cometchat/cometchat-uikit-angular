@@ -1,0 +1,19 @@
+<div class="emoji__keyboard__wrapper" [ngStyle]="styles.emojiContainerStyle()">
+    <div class="main__section" *ngFor="let emoji of emojiData" id="{{emoji.id}}">
+       <div class="section__name"  [ngStyle]="styles.emojiCategoryTitle()"> <cometchat-list-item [onHoverText]="emoji.name" [text]="emoji.name"  ></cometchat-list-item></div>
+      <div class="emoji__list">
+        <div class="emoji__item" *ngFor="let item of objectKeys(emoji.emojies)" (click)="onEmojiClick(emoji.emojies[item])" title="{{item}}">
+          <cometchat-list-item  [emoji]="getEmojiData(emoji.emojies[item])"  ></cometchat-list-item>
+        </div>
+      </div>
+    </div>
+
+  <div class="tab__list" [ngStyle]="styles.emojiCategoryWrapper()">
+    <div class="category__item"  *ngFor="let emoji of emojiData"  (click)="scrollToElement(emoji.id)" title="emoji.name"
+    >
+    <cometchat-list-item [onHoverText]="emoji.name" [iconURL]="emoji.symbolURL" [style]="activeCategory == emoji.id ? activeIconStyle : iconStyle" ></cometchat-list-item>
+  </div>
+  </div>
+</div>
+
+

@@ -1,0 +1,35 @@
+.preview__wrapper {
+  padding: 7px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  position: relative;
+}
+
+.preview__heading {
+  width: 24px;
+  height: 24px;
+  margin: auto;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.preview__options__wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+}
+
+.preview__option {
+  padding: 8px;
+ 
+}
+.option__list{
+  margin: 0 4px;
+  border: 1px solid #eaeaea;
+  box-shadow:0px 0px 0px 1px #f2eeee;
+  border-radius: 18px;
+  cursor: pointer;
+}

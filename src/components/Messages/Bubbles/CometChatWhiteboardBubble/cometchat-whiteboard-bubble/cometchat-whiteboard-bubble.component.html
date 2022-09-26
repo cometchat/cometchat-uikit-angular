@@ -1,0 +1,12 @@
+<div class="message__kit__blocks">
+    <div  class="message__blocks">
+        <p  class="message__title" [ngStyle]="whiteboardBubbleStyle.titleStyle()">{{title}}</p>
+        <i [ngStyle]="whiteboardBubbleStyle.whiteBoardIcon()"  class="message__icon"></i>
+    </div>
+    <div class="subtitle__style" [ngStyle]="whiteboardBubbleStyle.subtitleStyle()">
+        {{subTitle}}
+    </div>
+   <div class="launch__button" (click)="launchCollaborativeWhiteboard()">
+      <p class="button__text__style" [ngStyle]="whiteboardBubbleStyle.buttonStyle()">{{buttonText}}</p>
+   </div>
+  </div>

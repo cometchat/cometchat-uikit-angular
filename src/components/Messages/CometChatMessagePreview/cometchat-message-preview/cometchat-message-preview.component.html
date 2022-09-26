@@ -1,0 +1,9 @@
+<div class="message__preview" *ngIf="showMessagePreview" [ngStyle]="messagePreviewStyle.previewWrapperStyle()">
+  <div class="text__wrapper">
+      <p class="title" [ngStyle]="messagePreviewStyle.titleStyle()">{{messagePreviewTitle}}</p>
+      <p class="message" [ngStyle]="messagePreviewStyle.subtitleStyle()" >{{ messagePreviewSubtitle }}</p>
+  </div>
+  <div class="close__icon" (click)="closeMessagePreview()">
+    <i [ngStyle]="messagePreviewStyle.closeBtnIconStyle()" class="close__icon"></i>
+  </div>
+</div>

@@ -1,0 +1,39 @@
+.group__list__wrapper {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+  .decorator__message {
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    text-align: center;
+  }
+  .group__list {
+    height: 100%;
+    width:100%;
+    overflow-y: scroll;
+    margin: 0;
+    padding: 0;
+  }
+  .group{
+    cursor: pointer;
+  }
+  .decorator__message--loading{
+    height: 24px;
+    width: 24px;
+   display: block;
+  }
+
+  .group__list::-webkit-scrollbar {
+    background: transparent;
+    width: 8px;
+  }
+  .group__list::-webkit-scrollbar-thumb {
+    background: rgb(232, 229, 229);
+    border-radius: 8px;
+  }

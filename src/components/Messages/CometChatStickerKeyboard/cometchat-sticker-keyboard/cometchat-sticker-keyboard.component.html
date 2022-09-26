@@ -1,0 +1,23 @@
+<div class="sticker__wrapper" [ngStyle]="styles.keyboardStyles()">
+  <!--Message container-->
+  <div class="decorator__message" *ngIf="loading || isEmpty || isError; else elseBlock">
+    <p class="decorator__message-text" [ngStyle]="styles.decorateMessageStyles()">
+      {{ decoratorMessage }}
+    </p>
+  </div>
+  <ng-template #elseBlock>
+    <!--ActiveStickerList-->
+    <div class="sticker__list">
+      <div *ngFor="let stickers of activeStickerList" (click)="sendStickerMessage(stickers)">
+        <img [src]="stickers.stickerUrl" alt="stickers.stickerSetName" class="sticker__item" loading="lazy" />
+      </div>
+    </div>
+    <!--Section Items-->
+    <div class="section__list" [ngStyle]="styles.sectionStyles()">
+      <div *ngFor="let stickers of categoryStickerUrl" (click)="stickerSetClicked(stickers.stickerSetName)">
+        <img *ngIf="stickers.stickerUrl" [src]="stickers.stickerUrl" class="section__list__item"
+          loading="lazy" />
+      </div>
+    </div>
+  </ng-template>
+</div>

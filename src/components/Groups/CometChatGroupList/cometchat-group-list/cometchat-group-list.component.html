@@ -1,0 +1,43 @@
+<div class="group__list__wrapper"[ngStyle]="styles.groupListStyles()" >
+    <div class="decorator__message" *ngIf="loader || isEmpty || isError">
+     <div class="loading__view" *ngIf="loader" > 
+  <span class="decorator__message--loading" *ngIf="loader && !customView?.loading" [ngStyle]="styles.loadingIconStyle()">
+  </span>
+  <span class="custom__view--loading" *ngIf="loader && customView?.loading">
+    <ng-container *ngTemplateOutlet="customView?.loading">
+    </ng-container>
+  </span>
+    </div>
+     <div class="empty__view" *ngIf="isEmpty">
+      <span  *ngIf="isEmpty && !customView?.empty"  [ngStyle]="styles.emptyTextStyle()" class="decorator__message--empty"> 
+        {{emptyText}}
+       </span>
+       <span class="custom__view--empty"  *ngIf="isEmpty && customView?.empty" >
+        <ng-container *ngTemplateOutlet="customView?.empty">
+        </ng-container>
+       </span>
+     </div>
+     <div class="error__view" *ngIf="isError ">
+      <span class="decorator__message--error" *ngIf="isError && !hideError && !customView?.error" [ngStyle]="styles.errorTextStyle()">
+        {{errorText}}
+      </span>
+      <span class="custom__view--error" *ngIf="isError && !hideError && customView?.error">
+        <ng-container *ngTemplateOutlet="customView?.error">
+        </ng-container>
+      </span>
+     </div>
+    </div>
+    <div class="group__list" (scroll)="handleScroll($event)">
+      <div *ngFor="let group of groupList" class="group">
+        <cometchat-data-item
+        [avatarConfiguration]="dataItemConfiguration.avatarConfiguration"
+        [statusIndicatorConfiguration]="dataItemConfiguration.statusIndicatorConfiguration"
+          (click)="onClick(group)"
+          [group]="group"
+          [inputData]="inputData"
+          [style]="dataItemStyle"
+          [isActive]="isGroupActive(group)"
+        ></cometchat-data-item>
+      </div>
+    </div>
+  </div>

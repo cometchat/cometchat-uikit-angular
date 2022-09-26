@@ -1,0 +1,59 @@
+<div class="groupscreen" [ngStyle]="styles.groupsWrapperStyles()">
+  <div class="groupscreen--sidebar" [ngClass]="{mobile : isMobileView}" >
+    <cometchat-groups
+    [activeGroup]="group"
+    [backButtonIconURL]="backButtonIconURL"
+    [hideSearch]="hideSearch"
+    [createGroupIconURL]="createGroupIconURL"
+    [hideCreateGroup]="hideCreateGroup"
+    [searchIconURL]="searchIconURL"
+    [searchPlaceholder]="searchPlaceholder"
+    [showBackButton]="showBackButton"
+    [popoverConfiguration]="groupsConfiguration.popoverConfiguration"
+    [createGroupConfiguration]="groupsConfiguration.createGroupConfiguration"
+    [groupListConfiguration]="groupsConfiguration.groupListConfiguration"
+    ></cometchat-groups>
+  </div>
+  <div
+    class="groupscreen--main"
+    *ngIf="!openPasswordModal && group"
+    [ngStyle]="styles.messagesWrapperStyle()"
+    [ngClass]="{mobile : isMobileView}"
+  >
+    <cometchat-messages
+      [group]="group"
+      [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration"
+      [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration"
+      [messageListConfiguration]="messagesConfiguration.messageListConfiguration"
+      [type]="type"
+      [style]="messagesStyle"
+      [customIncomingMessageSound]="customIncomingMessageSound" [customOutgoingMessageSound]="customOutgoingMessageSound" [enableSoundForCalls]=" enableSoundForCalls" [enableSoundForMessages]="enableSoundForMessages" [enableTypingIndicator]="enableTypingIndicator" [hideMessageComposer]="hideMessageComposer" [messageTypes]="messageTypes"
+    ></cometchat-messages>
+  </div>
+  <div class="decorator__message--empty" *ngIf="!group && !openPasswordModal" [ngStyle]="styles.emptyMessageStyle()">
+    {{messageText}}
+   </div>
+   <div class="groupscreen__joingroup" *ngIf="openPasswordModal && !group" [ngStyle]="styles.messagesWrapperStyle()" [ngClass]="{mobile : isMobileView}">
+     <cometchat-join-protected-group
+     [group]="protectedGroup"
+     [style]="joinGroupStyle"
+     [messageHeaderConfiguration]="joinProtectedGroupConfiguration.messageHeaderConfiguration"
+     >
+     </cometchat-join-protected-group>
+   </div>
+</div>
+<ng-template #loadingView>
+  <div class="custom__view__loading">
+      loading....
+  </div>
+</ng-template>
+<ng-template #emptyView>
+  <div class="custom__view__empty">
+      try  something else
+  </div>
+</ng-template>
+<ng-template #errorView>
+  <div class="custom__view__error">
+      there is an error
+  </div>
+</ng-template>

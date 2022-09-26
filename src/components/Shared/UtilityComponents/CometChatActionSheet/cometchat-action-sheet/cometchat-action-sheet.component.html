@@ -1,0 +1,31 @@
+<div class="action__sheet" [ngStyle]="styles.actionSheetWrapperStyle()">
+  <div
+    class="sheet__header"
+  >
+    <span class="sheet__title" [ngStyle]="styles.actionSheetTitleStyle()">
+      {{title}}
+    </span>
+  <div class="icon__background"
+  *ngIf="!hideLayoutMode"
+  [ngStyle]="styles.layoutIconStyle()"
+  >
+    <div
+    
+    class="sheet__layout"
+    [ngStyle]="styles.actionSheetLayoutIconStyle()"
+    (click)="toggleLayoutMode()"
+  ></div>
+  </div>
+  </div>
+  <div class="sheet__items" [ngStyle]="styles.sheetItemListStyle()">
+    <cometchat-list-item
+    *ngFor="let action of actions"
+    [iconURL]="action.icon"
+    [text]="localize(action.name)"
+    [style]="actionSheetItemStyle"
+     class="list__item"
+    (click)="action.actionCallback()"
+    [ngStyle]="styles.layoutModeStyle()"
+    ></cometchat-list-item>
+  </div>
+</div>
