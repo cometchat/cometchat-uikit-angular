@@ -134,8 +134,8 @@ CometChat.init(appID, appSetting).then(
 
 ## 4. Launch Cometchat
 
-Using the CometChatUI component from the UI Kit, you can launch a fully functional chat application.
-In this component all UI Components are interlinked and work together to launch a fully functional chat on your website/application.
+Using the CometChatConversationsWithMessages component from the UI Kit, you can launch a fully functional chat application.
+In this component Chats and Messages are  interlinked and work together to launch a fully functional chat on your website/application.
 
 **Import the CometChat in the required module**
 
