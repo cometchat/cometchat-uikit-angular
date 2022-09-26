@@ -1,0 +1,564 @@
+<div [ngStyle]=" messageBubbleStyle.messageHoverStyle" class="message__bubble__wrapper" *ngIf="messageObject">
+  <div class="message__options__wrapper"
+  (mouseenter)="hideShowMenuOption($event)" 
+  (mouseleave)="hideShowMenuOption($event)" 
+  >
+    <div class="message__options" *ngIf="messageObject?.getType() != GROUP_MEMBER && !messageObject?.getDeletedAt() && messageOptions " [ngStyle]="messageBubbleStyle.messageOptionStyles()" >
+      <cometchat-menu-list
+      [mainMenuLimit]= "limit"
+      [data]= "messageObject"
+      [list]= "messageOptions"
+      [moreIconURL]="moreIconURL"
+      [subMenuStyle]="subMenuStyle"
+      [isOpen]="isHovering" 
+      [style]="optionsIcon"
+      ></cometchat-menu-list>
+    </div>
+    <div [ngStyle]="messageBubbleStyle.messageGutterStyle" class="message__bubble" *ngIf="alignment == messageAlignment.left">
+      <div class="message__bubble__left receiver__avatar" *ngIf=" messageBubbleData.thumbnail ">
+        <div class="message__bubble__avatar">
+          <cometchat-avatar
+          *ngIf="messageBubbleData.thumbnail && messageObject?.getType() != GROUP_MEMBER"
+          [height]="avatarStyle!.height!"
+          [width]="avatarStyle!.width!"
+          [border]="avatarStyle!.border!"
+          [borderRadius]="avatarStyle!.borderRadius!"
+          [outerViewSpacing]="avatarStyle!.outerViewSpacing!"
+          [backgroundColor]="avatarStyle!.backgroundColor!"
+          [nameTextColor]="avatarStyle!.nameTextColor!"
+          [image]="checkAvatarValue(messageObject)"
+          [name]="messageObject?.getSender()?.getName()"
+          ></cometchat-avatar>
+        </div>
+      </div>
+      <div class="message__bubble__right">
+        <div [ngStyle]="messageBubbleStyle.userNameStyle()" class="message__bubble__username__bar" *ngIf=" messageBubbleData.title && messageObject?.getSender()?.getName()  && messageObject?.getType() != GROUP_MEMBER">
+          <p>{{messageObject?.getSender()?.getName()}} &nbsp;</p>
+          <span [ngStyle]=" messageBubbleStyle.timeStampStyle() " class="message__timestamp" *ngIf="messageBubbleData.time && timeAlignment === messageTimeAlignment.top">
+            <cometchat-date
+            [timeStamp] = "timeStamp"
+            [pattern] = "dateFormat.pattern"
+            [timeFormat]="dateFormat.timeFormat"
+            [dateFormat]="dateFormat.dateFormat"
+            [timeStampColor] = "timeStampColor"
+            [timeStampFont] = "timeStampFont"
+            >   
+            </cometchat-date>
+          </span>
+        </div>
+        <div [ngStyle]="messageBubbleStyle.bubbleBackground()" class="background__color">
+               <!-- CASE FOR DELETED MESSAGES -->
+               <div *ngIf="messageObject?.getDeletedAt(); else elseBlock">
+                <div class="custom__view--delete" *ngIf="customView; else deleteView">
+                  <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+    
+                  </ng-container>
+                  
+                </div>
+                <ng-template #deleteView>
+                  <cometchat-delete-bubble
+                  [text]="deletedText"
+                  [style]="deleteBubbleStyle"
+                ></cometchat-delete-bubble>
+                 </ng-template>
+           
+              </div>
+      <!-- CASE FOR DELETED MESSAGES ENDS -->
+      <ng-template #elseBlock>
+        <div [ngSwitch]="messageObject!.getType()" >
+          <!-- CASE FOR TEXT -->
+          <div class="action__message" *ngSwitchCase="GROUP_MEMBER">
+            <div class="custom__view--groupmember" *ngIf="customView; else groupMemberView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #groupMemberView>
+              <cometchat-group-action-bubble
+            [messageObject]="messageObject"
+            [loggedInUser]="loggedInUser"
+            [style]="groupActionStyle!"
+            >
+            </cometchat-group-action-bubble>
+             </ng-template>
+       
+          </div>
+          <div *ngSwitchCase="MESSAGE_TYPE_TEXT">
+            <div class="custom__view--text" *ngIf="customView; else textView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #textView>
+              <cometchat-text-bubble
+              [style]="textBubbleStyle"
+                [messageObject]="messageObject"
+              ></cometchat-text-bubble>
+             </ng-template>
+         
+          </div>
+
+          <!--CASE FOR TEXT ENDS -->
+          <!--CASE FOR FILE-->
+          <div *ngSwitchCase="MESSAGE_TYPE_FILE">
+            <div class="custom__view--file" *ngIf="customView; else fileView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #fileView>
+              <cometchat-file-bubble
+              [style]="fileBubbleStyle"
+                [messageObject]="messageObject"
+              ></cometchat-file-bubble>  
+             </ng-template>
+           
+          </div>
+          <!--CASE FOR FILE ENDS-->
+          <!--CASE FOR IMAGE -->
+          <div *ngSwitchCase="MESSAGE_TYPE_IMAGE">
+            <div class="custom__view--image" *ngIf="customView; else imageView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #imageView>
+              <cometchat-image-bubble
+              [messageObject]="messageObject"
+            ></cometchat-image-bubble>   
+             </ng-template>
+       
+          </div>
+          <!--CASE FOR IMAGE  ENDS-->
+          <!--CASE FOR VIDEO -->
+          <div *ngSwitchCase="MESSAGE_TYPE_VIDEO"  class="video__bubble">
+            <div *ngIf="messageObject!.getCategory() !== CATEGORY_CALL">
+              <div class="custom__view--video" *ngIf="customView; else videoView">
+                <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+  
+                </ng-container>
+                
+              </div>
+              <ng-template #videoView>
+                <cometchat-video-bubble
+                [messageObject]="messageObject"
+              >
+              </cometchat-video-bubble>
+               </ng-template>
+
+            </div>
+          </div>
+          <!--CASE FOR VIDEO ENDS -->
+          <!--CASE FOR AUDIO -->
+          <div *ngSwitchCase="MESSAGE_TYPE_AUDIO">
+            <div class="custom__view--audio" *ngIf="customView; else audioView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #audioView>
+              <div *ngIf="messageObject!.getCategory() !== CATEGORY_CALL">
+                <cometchat-audio-bubble
+                  [messageObject]="messageObject"
+                >
+                </cometchat-audio-bubble> 
+              </div>
+             </ng-template>
+         
+          </div>
+          <!--CASE FOR AUDIO ENDS -->
+          <!--CASE FOR STICKER -->
+          <div *ngSwitchCase="'extension_sticker'">
+            <div class="custom__view--delete" *ngIf="customView; else stickerView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #stickerView>
+              <cometchat-sticker-bubble
+              [messageObject]="messageObject"
+            >
+            </cometchat-sticker-bubble>
+             </ng-template>
+      
+          </div>
+          <!--CASE FOR STICKER ENDS -->
+          <!--CASE FOR POLLS -->
+          <div *ngSwitchCase="'extension_poll'">
+            <div class="custom__view--poll" *ngIf="customView; else pollView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #pollView>
+              <cometchat-poll-bubble
+              [messageObject]="messageObject"
+              [loggedInUserUid]="loggedInUser!.getUid()"
+              [optionBackgroundIcon]="optionBackgroundIcon"
+              [style]="pollBubbleStyle"
+            >
+            </cometchat-poll-bubble>
+             </ng-template>
+      
+          </div>
+          <div  *ngSwitchCase="'extension_document'">
+            <div class="custom__view--document" *ngIf="customView; else documentView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #documentView>
+              <cometchat-document-bubble
+              [messageObject]="messageObject"
+              >
+              </cometchat-document-bubble>
+             </ng-template>
+        
+          </div>
+          <div  *ngSwitchCase="'extension_whiteboard'">
+            <div class="custom__view--whiteboard" *ngIf="customView; else whiteboardView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #whiteboardView>
+              <cometchat-whiteboard-bubble
+              [messageObject]="messageObject"
+              >
+              </cometchat-whiteboard-bubble>
+             </ng-template>
+   
+          </div>
+          <div
+          *ngSwitchDefault
+          >
+        <cometchat-placeholder-bubble
+        [messageObject]="messageObject"
+        [style]="placeholderStyle"
+        >
+        </cometchat-placeholder-bubble>
+      </div>
+          <!--CASE FOR  POLLS ENDS -->
+        </div>
+      </ng-template>
+            <div class="translation__wrapper" *ngIf="isTranslated">
+                <div class="translated__text" [ngStyle]="messageBubbleStyle.translatedMessageTextStyle()" > {{translatedMessage}} </div>
+                <div class="translated__message" [ngStyle]="messageBubbleStyle.translatedMessageStyle()" >Translated Message</div>
+            </div>
+          <div>
+            <cometchat-message-reaction
+            [messageObject]="messageObject"
+            [loggedInUser]="loggedInUser ? loggedInUser : {}"
+            [updateReaction]="updateReaction"
+        
+            ></cometchat-message-reaction>
+          </div>
+        </div>
+        <div [ngStyle]=" messageBubbleStyle.messageKitReceiptStyle()" class="message__bubble__receipt__bar">
+          <i class="message__receipt" *ngIf="messageBubbleData.readReceipt && messageObject!.getType() != GROUP_MEMBER">
+            <cometchat-message-receipt
+            [messageObject]="messageObject"
+            [messageWaitIcon]="messageReceiptIcons.messageWaitIcon"
+            [messageSentIcon]="messageReceiptIcons.messageSentIcon"
+            [messageDeliveredIcon]="messageReceiptIcons.messageDeliveredIcon"
+            [messageReadIcon]="messageReceiptIcons.messageReadIcon"
+            [messageErrorIcon]="messageReceiptIcons.messageErrorIcon"
+          ></cometchat-message-receipt>
+          </i>
+          <span [ngStyle]=" messageBubbleStyle.timeStampStyle() " class="message__timestamp" *ngIf=" messageBubbleData.time && timeAlignment === messageTimeAlignment.bottom && messageObject!.getType() != GROUP_MEMBER">
+            <cometchat-date
+              [timeStamp] = "timeStamp"
+              [pattern] = "dateFormat.pattern"
+              [timeFormat]="dateFormat.timeFormat"
+              [dateFormat]="dateFormat.dateFormat"
+              [timeStampColor] = "timeStampColor"
+              [timeStampFont] = "timeStampFont"
+              >   
+              </cometchat-date>
+          </span>
+        </div>
+      </div>
+    </div>
+   <!-- For right alignment of the message bubble  -->
+    <div [ngStyle]="messageBubbleStyle.messageGutterStyle" class="message__bubble" *ngIf="alignment == messageAlignment.right">
+
+      <div class="message__bubble__left">
+        
+        <div [ngStyle]="messageBubbleStyle.userNameStyle()" class="message__bubble__username__bar" *ngIf=" messageBubbleData.title && messageObject!.getSender()!.getName() && messageObject!.getType() != GROUP_MEMBER">
+          <span [ngStyle]=" messageBubbleStyle.timeStampStyle() " class="message__timestamp" *ngIf=" messageBubbleData.time && timeAlignment === messageTimeAlignment.top">
+            <cometchat-date
+                [timeStamp] = "timeStamp"
+                [pattern] = "dateFormat.pattern"
+                [timeFormat]="dateFormat.timeFormat"
+                [dateFormat]="dateFormat.dateFormat"
+                [timeStampColor] = "timeStampColor"
+                [timeStampFont] = "timeStampFont"
+              >   
+            </cometchat-date>
+            &nbsp;</span>
+          <p>{{messageObject!.getSender()!.getName() }}</p>
+        </div>
+        <div [ngStyle]="messageBubbleStyle.bubbleBackground()" class="background__color">
+           <!-- CASE FOR DELETED MESSAGES -->
+          <div *ngIf="messageObject?.getDeletedAt(); else elseBlock">
+            <div class="custom__view--delete" *ngIf="customView; else deleteView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+              </ng-container>
+            </div>
+            <ng-template #deleteView>
+              <cometchat-delete-bubble
+              [text]="deletedText"
+              [style]="deleteBubbleStyle"
+            ></cometchat-delete-bubble>
+            </ng-template>
+      
+          </div>
+          <!-- CASE FOR DELETED MESSAGES ENDS -->
+          <ng-template #elseBlock>
+            <div [ngSwitch]="messageObject!.getType()" >
+              <div class="action__message" *ngSwitchCase="GROUP_MEMBER">
+                <div class="custom__view--groupmember" *ngIf="customView; else groupMemberView">
+                  <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+                  </ng-container>
+                </div>
+                <ng-template #groupMemberView>
+                  <cometchat-group-action-bubble
+                  [messageObject]="messageObject"
+                  [style]="groupActionStyle!"
+                  [loggedInUser]="loggedInUser"
+                  >
+                  </cometchat-group-action-bubble>
+                 </ng-template>
+         
+              </div>
+              <!-- CASE FOR TEXT -->
+              <div *ngSwitchCase="MESSAGE_TYPE_TEXT">
+                <div class="custom__view--text" *ngIf="customView; else textView">
+                  <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+    
+                  </ng-container>
+                  
+                </div>
+                <ng-template #textView>
+                  <cometchat-text-bubble
+                  [style]="textBubbleStyle"
+                    [messageObject]="messageObject"
+                  ></cometchat-text-bubble>
+                 </ng-template>
+           
+              </div>
+                 <!-- direct call message -->
+              <!--CASE FOR TEXT ENDS -->
+              <!--CASE FOR FILE-->
+              <div *ngSwitchCase="MESSAGE_TYPE_FILE">
+                <div class="custom__view--file" *ngIf="customView; else fileView">
+                  <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+                  </ng-container>
+                </div>
+                <ng-template #fileView>
+                  <cometchat-file-bubble
+                  [style]="fileBubbleStyle"
+                    [messageObject]="messageObject"
+                  ></cometchat-file-bubble>    
+                 </ng-template>
+               
+              </div>
+              <!--CASE FOR FILE ENDS-->
+              <!--CASE FOR IMAGE -->
+              <div *ngSwitchCase="MESSAGE_TYPE_IMAGE">
+                <div class="custom__view--image" *ngIf="customView; else imageView">
+                  <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+    
+                  </ng-container>
+                  
+                </div>
+                <ng-template #imageView>
+                  <cometchat-image-bubble
+                  [messageObject]="messageObject"
+                ></cometchat-image-bubble>  
+                 </ng-template>
+         
+              </div>
+              <!--CASE FOR IMAGE  ENDS-->
+              <!--CASE FOR VIDEO -->
+              <div *ngSwitchCase="MESSAGE_TYPE_VIDEO"  class="video__bubble">
+                <div *ngIf="messageObject!.getCategory() !== CATEGORY_CALL" >
+                  <div class="custom__view--video" *ngIf="customView; else videoView">
+                    <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+      
+                    </ng-container>
+                    
+                  </div>
+                  <ng-template #videoView>
+                    <cometchat-video-bubble
+                    [messageObject]="messageObject"
+                  >
+                  </cometchat-video-bubble>
+                   </ng-template>
+              
+                </div>
+              </div>
+              <!--CASE FOR VIDEO ENDS -->
+              <!--CASE FOR AUDIO -->
+              <div *ngSwitchCase="MESSAGE_TYPE_AUDIO">
+                <div class="custom__view--audio" *ngIf="customView; else audioView">
+                  <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+    
+                  </ng-container>
+                  
+                </div>
+                <ng-template #audioView>
+                  <cometchat-audio-bubble
+                    [messageObject]="messageObject"
+                  >
+                  </cometchat-audio-bubble> 
+                 </ng-template>
+                <div *ngIf="messageObject!.getCategory() !== CATEGORY_CALL">
+                
+                </div>
+              </div>
+              <!--CASE FOR AUDIO ENDS -->
+              <!--CASE FOR STICKER -->
+              <div *ngSwitchCase="'extension_sticker'">
+                   <div class="custom__view--sticker" *ngIf="customView; else stickerView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #stickerView>
+              <cometchat-sticker-bubble
+              [messageObject]="messageObject"
+            >
+            </cometchat-sticker-bubble>
+             </ng-template>
+           
+              </div>
+              <!--CASE FOR STICKER ENDS -->
+              <!--CASE FOR POLLS -->
+              <div *ngSwitchCase="'extension_poll'">
+                   <div class="custom__view--poll" *ngIf="customView; else pollView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #pollView>
+              <cometchat-poll-bubble
+              [style]="pollBubbleStyle"
+              [messageObject]="messageObject"
+              [loggedInUserUid]="loggedInUser!.getUid()"
+              [optionBackgroundIcon]="optionBackgroundIcon"
+            >
+            </cometchat-poll-bubble>
+             </ng-template>
+         
+              </div>
+              <div  *ngSwitchCase="'extension_document'">
+                   <div class="custom__view--document" *ngIf="customView; else documentView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #documentView>
+              <cometchat-document-bubble
+              [messageObject]="messageObject"
+              >
+              </cometchat-document-bubble>
+             </ng-template>
+           
+              </div>
+              <div  *ngSwitchCase="'extension_whiteboard'">
+                   <div class="custom__view--whiteboard" *ngIf="customView; else whiteboardView">
+              <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+              </ng-container>
+              
+            </div>
+            <ng-template #whiteboardView>
+              <cometchat-whiteboard-bubble
+              [messageObject]="messageObject"
+              >
+              </cometchat-whiteboard-bubble>
+             </ng-template>
+           
+              </div>
+              <div
+              *ngSwitchDefault
+              >
+            <cometchat-placeholder-bubble
+            [messageObject]="messageObject"
+            [style]="placeholderStyle"
+            >
+            </cometchat-placeholder-bubble>
+          </div>
+              <!--CASE FOR  POLLS ENDS -->
+            </div>
+          </ng-template>
+          <div>
+            <div class="translation__wrapper" *ngIf="isTranslated">
+                <div class="translated__text" [ngStyle]="messageBubbleStyle.translatedMessageTextStyle()" > {{translatedMessage}} </div>
+                <div class="translated__message" [ngStyle]="messageBubbleStyle.translatedMessageStyle()" >Translated Message</div>
+            </div>
+            <cometchat-message-reaction
+            [messageObject]="messageObject"
+            [loggedInUser]="loggedInUser ? loggedInUser : {}"
+            [updateReaction]="updateReaction"
+
+            ></cometchat-message-reaction>
+          </div>
+        </div>
+        <div [ngStyle]="messageBubbleStyle.messageKitReceiptStyle()" class="message__bubble__receipt__bar">
+          <span [ngStyle]=" messageBubbleStyle.timeStampStyle() " class="message__timestamp" *ngIf=" messageBubbleData.time && timeAlignment === messageTimeAlignment.bottom && messageObject!.getType() != GROUP_MEMBER">
+              <cometchat-date
+              [timeStamp] = "timeStamp"
+              [pattern] = "dateFormat.pattern"
+              [timeFormat]="dateFormat.timeFormat"
+              [dateFormat]="dateFormat.dateFormat"
+              [timeStampColor] = "timeStampColor"
+              [timeStampFont] = "timeStampFont"
+              >   
+              </cometchat-date>
+          </span>
+          <i class="message__receipt" *ngIf="messageBubbleData.readReceipt && messageObject!.getType() != GROUP_MEMBER">
+            <cometchat-message-receipt
+            [messageObject]="messageObject"
+            [messageWaitIcon]="messageReceiptIcons.messageWaitIcon"
+            [messageSentIcon]="messageReceiptIcons.messageSentIcon"
+            [messageDeliveredIcon]="messageReceiptIcons.messageDeliveredIcon"
+            [messageReadIcon]="messageReceiptIcons.messageReadIcon"
+            [messageErrorIcon]="messageReceiptIcons.messageErrorIcon"
+            ></cometchat-message-receipt>
+          </i>
+        </div>
+      </div>
+      <div class="message__bubble__right sender__avatar" *ngIf=" messageBubbleData.thumbnail && messageObject!.getType() != GROUP_MEMBER ">
+        <div class="message__bubble__avatar">
+          <cometchat-avatar
+          *ngIf="messageBubbleData.thumbnail"
+          [height]="avatarStyle!.height!"
+          [width]="avatarStyle!.width!"
+          [border]="avatarStyle!.border!"
+          [borderRadius]="avatarStyle!.borderRadius!"
+          [outerViewSpacing]="avatarStyle!.outerViewSpacing!"
+          [backgroundColor]="avatarStyle!.backgroundColor!"
+          [nameTextColor]="avatarStyle!.nameTextColor!"
+          [image]="checkAvatarValue(messageObject)"
+          [name]="messageObject!.getSender()?.getName()"
+        ></cometchat-avatar>
+        </div>
+      </div>
+    
+    </div>
+  </div>
+</div>

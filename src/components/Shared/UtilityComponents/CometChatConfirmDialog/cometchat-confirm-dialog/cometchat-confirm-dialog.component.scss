@@ -1,0 +1,48 @@
+.confirm__dialog {
+  position: absolute;
+  margin: 0 auto;
+  padding: 16px;
+  height: 100%;
+  width: 100%;
+}
+.dialog__form{
+  justify-content: space-between;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.dialog__loading__wrapper {
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+  width: 100%;
+}
+.dialog__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 3px 10px 19px 10px;
+}
+button{
+  height: 46px;
+  border: none;
+  letter-spacing: 0.1px;
+  width: 328px;
+  margin: 5px 0;
+  border-radius: 4px;
+  cursor: pointer;
+
+}
+
+.dialog__message {
+  width: 100%;
+  line-height: 22px !important;
+}
+.dialog__buttons {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 24px 0 0 0;
+}

@@ -1,0 +1,14 @@
+<div [ngStyle]="messageHeaderStyle.chatHeaderStyle()" class="chat__header">
+  <div  class="chat__details">
+    <div class="back__button" [ngStyle]="messageHeaderStyle.backButtonStyle()" *ngIf="showBackButton && isMobileView"(click)="onBackButtonClick()" ></div>
+    <div class="data__item">
+      <cometchat-data-item
+        [inputData]="inputData"
+        [style]="dataItemStyle"
+        [isActive]="isActive"
+        [user]="user"
+        [group]="group"
+      ></cometchat-data-item>
+    </div>
+  </div>
+</div>

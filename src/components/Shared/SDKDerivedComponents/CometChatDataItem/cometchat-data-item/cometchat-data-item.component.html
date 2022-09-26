@@ -1,0 +1,25 @@
+<div class="list__item" [ngStyle]="dataItemStyles.listItem()" (mouseenter)="hideShowBackground($event)" 
+(mouseleave)="hideShowBackground($event)" 
+data-id="{{getConversationId()}}" >
+  <div [ngStyle]="dataItemStyles.itemThumbnailStyle()" class="list__item__thumbnail">
+    <cometchat-avatar *ngIf="inputData!.thumbnail" [height]="avatarStyle.height!" [width]="avatarStyle.width!"
+      [border]="avatarStyle.border!" [borderRadius]="avatarStyle.borderRadius!"
+      [outerViewSpacing]="avatarStyle.outerViewSpacing!" [backgroundColor]="avatarStyle.backgroundColor!"
+      [nameTextColor]="avatarStyle.nameTextColor!" [nameTextFont]="avatarStyle.nameTextFont!" [image]="getAvatar()"
+      [name]="name">
+    </cometchat-avatar>
+    <cometchat-status-indicator *ngIf="inputData!.status" [backgroundColor]="checkStatusType()"
+      [backgroundImage]="checkGroupType()" [style]="statusIndicatorStyle.style"
+      [height]=" user ?  statusIndicatorStyle.height! : '14px' " [width]="  user ?  statusIndicatorStyle.width! : '14px' "
+      [border]="statusIndicatorStyle.border!" [borderRadius]="statusIndicatorStyle.borderRadius!" class="status__indicator" >
+    </cometchat-status-indicator>
+  </div>
+  <div [ngStyle]="dataItemStyles.itemDetailStyle()" class="list__item__details">
+    <div [ngStyle]="dataItemStyles.itemNameStyle()" class="item__details__name" *ngIf="inputData!.title">
+      <p class="list__item__name">{{name}}</p>
+    </div>
+    <div [ngStyle]="dataItemStyles.itemDescStyle()" class="item__details__desc" *ngIf="inputData!.subtitle">
+      {{inputData!.subtitle(user || group ||  groupMember)}}
+    </div>
+  </div>
+</div>

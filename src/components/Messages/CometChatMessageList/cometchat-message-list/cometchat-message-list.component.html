@@ -1,0 +1,86 @@
+<div class="message__list__wrapper" (scroll)="handleScroll($event)" #messageWindow [ngStyle]="wrapperStyle()" >
+  <!--Message Container-->
+  <div class="decorator__message"  
+    *ngIf="isLoading || isError || isEmpty">
+    <div class="loading__view" *ngIf="isLoading" >
+      <span class="decorator__message--loading" *ngIf="isLoading && !customView?.loading" [ngStyle]="loadingIconStyle()">
+       </span>
+       <span class="custom__view--loading" >
+        <ng-container *ngTemplateOutlet="customView?.loading" >
+    
+        </ng-container>
+       </span>
+    </div>
+    <div class="error__view" *ngIf="isError && !hideError ">
+      <span class="decorator__message--error" *ngIf="isError && !hideError && !customView?.error" [ngStyle]="errorTextStyle()"> 
+        {{decoratorMessage}}
+       </span>
+     <span class="custom__view--error" *ngIf="isError && !hideError && customView?.error">
+      <ng-container *ngTemplateOutlet="customView?.error" >
+  
+      </ng-container>
+     </span>
+    </div>    
+    <div class="empty__view" *ngIf="isEmpty">
+      <span class="decorator__message--empty" *ngIf="isEmpty && !customView?.empty" [ngStyle]="emptyTextStyle()">
+      {{decoratorMessage}}
+      </span>
+      <span class="custom__view--empty"  *ngIf="isEmpty && customView?.empty">
+        <ng-container *ngTemplateOutlet="customView?.empty" >
+    
+        </ng-container>
+      </span>
+
+      
+  </div>
+  </div>
+  <div class="message__list">
+    <!--message-->
+    <div *ngFor="let msg of messages; trackBy: messageID; let i = index"  >
+      <div class="message__date__container" *ngIf="(i === 0)">
+        <span class="message__date" [ngStyle]="{backgroundColor:timeStampBackground}">
+          <cometchat-date [timeStamp]="msg!.getSentAt()"  [timeStampFont]="timeStampFont" [pattern]="dateFormat!.pattern"[dateFormat]="dateFormat!.dateFormat" [timeFormat]="dateFormat!.timeFormat"
+            [timeStampColor]="timeStampColor">
+          </cometchat-date>
+        </span>
+      </div>
+      <div class="message__date__container" *ngIf="
+          (i > 0 && isDateDifferent(messages[i - 1]?.getSentAt(), messages[i]?.getSentAt()))
+        ">
+        <span class="message__date" [ngStyle]="{backgroundColor:timeStampBackground}">
+          <cometchat-date [timeStamp]="msg.getSentAt()" [pattern]="dateFormat.pattern"[dateFormat]="dateFormat.dateFormat" [timeFormat]="dateFormat.timeFormat" [timeStampFont]="timeStampFont"
+            [timeStampColor]="timeStampColor">
+          </cometchat-date>
+        </span>
+      </div>
+      <div [ngStyle]="setBubbleAlignment(msg)" [accessKey]="i">
+        <cometchat-message-bubble 
+        [alignment]="getMessageAlignment(msg)"
+        [loggedInUser]="loggedInUser" 
+        [messageObject]="msg" 
+        [updateReaction]="onReactMessage"
+        [style]="setMessageBubbleStyle(msg)"
+        [customView]="getCustomView(msg)"
+        [messageBubbleData]="  (!msg.getSender()) ||  (loggedInUser!.getUid()  == msg.getSender()?.getUid()) ? sentMessageInputData : receivedMessageInputData"
+        [messageOptions]="setMessageOptions(msg)"
+        [menuListConfiguration]="messageBubbleConfiguration.menuListConfiguration"
+        [dateConfiguration]="messageBubbleConfiguration.dateConfiguration"
+        [avatarConfiguration]="messageBubbleConfiguration.avatarConfiguration"
+        [messageReceiptConfiguration]="messageBubbleConfiguration.messageReceiptConfiguration"
+        >
+      </cometchat-message-bubble>
+
+      </div>
+    </div>
+  </div>
+</div>
+<cometchat-new-message-indicator *ngIf="UnreadCount.length && !isOnBottom" [text]="newMessageCount"
+  [onClick]="onIndicatorClick" [style]="newMessageStyle">
+</cometchat-new-message-indicator>
+<div class="popover">
+  <cometchat-popover *ngIf="showActionSheetEmoji" [position]="position" [x]="event?.clientX" [y]="event?.clientY" [style]="toolTipStyle" >
+    <cometchat-emoji-keyboard [onClick]="onreactionSelected"></cometchat-emoji-keyboard>
+  </cometchat-popover>
+</div>
+<cometchat-smart-reply class="smart__reply" [onClose]="closeSmartReply" [loggedInUser]="loggedInUser" [messageObject]="replyPreview" [style]="smartReplyStyle" *ngIf="replyPreview">
+</cometchat-smart-reply>

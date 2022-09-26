@@ -1,0 +1,15 @@
+.message__kit__blocks {
+  border: 0 none;
+  display: flex;
+  max-width: max-content;
+  background: transparent;
+}
+
+.message__block {
+  width: 100%;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: left;
+  margin: 0;
+  display: inline-block;
+}

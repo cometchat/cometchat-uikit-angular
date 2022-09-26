@@ -1,0 +1,9 @@
+<cometchat-backdrop [isOpen]="withBackdrop" >
+</cometchat-backdrop>
+
+<div class="tooltip__container" [ngStyle]="styles.toolTipWrapperStyle()">
+  <div class="tooltip__pointer" [ngStyle]="styles.toolTipStyles()"></div>
+  <div class="tooltip__content" >
+    <ng-content></ng-content>
+  </div>
+</div>

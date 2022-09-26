@@ -1,0 +1,42 @@
+<div [ngStyle]="pollBubbleStyle.messageContainer()" class="message__text__container__style">
+  <div class="message__text__wrapper__style">
+    <p [ngStyle]="pollBubbleStyle.pollQuestion()" class="poll__question__style">{{ pollExtensionData?.question }}</p>
+    <ul class="poll__answer__style">
+      <!-- Options -->
+      <li
+        *ngFor="let option of pollOptions"
+        (click)="answerPollQuestion(option)"
+        [ngStyle]="pollBubbleStyle.pollOption(option)"
+        class="poll__option__style"
+      >
+
+        <div
+          [ngClass]="{
+            answer__wrapper__style: !option?.selectedByLoggedInUser,
+            answer__checked__wrapperStyle: option?.selectedByLoggedInUser
+          }"
+        >
+        <p  class="option__text__style">  <i [ngStyle]="pollBubbleStyle.checkIconStyle()" *ngIf="option.percent == '0%'" class="option__icon__style"></i> <span [ngStyle]="pollBubbleStyle.setPollOptionStyle()">{{ option?.text }}</span></p>
+          <span [ngStyle]="pollBubbleStyle.setvotePercentageStyle()" *ngIf="totalVotes">   {{ option?.percent }}</span>
+        
+        </div>
+      </li>
+
+      <!-- Options -->
+    </ul>
+    <p
+      [ngStyle]="pollBubbleStyle.pollResultStyle()"
+      class="poll__total__style"
+      *ngIf="pollExtensionData?.results?.total === 1"
+    >
+      {{ pollExtensionData?.results?.total }} vote
+    </p>
+    <p
+      [ngStyle]="pollBubbleStyle.pollResultStyle()"
+      class="poll__total__style"
+      *ngIf="pollExtensionData?.results?.total !== 1"
+    >
+      {{ pollExtensionData?.results?.total }} people voted
+    </p>
+  </div>
+</div>

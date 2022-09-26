@@ -1,0 +1,5 @@
+<div class="reaction__container">
+  <span class="reaction__emoji" #emoji [@FadeInFadeOut]="checkAnimatedState" *ngFor="let n of Array(5).fill(0)">
+    <img [src]="reactionName" [ngStyle]="liveReactionStyle()" alt="reaction" />
+  </span>
+</div>

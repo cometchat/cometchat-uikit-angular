@@ -1,0 +1,13 @@
+
+<li class="menu__item" [ngStyle]="menuItemStyles.menuItemStyle()" (click)="onClick()">
+   
+    <div class="icon__background" [ngStyle]="menuItemStyles.iconStyle()" *ngIf="iconURL">
+        <div type="button" [ngStyle]="menuItemStyles.actionWrapperStyle()"  class="menu__button" data-title="text"  title="{{onHoverText}}" >
+        </div>
+    </div>
+    <div class="emoji__text" *ngIf="emoji && emoji != '' && !iconURL">
+        {{emoji}}
+    </div>
+    <div  class="icon__label"  data-title="text" *ngIf="text" [ngStyle]="menuItemStyles.menuTextStyle()">{{text}}</div>
+</li>
+

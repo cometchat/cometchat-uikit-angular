@@ -1,0 +1,134 @@
+.creategroup__wrapper {
+  display: block;
+  overflow: hidden;
+  margin: 0 auto;
+}
+.close__button {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  z-index: 10;
+  border-radius: 8px;
+  top: 16px;
+  right: 16px;
+  cursor: pointer;
+}
+
+.creategroup__body {
+  top: 1%;
+  padding: 8px;
+  position: relative;
+  width: 100%;
+  height: calc(100% - 30px);
+  overflow-y: auto;
+  display: block;
+
+  div input {
+    width: 100%;
+    border: none;
+    padding: 10px 14px;
+    outline: none;
+  }
+}
+.decorator__message--error {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  height: 45px;
+  width: 100%;
+  padding: 0 12px;
+}
+
+.creategroup__button--create{
+  text-align: center;
+  border: none;
+  display: block;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  left: 0;
+  padding: 0 16px !important;
+  button{
+    width: 100%;
+    cursor: pointer;
+    padding: 12px;
+    outline: 0;
+    border: 0;
+  }
+}
+.creategroup__input--name{
+  padding: 4px 0 ;
+}
+input{
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  height: 36px;
+}
+.tab{
+  text-transform: capitalize ;
+}
+
+.creategroup__input--password{
+  padding:  4px 0 ;
+}
+.creategroup__input{
+  padding: 16px 8px ;
+}
+
+.creategroup__title{
+  display: flex;
+  margin-bottom: 15px;
+  text-align: left;
+  justify-content: center;
+}
+.tabs__container{
+  border-radius: 8px;
+  width: 328px;
+  height: 32px;
+  margin: auto;
+  .tab__list{
+    padding: 0 !important;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: auto;
+    padding: 0;
+    height: inherit;
+    width: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  ul li{
+    width: 108px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    list-style-type: none;
+    padding: 0 8px;
+    cursor: pointer;
+    text-align: center;
+    position: relative;
+  }
+  ul li:last-child{
+    border-right: none !important;
+  }
+}
+.group__type__tabs{
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  button{
+    margin: 0 1px;
+    border: none;
+    border-radius: 8px;
+    padding: 4px 16px;
+  }
+}

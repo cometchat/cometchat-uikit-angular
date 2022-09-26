@@ -1,0 +1,46 @@
+.decorator__message--loading{
+    display: block;
+    height: 28px;
+    width: 100%;
+    margin-right: 30px;
+}
+.user__list{
+    width: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      margin: 0;
+      height: 100%;
+}
+cometchat-data-item:hover{
+    cursor: pointer;
+}
+
+.user__section{
+    padding: 8px;
+}
+.decorator__message{
+    margin: 0;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 50%;
+    min-height: 36px;
+    line-height: 30px;
+    word-wrap: break-word;
+    padding: 0 8px;
+}
+.user__list__wrapper{
+    height: 100%;
+    width: 100%;
+}
+.user__list::-webkit-scrollbar {
+    background: transparent;
+    width: 8px;
+  }
+  .user__list::-webkit-scrollbar-thumb {
+    background: rgb(232, 229, 229);
+    border-radius: 8px;
+  }

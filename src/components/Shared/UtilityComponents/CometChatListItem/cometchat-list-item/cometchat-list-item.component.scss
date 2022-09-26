@@ -1,0 +1,30 @@
+.menu__item{
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    padding: 2px;
+    border-radius: inherit;
+    align-items: center;
+    cursor: pointer;
+}
+.icon__label{
+    margin-left: 10px;
+    text-align: center;
+}
+.menu__button{
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    list-style: none;
+}
+li{
+    list-style: none;
+}
+.icon__background{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

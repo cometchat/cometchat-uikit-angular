@@ -1,0 +1,76 @@
+<div class="list__item"  (mouseenter)="hideShowMenuOption($event)"
+  (mouseleave)="hideShowMenuOption($event)"
+  [ngStyle]="conversationListItemStyles.listItemStyle()"
+  [attr.data-conversationId]="conversationInputData!.id ? conversationObject?.getConversationId : ''" *ngIf="conversationObject">
+  <div class="item__thumbnail">
+    <cometchat-avatar [height]="avatarStyle.height" [width]="avatarStyle.width" [border]="avatarStyle.border"
+      [borderRadius]="avatarStyle.borderRadius" [outerViewSpacing]="avatarStyle.outerViewSpacing" [outerView]="avatarStyle.outerView"
+      [backgroundColor]="avatarStyle.backgroundColor" [nameTextColor]="avatarStyle.nameTextColor"
+      [nameTextFont]="avatarStyle.nameTextFont" *ngIf="conversationInputData!.thumbnail"
+      [image]="checkAvatarValue(conversationObject)" [name]="conversationObject?.conversationWith['name']">
+    </cometchat-avatar>
+    <cometchat-status-indicator
+      *ngIf="conversationInputData!.status  && ((conversationObject?.conversationWith['guid'] && (conversationObject?.conversationWith['type'] != 'public') || conversationObject?.conversationWith['uid']))"
+      [backgroundColor]="checkStatusType(conversationObject)" [backgroundImage]="checkGroupType(conversationObject)"
+      [style]="statusIndicatorStyle.style"
+      [height]=" conversationObject?.conversationType == 'user' ?  statusIndicatorStyle.height : '14px' "
+      [width]="  conversationObject?.conversationType == 'user' ?  statusIndicatorStyle.width : '14px' "
+      [border]="statusIndicatorStyle.border" [borderRadius]="statusIndicatorStyle.borderRadius">
+    </cometchat-status-indicator>
+  </div>
+  <div [ngStyle]="conversationListItemStyles.itemDetailStyle(style)" class="item__details">
+    <div class="item__title">
+      <div [ngStyle]="conversationListItemStyles.titleStyle(style)" class="item__innerTitle"
+        *ngIf="conversationInputData!.title">
+        {{conversationObject?.conversationWith.name}}
+      </div>
+      <span
+        *ngIf="conversationInputData!.time &&(conversationObject  && conversationObject?.lastMessage &&   conversationObject?.lastMessage.sentAt) && !isHovering"
+        class="time__stamp" [ngStyle]="conversationListItemStyles.timestampStyle(style)">
+        <cometchat-date
+          [timeStamp]="conversationObject?.lastMessage && conversationObject?.lastMessage.sentAt ? conversationObject?.lastMessage.sentAt : null"
+          [timeStampFont]="timeFont" [timeStampColor]="timeColor" [pattern]="timeFormat">
+        </cometchat-date>
+      </span>
+    </div>
+    <div [ngStyle]="conversationListItemStyles.itemThreadIndicatorStyle(style)" class="item__thread"
+      *ngIf=" !isTyping && !hideThreadIndicator&& conversationObject?.lastMessage && conversationObject?.lastMessage.parentMessageId ">
+      {{localize(threadIndicatorText)}}
+      <i>
+        <img
+          src="https://img.icons8.com/external-dreamstale-lineal-dreamstale/14/000000/external-down-arrow-arrows-dreamstale-lineal-dreamstale-24.png" />
+      </i>
+    </div>
+    <div  class="item__subtitle">
+       <cometchat-message-receipt
+        *ngIf="conversationInputData!.readReceipt && conversationObject && conversationObject?.lastMessage &&  conversationObject?.lastMessage.sender &&
+      conversationObject?.lastMessage?.sender?.uid != conversationObject?.conversationWith.uid &&  !conversationObject?.conversationWith.guid
+       && conversationObject?.lastMessage.category != 'call' && !conversationObject?.lastMessage.deletedAt && !isTyping && conversationObject?.lastMessage.type != 'DIRECT_CALL'"
+        [messageObject]=" conversationObject?.lastMessage" [messageWaitIcon]="messageReceiptIcons.messageWaitIcon"
+        [messageSentIcon]="messageReceiptIcons.messageSentIcon"
+        [messageDeliveredIcon]="messageReceiptIcons.messageDeliveredIcon"
+        [messageReadIcon]="messageReceiptIcons.messageReadIcon"
+        [messageErrorIcon]="messageReceiptIcons.messageErrorIcon">
+      </cometchat-message-receipt>
+      <div [ngStyle]="conversationListItemStyles.subTitleStyle(style)" class="item__subtitle__text"
+        *ngIf="!isTyping  && conversationInputData!.subtitle != null">
+        {{getSubtitleValue(conversationObject)}}
+      </div>
+      <div [ngStyle]="conversationListItemStyles.typingTextStyle(style)" class="item__typingtext"
+        *ngIf="showTypingIndicator && typingIndicatorText.trim().length && isTyping">
+        {{ typerName ?  typerName + " " +  localize(typingIndicatorText) : localize(typingIndicatorText)}}
+      </div>
+      <cometchat-badge-count
+        *ngIf="conversationInputData!.unreadCount && (( conversationObject && conversationObject?.unreadMessageCount && conversationObject?.unreadMessageCount > 0)) && !isHovering"
+        [count]=" conversationObject?.unreadMessageCount" [height]="badgeCountStyle.height"
+        [width]="badgeCountStyle.width" [border]="badgeCountStyle.border" [borderRadius]="badgeCountStyle.borderRadius"
+        [background]="badgeCountStyle.background" [textColor]="badgeCountStyle.color" [textFont]="badgeCountStyle.font">
+      </cometchat-badge-count>
+    </div>
+  </div>
+  <div class="menu__list">
+    <cometchat-menu-list [data]="conversationObject" [moreIconURL]="moreIconURL" [style]="conversationOptionsStyle"
+      [isOpen]="showMenuOnSelectedUser" [list]="conversationOptions">
+    </cometchat-menu-list>
+  </div>
+</div>

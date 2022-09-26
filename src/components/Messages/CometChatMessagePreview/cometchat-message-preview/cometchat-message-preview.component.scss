@@ -1,0 +1,23 @@
+.message__preview {
+  padding: 8px 20px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 0;
+  min-height: 52px;
+}
+.text__wrapper {
+  padding: 0 12px;
+  border-left: 2px solid #ded5d5;
+  p {
+    margin: 0;
+  }
+  .title {
+    margin-bottom: 2px;
+  }
+}
+.close__icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+}

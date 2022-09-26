@@ -1,0 +1,24 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.messages__wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.message__list__wrapper {
+  height: 100%;
+}
+.decorator__message--empty{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

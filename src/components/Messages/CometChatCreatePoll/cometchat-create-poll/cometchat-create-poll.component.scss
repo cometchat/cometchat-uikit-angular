@@ -1,0 +1,146 @@
+.option__icon {
+  background-size: 28px 28px;
+  cursor: pointer;
+  display: block;
+  height: 28px;
+  width: 28px;
+  z-index: 1000;
+  margin-right: 10px;
+}
+
+.add__icon {
+  background-size: 24px 24px;
+  cursor: pointer;
+  display: block;
+  height: 24px;
+  width: 24px;
+}
+
+.add__answer__text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.remove__icon {
+  cursor: pointer;
+  display: block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon__wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.icon__remove {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.create__poll__wrapper {
+  display: block;
+  z-index: 10;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+input {
+  outline: none;
+}
+
+.create__poll__close {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  top: 24px;
+  right: 28px;
+  cursor: pointer;
+}
+
+.create__poll__body {
+  padding: 25px;
+  width: 100%;
+  height: 90%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.decorator__message--error {
+  text-align: center;
+}
+
+.error__body {
+  border: none !important;
+}
+
+
+
+.poll__caption {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.create__poll__content{
+  height: calc(100% - 40px);
+  overflow-y: auto;
+  display: block;
+}
+
+.poll__data {
+  padding: 6px 12px;
+  width: 100%;
+  background: inherit;
+}
+
+.poll__data__width {
+  width: 110px;
+}
+
+.add__option__row {
+  border: none !important;
+  margin: 10px 0;
+}
+
+.add__icon__wrapper {
+  padding: 6px 0 !important;
+}
+
+.poll__row {
+  display: flex;
+  margin: 8px 0;
+}
+
+.poll__data__input {
+  padding: 6px 0;
+  background: transparent;
+  width: 100%;
+  border: none;
+}
+
+.poll__data__label:focus {
+  outline: none;
+}
+
+.poll__data__label {
+  padding: 6px 12px;
+}
+
+.create__button {
+  display: block;
+  width: 100%;
+
+  button {
+    cursor: pointer;
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 8px;
+    outline: 0;
+    border: 0;
+  }
+}
+
