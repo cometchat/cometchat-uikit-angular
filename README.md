@@ -122,7 +122,7 @@ CometChat.init(appID, appSetting).then(
 
 ## 3. Add UI Kit to your project
 
-- Install UIKit package from npm - npm install @cometchat-pro/angular-ui-kit
+- Install UIKit package from npm - `npm install @cometchat-pro/angular-ui-kit` 
 
 <div style="width:100%">
     <img width="200px" height="400px" src="./Screenshots/folder-structure.png">
