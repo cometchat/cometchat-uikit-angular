@@ -59,7 +59,7 @@ Javascript Angular Chat App (built using **CometChat UI Kit**) is a fully functi
 
 ## Usage
 
-1. [Download this repo](https://github.com/cometchat-pro/javascript-angular-chat-app/tree/pluto)
+1. [Download this repo](https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit/tree/pluto/examples/cometchat-angular-sample-app)
 2. Navigate to the javascript-angular-chat-app/src/CONST directory and replace APP_ID, REGION and AUTH_KEY with your CometChat App ID, Region and Auth Key in CONSTS.ts file
 
 ```javascript
