@@ -1,9 +1,17 @@
 <div class="sticker__wrapper" [ngStyle]="styles.keyboardStyles()">
   <!--Message container-->
   <div class="decorator__message" *ngIf="loading || isEmpty || isError; else elseBlock">
-    <p class="decorator__message-text" [ngStyle]="styles.decorateMessageStyles()">
-      {{ decoratorMessage }}
-    </p>
+    <cometchat-decorator-message  *ngIf="loading" [text]="decoratorMessage" [textColor]="style.loadingTextColor!" [textFont]="style.loadingTextFont!">
+        
+    </cometchat-decorator-message>
+    <cometchat-decorator-message  *ngIf=" isEmpty || isError" [text]="decoratorMessage" [textColor]="style.emptyTextColor!" [textFont]="style.emptyTextFont!">
+        
+    </cometchat-decorator-message>
+    <cometchat-decorator-message  *ngIf=" isError" [text]="decoratorMessage" [textColor]="style.errorTextColor!" [textFont]="style.errorTextFont!">
+        
+    </cometchat-decorator-message>
+
+
   </div>
   <ng-template #elseBlock>
     <!--ActiveStickerList-->

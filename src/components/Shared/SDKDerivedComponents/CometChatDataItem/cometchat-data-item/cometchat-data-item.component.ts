@@ -13,7 +13,6 @@ import { avatarStyles, statusIndicatorStyles } from '../DataItemInterface'
 import { GroupType } from "../../../Constants/UIKitConstants";
 import { groupTypes } from '../../../Types/interface'
 import { CometChatTheme } from "../../../PrimaryComponents";
-import { CometChatWrapperComponent } from "../../../PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
 import { CometChat } from "@cometchat-pro/chat";
 import { styles } from '../DataItemInterface'
 import { fontHelper } from "../../../PrimaryComponents/CometChatTheme/Typography";
@@ -24,7 +23,6 @@ import { InputData } from "../../../InputData/inputData";
   selector: "cometchat-data-item",
   templateUrl: "./cometchat-data-item.component.html",
   styleUrls: ["./cometchat-data-item.component.scss"],
-  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class CometChatDataItemComponent implements OnInit, OnChanges {
   // we will receive this properties from parent component
@@ -67,7 +65,7 @@ export class CometChatDataItemComponent implements OnInit, OnChanges {
   borderRadius:"",
   border:""
   };
-  public theme: any = new CometChatTheme({});
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   public statusImage: string | null = ""
   public name!: string;
   // background color for group type icon and status indicator
@@ -105,9 +103,7 @@ export class CometChatDataItemComponent implements OnInit, OnChanges {
     // handling on click event
   }
   ngOnInit() {
-    if (CometChatWrapperComponent.cometchattheme) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
   
     this.setName()
     this.checkConfiguration();
@@ -116,9 +112,7 @@ export class CometChatDataItemComponent implements OnInit, OnChanges {
   }
   
   setName(){
-    if (CometChatWrapperComponent.cometchattheme) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     if(this.inputData?.title){
       (this.name  as any)= this.user?.getName() || this.group?.getName() || this.groupMember?.getName()
     }
@@ -253,14 +247,14 @@ export class CometChatDataItemComponent implements OnInit, OnChanges {
     itemNameStyle: () => {
       return {
         lineHeight: "22px",
-        font: this.style?.titleFont,
-        color: this.style?.titleColor,
+        font: this.style?.titleFont || fontHelper(this.theme.typography.title2),
+        color: this.style?.titleColor || this.theme.palette.getAccent(),
       };
     },
     itemDescStyle: () => {
       return {
-        color: this.style.subtitleColor,
-        font: this.style.subtitleFont
+        color: this.style.subtitleColor || this.theme.palette.getAccent600(),
+        font: this.style.subtitleFont || fontHelper(this.theme.typography.subtitle2)
       };
     },
     listItem: () => {
@@ -268,7 +262,7 @@ export class CometChatDataItemComponent implements OnInit, OnChanges {
         width: this.style?.width,
         height: this.style?.height,
         borderBottom: this.style.border,
-        background: this.isActive || this.isHovering ?  this.style.activeBackground: this.style?.background,
+        background: this.isActive || this.isHovering ?  this.style.activeBackground || this.theme.palette.getAccent50(): this.style?.background || this.theme.palette.getBackground(),
       };
     },
   }

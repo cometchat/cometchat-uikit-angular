@@ -1,0 +1,8 @@
+<cometchat-messages [user]="user"  [messageTypes]="messageTypes"></cometchat-messages>
+<div class="payment__modal" *ngIf="openPaymentView">
+<div class="close__button" (click)="closePaymentTab()">
+    <img src="assets/close.svg" alt="" height="24px" width="24px">
+</div>
+<input type="number" placeholder="Enter amount"  [(ngModel)]="amount">
+<button (click)="sendPayment()">Send</button>
+</div>

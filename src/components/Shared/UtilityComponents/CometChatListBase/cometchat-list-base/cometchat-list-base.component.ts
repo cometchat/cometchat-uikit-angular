@@ -93,8 +93,7 @@ export class CometChatListBaseComponent implements OnInit, OnChanges {
         borderRadius: this.style["searchBorderRadius"],
         boxShadow: `${this.style["searchBackground"]} 0 0 0 1px inset`,
         background: this.style["searchBackground"],
-        font: this.style["searchTextFont"],
-        color: this.style["searchTextColor"],
+
       };
     },
     listBaseSearchButtonStyle: () => {

@@ -34,8 +34,7 @@ class MessageHeaderConfiguration {
   constructor(
     {
       options = {},
-      showBackButton = true,
-      isMobileView = false,
+      showBackButton = false,
       backButtonIconURL = "assets/resources/backbutton.svg",
       avatarConfiguration = new AvatarConfiguration({}),
       statusIndicatorConfiguration = new StatusIndicatorConfiguration({}),
@@ -54,7 +53,6 @@ class MessageHeaderConfiguration {
   ) {
     this.options = options;
     this.showBackButton = showBackButton;
-    this.isMobileView = isMobileView
     this.backButtonIconURL = backButtonIconURL;
     this.enableTypingIndicator = enableTypingIndicator;
     this.avatarConfiguration = avatarConfiguration;

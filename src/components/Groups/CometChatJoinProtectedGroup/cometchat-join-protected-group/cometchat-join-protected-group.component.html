@@ -2,7 +2,6 @@
     <cometchat-message-header
     [group]="group"
     [showBackButton]="showBackButton"
-    [isMobileView]="isMobileView"
     [backButtonIconURL]="backButtonIconURL"
     [inputData]="inputData"
     [style]="headerStyle"
@@ -11,9 +10,12 @@
     </cometchat-message-header>
   <div class=" joingroup__container" >
     <div class="joingroup__title" [ngStyle]="styles.titleStyle()" > {{title}} </div>
-    <div class="decorator__message--error" [ngStyle]="styles.errorTextStyle()" *ngIf="isError">
-      {{errorText}}
-    </div>
+
+    <div class="decorator__message--error"  *ngIf="isError">
+      <cometchat-decorator-message  [text]="errorText" [textColor]="style.errorTextColor!" [textFont]="style.errorTextFont!">
+
+      </cometchat-decorator-message>
+      </div>
     <div class="joingroup__input--password">  
     <input type="password" [placeholder]="passwordPlaceholderText" [(ngModel)]="password" [ngStyle]="styles.placeholderStyle()">  
     </div>

@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
+import { CometChatTheme, fontHelper } from "../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme";
 import { placeHolderStyles, styles } from "../../styles";
 @Component({
   selector: 'cometchat-placeholder-bubble',
@@ -16,6 +17,7 @@ export class CometChatPlaceholderBubbleComponent implements OnInit,OnChanges {
     textFont: "",
     textColor: "",
   };
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   public placeholder:string = ""
   constructor() {
   }
@@ -31,8 +33,8 @@ export class CometChatPlaceholderBubbleComponent implements OnInit,OnChanges {
   }
   getTextStyling(){
     return {
-      font:this.style.textFont,
-      color:this.style.textColor
+      font:this.style.textFont ||  fontHelper(this.theme.typography.subtitle1),
+      color:this.style.textColor || this.theme.palette.getAccent("light")
     }
   }
 }

@@ -8,12 +8,15 @@ export interface actionSheetStyles extends styles{
     listItemTitleColor?:string,
     listItemIconBackground?:string,
     listItemIconBorderRadius?:string,
+    listItemBackground?:string
 }
 export interface  actionSheetItemStyle extends styles{
     iconBackground?:string,
     iconTint?:string,
     textFont?:string,
+    textColor?:string,
     display ?: string,
     flexDirection ?: string,
     justifyContent ?: string,
+
 }

@@ -1,6 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { CometChatTheme, fontHelper, localize } from '../../../PrimaryComponents';
-import { CometChatWrapperComponent } from '../../../PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component';
 import { actionSheetItemStyle, actionSheetStyles } from '../interface';
 /**
 *
@@ -22,7 +21,7 @@ export class CometChatActionSheetComponent implements OnInit {
   @Input() layoutModeIconURL:string= "assets/resources/Grid-layout.svg";
   @Input() style:actionSheetStyles = {
     layoutModeIconTint: "rgba(20, 20, 20, 0.04)",
-    borderRadius: "8px",
+    borderRadius: "inherit",
     background: "rgb(255,255,255)",
     border: "none",
     width: "100%",
@@ -33,30 +32,30 @@ export class CometChatActionSheetComponent implements OnInit {
     listItemTitleFont:"500 15px Inter, sans-serif",
     listItemTitleColor:"rgba(20, 20, 20, 0.69)",
     listItemIconBackground:"transparent",
-    listItemIconBorderRadius:"none",
+    listItemIconBorderRadius:"-0",
+    listItemBackground:""
     
   };
-  public theme:any = new CometChatTheme({});
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   public layoutType:{list:string,grid:string} = Object.freeze({
     list: "list",
     grid: "grid"
   });
   public actionSheetItemStyle:actionSheetItemStyle = {
     height:"54px",
-    // iconBackground:"#6929CA",
     iconTint:"rgba(20, 20, 20, 0.69)",
-    textFont:fontHelper(this.theme.typography.subtitle1)
+    textFont:fontHelper(this.theme.typography.subtitle1),
   }
-  toggleButtonStyle:actionSheetItemStyle = {
-    // iconBackground:this.theme.palette.getPrimary(),
-    iconTint:"rgb(51, 153, 255)",
-    borderRadius:"24px"
-  }
+
   public localize:typeof localize = localize
   @Input() layoutMode:string= this.layoutType.list;
   @Input() actions:any= []; 
   constructor() { }
   ngOnInit(): void {
+    this.actionSheetItemStyle.textFont = this.style.listItemTitleFont ||  fontHelper(this.theme.typography.subtitle1)
+    this.actionSheetItemStyle.textColor = this.style.listItemTitleColor ||  this.theme.palette.getAccent()
+    this.actionSheetItemStyle.background =  this.style.listItemBackground || this.theme.palette.getAccent50()
+    this.actionSheetItemStyle.iconTint = this.style.listItemIconTint || this.theme.palette.getAccent600()
   }
   onActionItemClick(){
   }
@@ -69,7 +68,9 @@ export class CometChatActionSheetComponent implements OnInit {
       this.actionSheetItemStyle.flexDirection = "column"
       this.actionSheetItemStyle.justifyContent = "center"
       this.actionSheetItemStyle.width = "115px"
-      this.actionSheetItemStyle.textFont = fontHelper(this.theme.typography.caption1)
+      this.actionSheetItemStyle.textFont =   fontHelper(this.theme.typography.subtitle2)
+ 
+
     }
     else{
       this.layoutMode = this.layoutType.list;
@@ -78,7 +79,9 @@ export class CometChatActionSheetComponent implements OnInit {
       this.actionSheetItemStyle.display = "flex"
       this.actionSheetItemStyle.flexDirection = "row"
       this.actionSheetItemStyle.justifyContent = "flex-start"
-      this.actionSheetItemStyle.textFont = fontHelper(this.theme.typography.subtitle1)
+      this.actionSheetItemStyle.textFont = this.style.listItemTitleFont ||  fontHelper(this.theme.typography.subtitle1)
+    
+
     }
     }
   /**
@@ -95,7 +98,7 @@ export class CometChatActionSheetComponent implements OnInit {
      actionSheetLayoutIconStyle :()=> {
       return {
         WebkitMask: `url(${this.layoutModeIconURL})`,
-        background:  this.toggleButtonStyle.iconTint,
+        background:  this.style.layoutModeIconTint || this.theme.palette.getPrimary(),
       };
     },
      sheetItemListStyle :()=> {
@@ -112,19 +115,13 @@ export class CometChatActionSheetComponent implements OnInit {
     },
     layoutModeStyle:()=>{
       return {
-        background: this.theme.palette.getAccent50(),
         width: this.layoutMode == this.layoutType.list ? "100%" : "fit-content",
-        borderBottom:`1px solid ${this.theme.palette.getAccent50()}`,
+        borderBottom:`1px solid ${this.theme.palette.getAccent100()}`,
         margin:this.layoutMode == this.layoutType.grid ? "2px":"0"
       }
     },
-    layoutIconStyle:()=>{
-      return{
-        background:this.toggleButtonStyle.iconBackground,
-      }
-    },
-    actionSheetWrapperStyle : () => {
 
+    actionSheetWrapperStyle : () => {
       return {
         ...this.style,
       }

@@ -83,5 +83,9 @@
 }
 .message__options{
   position: absolute;
-  top: -19px;
+  // top: -19px;
+  display: flex;
+  align-items: center;
+  // justify-content: center;
+  width: 100%;
 }

@@ -4,6 +4,7 @@ import { CometChat } from '@cometchat-pro/chat';
 import { checkMessageForExtensionsData, checkHasOwnProperty } from '../../../../Shared/Helpers/CometChatHelper';
 import { pollBubbleStyle } from '../../styles';
 import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service';
+import { CometChatTheme, fontHelper } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 @Component({
   selector: 'cometchat-poll-bubble',
   templateUrl: './cometchat-poll-bubble.component.html',
@@ -17,6 +18,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
   @Input() totalVoteCount: number = 0;
   @Input() optionBackgroundIcon:string = 'assets/resources/checkmark.svg';
   @Input() loggedInUserUid:string = "";
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   isPollExtensionEnabled: boolean = true;
   pollId:string = "";
   pollExtensionData: any = null;
@@ -170,14 +172,14 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
       },
       setvotePercentageStyle:()=>{
         return {
-          font: this.style.votePercentTextFont,
-          color: this.style.votePercentTextColor,
+          font: this.style.votePercentTextFont || fontHelper(this.theme.typography.subtitle1),
+          color: this.style.votePercentTextColor || this.theme.palette.getAccent600("light"),
         };
       },
       setPollOptionStyle:()=>{
         return {
-          font: this.style.pollOptionTextFont,
-          color: this.style.pollOptionTextColor,
+          font: this.style.pollOptionTextFont || fontHelper(this.theme.typography.subtitle1),
+          color: this.style.pollOptionTextColor || this.theme.palette.getAccent("light"),
         };
       },
       percentageBackground: () => {
@@ -188,16 +190,16 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
       pollResultStyle: () => {
         let justifyContent = { justifyContent: "flex-start" };
           return {
-            font: this.style.totalVoteCountTextFont,
-            color: this.style.totalVoteCountTextColor,
+            font: this.style.totalVoteCountTextFont || fontHelper(this.theme.typography.subtitle2),
+            color: this.style.totalVoteCountTextColor || this.theme.palette.getAccent600("light"),
             ...justifyContent
           };
       },
       pollQuestion: () => {
         let justifyContent = { justifyContent: "flex-start" };
           return {
-            font: this.style.pollQuestionTextFont,
-            color: this.style.pollQuestionTextColor,
+            font: this.style.pollQuestionTextFont || fontHelper(this.theme.typography.subtitle1),
+            color: this.style.pollQuestionTextColor || this.theme.palette.getAccent("light"),
             borderRadius:this.style.borderRadius,
             border:this.style.border,
             ...justifyContent
@@ -205,7 +207,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
       },
       pollOption: (option:any) => {
         return {
-          background: option.selectedByLoggedInUser ? `linear-gradient(to right, ${this.style.selectedPollOptionBackground} ${option.percent}, white 0%)` : `linear-gradient(to right, ${this.style.pollOptionBackground} ${option.percent}, white 0%)`,
+          background: option.selectedByLoggedInUser ? `linear-gradient(to right, ${this.style.selectedPollOptionBackground || this.theme.palette.getPrimary()} ${option.percent}, white 0%)` : `linear-gradient(to right, ${this.style.pollOptionBackground || this.theme.palette.getAccent100("light")} ${option.percent}, white 0%)`,
           borderRadius:"8px"
         }
       },
@@ -214,7 +216,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
           width: "24px",
           height: "24px",
           WebkitMask: `url(${this.optionBackgroundIcon})`,
-          background: this.style?.optionsIconTint || "grey",
+          background: this.style?.optionsIconTint || this.theme.palette.getAccent600("light"),
         }
       }
     }

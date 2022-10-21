@@ -125,7 +125,7 @@ CometChat.init(appID, appSetting).then(
 - Install UIKit package from npm - `npm install @cometchat-pro/angular-ui-kit` 
 
 <div style="width:100%">
-    <img width="200px" height="400px" src="./Screenshots/folder-structure.png">
+    <img width="200px" height="400px" src="./Screenshots/folder_structure.png">
 </div>
 
 - Import the Components in the respective module where the component will be used.
@@ -142,8 +142,6 @@ In this component Chats and Messages are  interlinked and work together to launc
 ```html
 import { CometChatConversationsWithMessages } from '@cometchat-pro/angular-ui-kit'
 
-**Use this selector in your html file**
-
     <cometchat-conversations-with-messages>
 
     </cometchat-conversations-with-messages>
@@ -152,7 +150,7 @@ import { CometChatConversationsWithMessages } from '@cometchat-pro/angular-ui-ki
 
 # Checkout our sample app
 
-Visit our [Angular sample app](https://github.com/cometchat-pro/javascript-angular-chat-app) repo to run the Angular sample app.
+Visit our [Angular sample app](https://github.com/cometchat-pro/javascript-angular-chat-app/tree/pluto) repo to run the Angular sample app.
 
 ---
 

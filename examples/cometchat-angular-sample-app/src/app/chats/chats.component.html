@@ -1,0 +1,47 @@
+<div class="chats__wrapper">
+    <div class="chats__header" [ngStyle]="style.headerTitleStyle()">
+        {{localize("CHATS")}}
+    </div>
+    <div class="card__content">
+        <div class="cards" [ngStyle]="style.cardStyle()">
+            <div class="card__icon" [ngStyle]="style.iconStyle(sidebarIconURL)">
+            </div>
+            <div class="right__content"  (click)="redirect('conversations-with-messages')">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >   {{localize("CONVERSATIONS_WITH_MESSAGES")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatConversationsWithMessages is an independent component used to set up a screen that shows the recent conversations and allows you to send a message to the user or group from the list.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('conversations')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listwrapperIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("CONVERSATIONS")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatConversations is an independent component used to set up a screen that shows the recent conversations alone.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('conversation-list')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("CONVERSATION_LIST")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatConversationList component renders a scrollable list of all recent conversations in your app.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('listitem')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(conversationIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("CONVERSATION_LIST_ITEM")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatConversationListItem is a reusable component which is used to display the conversation list item in the conversation list.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

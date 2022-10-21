@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CometChat } from '@cometchat-pro/chat';
+import { CometChatTheme } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 
 import {styles} from '../../../../Shared/Types/interface'
 import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service';
@@ -13,6 +14,7 @@ export class CometChatVideoBubbleComponent implements OnInit {
   @Input() messageObject: CometChat.BaseMessage | null = null; 
 
   @Input() videoUrl: string = '';
+  @Input() theme: CometChatTheme = new CometChatTheme({});
 
   @Input() style:styles = {
     width: "100%",

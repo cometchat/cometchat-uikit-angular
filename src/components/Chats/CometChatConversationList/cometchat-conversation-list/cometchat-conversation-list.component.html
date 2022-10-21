@@ -10,9 +10,10 @@
        </span>
     </div>
     <div class="error__view" *ngIf="isError && !hideError ">
-      <span class="decorator__message--error" *ngIf="isError && !hideError && !customView?.error" [ngStyle]="conversationListStyles.errorStyle(style)"> 
-        {{decorateMessage}}
-       </span>
+
+       <cometchat-decorator-message *ngIf="isError && !hideError && !customView?.error" [text]="decorateMessage" [textColor]="style.emptyStateTextColor!" [textFont]="style.emptyStateTextFont!">
+
+      </cometchat-decorator-message>
      <span class="custom__view--error" *ngIf="isError && !hideError && customView?.error">
       <ng-container *ngTemplateOutlet="customView?.error" >
   
@@ -20,9 +21,10 @@
      </span>
     </div>    
     <div class="empty__view" *ngIf="isEmpty">
-      <span class="decorator__message--empty" *ngIf="isEmpty && !customView?.empty" [ngStyle]="conversationListStyles.emptyStyle(style)">
-      {{decorateMessage}}
-      </span>
+
+      <cometchat-decorator-message *ngIf="isEmpty && !customView?.empty" [text]="decorateMessage" [textColor]="style.emptyStateTextColor!" [textFont]="style.emptyStateTextFont!">
+
+      </cometchat-decorator-message>
       <span class="custom__view--empty"  *ngIf="isEmpty && customView?.empty">
         <ng-container *ngTemplateOutlet="customView?.empty" >
     
@@ -37,6 +39,7 @@
     (click)="onClick(conversation)"
     [style]="listItemStyle"
     [conversationInputData]="listItemData"
+    [theme]="theme"
     [loggedInUser]="loggedInUser"
     [typingIndicatorText]="typingIndicator"
     [showTypingIndicator]="showTypingIndicator"

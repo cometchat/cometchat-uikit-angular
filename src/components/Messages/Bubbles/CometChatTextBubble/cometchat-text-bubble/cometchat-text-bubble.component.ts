@@ -4,6 +4,7 @@ import {  checkMessageForExtensionsData,checkHasOwnProperty } from '../../../../
 import { styles } from "../../styles";
 import { MetadataKey } from "../../../../Shared/Constants/UIKitConstants";
 import { CometChatMessageEvents } from "../../../CometChatMessageEvents.service";
+import { CometChatTheme, fontHelper } from "../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme";
 @Component({
   selector: 'cometchat-text-bubble',
   templateUrl: './cometchat-text-bubble.component.html',
@@ -12,6 +13,7 @@ import { CometChatMessageEvents } from "../../../CometChatMessageEvents.service"
 export class CometChatTextBubbleComponent implements OnInit {
   @Input() messageObject!: CometChat.BaseMessage;
   @Input() text: string = "";
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() style:styles = {
     width: "100%",
     height: "100%",
@@ -127,22 +129,22 @@ export class CometChatTextBubbleComponent implements OnInit {
     },
     messageBlockStyle: () => {
       return {
-        font: this.style.textFont,
-        color: this.style.textColor,
+        font: this.style.textFont || fontHelper(this.theme.typography.subtitle1),
+        color: this.style.textColor || this.theme.palette.getAccent900("light"),
       }
     },
     linkPreviewTitleStyle: ()=>{
       return {
-        font: this.style.linkPreviewTitleFont,
-        color: this.style.linkPreviewTitleColor,
+        font: this.style.linkPreviewTitleFont || fontHelper(this.theme.typography.title1),
+        color: this.style.linkPreviewTitleColor || this.theme.palette.getAccent("light"),
       }
 
     },
 
     linkPreviewUrlStyle: ()=>{
       return {
-        font: this.style.linkPreviewSubtitleFont,
-        color: this.style.linkPreviewSubtitleColor,
+        font: this.style.linkPreviewSubtitleFont || fontHelper(this.theme.typography.subtitle2),
+        color: this.style.linkPreviewSubtitleColor || this.theme.palette.getAccent600("light"),
       }
 
     },

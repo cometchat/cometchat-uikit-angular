@@ -4,6 +4,7 @@
     [activeGroup]="group"
     [backButtonIconURL]="backButtonIconURL"
     [hideSearch]="hideSearch"
+    [theme]="theme"
     [createGroupIconURL]="createGroupIconURL"
     [hideCreateGroup]="hideCreateGroup"
     [searchIconURL]="searchIconURL"
@@ -22,6 +23,7 @@
   >
     <cometchat-messages
       [group]="group"
+      [theme]="theme"
       [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration"
       [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration"
       [messageListConfiguration]="messagesConfiguration.messageListConfiguration"
@@ -31,29 +33,18 @@
     ></cometchat-messages>
   </div>
   <div class="decorator__message--empty" *ngIf="!group && !openPasswordModal" [ngStyle]="styles.emptyMessageStyle()">
-    {{messageText}}
+    <cometchat-decorator-message   [text]="messageText" [textColor]="style.messageTextColor" [textFont]="style.messageTextFont">
+
+    </cometchat-decorator-message>
    </div>
+
    <div class="groupscreen__joingroup" *ngIf="openPasswordModal && !group" [ngStyle]="styles.messagesWrapperStyle()" [ngClass]="{mobile : isMobileView}">
      <cometchat-join-protected-group
      [group]="protectedGroup"
      [style]="joinGroupStyle"
+     [theme]="theme"
      [messageHeaderConfiguration]="joinProtectedGroupConfiguration.messageHeaderConfiguration"
      >
      </cometchat-join-protected-group>
    </div>
 </div>
-<ng-template #loadingView>
-  <div class="custom__view__loading">
-      loading....
-  </div>
-</ng-template>
-<ng-template #emptyView>
-  <div class="custom__view__empty">
-      try  something else
-  </div>
-</ng-template>
-<ng-template #errorView>
-  <div class="custom__view__error">
-      there is an error
-  </div>
-</ng-template>

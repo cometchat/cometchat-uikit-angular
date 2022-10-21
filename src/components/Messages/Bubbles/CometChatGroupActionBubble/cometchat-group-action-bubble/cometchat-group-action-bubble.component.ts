@@ -1,5 +1,6 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CometChat } from "@cometchat-pro/chat";
+import { CometChatTheme, fontHelper } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 import { groupActionStyles, styles } from '../../styles';
 
 @Component({
@@ -20,6 +21,7 @@ export class CometChatGroupActionBubbleComponent implements OnInit,OnChanges {
 	textFont :"", 
 	textColor :"", 
   }
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   actionMessage:string | null= "";
 
   constructor() { }
@@ -78,8 +80,8 @@ export class CometChatGroupActionBubbleComponent implements OnInit,OnChanges {
   actionMessageStyles = ()=>{
 
 	  return {
-		  color:this.style.textColor,
-		  font:this.style.textFont,
+		  color:this.style.textColor || this.theme.palette.getAccent600("light"),
+		  font:this.style.textFont ||  fontHelper(this.theme.typography.subtitle2),
 		  background:this.style.background
 	  }
   }

@@ -14,7 +14,7 @@
   </div>
   <div *ngFor="let reaction of messageReactions" class="message__reactions " (click)="reactToMessages(reaction)"
     [title]="reaction?.reactionTitle"  [ngStyle]="messageReactionStyle.highlightBackground(reaction?.showBlueOutline,reaction?.reactionCount)" >
-    <cometchat-list-item [text]="reaction?.reactionCount" [emoji]="reaction?.reactionName" >
+    <cometchat-list-item [text]="reaction?.reactionCount" [emoji]="reaction?.reactionName" [style]="listItemStyle">
     </cometchat-list-item>
   </div>
   <div class="message__reaction" *ngIf="

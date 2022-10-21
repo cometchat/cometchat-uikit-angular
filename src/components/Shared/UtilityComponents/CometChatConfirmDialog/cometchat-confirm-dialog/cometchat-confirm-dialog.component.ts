@@ -27,7 +27,7 @@ export class CometChatConfirmDialogComponent implements OnInit {
   @Input() cancelButtonText: string = localize("CANCEL") //Cancel button label
   @Input() onConfirm!: types.callBack; //Callback function when confirm button is clicked
   @Input() onCancel!: types.callBack;  //Callback function when cancel button is clicked
-  @Input() message: string = localize("DELETE_CONVERSATION");
+
   @Input() style: confirmDialogStyle = {
     height:"100%",
     width:"100%",

@@ -9,7 +9,7 @@ import { styles as dataItemStyle } from "../../../Shared/SDKDerivedComponents/Co
 import {  groupListStyle } from "../interface";
 import { customView } from "../../../Shared/Types/interface";
 import { CometChatGroupEvents } from "../../CometChatGroupEvents.service";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 /**
 *
 * CometChatGroupList is a wrapper component consists of CometChatDataItem Component.
@@ -32,6 +32,7 @@ export class CometChatGroupListComponent implements OnInit, OnDestroy, OnChanges
   @Input() searchKeyword: string = "";
   @Input() joinedOnly: boolean = false;
   @Input() tags: string[] = [];
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() style: groupListStyle = {
     width: "100%",
     height: "100%",
@@ -54,7 +55,7 @@ export class CometChatGroupListComponent implements OnInit, OnDestroy, OnChanges
   /**
   * Properties for internal use
   */
-  public theme: any = new CometChatTheme({});
+
   public loader: boolean = true;
   public isError: boolean = false;
   public isEmpty: boolean = false;
@@ -98,9 +99,7 @@ export class CometChatGroupListComponent implements OnInit, OnDestroy, OnChanges
     }
   }
   ngOnInit() {
-    if (CometChatWrapperComponent.cometchattheme) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.setThemeStyle();
     this.setDataItemConfiguration();
     this.attachListeners();
@@ -147,7 +146,7 @@ export class CometChatGroupListComponent implements OnInit, OnDestroy, OnChanges
   }
   setThemeStyle() {
     this.dataItemStyle.background = this.theme.palette.getBackground();
-    this.dataItemStyle.titleFont = fontHelper(this.theme.typography.title1);
+    this.dataItemStyle.titleFont = fontHelper(this.theme.typography.title2);
     this.dataItemStyle.titleColor = this.theme.palette.getAccent();
     this.dataItemStyle.subtitleFont = fontHelper(this.theme.typography.subtitle2);
     this.dataItemStyle.subtitleColor = this.theme.palette.getAccent600();
@@ -258,15 +257,16 @@ export class CometChatGroupListComponent implements OnInit, OnDestroy, OnChanges
       this.isError = false;
       this.fetchNextGroups()
         .then((groupList: CometChat.Group[]) => {
+          this.loader = false;
           if ((groupList.length <= 0 && this.groupList?.length <= 0) || (this.searchKeyword && groupList.length === 0 && this.groupList?.length <= 0)) {
             this.isEmpty = true;
-            this.loader = false;
+        
             this.isError = false;
             return;
           }
           this.groupList = [...this.groupList, ...groupList];
           this.isEmpty = false;
-          this.loader = false;
+         
           this.isError = false;
         })
         .catch((error: any) => {
@@ -376,27 +376,27 @@ export class CometChatGroupListComponent implements OnInit, OnDestroy, OnChanges
       return {
         height: this.style.height,
         width: this.style.width,
-        background: this.style.background,
+        background: this.style.background || this.theme.palette.getBackground(),
         border: this.style.border,
         borderRadius: this.style.borderRadius
       }
     },
     errorTextStyle: () => {
       return {
-        font: this.style.errorStateTextFont,
-        color: this.style.errorStateTextColor
+        font: this.style.errorStateTextFont || fontHelper(this.theme.typography.title1),
+        color: this.style.errorStateTextColor || this.theme.palette.getAccent400()
       }
     },
     emptyTextStyle: () => {
       return {
-        font: this.style.emptyStateTextFont,
-        color: this.style.emptyStateTextColor
+        font: this.style.emptyStateTextFont || fontHelper(this.theme.typography.title1),
+        color: this.style.emptyStateTextColor || this.theme.palette.getAccent400()
       }
     },
     loadingIconStyle: () => {
       return {
         WebkitMask: `url(${this.loadingIconURL})`,
-        background: this.style.loadingIconTint
+        background: this.style.loadingIconTint || this.theme.palette.getAccent400()
       }
     },
     groupListStyles: () => {

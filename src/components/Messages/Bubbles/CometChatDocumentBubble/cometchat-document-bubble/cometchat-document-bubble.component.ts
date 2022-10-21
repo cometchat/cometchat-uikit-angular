@@ -4,6 +4,7 @@ import { checkHasOwnProperty } from '../../../../Shared/Helpers/CometChatHelper'
 import { CometChat } from '@cometchat-pro/chat';
 import { documentStyles } from '../../styles';
 import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service';
+import { CometChatTheme, fontHelper } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 @Component({
   selector: 'cometchat-document-bubble',
   templateUrl: './cometchat-document-bubble.component.html',
@@ -16,18 +17,19 @@ export class CometChatDocumentBubbleComponent implements OnInit {
   @Input() iconURL: string = "assets/resources/collaborativedocument.svg"
   @Input() buttonText: string = "Launch";
   documentURL: string = ""
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() style: documentStyles = {
     width: "100%",
     height: "100%",
-    titleFont: "600 15px inter",
-    titleColor: "black",
-    subTitleFont: "400 13px inter",
-    subTitleColor: "grey",
-    iconTint: "grey",
+    titleFont: "",
+    titleColor: "",
+    subTitleFont: "",
+    subTitleColor: "",
+    iconTint: "",
     background: "transparent",
     borderRadius: "none",
     border: "",
-    buttonTextFont: "600 15px inter",
+    buttonTextFont: "",
     buttonTextColor: "rgb(51, 153, 255)",
     buttonBackground: "transparent",
   };
@@ -67,25 +69,25 @@ export class CometChatDocumentBubbleComponent implements OnInit {
     documentIcon: () => {
       return {
         WebkitMask: `url(${this.iconURL})`,
-        background: this.style.iconTint,
+        background: this.style.iconTint || this.theme.palette.getAccent400("light"),
       }
     },
     titleStyle: () => {
       return {
-        font: this.style.titleFont,
-        color: this.style.titleColor
+        font: this.style.titleFont || fontHelper(this.theme.typography.title2),
+        color: this.style.titleColor || this.theme.palette.getAccent("light")
       }
     },
     subtitleStyle: () => {
       return {
-        font: this.style.subTitleFont,
-        color: this.style.subTitleColor
+        font: this.style.subTitleFont ||  fontHelper(this.theme.typography.subtitle2),
+        color: this.style.subTitleColor || this.theme.palette.getAccent600("light")
       }
     },
     buttonStyle: () => {
       return {
-        font: this.style.buttonTextFont,
-        color: this.style.buttonTextColor,
+        font: this.style.buttonTextFont ||  fontHelper(this.theme.typography.title2),
+        color: this.style.buttonTextColor || this.theme.palette.getPrimary(),
         cursor: "pointer"
       }
     }

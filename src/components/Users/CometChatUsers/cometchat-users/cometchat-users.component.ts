@@ -9,7 +9,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import {  CometChatTheme, fontHelper, localize } from "../../../Shared";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 import { CometChat } from "@cometchat-pro/chat";
 import { styles } from "../../../Shared/UtilityComponents/CometChatListBase/interface";
 import { styles as userListStyles } from "../../CometChatUserList/interface"
@@ -79,7 +79,7 @@ export class CometChatUsersComponent implements OnInit, OnChanges {
      /**
      * Properties for internal use
      */
-  public theme: any = new CometChatTheme({})
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   public loadingIconURL!: string;
   public customView:any = null;
 
@@ -104,11 +104,9 @@ export class CometChatUsersComponent implements OnInit, OnChanges {
     this.setTheme()
   }
   setTheme() {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.style.background = this.theme.palette.getBackground();
-    this.style.titleFont = `${this.theme.typography.title2.fontWeight} ${this.theme.typography.title2.fontSize} ${this.theme.typography.title2.fontFamily}`;
+    this.style.titleFont = fontHelper(this.theme.typography.title1);
     this.style.titleColor = this.theme.palette.getAccent();
     this.style.searchBackground = this.theme.palette.getAccent50();
     this.style.searchTextColor = this.theme.palette.getAccent();
@@ -159,9 +157,9 @@ export class CometChatUsersComponent implements OnInit, OnChanges {
     return {
       height:this.style.height,
       width:this.style.width,
-      border:this.style.border,
+      border:this.style.border || `1px solid ${this.theme.palette.getAccent400()}`,
       borderRadius:this.style.borderRadius,
-      background:this.style.background
+      background:this.style.background || this.theme.palette.getBackground()
     }
 
   }

@@ -4,18 +4,17 @@ export interface composerStyles extends baseStyle{
     inputBackground?:string,
     inputTextFont?: string,
     inputTextColor?: string,
+    attachmentIconTint?: string,
+sendButtonIconTint?: string,
+emojiIconTint?: string,
+stickerCloseIconTint?: string,
 
 }
 export interface toolTipStyles extends baseStyle{
     boxShadow?:string;
 
 }
-export interface actionSheetStyles extends baseStyle{
-    titleFont: string
-    titleColor:string;
-    layoutModeIconTint: string;
 
-}
 export interface messagePreviewStyle extends baseStyle{
     messagePreviewBorder?: string
     messagePreviewBackground?: string

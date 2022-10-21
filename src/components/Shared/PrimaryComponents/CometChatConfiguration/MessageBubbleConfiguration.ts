@@ -10,7 +10,6 @@ import { MessageReceiptConfiguration } from "./MessageReceiptConfiguration";
  * @param {object} messageBubbleData
  * @param {callback} reactToMessage
  * @param {array} messageOptions
- * @param {string} alignment
  * @param {string} timeAlignment
  * @param {boolean} threadReplies
  * @param {object} dateConfiguration
@@ -24,7 +23,6 @@ export class MessageBubbleConfiguration {
   };
   reactToMessage: any;
   messageOptions: any[] = [];
-  alignment: string = MessageListAlignment.left;
   timeAlignment: string = MessageTimeAlignment.bottom;
   threadReplies: boolean = false;
   dateConfiguration: DateConfiguration = new DateConfiguration({});
@@ -45,7 +43,6 @@ export class MessageBubbleConfiguration {
     }),
     reactToMessage = null,
     messageOptions = [],
-    alignment = MessageListAlignment.left,
     timeAlignment = MessageTimeAlignment.bottom,
     threadReplies = false,
     menuListConfiguration = new MenuListConfiguration({}),
@@ -55,7 +52,6 @@ export class MessageBubbleConfiguration {
     this.messageBubbleData = messageBubbleData
     this.reactToMessage = reactToMessage;
     this.messageOptions = messageOptions;
-    this.alignment = alignment;
     this.timeAlignment = timeAlignment;
     this.threadReplies = threadReplies;
     this.dateConfiguration = dateConfiguration

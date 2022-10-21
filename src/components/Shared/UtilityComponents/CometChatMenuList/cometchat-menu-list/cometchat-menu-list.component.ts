@@ -7,7 +7,6 @@ import {
   ChangeDetectorRef,
 } from "@angular/core";
 import { CometChatTheme, fontHelper } from "../../../PrimaryComponents/CometChatTheme/CometChatTheme";
-import { CometChatWrapperComponent } from "../../../PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
   /**
 * 
 * CometChatMenuListComponent uses cometchatListItem component to render list of menus and options.
@@ -56,7 +55,7 @@ export class CometChatMenuListComponent implements OnInit, OnChanges {
     iconBorderRadius:"",
   }
   @Input() isOpen: boolean = false;
-  public theme:any = new CometChatTheme({})
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   mainMenuList: any[] = [];
   subMenuList: any[] = [];
   isShown: boolean = false; // hidden by default
@@ -65,10 +64,7 @@ export class CometChatMenuListComponent implements OnInit, OnChanges {
   constructor(private ref:ChangeDetectorRef) { };
 
   ngOnInit() {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    
-    }
+
     this.menuStyle= {
       width:this.style.width || "100%",
       height:this.style.height ||  "100%",

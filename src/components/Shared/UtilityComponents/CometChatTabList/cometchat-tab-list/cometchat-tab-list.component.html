@@ -1,0 +1,4 @@
+    <ul class="list__menu__item">
+        <cometchat-list-item *ngFor="let tabItem of tabs" [text]="tabItem.title" [iconURL]="tabItem.iconURL"
+            [style]="listItemStyle" (click)="onClick(tabItem)"  ></cometchat-list-item>
+ </ul>

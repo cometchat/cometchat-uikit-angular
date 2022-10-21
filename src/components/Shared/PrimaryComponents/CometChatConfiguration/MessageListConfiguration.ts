@@ -1,5 +1,6 @@
 import { MessageOptions } from "../../../Messages/CometChatMessageOptions/CometChatMessageOptions";
 import { dateFormat, MessageListAlignment, timeFormat } from "../../Constants/UIKitConstants";
+import { messageInputData } from "../../InputData/MessageInputData";
 import { AvatarConfiguration } from "./AvatarConfiguration";
 import { DateConfiguration } from "./DateConfiguration";
 import { MessageBubbleConfiguration } from "./MessageBubbleConfiguration";
@@ -54,13 +55,13 @@ class MessageListConfiguration {
 
 
 
-  sentMessageInputData: any = {
+  sentMessageInputData: messageInputData = {
     thumbnail: false,
     title: false,
     time: true,
     readReceipt: true,
   };
-  receivedMessageInputData: any = {
+  receivedMessageInputData: messageInputData = {
     thumbnail: false,
     title: false,
     time: true,
@@ -96,16 +97,16 @@ class MessageListConfiguration {
       tags = [],
 
       sentMessageInputData = {
-        thumbnail: false,
-        title: false,
-        time: true,
-        readReceipt: true,
+        thumbnail: null,
+        title: null,
+        time: null,
+        readReceipt: null,
       },
       receivedMessageInputData = {
-        thumbnail: true,
-        title: true,
-        time: true,
-        readReceipt: false,
+        thumbnail: null,
+        title: null,
+        time: null,
+        readReceipt: null,
       },
       loadingIconURL = "assets/resources/Spinner.svg",
       customView = {},

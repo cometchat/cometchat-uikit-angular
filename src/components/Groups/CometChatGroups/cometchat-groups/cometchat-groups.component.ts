@@ -9,10 +9,10 @@ import {
   ViewChild,
 } from "@angular/core";
 import { CometChatTheme, fontHelper, localize } from "../../../Shared";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 import { CometChat } from "@cometchat-pro/chat";
 import { styles } from "../interface";
-import { groupListStyle } from "../..//CometChatGroupList/interface"
+import { groupListStyle } from "../../CometChatGroupList/interface"
 import { GroupListConfiguration } from "../../../Shared/PrimaryComponents/CometChatConfiguration/GroupListConfiguration";
 import { checkHasOwnProperty } from "../../../Shared/Helpers/CometChatHelper";
 import { CometChatGroupListComponent } from "../../CometChatGroupList/cometchat-group-list/cometchat-group-list.component";
@@ -148,7 +148,7 @@ export class CometChatGroupsComponent implements OnInit, OnChanges {
     errorStateTextFont: "700 22px Inter",
     errorStateTextColor: "grey",
   }
-  public theme: any = new CometChatTheme({});
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   public loadingIconURL: string = "assets/resources/wait.svg";
   public searchKeyword: string = "";
   public hideError: boolean = false;
@@ -166,10 +166,7 @@ export class CometChatGroupsComponent implements OnInit, OnChanges {
     this.subscribeToEvents();
   }
   ngOnChanges(changes: SimpleChanges): void {
-    if (CometChatWrapperComponent.cometchattheme) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-      this.setTheme();
-    }
+
     if(changes["popoverConfiguration"] || changes["createGroupConfiguration"] || changes["groupListConfiguration"]){
       this.setGroupListConfig();
       this.setPopoverConfig();
@@ -196,11 +193,9 @@ export class CometChatGroupsComponent implements OnInit, OnChanges {
     this.openCreateGroup = !this.openCreateGroup
   }
   setTheme() {
-    if (CometChatWrapperComponent.cometchattheme) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.style.background = this.theme.palette.getBackground();
-    this.style.titleFont = fontHelper(this.theme.typography.title2);
+    this.style.titleFont = fontHelper(this.theme.typography.title1);
     this.style.titleColor = this.theme.palette.getAccent();
     this.style.searchBackground = this.theme.palette.getAccent50();
     this.style.searchTextColor = this.theme.palette.getAccent();
@@ -215,7 +210,7 @@ export class CometChatGroupsComponent implements OnInit, OnChanges {
     this.createGroupStyle.closeIconTint = this.theme.palette.getPrimary();
     this.createGroupStyle.background = this.theme.palette.getBackground();
     this.createGroupStyle.createGroupButtonBackground = this.theme.palette.getPrimary();
-    this.createGroupStyle.createGroupButtonTextFont = fontHelper(this.theme.typography.title1)
+    this.createGroupStyle.createGroupButtonTextFont = fontHelper(this.theme.typography.title2)
     this.createGroupStyle.createGroupButtonTextColor = this.theme.palette.getAccent900("light");
     this.createGroupStyle.errorTextBackground = this.theme.palette.getAccent50();
     this.createGroupStyle.errorTextColor = this.theme.palette.getError();
@@ -295,15 +290,15 @@ export class CometChatGroupsComponent implements OnInit, OnChanges {
       return {
         height: this.style.height,
         width: this.style.width,
-        border: this.style.border,
+        border: this.style.border || `1px solid ${this.theme.palette.getAccent400()}`,
         borderRadius: this.style.borderRadius,
-        background: this.style.background
+        background: this.style.background || this.theme.palette.getBackground()
       }
     },
     createButtonStyle: () => {
       return {
         WebkitMask: `url(${this.createGroupIconURL}) center center no-repeat`,
-        background: this.style.createGroupIconTint,
+        background: this.style.createGroupIconTint || this.theme.palette.getPrimary(),
       }
     }
   }

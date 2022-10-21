@@ -1,0 +1,103 @@
+.close__icon{
+    height: 30px;
+    width: 30px;
+    cursor: pointer;
+
+}
+.message_receipt__backdrop{
+    height: 100% ;
+    width: 100% ;
+    background: black;
+    opacity: 0.3;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.header{
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    .title{
+       display: flex;
+       align-items: center;
+       justify-content: center;
+    }
+}
+.badgecount{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.footer{
+    input{
+        height: 36px;
+    width: 100%;
+    outline: none;
+    padding: 8px;
+    border-radius: 12px;
+    background: transparent;
+    }
+    .switch__button{
+        display: flex;
+    width: 100%;
+    margin: 16px 0 8px 0;
+    justify-content: space-between;
+    }
+}
+.mode__title{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.description{
+    margin: 8px 0;
+}
+.message_receipt__container{
+    height: fit-content;
+    width: fit-content;
+    transform: translate(-50%,-50%);
+    left: 50%;
+    top: 50%;
+    position: absolute;
+    z-index: 10;
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.receipt__container{
+    display: flex;
+    flex-wrap: wrap;
+    margin: 8px 0;
+    
+}
+.receipt__icon{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px;
+}
+.cards{
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    margin: 8px;
+    padding: 8px;
+    flex-basis: 30%;
+    flex-shrink: 1;
+
+}
+@media (min-width: 320px) and (max-width: 767px) {
+  .cards{
+      flex-grow: 1;
+      flex-shrink: 1 !important;
+      flex-basis: 100% !important;
+  }
+  .message_receipt__container{
+      width: 92%;
+  }
+
+  }

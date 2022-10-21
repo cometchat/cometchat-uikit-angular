@@ -2,19 +2,19 @@ import { Component, OnInit, Input, Output, EventEmitter, ViewChild, ElementRef, 
 import {  getUnixTimestamp, ID, checkMessageForExtensionsData, checkHasOwnProperty } from '../../../Shared/Helpers/CometChatHelper';
 import { CometChat } from '@cometchat-pro/chat';
 import { MessageStatus, composerEnums, MetadataKey, MessageTypes,  messageConstants } from '../../../Shared/Constants/UIKitConstants';
-import {  MessagePreviewConfiguration, EmojiKeyboardConfiguration, StickerKeyboardConfiguration, ActionSheetConfiguration, CreatePollConfiguration, } from '../../../Shared';
+import {  MessagePreviewConfiguration, EmojiKeyboardConfiguration, StickerKeyboardConfiguration, ActionSheetConfiguration, CreatePollConfiguration, localize, } from '../../../Shared';
 import {styles} from '../../../Shared/Types/interface'
 import { CometChatTheme } from '../../../Shared';
 import { CometChatMessageEvents } from '../../CometChatMessageEvents.service';
 import { CometChatSoundManager } from '../../../Shared/PrimaryComponents/CometChatSoundManager/cometchat-sound-manager/cometchat-sound-manager';
-import { helperService } from '../../../Shared/CometChatMethodHelper.service';
+
 import { stickerKeyboardStyle } from '../../CometChatStickerKeyboard/interface';
 import { fontHelper } from '../../../Shared/PrimaryComponents/CometChatTheme/Typography';
 import { CometChatMessageTemplate, getDefaultTypes } from '../../CometChatMessageTemplate/cometchat-message-template';
-import { actionSheetStyles, composerStyles, createPollStyle, messagePreviewStyle, toolTipStyles } from '../interface';
+import { composerStyles, createPollStyle, messagePreviewStyle, toolTipStyles } from '../interface';
+import { actionSheetStyles } from '../../../Shared/UtilityComponents/CometChatActionSheet/interface';
 import { popoverStyles } from '../../../Shared/UtilityComponents/CometChatPopover/interface';
 import { PopoverConfiguration } from '../../../Shared/PrimaryComponents/CometChatConfiguration/PopoverConfiguration';
-import { CometChatWrapperComponent } from '../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component';
   /**
 *
 * CometChatMessageComposer is used to send message to user or group.
@@ -46,6 +46,10 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     inputBackground: "rgba(20, 20, 20, 0.04)", // done
     inputTextFont: "", // done 
     inputTextColor: "", // done
+    attachmentIconTint:"",
+    sendButtonIconTint:"",
+    emojiIconTint:"",
+    stickerCloseIconTint:"",
   }
   @Input() attachmentIconURL: string = "assets/resources/Plus.svg";
   @Input() liveReactionIconURL: string = "assets/resources/heart-reaction.png";
@@ -53,27 +57,28 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   @Input() closeIconURL: string = "assets/resources/plus-rotated.svg";
   @Input() sendButtonIconURL: string = "assets/resources/Send.svg";
   @Input() emojiIconURL: string = "assets/resources/Stipop.svg";
-  @Input() placeholderText: string = "Enter your message here";
+  @Input() placeholderText: string = localize("ENTER_YOUR_MESSAGE_HERE");
   @Input() hideAttachment: boolean = false;
   @Input() hideLiveReaction: boolean = false;
   @Input() hideEmoji: boolean = false;
   @Input() showSendButton: boolean = false;
   @Input() onSendButtonClick: any = null;
-  @Input() messageTypes: CometChatMessageTemplate[] = [];
+  @Input() messageTypes: any = [];
   @Input() customOutgoingMessageSound: string = ""
   @Input() enableSoundForMessages: boolean = true
   @Input() enableTypingIndicator: boolean = true
   @Input() excludeMessageTypes: string[] = [];
-  @Input()  createPollConfiguration: CreatePollConfiguration = new CreatePollConfiguration({})
-  @Input()  stickerKeyboardConfiguration: StickerKeyboardConfiguration = new StickerKeyboardConfiguration({})
-  @Input()  actionSheetConfiguration: ActionSheetConfiguration = new ActionSheetConfiguration({})
-  @Input()  emojiKeyboardConfiguration: EmojiKeyboardConfiguration = new EmojiKeyboardConfiguration({})
-  @Input()  messagePreviewConfiguration: MessagePreviewConfiguration = new MessagePreviewConfiguration({})
-  @Input()  popoverConfiguration: PopoverConfiguration = new PopoverConfiguration({})
+  @Input() createPollConfiguration: CreatePollConfiguration = new CreatePollConfiguration({})
+  @Input() stickerKeyboardConfiguration: StickerKeyboardConfiguration = new StickerKeyboardConfiguration({})
+  @Input() actionSheetConfiguration: ActionSheetConfiguration = new ActionSheetConfiguration({})
+  @Input() emojiKeyboardConfiguration: EmojiKeyboardConfiguration = new EmojiKeyboardConfiguration({})
+  @Input() messagePreviewConfiguration: MessagePreviewConfiguration = new MessagePreviewConfiguration({})
+  @Input() popoverConfiguration: PopoverConfiguration = new PopoverConfiguration({})
+  public localize:typeof localize = localize
       /**
      * Properties for internal use
      */
-  public theme = new CometChatTheme({})
+       @Input() theme: CometChatTheme = new CometChatTheme({});
   inputType: string = ""
   inputAcceptType: string = ""
   public event: any;
@@ -105,9 +110,9 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   actionSheetStyles: actionSheetStyles = {
     width: "100%",
     height: "100%",
-    borderRadius: "8px",
+    borderRadius: "inherit",
     background: this.theme.palette.getAccent900(),
-    titleFont: fontHelper(this.theme.typography.title1),
+    titleFont: fontHelper(this.theme.typography.title2),
     titleColor: this.theme.palette.getAccent(),
     layoutModeIconTint: this.theme.palette.getAccent900("light"),
   }
@@ -210,7 +215,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     optionPlaceholderTextColor: "",
     errorTextColor: "rgb(255, 59, 48)"
   }
-  constructor(private messageEvents: CometChatMessageEvents, private helperService: helperService, private ref: ChangeDetectorRef) { }
+  constructor(private messageEvents: CometChatMessageEvents,  private ref: ChangeDetectorRef) { }
   ngOnChanges(changes: SimpleChanges): void {
 
     if (changes["user"] || changes["group"]) {
@@ -218,6 +223,14 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     }
   }
   ngOnInit(): void {
+    // setTimeout(() => {
+    // for(let i = 0; i <30;i++){
+    //   if(this.loggedInUser?.getUid() == "superhero1"){
+    //     this.sendTextMessage("hello" + i)
+    //   }
+    // }
+      
+    // }, 3000);
 
     let i = 0;
     this.checkConfiguration();
@@ -306,19 +319,12 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     this.layoutMode = configuration.layoutMode || defaultConfiguration!.layoutMode;
   }
   setCreatePollConfiguration(configuration: CreatePollConfiguration, defaultConfiguration?: CreatePollConfiguration) {
-    this.errorText = configuration.errorText || defaultConfiguration!.errorText;
-    this.createPollTitle = configuration.title || defaultConfiguration!.title;
     this.onClose = configuration.onClose || this.closePollWindow;
     this.onCreatePoll = configuration.onCreatePoll || null;
     this.defaultAnswers = configuration.defaultAnswers || defaultConfiguration!.defaultAnswers;
-    this.questionPlaceholderText = configuration.questionPlaceholderText || defaultConfiguration!.questionPlaceholderText;
-    this.optionPlaceholderText = configuration.optionPlaceholderText || defaultConfiguration!.optionPlaceholderText;
-    this.answerHelpText = configuration.answerHelpText || defaultConfiguration!.answerHelpText;
     this.createPollCloseIconURL = configuration.closeIconURL || defaultConfiguration!.closeIconURL;
     this.deleteIconURL = configuration.deleteIconURL || defaultConfiguration!.deleteIconURL;
     this.addAnswerIconURL = configuration.addAnswerIconURL || defaultConfiguration!.addAnswerIconURL;
-    this.AddAnswerButtonText = configuration.AddAnswerButtonText || defaultConfiguration!.AddAnswerButtonText;
-    this.createPollButtonText = configuration.createPollButtonText || defaultConfiguration!.createPollButtonText;
   }
   setStickerKeyboardConfiguration(configuration: StickerKeyboardConfiguration, defaultConfiguration?: StickerKeyboardConfiguration) {
     this.emptyText = configuration.emptyText || defaultConfiguration!.emptyText
@@ -362,6 +368,11 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
       }
       let arr: any = this.defaultMessageTemplate.filter((item: any) => !removeitems.includes(item));
       this.types = arr
+   
+    }
+    if (this.excludeMessageTypes.length) {
+      let newArray = this.types!.filter((val: any) => !this.excludeMessageTypes.includes(val.type));
+      this.types = newArray
     }
     this.addCallback();
     this.ref.detectChanges();
@@ -395,21 +406,25 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     this.inputElementRef.nativeElement.type = "file"
     this.inputElementRef.nativeElement.accept = "image/*"
     this.inputElementRef.nativeElement.click()
+    this.showActionSheetItem = false
   }
   openFilePicker = (): void => {
     this.inputElementRef.nativeElement.type = "file"
     this.inputElementRef.nativeElement.accept = "file/*"
     this.inputElementRef.nativeElement.click()
+       this.showActionSheetItem = false
   }
   openvideoPicker = (): void => {
     this.inputElementRef.nativeElement.type = "file"
     this.inputElementRef.nativeElement.accept = "video/*"
     this.inputElementRef.nativeElement.click()
+       this.showActionSheetItem = false
   }
   openAudioPicker = (): void => {
     this.inputElementRef.nativeElement.type = "file"
     this.inputElementRef.nativeElement.accept = "audio/*"
     this.inputElementRef.nativeElement.click()
+       this.showActionSheetItem = false
   }
   inputChangeHandler = (event: any): void => {
     this.showActionSheetItem = false
@@ -450,9 +465,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     this.ref.detectChanges();
   }
   setTheme(): void {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme
-     }
+
     this.stickerKeyboardStyles.background = this.theme.palette.getAccent100();
     this.stickerKeyboardStyles.loadingTextColor = this.theme.palette.getAccent600();
     this.stickerKeyboardStyles.loadingTextFont = fontHelper(this.theme.typography.title1);
@@ -479,17 +492,26 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     this.createPollStyle.closeIconTint = this.theme.palette.getPrimary();
     this.createPollStyle.createPollButtonBackground = this.theme.palette.getPrimary();
     this.createPollStyle.createPollButtonTextColor = this.theme.palette.getAccent("dark");
-    this.createPollStyle.createPollButtonTextFont = fontHelper(this.theme.typography.title1);
+    this.createPollStyle.createPollButtonTextFont = fontHelper(this.theme.typography.title2);
     this.createPollStyle.deleteIconTint = this.theme.palette.getAccent600();
     this.createPollStyle.errorTextColor = this.theme.palette.getError();
     (this.createPollStyle.errorTextFont as string)! = fontHelper(this.theme.typography.title1);
-    this.createPollStyle.placeholderTextColor = this.theme.palette.getAccent900();
+    this.createPollStyle.placeholderTextColor = this.theme.palette.getAccent900("dark");
     this.createPollStyle.optionPlaceholderTextFont = fontHelper(this.theme.typography.subtitle1);
-    this.createPollStyle.optionPlaceholderTextColor = this.theme.palette.getAccent900();
+    this.createPollStyle.optionPlaceholderTextColor = this.theme.palette.getAccent900("dark");
     this.createPollStyle.placeholderTextFont = fontHelper(this.theme.typography.subtitle1);
     this.createPollStyle.questionBackground = this.theme.palette.getSecondary();
     this.createPollStyle.titleColor = this.theme.palette.getAccent();
-    this.createPollStyle.titleFont = fontHelper(this.theme.typography.title2);
+    this.createPollStyle.titleFont = fontHelper(this.theme.typography.title1);
+    this.actionSheetStyles.background = this.theme.palette.getAccent900();
+    this.actionSheetStyles.listItemIconBackground = this.theme.palette.getPrimary();
+    this.actionSheetStyles.listItemTitleFont =  fontHelper(this.theme.typography.subtitle1);
+    this.actionSheetStyles.listItemTitleColor =  this.theme.palette.getAccent();
+    this.actionSheetStyles.listItemBackground =   this.theme.palette.getAccent50();
+    this.actionSheetStyles.listItemIconTint =  this.theme.palette.getAccent600();
+    this.actionSheetStyles.titleColor = this.theme.palette.getAccent();
+    this.actionSheetStyles.titleFont = fontHelper(this.theme.typography.title2);
+    this.actionSheetStyles.layoutModeIconTint = this.theme.palette.getPrimary();
   }
   getLoggedInUserInfo(): void {
     try {
@@ -545,6 +567,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
         receiverType,
         typingMetadata
       );
+     
       CometChat.startTyping(typingNotification);
       this.isTyping = setTimeout(() => {
         this.endTyping();
@@ -669,7 +692,10 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
       }
       textMessage.setSentAt(getUnixTimestamp());
       textMessage.setMuid(ID());
-      this.helperService.addMessage((textMessage as CometChat.BaseMessage), MessageStatus.inprogress)
+      this.messageEvents.publishEvents( this.messageEvents.onMessageSent, {
+        message: (textMessage as CometChat.BaseMessage),
+        status: MessageStatus.inprogress,
+      });
       // play audio after action generation
       if (this.enableSoundForMessages) {
         this.playAudio();
@@ -682,7 +708,10 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
       CometChat.sendMessage(textMessage)
         .then((message: CometChat.TextMessage | CometChat.BaseMessage) => {
           let messageObject: CometChat.BaseMessage = message;
-          this.helperService.addMessage(messageObject, MessageStatus.success)
+          this.messageEvents.publishEvents( this.messageEvents.onMessageSent, {
+            message: messageObject,
+            status: MessageStatus.success,
+          });
 
           // Change the send button to reaction button
           setTimeout(() => {
@@ -693,10 +722,11 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
           }, 500);
         })
         .catch((error:any) => {
+           textMessage.error = error
           this.messageEvents.publishEvents(this.messageEvents.onMessageError, {
-            message: textMessage,
-            error: error
+            message: textMessage
           })
+
           this.messageSending = false;
         });
     } catch (error:any) {
@@ -833,7 +863,14 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     CometChat.callExtension(MetadataKey.extensions.document, "POST", messageConstants.V1_CREATE, {
       receiver: receiverId,
       receiverType: receiverType,
-    }).catch((error:any) => { });
+    }) .then((res:any) => {
+      this.showActionSheetItem = false
+      this.ref.detectChanges()
+    
+    })
+    .catch((error:any) => { 
+      this.showActionSheetItem = false
+    });
   };
   shareLiveReaction() {
     // to be implemented
@@ -845,8 +882,12 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
       receiverType: receiverType,
     })
       .then((res:any) => {
+        this.showActionSheetItem = false
+        this.ref.detectChanges()
       })
-      .catch((error:any) => { });
+      .catch((error:any) => { 
+        this.showActionSheetItem = false
+      });
   };
   playAudio() {
     if (this.customOutgoingMessageSound) {
@@ -1090,23 +1131,23 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
   styles: any = {
     composerStyle: () => {
       return {
-        background: this.style.background,
+        background: this.style.background || this.theme.palette.getAccent900(),
       }
     },
     messageInputStyle: () => {
       return {
-        font: this.style.inputTextFont,
-        color: this.style.inputTextColor,
-        background: this.style.inputBackground,
+        font: this.style.inputTextFont || fontHelper(this.theme.typography.subtitle1),
+        color: this.style.inputTextColor || this.theme.palette.getAccent900("dark"),
+        background: this.style.inputBackground || this.theme.palette.getSecondary(),
       }
     },
     inputStickyStyle: () => {
       return {
-        background: this.style.inputBackground,
+        background: this.style.inputBackground || this.theme.palette.getSecondary(),
       }
     },
     attchButtonIconStyle: () => {
-      let background = this.showActionSheetItem ? this.theme.palette.getAccent900("dark") : this.theme.palette.getAccent600("light");
+      let background = this.showActionSheetItem ?   this.theme.palette.getAccent900("dark") : this.style.attachmentIconTint || this.theme.palette.getAccent600("light");
       return {
         WebkitMask: `url(${this.showActionSheetItem ? this.closeIconURL : this.attachmentIconURL})`,
         background: background,
@@ -1115,7 +1156,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
       }
     },
     stickerBtnIconStyle: () => {
-      let background = this.showSticker ? this.theme.palette.getAccent900("dark") : this.theme.palette.getAccent600("light");
+      let background = this.showSticker ? this.theme.palette.getAccent900("dark") : this.style.stickerCloseIconTint || this.theme.palette.getAccent600("light");
       return {
         background: background,
         WebkitMask: `url(${this.showSticker ? this.closeIconURL : this.stickerIconURL})`,
@@ -1127,7 +1168,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     emojiBtnIconStyle: () => {
       return {
         WebkitMask: `url(${this.showActionSheetEmoji ? this.closeIconURL : this.emojiIconURL})`,
-        background: this.showActionSheetEmoji ? this.theme.palette.getAccent900("dark") : this.theme.palette.getAccent600("light"),
+        background: this.showActionSheetEmoji ? this.theme.palette.getAccent900("dark") : this.style.emojiIconTint || this.theme.palette.getAccent600("light"),
         width: "24px",
         height: "24px",
         display: "inline-block",
@@ -1144,7 +1185,7 @@ export class CometChatMessageComposerComponent implements OnInit, OnChanges {
     sendBtnIconStyle: () => {
       return {
         WebkitMask: `url(${this.sendButtonIconURL})`,
-        background: this.enableSendButton ? this.theme.palette.getPrimary() : this.theme.palette.getAccent600("light"),
+        background: this.enableSendButton ? this.theme.palette.getPrimary() : this.style.sendButtonIconTint || this.theme.palette.getAccent600("light"),
         width: "24px",
         height: "24px",
         display: "inline-block",

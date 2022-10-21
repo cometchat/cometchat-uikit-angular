@@ -3,7 +3,7 @@ import { CometChat } from '@cometchat-pro/chat';
 import { listenerEnums, userStatusEnums, typingEnums, groupEnums, MessageReceiverType } from '../../../Shared/Constants/UIKitConstants';
 import { localize } from '../../../Shared';
 import { CometChatTheme } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 import { DataItemConfiguration } from '../../../Shared/PrimaryComponents/CometChatConfiguration/DataItemConfiguration';
 import { CometChatMessageEvents } from '../../CometChatMessageEvents.service';
 import { dataItemStyle, style } from '../headerInterface';
@@ -34,7 +34,6 @@ export class CometChatMessageHeaderComponent implements OnInit, OnChanges {
   @Input() group!: CometChat.Group | null;
   @Input() options: object = {};
   @Input() showBackButton: Boolean = false;
-  @Input() isMobileView: boolean = false
   @Input() backButtonIconURL: string = "assets/resources/backbutton.svg";
   @Input() dataItemConfiguration:DataItemConfiguration = new DataItemConfiguration({})
   @Input() style: style = {
@@ -81,7 +80,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnChanges {
   checkNotBlocked: boolean = true;
   isTyping: boolean = false;
   showChatOption = false;
-  public theme: CometChatTheme = new CometChatTheme({});
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   userStatusColor: any = {
     online: this.theme.palette.getPrimary(),
     offline: this.theme.palette.getAccent600(),
@@ -123,11 +122,10 @@ export class CometChatMessageHeaderComponent implements OnInit, OnChanges {
     }
   }
   setThemeStyle() {
-    if (CometChatWrapperComponent.cometchattheme) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.dataItemStyle.background =  this.theme.palette.getBackground()
-    this.dataItemStyle.titleFont = fontHelper(this.theme.typography.title1);
+    this.dataItemStyle.activeBackground =  this.theme.palette.getBackground()
+    this.dataItemStyle.titleFont = fontHelper(this.theme.typography.title2);
     this.dataItemStyle.titleColor = this.theme.palette.getAccent()
     this.dataItemStyle.subtitleFont = fontHelper(this.theme.typography.subtitle2);
     this.dataItemStyle.subtitleColor = this.user && this.user.getStatus() ? this.userStatusColor[this.user.getStatus()] : this.userStatusColor.offline;
@@ -440,13 +438,13 @@ export class CometChatMessageHeaderComponent implements OnInit, OnChanges {
         width: this.style.width,
         height: this.style.height,
         border: this.style.border,
-        background: this.style.background,
+        background: this.style.background || this.theme.palette.getBackground(),
       }
     },
     backButtonStyle: () => {
       return {
         webkitMask: `url(${this.backButtonIconURL}) no-repeat left center`,
-        background: this.style.backButtonIconTint,
+        background: this.style.backButtonIconTint || this.theme.palette.getPrimary(),
         height: "22px",
         width: "22px"
       };

@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import { CometChat } from '@cometchat-pro/chat';
+import { CometChatTheme, fontHelper } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service';
 import { fileBubbleStyle } from '../../styles';
 
@@ -16,6 +17,7 @@ export class CometChatFileBubbleComponent implements OnInit,OnChanges {
 @Input() subtitle = "shared document";
 @Input() iconUrl = "assets/resources/download.svg"
 @Input() mimeType:string=""
+@Input() theme: CometChatTheme = new CometChatTheme({});
 
 @Input() style :fileBubbleStyle= {
 	width: "100%",
@@ -85,22 +87,22 @@ export class CometChatFileBubbleComponent implements OnInit,OnChanges {
 
     messageTitleStyle: () => {
       return {
-        font: this.style?.titleFont,
-        color: this.style?.titleColor,
+        font: this.style?.titleFont || fontHelper(this.theme.typography.title2),
+        color: this.style?.titleColor || this.theme.palette.getAccent900("dark"),
       }
     },
 
     messageSubTitleStyle: () => {
       return {
-        font: this.style?.subtitleFont,
-        color: this.style?.subtitleColor,
+        font: this.style?.subtitleFont ||  fontHelper(this.theme.typography.subtitle2),
+        color: this.style?.subtitleColor || this.theme.palette.getAccent600("light"),
       }
     },
 
     messageFileIconStyle: () => {
       return {
         WebkitMask:`url(${this.iconUrl}) `,
-        background:this.style.iconTint,
+        background:this.style.iconTint || this.theme.palette.getPrimary(),
 
       }
     }

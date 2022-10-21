@@ -1,0 +1,20 @@
+<cometchat-conversation-list [customView]="{
+    error:null,
+    loading:null,
+    empty:customEmptyView
+}" [tags]="tags" ></cometchat-conversation-list>
+
+<!-- creating custom view for empty state -->
+
+<ng-template #customEmptyView>
+    <div class="empty__view">
+      <div class="icon">
+        <img src="assets/empty-folder.png" alt="">
+      </div>
+     <div class="message">
+      No chats found 
+     </div>
+
+    </div>
+
+</ng-template>

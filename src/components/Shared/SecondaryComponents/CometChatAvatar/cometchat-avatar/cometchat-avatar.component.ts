@@ -18,8 +18,8 @@ export class CometChatAvatarComponent implements OnInit, OnChanges {
   @Input() height: string = "28px"; //Height of the avatar in pixels
   @Input() border: string = "none"; //This property sets an element's border. It sets the values of border-width, border-style, and border-color.
   @Input()borderRadius: string = "24px"; //Rounded corners of the border
-  @Input() backgroundColor: string = "white"; //Background Color of the element used for the fallback
-  @Input() nameTextColor: string = "black"; //Text color of the name
+  @Input() backgroundColor: string = "rgb(255,255,255)"; //Background Color of the element used for the fallback
+  @Input() nameTextColor: string = "rgb(20,20,20)"; //Text color of the name
   @Input() backgroundSize: string = "cover"; //Background Size of the image
   @Input() nameTextFont: string = "500 16px Inter"; //It sets all the different properties of an element's font. font-style(optional) font-variant(optional) font-weight(optional) font-size(mandatory) line-height(optional) font-family(mandatory)
   @Input() outerView: string = ""; //Spacing between the image and the outer border

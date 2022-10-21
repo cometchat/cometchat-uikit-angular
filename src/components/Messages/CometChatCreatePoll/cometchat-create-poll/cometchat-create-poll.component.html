@@ -10,7 +10,10 @@
       <div class="create__poll__content">
         <div class="error__body" *ngIf="isError">
           <div class="poll__data">
-            <div class="decorator__message--error" [ngStyle]="styles.errorTextStyle()">{{ errorText }}</div>
+              <cometchat-decorator-message  [text]="errorText" [textColor]="style.errorTextColor!" [textFont]="style.errorTextFont!">
+        
+              </cometchat-decorator-message>
+
           </div>
         </div>
         <div class="poll__row" [ngStyle]="styles.optionBorderStyle()">

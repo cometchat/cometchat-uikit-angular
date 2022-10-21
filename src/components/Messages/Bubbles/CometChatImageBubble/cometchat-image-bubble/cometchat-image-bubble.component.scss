@@ -1,11 +1,12 @@
 .message__kit__blocks {
   padding: 0;
   background: transparent;
+  
 }
 
 .message__blocks {
   margin: 0;
-  width: 228px;
-  height: 168px;
+  max-width: 300px;
+  height: 200px;
   border-radius: inherit;
 }

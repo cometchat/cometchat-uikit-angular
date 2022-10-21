@@ -5,6 +5,7 @@ import { CometChatConversationListItem } from "../../Shared/SDKDerivedComponents
 import { CometChatConfirmDialogModule } from "../../Shared/UtilityComponents/CometChatConfirmDialog/cometchat-confirm-dialog.module";
 import { CometChatBackdrop } from "../../Shared/UtilityComponents/CometChatBackdrop/cometchat-backdrop.module";
 import { CometChatPopover } from "../../Shared/UtilityComponents";
+import { CometChatDecoratorMessage } from "../../Shared/UtilityComponents/CometChatDecoratorMessage/cometchat-decorator-message.module";
 @NgModule({
   declarations: [CometChatConversationListComponent],
   imports: [
@@ -12,7 +13,8 @@ import { CometChatPopover } from "../../Shared/UtilityComponents";
     CometChatConversationListItem,
     CometChatConfirmDialogModule,
     CometChatBackdrop,
-    CometChatPopover
+    CometChatPopover,
+    CometChatDecoratorMessage
   ],
   exports: [CometChatConversationListComponent],
 })

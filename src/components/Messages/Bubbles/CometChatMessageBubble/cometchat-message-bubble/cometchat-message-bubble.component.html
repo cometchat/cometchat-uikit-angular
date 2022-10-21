@@ -3,7 +3,7 @@
   (mouseenter)="hideShowMenuOption($event)" 
   (mouseleave)="hideShowMenuOption($event)" 
   >
-    <div class="message__options" *ngIf="messageObject?.getType() != GROUP_MEMBER && !messageObject?.getDeletedAt() && messageOptions " [ngStyle]="messageBubbleStyle.messageOptionStyles()" >
+    <div class="message__options" *ngIf="messageObject?.getType() != GROUP_MEMBER && !messageObject?.getDeletedAt() && messageOptions?.length && messageOptions.length > 0" [ngStyle]="messageBubbleStyle.messageOptionStyles()" >
       <cometchat-menu-list
       [mainMenuLimit]= "limit"
       [data]= "messageObject"
@@ -14,7 +14,7 @@
       [style]="optionsIcon"
       ></cometchat-menu-list>
     </div>
-    <div [ngStyle]="messageBubbleStyle.messageGutterStyle" class="message__bubble" *ngIf="alignment == messageAlignment.left">
+    <div  class="message__bubble" *ngIf="alignment == messageAlignment.left">
       <div class="message__bubble__left receiver__avatar" *ngIf=" messageBubbleData.thumbnail ">
         <div class="message__bubble__avatar">
           <cometchat-avatar
@@ -241,11 +241,19 @@
           <div
           *ngSwitchDefault
           >
-        <cometchat-placeholder-bubble
-        [messageObject]="messageObject"
-        [style]="placeholderStyle"
-        >
-        </cometchat-placeholder-bubble>
+          <div class="default__view" *ngIf="customView">
+            <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+            </ng-container>
+          </div>
+        
+        <div *ngIf="!customView">
+          <cometchat-placeholder-bubble
+          [messageObject]="messageObject"
+          [style]="placeholderStyle"
+          >
+          </cometchat-placeholder-bubble>
+        </div>
       </div>
           <!--CASE FOR  POLLS ENDS -->
         </div>
@@ -289,7 +297,7 @@
       </div>
     </div>
    <!-- For right alignment of the message bubble  -->
-    <div [ngStyle]="messageBubbleStyle.messageGutterStyle" class="message__bubble" *ngIf="alignment == messageAlignment.right">
+    <div  class="message__bubble" *ngIf="alignment == messageAlignment.right">
 
       <div class="message__bubble__left">
         
@@ -310,7 +318,7 @@
         <div [ngStyle]="messageBubbleStyle.bubbleBackground()" class="background__color">
            <!-- CASE FOR DELETED MESSAGES -->
           <div *ngIf="messageObject?.getDeletedAt(); else elseBlock">
-            <div class="custom__view--delete" *ngIf="customView; else deleteView">
+            <div class="custom__view--delete" *ngIf="customView && messageObject?.getCategory() != 'custom'; else deleteView">
               <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
               </ng-container>
             </div>
@@ -496,11 +504,19 @@
               <div
               *ngSwitchDefault
               >
-            <cometchat-placeholder-bubble
-            [messageObject]="messageObject"
-            [style]="placeholderStyle"
-            >
-            </cometchat-placeholder-bubble>
+              <div class="default__view" *ngIf="customView">
+                <ng-container *ngTemplateOutlet="customView; context:{ $implicit: messageObject }" >
+
+                </ng-container>
+              </div>
+            
+            <div *ngIf="!customView">
+              <cometchat-placeholder-bubble
+              [messageObject]="messageObject"
+              [style]="placeholderStyle"
+              >
+              </cometchat-placeholder-bubble>
+            </div>
           </div>
               <!--CASE FOR  POLLS ENDS -->
             </div>

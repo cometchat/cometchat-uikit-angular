@@ -21,23 +21,11 @@ export const checkMessageForExtensionsData = (message: types.messageObject | nul
     }
     return output;
   } catch (error:any) {
-    logger(error);
+
   }
 };
 
-/**
- * Get Time when message was sent
- */
-/**
- * @param  {Array<any>} ...data
- */
-export const logger = (...data: Array<any>) => {
-  try {
-  
-  } catch (error:any) {
-    logger(error);
-  }
-};
+
 export const getUnixTimestamp = () => {
   return Math.round(+new Date() / 1000);
 }

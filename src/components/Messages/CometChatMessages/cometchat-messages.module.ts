@@ -5,6 +5,7 @@ import { CometChatMessageHeader } from "../CometChatMessageHeader/cometchat-mess
 import { CometChatMessageList } from "../CometChatMessageList/cometchat-message-list.module";
 import { CometChatMessageComposer } from "../CometChatMessageComposer/cometchat-message-composer.module";
 import { CometChatLiveReactions } from "../CometChatLiveReactions/cometchat-live-reactions.module";
+import { CometChatDecoratorMessage } from "../../Shared/UtilityComponents/CometChatDecoratorMessage/cometchat-decorator-message.module";
 
 @NgModule({
   declarations: [CometChatMessagesComponent],
@@ -14,6 +15,7 @@ import { CometChatLiveReactions } from "../CometChatLiveReactions/cometchat-live
     CometChatMessageComposer,
     CometChatMessageList,
     CometChatLiveReactions,
+    CometChatDecoratorMessage
   ],
   exports: [CometChatMessagesComponent],
 })

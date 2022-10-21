@@ -1,0 +1,68 @@
+.text__bubble{
+  height: fit-content;
+  width: fit-content;
+  color: white;
+  padding:  4px 8px;
+  background-color: rgb(51, 153, 255);
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 14px Inter;
+}
+.payment__bubble{
+  border-radius: 8px;
+  padding: 8px;
+  height: fit-content;
+  width: fit-content;
+  border: 1px solid lightgrey;
+  font: 500 16px Inter;
+}
+.rich__media{
+  .title{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 500 20px Inter;
+  }
+ 
+  min-height: 130px;
+  width: 320px;
+  background: rgba(248, 248, 248, 0.92);
+  display: flex;
+  padding: 8px;
+  .thumbnail{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 8px;
+  }
+
+  .details{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    font: 400 15px Inter;
+    .description{
+      text-align: left;
+      margin-top: 5px;
+      color: #8c8c8c;
+     font: 300 13px Inter;
+    }
+    a{
+      width: 100%;
+      background: transparent;
+      border: none;
+      margin-top: 12px;
+      font: 400 16px Inter;
+      cursor: pointer;
+      text-decoration: none;
+      color: black;
+    }
+  }
+  .title{
+    text-align: center;
+  }
+}

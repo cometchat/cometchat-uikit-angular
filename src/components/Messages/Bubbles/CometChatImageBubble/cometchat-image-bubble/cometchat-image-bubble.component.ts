@@ -10,6 +10,7 @@ import {styles} from '../../../../Shared/Types/interface'
 import { checkMessageForExtensionsData, checkHasOwnProperty } from '../../../../Shared/Helpers/CometChatHelper';
 import { CometChat } from '@cometchat-pro/chat';
 import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service';
+import { CometChatTheme } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 @Component({
   selector: 'cometchat-image-bubble',
   templateUrl: './cometchat-image-bubble.component.html',
@@ -26,7 +27,8 @@ export class CometChatImageBubbleComponent implements OnInit,OnChanges {
 	  background: "",
 	  borderRadius: "12px",
   };
-  icon:string = "assets/resources/unsafe-content.svg";
+  @Input () overayIconURL:string = "assets/resources/unsafe-content.svg";
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   imageLoader: boolean = false;
   innerWidth!:number;
   checkScreenSize: boolean = false;
@@ -124,15 +126,10 @@ export class CometChatImageBubbleComponent implements OnInit,OnChanges {
    * @param thumbnailGenerationObject
    */
   chooseImage(thumbnailGenerationObject: any) {
+
     try {
-      const smallUrl = thumbnailGenerationObject["url_small"];
       const mediumUrl = thumbnailGenerationObject["url_medium"];
-      const mq = window.matchMedia("(min-width:360px) and (max-width: 767px)");
-      let imageToShow = mediumUrl;
-      if (mq.matches) {
-        imageToShow = smallUrl;
-      }
-      return imageToShow;
+      return mediumUrl;
     } catch (error:any) {
      this.messageEvents.publishEvents(this.messageEvents.onError, error);
     }
@@ -142,10 +139,9 @@ export class CometChatImageBubbleComponent implements OnInit,OnChanges {
    * @param	
    */	
    setMessageImageUrl() {	
-    const metadata = MetadataKey.file;	
+    const metadata = MetadataKey.metadata;	
 		const fileMetadata = this.getMessageFileMetadata((this.messageObject as CometChat.BaseMessage), metadata);	
 		let img: any = new Image();	
-		let imageName: any;	
     if (fileMetadata instanceof Blob) {	
 			const reader = new FileReader();	
 			reader.onload = function() {	
@@ -154,19 +150,22 @@ export class CometChatImageBubbleComponent implements OnInit,OnChanges {
 			reader.readAsDataURL(fileMetadata);	
       this.ref.detectChanges()
     }	
-    else {	
-      img.src = (this.messageObject as any).data?.attachments[0]?.url;	
-      img.onload = () => {		
-        this.imageUrl = img.src;	
-        this.ref.detectChanges()
-      };	
+    else {
+      if((this.messageObject as any).data?.attachments)	{
+        img.src = (this.messageObject as any).data?.attachments[0].url;	
+        img.onload = () => {		
+          this.imageUrl = img.src;	
+          this.ref.detectChanges()
+        };	
+
+      }
+  
       this.ref.detectChanges()
     } 	
 		img.onload = () => {	
 			//only if there is a change in the image path, update state	
 			if (this.imageUrl !== img.src) {	
 				this.imageUrl = img.src,	
-        imageName = imageName;	
         this.ref.detectChanges()
 			}	
 		};	
@@ -222,8 +221,8 @@ export class CometChatImageBubbleComponent implements OnInit,OnChanges {
   imageBubbleStyle: any = {
     messageKitBlockStyle: () => {
       return {
-        height: this.style.height,
-        width: this.style.width,
+        height: !this.imageUrl ? "200px" : this.style.height,
+        width: !this.imageUrl ? "230px" : this.style.width,
         border: this.style.border,
         borderRadius: this.style.borderRadius,
         background: this.style.background,

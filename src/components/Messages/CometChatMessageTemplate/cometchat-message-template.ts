@@ -9,6 +9,7 @@
  * @param {Function} customView
  * @param {Array} options
  */
+import { localize } from "../../Shared";
 import { MessageTypes ,MessageCategory} from "../../Shared/Constants/UIKitConstants";
 import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptions";
  class CometChatMessageTemplate {
@@ -43,7 +44,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return new CometChatMessageTemplate({
 					type: MessageTypes.audio,
 					icon: "assets/resources/audio-file.svg",
-					name: "ATTACH_AUDIO",
+					name: localize("ATTACH_AUDIO"),
 					options: MessageOptions.getDefaultOptions(MessageTypes.audio),
 					category: this.getDefaultCategory(MessageTypes.audio)
 				  });
@@ -53,7 +54,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return new CometChatMessageTemplate({
 					type: MessageTypes.video,
 					icon: "assets/resources/Video.svg",
-					name: "ATTACH_VIDEO",
+					name: localize("ATTACH_VIDEO"),
 					options:MessageOptions.getDefaultOptions(MessageTypes.video),
 					category: this.getDefaultCategory(MessageTypes.video)
 				  });
@@ -63,7 +64,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return new CometChatMessageTemplate({
 					type: MessageTypes.text,
 					icon:"assets/resources/photolibrary.svg",
-					name: "TEXT",
+					name: localize("TEXT"),
 					options:MessageOptions.getDefaultOptions(MessageTypes.text),
 					category: this.getDefaultCategory(MessageTypes.text)
 				  });
@@ -73,7 +74,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return new CometChatMessageTemplate({
 					type: MessageTypes.file,
 					icon: "assets/resources/attachment-file.svg",
-					name: "ATTACH_FILE",
+					name: localize("ATTACH_FILE"),
 					options:MessageOptions.getDefaultOptions(MessageTypes.file),
 					category: this.getDefaultCategory(MessageTypes.file)
 				  });
@@ -82,7 +83,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return new CometChatMessageTemplate({
 					type: MessageTypes.document,
 					icon: "assets/resources/collaborativedocument.svg",
-					name: "COLLABORATIVE_DOCUMENT",
+					name: localize("COLLABORATIVE_DOCUMENT"),
 					options:MessageOptions.getDefaultOptions(MessageTypes.document),
 					category: this.getDefaultCategory(MessageTypes.document)
 				  });
@@ -92,7 +93,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				   return new CometChatMessageTemplate({
 					type: MessageTypes.whiteboard,
 					icon: "assets/resources/collaborativewhiteboard.svg",
-					name: "COLLABORATIVE_WHITEBOARD",
+					name: localize("COLLABORATIVE_WHITEBOARD"),
 					options:MessageOptions.getDefaultOptions(MessageTypes.whiteboard),
 					category: this.getDefaultCategory(MessageTypes.whiteboard)
 				  });
@@ -102,7 +103,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return 	new CometChatMessageTemplate({
 					type: MessageTypes.image,
 					icon: "assets/resources/photolibrary.svg",
-					name: "ATTACH_IMAGE",
+					name: localize("ATTACH_IMAGE"),
 					options: MessageOptions.getDefaultOptions(MessageTypes.image),
 					category: this.getDefaultCategory(MessageTypes.image)
 				  });
@@ -112,7 +113,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return new CometChatMessageTemplate({
 					type: MessageTypes.poll,
 					icon: "assets/resources/Polls.svg",
-					name: "CREATE_POLL",
+					name: localize("CREATE_POLL"),
 					options:MessageOptions.getDefaultOptions(MessageTypes.poll),
 					category: this.getDefaultCategory(MessageTypes.poll)
 				  });
@@ -122,7 +123,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				return new CometChatMessageTemplate({
 					type: MessageTypes.sticker,
 					icon: "assets/resources/Stickers.svg",
-					name: "STICKER",
+					name: localize("STICKER"),
 					options:MessageOptions.getDefaultOptions(MessageTypes.sticker),
 					category: this.getDefaultCategory(MessageTypes.sticker)
 				  });
@@ -132,7 +133,7 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 					return new CometChatMessageTemplate({
 						type: MessageTypes.groupMember,
 						icon: "",
-						name: "GROUP__MEMBER",
+						name: localize("GROUP__MEMBER"),
 						options:[],
 						category: MessageCategory.action
 					  });
@@ -140,8 +141,6 @@ import { MessageOptions } from "../CometChatMessageOptions/CometChatMessageOptio
 				 return null;
 				  break;
 		  }
-		// let defaultTypes = [this.groupAction,this.audioMessage,this.videoMessage,this.textMessage,this.imageMessage,this.pollMessage,this.stickerMessage,this.fileMessage,this.colaborativeWhiteBoard,this.colaborativeDocument]
-		//   return defaultTypes
 	  }
 	  static getDefaultTypes = ()=>{
 		 let types = [

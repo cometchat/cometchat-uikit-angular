@@ -3,7 +3,7 @@
     <cometchat-users #usersRef [activeUser]="user"[backButtonIconURL]="backButtonIconURL" [hideSearch]="hideSearch" [searchIconURL]="searchIconURL" [searchPlaceholder]="searchPlaceholder" [showBackButton]="showBackButton" [userListConfiguration]="usersConfiguration.userListConfiguration" ></cometchat-users>
   </div>
   <div class="userscreen__main" [ngClass]="{mobile__view : isMobileView && user}"[ngStyle]="messagesWrapperStyle()" *ngIf="user">
-      <cometchat-messages #messagesRef  [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration" 
+      <cometchat-messages #messagesRef   [theme]="theme" [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration" 
       [messageListConfiguration]="messagesConfiguration.messageListConfiguration" [style]="messagesStyle"
       [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration" 
        [user]="user!"  [customIncomingMessageSound]="customIncomingMessageSound" [customOutgoingMessageSound]="customOutgoingMessageSound" 
@@ -11,7 +11,8 @@
        [hideMessageComposer]="hideMessageComposer" [messageTypes]="messageTypes"  >
       </cometchat-messages>
   </div>
-  <div class="decorator__message--empty" *ngIf="!user" [ngStyle]="emptyMessageStyle()">
-    {{messageText}}
-   </div>
+   <div class="decorator__message--empty" *ngIf="!user"  [ngStyle]="emptyMessageStyle()">
+    <cometchat-decorator-message   [text]="messageText" [textColor]="style.messageTextColor" [textFont]="style.messageTextFont">
 
+    </cometchat-decorator-message>
+   </div>

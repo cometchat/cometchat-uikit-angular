@@ -1,12 +1,12 @@
 import { Component, OnInit,  Input } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
 import { inputData } from "../../../Shared/SDKDerivedComponents/CometChatDataItem/DataItemInterface";
-import { CometChatTheme, localize, MessageHeaderConfiguration } from "../../../Shared";
+import { CometChatTheme, fontHelper, localize, MessageHeaderConfiguration } from "../../../Shared";
 import { styles } from "../../../Shared/Types/interface";
 import { checkHasOwnProperty } from "../../../Shared/Helpers/CometChatHelper";
 import { CometChatGroupEvents } from "../../CometChatGroupEvents.service";
 import { joinGroupStyle } from "../interface";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 /**
 *
 * CometChatJoinProtectedGroupComponent is used to enter password for password protected group
@@ -66,12 +66,11 @@ export class CometChatJoinProtectedGroupComponent implements OnInit {
       borderRadius:"8px",
       background:"white"
     };
-  public theme:any = new CometChatTheme({})
+    @Input() theme: CometChatTheme = new CometChatTheme({});
   public isError: boolean = false;
   public errorText:any = localize("SOMETHING_WRONG");
   public password:string = "";
   public showBackButton: boolean = false;
-  public isMobileView: boolean = false;
   public backButtonIconURL: string = "";
   public inputData!: inputData;
   constructor(private groupEvents:CometChatGroupEvents) {}
@@ -81,9 +80,7 @@ export class CometChatJoinProtectedGroupComponent implements OnInit {
     this.setTheme() 
   }
   setTheme() {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.headerStyle.background = this.theme.palette.getBackground();
   }
 
@@ -95,7 +92,7 @@ export class CometChatJoinProtectedGroupComponent implements OnInit {
     let defaultConfiguration:MessageHeaderConfiguration = new MessageHeaderConfiguration({});
     let configuration:MessageHeaderConfiguration = this.messageHeaderConfiguration;
     this.showBackButton = checkHasOwnProperty(configuration, "showBackButton") ? configuration?.showBackButton : defaultConfiguration!.showBackButton;
-    this.isMobileView = checkHasOwnProperty(configuration, "isMobileView") ? configuration?.isMobileView : defaultConfiguration!.isMobileView;
+
     this.backButtonIconURL = configuration?.backButtonIconURL || defaultConfiguration!.backButtonIconURL;
     this.inputData = configuration?.inputData || defaultConfiguration!.inputData;
   }
@@ -131,37 +128,31 @@ export class CometChatJoinProtectedGroupComponent implements OnInit {
         border:this.style.border,
         borderRadius:this.style.borderRadius,
         boxShadow:this.style.boxShadow,
-        background:this.style.background
+        background:this.style.background || this.theme.palette.getBackground()
       }
     },
     titleStyle:()=>{
       return{
-        font:this.style.titleTextFont,
-        color:this.style.titleTextColor
+        font:this.style.titleTextFont || fontHelper(this.theme.typography.heading),
+        color:this.style.titleTextColor || this.theme.palette.getAccent700()
       }
     },
     placeholderStyle:()=>{
       return{
-        font:this.style.passwordPlaceholderTextFont,
-        color:this.style.passwordPlaceholderTextColor,
-        background:this.style.passwordInputBackground,
+        font:this.style.passwordPlaceholderTextFont || fontHelper(this.theme.typography.subtitle2),
+        color:this.style.passwordPlaceholderTextColor || this.theme.palette.getAccent900(),
+        background:this.style.passwordInputBackground || this.theme.palette.getAccent50(),
         border:this.style.passwordInputBorder,
-        boxShadow:this.style.boxShadow,
+        boxShadow:this.style.passwordInputBoxShadow || `${this.theme.palette.getAccent50()} 0px 0px 0px 1px`,
         borderRadius:this.style.joinButtonBorderRadius
       }
     },
     buttonStyle:()=>{
       return{
-        font:this.style.joinButtonTextFont,
-        color:this.style.joinButtonTextColor,
-        background:this.style.joinButtonBackground,
+        font:this.style.joinButtonTextFont ||  fontHelper(this.theme.typography.title1),
+        color:this.style.joinButtonTextColor || this.theme.palette.getAccent900("light"),
+        background:this.style.joinButtonBackground ||  this.theme.palette.getPrimary(),
         borderRadius:this.style.joinButtonBorderRadius
-      }
-    },
-    errorTextStyle:()=>{
-      return {
-        font:this.style.errorTextFont,
-        color:this.style.errorTextColor,
       }
     },
   }

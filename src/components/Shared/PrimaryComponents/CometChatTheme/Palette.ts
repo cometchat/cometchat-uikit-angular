@@ -1,4 +1,3 @@
-
 /**
  * @class PaletteItem
  * @param {String} light
@@ -16,7 +15,6 @@ export const modes = {
     light: "light",
     dark: "dark"
 }
-
 const opacity = {
 	accent50: {
 		[modes.light]: "0.04",
@@ -55,41 +53,29 @@ const opacity = {
 		[modes.dark]: "0.84",
 	},
 };
-
 const getAccentOpacity = (colorCode:string, opacity:string) => {
-
 	if (colorCode.startsWith("#")) {
 		return hexToRGBA(colorCode, opacity);
 	};
-
 	return RGBToRGBA(colorCode, opacity);
 };
-
 const hexToRGBA = (hex:string, opacity:string) => {
-	
 	const r = parseInt(hex.slice(1, 3), 16);
 	const g = parseInt(hex.slice(3, 5), 16);
 	const b = parseInt(hex.slice(5, 7), 16);
-
 	return "rgba(" + +r + "," + +g + "," + +b + "," + opacity + ")";
 };
-
 const RGBToRGBA = (rgb:any, opacity:string) => {
-
 	// Choose correct separator
 	let sep = rgb.indexOf(",") > -1 ? "," : " ";
 	// Turn "rgb(r,g,b)" into [r,g,b]
 	rgb = rgb.substr(4).split(")")[0].split(sep);
-
 	let r = (+rgb[0]).toString(16),
 		g = (+rgb[1]).toString(16),
 		b = (+rgb[2]).toString(16);
-
   	return "rgba(" + r + "," + g + "," + b + "," + opacity + ")";
 }
-
 export class Palette {
-
 	mode = modes.light;
 	background:any = {
 		[modes.light]: "rgba(255,255,255)",
@@ -240,7 +226,6 @@ export class Palette {
 		this.accent800 = accent800;
 		this.accent900 = accent900;
 	  }
-
 	getAccent =(mode:string = this.mode)=>{
 		return this.accent[mode]
 	}
@@ -272,7 +257,6 @@ export class Palette {
 		return this.accent800[mode]
 	}
 	getAccent900 =(mode:string = this.mode)=>{
-	
 		return this.accent900[mode]
 	}
 	getSuccess =(mode:string = this.mode)=>{
@@ -290,9 +274,6 @@ export class Palette {
 	getBackground =(mode:string = this.mode)=>{
 		return this.background[mode]
 	}
-
-
-	
 	/**
 	 * @param  {string} mode
 	 */
@@ -340,47 +321,38 @@ export class Palette {
 				[modes.light]: colorset[modes.light],
 				[modes.dark]: colorset[modes.dark],
 			};
-
 			this.setAccent50({
 				[modes.light]: getAccentOpacity(colorset[modes.light], opacity.accent50[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset[modes.light], opacity.accent50[modes.dark]),
 			});
-
 			this.setAccent100({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent100[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent100[modes.dark]),
 			});
-
 			this.setAccent200({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent200[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent200[modes.dark]),
 			});
-
 			this.setAccent300({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent300[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent300[modes.dark]),
 			});
-
 			this.setAccent400({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent400[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent400[modes.dark]),
 			});
-
 			this.setAccent500({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent500[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent500[modes.dark]),
 			});
-
 			this.setAccent600({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent600[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent600[modes.dark]),
 			});
-
 			this.setAccent700({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent700[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent700[modes.dark]),
 			});
-
 			this.setAccent800({
 				[modes.light]: getAccentOpacity(colorset.light, opacity.accent800[modes.light]),
 				[modes.dark]: getAccentOpacity(colorset.dark, opacity.accent800[modes.dark]),
@@ -398,7 +370,6 @@ export class Palette {
 			};
 		}
 	}
-
 	setAccent100(colorset:any) {
 		if (colorset && colorset[modes.light] && colorset[modes.dark]) {
 			this.accent100 = {
@@ -495,7 +466,6 @@ export class Palette {
 			};
 		}
 	}
-	
 }
 const palette = new Palette({});
 export {palette}

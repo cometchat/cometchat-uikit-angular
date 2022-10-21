@@ -2,7 +2,7 @@ import { Component, OnInit, Input } from '@angular/core';
 import { Emojis } from "../emojis";
 import { CometChatEmojiCategory } from "../emojiCategory";
 import { CometChatEmoji } from "../emoji";
-import { emojiKeyboardStyles } from '../../CometChatEmojiKeyboard/interface';
+import { emojiKeyboardStyles } from '../interface';
 import { CometChatTheme,fontHelper } from '../../../Shared';
   /**
 *
@@ -24,6 +24,7 @@ export class CometChatEmojiKeyboardComponent implements OnInit {
    */
   @Input() hideSearch: boolean = true;
   @Input()  onClick!: (emoji:string)=>void;
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input()  style: emojiKeyboardStyles ={
     width: "100%",
     height: "100%",
@@ -44,7 +45,7 @@ export class CometChatEmojiKeyboardComponent implements OnInit {
     iconTint:"",
   }
   objectKeys:any = Object.keys;
-  public theme:any = new CometChatTheme({})
+
   activeCategory: string = "people";
   ngOnInit(): void {
     this.getEmojiCategory();
@@ -111,11 +112,9 @@ styles:any = {
     };
   },
    emojiCategoryTitle :() => {
-    let color = this.style.textColor || this.theme.palette.getAccent600();
-    let font = this.style.textFont || fontHelper(this.theme.typography.caption1);
     return {
-      font: font,
-      color: color,
+      font: this.style.textFont || fontHelper(this.theme.typography.caption1),
+      color: this.style.textColor || this.theme.palette.getAccent600(),
     };
   },
 }

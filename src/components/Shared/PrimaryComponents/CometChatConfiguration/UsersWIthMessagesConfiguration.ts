@@ -1,6 +1,6 @@
 import {
 	MessagesConfiguration
-} from "./";
+} from ".";
 
 import {UsersConfiguration} from './usersConfiguration'
 /**

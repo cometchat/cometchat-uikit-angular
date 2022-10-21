@@ -7,10 +7,10 @@ import {
   SimpleChanges,
   ViewChild,
 } from "@angular/core";
-import { ConversationListConfiguration,CometChatTheme, localize} from "../../../Shared";
+import { ConversationListConfiguration,CometChatTheme, localize, fontHelper} from "../../../Shared";
 import { style } from '../../interface'
 import * as types from "../../../Shared/Types/typesDeclairation"
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 import { ConversationType } from "../../../Shared/Constants/UIKitConstants";
 import { CometChatConversationListComponent } from "../../CometChatConversationList/cometchat-conversation-list/cometchat-conversation-list.component";
   /**
@@ -66,7 +66,7 @@ export class CometChatConversationsComponent implements OnInit, OnChanges {
      * Properties for internal use
      */
   public loadingIconURL: string = ""; //loadingIconUrl
-  public theme: any = new CometChatTheme({});
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   public timeout!:number | null;
   // conversation list object for passing
   conversationListObject: any = {
@@ -75,9 +75,7 @@ export class CometChatConversationsComponent implements OnInit, OnChanges {
   constructor() { }
 
   ngOnInit() {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.checkConfiguration();
     this.setThemeStyle();
   }
@@ -113,18 +111,18 @@ export class CometChatConversationsComponent implements OnInit, OnChanges {
   // setting theme for listbaseComponent and ConversationListComponent
   setThemeStyle() {
     this.conversationListObject.style.background =   this.theme.palette.getBackground() 
-    this.conversationListObject.style.errorStateTextFont = `${this.theme.typography.heading.fontWeight} ${this.theme.typography.heading.fontSize} ${this.theme.typography.heading.fontFamily}`
+    this.conversationListObject.style.errorStateTextFont = fontHelper(this.theme.typography.heading)
     this.conversationListObject.style.errorStateTextColor = this.theme.palette.getAccent400()
-    this.conversationListObject.style.emptyStateTextFont = `${this.theme.typography.heading.fontWeight} ${this.theme.typography.heading.fontSize} ${this.theme.typography.heading.fontFamily}`
+    this.conversationListObject.style.emptyStateTextFont = fontHelper(this.theme.typography.heading)
     this.conversationListObject.style.emptyStateTextColor = this.theme.palette.getAccent400()
     this.style.background = this.theme.palette.getBackground()  
-    this.style.titleFont = `${this.theme.typography.title2.fontWeight} ${this.theme.typography.title2.fontSize} ${this.theme.typography.title2.fontFamily}`
+    this.style.titleFont = fontHelper(this.theme.typography.title1)
     this.style.titleColor = this.theme.palette.getAccent()
     this.style.searchBackground = this.theme.palette.getAccent50()
     this.style.searchTextColor =this.theme.palette.getAccent500()
     this.style.searchIconTint = this.theme.palette.getAccent500()
     this.style.backIconTint =this.theme.palette.getAccent500()
-    this.style.searchTextFont = `${this.theme.typography.subtitle2.fontWeight} ${this.theme.typography.subtitle2.fontSize} ${this.theme.typography.subtitle2.fontFamily}`
+    this.style.searchTextFont = fontHelper(this.theme.typography.subtitle2)
 
   }
   // this object contains dynamic stylings for this component
@@ -133,9 +131,9 @@ export class CometChatConversationsComponent implements OnInit, OnChanges {
       return{
         height: this.style.height ,
         width: this.style.width ,
-        border: this.style.border ,
+        border: this.style.border || `1px solid ${this.theme.palette.getAccent400()}`,
         borderRadius: this.style.borderRadius ,
-        background: this.style.background ,
+        background: this.style.background || this.theme.palette.getBackground()  ,
         
       }
     }

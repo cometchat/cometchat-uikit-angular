@@ -21,7 +21,12 @@
           [ngStyle]="styles.passwordInputStyle()" />
       </div>
       <div>
-        <div class="decorator__message--error" *ngIf="error" [ngStyle]="styles.errorTextStyle()">{{ error }}</div>
+        <div class="decorator__message--error" *ngIf="error" [ngStyle]="styles.errorTextStyle()">
+          <cometchat-decorator-message  [text]="error" [textColor]="style.errorTextColor!" [textFont]="style.errorTextFont!">
+
+          </cometchat-decorator-message>
+          </div>
+      
       </div>
     </div>
     <div class="creategroup__button--create">
