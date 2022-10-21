@@ -5,6 +5,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { whiteboardStyles } from '../../styles';
 import { CometChat } from '@cometchat-pro/chat';
 import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service';
+import { CometChatTheme, fontHelper } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 @Component({
   selector: 'cometchat-whiteboard-bubble',
   templateUrl: './cometchat-whiteboard-bubble.component.html',
@@ -13,6 +14,7 @@ import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service'
 export class CometChatWhiteboardBubbleComponent implements OnInit {
   @Input() messageObject!: CometChat.BaseMessage;;
   @Input() title: string = " Collaborative Whiteboard";
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() subTitle: string = "Open whiteboard to draw together";
   @Input() iconUrl: string = "assets/resources/collaborativewhiteboard.svg"
   buttonText: string = "Launch";
@@ -20,16 +22,16 @@ export class CometChatWhiteboardBubbleComponent implements OnInit {
   @Input() style: whiteboardStyles = {
     width: "100%",
     height: "100%",
-    titleFont: "600 15px inter",
-    titleColor: "black",
-    subTitleFont: "400 13px inter",
-    subTitleColor: "grey",
-    iconTint: "grey",
+    titleFont: "",
+    titleColor: "",
+    subTitleFont: "",
+    subTitleColor: "",
+    iconTint: "",
     background: "transparent",
     borderRadius: "none",
     border: "",
-    buttonTextFont: "600 15px inter",
-    buttonTextColor: "rgb(51, 153, 255)",
+    buttonTextFont: "",
+    buttonTextColor: "",
     buttonBackground: "transparent",
   };
   constructor(protected _sanitizer: DomSanitizer, private messageEvents:CometChatMessageEvents) { }
@@ -68,25 +70,25 @@ export class CometChatWhiteboardBubbleComponent implements OnInit {
     whiteBoardIcon: () => {
       return {
         WebkitMask: `url(${this.iconUrl})`,
-        background: this.style.iconTint,
+        background: this.style.iconTint || this.theme.palette.getAccent400("light"),
       }
     },
     titleStyle: () => {
       return {
-        font: this.style.titleFont,
-        color: this.style.titleColor
+        font: this.style.titleFont || fontHelper(this.theme.typography.title2),
+        color: this.style.titleColor || this.theme.palette.getAccent("light")
       }
     },
     subtitleStyle: () => {
       return {
-        font: this.style.subTitleFont,
-        color: this.style.subTitleColor
+        font: this.style.subTitleFont ||  fontHelper(this.theme.typography.subtitle2),
+        color: this.style.subTitleColor || this.theme.palette.getAccent600("light")
       }
     },
     buttonStyle: () => {
       return {
-        font: this.style.buttonTextFont,
-        color: this.style.buttonTextColor,
+        font: this.style.buttonTextFont ||  fontHelper(this.theme.typography.title2),
+        color: this.style.buttonTextColor || this.theme.palette.getPrimary(),
         cursor: "pointer"
       }
     }

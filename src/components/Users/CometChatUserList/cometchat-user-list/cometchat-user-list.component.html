@@ -9,18 +9,18 @@
    </span>
    </div>
     <div class="empty__view" *ngIf="usersNotFound && !loader">
-      <span  *ngIf="usersNotFound && !customView?.empty"  [ngStyle]="styles.emptyTextStyle()" class="decorator__message--empty"> 
-        {{emptyText}}
-       </span>
+       <cometchat-decorator-message *ngIf="usersNotFound && !customView?.empty" [text]="emptyText" [textColor]="style.emptyStateTextColor!" [textFont]="style.emptyStateTextFont!">
+
+      </cometchat-decorator-message>
        <span class="custom__view--empty"  *ngIf="usersNotFound && customView?.empty" >
         <ng-container *ngTemplateOutlet="customView?.empty">
         </ng-container>
        </span>
      </div>
      <div class="error__view" *ngIf="isError ">
-      <span class="decorator__message--error" *ngIf="isError && !hideError && !customView?.error" [ngStyle]="styles.errorTextStyle()">
-        {{errorText}}
-      </span>
+      <cometchat-decorator-message *ngIf="isError && !hideError && !customView?.error" [text]="errorText" [textColor]="style.emptyStateTextColor!" [textFont]="style.emptyStateTextFont!">
+
+      </cometchat-decorator-message>
       <span class="custom__view--error" *ngIf="isError && !hideError && customView?.error">
         <ng-container *ngTemplateOutlet="customView?.error">
         </ng-container>
@@ -51,6 +51,7 @@
       [statusIndicatorConfiguration]="dataItemConfiguration.statusIndicatorConfiguration"
       [inputData]="inputData"
       [style]="dataItemStyle"
+      [theme]="theme"
       [isActive]="IsUserActive(user)"
       [user]="user"
       (click)="onClick(user)"

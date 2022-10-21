@@ -3,9 +3,10 @@ import { CommonModule } from "@angular/common";
 import { CometChatJoinProtectedGroupComponent } from "./cometchat-join-protected-group/cometchat-join-protected-group.component";
 import { FormsModule } from "@angular/forms";
 import { CometChatMessageHeader } from "../../Messages/CometChatMessageHeader/cometchat-message-header.module";
+import { CometChatDecoratorMessage } from "../../Shared/UtilityComponents/CometChatDecoratorMessage/cometchat-decorator-message.module";
 @NgModule({
   declarations: [CometChatJoinProtectedGroupComponent],
-  imports: [CommonModule,FormsModule,CometChatMessageHeader],
+  imports: [CommonModule,FormsModule,CometChatMessageHeader,CometChatDecoratorMessage],
   exports: [CometChatJoinProtectedGroupComponent],
 })
 export class CometChatJoinProtectedGroup {}

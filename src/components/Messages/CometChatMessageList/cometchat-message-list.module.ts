@@ -16,6 +16,7 @@ import { CometChatEmojiKeyboard } from "../CometChatEmojiKeyboard/cometchat-emoj
 import { CometChatSmartReply } from "../CometChatSmartReply/cometchat-smart-reply.module";
 import { CometChatNewMessageIndicator } from "../CometChatNewMessageIndicator/cometchat-new-message-indicator.module";
 import { CometChatPopover } from "../../Shared/UtilityComponents";
+import { CometChatDecoratorMessage } from "../../Shared/UtilityComponents/CometChatDecoratorMessage/cometchat-decorator-message.module";
 @NgModule({
   declarations: [CometChatMessageListComponent],
   imports: [
@@ -40,7 +41,8 @@ import { CometChatPopover } from "../../Shared/UtilityComponents";
     CometChatEmojiKeyboard,
     CometChatSmartReply,
     CometChatNewMessageIndicator,
-    CometChatPopover
+    CometChatPopover,
+    CometChatDecoratorMessage
 
 
   ],

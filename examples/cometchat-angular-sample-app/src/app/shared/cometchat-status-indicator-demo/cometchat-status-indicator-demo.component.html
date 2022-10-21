@@ -1,0 +1,36 @@
+
+<div class="status_indicator__backdrop" >
+   
+</div>
+<div class="status_indicator__container" [ngStyle]="style.wrapperStyle()">
+    <div class="header">
+        <span class="title" [ngStyle]="style.titleStyle()">Status Indicator</span>
+        <div class="close__icon" [ngStyle]="style.closeIconStyle()" (click)="closeButton()"></div>
+    </div>
+    <div class="description" [ngStyle]="style.cardDescriptionStyle()">
+      StatusIndicator component indicates whether a user is online or offline..
+    </div>
+  <div class="avatar">
+    <cometchat-status-indicator [style]="statusIndicatorStyle"  [height]="height" [width]="width" [borderRadius]="borderRadius"  [backgroundColor]="background"> 
+
+    </cometchat-status-indicator>
+  </div>
+  
+    <div class="footer">
+
+        <div class="switch__button">
+            <span class="mode__title" [ngStyle]="style.modeTitleStyle()"> Status </span>
+            <div class="tabs__container">
+                <ul class="tab__list" [ngStyle]="style.tabListStyle()">
+                  <li class="tab" (click)="setActiveTab('online')" (mouseenter)="handleMouseHover('online', $event)"
+                    (mouseleave)="handleMouseHover('online', $event)" 
+                    [ngStyle]="style.modeStyle('online')"> Online </li>
+                    <li class="tab" (click)="setActiveTab('offline')" (mouseenter)="handleMouseHover('offline', $event)"
+                    (mouseleave)="handleMouseHover('offline', $event)" 
+                    [ngStyle]="style.modeStyle('offline')"> Offline </li>
+                </ul>
+              </div>
+            
+        </div>
+    </div>
+</div>

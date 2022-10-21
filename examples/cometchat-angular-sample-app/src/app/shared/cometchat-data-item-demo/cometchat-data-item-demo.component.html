@@ -1,0 +1,27 @@
+
+<div class="data_item__backdrop" >
+   
+</div>
+<div class="data_item__container" [ngStyle]="style.wrapperStyle()">
+    <div class="header">
+        <span class="title" [ngStyle]="style.titleStyle()">Data Item</span>
+        <div class="close__icon" [ngStyle]="style.closeIconStyle()" (click)="closeButton()"></div>
+    </div>
+    <div class="description" [ngStyle]="style.cardDescriptionStyle()">
+        CometChatDataItem is a reusable component which is used across multiple components in different variations such as User List, Group List as a List Item.
+    </div>
+   <div class="details__container">
+    <div class="user__data" *ngIf="user">
+        <span class="section__header" [ngStyle]="style.sectionHeaderStyle()" >User</span>
+        <div class="data__item">
+           <cometchat-data-item [user]="user" [inputData]="inputdata" [style]="dataItemStyle"> </cometchat-data-item>
+        </div>
+    </div>
+   <div class="group__data" *ngIf="group">
+    <span class="section__header" [ngStyle]="style.sectionHeaderStyle()">Group</span>
+    <div class="data__item">
+        <cometchat-data-item [inputData]="groupInputdata" [group]="group" [style]="dataItemStyle"></cometchat-data-item>
+    </div>
+   </div>
+   </div>
+</div>

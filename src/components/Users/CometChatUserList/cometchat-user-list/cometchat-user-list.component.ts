@@ -11,7 +11,7 @@ import {
 } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
 import { CometChatTheme, DataItemConfiguration, fontHelper } from "../../../Shared";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 import { UsersConstants } from "../../../Shared/Constants/UIKitConstants";
 import { styles } from "../interface";
 import { inputData, styles as dataItemStyle } from "../../../Shared/SDKDerivedComponents/CometChatDataItem/DataItemInterface";
@@ -66,12 +66,13 @@ export class CometChatUserListComponent implements OnInit, OnDestroy, OnChanges,
   @Input() dataItemConfiguration: DataItemConfiguration = new DataItemConfiguration({});
   @Input() friendsOnly: boolean = false;
   @Input() customView!:customView;
+  
   /**
    * Properties for internal use
    */
   public isError: boolean = false;
   public msgListenerId: string = UsersConstants.MESSAGE_ + new Date().getTime();
-  public theme: any = new CometChatTheme({});
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   public userListenerId: string = UsersConstants.USER_LIST_ + new Date().getTime();
   public inputData: inputData = {
     thumbnail: true,
@@ -119,9 +120,7 @@ export class CometChatUserListComponent implements OnInit, OnDestroy, OnChanges,
       this.loader = true;
       this.fetchNextUsertList();
     }
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.setThemeStyle();
     try {
       if (change["user"]) {
@@ -203,7 +202,7 @@ export class CometChatUserListComponent implements OnInit, OnDestroy, OnChanges,
   }
   setThemeStyle() {
     this.dataItemStyle.background = this.theme.palette.getBackground();
-    this.dataItemStyle.titleFont = fontHelper(this.theme.typography.title1);
+    this.dataItemStyle.titleFont = fontHelper(this.theme.typography.title2);
     this.dataItemStyle.titleColor = this.theme.palette.getAccent();
     this.dataItemStyle.subtitleFont = fontHelper(this.theme.typography.subtitle2);
     this.dataItemStyle.subtitleColor = this.theme.palette.getAccent600();
@@ -290,17 +289,17 @@ export class CometChatUserListComponent implements OnInit, OnDestroy, OnChanges,
       this.ref.detectChanges();
       this.usersRequest.fetchNext().then(
         (userList: any) => {
+          this.loader = false;
           this.isError = true
           if ((userList.length <= 0 && this.usersList?.length <= 0) || (this.userSearches && userList.length === 0 && this.usersList?.length <= 0)) {
             this.usersNotFound = true;
-            this.loader = false;
+        
             this.isError = false;
             this.ref.detectChanges();
           } else {
             this.usersNotFound = false;
             this.userSearches = false;
             this.usersList = [...this.usersList, ...userList];
-            this.loader = false;
             this.isError = false;
             this.ref.detectChanges();
           }
@@ -365,39 +364,35 @@ export class CometChatUserListComponent implements OnInit, OnDestroy, OnChanges,
       return {
         height: this.style.height,
         width: this.style.width,
-        background: this.style.background,
+        background: this.style.background || this.theme.palette.getBackground(),
         border: this.style.border,
         borderRadius: this.style.borderRadius
       }
     },
     errorTextStyle: () => {
       return {
-        font: this.style.errorStateTextFont,
-        color: this.style.errorStateTextColor
+        font: this.style.errorStateTextFont || fontHelper(this.theme.typography.title1),
+        color: this.style.errorStateTextColor || this.theme.palette.getAccent400()
       }
     },
     emptyTextStyle: () => {
       return {
-        font: this.style.emptyStateTextFont,
-        color: this.style.emptyStateTextColor
+        font: this.style.emptyStateTextFont || fontHelper(this.theme.typography.title1),
+        color: this.style.emptyStateTextColor || this.theme.palette.getAccent400()
       }
     },
     loadingIconStyle: () => {
       return {
         WebkitMask: `url(${this.loadingIconURL}) center center no-repeat`,
-        background: this.style.loadingIconTint
+        background: this.style.loadingIconTint || this.theme.palette.getAccent400()
       }
     },
     alphabetStyle: () => {
       return {
-        color: this.style.sectionHeaderTextColor,
-        font: this.style.sectionHeaderTextFont
+        color: this.style.sectionHeaderTextColor || this.theme.palette.getAccent600(),
+        font: this.style.sectionHeaderTextFont || fontHelper(this.theme.typography.caption1)
       }
     },
-    userListStyles: () => {
-      return {
-        background: this.style.background
-      }
-    }
+
   }
 }

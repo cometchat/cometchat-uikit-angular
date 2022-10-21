@@ -1,0 +1,21 @@
+
+.dataitem__container{
+    height: 80px;
+    width: 360px;
+    transform: translate(-50%,-50%);
+    left: 50%;
+    top: 50%;
+    position: absolute;
+    z-index: 10;
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+  .details__container{
+
+      padding-left: 8px;
+      margin-bottom: 8px;
+  }

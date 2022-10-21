@@ -4,7 +4,7 @@ import { CometChatMessageEvents } from "../../../Messages/CometChatMessageEvents
 import { CometChatTheme, fontHelper, localize, MessagesConfiguration } from "../../../Shared";
 import { GroupsConfiguration } from "../../../Shared/PrimaryComponents/CometChatConfiguration/GroupsConfiguratio";
 import { JoinProtectedGroupConfiguration } from "../../../Shared/PrimaryComponents/CometChatConfiguration/JoinProtectedGroupConfiguration";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 import { checkHasOwnProperty } from "../../../Shared/Helpers/CometChatHelper";
 import { GroupType } from "../../../Shared/Constants/UIKitConstants";
 import { CometChatGroupEvents } from "../../CometChatGroupEvents.service";
@@ -106,13 +106,14 @@ export class CometChatGroupsWithMessagesComponent implements OnInit, OnChanges {
     messageTextFont: "700 22px Inter",
 
   }
-  public theme:any = new CometChatTheme({});
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   constructor(private groupEvents: CometChatGroupEvents, private messageEvents: CometChatMessageEvents) { }
   ngOnChanges(changes: SimpleChanges): void {
 
     if (this.isMobileView) {
-      this.messagesConfiguration.messageHeaderConfiguration.isMobileView = true;
-      this.joinProtectedGroupConfiguration.messageHeaderConfiguration.isMobileView = true;
+      this.messagesConfiguration.messageHeaderConfiguration.showBackButton = true;
+      this.joinProtectedGroupConfiguration.messageHeaderConfiguration.showBackButton = true;
+      this.messagesConfiguration.messageHeaderConfiguration = {...this.messagesConfiguration.messageHeaderConfiguration}
       this.messagesConfiguration = { ...this.messagesConfiguration }
       this.groupsConfiguration.popoverConfiguration.style.height = "100%";
       this.groupsConfiguration.popoverConfiguration.style.width = "100%";
@@ -121,8 +122,8 @@ export class CometChatGroupsWithMessagesComponent implements OnInit, OnChanges {
       this.groupsConfiguration.popoverConfiguration =  this.groupsConfiguration.popoverConfiguration;
     }
     else if (!this.isMobileView) {
-      this.messagesConfiguration!.messageHeaderConfiguration!.isMobileView = false;
-      this.joinProtectedGroupConfiguration.messageHeaderConfiguration.isMobileView = false;
+      this.joinProtectedGroupConfiguration.messageHeaderConfiguration.showBackButton = false;
+      this.messagesConfiguration.messageHeaderConfiguration = {...this.messagesConfiguration.messageHeaderConfiguration}
       this.messagesConfiguration = { ...this.messagesConfiguration };
       this.groupsConfiguration.popoverConfiguration.style.height = "620px";
       this.groupsConfiguration.popoverConfiguration.style.width = "360px";
@@ -140,9 +141,7 @@ export class CometChatGroupsWithMessagesComponent implements OnInit, OnChanges {
     this.subscribeToEvents();
   }
   setTheme() {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.joinGroupStyle.background = this.theme.palette.getBackground();
     this.joinGroupStyle.errorTextColor = this.theme.palette.getError();
     this.joinGroupStyle.errorTextFont = fontHelper(this.theme.typography.text1);
@@ -156,7 +155,7 @@ export class CometChatGroupsWithMessagesComponent implements OnInit, OnChanges {
     this.joinGroupStyle.titleTextColor = this.theme.palette.getAccent700();
     this.joinGroupStyle.joinButtonBackground = this.theme.palette.getPrimary();
     this.joinGroupStyle.joinButtonTextColor = this.theme.palette.getAccent900("light");
-    this.joinGroupStyle.joinButtonTextFont = fontHelper(this.theme.typography.title1);
+    this.joinGroupStyle.joinButtonTextFont = fontHelper(this.theme.typography.title2);
     this.messagesStyle.background = this.theme.palette.getBackground()
     this.messagesStyle.messageTextFont = fontHelper(this.theme.typography.heading)
     this.messagesStyle.messageTextColor = this.theme.palette.getAccent400()
@@ -273,7 +272,7 @@ export class CometChatGroupsWithMessagesComponent implements OnInit, OnChanges {
         width: this.style.width,
         border: this.style.border,
         borderRadius: this.style.borderRadius,
-        background: this.style.background,
+        background: this.style.background || this.theme.palette.getBackground(),
         boxShadow: this.style.boxShadow
       }
     },
@@ -287,13 +286,13 @@ export class CometChatGroupsWithMessagesComponent implements OnInit, OnChanges {
 
     emptyMessageStyle : ()=>{
       return {
-        background: this.style.background,
+        background: this.style.background  || this.theme.palette.getBackground(),
         height:this.style.height,
         width:`calc(${this.style.width} - 280px)`,
         border:this.style.border,
         borderRadius:this.style.borderRadius,
-        font:this.style.messageTextFont,
-        color:this.style.messageTextColor
+        font:this.style.messageTextFont || fontHelper(this.theme.typography.heading),
+        color:this.style.messageTextColor || this.theme.palette.getAccent400()
       }
     }
   }

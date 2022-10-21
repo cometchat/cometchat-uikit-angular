@@ -1,0 +1,42 @@
+
+<div class="avatar__backdrop" >
+   
+</div>
+<div class="avatar__container" [ngStyle]="style.wrapperStyle()">
+    <div class="header">
+        <span class="title" [ngStyle]="style.titleStyle()">Avatar</span>
+        <div class="close__icon" [ngStyle]="style.closeIconStyle()" (click)="closeButton()"></div>
+    </div>
+    <div class="description" [ngStyle]="style.cardDescriptionStyle()">
+      CometChatAvatar component displays an image or user/group avatar with fallback to the first two letters of the user name/group name.
+    </div>
+  <div class="avatar" *ngIf="activeTab == 'Image'">
+    <cometchat-avatar [image]="image"  [height]="height" [width]="width" [borderRadius]="borderRadius" [border]="border"> 
+
+    </cometchat-avatar>
+  </div>
+  <div class="avatar"  *ngIf="activeTab == 'Name'">
+    <cometchat-avatar [name]="name" [nameTextColor]="textColor" [nameTextFont]="textFont" [backgroundColor]="background" [height]="height" [width]="width" [borderRadius]="borderRadius" [border]="border"> 
+
+    </cometchat-avatar>
+  </div>
+  
+    <div class="footer">
+        <input type="text" placeholder="Border Radius" [(ngModel)]="borderRadius" [ngStyle]="style.inputStyle()">
+
+        <div class="switch__button">
+            <span class="mode__title" [ngStyle]="style.modeTitleStyle()"> {{activeTab}} </span>
+            <div class="tabs__container">
+                <ul class="tab__list" [ngStyle]="style.tabListStyle()">
+                  <li class="tab" (click)="setActiveTab('Image')" (mouseenter)="handleMouseHover('Image', $event)"
+                    (mouseleave)="handleMouseHover('Image', $event)" 
+                    [ngStyle]="style.modeStyle('Image')"> Image </li>
+                    <li class="tab" (click)="setActiveTab('Name')" (mouseenter)="handleMouseHover('Name', $event)"
+                    (mouseleave)="handleMouseHover('Name', $event)" 
+                    [ngStyle]="style.modeStyle('Name')"> Name </li>
+                </ul>
+              </div>
+            
+        </div>
+    </div>
+</div>

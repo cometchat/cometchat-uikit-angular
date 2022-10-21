@@ -12,14 +12,13 @@ import { localize, CometChatLocalize } from '../../../PrimaryComponents/CometCha
 import * as types from '../../../Types/typesDeclairation'
 import { AvatarConfiguration } from '../../../PrimaryComponents/CometChatConfiguration/AvatarConfiguration'
 import { StatusIndicatorConfiguration } from '../../../PrimaryComponents/CometChatConfiguration/StatusIndicatorConfiguration'
-import { CometChatTheme } from '../../../PrimaryComponents/CometChatTheme/CometChatTheme'
+import { CometChatTheme, fontHelper } from '../../../PrimaryComponents/CometChatTheme/CometChatTheme'
 import { MessageReceiptConfiguration } from '../../../PrimaryComponents/CometChatConfiguration/MessageReceiptConfiguration'
 import { BadgeCountConfiguration } from '../../../PrimaryComponents/CometChatConfiguration/BadgeCountConfiguration'
-import { chatOptionEnums, conversationConstants, dateFormat, GroupType, messageConstants } from "../../../Constants/UIKitConstants";
+import { chatOptionEnums, conversationConstants, dateFormat, GroupType, messageConstants, MessageTypes } from "../../../Constants/UIKitConstants";
 import { checkHasOwnProperty, checkMessageForExtensionsData } from "../../../Helpers/CometChatHelper";
 import { groupTypes } from '../../../Types/interface'
 import { style } from '../../listItemTypes/style'
-import { CometChatWrapperComponent } from "../../../PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
 import { CometChatConversationEvents } from "../../../../Chats/CometChatConversationEvents.service";
 import { ConversationInputData } from "../../../InputData/ConversationInputData";
 @Component({
@@ -34,7 +33,7 @@ export class CometChatConversationListItemComponent
   @Input() statusIndicatorConfiguration: StatusIndicatorConfiguration = new StatusIndicatorConfiguration({});
   @Input() badgeCountConfiguration: BadgeCountConfiguration = new BadgeCountConfiguration({});
   @Input() messageReceiptConfiguration: MessageReceiptConfiguration = new MessageReceiptConfiguration({});
-  public theme: any = new CometChatTheme({});
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() style: style = {
     background: "",
     titleColor: "",
@@ -102,16 +101,16 @@ export class CometChatConversationListItemComponent
   typerName: string = "";
   setThemeStyle() {
     this.avatarStyle.backgroundColor = this.theme.palette.accent700[this.theme.palette.mode];
-    this.avatarStyle.nameTextFont = `${this.theme.typography.name.fontWeight} ${this.theme.typography.name.fontSize} ${this.theme.typography.name.fontFamily}`;
+    this.avatarStyle.nameTextFont = fontHelper(this.theme.typography.name);
     this.avatarStyle.nameTextColor = this.theme.palette.accent900[this.theme.palette.mode];
-    this.timeFont = `${this.theme.typography.caption2.fontWeight} ${this.theme.typography.caption2.fontSize} ${this.theme.typography.caption2.fontFamily}`;
+    this.timeFont = fontHelper(this.theme.typography.caption2);
     this.timeColor = this.theme.palette.accent600[this.theme.palette.mode];
     this.conversationOptionsStyle.iconTint = this.theme.palette.accent600[this.theme.palette.mode];
     this.statusColor.private = this.theme.palette.success[this.theme.palette.mode];
     this.statusColor.online = this.theme.palette.success[this.theme.palette.mode];
     this.badgeCountStyle.background = this.theme.palette.primary[this.theme.palette.mode];
     this.badgeCountStyle.color = this.theme.palette.accent.dark;
-    this.badgeCountStyle.font = `${this.theme.typography.caption1.fontWeight} ${this.theme.typography.caption1.fontSize} ${this.theme.typography.caption1.fontFamily}`;
+    this.badgeCountStyle.font = fontHelper(this.theme.typography.caption1);
     this.ref.detectChanges()
   }
   constructor(private conversationEvents: CometChatConversationEvents, private ref: ChangeDetectorRef) {
@@ -127,7 +126,6 @@ export class CometChatConversationListItemComponent
 * 
 */
   ngOnChanges(change: SimpleChanges) {
-
     try {
       if (change["theme"]) {
         this.setThemeStyle()
@@ -141,7 +139,6 @@ export class CometChatConversationListItemComponent
         // this.hideShowMenuOption()
       }
       if (change[conversationConstants.CONVERSATION_OBJECT]) {
-       
         if (
           change[conversationConstants.CONVERSATION_OBJECT].currentValue !==
           change[conversationConstants.CONVERSATION_OBJECT].previousValue
@@ -158,7 +155,6 @@ export class CometChatConversationListItemComponent
     }
     // 
   }
-  
   setSubtitle = (conversationObject: CometChat.Conversation): any => {
     let msgObject: CometChat.BaseMessage = conversationObject?.getLastMessage();
     var message = null;
@@ -166,32 +162,27 @@ export class CometChatConversationListItemComponent
       message = "Start a conversation";
     }
     if (checkHasOwnProperty(msgObject, "deletedAt")) {
-      message = localize(messageConstants.MESSAGE_IS_DELETED);
+      message = localize("MESSAGE_IS_DELETED");
     } else {
       switch (msgObject?.getCategory()) {
         case CometChat.CATEGORY_MESSAGE:
           try {
             switch (msgObject?.getType()) {
-              case CometChat.MESSAGE_TYPE.TEXT:
-                message = (msgObject as CometChat.TextMessage)?.getText();
+              case MessageTypes.text:
+                // message =  this.getExtensionData(msgObject) (msgObject as CometChat.TextMessage)?.getText();
+                message =  this.getExtensionData(msgObject);
                 break;
-              case CometChat.MESSAGE_TYPE.MEDIA:
-                message = CometChat.MESSAGE_TYPE.MEDIA;
+              case MessageTypes.image :
+                message = localize("MESSAGE_IMAGE");
                 break;
-              case CometChat.MESSAGE_TYPE.IMAGE:
-                message = conversationConstants.MESSAGE_IMAGE;
+              case MessageTypes.file:
+                message = localize("MESSAGE_FILE");
                 break;
-              case CometChat.MESSAGE_TYPE.FILE:
-                message = conversationConstants.MESSAGE_FILE;
+              case MessageTypes.video:
+                message = localize("MESSAGE_VIDEO");
                 break;
-              case CometChat.MESSAGE_TYPE.VIDEO:
-                message = conversationConstants.MESSAGE_VIDEO;
-                break;
-              case CometChat.MESSAGE_TYPE.AUDIO:
-                message = conversationConstants.MESSAGE_AUDIO;
-                break;
-              case CometChat.MESSAGE_TYPE.CUSTOM:
-                message = conversationConstants.CUSTOM_MESSAGE;
+              case MessageTypes.audio:
+                message = localize("MESSAGE_AUDIO");
                 break;
               default:
                 message = "start a conversation";
@@ -218,12 +209,18 @@ export class CometChatConversationListItemComponent
           break;
         case CometChat.MESSAGE_TYPE.CUSTOM:
           switch (msgObject?.getType()) {
-            case conversationConstants.CUSTOM_TYPE_POLL:
-              message = conversationConstants.CUSTOM_MESSAGE_POLL;
-              break;
-            case conversationConstants.CUSTOM_TYPE_STICKER:
-              message = conversationConstants.CUSTOM_MESSAGE_STICKER;
-              break;
+              case MessageTypes.whiteboard:
+                message = localize("CUSTOM_MESSAGE_WHITEBOARD");
+                break;
+                case MessageTypes.document:
+                  message = localize("CUSTOM_MESSAGE_DOCUMENT");
+                  break;
+                case MessageTypes.sticker:
+                  message = localize("CUSTOM_MESSAGE_STICKER");
+                  break;
+                  case MessageTypes.poll:
+                    message = localize("CUSTOM_MESSAGE_POLL");
+                    break;
             case "meeting":
               message = "direct call";
               break;
@@ -250,10 +247,27 @@ export class CometChatConversationListItemComponent
           message = `${msgObject?.getSender().getName()}:  ${message}`
         }
       }
-
     }
- 
     return message;
+  }
+  getExtensionData(messageObject: CometChat.BaseMessage) {
+    let messageText
+    //xss extensions data
+    const xssData = checkMessageForExtensionsData(messageObject, "xss-filter");
+    if (xssData && checkHasOwnProperty(xssData,"sanitized_text") && checkHasOwnProperty(xssData,"hasXSS") && xssData.hasXSS === "yes") {
+      messageText = xssData.sanitized_text;
+    }
+    //datamasking extensions data
+    const maskedData = checkMessageForExtensionsData(messageObject, "data-masking");
+    if (maskedData && checkHasOwnProperty(maskedData,"data") && checkHasOwnProperty(maskedData.data,"sensitive_data") && checkHasOwnProperty(maskedData.data,"message_masked") && maskedData.data.sensitive_data === "yes") {
+      messageText = maskedData.data.message_masked;
+    }
+    //profanity extensions data
+    const profaneData = checkMessageForExtensionsData(messageObject, "profanity-filter");
+    if (profaneData && checkHasOwnProperty(profaneData,"profanity") && checkHasOwnProperty(profaneData,"message_clean") && profaneData.profanity === "yes") {
+      messageText = profaneData.message_clean;
+    }
+    return messageText || (messageObject as any).text
   }
   // calling subtitle callback from configurations
   /**
@@ -263,11 +277,9 @@ export class CometChatConversationListItemComponent
     let subtitle;
     if(this.conversationInputData!.subtitle){
       subtitle = this.conversationInputData!.subtitle(conversation)
-
     }
     else{
       subtitle = this.setSubtitle(conversation)
-
     }
     return subtitle
   }
@@ -301,9 +313,6 @@ export class CometChatConversationListItemComponent
     return (lastMessage as any).text;
   };
   ngOnInit() {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
     this.typingIndicatorListener()
     this.checkConfiguration()
     this.setThemeStyle()
@@ -327,8 +336,6 @@ export class CometChatConversationListItemComponent
       this.setStatusIndicatorConfig(this.statusIndicatorConfiguration, statusIndicatorDefaultConfig)
       this.setBadgeCountConfig(this.badgeCountConfiguration, badgeCountDefaultConfig)
       this.setMessageReceiptConfig(this.messageReceiptConfiguration, messageReceiptDefaultConfig)
-    
-
   }
   /**
    * @param  {any} config
@@ -365,7 +372,6 @@ export class CometChatConversationListItemComponent
     this.messageReceiptIcons.messageReadIcon = config.messageReadIcon || defaultConfig.messageReadIcon;
     this.messageReceiptIcons.messageErrorIcon = config.messageErrorIcon || defaultConfig.messageErrorIcon;
   }
-
   // 
   /**
    * hide show menu options on hover
@@ -383,7 +389,6 @@ export class CometChatConversationListItemComponent
       this.ref.detectChanges()
     }
   }
-
   /**
    * @param  {CometChat.Conversation} data
    */
@@ -511,7 +516,6 @@ export class CometChatConversationListItemComponent
     }
     this.ref.detectChanges()
   }
-  
   /**
    * @param  {CometChat.Conversation} lastMessage
    */
@@ -543,7 +547,6 @@ export class CometChatConversationListItemComponent
       this.typingListenerId,
       new CometChat.MessageListener({
         onTypingStarted: (typingIndicator: any) => {
-
           if ((this.conversationObject as any)?.conversationWith.guid == typingIndicator.receiverId) {
             this.typerName = typingIndicator.sender.name
             this.isTyping = true
@@ -610,13 +613,11 @@ export class CometChatConversationListItemComponent
           width:this.style.width,
           border:this.style.border,
           borderRadius:this.style.borderRadius,
-          background: this.isHovering || this.isActive ? this.style.activeBackground : this.style.background
-
+          background: this.isHovering || this.isActive ? this.style.activeBackground || this.theme.palette.getAccent50() : this.style.background || this.theme.palette.getBackground()
         }
       },
       timestampStyle: (style: any) => {
         return {
-          color: style.subTitleColor,
           maxHeight: style.height ? style.height : "16px"
         }
       },
@@ -625,34 +626,33 @@ export class CometChatConversationListItemComponent
         return {
           width: "70%",
           flexGrow: "1",
-          border: style.border,
           ...padding,
         };
       },
       titleStyle: (style: any) => {
         return {
-          font: style.titleFont,
-          color: style.titleColor,
+          font: style.titleFont || fontHelper(this.theme.typography.title2),
+          color: style.titleColor || this.theme.palette.getAccent(),
         };
       },
       subTitleStyle: (style: any) => {
         return {
-          font: style.subTitleFont,
-          color: style.subTitleColor,
+          font: style.subTitleFont || fontHelper(this.theme.typography.subtitle2),
+          color: style.subTitleColor || this.theme.palette.getAccent600(),
           width: "100%",
         };
       },
       typingTextStyle: (style: any) => {
         return {
-          font: style.typingIndicatorTextFont,
-          color: style.typingIndicatorTextColor,
+          font: style.typingIndicatorTextFont || fontHelper(this.theme.typography.subtitle2),
+          color: style.typingIndicatorTextColor || this.theme.palette.getPrimary(),
           width: "calc(100% - 24px)",
         };
       },
       itemThreadIndicatorStyle: (style: any) => {
         return {
-          font: style.threadIndicatorTextFont,
-          color: style.threadIndicatorTextFont,
+          font: style.threadIndicatorTextFont || fontHelper(this.theme.typography.subtitle2),
+          color: style.threadIndicatorTextColor || this.theme.palette.getAccent400(),
         };
       }
     }

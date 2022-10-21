@@ -1,5 +1,6 @@
 
 import {ConversationOption } from "../../Shared/Constants/UIKitConstants";
+import { localize } from "../../Shared/PrimaryComponents/CometChatLocalize/cometchat-localize";
 /**
  * @class conversationOptions 
  * @description conversationOptions class extends Options class and is used for defining the conversation options.
@@ -13,27 +14,24 @@ export class ConversationOptions{
     public title:string = "";
     public iconURL:string = "";
     public callBack:Function | null = null;
-    constructor({id = "",title = "",iconURL = "",callBack = null as any}){
+    constructor({id = "",title = localize("DELETE"),iconURL = "",callBack = null as any}){
         this.id = id;
         this.title = title
         this.iconURL = iconURL;
-        this.callBack = callBack
+        this.callBack = callBack;
     };
-	static conversationOptions: any = {
-		DELETE: 
-		new ConversationOptions({
-			id: ConversationOption.delete,
-			title: ConversationOption.delete,
-			//inside style
-			iconURL: "assets/resources/deleteicon.svg",
-			callBack: null
-	}),
-	}
-	 static getDefaultOptions = ()=>{
-	   let options = [this.conversationOptions.DELETE];
+	static getDefaultOptions = ()=>{
+		return [
+			new ConversationOptions({
+				id: ConversationOption.delete,
+				title: localize("DELETE"),
+				//inside style
+				iconURL: "assets/resources/deleteicon.svg",
+				callBack: null,
+			  })
+		]
+	 }
 
-	   return options
-	}
 }
 const getDefaultOptions = ConversationOptions.getDefaultOptions
 export  {getDefaultOptions}

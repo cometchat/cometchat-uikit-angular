@@ -9,9 +9,8 @@ import {
   ChangeDetectorRef,
 } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import { messageConstants, MessageReceiverType, MessageStatus, MessageTypes } from "../../../Shared/Constants/UIKitConstants";
+import { messageConstants, MessageListAlignment, MessageReceiverType, MessageStatus, MessageTypes } from "../../../Shared/Constants/UIKitConstants";
 import { checkHasOwnProperty } from "../../../Shared/Helpers/CometChatHelper";
-
 import { CometChatMessageComposerComponent } from "../../CometChatMessageComposer/cometchat-message-composer/cometchat-message-composer.component";
 import { CometChatMessageListComponent } from "../../CometChatMessageList/cometchat-message-list/cometchat-message-list.component";
 import { CometChatConversationEvents } from "../../../Chats/CometChatConversationEvents.service";
@@ -23,7 +22,7 @@ import { LiveReactionConfiguration, localize, MessageComposerConfiguration, Mess
 import { customView } from "../../../Shared/Types/interface";
 import { composerStyles } from "../../CometChatMessageComposer/interface";
 import { MessageOptions } from "../../CometChatMessageOptions/CometChatMessageOptions";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+import { messageInputData } from "../../../Shared/InputData/MessageInputData";
   /**
 *
 * CometChatMessages is a wrapper component for messageList, messageHeader, messageComposer and liveReaction component.
@@ -75,13 +74,13 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
          /**
      * Properties for internal use
      */
-  public isMobileView: boolean = true
+  // public isMobileView: boolean = true
   public messagesStyle: any = {}
   public onMessageEdit: any;
   public onLiveReaction: any;
   public onMessageSent: any;
   public onMessageEdited: any;
-  public theme: any = new CometChatTheme({});
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   public messageToBeEdited: CometChat.BaseMessage | null = null;
   public replyPreview = null;
   public liveReaction: boolean = false;
@@ -110,6 +109,9 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     errorStateTextColor: "grey",
   }
   public liveReactionTimeout: any = 0;
+  public messageListTypes!:any;
+  public messageComposerTypes!:any;
+  public messagesTypes = [];
   /*
  messageHeaderConfiguration
  */
@@ -120,7 +122,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   /*
   messageListConfiguration
   */
-  alignment: string = "left";
+  alignment: string = "standard";
   excludeMessageTypes: string[] = [];
   excludeMessageOptions: {}[] = [];
   customOptions: {}[] = [];
@@ -138,14 +140,13 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   parentMessageId: number = 0;
   messages: CometChat.BaseMessage[] = [];
   reachedTopOfConversation: boolean = false;
- 
   errorText: string = "Unable to fetch messages";
   hideError: boolean = false;
   showEmojiInLargerSize: boolean = false;
   customMessageOptions: any[] = [];
-  receivedMessageInputData: any = {}
-  sentMessageInputData: any = {}
-  placeholderText: string = "";
+  receivedMessageInputData: messageInputData = {}
+  sentMessageInputData: messageInputData = {}
+  placeholderText: string = localize("ENTER_YOUR_MESSAGE_HERE");
   sendButtonIconURL: string = "";
   liveReactionIcon: string = "";
   attachmentIconURL: string = "";
@@ -157,6 +158,10 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   emojiIconURL: string = "";
   showSendButton: boolean = true;
   onSendButtonClick: any;
+  onMessageDelete: any;
+  onMessageReact: any;
+  onMessageRead: any;
+  onMessageError:any;
   constructor(private conversationEvents: CometChatConversationEvents, private messageEvents: CometChatMessageEvents, private ref: ChangeDetectorRef) { }
   /**
    * 
@@ -171,8 +176,6 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   ngOnInit() {
     this.subscribeToEvents();
     this.checkConfiguration();
-
-
     CometChat.getLoggedinUser().then((user) => {
       this.loggedInUser = user;
     });
@@ -219,7 +222,67 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   setLiveReactionConfiguration(configuration: LiveReactionConfiguration, defaultConfiguration?: LiveReactionConfiguration) {
     this.liveReactionIcon = configuration.liveReactionIconURL || defaultConfiguration!.liveReactionIconURL
   }
+  setInputData(senderInput:messageInputData,receiverInput:messageInputData){
+    if(this.user){
+      if(senderInput.time == null){
+        this.sentMessageInputData.time = true
+      }
+      if(senderInput.thumbnail == null){
+        this.sentMessageInputData.thumbnail = false
+      }
+      if(senderInput.title == null){
+        this.sentMessageInputData.title = false
+      }
+      if(senderInput.readReceipt == null){
+        this.sentMessageInputData.readReceipt = true
+      }
+      if(receiverInput.time == null){
+        this.receivedMessageInputData.time = true
+      }
+      if(receiverInput.thumbnail == null){
+        this.receivedMessageInputData.thumbnail = false
+      }
+      if(receiverInput.title == null){
+        this.receivedMessageInputData.title = false
+      }
+      if(receiverInput.readReceipt == null){
+        this.receivedMessageInputData.readReceipt = false
+      }
+    }
+    else if(this.group){
+      if(senderInput.time == null){
+        this.sentMessageInputData.time = true
+      }
+      if(senderInput.thumbnail == null){
+        this.sentMessageInputData.thumbnail = false
+      }
+      if(senderInput.title == null){
+        this.sentMessageInputData.title = false
+      }
+      if(senderInput.readReceipt == null){
+        this.sentMessageInputData.readReceipt = true
+      }
+      
+      if(receiverInput.time == null){
+        this.receivedMessageInputData.time = true
+      }
+      if(receiverInput.thumbnail == null){
+        this.receivedMessageInputData.thumbnail = true
+      }
+      if(receiverInput.title == null){
+        this.receivedMessageInputData.title = true
+      }
+
+    }
+    if(this.alignment == MessageListAlignment.left &&  this.messageListConfiguration.alignment != MessageListAlignment.left){
+      this.sentMessageInputData.readReceipt = false
+      this.receivedMessageInputData.readReceipt = false
+    }
+  }
   setMessageListConfiguration(configuration: MessageListConfiguration, defaultConfiguration?: MessageListConfiguration) {
+    this.receivedMessageInputData = {...configuration!.receivedMessageInputData} || {...defaultConfiguration!.receivedMessageInputData};
+    this.sentMessageInputData = {...configuration!.sentMessageInputData} || {...defaultConfiguration!.sentMessageInputData};
+    this.setInputData(this.sentMessageInputData, this.receivedMessageInputData)
     this.alignment = configuration?.alignment || defaultConfiguration!.alignment;
     this.customMessageOptions = configuration!.customMessageOptions || defaultConfiguration!.customMessageOptions;
     this.customView = configuration!.customView || defaultConfiguration!.customView;
@@ -231,24 +294,24 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     this.hideThreadReplies = checkHasOwnProperty(configuration, "hideThreadReplies") ? configuration!.hideThreadReplies : defaultConfiguration!.hideThreadReplies;
     this.limit = configuration!.limit || defaultConfiguration!.limit;
     this.loadingIconURL = configuration!.loadingIconURL || defaultConfiguration!.loadingIconURL;
-    this.messageTypes = configuration!.messageTypes || defaultConfiguration!.messageTypes;
+    if(!this.messageTypes || (this.messageTypes.length && this.messageTypes.length <= 0)){
+      this.messageListTypes = configuration!.messageTypes || defaultConfiguration!.messageTypes;
+    }
+    else{
+      this.messageListTypes = this.messageTypes;
+    }
     this.onlyUnread = checkHasOwnProperty(configuration, "onlyUnread") ? configuration!.onlyUnread : defaultConfiguration!.onlyUnread;
-    this.receivedMessageInputData = configuration!.receivedMessageInputData || defaultConfiguration!.receivedMessageInputData;
-    this.sentMessageInputData = configuration!.sentMessageInputData || defaultConfiguration!.sentMessageInputData;
     this.tags = configuration!.tags || defaultConfiguration!.tags;
     this.threadParentMessageId = checkHasOwnProperty(configuration, "threadParentMessageId") ? configuration!.threadParentMessageId : defaultConfiguration!.threadParentMessageId;
-
   }
   setMessageHeaderConfiguration(configuration: MessageHeaderConfiguration, defaultConfiguration?: MessageHeaderConfiguration) {
     this.options = configuration?.options || defaultConfiguration!.options;
     this.showBackButton = checkHasOwnProperty(configuration, "showBackButton") ? configuration?.showBackButton : defaultConfiguration!.showBackButton;
-    this.isMobileView = checkHasOwnProperty(configuration, "isMobileView") ? configuration?.isMobileView : defaultConfiguration!.isMobileView;
     this.backButtonIconURL = configuration?.backButtonIconURL || defaultConfiguration!.backButtonIconURL;
     this.enableTypingIndicator = checkHasOwnProperty(configuration, "enableTypingIndicator") ? configuration?.enableTypingIndicator : defaultConfiguration!.enableTypingIndicator;;
     this.inputData = configuration?.inputData || defaultConfiguration!.inputData;
   }
   setMessageComposerConfiguration(configuration: MessageComposerConfiguration, defaultConfiguration?: MessageComposerConfiguration) {
-    this.placeholderText = configuration.placeholderText || defaultConfiguration!.placeholderText;
     this.sendButtonIconURL = configuration.sendButtonIconURL || defaultConfiguration!.sendButtonIconURL;
     this.liveReactionIcon = configuration.liveReactionIconURL || defaultConfiguration!.liveReactionIconURL;
     this.attachmentIconURL = configuration.attachmentIconURL || defaultConfiguration!.attachmentIconURL;
@@ -260,19 +323,19 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     this.emojiIconURL = configuration.emojiIconURL || defaultConfiguration!.emojiIconURL;
     this.showSendButton = checkHasOwnProperty(configuration, "showSendButton") ? configuration.showSendButton : defaultConfiguration!.showSendButton;
     this.onSendButtonClick = configuration.onSendButtonClick || null;
-    this.messageTypes = configuration.messageTypes || defaultConfiguration!.messageTypes;
+    if(!this.messageTypes || (this.messageTypes.length && this.messageTypes.length <= 0)){
+      this.messageComposerTypes = configuration.messageTypes || defaultConfiguration!.messageTypes;
+    }
+    else{
+      this.messageComposerTypes = this.messageTypes;
+    }
     this.customOutgoingMessageSound = checkHasOwnProperty(configuration, "customOutgoingMessageSound") ? configuration.customOutgoingMessageSound : defaultConfiguration!.customOutgoingMessageSound;
     this.enableSoundForMessages = checkHasOwnProperty(configuration, "enableSoundForMessages") ? configuration.enableSoundForMessages : defaultConfiguration!.enableSoundForMessages;
     this.enableTypingIndicator = checkHasOwnProperty(configuration, "enableTypingIndicator") ? configuration.enableTypingIndicator : defaultConfiguration!.enableTypingIndicator;
     this.excludeMessageTypes = configuration.excludeMessageTypes || defaultConfiguration!.excludeMessageTypes;
   }
   ngOnChanges(change: SimpleChanges) {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    
-    }
     try {
-      this.checkConfiguration()
       if (change[MessageReceiverType.user] || change[MessageReceiverType.group]) {
         if (this.user) {
           if (Object.keys(this.user).length > 1) {
@@ -319,11 +382,10 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
         if (prevProps.callMessage !== props.callMessage && props.callMessage) {
         }
       }
+      this.checkConfiguration()
     } catch (error:any) {
         this.messageEvents.publishEvents(this.messageEvents.onError, error);
     }
-  }
-  sendgroup(): any {
   }
   ngOnDestroy() {
     this.unsubscribeToEvents()
@@ -339,7 +401,6 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    this.composerStyles.inputBackground = this.theme.palette.getSecondary()
    this.composerStyles.inputTextFont = fontHelper(this.theme.typography.subtitle1)
    this.composerStyles.inputTextColor = this.theme.palette.getAccent900("dark")
-
   }
   /**
    * on receiving message sent event from composer
@@ -378,13 +439,11 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     this.onMessageEdit = this.messageEvents.onMessageEdit.subscribe((object: any) => {
       if(object?.status == MessageStatus.inprogress ){
         this.previewMessage(object.message)
-
       }
       else if(object?.status == MessageStatus.success){
         this.updateMessage(object.message)
-
+     
       }
-  
     })
     this.onMessageSent = this.messageEvents.onMessageSent.subscribe((obj: any) => {
       this.sentMessageHandler(obj)
@@ -393,6 +452,18 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
       this.liveReactionStart(reactionName.reaction)
       this.ref.detectChanges();
     })
+    this.onMessageDelete = this.messageEvents.onMessageDelete.subscribe((messageObject: any) => {
+     this.updateDeletedMessage(messageObject.message)
+      this.ref.detectChanges();
+    })
+    this.onMessageReact = this.messageEvents.onMessageReact.subscribe((object: any) => {
+      this.messageListRef.reactToMessages(object.reaction, object.message)
+       this.ref.detectChanges();
+     })
+     this.onMessageError = this.messageEvents.onMessageError.subscribe((object: any) => {
+      this.updateMessage(object.message, true)
+       this.ref.detectChanges();
+     })
   }
   // start live reaction
   liveReactionStart = (reactionName: string) => {
@@ -411,6 +482,14 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     }, 1500);
     this.ref.detectChanges();
   }
+  updateDeletedMessage = (message:CometChat.BaseMessage)=>{
+    if(this.messageListRef.hideDeletedMessages){
+      this.messageListRef.removeMessage(message)
+    }
+    else{
+      this.messageListRef.updateMessage(message)
+    }
+  }
   /**
  * unsubscribe to events
  * 
@@ -419,6 +498,9 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
     this.onMessageEdit.unsubscribe();
     this.onMessageSent.unsubscribe();
     this.onLiveReaction.unsubscribe();
+    this.onMessageReact.unsubscribe();
+    this.onMessageDelete.unsubscribe();
+    this.onMessageError.unsubscribe()
   }
   /**
    * Plays Audio When Message is Sent
@@ -464,6 +546,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
    */
   updateMessage(message: CometChat.BaseMessage, muid: boolean = false) {
     this.messageListRef.updateMessage(message, muid);
+    this.updateLastMessage(message)
   }
   /**
    * This method will remove  the message from messageList
@@ -504,7 +587,7 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   }
   chatListStyle() {
     return {
-      background: this.style.background,
+      background: this.style.background || this.theme.palette.getBackground(),
       height:this.style.height,
       width:this.style.width,
       border:this.style.border,
@@ -513,14 +596,11 @@ export class CometChatMessagesComponent implements OnInit, OnChanges {
   }
   emptyMessageStyle = ()=>{
     return {
-      background: this.style.background,
+      background: this.style.background || this.theme.palette.getBackground(),
       height:this.style.height,
       width:this.style.width,
       border:this.style.border,
       borderRadius:this.style.borderRadius,
-      font:this.style.messageTextFont,
-      color:this.style.messageTextColor
-
     }
   }
 }

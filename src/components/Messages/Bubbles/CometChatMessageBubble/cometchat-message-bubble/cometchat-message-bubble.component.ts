@@ -5,7 +5,6 @@ import { MessageReceiptConfiguration } from "../../../../Shared/PrimaryComponent
 import { style } from '../../../../Chats/interface';
 import { CometChatTheme } from "../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme";
 import { CometChat } from "@cometchat-pro/chat";
-import { CometChatWrapperComponent } from "../../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
 import { checkMessageForExtensionsData, getUnixTimestamp } from '../../../../Shared/Helpers/CometChatHelper';
 import { avatarStyles, baseStyle, fileBubbleStyles, groupActionStyles, messageOptionsStyle, messageReceiptStyles, placeHolderStyles, pollBubbleStyles, styles, witeboardStyles } from '../../styles';
 import { DateConfiguration, localize, MenuListConfiguration, MessageBubbleConfiguration } from '../../../../Shared';
@@ -48,6 +47,7 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
   @Input() menuListConfiguration: MenuListConfiguration = new MenuListConfiguration({});
   @Input() avatarConfiguration: AvatarConfiguration = new AvatarConfiguration({});
   @Input() messageReceiptConfiguration: MessageReceiptConfiguration = new MessageReceiptConfiguration({});
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   // translate message
   public translatedMessage: string = "";
   public optionBackgroundIcon:string = 'assets/resources/checkmark.svg';
@@ -81,7 +81,6 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
   deletedText: string = localize(messageConstants.MESSAGE_IS_DELETED);
   timeStampFont: string = "";
   timeStampColor: string = "";
-  public theme: any = new CometChatTheme({})
   limit: number = 3;
   moreIconURL:string=""
   isHovering: boolean = false;
@@ -206,7 +205,6 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
     textColor: "",
   };
   subMenuStyle:any = {
-
   }
   public optionsIcon: messageOptionsStyle = {};
   // local method for messageoption callback
@@ -222,21 +220,17 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
     this.setThemeStyle()
     if(!this.messageObject?.getSender() || this.messageObject?.getSender().getUid() == this.loggedInUser?.getUid()){
       this.subMenuStyle.right = "0"
-      
     }
     else{
       this.subMenuStyle.left = "0"
-
     }
     this.checkConfiguration();
-
     this.checkReaction = checkMessageForExtensionsData(
       this.messageObject as CometChat.BaseMessage,
       "reactions"
     );
   }
   ngOnChanges(changes: SimpleChanges) {
-  
     let translatedMessageObject:any = this.messageObject
     if (translatedMessageObject && translatedMessageObject.data.metadata && translatedMessageObject.data.metadata["translated_message"]) {
       this.isTranslated = true;
@@ -252,20 +246,26 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
       this.setThemeStyle()
        if (this.messageObject!.getSentAt()) {
         this.timeStamp = this.messageObject!.getSentAt();
-      
       }
     }
   }
   setThemeStyle() {
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme
-     }
+  if(!this.style.background){
+    if(this.messageObject?.getReceiverId() != this.loggedInUser?.getUid()){
+      this.style.background =   this.theme.palette.getSecondary()
+   }
+   else{
+    this.style.background =  this.theme.palette.getPrimary() 
+   }
+  }
     this.textBubbleStyle.linkPreviewTitleColor = this.theme.palette.getAccent("light");
     this.textBubbleStyle.linkPreviewTitleFont = fontHelper(this.theme.typography.title1);
     this.textBubbleStyle.linkPreviewSubtitleColor = this.theme.palette.getAccent600("light");
     this.textBubbleStyle.linkPreviewSubtitleFont = fontHelper(this.theme.typography.subtitle2);
-    this.textBubbleStyle.textColor = !this.messageObject!.getSender() || this.messageObject!.getSender() && this.messageObject!.getSender().getUid() == this.loggedInUser!.getUid() ?  this.theme.palette.getAccent900("light") : this.theme.palette.getAccent900("dark");
-    this.fileBubbleStyle.titleFont = fontHelper(this.theme.typography.title1);
+    this.textBubbleStyle.textColor = !this.messageObject!.getSender() || this.messageObject!.getSender() && this.messageObject!.getSender().getUid() == this.loggedInUser!.getUid() && this.alignment != 'left'?  this.theme.palette.getAccent900("light") : this.theme.palette.getAccent900("dark");
+    this.textBubbleStyle.textFont = fontHelper(this.theme.typography.subtitle1)
+    this.fileBubbleStyle.titleFont = fontHelper(this.theme.typography.title2);
+    this.fileBubbleStyle.titleColor = this.theme.palette.getAccent900("dark");
     this.fileBubbleStyle.subtitleFont = fontHelper(this.theme.typography.subtitle2);
     this.fileBubbleStyle.subtitleColor = this.theme.palette.getAccent600("light");
     this.fileBubbleStyle.iconTint = this.theme.palette.getPrimary();
@@ -386,12 +386,6 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
         height: this.style.height,
       }
     },
-    messageGutterStyle: () => {
-      return {
-        width: this.style.width,
-        background: "rgb(51, 153, 255)",
-      }
-    },
     messageKitReceiptStyle: () => {
       let justifyContent;
       this.alignment === "right" && this.messageBubbleData.readReceipt ? justifyContent = { justifyContent: "flex-end" } : { justifyContent: "flex-start" };
@@ -402,15 +396,15 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
     userNameStyle: () => {
       let justifyContent = this.alignment === "right" ? { justifyContent: "flex-end" } : { justifyContent: "flex-start" };
       return {
-        font: this.style.nameTextFont || "500 12px Inter, sans-serif",
-        color: this.style.nameTextColor ||"rgba(20, 20, 20, 0.58)" ,
+        font: this.style.nameTextFont || fontHelper(this.theme.typography.caption1),
+        color: this.style.nameTextColor || this.theme.palette.getAccent600() ,
         ...justifyContent,
       };
     },
     nameFontStyle: () => {
       return {
-        font: this.style.nameTextFont,
-        color: this.style.nameTextColor
+        font: this.style.nameTextFont || fontHelper(this.theme.typography.caption1),
+        color: this.style.nameTextColor || this.theme.palette.getAccent600() ,
       }
     },
     timeStampStyle: () => {
@@ -433,14 +427,25 @@ export class CometChatMessageBubbleComponent implements OnInit, OnChanges {
     bubbleBackground: () => {
       return {
         border: this.style.border,
-        background: this.style.background,
+        background: this.style.background ,
         borderRadius: this.style.borderRadius,
       }
     },
     messageOptionStyles:()=>{
-      let right = {right:this.messageObject?.getReceiverId() != this.loggedInUser?.getUid() ? "20px" : "none"}
+      let left, right;
+      if(this.messageBubbleData.thumbnail){
+        right = !this.messageObject?.getSender() || this.messageObject.getSender().getUid() == this.loggedInUser?.getUid() ? "50px" : "0";
+        left = !this.messageObject?.getSender() || this.messageObject.getSender().getUid() == this.loggedInUser?.getUid() ? "0" : "50px"
+      }
+      else{
+        right = !this.messageObject?.getSender() || this.messageObject.getSender().getUid() == this.loggedInUser?.getUid() ? "12px" : "0";
+        left = !this.messageObject?.getSender() || this.messageObject.getSender().getUid() == this.loggedInUser?.getUid() ? "none" : "12px"
+      }
       return{
-        ...right 
+       justifyContent: !this.messageObject?.getSender() || this.messageObject.getSender().getUid() == this.loggedInUser?.getUid() ? "flex-end" : "flex-start",
+       right: right,
+       left:left,
+       top: this.messageBubbleData.title ? "0" : "-20px"
       }
     },
     translatedMessageStyle:()=>{

@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, Output, EventEmitter } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
+import { CometChatTheme, fontHelper } from "../../../Shared";
 import { messageConstants } from "../../../Shared/Constants/UIKitConstants";
 import { checkHasOwnProperty } from '../../../Shared/Helpers/CometChatHelper';
 import { CometChatMessageEvents } from "../../CometChatMessageEvents.service";
@@ -25,6 +26,7 @@ export class CometChatCreatePollComponent implements OnInit {
   @Input() errorText = "";
   @Input() user: CometChat.User | null = null;
   @Input() group: CometChat.Group | null = null;
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() title: string = "Create Poll";
   @Input() onClose!: () => void;
   @Input() onCreatePoll!: () => void;
@@ -191,78 +193,73 @@ export class CometChatCreatePollComponent implements OnInit {
     closeButtonStyle: () => {
       return {
         WebkitMask: `url(${this.closeIconURL})`,
-        background: this.style.closeIconTint
+        background: this.style.closeIconTint || this.theme.palette.getPrimary()
       }
     },
     addIconStyle: () => {
       return {
         WebkitMask: `url(${this.addAnswerIconURL})`,
-        background: this.style.addAnswerIconTint
+        background: this.style.addAnswerIconTint || this.theme.palette.getPrimary()
       }
     },
     removeIconStyle: () => {
       return {
         WebkitMask: `url(${this.deleteIconURL})`,
-        background: this.style.deleteIconTint
+        background: this.style.deleteIconTint ||  this.theme.palette.getAccent600()
       }
     },
     titleStyle: () => {
       return {
-        font: this.style.titleFont,
-        color: this.style.titleColor
+        font: this.style.titleFont || fontHelper(this.theme.typography.title1),
+        color: this.style.titleColor || this.theme.palette.getAccent()
       }
     },
     subtitleStyle: () => {
       return {
-        font: this.style.answerHelpTextFont,
-        color: this.style.answerHelpTextColor
+        font: this.style.answerHelpTextFont || fontHelper(this.theme.typography.caption1),
+        color: this.style.answerHelpTextColor || this.theme.palette.getAccent600()
       }
     },
     placeHolderStyle: () => {
       return {
-        font: this.style.placeholderTextFont,
-        color: this.style.placeholderTextColor,
+        font: this.style.placeholderTextFont || fontHelper(this.theme.typography.subtitle1),
+        color: this.style.placeholderTextColor || this.theme.palette.getAccent900(),
       }
     },
     optionPlaceHolderStyle: () => {
       return {
-        font: this.style.optionPlaceholderTextFont,
-        color: this.style.optionPlaceholderTextColor,
+        font: this.style.optionPlaceholderTextFont || fontHelper(this.theme.typography.subtitle1),
+        color: this.style.optionPlaceholderTextColor ||  this.theme.palette.getAccent900(),
       }
     },
     addIconTextStyle: () => {
       return {
-        font: this.style.addAnswerTextFont,
-        color: this.style.addAnswerTextColor
+        font: this.style.addAnswerTextFont || fontHelper(this.theme.typography.caption1),
+        color: this.style.addAnswerTextColor || this.theme.palette.getAccent600()
       }
     },
-    errorTextStyle: () => {
-      return {
-        font: this.style.errorTextFont,
-        color: this.style.errorTextColor
-      }
-    },
+
     buttonTextStyle: () => {
       return {
-        font: this.style.createPollButtonTextFont,
-        color: this.style.createPollButtonTextColor,
-        background: this.style.createPollButtonBackground
+        font: this.style.createPollButtonTextFont ||  fontHelper(this.theme.typography.title2),
+        color: this.style.createPollButtonTextColor || this.theme.palette.getAccent("dark"),
+        background: this.style.createPollButtonBackground || this.theme.palette.getPrimary()
       }
     },
     createPollWrapperStyle: () => {
       return {
         height: this.style.height,
         width: this.style.width,
-        background: this.style.background,
+        background: this.style.background || this.theme.palette.getAccent900(),
         border: this.style.border,
         borderRadius: this.style.borderRadius
       }
     },
     optionBorderStyle: () => {
       return {
-        border: this.style.border || "1px solid rgba(248, 248, 248, 0.92)",
+        border: this.style.border || `1px solid ${this.theme.palette.getSecondary()}`,
         borderRadius: this.style.borderRadius,
-        background: this.style.questionBackground
+        background: this.style.questionBackground || this.theme.palette.getSecondary()
       }
     }
   }

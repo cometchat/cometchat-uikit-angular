@@ -1,3 +1,4 @@
+import { CometChatMessageTemplate } from "../../../Messages/CometChatMessageTemplate/cometchat-message-template"
 import { ActionSheetConfiguration } from "./ActionSheetConfiguration"
 import { CreatePollConfiguration } from "./CreatePollConfiguration"
 import { EmojiKeyboardConfiguration } from "./EmojiKeyboardConfiguration"
@@ -43,7 +44,7 @@ class MessageComposerConfiguration {
   emojiIconURL: string = "assets/resources/Stipop.svg"
   showSendButton: boolean = true
   onSendButtonClick: any = null;
-  messageTypes: any[] = []
+  messageTypes!:any;
   customOutgoingMessageSound: string = ""
   enableSoundForMessages: boolean = true
   enableTypingIndicator: boolean = true

@@ -7,7 +7,6 @@
     </span>
   <div class="icon__background"
   *ngIf="!hideLayoutMode"
-  [ngStyle]="styles.layoutIconStyle()"
   >
     <div
     
@@ -21,7 +20,7 @@
     <cometchat-list-item
     *ngFor="let action of actions"
     [iconURL]="action.icon"
-    [text]="localize(action.name)"
+    [text]="action.name"
     [style]="actionSheetItemStyle"
      class="list__item"
     (click)="action.actionCallback()"

@@ -1,7 +1,7 @@
 {
 	"USERS": "Users",
 	"CHATS": "Chats",
-
+   "WOULD__YOU_LIKE_TO_DELETE_THIS_CONVERSATION":"Would you like to delete this conversation? This conversation will be deleted from all of your devices.",
 	"GROUPS": "Groups",
 	"SHARED":"Shared",
 	"SOUND_MANAGER":"Sound Manager",
@@ -34,6 +34,8 @@
 	"DELETE_CONVERSATION":"Delete Conversation?",
 	"ADD_TO_CHAT":"Add to Chat",
 	"MORE": "More",
+	"COPY_MESSAGE":"Copy",
+	
 
 	"MESSAGE_IMAGE": "📷 Image",
 	"MESSAGE_FILE": "📁 File",
@@ -213,7 +215,7 @@
 	"ON_ANOTHER_CALL": "is on another call",
 	"CREATING": "Creating",
 	"AVATAR": "Avatar",
-	"COPY_MESSAGE":"Copy",
+	
 	"ONGOING_CALL": "Ongoing call",
 	"YOU_ALREADY_ONGOING_CALL": "You are already in an ongoing call",
 	"RESIZE": "Resize",

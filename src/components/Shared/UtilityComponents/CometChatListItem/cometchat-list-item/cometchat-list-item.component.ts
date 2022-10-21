@@ -5,6 +5,7 @@ import {
   OnChanges,
   SimpleChanges,
 } from "@angular/core"
+import { CometChatTheme } from "../../../PrimaryComponents/CometChatTheme/CometChatTheme";
 @Component({
   selector: "cometchat-list-item",
   templateUrl: "./cometchat-list-item.component.html",
@@ -17,6 +18,7 @@ export class CometChatListItemComponent implements OnInit, OnChanges {
   @Input() iconURL: string = ""; 
   @Input() onHoverText: string = "";
   @Input() emoji:string = "";
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() style: any = {
     width:"",
     height:"",

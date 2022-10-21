@@ -1,4 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
+import { CometChatTheme, fontHelper } from '../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 import { messagePreviewStyle } from '../../CometChatMessageComposer/interface';
   /**
 *
@@ -20,6 +21,7 @@ export class CometChatMessagePreviewComponent implements OnInit {
    */
   @Input() messagePreviewTitle = "Edit Message";
   @Input() messagePreviewSubtitle = "";
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() messagePreviewCloseButtonIconURL = "assets/resources/close.svg";
   @Input() style: messagePreviewStyle = {
     messagePreviewBorder: "none",
@@ -49,24 +51,24 @@ export class CometChatMessagePreviewComponent implements OnInit {
     closeBtnIconStyle: () => {
       return {
         WebkitMask: `url(${this.messagePreviewCloseButtonIconURL}) `,
-        background: this.style.messagePreviewCloseButtonIconTint,
+        background: this.style.messagePreviewCloseButtonIconTint || this.theme.palette.getAccent500(),
       }
     },
     subtitleStyle: () => {
       return {
-        font: this.style.messagePreviewSubtitleFont,
-        color: this.style.messagePreviewSubtitleColor
+        font: this.style.messagePreviewSubtitleFont ||  fontHelper(this.theme.typography.subtitle2),
+        color: this.style.messagePreviewSubtitleColor || this.theme.palette.getAccent500()
       }
     },
     titleStyle: () => {
       return {
-        font: this.style.messagePreviewTitleFont,
-        color: this.style.messagePreviewTitleColor
+        font: this.style.messagePreviewTitleFont || fontHelper(this.theme.typography.caption1),
+        color: this.style.messagePreviewTitleColor || this.theme.palette.getAccent500()
       }
     },
     previewWrapperStyle: () => {
       return {
-        background: this.style.messagePreviewBackground,
+        background: this.style.messagePreviewBackground || this.theme.palette.getAccent900(),
         border: this.style.messagePreviewBorder,
       }
     }

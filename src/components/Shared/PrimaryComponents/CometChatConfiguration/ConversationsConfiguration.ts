@@ -1,4 +1,4 @@
-import { ConversationListConfiguration } from "./";
+import { ConversationListConfiguration } from ".";
 /**
  * @class ConversationWithMessagesConfiguration
  * @param {Object} conversationListConfiguration

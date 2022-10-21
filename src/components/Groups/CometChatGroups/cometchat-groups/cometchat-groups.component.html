@@ -2,7 +2,7 @@
   <cometchat-list-base [style]="style" [searchIconURL]="searchIconURL" [searchPlaceHolder]="searchPlaceholder"
     [title]="title" [backButtonIconURL]="backButtonIconURL" [showBackButton]="showBackButton" [hideSearch]="hideSearch"
     [onSearch]="onSearch">
-    <cometchat-group-list #groupListRef [dataItemConfiguration]="groupListConfiguration.dataItemConfiguration"
+    <cometchat-group-list #groupListRef  [theme]="theme" [dataItemConfiguration]="groupListConfiguration.dataItemConfiguration"
       [activeGroup]="activeGroup" [style]="groupListStyle" [hideError]="hideError" [limit]="limit"
       [loadingIconURL]="loadingIconURL" [customView]="customView" [searchKeyword]="searchKeyword" [tags]="tags"></cometchat-group-list>
   </cometchat-list-base>
@@ -16,6 +16,7 @@
     [onCreateGroup]="onCreateGroup"
     [closeButtonIconURL]="closeButtonIconURL"
     [hideCloseButton]="hideCloseButton"
+    [theme]="theme"
     [style]="createGroupStyle"
     >
     </cometchat-create-group>

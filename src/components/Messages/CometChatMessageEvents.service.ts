@@ -13,18 +13,20 @@ export class CometChatMessageEvents {
   onMessageSent: any = new Subject();
   // this events get triggered when there is any error while sending a message
   onMessageError: any = new Subject();
-  // this events get triggered when a message is edited
-  onMessageEdited: any = new Subject();
   // this events get triggered when we click on edit message option
   onMessageEdit: any = new Subject();
   // this events get triggered when we click on live reaction button
   onLiveReaction: any = new Subject();
+    // this events get triggered when we click on react message
+  onMessageReact: any = new Subject();
   // this events get triggered when a message is read
   onMessageRead:any = new Subject()
+    // this events get triggered when a message is deleted
+  onMessageDelete:any = new Subject()
    // this events get triggered when a message is read
-   onBack:any = new Subject()
+  onBack:any = new Subject()
      // this event gets triggered when there is nay error
-     onError:any = new Subject()
+  onError:any = new Subject()
 
 
   /**

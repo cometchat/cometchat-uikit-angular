@@ -1,4 +1,5 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { CometChatTheme, fontHelper } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 import { messageConstants } from '../../../../Shared/Constants/UIKitConstants';
 import { styles } from '../../styles';
 @Component({
@@ -13,11 +14,11 @@ export class CometChatDeleteBubbleComponent implements OnInit,OnChanges {
     height:"100%",
     border:"none",
     background:"transparent",
-    borderRadius:"none",
+    borderRadius:"0",
     textFont:"400 15px Inter, sans-serif",
     textColor:"rgba(20, 20, 20, 0.33)",
   };	
-	
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   constructor() { }
   ngOnChanges(changes: SimpleChanges): void {
     if(changes[messageConstants.TEXT] && changes[messageConstants.TEXT].currentValue != changes[messageConstants.TEXT].previousValue){
@@ -37,8 +38,8 @@ export class CometChatDeleteBubbleComponent implements OnInit,OnChanges {
   }
   deleteBubbleTextStyle(){
     return {
-      color:this.style.textColor,
-      font:this.style.textFont
+      color:this.style.textColor || this.theme.palette.getAccent400(),
+      font:this.style.textFont || fontHelper(this.theme.typography.subtitle1)
     }
   }
 }

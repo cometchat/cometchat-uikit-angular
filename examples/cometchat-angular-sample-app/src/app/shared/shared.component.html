@@ -1,0 +1,136 @@
+<div class="shared__wrapper">
+    <div class="shared__header" [ngStyle]="style.headerTitleStyle()">
+        {{localize("SHARED")}}
+    </div>
+    <div class="card__sections">
+      <div class="section__header" [ngStyle]="style.sectionHeaderStyle()">Primary</div>
+      <div class="card__content">
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('soundManager')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(soundIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >  {{localize("SOUND_MANAGER")}}  </span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatSoundManager allows you to play different types of audio which is required for incoming and outgoing events in UI Kit. for example, events like incoming and outgoing messages.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('theme')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(themeIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("THEME")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatTheme is a style applied to every component and every view in the activity or component in the UI Kit.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('localize')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(localizeIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("LOCALIZE")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                  CometChatLocalize allows you to detect the language of your users based on their browser or device settings and set the language accordingly.
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="section__header" [ngStyle]="style.sectionHeaderStyle()">SDK Derived</div>
+    <div class="card__content">
+      <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('conversationListItem')"   >
+          <div class="card__icon" [ngStyle]="style.iconStyle(conversationIconURL)">
+          </div>
+          <div class="right__content">
+              <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("CONVERSATION_LIST_ITEM")}}</span>
+              <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                CometChatConversationListItem is a reusable component which is used to display the conversation list item in the conversation list.
+              </div>
+          </div>
+      </div>
+      <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('dataItem')">
+          <div class="card__icon" [ngStyle]="style.iconStyle(conversationIconURL)">
+          </div>
+          <div class="right__content">
+              <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("DATA_ITEM")}}</span>
+              <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                CometChatDataItem is a reusable component which is used across multiple components in different variations such as User List, Group List as a List Item.
+              </div>
+          </div>
+      </div>
+  </div>
+  <div class="section__header" [ngStyle]="style.sectionHeaderStyle()">Secondary</div>
+  <div class="card__content">
+    <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('avatar')">
+        <div class="card__icon" [ngStyle]="style.iconStyle(avatarIconURL)">
+        </div>
+        <div class="right__content">
+            <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("AVATAR")}}</span>
+            <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                CometChatAvatar component displays an image or user/group avatar with fallback to the first two letters of the user name/group name
+            </div>
+        </div>
+    </div>
+    <div class="cards" [ngStyle]="style.cardStyle()"  (click)="openModal('statusIndicator')">
+        <div class="card__icon" [ngStyle]="style.iconStyle(statusIconURL)">
+        </div>
+        <div class="right__content">
+            <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("STATUS_INDICATOR")}}</span>
+            <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                StatusIndicator component indicates whether a user is online or offline.
+            </div>
+        </div>
+    </div>
+    <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('badgeCount')">
+        <div class="card__icon" [ngStyle]="style.iconStyle(badgeIconURL)">
+        </div>
+        <div class="right__content">
+            <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("BADGE_COUNT")}}</span>
+            <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                CometChatBadgeCount is a custom component which is used to display the unread message count. It can be used in places like ConversationListItem, etc.
+            </div>
+        </div>
+    </div>
+    <div class="cards" [ngStyle]="style.cardStyle()" (click)="openModal('messageReceipt')">
+        <div class="card__icon" [ngStyle]="style.iconStyle(receiptIconURL)">
+        </div>
+        <div class="right__content">
+            <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("MESSAGE_RECEIPT")}}</span>
+            <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                CometChatMessageReceipt component renders the receipts such as sending, sent, delivered, read and error state indicator of a message.
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+
+<!-- modals -->
+<cometchat-data-item-demo *ngIf="openDataItem" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-data-item-demo>
+<cometchat-avatar-demo *ngIf="openAvatar" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-avatar-demo>
+<cometchat-badge-count-demo *ngIf="openBadgeCount" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-badge-count-demo>
+<cometchat-message-receipt-demo *ngIf="openMessageReceipt" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-message-receipt-demo>
+<cometchat-conversation-list-item-demo *ngIf="openConversationListItem" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-conversation-list-item-demo>
+<cometchat-status-indicator-demo *ngIf="openStatusIndicator" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-status-indicator-demo>
+<cometchat-sound-manager-demo *ngIf="openSoundManager" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-sound-manager-demo>
+<cometchat-theme-demo *ngIf="openTheme" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-theme-demo>
+<cometchat-localize-demo *ngIf="openLocalize" [closeButton]="closeModal" [theme]="theme">
+
+</cometchat-localize-demo>

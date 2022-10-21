@@ -23,7 +23,7 @@ export class CometChatPopoverComponent implements OnInit {
    @Input() position:string= "top";
    @Input() x:number= 0;
    @Input() y:number= 0;
-   public theme:any =  new CometChatTheme({});
+   @Input() theme: CometChatTheme = new CometChatTheme({});
   constructor() { }
 /**
  * 

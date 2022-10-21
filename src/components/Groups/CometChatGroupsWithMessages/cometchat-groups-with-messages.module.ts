@@ -6,6 +6,7 @@ import { CometChatGroupsWithMessagesComponent } from "./cometchat-groups-with-me
 import { CometChatGroups } from "../CometChatGroups/cometchat-groups.module";
 import { CometChatMessages } from "../../Messages/CometChatMessages/cometchat-messages.module";
 import { CometChatJoinProtectedGroup } from "../CometChatJoinProtectedGroup/cometchat-join-protected-group.module";
+import { CometChatDecoratorMessage } from "../../Shared/UtilityComponents/CometChatDecoratorMessage/cometchat-decorator-message.module";
 @NgModule({
   declarations: [CometChatGroupsWithMessagesComponent],
   imports: [
@@ -14,7 +15,8 @@ import { CometChatJoinProtectedGroup } from "../CometChatJoinProtectedGroup/come
     CometChatMessages,
     BrowserModule,
     BrowserAnimationsModule,
-    CometChatJoinProtectedGroup
+    CometChatJoinProtectedGroup,
+    CometChatDecoratorMessage
   ],
   exports: [CometChatGroupsWithMessagesComponent],
 })

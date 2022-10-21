@@ -1,6 +1,6 @@
 import { Component, OnInit, Input } from "@angular/core";
 import { CometChat } from "@cometchat-pro/chat";
-import { localize } from "../../../Shared";
+import { CometChatTheme, fontHelper, localize } from "../../../Shared";
 import { GroupsConstants, GroupType } from "../../../Shared/Constants/UIKitConstants";
 import { CometChatGroupEvents } from "../../CometChatGroupEvents.service";
 import { createGroupStyle } from "../interface";
@@ -30,6 +30,7 @@ export class CometChatCreateGroupComponent implements OnInit {
   @Input() onCreateGroup:any;
   @Input() closeButtonIconURL:string="assets/resources/close2x.svg";
   @Input() hideCloseButton:boolean = false;
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() style: createGroupStyle = {
     width: "100%",
     height: "100%",
@@ -207,64 +208,62 @@ export class CometChatCreateGroupComponent implements OnInit {
     closeIconStyle:()=>{
       return{
        WebkitMask: `url(${this.closeButtonIconURL}) center center no-repeat`,
-       background:this.style.closeIconTint
+       background:this.style.closeIconTint || this.theme.palette.getPrimary()
       }
     },
     groupTypeStyle:(type:string)=>{
       return {
-        font:this.style.groupTypeTextFont,
-        color:this.style.groupTypeTextColor,
-         background: this.activeTab == type || this.type == type ? this.style.groupTypeTextActiveBackground :  this.style.groupTypeTextBackground,
-         boxShadow: this.activeTab == type || this.type == type? this.style.groupTypeTextActiveBoxShadow : this.style.groupTypeTextBoxShadow,
+        font:this.style.groupTypeTextFont || fontHelper(this.theme.typography.text2),
+        color:this.style.groupTypeTextColor || this.theme.palette.getAccent(),
+         background: this.activeTab == type || this.type == type ? this.style.groupTypeTextActiveBackground || this.theme.palette.getBackground():  this.style.groupTypeTextBackground,
+         boxShadow: this.activeTab == type || this.type == type? this.style.groupTypeTextActiveBoxShadow || `${this.theme.palette.getAccent100()} 0px 3px 1px 0` : this.style.groupTypeTextBoxShadow,
          borderRadius:this.activeTab == type || this.type == type? this.style.groupTypeTextActiveBorderRadius :this.style.groupTypeTextBorderRadius,
          borderRight:  this.style.groupTypeBorder
       }
     },
     tabListStyle:()=>{
       return{
-        background:this.style.groupTypeBackground,
+        background:this.style.groupTypeBackground || this.theme.palette.getAccent100(),
         borderRadius:this.style.borderRadius
       }
     },
     createButtonStyle:()=>{
       return{
-        font:this.style.createGroupButtonTextFont,
-        color:this.style.createGroupButtonTextColor,
-        background:this.style.createGroupButtonBackground,
+        font:this.style.createGroupButtonTextFont || fontHelper(this.theme.typography.title2),
+        color:this.style.createGroupButtonTextColor || this.theme.palette.getAccent900("light"),
+        background:this.style.createGroupButtonBackground || this.theme.palette.getPrimary(),
         borderRadius:this.style.createGroupButtonBorderRadius
       }
     },
     passwordInputStyle:()=>{
       return{
-        color:this.style.passwordTextColor,
-        font:this.style.passwordTextFont,
-        boxShadow:this.style.passwordInputBoxShadow,
-        background:this.style.passwordInputBackground,
+        color:this.style.passwordTextColor || this.theme.palette.getAccent(),
+        font:this.style.passwordTextFont || fontHelper(this.theme.typography.subtitle2),
+        boxShadow:this.style.passwordInputBoxShadow || `${this.theme.palette.getAccent50()} 0px 0px 0px 1px`,
+        background:this.style.passwordInputBackground || this.theme.palette.getAccent50(),
         border:this.style.passwordInputBorder,
         borderRadius:this.style.passwordInputBorderRadius
       }
     },
     nameInputStyle:()=>{
       return{
-        color:this.style.nameTextColor,
-        font:this.style.nameTextFont,
-        boxShadow:this.style.nameInputBoxShadow,
-        background:this.style.nameInputBackground,
+        color:this.style.nameTextColor ||  this.theme.palette.getAccent(),
+        font:this.style.nameTextFont || fontHelper(this.theme.typography.subtitle2),
+        boxShadow:this.style.nameInputBoxShadow || `${this.theme.palette.getAccent50()} 0px 0px 0px 1px`,
+        background:this.style.nameInputBackground || this.theme.palette.getAccent50(),
         border:this.style.nameInputBorder,
         borderRadius:this.style.nameInputBorderRadius,
       }
     },
     titleStyle:()=>{
       return{
-        color:this.style.titleTextColor,
-        font:this.style.titleTextFont,
+        color:this.style.titleTextColor || this.theme.palette.getAccent(),
+        font:this.style.titleTextFont || fontHelper(this.theme.typography.heading),
       }
     },
     errorTextStyle:()=>{
       return{
-        color:this.style.errorTextColor,
-        font:this.style.errorTextFont,
-        background:this.style.errorTextBackground,
+        background:this.style.errorTextBackground || this.theme.palette.getAccent50(),
         border:this.style.errorTextBorder,
         borderRadius:this.style.errorTextBorderRadius,
       }
@@ -276,8 +275,8 @@ export class CometChatCreateGroupComponent implements OnInit {
         borderRadius:this.style.borderRadius,
         height:this.style.height,
         width:this.style.width,
-        background:this.style.background,
-        boxShadow:this.style.boxShadow
+        background:this.style.background || this.theme.palette.getBackground(),
+        boxShadow:this.style.boxShadow || `${this.theme.palette.getAccent50()} 0px 0px 0px 1px`
       }
     }
   }

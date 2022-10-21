@@ -12,9 +12,10 @@
        </span>
     </div>
     <div class="error__view" *ngIf="isError && !hideError ">
-      <span class="decorator__message--error" *ngIf="isError && !hideError && !customView?.error" [ngStyle]="errorTextStyle()"> 
-        {{decoratorMessage}}
-       </span>
+    
+       <cometchat-decorator-message *ngIf="isError && !hideError && !customView?.error" [text]="decoratorMessage" [textColor]="style.emptyStateTextColor!" [textFont]="style.emptyStateTextFont!">
+
+      </cometchat-decorator-message>
      <span class="custom__view--error" *ngIf="isError && !hideError && customView?.error">
       <ng-container *ngTemplateOutlet="customView?.error" >
   
@@ -22,9 +23,10 @@
      </span>
     </div>    
     <div class="empty__view" *ngIf="isEmpty">
-      <span class="decorator__message--empty" *ngIf="isEmpty && !customView?.empty" [ngStyle]="emptyTextStyle()">
-      {{decoratorMessage}}
-      </span>
+   
+      <cometchat-decorator-message *ngIf="isEmpty && !customView?.empty" [text]="decoratorMessage" [textColor]="style.emptyStateTextColor!" [textFont]="style.emptyStateTextFont!">
+
+      </cometchat-decorator-message>
       <span class="custom__view--empty"  *ngIf="isEmpty && customView?.empty">
         <ng-container *ngTemplateOutlet="customView?.empty" >
     
@@ -56,6 +58,7 @@
       <div [ngStyle]="setBubbleAlignment(msg)" [accessKey]="i">
         <cometchat-message-bubble 
         [alignment]="getMessageAlignment(msg)"
+        [theme]="theme"
         [loggedInUser]="loggedInUser" 
         [messageObject]="msg" 
         [updateReaction]="onReactMessage"
@@ -74,13 +77,13 @@
     </div>
   </div>
 </div>
-<cometchat-new-message-indicator *ngIf="UnreadCount.length && !isOnBottom" [text]="newMessageCount"
+<cometchat-new-message-indicator *ngIf="UnreadCount.length && !isOnBottom"  [theme]="theme" [text]="newMessageCount"
   [onClick]="onIndicatorClick" [style]="newMessageStyle">
 </cometchat-new-message-indicator>
 <div class="popover">
   <cometchat-popover *ngIf="showActionSheetEmoji" [position]="position" [x]="event?.clientX" [y]="event?.clientY" [style]="toolTipStyle" >
-    <cometchat-emoji-keyboard [onClick]="onreactionSelected"></cometchat-emoji-keyboard>
+    <cometchat-emoji-keyboard  [theme]="theme" [onClick]="onreactionSelected"></cometchat-emoji-keyboard>
   </cometchat-popover>
 </div>
-<cometchat-smart-reply class="smart__reply" [onClose]="closeSmartReply" [loggedInUser]="loggedInUser" [messageObject]="replyPreview" [style]="smartReplyStyle" *ngIf="replyPreview">
+<cometchat-smart-reply class="smart__reply" [onClose]="closeSmartReply"  [theme]="theme" [loggedInUser]="loggedInUser" [messageObject]="replyPreview" [style]="smartReplyStyle" *ngIf="replyPreview">
 </cometchat-smart-reply>

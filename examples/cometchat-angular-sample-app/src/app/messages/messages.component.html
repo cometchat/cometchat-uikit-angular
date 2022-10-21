@@ -1,0 +1,62 @@
+<div class="messages__wrapper">
+    <div class="messages__header" [ngStyle]="style.headerTitleStyle()">
+        {{localize("MESSAGES")}}
+    </div>
+    <div class="card__content">
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('messages')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(sidebarIconURL)">
+         
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >  {{localize("MESSAGES")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    The CometChatMessages component is an independent component that is used to handle messages for users and groups.
+                     
+                </div>
+            </div>
+         
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('message-header')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listwrapperIconURL)">
+             
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >  {{localize("MESSAGE_HEADER")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatMessageHeader is an independent component that  displays the User or Group information using SDK's User or Group object.
+                     
+                </div>
+            </div>
+           
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('message-list')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listIconURL)">
+        
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("MESSAGE_LIST")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatMessageList displays a list of messages and handles real-time operations.
+                     
+                </div>
+            </div>
+           
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('message-composer')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(composerIconURL)">
+        
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >{{localize("MESSAGE_COMPOSER")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatComposer is an independent and a critical component that allows users to compose and send various types of messages such as text, image, video and custom messages.
+                     
+                </div>
+            </div>
+           
+        </div>
+        
+    </div>
+
+
+</div>

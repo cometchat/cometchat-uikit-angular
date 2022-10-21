@@ -8,7 +8,7 @@ import { CometChatMessageEvents } from "../../../Messages/CometChatMessageEvents
 import { CometChatTheme, fontHelper, localize, MessagesConfiguration } from "../../../Shared";
 import { ConversationsConfiguration } from "../../../Shared/PrimaryComponents/CometChatConfiguration";
 import { checkHasOwnProperty } from "../../../Shared/Helpers/CometChatHelper";
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
   /**
  * 
  * CometChatConversationWithMessagesComponent is a wrapper component for CometChatMessageComponent and CometChatConversations component to show chats and messages in one screen
@@ -92,12 +92,13 @@ export class CometChatConversationsWithMessagesComponent implements OnInit, OnCh
   public onMessageRead: any;
   public onItemClick: any = null;
   public onBackButtonClick: any;
-  public theme: CometChatTheme = new CometChatTheme({});
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   constructor(private conversationEvents: CometChatConversationEvents, private messageEVents: CometChatMessageEvents, private ref: ChangeDetectorRef) {
    }
   ngOnChanges(changes: SimpleChanges): void {
     if (this.isMobileView) {
-      this.messagesConfiguration.messageHeaderConfiguration.isMobileView = true;
+      this.messagesConfiguration.messageHeaderConfiguration.showBackButton = true;
+      this.messagesConfiguration.messageHeaderConfiguration = {...this.messagesConfiguration.messageHeaderConfiguration}
       this.messagesConfiguration.messageComposerConfiguration.popoverConfiguration.style.height = "100%";
       this.messagesConfiguration.messageComposerConfiguration.popoverConfiguration.style.width = "100%";
       this.messagesConfiguration = { ...this.messagesConfiguration }
@@ -105,7 +106,8 @@ export class CometChatConversationsWithMessagesComponent implements OnInit, OnCh
 
     }
     else if (!this.isMobileView) {
-      this.messagesConfiguration.messageHeaderConfiguration.isMobileView = false;
+      this.messagesConfiguration.messageHeaderConfiguration.showBackButton = false;
+      this.messagesConfiguration.messageHeaderConfiguration = {...this.messagesConfiguration.messageHeaderConfiguration}
       this.messagesConfiguration.messageComposerConfiguration.popoverConfiguration.style.height = "620px";
       this.messagesConfiguration.messageComposerConfiguration.popoverConfiguration.style.width = "360px";
       this.messagesConfiguration = { ...this.messagesConfiguration }
@@ -127,9 +129,7 @@ export class CometChatConversationsWithMessagesComponent implements OnInit, OnCh
     }
   }
   setTheme(){
-    if (CometChatWrapperComponent.cometchattheme ) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     this.messagesStyle.background = this.theme.palette.getBackground()
     this.messagesStyle.messageTextFont = fontHelper(this.theme.typography.heading)
     this.messagesStyle.messageTextColor = this.theme.palette.getAccent400();
@@ -239,13 +239,22 @@ export class CometChatConversationsWithMessagesComponent implements OnInit, OnCh
   emptyMessageStyle = ()=>{
 
     return {
-      background: this.style.background,
+      background: this.style.background || this.theme.palette.getBackground(),
       height:this.style.height,
       width:`calc(${this.style.width} - 280px)`,
       border:this.style.border,
       borderRadius:this.style.borderRadius,
-      font:this.style.messageTextFont,
-      color:this.style.messageTextColor
+     
+    }
+  }
+  chatsWrapperStyles =  () => {
+    return {
+      height: this.style.height,
+      width: this.style.width,
+      border: this.style.border,
+      borderRadius: this.style.borderRadius,
+      background: this.style.background || this.theme.palette.getBackground(),
+      boxShadow: this.style.boxShadow
     }
   }
 }

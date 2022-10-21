@@ -1,10 +1,10 @@
 <div class="messages__wrapper" [ngStyle]="chatListStyle()" *ngIf="user || group">
-  <cometchat-message-header [showBackButton]="showBackButton" [group]="group" [user]="user"
-    [isMobileView]="isMobileView" [backButtonIconURL]="backButtonIconURL" [inputData]="inputData" [dataItemConfiguration]="messageHeaderConfiguration.dataItemConfiguration"
+  <cometchat-message-header  [theme]="theme" [showBackButton]="showBackButton" [group]="group" [user]="user"
+     [backButtonIconURL]="backButtonIconURL" [inputData]="inputData" [dataItemConfiguration]="messageHeaderConfiguration.dataItemConfiguration"
     [enableTypingIndicator]="enableTypingIndicator"></cometchat-message-header>
   <div class="message__list__wrapper">
     <cometchat-message-list [loggedInUser]="loggedInUser" [user]="user" [alignment]="alignment"
-      [messageTypes]="messageTypes" [excludeMessageTypes]="excludeMessageTypes"
+      [messageTypes]="messageListTypes"  [theme]="theme" [excludeMessageTypes]="excludeMessageTypes"
       [excludeMessageOptions]="excludeMessageOptions" [customMessageOptions]="customMessageOptions" [limit]="limit"
       [onlyUnread]="onlyUnread" [hideMessagesFromBlockedUsers]="hideMessagesFromBlockedUsers"
       [hideDeletedMessages]="hideDeletedMessages" [threadParentMessageId]="threadParentMessageId"
@@ -16,15 +16,17 @@
   <div class="live__reaction">
     <cometchat-live-reactions *ngIf="liveReaction" [reactionName]="reactionName"></cometchat-live-reactions>
   </div>
-  <cometchat-message-composer [user]="user" [group]="group" [style]="composerStyles" [placeholderText]="placeholderText" [popoverConfiguration]="messageComposerConfiguration.popoverConfiguration" [createPollConfiguration]="messageComposerConfiguration.createPollConfiguration" [actionSheetConfiguration]="messageComposerConfiguration.actionSheetConfiguration" [emojiKeyboardConfiguration]="messageComposerConfiguration.emojiKeyboardConfiguration" [messagePreviewConfiguration]="messageComposerConfiguration.messagePreviewConfiguration" [stickerKeyboardConfiguration]="messageComposerConfiguration.stickerKeyboardConfiguration"
+  <cometchat-message-composer [user]="user"  [theme]="theme" [group]="group" [style]="composerStyles" [placeholderText]="placeholderText" [popoverConfiguration]="messageComposerConfiguration.popoverConfiguration" [createPollConfiguration]="messageComposerConfiguration.createPollConfiguration" [actionSheetConfiguration]="messageComposerConfiguration.actionSheetConfiguration" [emojiKeyboardConfiguration]="messageComposerConfiguration.emojiKeyboardConfiguration" [messagePreviewConfiguration]="messageComposerConfiguration.messagePreviewConfiguration" [stickerKeyboardConfiguration]="messageComposerConfiguration.stickerKeyboardConfiguration"
     [sendButtonIconURL]="sendButtonIconURL" [liveReactionIconURL]="liveReactionIcon"
     [attachmentIconURL]="attachmentIconURL" [stickerIconURL]="stickerIconURL" [closeIconURL]="closeIconURL"
     [hideAttachment]="hideAttachment" [hideLiveReaction]="hideLiveReaction" [hideEmoji]="hideEmoji"
     [emojiIconURL]="emojiIconURL" [showSendButton]="showSendButton" [onSendButtonClick]="onSendButtonClick"
-    [messageTypes]="messageTypes" [customOutgoingMessageSound]="customOutgoingMessageSound"
+    [messageTypes]="messageComposerTypes" [customOutgoingMessageSound]="customOutgoingMessageSound"
     [enableSoundForMessages]="enableSoundForMessages" [enableTypingIndicator]="enableTypingIndicator"
     [excludeMessageTypes]="excludeMessageTypes" #messageComposerRef *ngIf="!hideMessageComposer"> </cometchat-message-composer>
 </div>
 <div class="decorator__message--empty" *ngIf="!user && !group" [ngStyle]="emptyMessageStyle()">
-  {{emptyText}}
+  <cometchat-decorator-message  *ngIf="!user && !group" [text]="emptyText" [textColor]="style.messageTextColor" [textFont]="style.messageTextFont">
+
+  </cometchat-decorator-message>
  </div>

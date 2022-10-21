@@ -13,9 +13,9 @@ import * as types from "../../../Shared/Types/typesDeclairation"
 import {ConversationListItemConfiguration} from "../../../Shared/PrimaryComponents/CometChatConfiguration/ConversationListItemConfiguration"
 import {CometChatTheme, fontHelper} from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme"
 import { style } from '../../interface'
-import { CometChatWrapperComponent } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatThemeWrapper/cometchat-theme-wrapper.component";
+
 import { CometChatConversationEvents } from "../../CometChatConversationEvents.service";
-import { ConversationType, conversationConstants, callConstants } from "../../../Shared/Constants/UIKitConstants";
+import { ConversationType, conversationConstants, callConstants, ConversationOption } from "../../../Shared/Constants/UIKitConstants";
 import { getDefaultOptions } from "../../ConversationOptions/conversation-options";
 import { popoverStyles } from "../../../Shared/UtilityComponents/CometChatPopover/interface";
 import { ConversationInputData } from "../../../Shared/InputData/ConversationInputData";
@@ -43,7 +43,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
         /**
    * This properties will come from Parent.
    */
-  @Input() limit: number = 0; 
+  @Input() limit: number = 30; 
   @Input() conversationType: types.conversationTypes = ConversationType.both; 
   @Input() userAndGroupTags: boolean = false; 
   @Input() tags: Array<string> = []; 
@@ -71,7 +71,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
      * Properties for internal use
      */
   public isDialogOpen: boolean = false;
-  public theme: any = new CometChatTheme({});
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   // public loggedInUser!: CometChat.User | null;
   public isEmpty: boolean = false;
   public isLoading: boolean = true;
@@ -133,7 +133,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     this.isDialogOpen = false
     this.conversationToBeDeleted = null
   }
-  conversationOptions!:  {}[];
+  conversationOptions!:  any;
   listItemData: ConversationInputData = {};
   listItemStyle: listItemStyle = {
     titleFont: "",
@@ -157,7 +157,6 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
-  
     this.setConversationOptions();
     this.setThemeStyle();
     this.checkConfiguration();
@@ -182,9 +181,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     this.ref.detectChanges()
   }
   ngOnChanges(change: SimpleChanges) {
-    if (CometChatWrapperComponent.cometchattheme) {
-      this.theme = CometChatWrapperComponent.cometchattheme;
-    }
+    
     try {
       if(change["theme"]){
         this.setThemeStyle()
@@ -250,35 +247,6 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
       /**
        * When user sends message conversationList is updated with latest message
        */
-      if (this.checkItemChange === false) {
-        if (change[conversationConstants.LAST_MESSAGE]) {
-          if (
-            change[conversationConstants.LAST_MESSAGE].previousValue !==
-            change[conversationConstants.LAST_MESSAGE].currentValue &&
-            change[conversationConstants.LAST_MESSAGE].currentValue !== undefined
-          ) {
-            const lastMessage = change[conversationConstants.LAST_MESSAGE].currentValue[0];
-            const conversationList: any = [...this.conversationList];
-            const conversationKey = conversationList.findIndex((c: any) => {
-              if (lastMessage === undefined) {
-                return false;
-              }
-              return c.conversationId === lastMessage.conversationId;
-            });
-            if (conversationKey > -1) {
-              const conversationObj: any = conversationList[conversationKey];
-              let newConversationObj = {
-                ...conversationObj,
-                lastMessage: lastMessage,
-              };
-              conversationList.splice(conversationKey, 1,newConversationObj);
-              this.conversationList = conversationList;
-              this.ref.detectChanges()
-            }
-          }
-        }
-      }
-      this.checkItemChange = false;
     } catch (error:any) {
          this.conversationEvents.publishEvents(this.conversationEvents.onError, error);
     }
@@ -295,7 +263,11 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   // getting default conversation option and adding callback in it
   setConversationOptions(){
     this.conversationOptions = getDefaultOptions();
-    (this.conversationOptions as any)[0].callBack = this.deleteConversationOnClick;
+    this.conversationOptions.forEach((element: any) => {
+      if(!element.callBack && element.id == ConversationOption.delete){
+        element.callBack = this.deleteConversationOnClick
+      }
+    });
   }
   // subscribe to global events 
   subscribeToEvents() {
@@ -340,7 +312,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   setThemeStyle() {
     this.listItemStyle.background = this.theme.palette.getBackground();
     this.listItemStyle.activeBackground = this.theme.palette.getAccent50();
-    this.listItemStyle.titleFont = fontHelper(this.theme.typography.title1);
+    this.listItemStyle.titleFont = fontHelper(this.theme.typography.title2);
     this.listItemStyle.titleColor = this.theme.palette.getAccent();
     this.listItemStyle.subTitleFont = fontHelper(this.theme.typography.subtitle2);
     this.listItemStyle.subTitleColor = this.theme.palette.getAccent600();
@@ -351,9 +323,9 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     this.confirmDialogStyle.confirmBackground = this.theme.palette.getError();
     this.confirmDialogStyle.cancelBackground = this.theme.palette.getAccent50();
     this.confirmDialogStyle.confirmTextColor = this.theme.palette.getAccent900("light");
-    this.confirmDialogStyle.confirmTextFont = fontHelper(this.theme.typography.title1);
+    this.confirmDialogStyle.confirmTextFont = fontHelper(this.theme.typography.title2);
     this.confirmDialogStyle.cancelTextColor = this.theme.palette.getAccent900("dark");
-    this.confirmDialogStyle.cancelTextFont = fontHelper(this.theme.typography.title1);
+    this.confirmDialogStyle.cancelTextFont = fontHelper(this.theme.typography.title2);
     this.confirmDialogStyle.titleFont = fontHelper(this.theme.typography.heading);
     this.confirmDialogStyle.titleColor = this.theme.palette.getAccent();
     this.confirmDialogStyle.subtitleFont = fontHelper(this.theme.typography.subtitle1);
@@ -519,7 +491,10 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
           this.loggedInUser  = user;
           this.fetchNextConversation()
             .then((conversationList: CometChat.Conversation[]) => {
+              this.isLoading = false
               conversationList.forEach((conversation: CometChat.Conversation) => {
+
+               
 
                 if (
                   this.activeConversation &&  this.activeConversation !== null &&
@@ -537,13 +512,15 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
                 ...conversationList,
               ];
               this.ref.detectChanges()
+            
               if (this.conversationList.length === 0  ) {
                 this.decorateMessage = this.emptyText ? this.emptyText :   conversationConstants.NO_CHATS_FOUND;
-                this.isLoading = false
+
                 this.isError = false
                 this.isEmpty = true
+                // this.isLoading = false
               } else {
-                this.isLoading = false
+   
                 this.isError = false
                 this.isEmpty = false
                 this.decorateMessage = "";
@@ -560,7 +537,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
         })
         .catch((error:any) => {
           this.decorateMessage = this.errorText ? this.errorText :   conversationConstants.ERROR;
-            this.isLoading = false
+          this.isLoading = false
             this.isError = true
             this.isEmpty = false
             this.ref.detectChanges();
@@ -646,7 +623,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   // traceby method
   conversationId = (index: any, item: any)=> {
     // return item?.unreadMessageCount || item?.lastMessage?.readAt || (item?.lastMessage?.deliveredAt || item?.lastMessage?.readAt );
-    return  item?.lastMessage?.muid;
+    return  item?.lastMessage?.muid || item?.lastMessage?.deliveredAt || item?.lastMessage?.readAt;
   }
   /**
    * @param  {CometChat.BaseMessage} readMessage
@@ -655,22 +632,22 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     return String(Math.round(+new Date()/1000))
   }
   markAsRead(readMessage: CometChat.MessageReceipt) {
-    if (this.activeConversation) {
-      let conversationlist:CometChat.Conversation[] = [...this.conversationList]
-      const conversationKey = conversationlist.findIndex(
-        (conversationObj: CometChat.Conversation) => (conversationObj.getLastMessage() as CometChat.TextMessage).getReceiverId() == readMessage.getSender().getUid()
-      );
-      if (conversationKey > -1) {
-        let newConversationObject!:CometChat.Conversation;
-        if (!(conversationlist[conversationKey].getLastMessage() as CometChat.TextMessage).getReadAt()) {
-          newConversationObject  =conversationlist[conversationKey];
-          (newConversationObject.getLastMessage() as CometChat.TextMessage).setReadAt(readMessage.getReadAt()); 
-          (newConversationObject.getLastMessage() as CometChat.TextMessage).setMuid(this.getUinx());
-        }
-        conversationlist.splice(conversationKey, 1, newConversationObject);
-        this.conversationList = [...conversationlist];
+    let conversationlist:CometChat.Conversation[] = [...this.conversationList]
+    const conversationKey = conversationlist.findIndex(
+      (conversationObj: CometChat.Conversation) => (conversationObj.getLastMessage() as CometChat.TextMessage).getReceiverId() == readMessage.getSender().getUid()
+    );
+    if (conversationKey > -1) {
+      let newConversationObject!:CometChat.Conversation;
+      if (!(conversationlist[conversationKey].getLastMessage() as CometChat.TextMessage).getReadAt()) {
+        newConversationObject  = conversationlist[conversationKey];
+        (newConversationObject.getLastMessage() as CometChat.TextMessage).setReadAt(readMessage.getReadAt()); 
+        (newConversationObject.getLastMessage() as CometChat.TextMessage).setMuid(this.getUinx());
+            conversationlist.splice(conversationKey, 1, newConversationObject);
+      this.conversationList = [...conversationlist];
       }
+  
     }
+
   }
   /**
    * Updates Detail when user comes online/offline
@@ -732,6 +709,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     try { 
       this.makeConversation(message)
         .then((response: any) => {
+
           const conversationKey = response.conversationKey;
           const conversationObj: CometChat.Conversation = response.conversationObj;
           const conversationList = response.conversationList;
@@ -786,9 +764,11 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     if (conversationKey > -1) {
       conversationObj = conversationList[conversationKey];
       if(!(conversationObj.getLastMessage() as CometChat.TextMessage).getDeliveredAt()){
+        (conversationObj.getLastMessage() as CometChat.TextMessage).setDeliveredAt(Number(this.getUinx()));
         (conversationObj.getLastMessage() as CometChat.TextMessage).setMuid(this.getUinx());
         conversationList.splice(conversationKey,1,conversationObj)
         this.conversationList = [...conversationList];
+        this.ref.detectChanges()
       }
     }
 
@@ -958,12 +938,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
    * handle confirm dialog response
    * @param  {string} value
    */
-  // handleConfirmDialog(value: string) {
-  //   if (value == "yes") {
-  //     this.deleteSelectedConversation()
-  //   }
-  //   this.showConfirmDialog = false
-  // }
+
   // calling dcometchat.deleteConversation method
   deleteSelectedConversation = ()=> {
     return new Promise((resolve, reject) => {
@@ -1005,7 +980,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     chatsListStyle: (style: style) => {
       return {
         height: style.height,
-        background: style.background,
+        background: style.background || this.theme.palette.getBackground() ,
       };
     },
     messageContainerStyle: (style: any) => {
@@ -1015,20 +990,20 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     },
     errorStyle: (style: style) => {
       return {
-        font: style.errorStateTextFont,
-        color: style.errorStateTextColor,
+        font: style.errorStateTextFont || fontHelper(this.theme.typography.heading),
+        color: style.errorStateTextColor || this.theme.palette.getAccent400(),
       }
     },
     emptyStyle: (style: style) => {
       return {
-        font: style.emptyStateTextFont,
-        color: style.emptyStateTextColor,
+        font: style.emptyStateTextFont || fontHelper(this.theme.typography.heading),
+        color: style.emptyStateTextColor || this.theme.palette.getAccent400(),
       }
     },
     loadingStyle: (style: style) => {
       return {
         WebkitMask: `url(${this.loadingIconURL})`,
-        background: style.loadingIconTint || "grey",
+        background: style.loadingIconTint || this.theme.palette.getAccent400(),
       }
     }
   }

@@ -13,7 +13,7 @@ export class CometChatBackdropComponent implements OnInit {
     height:"100%",
     width:"100%",
     border:"none",
-    borderRadius:"none",
+    borderRadius:"0",
     backgroundColor:"#000"
   } //Styles applied to the backdrop element
   constructor() { }

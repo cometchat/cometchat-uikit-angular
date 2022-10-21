@@ -1,0 +1,62 @@
+<div class="groups__wrapper">
+    <div class="groups__header" [ngStyle]="style.headerTitleStyle()">
+         {{localize("GROUPS")}}
+    </div>
+    <div class="card__content">
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('groups-with-messages')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(sidebarIconURL)">
+         
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >   {{localize("GROUPS_WITH_MESSAGES")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatGroupsWithMessages is an independent component used to set up a screen that shows the list of groups available in your app and gives you the ability to search for a specific group and to start a conversation.
+                     
+                </div>
+            </div>
+         
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('groups')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listwrapperIconURL)">
+             
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >   {{localize("GROUPS")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatGroups is an independent component used to set up a screen that displays the list of groups available in your app and gives you the ability to search for a specific group
+                     
+                </div>
+            </div>
+           
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('group-list')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listIconURL)">
+        
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >   {{localize("GROUP_LIST")}}</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatGroupList component renders a scrollable list of groups in your app.
+                     
+                </div>
+            </div>
+           
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('group-dataitem')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(conversationIconURL)">
+        
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >  {{localize("DATA_ITEM")}} ({{localize("GROUPS")}})</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatDataItem is used to display the group list item in the group list. It houses the Avatar, Status indicator, Title and Subtitle.
+                     
+                </div>
+            </div>
+           
+        </div>
+        
+    </div>
+
+
+</div>

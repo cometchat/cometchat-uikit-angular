@@ -13,6 +13,7 @@ import { messageConstants, MessageStatus, MetadataKey} from '../../../Shared/Con
 import * as types from '../../../Shared/Types/typesDeclairation'
 import { CometChatSoundManager } from "../../../Shared/PrimaryComponents/CometChatSoundManager/cometchat-sound-manager/cometchat-sound-manager";
 import { smartReplyStyles } from "../interface";
+import { CometChatTheme, fontHelper } from "../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme";
       /**
  * 
  * CometChatSmartReply is used to show suggested replies when we receive a message.
@@ -58,6 +59,7 @@ export class CometChatSmartReplyComponent implements OnInit {
   @Input() onClick!: Function;
   @Input() onClose!: Function;
   @Input() closeIconURL:string="assets/resources/plus-rotated.svg";
+  @Input() theme: CometChatTheme = new CometChatTheme({});
 
         /**
      * Properties for internal use
@@ -83,6 +85,18 @@ export class CometChatSmartReplyComponent implements OnInit {
     }
   }
   ngOnInit() {
+    if(!this.style.textFont){
+      this.style.textFont = fontHelper(this.theme.typography.subtitle1)
+
+    }
+    if(!this.style.textColor){
+      this.style.textColor = this.theme.palette.getAccent()
+
+    }
+    if(!this.style.textBackground){
+      this.style.textBackground = this.theme.palette.getAccent900()
+
+    }
 
 
   }
@@ -134,7 +148,7 @@ export class CometChatSmartReplyComponent implements OnInit {
   }
   optionListStyle(){
     return {
-      background:this.style.background,
+      background:this.style.background || this.theme.palette.getBackground(),
       height:this.style.height,
       width:this.style.width,
       border:this.style.border,
@@ -239,7 +253,7 @@ export class CometChatSmartReplyComponent implements OnInit {
   closeIconStyle =  () =>{
     return{
       WebkitMask: `url(${this.closeIconURL})`,
-      background: this.style.iconTint,
+      background: this.style.iconTint || this.theme.palette.getAccent600(),
       
 
     }

@@ -22,49 +22,7 @@ export class MessageOptions{
         this.callBack = callBack;
         this.optionFor = optionFor;
     };
-    static messageOptions: any = {
-        DELETE:
-        new MessageOptions({
-            id: MessageOption.deleteMessage,
-            title: MessageOption.deleteMessage,
-            //inside style
-            iconURL: "assets/resources/deleteicon.svg",
-            callBack: null,
-            optionFor: MessageOptionForConstants.sender,
-    }),
-          EDIT: new MessageOptions({
-            id: MessageOption.editMessage,
-            title: MessageOption.editMessage,
-            //inside style
-            iconURL: "assets/resources/editicon.svg",
-            callBack: null,
-            optionFor: MessageOptionForConstants.sender,
-          }),
-        TRANSLATE: new MessageOptions({
-            id: MessageOption.translateMessage,
-            title: MessageOption.translateMessage,
-            //inside style
-            iconURL: "assets/resources/translation.svg",
-            callBack: null,
-            optionFor: MessageOptionForConstants.both,
-        }),
-        REACTION: new MessageOptions({
-          id: MessageOption.reactToMessage,
-          title: MessageOption.reactToMessage,
-          //inside style
-          iconURL: "assets/resources/Reactionsicon.svg",
-          callBack: null,
-          optionFor: MessageOptionForConstants.both,
-        }),
-        COPY: new MessageOptions({
-            id: MessageOption.copyMessage,
-            title: MessageOption.copyMessage,
-            //inside style
-            iconURL: "assets/resources/Copy.svg",
-            callBack: null,
-            optionFor: MessageOptionForConstants.both,
-          })
-    };
+  
      static getDefaultOptions = (type:any)=>{
        let options;
        switch (type) {
@@ -156,3 +114,6 @@ export class MessageOptions{
         }
       };
 }
+const getDefaultMessageOptions = MessageOptions.getDefaultOptions
+const getMessageOptions = MessageOptions.getMessageOptions
+export { getDefaultMessageOptions ,getMessageOptions};

@@ -9,6 +9,7 @@ import {styles} from '../../../../Shared/Types/interface'
   import { checkHasOwnProperty } from '../../../../Shared/Helpers/CometChatHelper';
 import {  stickerEnums  } from '../../../../Shared/Constants/UIKitConstants';
 import { CometChatMessageEvents } from '../../../CometChatMessageEvents.service';
+import { CometChatTheme } from '../../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 
 @Component({
   selector: 'cometchat-sticker-bubble',
@@ -28,6 +29,7 @@ export class CometChatStickerBubbleComponent implements OnInit {
 	  background: "transparent",
 	  borderRadius: "12px"
   };
+  @Input() theme: CometChatTheme = new CometChatTheme({});
 
   constructor(private messageEvents:CometChatMessageEvents) { }
 

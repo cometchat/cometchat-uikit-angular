@@ -1,5 +1,6 @@
 import { Component, OnChanges, OnInit, SimpleChanges, Input, ChangeDetectionStrategy } from '@angular/core';
 import { checkMessageForExtensionsData } from '../../../Shared/Helpers/CometChatHelper';
+import { CometChatTheme, fontHelper } from '../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
 import { CometChatMessageEvents } from '../../CometChatMessageEvents.service';
   /**
 *
@@ -22,6 +23,7 @@ export class CometChatMessageReactionComponent implements OnInit, OnChanges {
    */
   @Input() messageObject: any = null;
   @Input() loggedInUser: any;
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() updateReaction: any;
   @Input() addReactionIconURL: string = "assets/resources/addreaction.svg";
   @Input() style = {
@@ -32,18 +34,29 @@ export class CometChatMessageReactionComponent implements OnInit, OnChanges {
     background: "",
   }
   reactionIconStyle = {
-    iconTint:"rgba(20, 20, 20, 0.58)"
+    iconTint:"grey"
+  }
+  listItemStyle:any = {
+    textFont:"",
+    textColor:""
   }
          /**
      * Properties for internal use
      */
-
   extensionData: any;
   reactionsName: any;
   messageReactions: any;
   count: any;
   constructor(private messageEvents:CometChatMessageEvents) { }
   ngOnInit(): void {
+    this.reactionIconStyle.iconTint = this.theme.palette.getAccent600("light")
+    if(!this.messageObject?.sender ||  this.messageObject?.sender?.uid == this.loggedInUser?.uid){
+      this.listItemStyle.textColor = this.theme.palette.getAccent900("dark")
+    }
+    else{
+      this.listItemStyle.textColor = this.theme.palette.getAccent900("light")
+    }
+    this.listItemStyle.textFont = fontHelper(this.theme.typography.caption1)
     try {
       this.extensionData = checkMessageForExtensionsData(
         this.messageObject,
@@ -55,8 +68,6 @@ export class CometChatMessageReactionComponent implements OnInit, OnChanges {
     }
   }
   ngOnChanges(changes: SimpleChanges): void {
- 
-
     try {
       if (changes["messageObject"]) {
         if (
@@ -77,15 +88,11 @@ export class CometChatMessageReactionComponent implements OnInit, OnChanges {
     }
   }
   getMessageReactions(reaction: any) {
-
-
-
     if (reaction === null) {
       return null;
     }
     let messageReactions: any = [];
     Object.keys(reaction).map((data, key) => {
-  
       const reactionData = reaction[data];
       const reactionCount = Object.keys(reactionData).length;
       let showBlueOutline = false;
@@ -116,57 +123,45 @@ export class CometChatMessageReactionComponent implements OnInit, OnChanges {
         messageReaction = { reactionName, reactionTitle, showBlueOutline };
       }
       messageReactions.push(messageReaction);
-      
     }
     );
-
     this.messageReactions = messageReactions;
     return;
   }
   reactToMessages(emoji: any = null) {
     this.updateReaction(this.messageObject,null,emoji.reactionName)
-
   }
-  
-
   messageReactionStyle: any = {
-    addReactionButtonStyle: () => {
-      return {
-        width: "24px",
-        height: "24px",
-        display: "inline-block",
-        WebkitMask: `url(${this.addReactionIconURL})`,
-        background: "black",
-      }
-    },
     highlightBackground:(showOutline:boolean, count:any)=>{
       let style:any = {}
       if(showOutline){
-        style = {
-          border:"1px solid #39f",
-          font:"400 12px Inter",
-          background:"#f6f6f6"
+        if(!this.messageObject?.sender ||  this.messageObject?.sender?.uid == this.loggedInUser?.uid ){
+          this.listItemStyle.textColor = this.theme.palette.getAccent900("dark")
         }
-
+        else{
+          this.listItemStyle.textColor = this.theme.palette.getAccent900("light")
+        }
+        style = {
+          border:`1px solid ${this.theme.palette.getPrimary()}`,
+          font: fontHelper(this.theme.typography.caption1),
+          background: !this.messageObject?.sender ||  this.messageObject?.sender?.uid == this.loggedInUser?.uid ? this.theme.palette.getBackground("light") : this.theme.palette.getPrimary()
+        }
       }else{
+        this.listItemStyle.textColor = this.theme.palette.getAccent900("dark")
         style = {
           border:"none",
-          font:"400 12px Inter",
-          background:"#f6f6f6"
+          font: fontHelper(this.theme.typography.caption1),
+          background:this.theme.palette.getBackground("light")
         }
-
       }
-   
       return{
         ...style,
         display: count ? "inline-flex" : "none"
-
       }
     },
     emojiButtonStyle:()=>{
       return{
-        background:"#f6f6f6"
-
+        // background: this.theme.palette.getAccent50("dark")
       }
     }
   }

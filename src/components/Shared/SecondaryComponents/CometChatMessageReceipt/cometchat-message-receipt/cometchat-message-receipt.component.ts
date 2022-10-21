@@ -12,7 +12,7 @@ export class CometChatMessageReceiptComponent implements OnInit, OnChanges {
   @Input() messageDeliveredIcon: string = ""; //Icon to be shown when the message is delivered
   @Input() messageReadIcon: string = ""; //Icon to be shown when the message is read
   @Input() messageErrorIcon: string = ""; //Icon to be shown when the message is not sent due to an error
-  @Input() messageObject!:CometChat.BaseMessage;; //CometChat SDK’s message object
+  @Input() messageObject!:CometChat.BaseMessage; //CometChat SDK’s message object
   public icon: string | null= '';
   constructor(private ref:ChangeDetectorRef) { }
   /**
@@ -31,11 +31,14 @@ export class CometChatMessageReceiptComponent implements OnInit, OnChanges {
     this.updateMessageReceipt();
   }
   ngOnChanges(change:SimpleChanges) {
-    
-      this.updateMessageReceipt();
+    this.updateMessageReceipt();
+     
  
   }
   updateMessageReceipt(){
+    
+
+    
     if ((this.messageObject as any).error) {
       this.icon = this.messageErrorIcon;
     }else if(this.messageObject?.getReceiverType() ==  CometChat.RECEIVER_TYPE.GROUP){

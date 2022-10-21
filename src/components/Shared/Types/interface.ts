@@ -15,8 +15,8 @@ export interface groupTypes {
 
 
 export interface customView {
-    loading:any,
-    error:any,
-    empty:any
+    loading?:any,
+    error?:any,
+    empty?:any
 
 }

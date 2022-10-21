@@ -1,0 +1,121 @@
+.close__icon{
+    height: 30px;
+    width: 30px;
+    cursor: pointer;
+
+}
+.theme__backdrop{
+  height: 100% ;
+  width: 100% ;
+  background: black;
+  opacity: 0.3;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+}
+.header{
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    .title{
+       display: flex;
+       align-items: center;
+       justify-content: center;
+    }
+}
+.avatar{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.footer{
+    input{
+        height: 36px;
+    width: 100%;
+    outline: none;
+    padding: 8px;
+    border-radius: 12px;
+    background: transparent;
+    }
+    .switch__button{
+        display: flex;
+    width: 100%;
+    margin: 16px 0 8px 0;
+    justify-content: space-between;
+    }
+}
+.mode__title{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.theme__container{
+    height: 260px;
+    width: 360px;
+    transform: translate(-50%,-50%);
+    left: 50%;
+    top: 50%;
+    position: absolute;
+    z-index: 10;
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+// toggle button
+.tabs__container{
+    border-radius: 8px;
+
+    .tab__list{
+      padding: 0 !important;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+  
+      margin: auto;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    ul li{
+        margin: 2px;
+      width: 70px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      list-style-type: none;
+      padding: 0 8px;
+      cursor: pointer;
+      text-align: center;
+      position: relative;
+    }
+    ul li:last-child{
+      border-right: none !important;
+    }
+  }
+  .group__type__tabs{
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    button{
+      margin: 0 1px;
+      border: none;
+      border-radius: 8px;
+      padding: 4px 16px;
+    }
+  }
+  .view__button{
+    height: 38px;
+    width: 100%;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}

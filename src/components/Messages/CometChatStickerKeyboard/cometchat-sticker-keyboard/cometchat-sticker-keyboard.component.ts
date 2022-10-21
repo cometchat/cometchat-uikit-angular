@@ -4,6 +4,7 @@ import { CometChat } from '@cometchat-pro/chat';
 import { ExtensionURLs, stickerEnums } from '../../../Shared/Constants/UIKitConstants';;
 import { stickerKeyboardStyle } from '../interface';
 import { CometChatMessageEvents } from '../../CometChatMessageEvents.service';
+import { CometChatTheme, fontHelper } from '../../../Shared/PrimaryComponents/CometChatTheme/CometChatTheme';
   /**
    *
    * CometChatStickerKeyboard Provides ability to share stickers in a 1:1 and group chats.
@@ -32,6 +33,7 @@ export class CometChatStickerKeyboardComponent implements OnInit {
     loadingTextFont:"500 15px Inter,sans-serif",
     loadingTextColor:"rgba(20,20,20, 0.58)",
   }
+  @Input() theme: CometChatTheme = new CometChatTheme({});
   @Input() emptyText: string = stickerEnums.no_stickers_found;
   @Input() loadingText: string = stickerEnums.loading_message;
   @Input() errorText: string = "Something went wrong";
@@ -176,23 +178,23 @@ export class CometChatStickerKeyboardComponent implements OnInit {
       if(this.loading){
 
         style = {
-          color: this.style.loadingTextColor,
-          font: this.style.loadingTextFont,
+          color: this.style.loadingTextColor || this.theme.palette.getAccent600(),
+          font: this.style.loadingTextFont || fontHelper(this.theme.typography.title1),
 
         }
 
       }
       else if(this.isError){
         style = {
-          color: this.style.errorTextColor,
-          font: this.style.errorTextFont,
+          color: this.style.errorTextColor || this.theme.palette.getAccent600(),
+          font: this.style.errorTextFont || fontHelper(this.theme.typography.title1),
 
         }
       }
       else{
         style = {
-          color: this.style.emptyTextColor,
-          font: this.style.emptyTextFont,
+          color: this.style.emptyTextColor || this.theme.palette.getAccent600(),
+          font: this.style.emptyTextFont || fontHelper(this.theme.typography.title1),
 
         }
       }
@@ -203,14 +205,14 @@ export class CometChatStickerKeyboardComponent implements OnInit {
       return {
         height: this.style.height,
         width: this.style.width,
-        background: this.style.background,
+        background: this.style.background || this.theme.palette.getAccent100(),
         border: this.style.border,
         borderRadius: this.style.borderRadius
       }
     },
     sectionStyles: () => {
       return {
-        background: this.style.categoryBackground,
+        background: this.style.categoryBackground || this.theme.palette.getAccent900(),
         border: this.style.border,
         borderRadius: this.style.borderRadius
       }

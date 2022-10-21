@@ -1,7 +1,7 @@
 import {
 	ConversationsConfiguration,
 	MessagesConfiguration
-} from "./";
+} from ".";
 
 /**
  * @class ConversationWithMessagesConfiguration

@@ -1,9 +1,10 @@
-<div class="chatscreen__wrapper">
+<div class="chatscreen__wrapper" [ngStyle]="chatsWrapperStyles()">
   <div class="chatscreen__sidebar" [ngClass]="{mobile__view : isMobileView}">
     <cometchat-conversation
     #conversationRef
     [activeConversation]="activeConversation"
     [hideSearch]="hideSearch"
+    [theme]="theme"
     [backButtonIconURL]="backButtonIconURL"
     [searchIconURL]="searchIconURL"
     [searchPlaceHolder]="searchPlaceHolder"
@@ -16,7 +17,9 @@
     <cometchat-messages
     #messagesRef
     [user]="user!"
+    [theme]="theme"
     [group]="group!"
+    [messageTypes]="messageTypes"
     [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration"
     [messageListConfiguration]="messagesConfiguration.messageListConfiguration"
     [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration"
@@ -26,5 +29,8 @@
     <!--Message List Screen ENDS-->
   </div>
   <div class="decorator__message--empty" *ngIf="!user && !group" [ngStyle]="emptyMessageStyle()">
-    {{messageText}}
+    <cometchat-decorator-message   [text]="messageText" [textColor]="style.messageTextColor" [textFont]="style.messageTextFont">
+
+    </cometchat-decorator-message>
    </div>
+ 
