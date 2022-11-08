@@ -150,7 +150,7 @@ import { CometChatConversationsWithMessages } from '@cometchat-pro/angular-ui-ki
 
 # Checkout our sample app
 
-Visit our [Angular sample app](https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit/tree/pluto/examples/cometchat-angular-sample-app) repo to run the Angular sample app.
+Checkout our sample app provided in the [examples](https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit/tree/pluto/examples/cometchat-angular-sample-app) folder.
 
 ---
 
