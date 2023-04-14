@@ -1,6 +1,6 @@
 {
   "name": "cometchat-pro-angular-ui-kit",
-  "version": "3.0.6-3",
+  "version": "3.0.11-1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -19,7 +19,7 @@
     "@angular/platform-browser": "~8.2.14",
     "@angular/platform-browser-dynamic": "~8.2.14",
     "@angular/router": "~8.2.14",
-    "@cometchat-pro/chat": "3.0.6",
+    "@cometchat-pro/chat": "3.0.11",
     "@ctrl/ngx-emoji-mart": "^1.0.6",
     "rxjs": "~6.4.0",
     "tslib": "^1.10.0",
@@ -41,11 +41,11 @@
     "karma-chrome-launcher": "~2.2.0",
     "karma-coverage-istanbul-reporter": "~2.0.1",
     "karma-jasmine": "~2.0.1",
-    "karma-jasmine-html-reporter": "^1.4.0",
+    "karma-jasmine-html-reporter": "1.4.0",
     "ng-packagr": "^5.4.0",
     "protractor": "~7.0.0",
     "ts-node": "~7.0.0",
-    "tsickle": "^0.37.0",
+    "tsickle": "0.37.0",
     "tslint": "~5.15.0",
     "typescript": "~3.5.3"
   }

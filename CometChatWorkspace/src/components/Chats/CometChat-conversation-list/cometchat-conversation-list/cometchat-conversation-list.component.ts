@@ -260,17 +260,17 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
     this.CometChatService.onConfirmDialogClick.subscribe((value: any) => {
       this.showConfirmDialog = false;
       if(value === "yes") {
-        let conversationWith: any; 
+        let conversationWith: any;
         if(this.conversationToBeDeleted) {
           let conversationType = this.conversationToBeDeleted.conversationType;
           if(conversationType === CometChat.RECEIVER_TYPE.USER) {
             conversationWith = this.conversationToBeDeleted.conversationWith.uid;
           } else {
-            conversationWith = this.conversationToBeDeleted.conversationWith.guid; 
+            conversationWith = this.conversationToBeDeleted.conversationWith.guid;
           }
 
           CometChat.deleteConversation(conversationWith, conversationType).then(
-          deletedConversation => { 
+          deletedConversation => {
             this.updateConversationList(this.conversationToBeDeleted);
             this.conversationToBeDeleted = null;
           }, error => {
@@ -287,7 +287,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
      */
     this.CometChatService.onLeaveGroup.subscribe((group : any) => {
       this.conversationList.forEach((conversation: any , index) => {
-        if(conversation.conversationType === CometChat.RECEIVER_TYPE.GROUP && 
+        if(conversation.conversationType === CometChat.RECEIVER_TYPE.GROUP &&
           conversation.conversationWith.guid === group.guid) {
           this.conversationList.splice(index, 1);
         }
@@ -396,7 +396,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
             callback(enums.MEDIA_MESSAGE_RECEIVED, null, mediaMessage);
           },
           onCustomMessageReceived: (customMessage: object) => {
-            
+
             callback(enums.CUSTOM_MESSAGE_RECEIVED, null, customMessage);
           },
           onMessageDeleted: (deletedMessage: object) => {
@@ -436,7 +436,15 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
       logger(error);
     }
   }
-
+   /**
+   * Mark the last message of conversation as delivered.
+   */
+   markConversationAsDelivered(conversation:CometChat.Conversation){
+    let message:CometChat.BaseMessage = conversation.getLastMessage()
+    if(conversation.getConversationType() == CometChat.RECEIVER_TYPE.USER && message  && !message.getDeliveredAt() &&  this.loggedInUser && this.loggedInUser.uid != message.getSender().getUid()){
+    CometChat.markAsDelivered(message)
+    }
+   }
   /**
    * Fetches Conversations Details with all the users
    */
@@ -448,6 +456,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
           this.fetchNextConversation()
             .then((conversationList: []) => {
               conversationList.forEach((conversation: any) => {
+                this.markConversationAsDelivered(conversation);
                 if (
                   this.type !== null &&
                   this.item !== null &&
@@ -529,7 +538,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
 
   markMessageAsDelivered = (message: any) => {
 		//if chat window is not open, mark message as delivered
-		if ((this.item === null || this.item.uid !== message.sender.uid) 
+		if ((this.item === null || this.item.uid !== message.sender.uid)
 		&& !message.hasOwnProperty("deliveredAt")) {
 		  CometChat.markAsDelivered(message);
 		}
@@ -594,7 +603,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
           payLoad:message
 
         })
-     
+
       }
       this.makeConversation(message)
         .then((response: any) => {
@@ -796,7 +805,7 @@ export class CometChatConversationListComponent implements OnInit, OnChanges {
   /*
    * Updates the convesation list when deleted.
    * Adding Conversation Object to CometchatService
-   */ 
+   */
   updateConversationList(conversation: object) {
     let index = this.conversationList.findIndex((element) => element == conversation);
     this.conversationList.splice(index, 1);
