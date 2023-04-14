@@ -13,7 +13,7 @@ import { CometChat } from "@cometchat-pro/chat";
 import * as enums from "../../../../utils/enums";
 import { DatePipe } from "@angular/common";
 import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
-import { logger } from "../../../../utils/common";
+import { getUnixTimestamp, logger } from "../../../../utils/common";
 
 @Component({
   selector: "cometchat-message-list",
@@ -89,7 +89,7 @@ export class CometChatMessageListComponent
   }
 
   ngOnChanges(change: SimpleChanges) {
-    
+
 
     try {
       if (change[enums.ITEM]) {
@@ -129,7 +129,7 @@ export class CometChatMessageListComponent
         if (change[enums.MESSAGED].currentValue.length > 0) {
           this.decoratorMessage = "";
         }
-   
+
       }
     } catch (error) {
       logger(error);
@@ -137,7 +137,6 @@ export class CometChatMessageListComponent
   }
 
   ngOnInit() {
-    // this.fetchCustomMessage()
     try {
       this.createMessageRequestObjectAndGetMessages();
 
@@ -198,7 +197,7 @@ export class CometChatMessageListComponent
         new CometChat.MessageListener({
           onTextMessageReceived: (textMessage: any) => {
             this.messageUpdated(enums.TEXT_MESSAGE_RECEIVED, textMessage);
-    
+
           },
           onMediaMessageReceived: (mediaMessage: any) => {
             this.messageUpdated(enums.MEDIA_MESSAGE_RECEIVED, mediaMessage);
@@ -216,7 +215,7 @@ export class CometChatMessageListComponent
             this.messageUpdated(enums.MESSAGE_DELIVERED, messageReceipt);
           },
           onMessagesRead: (messageReceipt: any) => {
-            
+         console.count(messageReceipt)
             this.messageUpdated(enums.MESSAGE_READ, messageReceipt);
           },
           onMessageDeleted: (deletedMessage: any) => {
@@ -408,48 +407,20 @@ export class CometChatMessageListComponent
               } else {
                 this.decoratorMessage = "";
               }
-
+              let lastMessage = messageList[messageList.length - 1]
+              if (lastMessage && !lastMessage.getDeliveredAt() && this.loggedInUser && lastMessage.getSender().getUid() != this.loggedInUser.getUid()) {
+                this.markMessageAsDelivered(lastMessage)
+               }
+              if (lastMessage && !lastMessage.getReadAt() && this.loggedInUser && lastMessage.getSender().getUid() != this.loggedInUser.getUid()) {
+                CometChat.markAsRead(lastMessage);
+              }
               messageList.forEach((message: any) => {
-                // console.log(messageList)
-                
-                
                 if (
                   message.category === CometChat.CATEGORY_ACTION &&
                   message.sender.uid === enums.APP_SYSTEM
                 ) {
                   actionMessages.push(message);
                 }
-
-                //if the sender of the message is not the loggedin user, mark it as read.
-                if (message.getSender().getUid() !== this.loggedInUser.uid) {
-                   
-                  //mark the message as delivered
-                  this.markMessageAsDelivered(message);
-                  
-      
-                
-                  if (
-                    message.getSender().getUid() !== user.getUid() &&
-                    !message.getReadAt()
-                  ) {
-                    if (
-                      message.getReceiverType() === CometChat.RECEIVER_TYPE.USER
-                    ) {
-                      // console.log(message)
-                 
-                    CometChat.markAsRead(message);
-                    } else if (
-                      message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP
-                    ) {
-                      CometChat.markAsRead(message);
-                    }
-
-                    this.actionGenerated.emit({
-                      type: enums.MESSAGE__READ,
-                      payLoad: message,
-                    });
-                  }
-                  }
                 });
 
               ++this.times;
@@ -462,7 +433,6 @@ export class CometChatMessageListComponent
               if (scrollToTop) {
                 actionGeneratedType = enums.OLDER_MESSAGES_FETCHED;
               }
-
               // Only called when the active user changes the the conversation , that is switches to some other person
               // to chat with
               if (newConversation) {
@@ -498,7 +468,28 @@ export class CometChatMessageListComponent
       logger(error);
     }
   }
-
+  /**
+ * setting ReadAt in all the previous messages when we mark last message as read
+ * @param  {number} messageKey
+ */
+  markAllMessagAsRead(messageKey: number) {
+    for (let i = messageKey; i >= 0; i--) {
+      if (!this.messages[i].readAt) {
+        this.messages[i].readAt = getUnixTimestamp();
+      }
+    }
+  }
+  /**
+* setting deliveredAt in all the previous messages when we mark last message as delivered
+* @param  {number} messageKey
+*/
+  markAllMessagAsDelivered(messageKey: number) {
+    for (let i = messageKey; i >= 0; i--) {
+      if (!this.messages[i].deliveredAt) {
+        this.messages[i].deliveredAt = getUnixTimestamp();
+      }
+    }
+  }
   /**
    * Updates messageList on basis of user activity or group activity or calling activity
    * @param
@@ -514,7 +505,7 @@ export class CometChatMessageListComponent
         case enums.MESSAGE_READ:
           this.messageReadAndDelivered(message);
           break;
-         
+
         case enums.MESSAGE_DELETED: {
           this.messageDeleted(message);
           break;
@@ -540,7 +531,7 @@ export class CometChatMessageListComponent
         case enums.INCOMING_CALL_CANCELLED:
         case enums.OUTGOING_CALL_ACCEPTED:
         case enums.OUTGOING_CALL_REJECTED:
-        
+
           this.callUpdated(message);
           break;
       }
@@ -550,7 +541,6 @@ export class CometChatMessageListComponent
   }
 
   markMessageAsDelivered = (message: any) => {
-
 		if (message.sender.uid !== this.loggedInUser.uid && message.hasOwnProperty("deliveredAt") === false) {
 			CometChat.markAsDelivered(message);
 		}
@@ -570,6 +560,7 @@ export class CometChatMessageListComponent
       ) {
         if ((!message.getReadAt()  && !message.parentMessageId) ||  (!message.getReadAt() && this.parentMessageId && message.parentMessageId)) {
           CometChat.markAsRead(message);
+
         }
 
         this.actionGenerated.emit({
@@ -584,6 +575,7 @@ export class CometChatMessageListComponent
         if ((!message.getReadAt()  && !message.parentMessageId) ||  (!message.getReadAt() && this.parentMessageId && message.parentMessageId)) {
 
           CometChat.markAsRead(message);
+          console.count(message)
         }
 
         this.actionGenerated.emit({
@@ -601,21 +593,13 @@ export class CometChatMessageListComponent
    * @param Event action
    */
   actionHandler(action: any) {
-
-    
     try {
       this.actionGenerated.emit(action);
     } catch (error) {
       logger(error);
     }
   }
-  // emitSessionDataToMsgComp(action){
-  //   this.actionGenerated.emit({
-  //     type:"sessionid",
-  //     sessionid:action.sessionid
-  //   })
 
-  // }
 
   /**
    * Sets Status of messages i.e sent/delivered/read
@@ -635,15 +619,7 @@ export class CometChatMessageListComponent
             (m: any) => m.id === message.getMessageId()
           );
           if (messageKey > -1) {
-            let messageObj: CometChat.BaseMessage = messageList[messageKey];
-            let newMessageObj = Object.assign({}, messageObj, {
-              deliveredAt: message.getDeliveredAt(),
-            });
-            messageList.splice(messageKey, 1, newMessageObj);
-              this.actionGenerated.emit({
-                type: enums.MESSAGE_UPDATED,
-                payLoad: messageList,
-              });
+              this.markAllMessagAsDelivered(messageKey)
           }
         } else if (message.getReceiptType() === enums.READ) {
           //search for message
@@ -651,22 +627,9 @@ export class CometChatMessageListComponent
             (m: any) => m.id === message.getMessageId()
           );
           if (messageKey > -1) {
-            let messageObj = messageList[messageKey];
-            let newMessageObj = Object.assign({}, messageObj, {
-              readAt: message.getReadAt(),
-            });
-            messageList.splice(messageKey, 1, newMessageObj);
-
-            this.actionGenerated.emit({
-              type: enums.MESSAGE_UPDATED,
-              payLoad: messageList,
-            });
+            this.markAllMessagAsRead(messageKey)
           }
         }
-      } else if (
-        message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP &&
-        message.getReceiver() === this.item.guid
-      ) {
       }
     } catch (error) {
       logger(error);
@@ -809,7 +772,7 @@ export class CometChatMessageListComponent
             type: enums.DIRECT_CALL_STARTED,
             payLoad: [message],
           });
-         
+
         }
 
         if (
@@ -826,8 +789,8 @@ export class CometChatMessageListComponent
             type: enums.CUSTOM_MESSAGE_RECEIVE,
             payLoad: [message],
           });
-        } 
-        
+        }
+
         else if (message.type === enums.CUSTOM_TYPE_POLL) {
           //customdata (poll extension) does not have metadata
 
@@ -838,16 +801,16 @@ export class CometChatMessageListComponent
               payLoad: [message],
             });
         }
-      } 
+      }
       else if (
         this.type === CometChat.RECEIVER_TYPE.USER &&
         message.getReceiverType() === CometChat.RECEIVER_TYPE.USER &&
-        ((message.getSender().uid === this.item.uid && 
+        ((message.getSender().uid === this.item.uid &&
           message.getReceiverId() === this.loggedInUser.uid)
            || (
           this.loggedInUser.uid === message.getSender().uid &&
 			    message.getReceiverId() === this.item.uid
-        )) 
+        ))
       ) {
         if ((!message.getReadAt()  && !message.parentMessageId) ||  (!message.getReadAt() && this.parentMessageId && message.parentMessageId)) {
           CometChat.markAsRead(message);
@@ -874,7 +837,7 @@ export class CometChatMessageListComponent
             payLoad: [message],
           });
         }
-       
+
       }
     } catch (error) {
       logger(error);
@@ -921,12 +884,12 @@ export class CometChatMessageListComponent
     }
   }
 
-  /** 
-   * TrackBy by id's 
+  /**
+   * TrackBy by id's
    */
   messageID(index:any, item:any) {
-    return item.replyCount || item.id || item._id;
-    // return item.replyCount || item.data || item.id;
+    // return item.replyCount || item.id || item._id;
+    return item.replyCount ||  item.readAt || item.deliveredAt;
   }
 
   /**
