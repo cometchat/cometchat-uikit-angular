@@ -1,0 +1,14 @@
+<div class="cc-tabs-wrapper">
+   <div class="cc-child-view" *ngIf="childView">
+      <ng-container [ngTemplateOutlet]="childView" >
+
+      </ng-container>
+   </div>
+   <div class="cc-tabs" [ngStyle]="getTabsStyle()">
+      <cometchat-draggable [draggableStyle]="tabsStyle">
+         <div class="cc__tab-item" [ngStyle]="getTabsPlacement()">
+            <cometchat-icon-button [alignment]="'column'" *ngFor="let tab of tabs" [iconURL]="tab.iconURL" [text]="tab.title" [buttonStyle]="getButtonStyle(tab)" (cc-button-clicked)="openViewOnCLick(tab)"></cometchat-icon-button>
+         </div>
+      </cometchat-draggable>
+    </div>
+</div>

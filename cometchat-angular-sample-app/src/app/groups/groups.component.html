@@ -1,0 +1,113 @@
+<div class="groups__wrapper">
+    <div class="groups__header" [ngStyle]="style.headerTitleStyle()">
+      Groups
+    </div>
+    <div class="card__content">
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('groups-with-messages')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(sidebarIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Groups With Messages</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatGroupsWithMessages is an independent component used to set up a screen that shows the list of groups available in your app and gives you the ability to search for a specific group and to start a conversation
+
+                </div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('groups')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listwrapperIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" > Groups</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatGroups is an independent component used to set up a screen that displays the list of groups available in your app and gives you the ability to search for a specific group
+
+                </div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('create-group')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(createGroupIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Create Group</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    This component is used to create a new group. Groups can of three types- public, private or password protected. To learn more about this component click here.
+                </div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('join-group')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(joinGroupIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" > Protected Group</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    This component is used to join a password protected group. To learn more about this component click here</div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('group-members')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(groupMemberIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" > Group Members</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    This component is used to view a members in a group. To learn more about this component click here</div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('add-member')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(addMemberIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Add Members</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    This component is used to add users to a group. To learn more about this component click here</div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('transfer-ownership')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(transferOwnershipIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" > Transfer Ownership</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    This component is used to transfer ownership of a group from one user to another. To learn more about this component click here                </div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('banned-members')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(banMembersIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Banned Members</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    This component is used to view banned members from group. To learn more about this component click here</div>
+            </div>
+
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('details')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(detailsIconURL)">
+
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" > Details</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatDetails component for a group To learn more about this component click here            </div>
+
+        </div>
+
+    </div>
+
+
+</div>

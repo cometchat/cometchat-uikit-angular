@@ -1,0 +1,33 @@
+<div class="cc-message-bubble__wrapper" [ngStyle]="wrapperStyle()">
+  <div class="cc-message-bubble__container" (mouseenter)="hideShowMenuOption($event)"
+(mouseleave)="hideShowMenuOption($event)">
+<div class="cc-message-bubble__avatar" *ngIf="leadingView">
+  <ng-container *ngTemplateOutlet="leadingView">
+  </ng-container>
+</div>
+<div class="cc-message-bubble" [ngStyle]="bubbleAlignmentStyle()">
+  <div class="cc-message-bubble__title" [ngStyle]="titleStyle()" *ngIf="headerView">
+<ng-container [ngTemplateOutlet]="headerView">
+</ng-container>
+  </div>
+  <div class="cc-messageoptions" *ngIf="options && options.length >= 1 && isHovering" [ngStyle]="optionsStyles()">
+<cometchat-menu-list [moreIconURL]="moreIconURL" [topMenuSize]="topMenuSize" [menuListStyle]="optionsStyle" [data]="options" (cc-menu-clicked)="onOptionClick($event)">
+</cometchat-menu-list>
+  </div>
+  <div class="cc-message-bubble__content" [ngStyle]="bubbleStyle()">
+<ng-container *ngTemplateOutlet="replyView">
+</ng-container>
+<ng-container *ngTemplateOutlet="contentView">
+</ng-container>
+<ng-container *ngTemplateOutlet="bottomView">
+</ng-container>
+<ng-container *ngTemplateOutlet="threadView">
+</ng-container>
+<div>
+</div>
+  </div>
+  <ng-container *ngTemplateOutlet="footerView">
+  </ng-container>
+</div>
+  </div>
+</div>

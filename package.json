@@ -1,6 +1,6 @@
 {
   "name": "cometchat-pro-angular-ui-kit",
-  "version": "3.0.5-1",
+  "version": "3.0.12-1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -19,7 +19,10 @@
     "@angular/platform-browser": "~8.2.14",
     "@angular/platform-browser-dynamic": "~8.2.14",
     "@angular/router": "~8.2.14",
-    "@cometchat-pro/chat": "3.0.10",
+    "@cometchat-pro/chat": "3.0.12",
+    "my-cstom-package-lit": "^3.4.38",
+    "uikit-resources-lerna": "3.4.42",
+    "uikit-utils-lerna": "3.4.42",
     "rxjs": "~6.4.0",
     "tslib": "^1.10.0",
     "zone.js": "~0.9.1"

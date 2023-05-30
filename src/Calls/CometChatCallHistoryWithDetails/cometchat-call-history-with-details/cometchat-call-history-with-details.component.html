@@ -1,0 +1,41 @@
+<div class="cc-with-details__wrapper" [ngStyle]="chatsWrapperStyles()" >
+  <div class="cc-with-details__sidebar" [ngClass]="{mobile : isMobileView}">
+    <cometchat-call-history
+    #conversationRef
+    [activeCall]="activeCall"
+    [onItemClick]="callHistoryConfiguration.onItemClick || onItemClick"
+    [conversationsStyle]="callHistoryConfiguration.callHistoryStyle"
+    [subtitleView]="callHistoryConfiguration.subtitleView"
+    [options]="callHistoryConfiguration.options"
+    [conversationsRequestBuilder]="callHistoryConfiguration.messageRequestBuilder"
+    [emptyStateView]="callHistoryConfiguration.emptyStateView"
+    [onSelect]="callHistoryConfiguration.onSelect"
+    [loadingIconURL]="callHistoryConfiguration.loadingIconURL"
+    [errorStateView]="callHistoryConfiguration.errorStateView"
+    [loadingStateView]="callHistoryConfiguration.loadingStateView"
+    [titleAlignment]="callHistoryConfiguration.titleAlignment"
+    [listItemView]="callHistoryConfiguration.listItemView"
+    [menu]="callHistoryConfiguration.menu"
+    [hideSeparator]="callHistoryConfiguration.hideSeparator"
+    [hideError]="callHistoryConfiguration.hideError"
+    [selectionMode]="callHistoryConfiguration.selectionMode"
+    [listItemStyle]="callHistoryConfiguration.listItemStyle"
+    [avatarStyle]="callHistoryConfiguration.avatarStyle"
+    ></cometchat-call-history>
+  </div>
+  <div class="cc-with-details__main" [ngClass]="{mobile : isMobileView}" *ngIf="user || group">
+    <!--call details Screen-->
+    <cometchat-call-details
+    #messagesRef
+    [user]="user!"
+    [group]="group!"
+    [callDetailsStyle]="callDetailsConfiguration.callDetailsStyle"
+    [callButtonsConfiguration]="callDetailsConfiguration.callButtonsConfiguration"
+ [onClose]="callDetailsConfiguration.onClose || closeDetailsPage" [listItemStyle]="callDetailsConfiguration.listItemStyle"  [avatarStyle]="callDetailsConfiguration.avatarStyle" [statusIndicatorStyle]="callDetailsConfiguration.statusIndicatorStyle"  [customProfileView]="callDetailsConfiguration.customProfileView" [subtitleView]="callDetailsConfiguration.subtitleView" [hideProfile]="callDetailsConfiguration.hideProfile" [onError]="callDetailsConfiguration.onError" [closeButtonIconURL]="callDetailsConfiguration.closeButtonIconURL"
+    >
+    </cometchat-call-details>
+    <!--call details Screen ENDS-->
+  </div>
+  <div class="cc-decorator__message--empty" *ngIf="!user && !group" [ngStyle]="emptyMessageStyle()">
+    <cometchat-label [text]="messageText" [labelStyle]="labelStyle"></cometchat-label>
+   </div>

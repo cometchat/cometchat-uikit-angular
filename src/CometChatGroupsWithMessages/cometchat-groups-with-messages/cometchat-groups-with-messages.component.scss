@@ -1,0 +1,30 @@
+.cc-with-messages__wrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+.cc-with-messages__sidebar {
+  width: 280px;
+  height: 100%;
+  position: relative;
+
+}
+.cc-with-messages__main {
+  width: calc(100% - 280px);
+  height: 100%;
+}
+.mobile{
+  width: 100% !important;
+  height: 100%;
+  position: absolute;
+}
+.cc-decorator__message--empty{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.cc-with-messages__joingroup{
+  width: calc(100% - 280px);
+  height: 100%;
+}

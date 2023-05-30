@@ -1,0 +1,56 @@
+<div class="cc-details__wrapper" *ngIf="user || group" [ngStyle]="wrapperStyle()">
+  <div class="cc-details__header">
+    <cometchat-label [text]="title" [labelStyle]="getTitleStyle()"></cometchat-label>
+    <cometchat-button [iconURL]="closeButtonIconURL" class="cc-details__close-button" [buttonStyle]="closeButtonStyle" (cc-button-clicked)="onCloseDetails()"></cometchat-button>
+  </div>
+<div class="cc-details" [ngStyle]="marginStyle()">
+  <div class="cc-details__profile" *ngIf="!hideProfile">
+    <cometchat-list-item *ngIf="!customProfileView;else listitem" [avatarName]="user?.getName() ?? this.group?.getName()" [avatarURL]="this.user?.getAvatar() ?? this.group?.getIcon()" [listItemStyle]="listItemStyle"
+    [statusIndicatorColor]="checkStatusType()" [statusIndicatorIcon]="checkGroupType()" [title]="this.user?.getName() ?? this.group?.getName()"  [hideSeparator]="false"
+     [statusIndicatorStyle]="statusIndicatorStyle" [avatarStyle]="avatarStyle">
+   <div slot="subtitleView">
+   <div *ngIf="!subtitleView; else subtitle">
+   <cometchat-label [text]="subtitleText" [labelStyle]="subtitleStyle()">
+   </cometchat-label>
+   </div>
+   <ng-template #subtitle>
+     <ng-container *ngTemplateOutlet="subtitleView;context:{ $implicit: user ?? group }">
+     </ng-container>
+   </ng-template>
+   </div>
+   </cometchat-list-item>
+  </div>
+<div class="cc-calldetails_primary-section" *ngIf="!data || data.length == 0">
+  <cometchat-call-buttons [user]="user" [group]="group" [callButtonsStyle]="callButtonsConfiguration.callButtonsStyle" [onVideoCallClick]="callButtonsConfiguration.onVideoCallClick" [onVoiceCallClick]="callButtonsConfiguration.onVoiceCallClick" [videoCallIconURL]="callButtonsConfiguration.videoCallIconURL" [voiceCallIconURL]="callButtonsConfiguration.voiceCallIconURL" ></cometchat-call-buttons>
+
+</div>
+<div class="cc-details__section-list" *ngIf="data && data.length > 0">
+  <div class="cc-details__section" *ngFor="let item of data" >
+    <div class="cc-details__section-separator" *ngIf="item.title">
+      <cometchat-label [text]="item.title" [labelStyle]="showDataSectionStyle(item)"></cometchat-label>
+    </div>
+    <div class="cc-details__options-wrapper" *ngIf="getTemplateOptions(item)">
+<div class="cc-details__options"*ngFor="let option of getTemplateOptions(item)" >
+<div class="cc-details__option" *ngIf="!getCustomOptionView(option);else customView">
+  <div class="cc-details__option-title" >
+    <cometchat-button  [text]="option.title" [buttonStyle]="getButtonStyle(option)"></cometchat-button>
+    <div class="cc-details__option-tail" *ngIf="option?.tail">
+ <ng-container *ngTemplateOutlet="option?.tail"></ng-container>
+    </div>
+  </div>
+  <cometchat-divider [dividerStyle]="dividerStyle"></cometchat-divider>
+</div>
+<ng-template #customView>
+    <ng-container *ngTemplateOutlet="getCustomOptionView(option)" >
+    </ng-container>
+</ng-template>
+</div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<ng-template #listitem>
+  <ng-container *ngTemplateOutlet="customProfileView">
+  </ng-container>
+</ng-template>

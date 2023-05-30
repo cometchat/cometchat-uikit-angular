@@ -1,0 +1,284 @@
+.signup__wrapper{
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+}
+.signup__page{
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    height: 100%;
+    width: 80%;
+    margin: auto;
+    padding: 0 8px;
+    .header__section{
+       padding: 8px 0;
+       flex-basis: 6%;
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+    }
+    .content__section{
+        flex-basis: 75%;
+        display: flex;
+        padding: 8px 0;
+        width: 100%;
+        justify-content: space-between;
+        .content__title{
+            margin: 8px 0 16px 0;
+        }
+        .left__content{
+            height: 100%;
+            width: 50%;
+            .signup__container{
+                display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+                height: 100%;
+                width: 100%;
+                margin-top: 8px;
+                .uid__field{
+                    display: flex;
+                    flex-direction: column;
+                    margin-bottom: 8px;
+                    label{
+                        padding: 8px;
+                    }
+                }
+                .name__field{
+                    display: flex;
+                    flex-direction: column;
+                    margin-bottom: 8px;
+                    label{
+                        padding: 8px;
+                    }
+                }
+                .uid__generator{
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-start;
+                    align-items: center;
+                    margin: 12px 0;
+                }
+                padding: 8px 8px 24px 8px;
+                border-radius: 8px;
+                .sample__users{
+                    display: flex;
+                    width: 100%;
+                    flex-wrap: wrap;
+                    justify-content: space-around;
+                }
+                .signup__header{
+                    margin-left:16px;
+                }
+                .cards{
+                    cursor: pointer;
+                    display: flex;
+                    border-radius: 8px;
+                    padding: 8px;
+                    align-items: center;
+                    justify-content: flex-start;
+                    margin: 8px 4px;
+                    min-width: 180px;
+                    max-width: 260px;
+                   flex-basis: 45%;
+                   flex-shrink: 1;
+                   flex-grow: 1;
+                    .user__details{
+                        margin-left: 8px;
+                    }
+                }
+                .signup__field{
+                    display: flex;
+                 flex-direction: column;
+                    padding:8px;
+                   justify-content: space-evenly;
+                   input{
+                    height: 42px;
+                    border-radius: 12px;
+                    padding: 8px;
+                    background: transparent;
+                    outline: none;
+                   }
+                   input::placeholder{
+                       color: rgb(169, 169, 169);
+                   }
+                }
+                .signup__section{
+                    margin-top: 50px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-direction: column;
+                    button{
+                        padding: 4px;
+                    }
+                    .signup__button{
+                        height: 38px;
+                        width: 100%;
+                        border-radius: 8px;
+                        border: none;
+                    }
+                }
+            }
+        }
+        .right__content{
+            margin-left: 2px;
+            height: 100%;
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+        }
+    }
+    .footer__section{
+        flex-basis: 6%;
+        margin-bottom: 8px;
+        bottom: 0;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        width: 100%;
+    }
+}
+button{
+    cursor: pointer;
+}
+/* checkbox style */
+.checkbox__container {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 22px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  /* Hide the browser's default checkbox */
+  .checkbox__container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+  /* Create a custom checkbox */
+  .checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 24px;
+    width: 24px;
+    background-color: #eee;
+    border-radius: 4px;
+  }
+  /* On mouse-over, add a grey background color */
+  .checkbox__container:hover input ~ .checkmark {
+    background-color: #ccc;
+  }
+  /* When the checkbox is checked, add a blue background */
+  .checkbox__container input:checked ~ .checkmark {
+    background-color: #2196F3;
+  }
+  /* Create the checkmark/indicator (hidden when not checked) */
+  .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+  }
+  /* Show the checkmark when checked */
+  .checkbox__container input:checked ~ .checkmark:after {
+    display: block;
+  }
+  /* Style the checkmark/indicator */
+  .checkbox__container .checkmark:after {
+    left: 9px;
+    top: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+  }
+  .error__text{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    bottom: -15px;
+    position: relative;
+    padding: 0 12px;
+}
+@media (min-width: 320px) and (max-width: 800px) {
+    .left__content{
+        width: 100% !important;
+        height: 100% !important;
+    }
+    .right__content{
+     display: none !important;
+     width: 0% !important;
+ }
+ .signup__page{
+    width: 98% !important;
+}
+   }
+@media (min-width: 820px) and (max-width: 1200px) {
+.signup__page{
+width: 96% !important;
+}
+
+}
+@media (min-height: 300px) and (max-height: 600px) {
+    .signup__section{
+        margin-top: 0px !important;
+    }
+    .signup__container{
+        height: fit-content !important;
+    }
+
+    }
+    .spinner__wheel {
+        position: absolute;
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        align-items: center;
+        z-index: 10;
+        justify-content: center;
+        top: 0;
+
+        &::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          height: 100%;
+          width: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: -1;
+        }
+
+        .spinner__content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 25px;
+            background: white;
+            height: 200px;
+            width: 300px;
+            border-radius: 8px;
+            padding-bottom: 30px;
+        }
+        img{
+            height: 55px;
+            width: 55px;
+        }
+      }

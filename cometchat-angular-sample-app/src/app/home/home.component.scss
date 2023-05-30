@@ -1,0 +1,126 @@
+* {
+    font-family: Inter, sans-serif;
+    overflow: hidden;
+  }
+  .home__screen {
+    display: flex;
+    // height: 100%;
+    height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .home__screen * {
+    box-sizing: border-box;
+  }
+  .sidebar__content::-webkit-scrollbar {
+    width: 8px;
+    height: 4px;
+
+  }
+  .root__page{
+    cursor: pointer;
+  }
+  .sidebar__content::-webkit-scrollbar-track {
+    background: #ffffff00;
+  }
+  .sidebar__content::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 8px;
+  }
+  .sidebar__content::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+  }
+  .home__screen__sidebar {
+    width: 280px;
+    height: 100%;
+    position: relative;
+  }
+  .home__screen__main {
+    width: calc(100% - 280px);
+    height: 100%;
+    order: 2;
+    display: flex;
+    flex-direction: column;
+  }
+//   card styling
+.sidebar__header{
+    padding: 8px;
+    margin: 0 4px;
+    height: 6%;
+}
+.navbar__left{
+  display: flex;
+}
+.sidebar__content{
+  height: 89%;
+  overflow-y: scroll;
+}
+.cards{
+    display: flex;
+    justify-content: space-between;
+    width: 94%;
+    cursor: pointer;
+    margin: 12px 8px;
+    height: fit-content;
+    padding: 10px;
+    border-radius: 12px;
+    .left__content{
+        flex-basis: 90%;
+        .card__description{
+            text-align: left;
+            margin: 8px 0;
+        }
+    }
+    .card__icon{
+        flex-basis: 5%;
+        text-align: center;
+    }
+}
+.sidebar__footer{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    bottom: 0;
+    margin: auto;
+    height: 4%;
+    width: 100%;
+    margin-bottom: 8px;
+}
+.navbar__right{
+    position: absolute;
+    right: 1%;
+    display: flex;
+    top: 0;
+    z-index: 100;
+   .logout__icon{
+    margin: 8px;
+    cursor: pointer;
+   }
+   .theme__mode{
+    margin: 8px;
+    cursor: pointer;
+   }
+}
+.navbar{
+    padding: 8px 8px 8px 16px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    flex-basis: 6%;
+}
+.content{
+    flex-basis: 95%;
+}
+  @media (min-width: 320px) and (max-width: 767px) {
+    .home__screen__sidebar {
+      position: absolute !important;
+      top: 0;
+      bottom: 0;
+      width: 100% !important;
+      z-index: 2;
+    }
+    .home__screen__main {
+      width: 100% !important;
+    }
+  }

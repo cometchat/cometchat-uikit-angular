@@ -1,0 +1,47 @@
+<div class="chats__wrapper">
+    <div class="chats__header" [ngStyle]="style.headerTitleStyle()">
+        Calls
+    </div>
+    <div class="card__content">
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('call-buttons')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(sidebarIconURL)">
+            </div>
+            <div class="right__content"  >
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >   Call Buttons</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatCallButtons is an independent component used to initiate 1v1 and direct calling.
+                </div>
+            </div>
+        </div>
+        <!-- <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('call-history')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(sidebarIconURL)">
+            </div>
+            <div class="right__content"  >
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Call History</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatCallHistory is an independent component used to show call history of loggedin user.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('call-history-with-details')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listwrapperIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Call History With Details</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatCallHistoryWithDetails is an independent component used to show call history and details of the user.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('call-details')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listwrapperIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Call Details</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatCallDetails is an independent component used to show Details of the call.
+                </div>
+            </div>
+        </div> -->
+    </div>
+</div>

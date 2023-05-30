@@ -1,0 +1,36 @@
+<div class="cc-incoming-call__wrapper" [ngStyle]="wrapperStyle()" *ngIf="call && showIncomingCallScreen">
+    <div class="cc-incoming-call__listitem">
+        <cometchat-list-item [title]="call?.getSender()?.getName()"
+        [listItemStyle]="listItemStyle"
+        [hideSeparator]="true" >
+        <div slot="subtitleView" class="cc-incoming-call__subtitle-view" *ngIf="subtitleView;else subtitle">
+            <ng-container *ngTemplateOutlet="subtitleView">
+            </ng-container>
+        </div>
+        <ng-template #subtitle>
+           <div slot="subtitleView"  class="cc-incoming-call__subtitle-view">
+          <div class="cc-call__icon">
+            <cometchat-icon [iconStyle]="iconStyle" [URL]="getCallTypeIcon()"></cometchat-icon>
+          </div>
+          <cometchat-label class="cc-call__type" [text]="subtitleText" [labelStyle]="subtitleStyle()">
+
+          </cometchat-label>
+          </div>
+        </ng-template>
+      <div slot="tailView"  class="cc-incoming-call__tail-view">
+        <div class="tail__view">
+          <div class="cc-incoming-call__avatar">
+            <cometchat-avatar [avatarStyle]="avatarStyle" [image]="call?.getSender()?.getAvatar()" [name]="call?.getSender()?.getName()">
+
+            </cometchat-avatar>
+          </div>
+        </div>
+        </div>
+    </cometchat-list-item>
+    </div>
+    <div class="cc-incoming-call-buttons">
+        <cometchat-button (cc-button-clicked)="rejectIncomingCall()"  [buttonStyle]="declineButtonStyle" [text]="declineButtonText"></cometchat-button>
+        <cometchat-button (cc-button-clicked)="acceptIncomingCall()"  [buttonStyle]="acceptButtonStyle" [text]="acceptButtonText" ></cometchat-button>
+        </div>
+</div>
+<cometchat-ongoing-call *ngIf="showOngoingCall && activeCall && !showIncomingCallScreen" [ongoingCallStyle]="ongoingCallStyle" [sessionID]="sessionId"  [callSettingsBuilder]="getCallBuilder()!"></cometchat-ongoing-call>

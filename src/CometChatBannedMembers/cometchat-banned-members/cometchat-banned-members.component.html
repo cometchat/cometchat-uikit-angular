@@ -1,0 +1,60 @@
+<div class="cc-banned-members" [ngStyle]="wrapperStyle()">
+  <div class="cc-banned-members__back">
+    <cometchat-button [iconURL]="backButtonIconURL" [buttonStyle]="backButtonStyle()" *ngIf="showBackButton"   (cc-button-clicked)="backClicked()" >
+
+    </cometchat-button>
+  </div>
+  <div class="cc-banned-members__wrapper" [ngStyle]="membersStyles()">
+    <div class="cc-banned-members__menus" *ngIf="menu">
+      <ng-container *ngTemplateOutlet="menu">
+      </ng-container>
+  </div>
+    <cometchat-list [listItemView]="listItemView ? listItemView : listItem" [onScrolledToBottom]="onScrolledToBottom" [onSearch]="onSearch"
+        [list]="bannedMembers" [searchText]="searchKeyword" [searchPlaceholderText]="searchPlaceholder"
+        [searchIconURL]="searchIconURL" [hideSearch]="hideSearch"  [title]="title"
+
+        [emptyStateText]="emptyStateText" [loadingIconURL]="loadingIconURL"
+        [titleAlignment]="titleAlignment" [loadingStateView]="loadingStateView" [emptyStateView]="emptyStateView"
+        [errorStateText]="errorStateText" [errorStateView]="errorStateView" [listStyle]="listStyle" [state]="state">
+    </cometchat-list>
+    <ng-template #listItem let-bannedMember>
+        <cometchat-list-item [title]="bannedMember?.name" [avatarURL]="bannedMember?.avatar" [avatarName]="bannedMember?.name"
+            [listItemStyle]="listItemStyle" [avatarStyle]="avatarStyle"
+ [hideSeparator]="hideSeparator">
+            <div slot="subtitleView" *ngIf="subtitleView" class="cc-banned-members__subtitle-view">
+                <ng-container *ngTemplateOutlet="subtitleView">
+                </ng-container>
+            </div>
+            <div slot="menuView"  *ngIf="options">
+              <cometchat-menu-list [data]="options(bannedMember)"  [menuListStyle]="menuListStyle"></cometchat-menu-list>
+          </div>
+          <div slot="tailView"  *ngIf="selectionMode != selectionmodeEnum.none; else changeScope" class="cc-banned-members__tail-view">
+            <ng-container *ngTemplateOutlet="tailView">
+            </ng-container>
+        </div>
+        <ng-template  #changeScope>
+         <div  slot="tailView">
+          <div class="cc-banned-members__unban">
+            <cometchat-button [buttonStyle]="unbanIconStyle" [iconURL]="unbanIconURL" (click)="unBanMember(bannedMember)">
+
+            </cometchat-button>
+          </div>
+         </div>
+        </ng-template>
+        </cometchat-list-item>
+        <ng-template #tailView>
+          <div  *ngIf="selectionMode == selectionmodeEnum.single" class="cc-banned-members__selection--single">
+            <cometchat-radio-button (cc-radio-button-changed)="onSelect ? onSelect(bannedMember) : null"></cometchat-radio-button>
+          </div>
+          <div  *ngIf="selectionMode == selectionmodeEnum.multiple" class="cc-banned-members__selection--multiple">
+            <cometchat-checkbox (cc-checkbox-changed)="onSelect ? onSelect(bannedMember) : null"></cometchat-checkbox>
+          </div>
+        </ng-template>
+    </ng-template>
+  </div>
+  <div class="cc-close-button">
+    <cometchat-button [iconURL]="closeButtonIconURL" [buttonStyle]="closeButtonStyle()" (cc-button-clicked)="closeClicked()">
+
+    </cometchat-button>
+  </div>
+</div>

@@ -1,0 +1,48 @@
+<div class="cc-groups" [ngStyle]="groupStyle()">
+  <div class="cc-menus" *ngIf="menu">
+
+    <ng-container *ngTemplateOutlet="menu">
+    </ng-container>
+
+</div>
+  <cometchat-list [listItemView]="listItemView ? listItemView : listItem" [onScrolledToBottom]="onScrolledToBottom" [onSearch]="onSearch"
+      [list]="groupsList" [searchText]="searchKeyword" [searchPlaceholderText]="searchPlaceholder"
+      [searchIconURL]="searchIconURL" [hideSearch]="hideSearch" [hideError]="hideError" [title]="title"
+      [emptyStateText]="emptyStateText" [loadingIconURL]="loadingIconURL"
+      [titleAlignment]="titleAlignment" [loadingStateView]="loadingStateView" [emptyStateView]="emptyStateView"
+      [errorStateText]="errorStateText" [errorStateView]="errorStateView" [listStyle]="listStyle" [state]="state">
+  </cometchat-list>
+  <ng-template #listItem let-group>
+      <cometchat-list-item [title]="group?.name" [avatarURL]="group?.avatar" [avatarName]="group?.name"
+          [listItemStyle]="listItemStyle" [avatarStyle]="avatarStyle" [statusIndicatorStyle]="statusIndicatorStyle"
+          [statusIndicatorColor]="getStatusIndicatorColor(group)" [statusIndicatorIcon]="getGroupIcon(group)" [hideSeparator]="hideSeparator" (cc-listitem-clicked)="onClick(group)" [isActive]="getActiveGroup(group)">
+          <div slot="subtitleView" class="cc-groups__subtitle-view" *ngIf="subtitleView;else groupSubtitle">
+              <ng-container *ngTemplateOutlet="subtitleView">
+              </ng-container>
+          </div>
+          <ng-template #groupSubtitle>
+             <div slot="subtitleView" [ngStyle]="subtitleStyle()" class="cc-groups__subtitle-view"> {{getMemberCount(group)}} </div>
+          </ng-template>
+
+          <div slot="menuView" class="cc-groups__options" *ngIf="options">
+            <cometchat-menu-list [data]="options(group)">
+
+            </cometchat-menu-list>
+        </div>
+        <div slot="tailView" *ngIf="selectionMode != selectionmodeEnum.none" class="cc-groups__tail-view">
+          <ng-container *ngTemplateOutlet="tailView">
+          </ng-container>
+      </div>
+      </cometchat-list-item>
+      <ng-template #tailView>
+        <div  *ngIf="selectionMode == selectionmodeEnum.single">
+          <cometchat-radio-button (cc-radio-button-changed)="onSelect ? onSelect(group) : null"></cometchat-radio-button>
+
+        </div>
+        <div  *ngIf="selectionMode == selectionmodeEnum.multiple">
+          <cometchat-checkbox (cc-checkbox-changed)="onSelect ? onSelect(group) : null"></cometchat-checkbox>
+
+        </div>
+      </ng-template>
+  </ng-template>
+</div>

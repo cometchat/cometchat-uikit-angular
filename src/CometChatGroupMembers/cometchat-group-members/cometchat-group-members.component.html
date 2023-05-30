@@ -1,0 +1,71 @@
+<div class="cc-group-members" [ngStyle]="wrapperStyle()">
+  <div class="cc-group-members__back">
+    <cometchat-button [iconURL]="backButtonIconURL" [buttonStyle]="backButtonStyle()" *ngIf="showBackButton"   (cc-button-clicked)="backClicked()" >
+
+    </cometchat-button>
+  </div>
+  <div class="cc-group-members__wrapper" [ngStyle]="membersStyle()">
+    <div class="cc-group-members__menus" >
+      <ng-container *ngTemplateOutlet="menu">
+      </ng-container>
+  </div>
+    <cometchat-list [listItemView]="listItemView ? listItemView : listItem" [onScrolledToBottom]="onScrolledToBottom" [onSearch]="onSearch"
+        [list]="groupMembers" [searchText]="searchKeyword" [searchPlaceholderText]="searchPlaceholder"
+        [searchIconURL]="searchIconURL" [hideSearch]="hideSearch"  [title]="title"
+
+        [emptyStateText]="emptyStateText" [loadingIconURL]="loadingIconURL"
+        [titleAlignment]="titleAlignment" [loadingStateView]="loadingStateView" [emptyStateView]="emptyStateView"
+        [errorStateText]="errorStateText" [errorStateView]="errorStateView" [listStyle]="listStyle" [state]="state">
+    </cometchat-list>
+    <ng-template #listItem let-groupMember>
+        <cometchat-list-item [title]="groupMember?.name" [avatarURL]="groupMember?.avatar" [avatarName]="groupMember?.name"
+            [listItemStyle]="listItemStyle" [avatarStyle]="avatarStyle" [statusIndicatorStyle]="statusIndicatorStyle"
+            [statusIndicatorColor]="getStatusIndicatorColor(groupMember)" [hideSeparator]="hideSeparator">
+            <div slot="subtitleView" *ngIf="subtitleView" class="cc-group-members__subtitle-view">
+                <ng-container *ngTemplateOutlet="subtitleView">
+                </ng-container>
+            </div>
+            <div slot="menuView" class="cc-group-members__options" *ngIf=" !tailView && options">
+              <cometchat-menu-list [data]="options(groupMember)"  [menuListStyle]="menuListStyle" (cc-menu-clicked)="handleMenuAction($event, groupMember)"></cometchat-menu-list>
+          </div>
+        <div slot="tailView"  class="cc-group-members__tail-view">
+
+         <div *ngIf="tailView">
+          <ng-container *ngTemplateOutlet="tailView;context:{ $implicit: groupMember }">
+          </ng-container>
+
+         </div>
+          <div *ngIf="selectionMode != selectionmodeEnum.none" >
+            <div  *ngIf="selectionMode == selectionmodeEnum.single" class="cc-group-members__selection--single">
+              <cometchat-radio-button (cc-radio-button-changed)="onSelect ? onSelect(groupMember) : null"></cometchat-radio-button>
+            </div>
+            <div  *ngIf="selectionMode == selectionmodeEnum.multiple" class="cc-group-members__selection--multiple">
+              <cometchat-checkbox (cc-checkbox-changed)="onSelect ? onSelect(groupMember) : null"></cometchat-checkbox>
+            </div>
+          </div>
+          <div *ngIf="!tailView">
+            <div class="cc-group-members__scopechange" slot="tailView">
+
+              <cometchat-menu-list [moreIconURL]="moreIconURL"  *ngIf="isArray(getOptions(groupMember))"  [topMenuSize]="0" [data]="getOptions(groupMember)" (cc-menu-clicked)="handleMenuAction($event, groupMember)" [menuListStyle]="menuListStyle"></cometchat-menu-list>
+               <cometchat-label *ngIf=" isString(getOptions(groupMember))" [text]="getOptions(groupMember)" [labelStyle]="getScopeStyle()">
+
+               </cometchat-label>
+
+           </div>
+          </div>
+      </div>
+        </cometchat-list-item>
+
+    </ng-template>
+  </div>
+  <div class="cc-group-members__close">
+    <cometchat-button [iconURL]="closeButtonIconURL" [buttonStyle]="closeButtonStyle()" (cc-button-clicked)="closeClicked()">
+
+    </cometchat-button>
+  </div>
+</div>
+<cometchat-backdrop *ngIf="changeScope && memberScope.length > 0" [backdropStyle]="backdropStyle">
+  <cometchat-change-scope  [changeScopeStyle]="groupScopeStyle" [options]="memberScope" [arrowIconURL]="dropdownIconURL" (cc-changescope-close-clicked)="changeScope = false;" (cc-changescope-changed)="changeMemberScope($event)">
+
+  </cometchat-change-scope>
+</cometchat-backdrop>

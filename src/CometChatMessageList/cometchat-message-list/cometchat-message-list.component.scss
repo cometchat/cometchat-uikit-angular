@@ -1,0 +1,71 @@
+.cc-message-list {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  position: relative;
+}
+.cc-message-list__wrapper {
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+  overflow-y: hidden;
+}
+.cc-message-list__bubble-footer{
+  display: flex;
+  justify-content: center;
+    align-items: center;
+}
+.cc-message-list__date-container {
+  text-align: center;
+  margin: 5px 0;
+}
+
+ .cc-message-list__smart-replies{
+  height: fit-content;
+  width: 100%;
+  position: absolute;
+  bottom:0;
+ }
+
+.cc-message-list__date {
+  border-radius: 10px;
+}
+.cc-message-list__threadreplies{
+  min-width: 130px;
+  width: 100%;
+}
+.cc-message-list__message-indicator{
+  height:25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  bottom: 0%;
+    position: absolute;
+}
+.cc-message-list__footer-view{
+  z-index: 2;
+  position: relative;
+  // bottom: 5%;
+  width: 100%;
+}
+.cc-message-list__decorator-message {
+  margin: 0;
+  line-height: 30px;
+  word-wrap: break-word;
+  padding: 0 8px;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.cc-message-list::-webkit-scrollbar {
+  background: transparent;
+  width: 8px;
+}
+.cc-message-list::-webkit-scrollbar-thumb {
+  background: rgb(232, 229, 229);
+  border-radius: 8px;
+}

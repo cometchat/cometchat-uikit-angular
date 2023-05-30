@@ -1,0 +1,41 @@
+.close__icon{
+  height: 30px;
+  width: 30px;
+  cursor: pointer;
+}
+
+.header{
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  .title{
+     display: flex;
+     align-items: center;
+     justify-content: center;
+  }
+}
+.video{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.video__container{
+  height: fit-content;
+  width: 320px;
+  transform: translate(-50%,-50%);
+  left: 50%;
+  top: 50%;
+  position: absolute;
+  z-index: 10;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap:12px;
+  padding-bottom: 24px;
+}
+
+

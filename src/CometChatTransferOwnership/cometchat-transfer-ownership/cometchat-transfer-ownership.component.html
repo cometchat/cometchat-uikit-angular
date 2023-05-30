@@ -1,0 +1,27 @@
+
+<div class="cc-transfer-ownership" [ngStyle]="wrapperStyle()">
+  <div class="cc-transfer-ownership__members">
+    <cometchat-group-members [listItemView]="listItemView" [searchRequestBuilder]="searchRequestBuilder"
+    [errorStateText]="errorStateText" [errorStateView]="errorStateView" [loadingStateView]="loadingStateView"
+    [hideSeparator]="hideSeparator" [emptyStateText]="emptyStateText"
+    [groupMemberRequestBuilder]="groupMemberRequestBuilder" [hideSearch]="false"
+    [closeButtonIconURL]="closeButtonIconURL" [listItemStyle]="listItemStyle" [emptyStateView]="emptyStateView"
+    [searchPlaceholder]="searchPlaceholder" [statusIndicatorStyle]="statusIndicatorStyle"
+    [avatarStyle]="avatarStyle" [groupMemberStyle]="groupMemberStyle" [onError]="onError"
+    [subtitleView]="subtitleView" [disableUsersPresence]="disableUsersPresence" [onClose]="closeClicked"
+    [onSelect]="onOwnerSelected" [tailView]="tailView" [selectionMode]="selectionMode"
+    [titleAlignment]="titleAlignment" [group]="group" [showBackButton]="showBackButton" [title]="title" [options]="options">
+    </cometchat-group-members>
+    </div>
+    <div class="cc-transfer-ownership-buttons">
+    <cometchat-button class="cc-transfer-ownership__buttons--confirm" [text]="transferButtonText"
+      [buttonStyle]="transferButtonStyle" (cc-button-clicked)="onTransferClick()"></cometchat-button>
+    <cometchat-button class="cc-transfer-ownership__buttons--cancel" [text]="cancelButtonText"
+      [buttonStyle]="cancelButtonStyle" (cc-button-clicked)="closeClicked()"></cometchat-button>
+    </div>
+  </div>
+<!-- view for member scope -->
+<ng-template #tailView let-groupMember>
+  <cometchat-label [text]="groupMember?.scope" [labelStyle]="getScopeStyle()">
+  </cometchat-label>
+  </ng-template>

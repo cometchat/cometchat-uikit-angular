@@ -1,0 +1,46 @@
+.cc-group-members{
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+.cc-group-members__back{
+    position: absolute;
+    left: 8px;
+    padding: 12px 8px 8px 8px;
+}
+.cc-group-members__wrapper{
+    height: 100%;
+    padding: 8px;
+    width: 100%;
+}
+
+
+.cc-group-members__close{
+    position: absolute;
+    right: 8px;
+    padding: 8px;
+
+}
+
+
+
+.cc-group-members__tail-view{
+    position: relative;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+.cc-group-members__menus{
+    position: absolute;
+    right: 12px;
+    padding: 12px;
+    cursor: pointer;
+}
+.scope__changed{
+    height: 100%;
+    width: fit-content;
+    position: absolute;
+    right: 8px;
+}

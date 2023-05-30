@@ -1,0 +1,65 @@
+<div class="cc-messages__wrapper">
+<div class="cc-messages" [ngStyle]="chatListStyle()" *ngIf="user || group">
+<div class="cc-messages__header" *ngIf="!hideMessageHeader">
+  <div *ngIf="messageHeaderView; else customHeaderView" class="cc-messages__header-customview">
+    <ng-container *ngTemplateOutlet="messageHeaderView">
+    </ng-container>
+  </div>
+  <ng-template #customHeaderView>
+    <cometchat-message-header [user]="user" [group]="group" [subtitleView]="messageHeaderConfiguration.subtitleView"
+    [disableUsersPresence]="messageHeaderConfiguration.disableUsersPresence" [protectedGroupIcon]="messageHeaderConfiguration.protectedGroupIcon" [privateGroupIcon]="messageHeaderConfiguration.privateGroupIcon" [menu]="headerMenu" [messageHeaderStyle]="messageHeaderConfiguration.messageHeaderStyle"
+    [backButtonIconURL]="messageHeaderConfiguration.backButtonIconURL" [hideBackButton]="messageHeaderConfiguration.hideBackButton" [onError]="messageHeaderConfiguration.onError" [onBack]="messageHeaderConfiguration.onBack" [listItemStyle]="messageHeaderConfiguration.listItemStyle" [statusIndicatorStyle]="messageHeaderConfiguration.statusIndicatorStyle"
+    [avatarStyle]="messageHeaderConfiguration.avatarStyle"
+    >
+    </cometchat-message-header>
+  </ng-template>
+</div>
+<div class="cc-messages__list">
+  <cometchat-message-list #messageListRef [disableSoundForMessages]="disableSoundForMessages" [customSoundForMessages]="customSoundForIncomingMessages" [emptyStateView]="messageListConfiguration.emptyStateView" [loadingStateView]="messageListConfiguration.loadingStateView"  [user]="user" [group]="group"
+  [errorStateView]="messageListConfiguration.errorStateView" [disableReceipt]="messageListConfiguration.disableReceipt" [readIcon]="messageListConfiguration.readIcon" [deliveredIcon]="messageListConfiguration.deliveredIcon" [sentIcon]="messageListConfiguration.sentIcon" [waitIcon]="messageListConfiguration.waitIcon"
+  [errorIcon]="messageListConfiguration.errorIcon" [alignment]="messageListConfiguration.alignment" [showAvatar]="messageListConfiguration.showAvatar" [datePattern]="messageListConfiguration.datePattern" [timestampAlignment]="messageListConfiguration.timestampAlignment" [DateSeparatorPattern]="messageListConfiguration.DateSeparatorPattern"
+  [messageTypes]="messageListConfiguration.messageTypes" [messagesRequestBuilder]="messageListConfiguration.messagesRequestBuilder" [thresholdValue]="messageListConfiguration.thresholdValue" [onThreadRepliesClick]="messageListConfiguration.onThreadRepliesClick || openThreadView" [headerView]="messageListConfiguration.headerView" [footerView]="messageListConfiguration.footerView"
+   [avatarStyle]="messageListConfiguration.avatarStyle" [backdropStyle]="messageListConfiguration.backdropStyle" [dateSeparatorStyle]="messageListConfiguration.dateSeparatorStyle" [messageListStyle]="messageListConfiguration.messageListStyle"  [onError]="messageListConfiguration.onError"
+  >
+  </cometchat-message-list>
+</div>
+<div class="cc-messages__composer" *ngIf="!hideMessageComposer">
+  <div *ngIf="messageComposerView; else customComposerView" class="cc-messages__composer--customview">
+    <ng-container *ngTemplateOutlet="messageComposerView">
+    </ng-container>
+  </div>
+  <ng-template #customComposerView>
+    <cometchat-message-composer #messageComposerRef [disableSoundForMessages]="disableSoundForMessages"
+    [customSoundForMessages]="customSoundForOutgoingMessages"
+    [user]="user" [group]="group" [text]="messageComposerConfiguration.text" [headerView]="messageComposerConfiguration.headerView" [onTextChange]="messageComposerConfiguration.onTextChange" [attachmentIconURL]="messageComposerConfiguration.attachmentIconURL"
+    [attachmentOptions]="messageComposerConfiguration.attachmentOptions" [secondaryButtonView]="messageComposerConfiguration.secondaryButtonView" [auxilaryButtonView]="messageComposerConfiguration.auxilaryButtonView" [auxiliaryButtonsAlignment]="messageComposerConfiguration.auxiliaryButtonsAlignment"
+    [sendButtonView]="messageComposerConfiguration.sendButtonView" [hideLiveReaction]="messageComposerConfiguration.hideLiveReaction" [LiveReactionIconURL]="messageComposerConfiguration.LiveReactionIconURL" [messageComposerStyle]="messageComposerConfiguration.messageComposerStyle" [onSendButtonClick]="messageComposerConfiguration.onSendButtonClick"
+    [onSendButtonClick]="messageComposerConfiguration.onSendButtonClick" [onError]="messageComposerConfiguration.onError"
+    >
+    </cometchat-message-composer>
+  </ng-template>
+</div>
+ </div>
+ <div class="cc-messages__livereaction">
+  <cometchat-live-reaction *ngIf="liveReaction" [reactionIconURL]="reactionName"></cometchat-live-reaction>
+</div>
+<div *ngIf="openThreadedMessages" class="cc-messages__threadedmessages">
+<cometchat-threaded-messages [onClose]="closeThreadView" [threadedMessagesStyle]="threadedMessageConfiguration.threadedMessagesStyle" [messageActionView]="threadedMessageConfiguration.messageActionView" [closeIconURL]="threadedMessageConfiguration.closeIconURL" [onError]="threadedMessageConfiguration.onError" [bubbleView]="threadedMessageConfiguration.bubbleView || parentBubbleView" [parentMessage]="threadMessageObject" [user]="user" [group]="group"></cometchat-threaded-messages>
+</div>
+<div *ngIf="openDetails" class="cc-messages__details">
+  <cometchat-details [backdropStyle]="detailsConfiguration.backdropStyle"  [transferOwnershipConfiguration]="detailsConfiguration.transferOwnershipConfiguration" [groupMembersConfiguration]="detailsConfiguration.groupMembersConfiguration" [bannedMembersConfiguration]="detailsConfiguration.bannedMembersConfiguration" [addMembersConfiguration]="detailsConfiguration.addMembersConfiguration"  [onClose]="detailsConfiguration.onClose || closeDetailsPage" [listItemStyle]="detailsConfiguration.listItemStyle" [detailsStyle]="detailsConfiguration.detailsStyle" [avatarStyle]="detailsConfiguration.avatarStyle" [statusIndicatorStyle]="detailsConfiguration.statusIndicatorStyle" [leaveDialogStyle]="detailsConfiguration.leaveDialogStyle" [data]="detailsConfiguration.data" [customProfileView]="detailsConfiguration.customProfileView" [subtitleView]="detailsConfiguration.subtitleView" [hideProfile]="detailsConfiguration.hideProfile" [onError]="detailsConfiguration.onError" [closeButtonIconURL]="detailsConfiguration.closeButtonIconURL"  [user]="user" [group]="group"></cometchat-details>
+  </div>
+</div>
+<ng-template #headerMenu>
+  <div class="cc-messages__headermenu">
+<div class="cc-messages__auxiliarymenu" *ngIf="getAuxilaryView(); else elseBlock">
+  <ng-container *ngTemplateOutlet="getAuxilaryView()">
+  </ng-container>
+</div>
+    <ng-template #elseBlock>
+      <cometchat-call-buttons *ngIf="enableCalling" voiceCallIconText="" videoCallIconText="" [user]="user" [group]="group" [callButtonsStyle]="callButtonsStyle">
+      </cometchat-call-buttons>
+    </ng-template>
+    <cometchat-button *ngIf="!hideDetails" [iconURL]="infoIconStyle" [buttonStyle]="detailsButtonStyle" (cc-button-clicked)="openDetailsPage()"></cometchat-button>
+  </div>
+</ng-template>

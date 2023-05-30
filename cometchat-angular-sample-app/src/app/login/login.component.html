@@ -1,0 +1,61 @@
+<div class="login__wrapper" [ngStyle]="styles.loginWrapperStyle()">
+    <div class="login__page">
+        <div class="header__section" [ngStyle]="styles.headerSectionStyle()">
+            <div class="header__title" [ngStyle]="styles.headerTitleStyle()">comet<b>chat</b></div>
+            <div class="release-tag" [ngStyle]="styles.headerSubtitleStyle()">3.0.10-pluto.beta.2</div>
+        </div>
+        <div class="content__section">
+       <div class="left__content">
+        <div class="content__title" [ngStyle]="styles.titleStyle()">
+            Login to Your <br> Account
+        </div>
+        <div class="login__container" [ngStyle]="styles.containerStyle()">
+          <div class="sample__login">
+            <span class="login__header" [ngStyle]="styles.subtitleStyle()">
+                Using our sample users
+            </span>
+            <div class="sample__users">
+                <div class="cards" *ngFor="let user of usersArray" [ngStyle]="styles.userDetailsStyle()" (click)="loginToDashboard(user.uid)">
+                      <div class="avatar">
+                          <cometchat-avatar [name]="user.name" [image]="user.avatar"
+                          [avatarStyle]="avatarStyle"
+                          >
+
+                         </cometchat-avatar>
+                      </div>
+                        <div class="user__details">
+                          <div class="user__name" [ngStyle]="styles.usernameStyle()"> {{user.name}} </div>
+                          <div class="user__uid" [ngStyle]="styles.useruidStyle()">{{user.uid}}</div>
+                      </div>
+
+                </div>
+
+            </div>
+          </div>
+          <div class="error__text" [ngStyle]="styles.errorTextStyle()" *ngIf="error">
+           {{error}}
+          </div>
+          <div class="login__field" [ngStyle]="styles.borderStyle()">
+              <span class="login__message" [ngStyle]="styles.loginMessageStyle()">  Or else continue with login using UID</span>
+              <input type="text" placeholder="Enter UID Here" required [ngStyle]="styles.inputStyle()" [(ngModel)]="uid" (input)="error ? error = '' : null ">
+              <button [ngStyle]="styles.buttonStyle()" class="login__button" (click)="loginToDashboard(uid)">Login</button>
+          </div>
+          <div class="signup__section">
+              <div class="signup__text"  [ngStyle]="styles.subtitleStyle()">Don't have an account?</div>
+              <button class="signup__button" [ngStyle]="styles.signupButtonStyle()" (click)="signup()" >  Sign Up</button>
+          </div>
+        </div>
+       </div>
+       <div class="right__content" [ngStyle]="styles.sectionImageStyle()"></div>
+    </div>
+    </div>
+</div>
+<div class="footer__section" [ngStyle]="styles.footerStyle()"> <footer > 2022 &copy; CometChat </footer></div>
+<!-- loading banner -->
+<div class="spinner__wheel" *ngIf="inProgress">
+    <div class="spinner__content">
+        <img src="assets/logo.png" />
+        <cometchat-icon [URL]="'assets/Spinner.svg'"></cometchat-icon>
+
+    </div>
+    </div>

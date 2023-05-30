@@ -1,0 +1,10 @@
+<div class="cc-call-buttons__wrapper" [ngStyle]="wrapperStyle()">
+<div class="cc-call-buttons-buttons">
+<cometchat-button [disabled]="disableButtons ? true : false" *ngIf="user" (cc-button-clicked)="initiateAudioCall()" [buttonStyle]="getVoiceCallButtonStyle(disableButtons)" [text]="voiceCallIconText" [hoverText]="voiceCallIconHoverText" [iconURL]="voiceCallIconURL"></cometchat-button>
+<cometchat-button [disabled]="disableButtons  ? true : false" *ngIf="user || group" (cc-button-clicked)="initiateVideoCall()" [buttonStyle]="getVideoCallButtonStyle(disableButtons)" [text]="videoCallIconText" [hoverText]="videoCallIconHoverText" [iconURL]="videoCallIconURL"></cometchat-button>
+</div>
+</div>
+<cometchat-ongoing-call *ngIf="showOngoingCall" [ongoingCallStyle]="ongoingCallStyle" [sessionID]="sessionId"  [callSettingsBuilder]="getCallBuilder()!"></cometchat-ongoing-call>
+<cometchat-backdrop *ngIf="showOutgoingCallscreen">
+<cometchat-outgoing-call [onCloseClicked]="cancelOutgoingCall" [outgoingCallStyle]="outgoingCallStyle" [call]="call!"></cometchat-outgoing-call>
+</cometchat-backdrop>
