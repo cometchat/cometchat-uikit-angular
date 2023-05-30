@@ -1,0 +1,39 @@
+.cc-banned-members{
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}.cc-banned-members__back{
+    position: absolute;
+    left: 8px;
+    padding: 12px 8px 8px 8px;
+}
+.cc-banned-members__wrapper{
+    height: 100%;
+    width: 100%;
+    padding: 8px;
+}
+
+
+.cc-close-button{
+    position: absolute;
+    right: 8px;
+    padding: 12px 8px 8px 8px;
+
+}
+
+.cc-banned-members__tail-view{
+    position: relative;
+}
+.cc-banned-members__menus{
+    position: absolute;
+    right: 12px;
+    padding: 12px;
+    cursor: pointer;
+}
+.cc-banned-members__unban{
+    display:flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100px;
+}

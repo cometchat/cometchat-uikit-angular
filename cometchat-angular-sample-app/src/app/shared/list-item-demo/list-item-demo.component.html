@@ -1,0 +1,40 @@
+
+<div class="list_item__backdrop" >
+
+</div>
+<div class="list_item__container" [ngStyle]="style.wrapperStyle()">
+    <div class="header">
+        <span class="title" [ngStyle]="style.titleStyle()"> List Item</span>
+        <div class="close__icon" [ngStyle]="style.closeIconStyle()" (click)="closeButton()"></div>
+    </div>
+    <div class="description" [ngStyle]="style.cardDescriptionStyle()">
+      ListItem displays data on a tile and that tile may contain leading, trailing, title and subtitle widgets.
+    </div>
+   <div class="details__container">
+    <cometchat-list-item [hideSeparator]="true" [avatarStyle]="avatarStyle" [statusIndicatorStyle]="statusIndicatorStyle"
+    [title]="user.name"
+   [statusIndicatorColor]="'lightgreen'"
+   [listItemStyle]="listItemStyle" [avatarURL]="user?.avatar" [avatarName]="user?.name">
+</cometchat-list-item></div>
+   <div class="details__container">
+    <cometchat-list-item [hideSeparator]="true" [avatarStyle]="avatarStyle" [statusIndicatorStyle]="statusIndicatorStyle"
+    [title]="group.name"
+   [listItemStyle]="listItemStyle"  [avatarName]="group?.name">
+   <div slot="subtitleView" [ngStyle]="style.cardDescriptionStyle()">{{memberCount}}</div></cometchat-list-item></div>
+   <div class="details__container">
+    <cometchat-list-item [hideSeparator]="true" [avatarStyle]="avatarStyle" [statusIndicatorStyle]="statusIndicatorStyle"
+    [title]="user.name"
+   [statusIndicatorColor]="'lightgreen'"
+   [listItemStyle]="listItemStyle" [avatarURL]="user?.avatar" [avatarName]="user?.name">
+<div slot="subtitleView" [ngStyle]="style.cardDescriptionStyle()"> Hello</div>
+<div slot="tailView"  class="cc-conversations__tailview">
+    <div class="tail__view">
+      <div class="cc-date">
+        <cometchat-date [dateStyle]="dateStyle" [timestamp]="192539273647"></cometchat-date>
+      </div>
+      <div class="cc-conversations__badge">
+         <cometchat-badge [count]="30" [badgeStyle]="badgeStyle"></cometchat-badge>
+      </div>
+    </div>
+    </div>
+</cometchat-list-item></div>

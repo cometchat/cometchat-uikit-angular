@@ -1,0 +1,22 @@
+.cc-message-composer__sendbutton,.cc-message-composer__livereaction{
+  margin: 0 5px;
+}
+
+.cc-message-composer__wrapper{
+  height: 100%;
+  width: 100%;
+  position: relative;
+  padding: 4px;
+}
+.cc-message-composer__header-view{
+ height: fit-content;
+ width: 100%;
+  bottom: 120%;
+}
+.cc-message-composer__mediainput{
+  display: none;
+}
+.cc-message-composer__auxiliary{
+  display: flex;
+  gap:8px
+}

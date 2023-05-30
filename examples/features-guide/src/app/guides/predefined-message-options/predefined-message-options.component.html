@@ -1,8 +1,0 @@
-<cometchat-messages [user]="user" [messageTypes]="messageTypes"></cometchat-messages>
-<div class="edit__modal" *ngIf="openPreview">
-    <div class="close__button" (click)=" this.openPreview = false">
-        <img src="assets/close.svg" alt="" height="24px" width="24px">
-    </div>
-    <input type="text" placeholder="Enter text"  [(ngModel)]="editedText">
-    <button (click)="editMessage()">Edit</button>
-    </div>

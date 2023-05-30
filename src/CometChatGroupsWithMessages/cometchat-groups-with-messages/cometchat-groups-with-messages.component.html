@@ -1,0 +1,82 @@
+<div class="cc-with-messages__wrapper" [ngStyle]="groupsWrapperStyles()">
+  <div class="cc-with-messages__sidebar" [ngClass]="{mobile : isMobileView}">
+    <cometchat-groups
+    #groupRef
+    [activeGroup]="group"
+    [hideSearch]="groupsConfiguration.hideSearch"
+    [searchIconURL]="groupsConfiguration.searchIconURL"
+    [searchRequestBuilder]="groupsConfiguration.searchRequestBuilder"
+    [onItemClick]="groupsConfiguration.onItemClick || onItemClick"
+    [groupsStyle]="groupsConfiguration.groupsStyle"
+    [subtitleView]="groupsConfiguration.subtitleView"
+    [options]="groupsConfiguration.options"
+    [privateGroupIcon]="groupsConfiguration.privateGroupIcon"
+    [protectedGroupIcon]="groupsConfiguration.protectedGroupIcon"
+    [groupsRequestBuilder]="groupsConfiguration.groupsRequestBuilder"
+    [emptyStateView]="groupsConfiguration.emptyStateView"
+    [onSelect]="groupsConfiguration.onSelect"
+    [loadingIconURL]="groupsConfiguration.loadingIconURL"
+    [errorStateView]="groupsConfiguration.errorStateView"
+    [loadingStateView]="groupsConfiguration.loadingStateView"
+    [titleAlignment]="groupsConfiguration.titleAlignment"
+    [listItemView]="groupsConfiguration.listItemView"
+    [menu]="groupsConfiguration.menu || createGroupButton"
+    [hideSeparator]="groupsConfiguration.hideSeparator"
+    [hideError]="groupsConfiguration.hideError"
+    [selectionMode]="groupsConfiguration.selectionMode"
+    [listItemStyle]="groupsConfiguration.listItemStyle"
+
+    ></cometchat-groups>
+  </div>
+  <div class="cc-with-messages__main" [ngClass]="{mobile : isMobileView}" *ngIf="group && !openPasswordModal">
+    <!--Message List Screen-->
+    <cometchat-messages
+    #messagesRef
+    [group]="group!"
+    [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration"
+    [messageListConfiguration]="messagesConfiguration.messageListConfiguration"
+    [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration"
+    [messagesStyle]="messagesConfiguration.messagesStyle"
+    [customSoundForIncomingMessages]="messagesConfiguration.customSoundForIncomingMessages"
+    [customSoundForOutgoingMessages]="messagesConfiguration.customSoundForOutgoingMessages"
+    [detailsConfiguration]="messagesConfiguration.detailsConfiguration"
+    [disableSoundForMessages]="messagesConfiguration.disableSoundForMessages"
+    [disableTyping]="messagesConfiguration.disableTyping"
+    [hideMessageComposer]="messagesConfiguration.hideMessageComposer"
+    [hideMessageHeader]="messagesConfiguration.hideMessageHeader"
+    [messageComposerView]="messagesConfiguration.messageComposerView"
+    [messageHeaderView]="messagesConfiguration.messageHeaderView"
+    [messageListView]="messagesConfiguration.messageListView"
+    >
+    </cometchat-messages>
+    <!--Message List Screen ENDS-->
+  </div>
+  <div class="cc-decorator__message--empty" *ngIf="!group  && !openPasswordModal" [ngStyle]="emptyMessageStyle()">
+    <cometchat-label [text]="messageText" [labelStyle]="labelStyle"></cometchat-label>
+   </div>
+   <div class="cc-with-messages__joingroup" *ngIf="openPasswordModal && !group" [ngStyle]="emptyMessageStyle()" [ngClass]="{mobile : isMobileView}">
+    <cometchat-join-group
+    [group]="protectedGroup!"
+    [joinGroupStyle]="joinGroupStyle"
+    (cc-joingroup-joined)="onGroupJoined($event)"
+    [errorCallback]="joinGroupConfiguration.onError"
+    [joinClick]="joinGroupConfiguration.joinClick"
+    >
+    <cometchat-message-header slot="headerView"  [group]="protectedGroup!" [subtitleView]="joinGroupConfiguration.messageHeaderConfiguration.subtitleView"
+    [disableUsersPresence]="joinGroupConfiguration.messageHeaderConfiguration.disableUsersPresence" [protectedGroupIcon]="joinGroupConfiguration.messageHeaderConfiguration.protectedGroupIcon" [privateGroupIcon]="joinGroupConfiguration.messageHeaderConfiguration.privateGroupIcon" [menu]="joinGroupConfiguration.messageHeaderConfiguration.menu" [messageHeaderStyle]="messageHeaderStyle"
+    [backButtonIconURL]="joinGroupConfiguration.messageHeaderConfiguration.backButtonIconURL" [hideBackButton]="joinGroupConfiguration.messageHeaderConfiguration.hideBackButton" [onError]="joinGroupConfiguration.messageHeaderConfiguration.onError" [onBack]="joinGroupConfiguration.messageHeaderConfiguration.onBack || closeJoinGroup" [listItemStyle]="listItemStyle" [statusIndicatorStyle]="joinGroupConfiguration.messageHeaderConfiguration.statusIndicatorStyle"
+    [avatarStyle]="joinGroupConfiguration.messageHeaderConfiguration.avatarStyle"
+    >
+    </cometchat-message-header>
+    </cometchat-join-group>
+  </div>
+</div>
+   <ng-template #createGroupButton>
+     <cometchat-button *ngIf="!hideCreateGroup" [iconURL]="createIconURL" [buttonStyle]="createGroupButtonStyle" (cc-button-clicked)="openCreateGroup()"></cometchat-button>
+
+   </ng-template>
+<cometchat-backdrop *ngIf="openCreateGroupPage" [backdropStyle]="backdropStyle">
+  <cometchat-create-group [createGroupStyle]="createGroupStyle" [hideCloseButton]="createGroupConfiguration.hideCloseButton" [closeButtonIconURL]="createGroupConfiguration.closeButtonIconURL" [createClick]="createGroupConfiguration.createClick"  [closeCallback]="closeCreateGroup">
+
+  </cometchat-create-group>
+</cometchat-backdrop>

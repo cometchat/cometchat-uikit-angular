@@ -1,0 +1,48 @@
+<div class="cc-users" [ngStyle]="userStyle()">
+  <div class="cc-menus" *ngIf="menu">
+
+    <ng-container *ngTemplateOutlet="menu">
+    </ng-container>
+
+</div>
+  <cometchat-list [listItemView]="listItemView ? listItemView : listItem" [onScrolledToBottom]="onScrolledToBottom" [onSearch]="onSearch"
+      [list]="usersList" [searchText]="searchKeyword" [searchPlaceholderText]="searchPlaceholder"
+      [searchIconURL]="searchIconURL" [hideSearch]="hideSearch" [hideError]="hideError" [title]="title"
+      [sectionHeaderField]="sectionHeaderField" [showSectionHeader]="showSectionHeader"
+      [emptyStateText]="emptyStateText" [loadingIconURL]="loadingIconURL"
+      [titleAlignment]="titleAlignment" [loadingStateView]="loadingStateView" [emptyStateView]="emptyStateView"
+      [errorStateText]="errorStateText" [errorStateView]="errorStateView" [listStyle]="listStyle" [state]="state">
+  </cometchat-list>
+  <ng-template #listItem let-user>
+      <cometchat-list-item [title]="user?.name" [avatarURL]="user?.avatar" [avatarName]="user?.name"
+          [listItemStyle]="listItemStyle" [avatarStyle]="avatarStyle" [statusIndicatorStyle]="statusIndicatorStyle"
+          [statusIndicatorColor]="getStatusIndicatorColor(user)" [hideSeparator]="hideSeparator" (cc-listitem-clicked)="onClick(user)" [isActive]="getActiveUser(user)">
+          <div slot="subtitleView" *ngIf="subtitleView">
+              <ng-container *ngTemplateOutlet="subtitleView">
+              </ng-container>
+          </div>
+
+          <div slot="menuView" class="cc-users__options" *ngIf="options">
+              <cometchat-menu-list [data]="options(user)">
+
+              </cometchat-menu-list>
+        </div>
+        <div slot="tailView"  *ngIf="selectionMode != selectionmodeEnum.none" class="cc-users__tail-view">
+          <ng-container *ngTemplateOutlet="tailView">
+          </ng-container>
+      </div>
+      <ng-template #tailView>
+        <div  *ngIf="selectionMode == selectionmodeEnum.single" class="cc-users__selection--single">
+          <cometchat-radio-button  (cc-radio-button-checked)="addMembersToList(user)" [checked]="isUserSelected(user)" ></cometchat-radio-button>
+
+        </div>
+        <div  *ngIf="selectionMode == selectionmodeEnum.multiple" class="cc-users__selection--multiple">
+          <cometchat-checkbox  (cc-checkbox-changed)="addMembersToList(user)"></cometchat-checkbox>
+
+        </div>
+      </ng-template>
+      </cometchat-list-item>
+
+  </ng-template>
+</div>
+

@@ -1,0 +1,40 @@
+
+.cc-transfer-ownership__buttons--confirm{
+    height:42px;
+    width: 100%;
+}
+.cc-transfer-ownership__buttons--cancel{
+    height:42px;
+    width: 100%;
+}
+.cc-transfer-ownership {
+
+    width: 320px;
+    height: 650%;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    justify-content: space-between;
+    position: relative;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+  }
+
+  .cc-transfer-ownership__members {
+    height: 85%;
+  }
+
+  .cc-transfer-ownership-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    height: 15%;
+    gap: 10px;
+  }

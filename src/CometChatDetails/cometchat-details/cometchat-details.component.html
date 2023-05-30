@@ -1,0 +1,168 @@
+<div class="cc-details__wrapper" *ngIf="user || group" [ngStyle]="wrapperStyle()">
+  <div class="cc-details__header">
+    <cometchat-label [text]="title" [labelStyle]="getTitleStyle()"></cometchat-label>
+    <cometchat-button [iconURL]="closeButtonIconURL" class="cc-details__close-button" [buttonStyle]="closeButtonStyle" (cc-button-clicked)="onCloseDetails()"></cometchat-button>
+  </div>
+<div class="cc-details" [ngStyle]="marginStyle()">
+  <div class="cc-details__profile" *ngIf="!hideProfile">
+    <cometchat-list-item *ngIf="!customProfileView;else listitem" [avatarName]="user?.getName() ?? this.group?.getName()" [avatarURL]="this.user?.getAvatar() ?? this.group?.getIcon()" [listItemStyle]="listItemStyle"
+    [statusIndicatorColor]="checkStatusType()" [statusIndicatorIcon]="checkGroupType()" [title]="this.user?.getName() ?? this.group?.getName()"  [hideSeparator]="false"
+     [statusIndicatorStyle]="statusIndicatorStyle" [avatarStyle]="avatarStyle">
+   <div slot="subtitleView">
+   <div *ngIf="!subtitleView; else subtitle">
+   <cometchat-label [text]="subtitleText" [labelStyle]="subtitleStyle()">
+   </cometchat-label>
+   </div>
+   <ng-template #subtitle>
+     <ng-container *ngTemplateOutlet="subtitleView;context:{ $implicit: user ?? group }">
+     </ng-container>
+   </ng-template>
+   </div>
+   </cometchat-list-item>
+  </div>
+<div class="cc-details__section-list" *ngIf="defaultTemplate && defaultTemplate.length > 0">
+  <div class="cc-details__section" *ngFor="let item of defaultTemplate" >
+    <div class="cc-details__section-separator" *ngIf="item.title">
+      <cometchat-label [text]="item.title" [labelStyle]="getSectionHeaderStyle(item)"></cometchat-label>
+    </div>
+    <div class="cc-details__options-wrapper" *ngIf="getTemplateOptions(item)">
+<div class="cc-details__options"*ngFor="let option of getTemplateOptions(item)" >
+<div class="cc-details__option" *ngIf="!getCustomOptionView(option);else customView" (click)="onOptionClick(option)">
+  <div class="cc-details__option-title" >
+    <cometchat-button  [text]="option.title" [buttonStyle]="getButtonStyle(option)"></cometchat-button>
+    <div class="cc-details__option-tail" *ngIf="option?.tail">
+ <ng-container *ngTemplateOutlet="option?.tail"></ng-container>
+    </div>
+  </div>
+  <cometchat-divider [dividerStyle]="dividerStyle"></cometchat-divider>
+</div>
+<ng-template #customView>
+    <ng-container *ngTemplateOutlet="getCustomOptionView(option)" >
+    </ng-container>
+</ng-template>
+</div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<ng-template #listitem>
+  <ng-container *ngTemplateOutlet="customProfileView">
+  </ng-container>
+</ng-template>
+<div class="cc-details__view" *ngIf="openAddMembersPage">
+  <cometchat-add-members
+  [titleAlignment]="addMembersConfiguration.titleAlignment"
+  [listItemStyle]="addMembersConfiguration.listItemStyle"
+  [addMembersStyle]="addMembersConfiguration.addMembersStyle"
+  [avatarStyle]="addMembersConfiguration.avatarStyle"
+  [statusIndicatorStyle]="addMembersConfiguration.statusIndicatorStyle"
+  [loadingStateView]="addMembersConfiguration.loadingStateView"
+  [loadingIconURL]="addMembersConfiguration.loadingIconURL"
+  [errorStateView]="addMembersConfiguration.errorStateView"
+  [emptyStateView]="addMembersConfiguration.emptyStateView"
+  [onSelect]="addMembersConfiguration.onSelect"
+  [onError]="addMembersConfiguration.onError"
+  [hideError]="addMembersConfiguration.hideError"
+  [hideSearch]="addMembersConfiguration.hideSearch"
+  [searchIconURL]="addMembersConfiguration.searchIconURL"
+  [selectionMode]="addMembersConfiguration.selectionMode"
+  [hideSeparator]="addMembersConfiguration.hideSeparator"
+  [showBackButton]="addMembersConfiguration.showBackButton"
+  [backButtonIconURL]="addMembersConfiguration.backButtonIconURL"
+  [closeButtonIconURL]="addMembersConfiguration.closeButtonIconURL"
+  [options]="addMembersConfiguration.options"
+  [menu]="addMembersConfiguration.menu"
+  [disableUsersPresence]="addMembersConfiguration.disableUsersPresence"
+  [subtitleView]="addMembersConfiguration.subtitleView"
+  [group]="group"
+   [selectionMode]="selectionmodeEnum"
+   [onClose]="addMembersConfiguration.onClose ||onCloseClick"
+   [onBack]="addMembersConfiguration.onBack || addMembers">
+  </cometchat-add-members>
+</div>
+<div class="cc-details__view" *ngIf="openBannedMembersPage">
+  <cometchat-banned-members
+  [titleAlignment]="bannedMembersConfiguration.titleAlignment"
+  [listItemStyle]="bannedMembersConfiguration.listItemStyle"
+  [bannedMembersStyle]="bannedMembersConfiguration.bannedMembersStyle"
+  [avatarStyle]="bannedMembersConfiguration.avatarStyle"
+  [statusIndicatorStyle]="bannedMembersConfiguration.statusIndicatorStyle"
+  [loadingStateView]="bannedMembersConfiguration.loadingStateView"
+  [loadingIconURL]="bannedMembersConfiguration.loadingIconURL"
+  [errorStateView]="bannedMembersConfiguration.errorStateView"
+  [emptyStateView]="bannedMembersConfiguration.emptyStateView"
+  [onSelect]="bannedMembersConfiguration.onSelect"
+  [onError]="bannedMembersConfiguration.onError"
+  [hideError]="bannedMembersConfiguration.hideError"
+  [hideSearch]="bannedMembersConfiguration.hideSearch"
+  [searchIconURL]="bannedMembersConfiguration.searchIconURL"
+  [selectionMode]="bannedMembersConfiguration.selectionMode"
+  [hideSeparator]="bannedMembersConfiguration.hideSeparator"
+  [showBackButton]="bannedMembersConfiguration.showBackButton"
+  [backButtonIconURL]="bannedMembersConfiguration.backButtonIconURL"
+  [closeButtonIconURL]="bannedMembersConfiguration.closeButtonIconURL"
+  [options]="bannedMembersConfiguration.options"
+  [menu]="bannedMembersConfiguration.menu"
+  [disableUsersPresence]="bannedMembersConfiguration.disableUsersPresence"
+  [subtitleView]="bannedMembersConfiguration.subtitleView"
+  [group]="group" [onClose]="onCloseClick" [onBack]="bannedMembersConfiguration.onBack || bannedMembers">
+  </cometchat-banned-members>
+</div>
+<div class="cc-details__view" *ngIf="openViewMembersPage">
+  <cometchat-group-members
+  [titleAlignment]="groupMembersConfiguration.titleAlignment"
+  [listItemStyle]="groupMembersConfiguration.listItemStyle"
+  [groupMembersStyle]="groupMembersConfiguration.groupMembersStyle"
+  [avatarStyle]="groupMembersConfiguration.avatarStyle"
+  [statusIndicatorStyle]="groupMembersConfiguration.statusIndicatorStyle"
+  [loadingStateView]="groupMembersConfiguration.loadingStateView"
+  [loadingIconURL]="groupMembersConfiguration.loadingIconURL"
+  [errorStateView]="groupMembersConfiguration.errorStateView"
+  [emptyStateView]="groupMembersConfiguration.emptyStateView"
+  [onSelect]="groupMembersConfiguration.onSelect"
+  [onError]="groupMembersConfiguration.onError"
+  [hideError]="groupMembersConfiguration.hideError"
+  [hideSearch]="groupMembersConfiguration.hideSearch"
+  [searchIconURL]="groupMembersConfiguration.searchIconURL"
+  [selectionMode]="groupMembersConfiguration.selectionMode"
+  [backdropStyle]="groupMembersConfiguration.backdropStyle"
+  [hideSeparator]="groupMembersConfiguration.hideSeparator"
+  [showBackButton]="groupMembersConfiguration.showBackButton"
+  [backButtonIconURL]="groupMembersConfiguration.backButtonIconURL"
+  [closeButtonIconURL]="groupMembersConfiguration.closeButtonIconURL"
+  [options]="groupMembersConfiguration.options"
+  [menu]="groupMembersConfiguration.menu"
+  [disableUsersPresence]="groupMembersConfiguration.disableUsersPresence"
+  [subtitleView]="groupMembersConfiguration.subtitleView"
+  [groupScopeStyle]="groupMembersConfiguration.groupScopeStyle"
+  [group]="group" [onClose]=" groupMembersConfiguration.onClose || onCloseClick" [onBack]="groupMembersConfiguration.onBack || viewMembers">
+  </cometchat-group-members>
+</div>
+<cometchat-backdrop [backdropStyle]="backdropStyle" *ngIf="confirmLeaveGroupModal">
+  <cometchat-confirm-dialog [title]="''"  [messageText]="confirmDialogMessage" [cancelButtonText]="cancelButtonText" [confirmButtonText]="leaveButtonText" (cc-confirm-clicked)="onLeaveClick()" (cc-cancel-clicked)="onCancelClick()" [confirmDialogStyle]="leaveDialogStyle">
+  </cometchat-confirm-dialog>
+</cometchat-backdrop>
+<cometchat-backdrop [backdropStyle]="backdropStyle" *ngIf="openTransferOwnershipModal">
+  <cometchat-transfer-ownership
+  [transferOwnershipStyle]="transferOwnershipConfiguration.transferOwnershipStyle"
+  [onTransferOwnership]="transferOwnershipConfiguration.onTransferOwnership"
+  [titleAlignment]="transferOwnershipConfiguration.titleAlignment"
+  [listItemStyle]="transferOwnershipConfiguration.listItemStyle"
+  [avatarStyle]="transferOwnershipConfiguration.avatarStyle"
+  [statusIndicatorStyle]="transferOwnershipConfiguration.statusIndicatorStyle"
+  [loadingStateView]="transferOwnershipConfiguration.loadingStateView"
+  [loadingIconURL]="transferOwnershipConfiguration.loadingIconURL"
+  [errorStateView]="transferOwnershipConfiguration.errorStateView"
+  [emptyStateView]="transferOwnershipConfiguration.emptyStateView"
+  [onError]="transferOwnershipConfiguration.onError"
+  [hideSearch]="transferOwnershipConfiguration.hideSearch"
+  [searchIconURL]="transferOwnershipConfiguration.searchIconURL"
+  [hideSeparator]="transferOwnershipConfiguration.hideSeparator"
+  [closeButtonIconURL]="transferOwnershipConfiguration.closeButtonIconURL"
+  [options]="transferOwnershipConfiguration.options"
+  [disableUsersPresence]="transferOwnershipConfiguration.disableUsersPresence"
+  [subtitleView]="transferOwnershipConfiguration.subtitleView"
+  [group]="group" [onClose]="transferOwnershipConfiguration.onClose || openTransferOwnership">
+  </cometchat-transfer-ownership>
+</cometchat-backdrop>

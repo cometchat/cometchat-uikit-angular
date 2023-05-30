@@ -1,0 +1,36 @@
+<div class="users__wrapper">
+    <div class="users__header" [ngStyle]="style.headerTitleStyle()">
+      Users
+    </div>
+    <div class="card__content">
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('users-with-messages')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(sidebarIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" > Users With Messages</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatUsersWithMessages is an independent component used to set up a screen that shows the list of users available in your app and gives you the ability to search for a specific user and to start conversation.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('users')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(listwrapperIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" > Users</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatUsers is an independent component used to set up a screen that displays a scrollable list of users available in your app and gives you the ability to search for a specific user.
+                </div>
+            </div>
+        </div>
+        <div class="cards" [ngStyle]="style.cardStyle()" (click)="redirect('details')">
+            <div class="card__icon" [ngStyle]="style.iconStyle(detailsIconURL)">
+            </div>
+            <div class="right__content">
+                <span class="card__title" [ngStyle]="style.cardTitleStyle()" >Details</span>
+                <div class="card__description" [ngStyle]="style.cardDescriptionStyle()">
+                    CometChatDetails component for a user. To learn more about this component click here        </div>
+        </div>
+    </div>
+    </div>
+</div>

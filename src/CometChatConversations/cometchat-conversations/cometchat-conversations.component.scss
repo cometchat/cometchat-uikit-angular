@@ -1,0 +1,61 @@
+.cc-conversations{
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+    position: relative;
+}
+.cc-conversations__selection-view{
+    position: relative;
+}
+.tail__view{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.cc-subtitle__text{
+
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.cc-conversations__menus{
+    position: absolute;
+    right: 12px;
+    padding: 12px;
+    cursor: pointer;
+}
+.cc-menus__icon{
+    height: 24px;
+    width: 24px;
+}
+.cc-conversations__subtitle-view{
+    display: flex;
+    align-items: center;
+    width: 90%;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+.cc-conversations__subtitle{
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    align-items: center;
+    min-height: 22px;
+}
+.cc-conversations__threadview{
+    height: 12px;
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    align-items: center;
+}
+.cc-conversations__badge{
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    width: 100%;
+    padding-right: 8px;
+}

@@ -1,0 +1,267 @@
+<div class="cc-message-list__wrapper" [ngStyle]="wrapperStyle()">
+  <div class="cc-message-list__header-view">
+<div *ngIf="headerView">
+  <ng-container *ngTemplateOutlet="headerView">
+  </ng-container>
+</div>
+        </div>
+  <div class="cc-message-list" #listScroll>
+    <div class="cc-message-list__top" #top>
+    </div>
+    <div class="cc-message-list__decorator-message" *ngIf="state == states.loading || state == states.error  || state == states.empty "
+      [ngStyle]="messageContainerStyle()">
+      <div class="cc-message-list__loading-view" *ngIf="state == states.loading ">
+        <cometchat-loader [iconURL]="loadingIconURL" [loaderStyle]="loadingStyle()">
+        </cometchat-loader>
+        <span class="cc-message-list__customview--loading" *ngIf="state == states.loading  && loadingStateView">
+          <ng-container *ngTemplateOutlet="loadingStateView">
+          </ng-container>
+        </span>
+      </div>
+      <div class="cc-message-list__error-view" *ngIf="state == states.error  && !hideError ">
+        <cometchat-label [labelStyle]="errorStyle()" *ngIf="state == states.error  && !hideError && !errorStateView" [text]="errorStateText"
+          >
+        </cometchat-label>
+        <span class="cc-message-list__custom-view--error" *ngIf="state == states.error  && !hideError && errorStateView">
+          <ng-container *ngTemplateOutlet="errorStateView">
+          </ng-container>
+        </span>
+      </div>
+      <div class="cc-message-list__empty-view" *ngIf="state == states.empty">
+        <cometchat-label [labelStyle]="emptyStyle()" *ngIf="state == states.empty && !emptyStateView" [text]="emptyStateText"
+          >
+        </cometchat-label>
+        <span class="cc-message-list__custom-view--empty" *ngIf="state == states.empty && emptyStateView">
+          <ng-container *ngTemplateOutlet="emptyStateView">
+          </ng-container>
+        </span>
+      </div>
+    </div>
+    <div class="cc-message-list__bubble" *ngFor="let message of messagesList; let i = index">
+      <div class="cc-message-list__date-container" *ngIf="(i === 0)">
+        <span class="cc-message-list__date" >
+          <cometchat-date [timestamp]="message!.getSentAt()"  [pattern]="DateSeparatorPattern" [dateStyle]="dateSeparatorStyle"
+           >
+          </cometchat-date>
+        </span>
+      </div>
+      <div class="cc-message-list__date-container" *ngIf="(i > 0 && isDateDifferent(messagesList[i - 1]?.getSentAt(), messagesList[i]?.getSentAt()))
+        ">
+        <span class="cc-message-list__date"  >
+          <cometchat-date [timestamp]="message?.getSentAt()" [pattern]="DateSeparatorPattern"   [dateStyle]="dateSeparatorStyle"
+           >
+          </cometchat-date>
+        </span>
+      </div>
+        <div *ngIf="getBubbleWrapper(message) ">
+          <ng-container *ngTemplateOutlet="getBubbleWrapper(message)">
+          </ng-container>
+        </div>
+       <div>
+        <cometchat-message-bubble  *ngIf="!getBubbleWrapper(message)" [leadingView]=" showAvatar ? leadingView : null" [bottomView]="enableReactions ? reactionView : null"
+        [headerView]="getHeaderView(message) || message?.getCategory() != MessageCategory.action && showHeaderTitle(message) ? bubbleHeader : null" [footerView]="footerView"  [contentView]="contentView" [threadView]="threadView"
+         [id]="message?.getId() || message?.getMuid()" [options]="setMessageOptions(message)"
+          [messageBubbleStyle]="setMessageBubbleStyle(message)"  [alignment]="setBubbleAlignment(message)">
+        <ng-template #contentView>
+          <ng-container *ngTemplateOutlet="getContentView(message);context:{ $implicit: message }" >
+          </ng-container>
+        </ng-template>
+        <ng-template #reactionView>
+          <reactions-view [messageObject]="message" [alignment]="setBubbleAlignment(message)"
+          [loggedInUser]="loggedInUser" [reactionsStyle]="reactionsStyle(message)"></reactions-view>
+          </ng-template>
+         <ng-template #footerView>
+          <div  class="cc-message-list__bubble-footer">
+            <div *ngIf="getFooterView(message);else bubbleFooter">
+              <ng-container *ngTemplateOutlet="getFooterView(message);context:{ $implicit: message }" >
+              </ng-container>
+            </div>
+            <ng-template #bubbleFooter>
+              <div class="cc-message-list__bubble-date" *ngIf="timestampAlignment == timestampEnum.bottom && message?.getCategory() != MessageCategory.action && !message.getDeletedAt() && message?.getCategory() != MessageCategory.call">
+                <cometchat-date [timestamp]="message?.getSentAt()" [dateStyle]="bubbleDateStyle" [pattern]="datePattern">
+                </cometchat-date>
+               </div>
+                 <div *ngIf=" !message?.getDeletedAt() &&  !disableReceipt && (!message?.getSender() ||this.loggedInUser.getUid() == message?.getSender()?.getUid()) && message?.getCategory() != MessageCategory.action && message?.getCategory() != MessageCategory.call" class="cc-message-list__receipt">
+                    <cometchat-receipt [receipt]="getMessageReceipt(message)" [receiptStyle]="receiptStyle" [waitIcon]="waitIcon" [sentIcon]="sentIcon" [deliveredIcon]="deliveredIcon" [readIcon]="readIcon" [errorIcon]="errorIcon"></cometchat-receipt>
+                 </div>
+            </ng-template>
+          </div>
+         </ng-template>
+<ng-template #leadingView>
+  <div  *ngIf=" message?.getCategory() != MessageCategory.action  && showHeaderTitle(message)" >
+    <cometchat-avatar [name]="message?.getSender()?.getName()" [style]="avatarStyle" [image]="message?.getSender()?.getAvatar()">
+    </cometchat-avatar>
+  </div>
+</ng-template>
+<ng-template #bubbleHeader>
+  <div *ngIf="getHeaderView(message);else defaultHeader">
+    <ng-container *ngTemplateOutlet="getHeaderView(message);context:{ $implicit: message }" >
+    </ng-container>
+  </div>
+<ng-template #defaultHeader>
+  <div  class="cc-message-list__bubble-header" *ngIf="message?.getCategory() != MessageCategory.action && showHeaderTitle(message) && message?.getCategory() != MessageCategory.call">
+    <cometchat-label [text]="message?.getSender()?.getName()" [labelStyle]="labelStyle"></cometchat-label>
+    <cometchat-date [pattern]="datePattern" [timestamp]="message?.getSentAt()" [style]="bubbleDateStyle" *ngIf="timestampAlignment == timestampEnum.top"></cometchat-date>
+   </div>
+</ng-template>
+</ng-template>
+<ng-template #threadView>
+  <div class="cc-message-list__threadreplies" *ngIf="message?.getReplyCount() && !message.getDeletedAt()" >
+    <cometchat-divider [dividerStyle]="dividerStyle"></cometchat-divider>
+    <cometchat-button [text]="getThreadCount(message)" [buttonStyle]="getThreadViewStyle(message)" [iconURL]="threadOpenIcon" (cc-button-clicked)="openThreadView(message)">
+    </cometchat-button>
+  </div>
+</ng-template>
+      </cometchat-message-bubble>
+       </div>
+    </div>
+    <div class="cc-message-list__bottom" #bottom>
+    </div>
+  </div>
+  <div class="cc-message-list__footer-view">
+    <div *ngIf="footerView;else footer">
+      <ng-container *ngTemplateOutlet="footerView">
+      </ng-container>
+    </div>
+    <ng-template #footer>
+      <div class="cc-message-list__smart-replies" *ngIf="showSmartReply && getReplies() && (!UnreadCount || UnreadCount.length == 0)">
+        <smart-replies [smartReplyStyle]="smartReplyStyle" [replies]="getReplies()" (cc-reply-clicked)="sendReply($event)" (cc-close-clicked)="closeSmartReply()">
+        </smart-replies>
+      </div>
+<div class="cc-message-list__message-indicator" *ngIf="UnreadCount && UnreadCount.length > 0 && !isOnBottom">
+  <cometchat-button [text]="newMessageCount" [buttonStyle]="unreadMessagesStyle" (cc-button-clicked)="scrollToBottom()"></cometchat-button>
+</div>
+    </ng-template>
+        </div>
+
+</div>
+<!-- default bubbles -->
+<ng-template #textBubble let-message>
+  <cometchat-text-bubble *ngIf="message?.type == MessageTypesConstant.groupMember" [textStyle]="setTextBubbleStyle(message)" [text]="message?.message"></cometchat-text-bubble>
+  <cometchat-text-bubble *ngIf="message?.getDeletedAt()" [textStyle]="setTextBubbleStyle(message)" [text]="localize('MESSAGE_IS_DELETED')"></cometchat-text-bubble>
+<cometchat-text-bubble *ngIf="!isTranslated(message) && !getLinkPreview(message) && !message?.deletedAt && message?.type != MessageTypesConstant.groupMember" [textStyle]="setTextBubbleStyle(message)" [text]="getTextMessage(message)"></cometchat-text-bubble>
+<link-preview [linkPreviewStyle]="linkPreviewStyle" (cc-link-clicked)="openLinkURL($event)" *ngIf="!message?.getDeletedAt() && getLinkPreview(message) && enableLinkPreview" [title]="getLinkPreviewDetails('title',message)" [description]="getLinkPreviewDetails('description',message)" [URL]="getLinkPreviewDetails('url',message)" [image]="getLinkPreviewDetails('image',message)" [favIconURL]="getLinkPreviewDetails('favicon',message)">
+  <cometchat-text-bubble
+  *ngIf="!isTranslated(message) && getLinkPreview(message) && !message?.deletedAt && message?.type != MessageTypesConstant.groupMember"
+  [textStyle]="setTextBubbleStyle(message)" [text]="getTextMessage(message)"></cometchat-text-bubble>
+</link-preview>
+<message-translation-bubble [alignment]="getBubbleAlignment(message)" *ngIf="isTranslated(message)"  [messageTranslationStyle]="setTranslationStyle(message)" [translatedText]="isTranslated(message)">
+  <cometchat-text-bubble *ngIf=" !message?.deletedAt && message?.type != MessageTypesConstant.groupMember" [textStyle]="setTextBubbleStyle(message)" [text]="message?.text"></cometchat-text-bubble>
+
+</message-translation-bubble>
+</ng-template>
+<ng-template #fileBubble let-message>
+
+  <cometchat-file-bubble [fileStyle]="setFileBubbleStyle(message)" [downloadIconURL]="downloadIconURL" [subtitle]="localize('SHARED_FILE')" [title]="message?.data?.attachments ? message?.data?.attachments[0]?.name: ''" [fileURL]="message?.data?.attachments ? message?.data?.attachments[0]?.url : ''"></cometchat-file-bubble>
+</ng-template>
+<ng-template #audioBubble let-message>
+  <cometchat-icon-button [disabled]="true" *ngIf="message?.category == callConstant && message?.type == MessageTypesConstant.audio" [iconURL]="getCallTypeIcon(message)" [buttonStyle]="callStatusStyle(message)" [text]="getCallActionMessage(message)"></cometchat-icon-button>
+  <cometchat-audio-bubble *ngIf="!message.getDeletedAt() && message?.category != callConstant"  [src]="message?.data?.attachments ? message?.data?.attachments[0]?.url : ''" > </cometchat-audio-bubble>
+</ng-template>
+<ng-template #videoBubble let-message>
+  <cometchat-icon-button [disabled]="true" *ngIf="message?.category == callConstant && message?.type == MessageTypesConstant.video" [iconURL]="getCallTypeIcon(message)" [buttonStyle]="callStatusStyle(message)" [text]="getCallActionMessage(message)"></cometchat-icon-button>
+
+  <cometchat-video-bubble *ngIf="!message.getDeletedAt() && message?.category != callConstant" [videoStyle]="videoBubbleStyle" [src]="message?.data?.attachments ? message?.data?.attachments[0]?.url : ''" [poster]=" getImageThumbnail(message)"></cometchat-video-bubble>
+</ng-template>
+<ng-template #imageBubble let-message>
+ <image-moderation  (cc-show-dialog)="openWarningDialog($event)" *ngIf="!message.getDeletedAt() && enableImageModeration" [message]="message" [imageModerationStyle]="imageModerationStyle">
+  <cometchat-image-bubble (cc-image-clicked)="openImageInFullScreen(message)"   [src]=" getImageThumbnail(message)" [placeholderImage]="placeholderIconURL"></cometchat-image-bubble>
+ </image-moderation>
+  <cometchat-image-bubble (cc-image-clicked)="openImageInFullScreen(message)" *ngIf="!message.getDeletedAt() && !enableImageModeration"  [src]=" getImageThumbnail(message)" [placeholderImage]="placeholderIconURL"></cometchat-image-bubble>
+</ng-template>
+<ng-template #customTextBubble>
+</ng-template>
+<ng-template #stickerBubble  let-message>
+  <cometchat-image-bubble [src]="getSticker(message)" [imageStyle]="imageBubbleStyle" ></cometchat-image-bubble>
+
+</ng-template>
+<ng-template #whiteboardBubble  let-message>
+  <cometchat-document-bubble [hideSeparator]="false" [iconAlignment]="documentBubbleAlignment" [documentStyle]="documentBubbleStyle" [URL]="getWhiteboardDocument(message)" [ccClicked]="launchCollaborativeWhiteboardDocument" [iconURL]="whiteboardIconURL" [title]="whiteboardTitle" [buttonText]="whiteboardButtonText" [subtitle]="whiteboardSubitle"></cometchat-document-bubble>
+
+</ng-template>
+<ng-template #documentBubble  let-message>
+  <cometchat-document-bubble [hideSeparator]="false" [iconAlignment]="documentBubbleAlignment" [documentStyle]="documentBubbleStyle" [URL]="getWhiteboardDocument(message)" [ccClicked]="launchCollaborativeWhiteboardDocument" [iconURL]="documentIconURL" [title]="documentTitle" [buttonText]="documentButtonText" [subtitle]="documentSubitle"></cometchat-document-bubble>
+
+</ng-template>
+<ng-template #directCalling  let-message>
+  <cometchat-document-bubble  [hideSeparator]="true" [iconAlignment]="callBubbleAlignment" [documentStyle]="getCallBubbleStyle(message)" [URL]="getSessionId(message)" [ccClicked]="startDirectCall" [iconURL]="directCallIconURL" [title]="getCallBubbleTitle(message)" [buttonText]="joinCallButtonText"></cometchat-document-bubble>
+
+</ng-template>
+<ng-template #pollBubble  let-message>
+  <polls-bubble [pollStyle]="pollBubbleStyle"  [pollQuestion]="getPollBubbleData(message,'question')" [pollId]="getPollBubbleData(message,'id')"
+   [loggedInUser]="loggedInUser" [senderUid]="getPollBubbleData(message)" [metadata]="message?.metadata"></polls-bubble>
+
+</ng-template>
+
+<!-- thread bubble view -->
+<ng-template #threadMessageBubble let-message>
+  <div *ngIf="getBubbleWrapper(message)">
+    <ng-container *ngTemplateOutlet="getBubbleWrapper(message)">
+    </ng-container>
+  </div>
+  <cometchat-message-bubble  *ngIf="!getBubbleWrapper(message)" [bottomView]="enableReactions ? reactionView : null" [leadingView]=" showAvatar ? leadingView : null" [headerView]="bubbleHeader" [footerView]="footerView"
+  [contentView]="contentView"  [id]="message?.getId() || message?.getMuid()"  [messageBubbleStyle]="setMessageBubbleStyle(message)"  [alignment]="threadedAlignment">
+    <ng-template #contentView>
+      <ng-container *ngTemplateOutlet="getContentView(message);context:{ $implicit: message }" >
+      </ng-container>
+    </ng-template>
+    <ng-template #reactionView>
+      <reactions-view [messageObject]="message" [alignment]="setBubbleAlignment(message)"
+      [loggedInUser]="loggedInUser" [reactionsStyle]="reactionsStyle(message)"></reactions-view>
+      </ng-template>
+     <ng-template #footerView>
+      <div  class="cc-message-list__bubble-footer">
+        <div *ngIf="getFooterView(message);else bubbleFooter">
+          <ng-container *ngTemplateOutlet="getFooterView(message);context:{ $implicit: message }" >
+          </ng-container>
+        </div>
+        <ng-template #bubbleFooter>
+          <div class="cc-message-list__bubble-date" *ngIf="timestampAlignment == timestampEnum.bottom && message?.getCategory() != MessageCategory.action && message?.getCategory() != MessageCategory.call">
+            <cometchat-date [timestamp]="message?.getSentAt()" [dateStyle]="bubbleDateStyle" [pattern]="datePattern">
+            </cometchat-date>
+           </div>
+             <div *ngIf=" !message?.getDeletedAt() &&  !disableReceipt && (!message?.getSender() ||this.loggedInUser.getUid() == message?.getSender()?.getUid()) && message?.getCategory() != MessageCategory.action && message?.getCategory() != MessageCategory.call" class="cc-message-list__receipt">
+                <cometchat-receipt [receipt]="getMessageReceipt(message)" [receiptStyle]="receiptStyle" [waitIcon]="waitIcon" [sentIcon]="sentIcon" [deliveredIcon]="" [readIcon]="deliveredIcon" [errorIcon]="errorIcon"></cometchat-receipt>
+             </div>
+        </ng-template>
+      </div>
+     </ng-template>
+<ng-template #leadingView>
+<div  *ngIf=" message?.getCategory() != MessageCategory.action && showHeaderTitle(message)" >
+<cometchat-avatar [name]="message?.getSender()?.getName()" [style]="avatarStyle" [image]="message?.getSender()?.getAvatar()">
+</cometchat-avatar>
+</div>
+</ng-template>
+<ng-template #bubbleHeader>
+<div *ngIf="getHeaderView(message);else defaultHeader">
+<ng-container *ngTemplateOutlet="getHeaderView(message);context:{ $implicit: message }" >
+</ng-container>
+</div>
+<ng-template #defaultHeader>
+<div  class="cc-message-list__bubble-header" *ngIf="message?.getCategory() != MessageCategory.action && showHeaderTitle(message) && message?.getCategory() != MessageCategory.call">
+<cometchat-label [text]="message?.getSender()?.getName()" [labelStyle]="labelStyle"></cometchat-label>
+<cometchat-date [pattern]="datePattern" [timestamp]="message?.getSentAt()" [style]="bubbleDateStyle" *ngIf="timestampAlignment == timestampEnum.top"></cometchat-date>
+</div>
+</ng-template>
+</ng-template>
+  </cometchat-message-bubble>
+
+</ng-template>
+
+
+<!--  -->
+<ng-template #bubbleView></ng-template>
+<cometchat-popover [popoverStyle]="popoverStyle"  #popoverRef [placement]="keyboardAlignment">
+<cometchat-emoji-keyboard (cc-emoji-clicked)="addReaction($event)"  slot="content"></cometchat-emoji-keyboard>
+</cometchat-popover>
+<cometchat-backdrop *ngIf="openConfirmDialog" [backdropStyle]="backdropStyle">
+  <cometchat-confirm-dialog [title]="''" [messageText]="warningText" (cc-confirm-clicked)="onConfirmClick()" [cancelButtonText]="cancelText" [confirmButtonText]="confirmText" (cc-cancel-clicked)="onCancelClick()" [confirmDialogStyle]="confirmDialogStyle">
+
+  </cometchat-confirm-dialog>
+</cometchat-backdrop>
+<full-screen-viewer (cc-close-clicked)="closeImageInFullScreen()" *ngIf="openFullscreenView" [URL]="imageurlToOpen" [closeIconURL]="closeIconURL" [fullScreenViewerStyle]="fullScreenViewerStyle">
+
+</full-screen-viewer>
+
+<!-- ongoing callscreen for direct call -->
+<cometchat-ongoing-call *ngIf="showOngoingCall" [ongoingCallStyle]="ongoingCallStyle" [sessionID]="sessionId"></cometchat-ongoing-call>

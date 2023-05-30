@@ -1,0 +1,19 @@
+.cc-tabs-wrapper{
+	height: 100%;
+	width: 100%;
+	display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.cc-child-view{
+	height: 100%;
+	width: 100%;
+}
+.cc-tabs{
+	height: fit-content;
+	width: fit-content;
+	position: absolute;
+}
+.cc__tab-item{
+	display:flex;
+}

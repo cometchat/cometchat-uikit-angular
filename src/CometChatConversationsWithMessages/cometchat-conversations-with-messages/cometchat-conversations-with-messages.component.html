@@ -1,0 +1,70 @@
+<div class="cc-with-messages__wrapper" [ngStyle]="chatsWrapperStyles()" >
+  <div class="cc-with-messages__sidebar" [ngClass]="{mobile : isMobileView}">
+    <cometchat-conversations
+    #conversationRef
+    [activeConversation]="activeConversation"
+    [onItemClick]="conversationConfiguration.onItemClick || onItemClick"
+    [conversationsStyle]="conversationConfiguration.conversationsStyle"
+    [subtitleView]="conversationConfiguration.subtitleView"
+    [options]="conversationConfiguration.options"
+    [disableUsersPresence]="conversationConfiguration.disableUsersPresence"
+    [disableReceipt]="conversationConfiguration.disableReceipt"
+    [disableTyping]="conversationConfiguration.disableTyping"
+    [deliveredIcon]="conversationConfiguration.deliveredIcon"
+    [readIcon]="conversationConfiguration.readIcon"
+    [waitIcon]="conversationConfiguration.waitIcon"
+    [errorIcon]="conversationConfiguration.errorIcon"
+    [datePattern]="conversationConfiguration.datePattern"
+    [receiptStyle]="conversationConfiguration.receiptStyle"
+    [sentIcon]="conversationConfiguration.sentIcon"
+    [privateGroupIcon]="conversationConfiguration.privateGroupIcon"
+    [protectedGroupIcon]="conversationConfiguration.protectedGroupIcon"
+    [customSoundForMessages]="conversationConfiguration.customSoundForMessages"
+    [conversationsRequestBuilder]="conversationConfiguration.conversationsRequestBuilder"
+    [emptyStateView]="conversationConfiguration.emptyStateView"
+    [onSelect]="conversationConfiguration.onSelect"
+    [loadingIconURL]="conversationConfiguration.loadingIconURL"
+    [errorStateView]="conversationConfiguration.errorStateView"
+    [loadingStateView]="conversationConfiguration.loadingStateView"
+    [titleAlignment]="conversationConfiguration.titleAlignment"
+    [listItemView]="conversationConfiguration.listItemView"
+    [menu]="conversationConfiguration.menu"
+    [hideSeparator]="conversationConfiguration.hideSeparator"
+    [hideError]="conversationConfiguration.hideError"
+    [selectionMode]="conversationConfiguration.selectionMode"
+    [disableSoundForMessages]="conversationConfiguration.disableSoundForMessages"
+    [deleteConversationDialogStyle]="conversationConfiguration.deleteConversationDialogStyle"
+    [badgeStyle]="conversationConfiguration.badgeStyle"
+    [dateStyle]="conversationConfiguration.dateStyle"
+    [listItemStyle]="conversationConfiguration.listItemStyle"
+    [backdropStyle]="conversationConfiguration.backdropStyle"
+
+    ></cometchat-conversations>
+  </div>
+  <div class="cc-with-messages__main" [ngClass]="{mobile : isMobileView}" *ngIf="user || group">
+    <!--Message List Screen-->
+    <cometchat-messages
+    #messagesRef
+    [user]="user!"
+    [group]="group!"
+    [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration"
+    [messageListConfiguration]="messagesConfiguration.messageListConfiguration"
+    [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration"
+    [messagesStyle]="messagesConfiguration.messagesStyle"
+    [customSoundForIncomingMessages]="messagesConfiguration.customSoundForIncomingMessages"
+    [customSoundForOutgoingMessages]="messagesConfiguration.customSoundForOutgoingMessages"
+    [detailsConfiguration]="messagesConfiguration.detailsConfiguration"
+    [disableSoundForMessages]="messagesConfiguration.disableSoundForMessages"
+    [disableTyping]="messagesConfiguration.disableTyping"
+    [hideMessageComposer]="messagesConfiguration.hideMessageComposer"
+    [hideMessageHeader]="messagesConfiguration.hideMessageHeader"
+    [messageComposerView]="messagesConfiguration.messageComposerView"
+    [messageHeaderView]="messagesConfiguration.messageHeaderView"
+    [messageListView]="messagesConfiguration.messageListView"
+    >
+    </cometchat-messages>
+    <!--Message List Screen ENDS-->
+  </div>
+  <div class="cc-decorator__message--empty" *ngIf="!user && !group" [ngStyle]="emptyMessageStyle()">
+    <cometchat-label [text]="messageText" [labelStyle]="labelStyle"></cometchat-label>
+   </div>

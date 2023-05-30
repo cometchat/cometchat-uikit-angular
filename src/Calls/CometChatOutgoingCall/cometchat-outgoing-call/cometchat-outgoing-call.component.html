@@ -1,0 +1,17 @@
+<div class="cc-outgoing-call__wrapper" [ngStyle]="wrapperStyle()">
+    <div class="cc-outgoing-call__custom-view" *ngIf="customView; else elseBlock;">
+        <ng-container *ngTemplateOutlet="customView">
+
+        </ng-container>
+    </div>
+<ng-template #elseBlock>
+    <cometchat-card [title]="call?.getReceiver()?.getName()" [cardStyle]="cardStyle" [avatarName]="call?.getReceiver()?.getName()" [avatarURL]="getAvatarURL()" [avatarStyle]="avatarStyle" >
+        <cometchat-label slot="subtitleView" [labelStyle]="subtitleStyle()" [text]="subtitleText"> </cometchat-label>
+        <div slot="bottomView">
+            <cometchat-icon-button (cc-button-clicked)="onClose()" [text]="declineButtonText" [iconURL]="declineButtonIconURL" [alignment]="iconAlignment" [buttonStyle]="buttonStyle">
+
+            </cometchat-icon-button>
+        </div>
+        </cometchat-card>
+</ng-template>
+</div>

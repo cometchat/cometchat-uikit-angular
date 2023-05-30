@@ -1,0 +1,56 @@
+<div class="signup__wrapper" [ngStyle]="styles.loginWrapperStyle()">
+    <div class="signup__page">
+        <div class="header__section" [ngStyle]="styles.headerSectionStyle()">
+            <div class="header__title" [ngStyle]="styles.headerTitleStyle()">comet<b>chat</b></div>
+            <div class="release-tag" [ngStyle]="styles.headerSubtitleStyle()">3.0.10-pluto.beta.2</div>
+        </div>
+        <div class="content__section">
+       <div class="left__content">
+        <div class="content__title" [ngStyle]="styles.titleStyle()">
+           Sign Up
+        </div>
+        <div class="signup__container" [ngStyle]="styles.containerStyle()">
+
+         <div class="signup__field">
+
+     <div class="uid__field">
+        <label for="uid" [ngStyle]="styles.loginMessageStyle()">UID</label>
+        <input type="text" placeholder="Enter UID Here" (input)="error ? error = '' : null " [ngStyle]="styles.inputStyle()" name="uid" [(ngModel)]="userUID" [disabled]="generateUID">
+     </div>
+     <div class="name__field">
+        <label for="name" [ngStyle]="styles.loginMessageStyle()">Name</label>
+        <input type="text" placeholder="Enter Name here" (input)="error ? error = '' : null " [ngStyle]="styles.inputStyle()" name="name" [(ngModel)]="userName">
+     </div>
+     <div class="uid__generator">
+
+          <label  [ngStyle]="styles.loginMessageStyle()" class="checkbox__container">By clicking on this checkbox, UID will be generated automatically.
+            <input type="checkbox" (change)="toggleGenerateUID($event)" >
+            <span class="checkmark"></span>
+
+          </label>
+
+
+     </div>
+     <div class="error__text" [ngStyle]="styles.errorTextStyle()" *ngIf="error">
+        {{error}}
+       </div>
+          </div>
+          <div class="signup__section">
+
+              <button class="signup__button" [ngStyle]="styles.signupButtonStyle()" (click)="createUser(userName,userUID)">Submit</button>
+          </div>
+        </div>
+       </div>
+       <div class="right__content" [ngStyle]="styles.sectionImageStyle()"></div>
+    </div>
+        <div class="footer__section"> <footer [ngStyle]="styles.footerStyle()"> 2022 &copy; CometChat </footer></div>
+    </div>
+</div>
+
+<!-- loading banner -->
+<div class="spinner__wheel" *ngIf="inProgress">
+    <div class="spinner__content">
+        <img src="assets/logo.png" />
+        <cometchat-icon [URL]="'assets/Spinner.svg'"></cometchat-icon>
+    </div>
+    </div>

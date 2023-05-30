@@ -1,0 +1,84 @@
+<div  class="cc-conversations" [ngStyle]="styles.wrapperStyle()">
+  <cometchat-backdrop [backdropStyle]="backdropStyle" *ngIf="isDialogOpen">
+    <cometchat-confirm-dialog [title]="confirmDialogTitle" [messageText]="confirmDialogMessage" [cancelButtonText]="cancelButtonText" [confirmButtonText]="confirmButtonText" (cc-confirm-clicked)="onConfirmClick()" (cc-cancel-clicked)="onCancelClick()" [confirmDialogStyle]="deleteConversationDialogStyle">
+    </cometchat-confirm-dialog>
+  </cometchat-backdrop>
+  <div class="cc-conversations__menus" *ngIf="menu">
+
+      <ng-container *ngTemplateOutlet="menu">
+      </ng-container>
+
+  </div>
+<cometchat-list [state]="state"
+[searchIconURL]="searchIconURL"  [hideError]="hideError"
+[emptyStateText]="emptyStateText" [loadingIconURL]="loadingIconURL"
+[titleAlignment]="titleAlignment" [loadingView]="loadingStateView" [listStyle]="listStyle" [emptyStateView]="emptyStateView"
+[errorStateText]="errorStateText" [errorView]="errorStateView"
+[onScrolledToBottom]="getConversation" [list]="conversationList"  [listItemView]="listItemView ? listItemView : listItem" [title]="title"  [hideSearch]="hideSearch"></cometchat-list>
+</div>
+<ng-template #listItem let-conversation>
+  <cometchat-list-item [hideSeparator]="hideSeparator" [avatarStyle]="avatarStyle" [statusIndicatorStyle]="setStatusIndicatorStyle(conversation)"
+  [id]="conversation?.conversationId" [isActive]="getActiveConversation(conversation)"
+  (cc-listitem-clicked)="onClick(conversation)" [title]="conversation?.conversationWith?.name"
+  [statusIndicatorIcon]="checkGroupType(conversation)" [statusIndicatorColor]="checkStatusType(conversation)"
+  [listItemStyle]="listItemStyle" [avatarURL]="conversation?.conversationWith?.avatar" [avatarName]="conversation?.conversationWith?.name">
+    <div slot="subtitleView" *ngIf="subtitleView;else conversationSubtitle">
+      <ng-container *ngTemplateOutlet="subtitleView">
+      </ng-container>
+  </div>
+  <ng-template #conversationSubtitle>
+
+  <div class="cc-conversations__subtitle-view " slot="subtitleView" >
+    <div class="cc-conversations__threadview" *ngIf="conversation?.lastMessage?.parentMessageId">
+      <cometchat-label [labelStyle]="itemThreadIndicatorStyle()" [text]="threadIndicatorText"> </cometchat-label>
+      <cometchat-icon [URL]="threadIconURL" [iconStyle]="iconStyle"></cometchat-icon>
+
+    </div>
+<div class="cc-conversations__subtitle">
+  <div class="cc-conversations__readreceipt" *ngIf="isReceiptDisable(conversation)">
+    <cometchat-receipt  [receipt]="getMessageReceipt(conversation)" [receiptStyle]="receiptStyle" [sentIcon]="sentIcon" [errorIcon]="errorIcon" [deliveredIcon]="deliveredIcon" [readIcon]="readIcon"></cometchat-receipt>
+  </div>
+
+  <div [ngStyle]="subtitleStyle(conversation)" class="cc-subtitle__text"> {{setSubtitle(conversation)}} </div>
+</div>
+
+  </div>
+  </ng-template>
+  <div slot="menuView" class="cc-conversations__optionsview" *ngIf="selectionMode == selectionmodeEnum.none">
+    <div *ngIf="options">
+      <cometchat-menu-list [data]="options(conversation)" (cc-menu-clicked)="onOptionClick($event,conversation)" [menuListStyle]="menustyle">
+
+      </cometchat-menu-list>
+    </div>
+    <div *ngIf="!options && conversationOptions">
+      <cometchat-menu-list [data]="conversationOptions" (cc-menu-clicked)="onOptionClick($event,conversation)" [menuListStyle]="menustyle">
+
+      </cometchat-menu-list>
+    </div>
+</div>
+<div slot="tailView"  class="cc-conversations__tail-view">
+<div class="tail__view" *ngIf="selectionMode == selectionmodeEnum.none">
+  <div class="cc-date">
+    <cometchat-date [dateStyle]="dateStyle" [timestamp]="conversation?.lastMessage?.sentAt" [pattern]="getDate()"></cometchat-date>
+  </div>
+  <div class="cc-conversations__badge">
+     <cometchat-badge [count]="conversation?.unreadMessageCount" [badgeStyle]="badgeStyle"></cometchat-badge>
+  </div>
+</div>
+<div class="cc-conversations__selection-view" *ngIf="selectionMode != selectionmodeEnum.none">
+  <ng-container *ngTemplateOutlet="tailView">
+  </ng-container>
+</div>
+</div>
+  </cometchat-list-item>
+  <ng-template #tailView>
+    <div  *ngIf="selectionMode == selectionmodeEnum.single">
+      <cometchat-radio-button (cc-radio-button-changed)="onSelect ? onSelect(conversation) : null"></cometchat-radio-button>
+    </div>
+    <div  *ngIf="selectionMode == selectionmodeEnum.multiple">
+      <cometchat-checkbox (cc-checkbox-changed)="onSelect ? onSelect(conversation) : null"></cometchat-checkbox>
+    </div>
+  </ng-template>
+</ng-template>
+
+

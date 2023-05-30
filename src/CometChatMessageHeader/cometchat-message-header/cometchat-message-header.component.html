@@ -1,0 +1,35 @@
+<div class="cc-message-header__wrapper" [ngStyle]="headerStyle()">
+  <div class="cc-message-header">
+  <div class="cc-message-header__back-button" *ngIf="!hideBackButton"> <cometchat-button [iconURL]="backButtonIconURL" [buttonStyle]="backButtonStyle" (cc-button-clicked)="onBackClicked()"></cometchat-button></div>
+<div class="cc-message-header__listitem">
+<cometchat-list-item *ngIf="!listItemView;else listitem" [avatarName]="user?.getName() || this.group?.getName()" [avatarURL]="this.user?.getAvatar() || this.group?.getIcon()" [listItemStyle]="listItemStyle"
+ [statusIndicatorColor]="checkStatusType()" [statusIndicatorIcon]="checkGroupType()" [title]="this.user?.getName() || this.group?.getName()"  [hideSeparator]="true"
+  [statusIndicatorStyle]="statusIndicatorStyle" [avatarStyle]="avatarStyle">
+<div slot="subtitleView">
+<div *ngIf="!subtitleView; else subtitle">
+<cometchat-label [text]="subtitleText" [labelStyle]="subtitleStyle()">
+
+</cometchat-label>
+</div>
+<ng-template #subtitle>
+  <ng-container *ngTemplateOutlet="subtitleView;context:{ $implicit: user ?? group }">
+
+  </ng-container>
+</ng-template>
+
+</div>
+</cometchat-list-item>
+<ng-template #listitem>
+  <ng-container *ngTemplateOutlet="listItemView">
+
+  </ng-container>
+</ng-template>
+</div>
+  </div>
+  <div class="cc-message-header__menu" *ngIf="menu">
+    <ng-container *ngTemplateOutlet="menu">
+
+    </ng-container>
+  </div>
+     </div>
+

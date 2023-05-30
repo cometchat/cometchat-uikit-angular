@@ -1,0 +1,65 @@
+<div class="cc-list__wrapper">
+  <div class="list__header" [ngStyle]="headerStyle()">
+    <div *ngIf="title" class="list__title" [ngStyle]="headerTitle()"> {{title}}</div>
+    <div class="cc-list__search-input">
+      <cometchat-search-input [searchInputStyle]="searchStyle" [placeholderText]="searchPlaceholderText" *ngIf="!hideSearch"
+      [searchIconURL]="searchIconURL" (cc-search-changed)="searchEvent($event)"></cometchat-search-input>
+    </div>
+  </div>
+  <div class="cc-list" #listScroll [ngStyle]="listStyles()">
+    <div class="list__top" #top>
+    </div>
+    <div class="decorator__message" *ngIf="state == states.loading || state == states.error  || state == states.empty "
+      [ngStyle]="messageContainerStyle()">
+      <div class="loading__view" *ngIf="state == states.loading ">
+        <cometchat-loader [iconURL]="loadingIconURL" [loaderStyle]="iconStyle">
+        </cometchat-loader>
+        <span class="custom__view--loading" *ngIf="state == states.loading  && loadingStateView">
+          <ng-container *ngTemplateOutlet="loadingStateView">
+          </ng-container>
+        </span>
+      </div>
+      <div class="error__view" *ngIf="state == states.error  && !hideError ">
+        <cometchat-label [labelStyle]="errorStyle()" *ngIf="state == states.error  && !hideError && !errorStateView" [text]="errorStateText"
+          >
+        </cometchat-label>
+        <span class="custom__view--error" *ngIf="state == states.error  && !hideError && errorStateView">
+          <ng-container *ngTemplateOutlet="errorStateView">
+          </ng-container>
+        </span>
+      </div>
+      <div class="empty__view" *ngIf="state == states.empty">
+        <cometchat-label [labelStyle]="emptyStyle()" *ngIf="state == states.empty && !emptyStateView" [text]="emptyStateText"
+          >
+        </cometchat-label>
+        <span class="custom__view--empty" *ngIf="state == states.empty && emptyStateView">
+          <ng-container *ngTemplateOutlet="emptyStateView">
+          </ng-container>
+        </span>
+      </div>
+    </div>
+    <div class="listitem__view" *ngFor="let item of list; let i = index">
+      <div class="list__section" *ngIf="showSectionHeader">
+        <div *ngIf="i > 0; else elseBlock" class="section__separator">
+          <div *ngIf="
+              list[i - 1][sectionHeaderField][0].toUpperCase() !==
+              list[i][sectionHeaderField][0].toUpperCase()
+            " class="section__header" [ngStyle]="sectionHeaderStyle()">
+            {{ list[i][sectionHeaderField][0].toUpperCase() }}
+          </div>
+        </div>
+        <ng-template #elseBlock>
+          <div class="section__header" [ngStyle]="sectionHeaderStyle()">
+            {{
+            list[i][sectionHeaderField][0].toUpperCase()
+            }}
+          </div>
+        </ng-template>
+      </div>
+      <ng-container *ngTemplateOutlet="listItemView;context:{ $implicit: item }">
+      </ng-container>
+    </div>
+    <div class="list__bottom" #bottom>
+    </div>
+  </div>
+</div>

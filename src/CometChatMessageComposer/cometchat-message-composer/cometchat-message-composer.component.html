@@ -1,0 +1,70 @@
+<div class="cc-message-composer__wrapper" >
+  <div class="cc-message-composer__header-view" *ngIf="headerView; else messagePreview">
+    <ng-container *ngTemplateOutlet="headerView">
+    </ng-container>
+  </div>
+  <ng-template #messagePreview>
+    <div class="cc-message-composer__header-view" *ngIf="showStickerKeyboard">
+      <stickers-keyboard    [stickerStyle]="stickerKeyboardStyle" (cc-sticker-clicked)="sendSticker($event)">
+      </stickers-keyboard>
+    </div>
+    <div class="cc-message-composer__header-view" *ngIf="showPreview">
+      <cometchat-preview [previewStyle]="previewStyle" [previewSubtitle]="messageToBeEdited?.getText()" (cc-preview-close-clicked)="closePreview()"> </cometchat-preview>
+    </div>
+  </ng-template>
+<div class="cc-message-composer__input">
+  <cometchat-message-input (cc-message-input-entered)="sendMessageOnEnter($event)" #inputRef [text]="text" (cc-message-input-changed)="messageInputChanged($event)" [messageInputStyle]="messageInputStyle" [placeholderText]="placeholderText" [auxiliaryButtonAlignment]="auxiliaryButtonsAlignment">
+    <div slot="secondaryView">
+      <div *ngIf="secondaryButtonView;else secondaryButton">
+        <ng-container *ngTemplateOutlet="secondaryButtonView">
+        </ng-container>
+      </div>
+      <ng-template #secondaryButton>
+    <div class="cc-message-composer__attachbutton">
+        <cometchat-popover [placement]="auxilaryPlacement" [popoverStyle]="popoverStyle" >
+          <cometchat-action-sheet slot="content" [actions]="composerActions" [actionSheetStyle]="actionsheetStyle" (cc-actionsheet-clicked)="handleActions($event)">
+          </cometchat-action-sheet>
+            <cometchat-button #actionSheetRef slot="children" (cc-button-clicked)="openActionSheet($event)" [iconURL]="!showActionSheetItem || (showEmojiKeyboard && !showActionSheetItem)  ? attachmentIconURL  : closeIconURL" [buttonStyle]="attachmentButtonStyle"></cometchat-button>
+        </cometchat-popover>
+    </div>
+      </ng-template>
+    </div>
+    <div slot="auxilaryView" >
+     <div *ngIf="auxilaryButtonView; else auxilaryView">
+      <ng-container *ngTemplateOutlet="auxilaryButtonView">
+      </ng-container>
+     </div>
+    </div>
+    <div slot="primaryView">
+      <div *ngIf="sendButtonView;else sendButton">
+      </div>
+      <ng-template #sendButton>
+        <div class="cc-message-composer__sendbutton" *ngIf="showSendButton || hideLiveReaction">
+  <cometchat-button [iconURL]="sendButtonIconURL" [buttonStyle]="sendButtonStyle" [hoverText]="localize('SEND_MESSAGE')" (cc-button-clicked)="customSendMethod(messageText)"></cometchat-button>
+        </div>
+        <div class="cc-message-composer__livereaction" *ngIf="!hideLiveReaction && !showSendButton">
+          <cometchat-button [iconURL]="LiveReactionIconURL" [hoverText]="localize('LIVE_REACTION')" [buttonStyle]="liveReactionStyle" (cc-button-clicked)="sendReaction()"></cometchat-button>
+          </div>
+      </ng-template>
+    </div>
+  </cometchat-message-input>
+</div>
+</div>
+<ng-template #auxilaryView>
+<div class="cc-message-composer__auxiliary">
+  <div class="cc-message-composer__stickerkeyboard" *ngIf="enableStickerKeyboard">
+    <cometchat-button #stickerButtonRef  (cc-button-clicked)="openStickerKeyboard($event)" [iconURL]=" !showStickerKeyboard ? stickerButtonIconURL : closeIconURL" [buttonStyle]="emojiButtonStyle"></cometchat-button>
+  </div>
+  <div class="cc-message-composer__emojikeyboard">
+    <cometchat-popover  [placement]="auxilaryPlacement" [popoverStyle]="emojiPopover" >
+      <cometchat-emoji-keyboard slot="content" [emojiKeyboardStyle]="emojiKeyboardStyle" (cc-emoji-clicked)="appendEmoji($event)">
+      </cometchat-emoji-keyboard>
+      <cometchat-button #emojiButtonRef slot="children" (cc-button-clicked)="openEmojiKeyboard($event)" [iconURL]=" !showEmojiKeyboard  || (!showEmojiKeyboard && showActionSheetItem) ? emojiButtonIconURL : closeIconURL" [buttonStyle]="emojiButtonStyle"></cometchat-button>
+    </cometchat-popover>
+  </div>
+</div>
+</ng-template>
+<input class="cc-message-composer__mediainput" #inputElement (change)="inputChangeHandler($event)" />
+<cometchat-backdrop *ngIf="showCreatePolls" [backdropStyle]="backdropStyle">
+  <create-poll [user]="user" [group]="group" (cc-close-clicked)="closeCreatePolls()" [createPollStyle]="createPollStyle"></create-poll>
+</cometchat-backdrop>

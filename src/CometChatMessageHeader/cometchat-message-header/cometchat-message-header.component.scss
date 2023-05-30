@@ -1,0 +1,35 @@
+.cc-message-header__wrapper{
+  display: flex;
+align-items: center;
+justify-content: space-between;
+flex-direction: row;
+padding: 8px;
+box-sizing: border-box;
+}
+.cc-message-header__back-button{
+  margin-right:8px;
+}
+.cc-message-header{
+  display: flex;
+align-items: center;
+justify-content: flex-start;
+height:100%;
+width:100%;
+}
+.cc-message-header__listitem{
+  height:100%;
+width:100%;
+display: flex;
+align-items: center;
+justify-content: flex-start;
+}
+.cc-message-header__menu{
+  width: fit-content;
+ display: flex;
+ align-items: center;
+ justify-content: flex-end;
+ padding: 12px;
+}
+cometchat-list-item{
+  width: 100%;
+}

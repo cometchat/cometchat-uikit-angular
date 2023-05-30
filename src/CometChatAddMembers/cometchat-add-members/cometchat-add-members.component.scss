@@ -1,0 +1,43 @@
+.cc-add-members{
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+.cc-back-button{
+    position: absolute;
+    left: 8px;
+    padding: 12px 8px 8px 8px;
+}
+.cc-add-members__wrapper{
+    height: 100%;
+    width: 100%;
+    padding: 8px;
+}
+
+
+.cc-close-button{
+    position: absolute;
+    right: 8px;
+    padding: 12px 8px 8px 8px;
+
+}
+.cc-users{
+    height: 90%;
+}
+.cc-add-members__buttons{
+    height: 10%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button__icon{
+    display: flex;
+    justify-content: flex-end;
+}
+.cc-add-members__buttons--add{
+    height:42px;
+    width: 100%;
+}

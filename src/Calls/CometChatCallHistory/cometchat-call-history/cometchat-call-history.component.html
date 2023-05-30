@@ -1,0 +1,55 @@
+<div class="cc-call-history" [ngStyle]="callStyle()">
+  <div class="cc-menus" *ngIf="menu">
+    <ng-container *ngTemplateOutlet="menu">
+    </ng-container>
+</div>
+  <cometchat-list [hideSearch]="true" [listItemView]="listItemView ? listItemView : listItem" [onScrolledToBottom]="onScrolledToBottom"
+      [list]="callsList" [hideError]="hideError" [title]="title"
+      [emptyStateText]="emptyStateText" [loadingIconURL]="loadingIconURL"
+      [titleAlignment]="titleAlignment" [loadingStateView]="loadingStateView" [emptyStateView]="emptyStateView"
+      [errorStateText]="errorStateText" [errorStateView]="errorStateView" [listStyle]="listStyle" [state]="state">
+  </cometchat-list>
+  <ng-template #listItem let-call>
+      <cometchat-list-item [title]="getCallerName(call)" [avatarURL]="call?.avatar" [avatarName]="getCallerName(call)"
+          [listItemStyle]="getListItemStyle(call)" [avatarStyle]="avatarStyle"
+          [hideSeparator]="hideSeparator" (cc-listitem-clicked)="onClick(call)" [isActive]="getActiveCall(call)">
+          <div slot="subtitleView" class="cc-call-history__subtitle-view" *ngIf="subtitleView;else groupSubtitle">
+              <ng-container *ngTemplateOutlet="subtitleView">
+              </ng-container>
+          </div>
+          <ng-template #groupSubtitle>
+             <div slot="subtitleView" [ngStyle]="subtitleStyle()" class="cc-call-history__subtitle-view">
+            <div class="cc-call__icon">
+              <cometchat-icon [iconStyle]="iconStyle" [URL]="getCallTypeIcon(call)"></cometchat-icon>
+            </div>
+            <div class="cc-call__type">
+              {{getSubtitle(call)}}
+            </div>
+            </div>
+          </ng-template>
+          <div slot="menuView" class="cc-call-history__options" *ngIf="options">
+            <cometchat-menu-list (cc-menu-clicked)="callMenuOption($event,call)" [data]="options(call)">
+            </cometchat-menu-list>
+        </div>
+        <div slot="tailView"  class="cc-call-history__tail-view">
+          <div class="tail__view" *ngIf="selectionMode == selectionmodeEnum.none">
+            <div class="cc-call-history__date">
+              <cometchat-date [dateStyle]="dateStyle" [timestamp]="call?.sentAt" [pattern]="datePattern"></cometchat-date>
+            </div>
+          </div>
+          <div class="cc-call-history__selection-view" *ngIf="selectionMode != selectionmodeEnum.none">
+            <ng-container *ngTemplateOutlet="tailView">
+            </ng-container>
+          </div>
+          </div>
+      </cometchat-list-item>
+      <ng-template #tailView>
+        <div  *ngIf="selectionMode == selectionmodeEnum.single">
+          <cometchat-radio-button (cc-radio-button-changed)="onSelect ? onSelect(call) : null"></cometchat-radio-button>
+        </div>
+        <div  *ngIf="selectionMode == selectionmodeEnum.multiple">
+          <cometchat-checkbox (cc-checkbox-changed)="onSelect ? onSelect(call) : null"></cometchat-checkbox>
+        </div>
+      </ng-template>
+  </ng-template>
+</div>

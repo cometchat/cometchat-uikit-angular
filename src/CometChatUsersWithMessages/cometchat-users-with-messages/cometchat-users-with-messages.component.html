@@ -1,0 +1,56 @@
+<div class="cc-with-messages__wrapper" [ngStyle]="usersWrapperStyles()">
+  <div class="cc-with-messages__sidebar" [ngClass]="{mobile : isMobileView}">
+    <cometchat-users
+    #usersRef
+    [activeUser]="user"
+    [hideSearch]="usersConfiguration.hideSearch"
+    [searchIconURL]="usersConfiguration.searchIconURL"
+    [searchRequestBuilder]="usersConfiguration.searchRequestBuilder"
+    [onItemClick]="usersConfiguration.onItemClick || onItemClick"
+    [usersStyle]="usersConfiguration.usersStyle"
+    [subtitleView]="usersConfiguration.subtitleView"
+    [options]="usersConfiguration.options"
+    [usersRequestBuilder]="usersConfiguration.usersRequestBuilder"
+    [emptyStateView]="usersConfiguration.emptyStateView"
+    [onSelect]="usersConfiguration.onSelect"
+    [loadingIconURL]="usersConfiguration.loadingIconURL"
+    [errorStateView]="usersConfiguration.errorStateView"
+    [loadingStateView]="usersConfiguration.loadingStateView"
+    [titleAlignment]="usersConfiguration.titleAlignment"
+    [showSectionHeader]="usersConfiguration.showSectionHeader"
+    [listItemView]="usersConfiguration.listItemView"
+    [menu]="usersConfiguration.menu"
+    [hideSeparator]="usersConfiguration.hideSeparator"
+    [hideError]="usersConfiguration.hideError"
+    [selectionMode]="usersConfiguration.selectionMode"
+    [listItemStyle]="usersConfiguration.listItemStyle"
+
+    ></cometchat-users>
+  </div>
+  <div class="cc-with-messages__main" [ngClass]="{mobile : isMobileView}" *ngIf="user">
+    <!--Message List Screen-->
+    <cometchat-messages
+    #messagesRef
+    [user]="user!"
+    [messageHeaderConfiguration]="messagesConfiguration.messageHeaderConfiguration"
+    [messageListConfiguration]="messagesConfiguration.messageListConfiguration"
+    [messageComposerConfiguration]="messagesConfiguration.messageComposerConfiguration"
+    [messagesStyle]="messagesConfiguration.messagesStyle"
+    [customSoundForIncomingMessages]="messagesConfiguration.customSoundForIncomingMessages"
+    [customSoundForOutgoingMessages]="messagesConfiguration.customSoundForOutgoingMessages"
+    [detailsConfiguration]="messagesConfiguration.detailsConfiguration"
+    [disableSoundForMessages]="messagesConfiguration.disableSoundForMessages"
+    [disableTyping]="messagesConfiguration.disableTyping"
+    [hideMessageComposer]="messagesConfiguration.hideMessageComposer"
+    [hideMessageHeader]="messagesConfiguration.hideMessageHeader"
+    [messageComposerView]="messagesConfiguration.messageComposerView"
+    [messageHeaderView]="messagesConfiguration.messageHeaderView"
+    [messageListView]="messagesConfiguration.messageListView"
+    >
+    </cometchat-messages>
+    <!--Message List Screen ENDS-->
+  </div>
+  <div class="cc-decorator__message--empty" *ngIf="!user" [ngStyle]="emptyMessageStyle()">
+    <cometchat-label [text]="messageText" [labelStyle]="labelStyle"></cometchat-label>
+   </div>
+</div>

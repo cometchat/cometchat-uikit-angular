@@ -1,0 +1,44 @@
+<div class="cc-add-members" [ngStyle]="wrapperStyle()">
+  <div class="cc-back-button">
+    <cometchat-button [iconURL]="backButtonIconURL" [buttonStyle]="backButtonStyle()"  (cc-button-clicked)="backClicked()" *ngIf="showBackButton">
+
+    </cometchat-button>
+  </div>
+  <div class="cc-add-members__wrapper" [ngStyle]="addMembersStyles()">
+   <div class="cc-users">
+    <cometchat-users [searchPlaceholder]="searchPlaceholder" [usersRequestBuilder]="usersRequestBuilder"
+    [hideSearch]="hideSearch"
+    [searchIconURL]="searchIconURL"
+    [searchRequestBuilder]="searchRequestBuilder"
+    [usersStyle]="usersStyle"
+    [subtitleView]="subtitleView"
+    [options]="options"
+    [usersRequestBuilder]="usersRequestBuilder"
+    [emptyStateView]="emptyStateView"
+    [onSelect]=" addRemoveUsers"
+    [sectionHeaderField]="sectionHeaderField"
+    [loadingIconURL]="loadingIconURL"
+    [errorStateView]="errorStateView"
+    [loadingStateView]="loadingStateView"
+    [titleAlignment]="titleAlignment"
+    [showSectionHeader]="showSectionHeader"
+    [listItemView]="listItemView"
+    [menu]="menu"
+    [hideSeparator]="hideSeparator"
+    [hideError]="hideError"
+    [selectionMode]=" selectionMode"
+    [title]="title"  >
+
+    </cometchat-users>
+   </div>
+    <div class="cc-add-members__buttons">
+      <cometchat-button class="cc-add-members__buttons--add" [text]="buttonText" [buttonStyle]="addMemberButtonStyle" (click)="addMembersToGroup()" ></cometchat-button>
+
+    </div>
+  </div>
+  <div class="cc-close-button">
+    <cometchat-button [iconURL]="closeButtonIconURL" [buttonStyle]="closeButtonStyle()" (cc-button-clicked)="closeClicked()">
+
+    </cometchat-button>
+  </div>
+</div>

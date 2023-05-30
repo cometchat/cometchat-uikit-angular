@@ -1,0 +1,8 @@
+<div [ngStyle]="wrapperStyle()">
+    <cometchat-message-header [hideBackButton]="false" [menu]="menu"  [user]="user" *ngIf="user">
+    </cometchat-message-header>
+</div>
+<ng-template #menu>
+    <cometchat-button [iconURL]="infoIconStyle" [buttonStyle]="detailsButtonStyle"></cometchat-button>
+
+</ng-template>

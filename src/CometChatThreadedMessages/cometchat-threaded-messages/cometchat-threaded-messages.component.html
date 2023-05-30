@@ -1,0 +1,37 @@
+<div class="cc-threaded-messages__wrapper" [ngStyle]="wrapperStyle()">
+<div class="cc-threaded-messages__header">
+<div class="cc-threaded-messages__title">
+<cometchat-label [text]="title" [labelStyle]="titleStyle"></cometchat-label>
+</div>
+<div  class="cc-threaded-messages__close">
+<cometchat-button [iconURL]="closeIconURL" [buttonStyle]="buttonStyle" (cc-button-clicked)="closeView()"></cometchat-button>
+</div>
+</div>
+<div class="cc-threaded-messages__bubble-view">
+  <ng-container *ngTemplateOutlet="bubbleView; context:{ $implicit: parentMessage }">
+  </ng-container>
+</div>
+<div class="cc-threaded-messages__action-view">
+  <ng-container *ngTemplateOutlet="messageActionView; context:{ $implicit: parentMessage }">
+  </ng-container>
+ <cometchat-button *ngIf="!messageActionView" [text]="getThreadCount()" [buttonStyle]="actionButtonStyle"></cometchat-button>
+</div>
+<div class="cc-threaded-messages__list">
+  <cometchat-message-list #messageListRef [parentMessageId]="parentMessage!.getId()" [emptyStateView]="messageListConfiguration.emptyStateView" [loadingStateView]="messageListConfiguration.loadingStateView"  [user]="user" [group]="group"
+  [errorStateView]="messageListConfiguration.errorStateView" [disableReceipt]="messageListConfiguration.disableReceipt" [readIcon]="messageListConfiguration.readIcon" [deliveredIcon]="messageListConfiguration.deliveredIcon" [sentIcon]="messageListConfiguration.sentIcon" [waitIcon]="messageListConfiguration.waitIcon"
+  [errorIcon]="messageListConfiguration.errorIcon" [alignment]="messageListConfiguration.alignment" [showAvatar]="messageListConfiguration.showAvatar" [datePattern]="messageListConfiguration.datePattern" [timestampAlignment]="messageListConfiguration.timestampAlignment" [DateSeparatorPattern]="messageListConfiguration.DateSeparatorPattern"
+  [messageTypes]="messageListConfiguration.messageTypes" [messagesRequestBuilder]="messageListConfiguration.messagesRequestBuilder || requestBuilder" [thresholdValue]="messageListConfiguration.thresholdValue" [onThreadRepliesClick]="messageListConfiguration.onThreadRepliesClick" [headerView]="messageListConfiguration.headerView" [footerView]="messageListConfiguration.footerView"
+   [avatarStyle]="messageListConfiguration.avatarStyle" [dateSeparatorStyle]="messageListConfiguration.dateSeparatorStyle" [messageListStyle]="messageListConfiguration.messageListStyle"  [onError]="messageListConfiguration.onError"
+  >
+  </cometchat-message-list>
+</div>
+<div class="cc-threaded-messages__composer">
+    <cometchat-message-composer #messageComposerRef [parentMessageId]="parentMessage!.getId()"
+    [user]="user" [group]="group" [text]="messageComposerConfiguration.text" [headerView]="messageComposerConfiguration.headerView" [onTextChange]="messageComposerConfiguration.onTextChange" [attachmentIconURL]="messageComposerConfiguration.attachmentIconURL"
+    [attachmentOptions]="messageComposerConfiguration.attachmentOptions" [secondaryButtonView]="messageComposerConfiguration.secondaryButtonView" [auxilaryButtonView]="messageComposerConfiguration.auxilaryButtonView" [auxiliaryButtonsAlignment]="messageComposerConfiguration.auxiliaryButtonsAlignment"
+    [sendButtonView]="messageComposerConfiguration.sendButtonView" [hideLiveReaction]="messageComposerConfiguration.hideLiveReaction" [LiveReactionIconURL]="messageComposerConfiguration.LiveReactionIconURL" [messageComposerStyle]="messageComposerConfiguration.messageComposerStyle" [onSendButtonClick]="messageComposerConfiguration.onSendButtonClick"
+    [onSendButtonClick]="messageComposerConfiguration.onSendButtonClick" [onError]="messageComposerConfiguration.onError"
+    >
+    </cometchat-message-composer>
+</div>
+ </div>
