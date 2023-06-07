@@ -8,7 +8,7 @@
 
 <br/><br/>
 
-> We've launched a major update to our UI Kit with the release of UI Kit v4. Please switch to version 4.x.x by visiting the [@cometchat/chat-uikit-angular](https://www.npmjs.com/package/@cometchat/chat-uikit-angular), or [head here to read our documentation](https://www.cometchat.com/docs/angular-uikit-beta/overview).
+> **_NOTE:_**  We've launched a major update to our UI Kit with the release of UI Kit v4. Please switch to version 4.x.x by visiting the [@cometchat/chat-uikit-angular](https://www.npmjs.com/package/@cometchat/chat-uikit-angular), or [head here to read our documentation](https://www.cometchat.com/docs/angular-uikit-beta/overview).
 <br/><br/>
 
 # CometChat Angular UI Kit
