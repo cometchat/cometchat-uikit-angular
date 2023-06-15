@@ -7,9 +7,11 @@
 </div>
 
 <br/><br/>
-> Version 4 CometChat UI Kits
+> **Note**
 
-We’ve introduced a major update to our UI kits. Version 4 features a modular architecture that give you enhanced flexibility to build and customize your web and mobile apps. Please switch to version 4 by visiting the [@cometchat/chat-uikit-angular](https://www.npmjs.com/package/@cometchat/chat-uikit-angular), or [check out our documentation](https://www.cometchat.com/docs/angular-uikit-beta/overview).
+Version 4 CometChat UI Kits 
+
+We’ve introduced a major update to our UI kits. Version 4 features a modular architecture that gives you enhanced flexibility to build and customize your web and mobile apps. [Visit our documentation](https://www.cometchat.com/docs/angular-uikit-beta/overview) to read more about this.
 <br/><br/>
 
 # CometChat Angular UI Kit
