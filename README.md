@@ -160,7 +160,7 @@ CometChat.login(uid, authKey).then(
 
 ## 3. Add UI Kit to your project
 
-- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-pro-angular-ui-kit.git`
+- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-chat-uikit-angular.git`
 - Copy the cloned repository into your project src folder.
 
 <div style="width:100%">
@@ -174,7 +174,7 @@ CometChat.login(uid, authKey).then(
 ```
 "styles": [
   "node_modules/@ctrl/ngx-emoji-mart/picker.css",
-  "src/cometchat-pro-angular-ui-kit/CometChatWorkspace/src/css/styles.scss"
+  "src/cometchat-chat-uikit-angular/CometChatWorkspace/src/css/styles.scss"
 ]
 ```
 
