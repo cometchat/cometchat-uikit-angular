@@ -13,7 +13,7 @@ import * as enums from "../../../../utils/enums";
 import { COMETCHAT_CONSTANTS } from "../../../../utils/messageConstants";
 import { DatePipe } from "@angular/common";
 import { logger } from "../../../../utils/common";
-import { CometChatService } from "src/cometchat-pro-angular-ui-kit/CometChatWorkspace/src/utils/cometchat.service";
+import { CometChatService } from "src/cometchat-chat-uikit-angular/CometChatWorkspace/src/utils/cometchat.service";
 @Component({
   selector: "cometchat-message-header",
   templateUrl: "./cometchat-message-header.component.html",
@@ -395,7 +395,7 @@ export class CometChatMessageHeaderComponent
    * Starts audio call
    */
   audioCall() {
- 
+
     try {
       this.actionGenerated.emit({ type: enums.AUDIO_CALL });
     } catch (error) {
@@ -408,14 +408,14 @@ export class CometChatMessageHeaderComponent
     } catch (error) {
       logger(error);
     }
-  
+
   }
 
   /**
    * Starts video call
    */
   videoCall() {
-  
+
     try {
       this.actionGenerated.emit({ type: enums.VIDEO_CALL });
     } catch (error) {
