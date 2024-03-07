@@ -156,7 +156,7 @@ console.log("Login Successful:", { user });
 
 ### i. Import the required components inside your project.
 
-In `app.module.ts`
+Add the code below in `app.module.ts`
 
 ```javascript
 
@@ -178,7 +178,7 @@ export class AppModule { }
 
 ### ii. Launch the component.
 
-In `app.component.html`
+Add the code below in `app.component.html`
 
 ```html
 <cometchat-conversations-with-messages></cometchat-conversations-with-messages>
@@ -200,14 +200,14 @@ Visit our [Angular sample app](https://github.com/cometchat/cometchat-uikit-angu
 
 - To read the full documentation on UI Kit integration visit our [Documentation](https://www.cometchat.com/docs/angular-chat-ui-kit/overview).
 
-- Facing any issues while integrating or installing the UI Kit please connect with us via real time support present in <a href="https://app.cometchat.com/" target="_blank">CometChat Dashboard.</a>
+- Facing any issues while integrating or installing the UI Kit please connect with us via real-time support present in <a href="https://app.cometchat.com/" target="_blank">CometChat Dashboard.</a>
 
 ---
 
 
 # Contact :mailbox:
 
-Contact us via real time support present in [CometChat Dashboard](https://app.cometchat.com/).
+Contact us via real-time support present in [CometChat Dashboard](https://app.cometchat.com/).
 
 ---
 
