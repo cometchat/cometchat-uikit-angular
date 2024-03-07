@@ -139,7 +139,7 @@ console.log("Login Successful:", { user });
 }).catch(console.log);
 ```
 
-### i. Login using Auth Token
+### ii. Login using Auth Token
 
 ```javascript
 const authToken: string = "AUTH_TOKEN";
