@@ -1,28 +1,10 @@
-<div style="width:100%">
-    <div style="width:50%;">
-        <div align="center">
-        <a href="#"><img align="center" width="180" height="180" alt="CometChat" src="./Screenshots/logo.png"> </a>
-        </div>
-    </div>
-</div>
-
-<br/><br/>
-> **Note**
-
-Version 4 CometChat UI Kits 
-
-We’ve introduced a major update to our UI kits. Version 4 features a modular architecture that gives you enhanced flexibility to build and customize your web and mobile apps. [Visit our documentation](https://www.cometchat.com/docs/angular-v4-uikit/overview) to read more about this.
-<br/><br/>
-
-# CometChat Angular UI Kit
+# CometChat Angular UI Kit: v4
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/cometchat-pro/javascript-angular-chat-ui-kit)
 ![GitHub contributors](https://img.shields.io/github/contributors/cometchat-pro/javascript-angular-chat-ui-kit)
 ![GitHub stars](https://img.shields.io/github/stars/cometchat-pro/javascript-angular-chat-ui-kit?style=social)
 ![Twitter Follow](https://img.shields.io/twitter/follow/cometchat?style=social)
-
 </br></br>
-
 <div style="width:100%">
     <div style="width:50%; display:inline-block">
         <div align="center">
@@ -88,126 +70,129 @@ To install Angular UI Kit, you need to first register on CometChat Dashboard. <a
 ### iii. Add the CometChat Dependency
 
 ```javascript
-  npm install @cometchat-pro/chat@3.0.11 --save
+  npm install @cometchat/chat-uikit-angular
 ```
 
 <br/>
 
-## 2. Configure CometChat inside your app
+## 2. Link the assets
 
-### i. Import CometChat SDK
+Add the assets as shown below in the `package.json` of your project:
 
-```javascript
-import { CometChat } from "@cometchat-pro/chat";
+```json
+"assets": [
+"src/favicon.ico",
+"src/assets",
+// add this inside angular.json build/assets section
+{
+	"glob": "**/*",
+	"input":  "./node_modules/@cometchat/chat-uikit-angular/assets/",
+	"output": "assets/"
+}],
 ```
 
-### ii. Initialize CometChat 🌟
+## 3. Initialise CometChatUIKit
 
-The `init()` method initializes the settings required for CometChat.
-We suggest calling the `init()` method on app startup, preferably in the `main.ts`, wrapping the `platformBrowserDynamic().bootstrapModule(AppModule)` as shown below.
+The `init()` method initializes the settings required for CometChat. We suggest calling the `init()` method on app startup, i.e. `main.ts` file of the application.
 
 ```javascript
-const appID = "APP_ID";
-const region = "REGION";
-const appSetting = new CometChat.AppSettingsBuilder()
-  .subscribePresenceForAllUsers()
-  .setRegion(region)
+//add this in our main.ts file.
+import { CometChatUIKit,UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const COMETCHAT_CONSTANTS = {
+	APP_ID: "APP_ID", // Replace with your App ID
+	REGION: "REGION", // Replace with your App Region ("eu" or "us")
+	AUTH_KEY: "AUTH_KEY" // Replace with your Auth Key
+}
+
+//create the builder
+const uiKitSettings = new UIKitSettingsBuilder()
+  .setAppId(COMETCHAT_CONSTANTS.APP_ID)
+  .setRegion(COMETCHAT_CONSTANTS.REGION)
+  .setAuthKey(COMETCHAT_CONSTANTS.AUTH_KEY)
+  .subscribePresenceForFriends()
   .build();
-CometChat.init(appID, appSetting).then(
-  () => {
-    console.log("Initialization completed successfully");
-    // You can now call login function.
-    platformBrowserDynamic()
-      .bootstrapModule(AppModule)
-      .catch((err) => console.error(err));
-  },
-  (error) => {
-    console.log("Initialization failed with error:", error);
-    // Check the reason for error and take appropriate action.
-  }
-);
+
+//Initialize CometChat
+CometChatUIKit.init(uiKitSettings)?.then(()=>{
+		//load your root module
+    platformBrowserDynamic().bootstrapModule(AppModule).catch(err => console.error(err));
+})
 ```
 
-**Note:**</br>
+## 4. Login User
 
-- Replace APP_ID and REGION with your CometChat `App ID` and `Region` in the above code.
+The `login()` method returns the User object containing all the information of the logged-in user.
 
-### iii. Login your user 👤
-
-This method takes `UID` and `Auth Key` as input parameters and returns the User object containing all the information of the logged-in user..
+### i. Login using Auth Key
 
 ```javascript
-const authKey = "AUTH_KEY";
-const uid = "SUPERHERO1";
+const UID: string = "UID";
+const authKey: string = "AUTH_KEY";
 
-CometChat.login(uid, authKey).then(
-  (user) => {
-    console.log("Login Successful:", { user });
-  },
-  (error) => {
-    console.log("Login failed with exception:", { error });
-  }
-);
+//Login user
+CometChatUIKit.login(UID, authKey).then(user: CometChat.User => {
+
+console.log("Login Successful:", { user });
+//mount your app
+
+}).catch(console.log);
 ```
 
-**Note:** </br>
+### i. Login using Auth Token
 
-- Replace `AUTH_KEY` with your CometChat `Auth Key` in the above code.
+```javascript
+const authToken: string = "AUTH_TOKEN";
+//Login user
+CometChatUIKit.login(authToken).then(user: CometChat.User => {
 
-- We have setup 5 users for testing having UIDs: `SUPERHERO1`, `SUPERHERO2`, `SUPERHERO3`,`SUPERHERO4` and `SUPERHERO5`.
+console.log("Login Successful:", { user });
+//mount your app
 
-<br/>
-
-## 3. Add UI Kit to your project
-
-- Clone this repository `git clone https://github.com/cometchat-pro/cometchat-chat-uikit-angular.git`
-- Copy the cloned repository into your project src folder.
-
-<div style="width:100%">
-    <img width="200px" height="400px" src="./Screenshots/folder_structure.png">
-</div>
-
-- Import the Components in the respective module where the component will be used.
-- Install @ctrl/ngx-emoji-mart according to the angular version of your project [@ctrl/ngx-emoji-mart](https://www.npmjs.com/package/@ctrl/ngx-emoji-mart)
-- Add this styles to your `angular.json`
-
-```
-"styles": [
-  "node_modules/@ctrl/ngx-emoji-mart/picker.css",
-  "src/cometchat-chat-uikit-angular/CometChatWorkspace/src/css/styles.scss"
-]
+}).catch(console.log);
 ```
 
-- Wrap all the selectors in a `div` with `class=responsive` as shown in next step
+## 5. Launch UI Components
 
-<br/>
+### i. Import the required components inside your project.
 
-## 4. Launch Cometchat
+In `app.module.ts`
 
-Using the CometChatUI component from the UI Kit, you can launch a fully functional chat application.
-In this component all UI Components are interlinked and work together to launch a fully functional chat on your website/application.
+```javascript
 
-**Import the CometChat in the required module**
+import { NgModule }      from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { AppComponent }  from './app.component';
+//import the component in your module.ts file
+import { CometChatConversationsWithMessages } from '@cometchat/chat-uikit-angular';
+
+@NgModule({
+  imports:      [ BrowserModule, CometChatConversationsWithMessages ],
+  declarations: [ AppComponent ],
+  bootstrap:    [ AppComponent ]
+})
+
+export class AppModule { }
+
+```
+
+### ii. Launch the component.
+
+In `app.component.html`
 
 ```html
-import { CometChatUI } from
-"../components/CometChatUI/CometChat-Ui/cometchat-ui.module";
+<cometchat-conversations-with-messages></cometchat-conversations-with-messages>
+```
+### iii. Run the project
+
+```cli
+ng serve
 ```
 
-**Use this selector in your html file**
-
-```
-<div class="responsive">
-  <CometChatUI></CometChatUI>
-</div>
-
-```
-
----
 
 # Checkout our sample app
 
-Visit our [Angular sample app](https://github.com/cometchat-pro/javascript-angular-chat-app) repo to run the Angular sample app.
+Visit our [Angular sample app](https://github.com/cometchat/cometchat-uikit-angular) repo to run the Angular sample app.
 
 ---
 
@@ -219,12 +204,6 @@ Visit our [Angular sample app](https://github.com/cometchat-pro/javascript-angul
 
 ---
 
-# Contributors
-
-Thanks to the following people who have contributed to this project:
-
-[👨‍💻 @priyadarshininadar](https://github.com/priyadarshininadar) <br>
-[👨‍💻 @ajaygajra](https://github.com/ajaygajra) <br>
 
 # Contact :mailbox:
 
@@ -234,4 +213,4 @@ Contact us via real time support present in [CometChat Dashboard](https://app.co
 
 # License
 
-This project uses the following [license](./LICENSE).
+This project uses the following [license](https://github.com/cometchat/.github/blob/master/LICENSE).
