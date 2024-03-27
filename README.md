@@ -14,12 +14,6 @@
 - [About the project](#about-the-project)
   - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
-  - [Dependencies](#dependencies)
-- [Versioning](#versioning)
-- [Contributing](#contributing)
-- [Support](#support)
-- [License](#license)
-- [About Authors](#about-authors)
 
 
 ## About the project
