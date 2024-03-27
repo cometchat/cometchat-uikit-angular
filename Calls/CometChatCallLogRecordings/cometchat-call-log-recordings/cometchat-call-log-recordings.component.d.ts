@@ -1,0 +1,90 @@
+import { OnInit, ChangeDetectorRef } from "@angular/core";
+import { ListStyle } from "@cometchat/uikit-shared";
+import { AvatarStyle, DateStyle, IconStyle, ListItemStyle } from "@cometchat/uikit-elements";
+import { CometChatThemeService } from "../../../CometChatTheme.service";
+import { CometChatOption, DatePatterns, States } from "@cometchat/uikit-resources";
+import { CallLogRecordingsStyle } from "@cometchat/uikit-shared";
+import * as i0 from "@angular/core";
+export declare class CometChatCallLogRecordingsComponent implements OnInit {
+    private ref;
+    private themeService;
+    title: string;
+    call: any;
+    onBackClick: () => void;
+    backIconURL: string;
+    datePattern: DatePatterns;
+    subtitleView: any;
+    listItemView: any;
+    downloadIconURL: string;
+    onDownloadClick: (item: any) => void;
+    hideDownloadButton: boolean;
+    onError: (error: CometChat.CometChatException) => void;
+    avatarStyle: AvatarStyle;
+    dateStyle: DateStyle;
+    CallLogRecordingsStyle: CallLogRecordingsStyle;
+    listItemStyle: ListItemStyle;
+    recordingsList: any;
+    loggedInUser: CometChat.User | null;
+    state: States;
+    listStyle: ListStyle;
+    limit: number;
+    options: ((member: CometChat.Call) => CometChatOption[]) | null;
+    iconStyle: IconStyle;
+    constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);
+    ngOnInit(): void;
+    handleDownloadClick(item: any): void;
+    download: (url: any) => Promise<void>;
+    getSubtitle(totalSeconds: number): string;
+    callStyle: () => {
+        height: string | undefined;
+        width: string | undefined;
+        background: string | undefined;
+        border: string | undefined;
+        borderRadius: string | undefined;
+    };
+    setThemeStyle(): void;
+    setAvatarStyle(): void;
+    setDateStyle(): void;
+    getListItemStyle(): {
+        activeBackground?: string | undefined;
+        hoverBackground?: string | undefined;
+        separatorColor?: string | undefined;
+        titleFont?: string | undefined;
+        titleColor?: string | undefined;
+        padding?: string | undefined;
+        height?: string | undefined;
+        width?: string | undefined;
+        border?: string | undefined;
+        borderRadius?: string | undefined;
+        background?: string | undefined;
+    };
+    setCallRecordingsStyle(): void;
+    subtitleStyle: () => {
+        font: string | undefined;
+        color: string | undefined;
+    };
+    backButtonStyle: () => {
+        height: string;
+        width: string;
+        border: string;
+        borderRadius: string;
+        background: string;
+        buttonIconTint: string | undefined;
+    };
+    downLoadIconStyle: () => {
+        height: string;
+        width: string;
+        border: string;
+        borderRadius: string;
+        background: string;
+        buttonIconTint: string | undefined;
+    };
+    handleBackClick: () => void;
+    titleStyle: () => {
+        font: string | undefined;
+        color: string | undefined;
+        background: string;
+    };
+    static ɵfac: i0.ɵɵFactoryDeclaration<CometChatCallLogRecordingsComponent, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatCallLogRecordingsComponent, "cometchat-call-log-recordings", never, { "title": "title"; "call": "call"; "onBackClick": "onBackClick"; "backIconURL": "backIconURL"; "datePattern": "datePattern"; "subtitleView": "subtitleView"; "listItemView": "listItemView"; "downloadIconURL": "downloadIconURL"; "onDownloadClick": "onDownloadClick"; "hideDownloadButton": "hideDownloadButton"; "onError": "onError"; "avatarStyle": "avatarStyle"; "dateStyle": "dateStyle"; "CallLogRecordingsStyle": "CallLogRecordingsStyle"; "listItemStyle": "listItemStyle"; "options": "options"; }, {}, never, never>;
+}

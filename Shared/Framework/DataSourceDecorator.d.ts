@@ -1,0 +1,43 @@
+import { CometChatActionsView, CometChatMessageComposerAction, CometChatMessageOption, CometChatMessageTemplate, CometChatTheme, MentionsTargetElement } from "@cometchat/uikit-resources";
+import { DataSource } from "./DataSource";
+import { ComposerId } from "../Utils/MessageUtils";
+import { AIOptionsStyle, CometChatMentionsTextFormatter, CometChatTextFormatter, CometChatUrlTextFormatter } from "@cometchat/uikit-shared";
+export declare abstract class DataSourceDecorator implements DataSource {
+    dataSource: DataSource;
+    constructor(dataSource: DataSource);
+    getTextMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): CometChatMessageOption[];
+    getImageMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): CometChatMessageOption[];
+    getVideoMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): CometChatMessageOption[];
+    getAudioMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): CometChatMessageOption[];
+    getFileMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): CometChatMessageOption[];
+    getTextMessageTemplate(): CometChatMessageTemplate;
+    getImageMessageTemplate(): CometChatMessageTemplate;
+    getVideoMessageTemplate(): CometChatMessageTemplate;
+    getAudioMessageTemplate(): CometChatMessageTemplate;
+    getFileMessageTemplate(): CometChatMessageTemplate;
+    getFormMessageTemplate(): CometChatMessageTemplate;
+    getCardMessageTemplate(): CometChatMessageTemplate;
+    getGroupActionTemplate(): CometChatMessageTemplate;
+    getSchedulerMessageTemplate(): CometChatMessageTemplate;
+    getAllMessageTemplates(): CometChatMessageTemplate[];
+    getMessageTemplate(messageType: string, messageCategory: string): CometChatMessageTemplate | null;
+    getMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): CometChatMessageOption[];
+    getCommonOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): CometChatMessageOption[];
+    getDeleteOption(theme: CometChatTheme): CometChatMessageOption;
+    getReplyInThreadOption(theme: CometChatTheme): CometChatMessageOption;
+    getEditOption(theme: CometChatTheme): CometChatMessageOption;
+    getAttachmentOptions(theme?: CometChatTheme, user?: CometChat.User, group?: CometChat.Group, id?: ComposerId): any;
+    getAllMessageTypes(): string[];
+    getAllMessageCategories(): string[];
+    getAuxiliaryOptions(id: ComposerId, user?: CometChat.User, group?: CometChat.Group): any;
+    getId(): string;
+    getLastConversationMessage(conversation: CometChat.Conversation, loggedInUser: CometChat.User, additionalParams?: any): string;
+    getAIOptions(theme: CometChatTheme, id?: Map<String, any>, aiOptionsStyles?: AIOptionsStyle): (CometChatMessageComposerAction | CometChatActionsView)[];
+    getAllTextFormatters(formatterParams: any): CometChatTextFormatter[];
+    getMentionsTextFormatter(formatterParams: any): CometChatMentionsTextFormatter;
+    getUrlTextFormatter(formatterParams: any): CometChatUrlTextFormatter;
+    getMentionsFormattedText(message: CometChat.TextMessage, subtitle: string, mentionsFormatterParams: {
+        mentionsTargetElement: MentionsTargetElement;
+        theme: CometChatTheme;
+    }): string;
+}

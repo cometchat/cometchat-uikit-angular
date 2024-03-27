@@ -1,0 +1,52 @@
+{
+  "name": "@cometchat/chat-uikit-angular",
+  "version": "4.3.1",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "keywords": [
+    "CometChat",
+    "chat",
+    "messaging",
+    "chat",
+    "uikit",
+    "pro",
+    "message",
+    "uikit",
+    "messaging",
+    "uikit",
+    "audio",
+    "chat",
+    "video",
+    "chat",
+    "webRTC",
+    "Angular"
+  ],
+  "peerDependencies": {
+    "@cometchat/chat-sdk-javascript": "^4.0.4",
+    "@cometchat/uikit-elements": "~4.3.2",
+    "@cometchat/uikit-resources": "~4.3.1",
+    "@cometchat/uikit-shared": "~4.3.2"
+  },
+  "module": "fesm2015/cometchat-chat-uikit-angular.mjs",
+  "es2020": "fesm2020/cometchat-chat-uikit-angular.mjs",
+  "esm2020": "esm2020/cometchat-chat-uikit-angular.mjs",
+  "fesm2020": "fesm2020/cometchat-chat-uikit-angular.mjs",
+  "fesm2015": "fesm2015/cometchat-chat-uikit-angular.mjs",
+  "typings": "cometchat-chat-uikit-angular.d.ts",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./cometchat-chat-uikit-angular.d.ts",
+      "esm2020": "./esm2020/cometchat-chat-uikit-angular.mjs",
+      "es2020": "./fesm2020/cometchat-chat-uikit-angular.mjs",
+      "es2015": "./fesm2015/cometchat-chat-uikit-angular.mjs",
+      "node": "./fesm2015/cometchat-chat-uikit-angular.mjs",
+      "default": "./fesm2020/cometchat-chat-uikit-angular.mjs"
+    }
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}
