@@ -10,14 +10,8 @@
 <br />
 
 
-## Table of contents
-- [About the project](#about-the-project)
-  - [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-
-
 ## About the project
-CometChat Angular UIKit provides pre-built user interface kit that developers can use to quickly integrate a reliable & fully featured chat experience into an existing or a new  app.<br />
+CometChat Angular UIKit provides a pre-built user interface kit that developers can use to quickly integrate a reliable & fully-featured chat experience into an existing or a new  app.<br />
 
 ### Prerequisites
 - npm >= 7.
