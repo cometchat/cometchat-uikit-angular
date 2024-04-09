@@ -1,7 +1,7 @@
 {
   "name": "@cometchat/chat-uikit-angular",
-  "version": "4.3.1",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "version": "4.3.2",
+  "license": "https://www.cometchat.com/legal-terms-of-service",
   "keywords": [
     "CometChat",
     "chat",
@@ -22,9 +22,9 @@
   ],
   "peerDependencies": {
     "@cometchat/chat-sdk-javascript": "^4.0.4",
-    "@cometchat/uikit-elements": "~4.3.2",
-    "@cometchat/uikit-resources": "~4.3.1",
-    "@cometchat/uikit-shared": "~4.3.2"
+    "@cometchat/uikit-elements": "~4.3.4",
+    "@cometchat/uikit-resources": "~4.3.3",
+    "@cometchat/uikit-shared": "~4.3.4"
   },
   "module": "fesm2015/cometchat-chat-uikit-angular.mjs",
   "es2020": "fesm2020/cometchat-chat-uikit-angular.mjs",

@@ -111,7 +111,6 @@ export declare class CometChatDetailsComponent implements OnInit, OnChanges {
     onLeaveClick(): void;
     createActionMessage(actionOn: CometChat.GroupMember, action: string): import("@cometchat/chat-sdk-javascript").Action;
     createUserLeftAction(actionOn: CometChat.User, action: string): import("@cometchat/chat-sdk-javascript").Action;
-    onCloseClick: () => void;
     onCancelClick(): void;
     blockUser(): void;
     unBlockUser(): void;
@@ -122,7 +121,7 @@ export declare class CometChatDetailsComponent implements OnInit, OnChanges {
     showDeleteDialog(): void;
     deleteGroup(): void;
     openTransferOwnership: () => void;
-    onCloseDetails(): void;
+    onCloseDetails: () => void;
     subtitleStyle: () => {
         textFont: string | undefined;
         textColor: string | undefined;

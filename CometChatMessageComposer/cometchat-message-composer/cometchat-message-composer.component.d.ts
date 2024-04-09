@@ -3,7 +3,7 @@ import { CometChat } from "@cometchat/chat-sdk-javascript";
 import { EmojiKeyboardStyle, PopoverStyle, ActionSheetStyle, PreviewStyle, MediaRecorderStyle, BackdropStyle } from "@cometchat/uikit-elements";
 import { Subscription } from "rxjs";
 import { localize, CometChatMessageComposerAction, AuxiliaryButtonAlignment, Placement, CometChatActionsView, States, UserMemberListType } from "@cometchat/uikit-resources";
-import { MessageComposerStyle, StickersConfiguration, StickersStyle, CreatePollStyle, ComposerId, SmartRepliesStyle, AIOptionsStyle, CometChatMentionsTextFormatter, CometChatTextFormatter, UserMentionStyle, UserMemberWrapperConfiguration } from "@cometchat/uikit-shared";
+import { MessageComposerStyle, StickersConfiguration, StickersStyle, CreatePollStyle, ComposerId, SmartRepliesStyle, AIOptionsStyle, CometChatMentionsFormatter, CometChatTextFormatter, UserMentionStyle, UserMemberWrapperConfiguration } from "@cometchat/uikit-shared";
 import { CometChatThemeService } from "../../CometChatTheme.service";
 import "@cometchat/uikit-shared";
 import "@cometchat/uikit-elements";
@@ -102,7 +102,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     ccMessageEdit: Subscription;
     ccComposeMessage: Subscription;
     textFormatterList: Array<CometChatTextFormatter>;
-    mentionsTextFormatterInstance: CometChatMentionsTextFormatter;
+    mentionsTextFormatterInstance: CometChatMentionsFormatter;
     mentionedUsers: Array<CometChat.User | CometChat.GroupMember>;
     acceptHandlers: any;
     enableStickerKeyboard: boolean;

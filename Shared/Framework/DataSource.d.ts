@@ -1,6 +1,6 @@
 import { CometChatActionsView, CometChatMessageComposerAction, CometChatMessageOption, CometChatMessageTemplate, CometChatTheme, MentionsTargetElement } from "@cometchat/uikit-resources";
 import { ComposerId } from "../Utils/MessageUtils";
-import { AIOptionsStyle, CometChatMentionsTextFormatter, CometChatTextFormatter, CometChatUrlTextFormatter } from "@cometchat/uikit-shared";
+import { AIOptionsStyle, CometChatMentionsFormatter, CometChatTextFormatter, CometChatUrlsFormatter } from "@cometchat/uikit-shared";
 export declare abstract class DataSource {
     abstract getTextMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): Array<CometChatMessageOption>;
     abstract getImageMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): Array<CometChatMessageOption>;
@@ -31,8 +31,8 @@ export declare abstract class DataSource {
     abstract getEditOption(theme: CometChatTheme): CometChatMessageOption;
     abstract getAIOptions(theme: CometChatTheme, id?: Map<String, any>, aiOptionsStyles?: AIOptionsStyle): (CometChatMessageComposerAction | CometChatActionsView)[];
     abstract getAllTextFormatters(formatterParams: any): CometChatTextFormatter[];
-    abstract getMentionsTextFormatter(formatterParams: any): CometChatMentionsTextFormatter;
-    abstract getUrlTextFormatter(formatterParams: any): CometChatUrlTextFormatter;
+    abstract getMentionsTextFormatter(formatterParams: any): CometChatMentionsFormatter;
+    abstract getUrlTextFormatter(formatterParams: any): CometChatUrlsFormatter;
     abstract getMentionsFormattedText(message: CometChat.TextMessage, subtitle: string, mentionsFormatterParams: {
         mentionsTargetElement: MentionsTargetElement;
         theme: CometChatTheme;

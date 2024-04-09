@@ -35,6 +35,7 @@ export declare class CometChatContactsComponent implements OnInit, AfterViewInit
     tabs: CometChatTabItem[];
     hideSubmitButton: boolean;
     submitButtonText: string;
+    selection: typeof SelectionMode;
     usersRequestBuilder: CometChat.UsersRequestBuilder;
     usersSearchRequestBuilder: CometChat.UsersRequestBuilder;
     groupsRequestBuilder: CometChat.GroupsRequestBuilder;

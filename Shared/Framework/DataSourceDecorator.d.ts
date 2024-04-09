@@ -1,7 +1,7 @@
 import { CometChatActionsView, CometChatMessageComposerAction, CometChatMessageOption, CometChatMessageTemplate, CometChatTheme, MentionsTargetElement } from "@cometchat/uikit-resources";
 import { DataSource } from "./DataSource";
 import { ComposerId } from "../Utils/MessageUtils";
-import { AIOptionsStyle, CometChatMentionsTextFormatter, CometChatTextFormatter, CometChatUrlTextFormatter } from "@cometchat/uikit-shared";
+import { AIOptionsStyle, CometChatMentionsFormatter, CometChatTextFormatter, CometChatUrlsFormatter } from "@cometchat/uikit-shared";
 export declare abstract class DataSourceDecorator implements DataSource {
     dataSource: DataSource;
     constructor(dataSource: DataSource);
@@ -34,8 +34,8 @@ export declare abstract class DataSourceDecorator implements DataSource {
     getLastConversationMessage(conversation: CometChat.Conversation, loggedInUser: CometChat.User, additionalParams?: any): string;
     getAIOptions(theme: CometChatTheme, id?: Map<String, any>, aiOptionsStyles?: AIOptionsStyle): (CometChatMessageComposerAction | CometChatActionsView)[];
     getAllTextFormatters(formatterParams: any): CometChatTextFormatter[];
-    getMentionsTextFormatter(formatterParams: any): CometChatMentionsTextFormatter;
-    getUrlTextFormatter(formatterParams: any): CometChatUrlTextFormatter;
+    getMentionsTextFormatter(formatterParams: any): CometChatMentionsFormatter;
+    getUrlTextFormatter(formatterParams: any): CometChatUrlsFormatter;
     getMentionsFormattedText(message: CometChat.TextMessage, subtitle: string, mentionsFormatterParams: {
         mentionsTargetElement: MentionsTargetElement;
         theme: CometChatTheme;

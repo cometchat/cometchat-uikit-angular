@@ -51,13 +51,16 @@ export declare class CometChatConversationsWithMessagesComponent implements OnIn
     ccOwnershipChanged: Subscription;
     ccGroupDeleted: Subscription;
     sideBarStyle: any;
+    groupListenerId: string;
     ccConversationDeleted: Subscription;
     constructor(elementRef: ElementRef, ref: ChangeDetectorRef, themeService: CometChatThemeService);
     ngOnChanges(changes: SimpleChanges): void;
     triggerStartConversation(): void;
+    removeChatOnGroupAction(leftUser: CometChat.User, message: CometChat.Action): void;
+    attachGroupListeners(): void;
     onBack: () => void;
     setWithMessagesStyle(): void;
-    onContactSelected: (users?: import("@cometchat/chat-sdk-javascript").User[] | undefined, groups?: import("@cometchat/chat-sdk-javascript").Group[] | undefined) => void;
+    onContactClicked: (user?: import("@cometchat/chat-sdk-javascript").User | undefined, group?: import("@cometchat/chat-sdk-javascript").Group | undefined) => void;
     onItemClick: ((conversation: CometChat.Conversation) => void);
     ngAfterViewInit(): void;
     updateBackdropHeight(): void;

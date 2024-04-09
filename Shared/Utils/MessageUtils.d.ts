@@ -1,5 +1,5 @@
 import { CometChatMessageOption, MessageBubbleAlignment, CometChatMessageTemplate, CometChatMessageComposerAction, CometChatTheme, CometChatActionsView, MentionsTargetElement } from "@cometchat/uikit-resources";
-import { CometChatMentionsTextFormatter, CometChatTextFormatter, CometChatUrlTextFormatter } from "@cometchat/uikit-shared";
+import { CometChatMentionsFormatter, CometChatTextFormatter, CometChatUrlsFormatter } from "@cometchat/uikit-shared";
 import { DataSource } from "../Framework/DataSource";
 export declare class MessageUtils implements DataSource {
     /**
@@ -135,8 +135,8 @@ export declare class MessageUtils implements DataSource {
     }): string;
     getAIOptions(theme: CometChatTheme, id?: Map<String, any>): Array<CometChatMessageComposerAction | CometChatActionsView>;
     getAllTextFormatters(formatterParams: any): CometChatTextFormatter[];
-    getMentionsTextFormatter(params: any): CometChatMentionsTextFormatter;
-    getUrlTextFormatter(params?: any): CometChatUrlTextFormatter;
+    getMentionsTextFormatter(params: any): CometChatMentionsFormatter;
+    getUrlTextFormatter(params?: any): CometChatUrlsFormatter;
 }
 export declare type ComposerId = {
     parentMessageId: number | null;

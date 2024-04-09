@@ -395,6 +395,10 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
         textColor: string | undefined;
         bubblePadding?: undefined;
     };
+    isPartOfCurrentChatForUIEvent: (message: CometChat.BaseMessage) => boolean;
+    isPartOfCurrentChatForSDKEvent: (message: CometChat.BaseMessage) => boolean;
+    isThreadOfCurrentChatForUIEvent: (message: CometChat.BaseMessage) => boolean;
+    isThreadOfCurrentChatForSDKEvent: (message: CometChat.BaseMessage) => boolean;
     setFileBubbleStyle(message: CometChat.BaseMessage): any;
     ngAfterViewInit(): void;
     startDirectCall: (sessionId: string) => void;

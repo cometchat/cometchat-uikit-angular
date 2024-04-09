@@ -192,7 +192,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     checkGroupType(conversation: CometChat.Conversation): string;
     onCancelClick: () => void;
     getMessageReceipt: (conversation: CometChat.Conversation) => import("@cometchat/uikit-shared/dist/Utils/MessageReceiptUtils").receipts;
-    getDate(): DatePatterns.DayDate | DatePatterns.DayDateTime | DatePatterns.DateTime;
+    getDate(): DatePatterns;
     optionsStyle: {
         background: string;
         border: string;
@@ -241,6 +241,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
      */
     attachListeners(callback: any): void;
     fetchNewConversations(): void;
+    removeConversationFromMessage(group: CometChat.Group): void;
     /**
      * Removes all listeners
      */
@@ -280,6 +281,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
      * @param  {CometChat.Conversation|{}} conversation
      */
     makeLastMessage(message: CometChat.BaseMessage, conversation?: CometChat.Conversation | {}): import("@cometchat/chat-sdk-javascript").BaseMessage;
+    updateConversationWithForGroup(message: CometChat.Action, conversation: CometChat.Conversation): void;
     /**
      *
      * Updates Conversations as Text/Custom Messages are received
