@@ -49,6 +49,7 @@ export declare class CometChatMessageInformationComponent implements OnInit, OnC
     receiptInfoText: string;
     emptyLabelStyle: LabelStyle;
     dateStyle: DateStyle;
+    loggedInUser: CometChat.User | null;
     dividerStyle: any;
     states: States;
     constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);

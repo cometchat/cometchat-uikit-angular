@@ -61,6 +61,7 @@ export declare class CometChatUsersComponent implements OnInit {
     firstReload: boolean;
     connectionListenerId: string;
     previousSearchKeyword: string;
+    isWebsocketReconnected: boolean;
     /**
      * Events
      */
