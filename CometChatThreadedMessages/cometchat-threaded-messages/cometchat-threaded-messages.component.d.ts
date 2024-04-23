@@ -26,6 +26,9 @@ export declare class CometChatThreadedMessagesComponent implements OnInit, OnCha
     messageListConfiguration: MessageListConfiguration;
     messageComposerConfiguration: MessageComposerConfiguration;
     threadedMessagesStyle: ThreadedMessagesStyle;
+    hideMessageComposer: boolean;
+    messageComposerView: TemplateRef<any>;
+    messageListView: TemplateRef<any>;
     user: CometChat.User;
     group: CometChat.Group;
     loggedInUser: CometChat.User | null;
@@ -74,5 +77,5 @@ export declare class CometChatThreadedMessagesComponent implements OnInit, OnCha
         borderRadius: string | undefined;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatThreadedMessagesComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatThreadedMessagesComponent, "cometchat-threaded-messages", never, { "onClose": "onClose"; "onError": "onError"; "parentMessage": "parentMessage"; "title": "title"; "closeIconURL": "closeIconURL"; "bubbleView": "bubbleView"; "messageActionView": "messageActionView"; "messageListConfiguration": "messageListConfiguration"; "messageComposerConfiguration": "messageComposerConfiguration"; "threadedMessagesStyle": "threadedMessagesStyle"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatThreadedMessagesComponent, "cometchat-threaded-messages", never, { "onClose": "onClose"; "onError": "onError"; "parentMessage": "parentMessage"; "title": "title"; "closeIconURL": "closeIconURL"; "bubbleView": "bubbleView"; "messageActionView": "messageActionView"; "messageListConfiguration": "messageListConfiguration"; "messageComposerConfiguration": "messageComposerConfiguration"; "threadedMessagesStyle": "threadedMessagesStyle"; "hideMessageComposer": "hideMessageComposer"; "messageComposerView": "messageComposerView"; "messageListView": "messageListView"; }, {}, never, never>;
 }
