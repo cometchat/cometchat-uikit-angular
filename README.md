@@ -9,7 +9,7 @@ CometChat Angular UIKit provides a pre-built user interface kit that developers 
     display: flex;
     align-items: center;
     justify-content: center;">
-  <img src="./Screenshots/overview_cometchat_screens_ios.png">
+  <img src="./Screenshots/overview_cometchat_screens.png">
 </div>
 
 ### Prerequisites
@@ -20,8 +20,9 @@ CometChat Angular UIKit provides a pre-built user interface kit that developers 
 To set up Angular Chat UIKit and utilize CometChat for your chat functionality, you'll need to follow these steps:
 - Registration: Go to the CometChat website (https://www.cometchat.com/) and sign up for an account.
 - Create an App: After registering, log in to your CometChat account and create a new app. Provide the necessary details such as the app name, platform (Angular), and other relevant information. Once you've created the app, CometChat will generate an Auth Key and App ID for you. Make sure to keep these credentials secure, as you'll need them later.
-- Make sure you've read the [key concepts](https://www.cometchat.com/docs/angular-uikit-beta/key-concepts)
-- Follow the steps provided in the integration section [here](https://www.cometchat.com/docs/angular-uikit-beta/integration#getting-started)
+- Check the [Key Concepts](https://www.cometchat.com/docs/angular-uikit/key-concepts) to understand the basic components of CometChat.
+- Refer to the [Integration Steps](https://www.cometchat.com/docs/angular-uikit/integration) in our documentation to integrate the UI Kit into your Angular app.
+
 
 ### Dependencies
 Install the necessary peer dependencies by running the following command:
