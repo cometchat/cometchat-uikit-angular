@@ -1,6 +1,16 @@
+<p align="center">
+  <img alt="CometChat" src="https://assets.cometchat.io/website/images/logos/banner.png">
+</p>
 
 ## CometChat Angular UI Kit
-CometChat Angular UIKit provides pre-built user interface kit that developers can use to quickly integrate a reliable & fully featured chat experience into an existing or a new  app.<br />
+CometChat Angular UIKit provides a pre-built user interface kit that developers can use to quickly integrate a reliable & fully-featured chat experience into an existing or a new  app.<br />
+
+<div style="
+    display: flex;
+    align-items: center;
+    justify-content: center;">
+  <img src="./Screenshots/overview_cometchat_screens_ios.png">
+</div>
 
 ### Prerequisites
 - npm >= 7.
