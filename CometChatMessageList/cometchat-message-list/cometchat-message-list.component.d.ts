@@ -254,6 +254,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     limit: number;
     types: string[];
     categories: string[];
+    callbacks: Map<string, (sessionId: string) => void>;
     constructor(ngZone: NgZone, ref: ChangeDetectorRef, themeService: CometChatThemeService);
     ngOnChanges(changes: SimpleChanges): void;
     sendMessage(message: CometChat.BaseMessage, receiverId: string, receiverType: string): Promise<unknown>;
@@ -401,7 +402,8 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     isThreadOfCurrentChatForSDKEvent: (message: CometChat.BaseMessage) => boolean;
     setFileBubbleStyle(message: CometChat.BaseMessage): any;
     ngAfterViewInit(): void;
-    startDirectCall: (sessionId: string) => void;
+    getStartCallFunction(message: CometChat.CustomMessage): (sessionId: string) => void;
+    startDirectCall: (sessionId: string, message: any) => void;
     launchCollaborativeWhiteboardDocument: (url: string) => void;
     /**
      * Extracting  types and categories from template

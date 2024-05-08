@@ -57,7 +57,7 @@ export declare class CometChatIncomingCallComponent implements OnInit, OnChanges
     getCallTypeIcon(): "assets/Audio-Call.svg" | "assets/Video-call.svg";
     acceptIncomingCall(): void;
     checkForActiveCallAndEndCall: () => Promise<unknown>;
-    rejectIncomingCall(reason?: string): void;
+    rejectIncomingCall(reason?: string, call?: CometChat.Call): void;
     getCallBuilder(): typeof CometChatUIKitCalls.CallSettings | undefined;
     setThemeStyle(): void;
     setListItemStyle(): void;
