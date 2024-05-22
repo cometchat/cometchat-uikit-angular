@@ -25,7 +25,13 @@ export declare class CometChatMessageHeaderComponent implements OnInit, OnChange
     subtitleView: any;
     disableUsersPresence: boolean;
     disableTyping: boolean;
+    /**
+   * @deprecated
+   *
+   * This property is deprecated as of version 4.3.7 due to newer property 'passwordGroupIcon'. It will be removed in subsequent versions.
+   */
     protectedGroupIcon: string;
+    passwordGroupIcon: string | undefined;
     privateGroupIcon: string;
     menu: any;
     user: CometChat.User;
@@ -82,5 +88,5 @@ export declare class CometChatMessageHeaderComponent implements OnInit, OnChange
         textColor: string | undefined;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatMessageHeaderComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatMessageHeaderComponent, "cometchat-message-header", never, { "avatarStyle": "avatarStyle"; "statusIndicatorStyle": "statusIndicatorStyle"; "messageHeaderStyle": "messageHeaderStyle"; "listItemStyle": "listItemStyle"; "subtitleView": "subtitleView"; "disableUsersPresence": "disableUsersPresence"; "disableTyping": "disableTyping"; "protectedGroupIcon": "protectedGroupIcon"; "privateGroupIcon": "privateGroupIcon"; "menu": "menu"; "user": "user"; "group": "group"; "backButtonIconURL": "backButtonIconURL"; "hideBackButton": "hideBackButton"; "listItemView": "listItemView"; "onError": "onError"; "onBack": "onBack"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatMessageHeaderComponent, "cometchat-message-header", never, { "avatarStyle": "avatarStyle"; "statusIndicatorStyle": "statusIndicatorStyle"; "messageHeaderStyle": "messageHeaderStyle"; "listItemStyle": "listItemStyle"; "subtitleView": "subtitleView"; "disableUsersPresence": "disableUsersPresence"; "disableTyping": "disableTyping"; "protectedGroupIcon": "protectedGroupIcon"; "passwordGroupIcon": "passwordGroupIcon"; "privateGroupIcon": "privateGroupIcon"; "menu": "menu"; "user": "user"; "group": "group"; "backButtonIconURL": "backButtonIconURL"; "hideBackButton": "hideBackButton"; "listItemView": "listItemView"; "onError": "onError"; "onBack": "onBack"; }, {}, never, never>;
 }

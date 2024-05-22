@@ -89,6 +89,9 @@ export declare class CometChatConversationsWithMessagesComponent implements OnIn
         borderRadius: string | undefined;
         background: string | undefined;
     };
+    contactsWrapperStyles: () => {
+        background: string | undefined;
+    };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatConversationsWithMessagesComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<CometChatConversationsWithMessagesComponent, "cometchat-conversations-with-messages", never, { "user": "user"; "group": "group"; "isMobileView": "isMobileView"; "messageText": "messageText"; "conversationsWithMessagesStyle": "conversationsWithMessagesStyle"; "messagesConfiguration": "messagesConfiguration"; "conversationConfiguration": "conversationConfiguration"; "onError": "onError"; "startNewConversationIconURL": "startNewConversationIconURL"; "hideStartNewConversation": "hideStartNewConversation"; "StartConversationConfiguration": "StartConversationConfiguration"; }, {}, never, never>;
 }

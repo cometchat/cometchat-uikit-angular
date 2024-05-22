@@ -38,7 +38,13 @@ export declare class CometChatGroupsComponent implements OnInit, OnChanges {
     errorStateView: TemplateRef<any>;
     loadingIconURL: string;
     privateGroupIcon: string;
+    /**
+    * @deprecated
+    *
+    * This property is deprecated as of version 4.3.7 due to newer property 'passwordGroupIcon'. It will be removed in subsequent versions.
+    */
     protectedGroupIcon: string;
+    passwordGroupIcon: string | undefined;
     loadingStateView: TemplateRef<any>;
     emptyStateText: string;
     errorStateText: string;
@@ -138,5 +144,5 @@ export declare class CometChatGroupsComponent implements OnInit, OnChanges {
         color: string | undefined;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatGroupsComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatGroupsComponent, "cometchat-groups", never, { "groupsRequestBuilder": "groupsRequestBuilder"; "searchRequestBuilder": "searchRequestBuilder"; "subtitleView": "subtitleView"; "listItemView": "listItemView"; "menu": "menu"; "options": "options"; "activeGroup": "activeGroup"; "hideSeparator": "hideSeparator"; "selectionMode": "selectionMode"; "searchPlaceholder": "searchPlaceholder"; "hideError": "hideError"; "searchIconURL": "searchIconURL"; "hideSearch": "hideSearch"; "title": "title"; "onError": "onError"; "onSelect": "onSelect"; "emptyStateView": "emptyStateView"; "errorStateView": "errorStateView"; "loadingIconURL": "loadingIconURL"; "privateGroupIcon": "privateGroupIcon"; "protectedGroupIcon": "protectedGroupIcon"; "loadingStateView": "loadingStateView"; "emptyStateText": "emptyStateText"; "errorStateText": "errorStateText"; "titleAlignment": "titleAlignment"; "statusIndicatorStyle": "statusIndicatorStyle"; "avatarStyle": "avatarStyle"; "groupsStyle": "groupsStyle"; "listItemStyle": "listItemStyle"; "onItemClick": "onItemClick"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatGroupsComponent, "cometchat-groups", never, { "groupsRequestBuilder": "groupsRequestBuilder"; "searchRequestBuilder": "searchRequestBuilder"; "subtitleView": "subtitleView"; "listItemView": "listItemView"; "menu": "menu"; "options": "options"; "activeGroup": "activeGroup"; "hideSeparator": "hideSeparator"; "selectionMode": "selectionMode"; "searchPlaceholder": "searchPlaceholder"; "hideError": "hideError"; "searchIconURL": "searchIconURL"; "hideSearch": "hideSearch"; "title": "title"; "onError": "onError"; "onSelect": "onSelect"; "emptyStateView": "emptyStateView"; "errorStateView": "errorStateView"; "loadingIconURL": "loadingIconURL"; "privateGroupIcon": "privateGroupIcon"; "protectedGroupIcon": "protectedGroupIcon"; "passwordGroupIcon": "passwordGroupIcon"; "loadingStateView": "loadingStateView"; "emptyStateText": "emptyStateText"; "errorStateText": "errorStateText"; "titleAlignment": "titleAlignment"; "statusIndicatorStyle": "statusIndicatorStyle"; "avatarStyle": "avatarStyle"; "groupsStyle": "groupsStyle"; "listItemStyle": "listItemStyle"; "onItemClick": "onItemClick"; }, {}, never, never>;
 }

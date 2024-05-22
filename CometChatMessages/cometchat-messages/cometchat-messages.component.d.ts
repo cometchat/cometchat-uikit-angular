@@ -55,7 +55,13 @@ export declare class CometChatMessagesComponent implements OnInit, OnChanges {
     showAiBotChat: boolean;
     subtitleView: TemplateRef<any>;
     disableUsersPresence: boolean;
+    /**
+   * @deprecated
+   *
+   * This property is deprecated as of version 4.3.7 due to newer property 'passwordGroupIcon'. It will be removed in subsequent versions.
+   */
     protectedGroupIcon: string;
+    passwordGroupIcon: string | undefined;
     privateGroupIcon: string;
     menu: TemplateRef<any>;
     headerStyle: MessageHeaderStyle;

@@ -225,6 +225,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     openFilePicker: () => void;
     openvideoPicker: () => void;
     openAudioPicker: () => void;
+    handleOutsideClick(): void;
     openActionSheet: (event: any) => void;
     handleAiFeaturesClose: (callback: () => void) => void;
     closeSmartReply: () => void;
