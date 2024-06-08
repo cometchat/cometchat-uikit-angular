@@ -8,6 +8,7 @@ export declare class CometChatUIKit {
     static SoundManager: typeof CometChatSoundManager;
     static Localize: typeof CometChatLocalize;
     static loggedInUser?: CometChat.User;
+    static conversationUpdateSettings?: CometChat.ConversationUpdateSettings;
     static getDataSource(): import("@cometchat/chat-uikit-angular").DataSource;
     static init(uiKitSettings: UIKitSettings): Promise<Object> | undefined;
     static getLoggedinUser(): Promise<CometChat.User> | undefined;

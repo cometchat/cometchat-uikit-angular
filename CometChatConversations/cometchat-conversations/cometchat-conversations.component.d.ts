@@ -205,6 +205,14 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     };
     constructor(ngZone: NgZone, ref: ChangeDetectorRef, themeService: CometChatThemeService, sanitizer: DomSanitizer);
     ngOnInit(): void;
+    /**
+    * Determines if the last message should trigger an update based on its category and type.
+    *
+    * @param message - The last message sent or received in the conversation.
+    * @returns {boolean} - Returns true if the message should trigger an update, false otherwise.
+    */
+    checkIfLastMessageShouldUpdate(message: CometChat.BaseMessage): boolean | undefined;
+    shouldIncrementForCustomMessage(message: CometChat.CustomMessage): any;
     attachConnectionListeners(): void;
     updateConversationObject(conversation: CometChat.Conversation): void;
     subscribeToEvents(): void;
