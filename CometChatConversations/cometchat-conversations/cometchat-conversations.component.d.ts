@@ -154,6 +154,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     userListenerId: string;
     groupListenerId: string;
     groupToUpdate: CometChat.Group | {};
+    conversationType?: string;
     safeHtml: SafeHtml;
     enablePolls: boolean;
     enableStickers: boolean;

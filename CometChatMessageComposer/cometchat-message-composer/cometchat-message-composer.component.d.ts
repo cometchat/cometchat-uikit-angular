@@ -1,12 +1,12 @@
-import { OnInit, ElementRef, ChangeDetectorRef, OnChanges, SimpleChanges, TemplateRef, EventEmitter } from "@angular/core";
-import { CometChat } from "@cometchat/chat-sdk-javascript";
-import { EmojiKeyboardStyle, PopoverStyle, ActionSheetStyle, PreviewStyle, MediaRecorderStyle, BackdropStyle } from "@cometchat/uikit-elements";
-import { Subscription } from "rxjs";
-import { localize, CometChatMessageComposerAction, AuxiliaryButtonAlignment, Placement, CometChatActionsView, States, UserMemberListType } from "@cometchat/uikit-resources";
-import { MessageComposerStyle, StickersConfiguration, StickersStyle, CreatePollStyle, ComposerId, SmartRepliesStyle, AIOptionsStyle, CometChatMentionsFormatter, CometChatTextFormatter, UserMentionStyle, UserMemberWrapperConfiguration } from "@cometchat/uikit-shared";
-import { CometChatThemeService } from "../../CometChatTheme.service";
 import "@cometchat/uikit-shared";
 import "@cometchat/uikit-elements";
+import { AIOptionsStyle, CometChatMentionsFormatter, CometChatTextFormatter, ComposerId, CreatePollStyle, MessageComposerStyle, SmartRepliesStyle, StickersConfiguration, StickersStyle, UserMemberWrapperConfiguration, UserMentionStyle } from "@cometchat/uikit-shared";
+import { ActionSheetStyle, BackdropStyle, EmojiKeyboardStyle, MediaRecorderStyle, PopoverStyle, PreviewStyle } from "@cometchat/uikit-elements";
+import { AuxiliaryButtonAlignment, CometChatActionsView, CometChatMessageComposerAction, Placement, States, UserMemberListType, localize } from "@cometchat/uikit-resources";
+import { ChangeDetectorRef, ElementRef, EventEmitter, OnChanges, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+import { CometChatThemeService } from "../../CometChatTheme.service";
+import { Subscription } from "rxjs";
 import * as i0 from "@angular/core";
 /**
  *
@@ -189,6 +189,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     getReceiverDetails(): {
         receiverId: string;
         receiverType: string;
+        isBlocked: boolean;
     };
     playAudio(): void;
     /**
