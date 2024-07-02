@@ -1,6 +1,6 @@
 {
   "name": "@cometchat/chat-uikit-angular",
-  "version": "4.3.10",
+  "version": "4.3.11",
   "license": "https://www.cometchat.com/legal-terms-of-service",
   "homepage": "https://www.cometchat.com",
   "repository": "https://github.com/cometchat/cometchat-uikit-angular",
@@ -25,9 +25,9 @@
   "description": "Ready-to-use Chat UI Components for Angular (JavaScript/Web)",
   "peerDependencies": {
     "@cometchat/chat-sdk-javascript": "^4.0.7",
-    "@cometchat/uikit-elements": "~4.3.11",
-    "@cometchat/uikit-resources": "~4.3.9",
-    "@cometchat/uikit-shared": "~4.3.12"
+    "@cometchat/uikit-elements": "~4.3.12",
+    "@cometchat/uikit-resources": "~4.3.10",
+    "@cometchat/uikit-shared": "~4.3.13"
   },
   "module": "fesm2015/cometchat-chat-uikit-angular.mjs",
   "es2020": "fesm2020/cometchat-chat-uikit-angular.mjs",

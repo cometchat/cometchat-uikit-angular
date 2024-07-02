@@ -2,7 +2,7 @@ import "@cometchat/uikit-shared";
 import "@cometchat/uikit-elements";
 import { AIOptionsStyle, CometChatMentionsFormatter, CometChatTextFormatter, ComposerId, CreatePollStyle, MessageComposerStyle, SmartRepliesStyle, StickersConfiguration, StickersStyle, UserMemberWrapperConfiguration, UserMentionStyle } from "@cometchat/uikit-shared";
 import { ActionSheetStyle, BackdropStyle, EmojiKeyboardStyle, MediaRecorderStyle, PopoverStyle, PreviewStyle } from "@cometchat/uikit-elements";
-import { AuxiliaryButtonAlignment, CometChatActionsView, CometChatMessageComposerAction, Placement, States, UserMemberListType, localize } from "@cometchat/uikit-resources";
+import { AuxiliaryButtonAlignment, CometChatActionsView, CometChatMessageComposerAction, Placement, PreviewMessageMode, States, UserMemberListType, localize } from "@cometchat/uikit-resources";
 import { ChangeDetectorRef, ElementRef, EventEmitter, OnChanges, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
 import { CometChat } from "@cometchat/chat-sdk-javascript";
 import { CometChatThemeService } from "../../CometChatTheme.service";
@@ -51,7 +51,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     mentionsWarningStyle?: any;
     InfoSimpleIcon: string;
     messageComposerStyle: MessageComposerStyle;
-    onSendButtonClick: ((message: CometChat.BaseMessage) => void) | undefined;
+    onSendButtonClick: ((message: CometChat.BaseMessage, previewMessageMode?: PreviewMessageMode) => void) | undefined;
     onError: ((error: CometChat.CometChatException) => void) | null;
     backdropStyle: BackdropStyle;
     actionSheetStyle: ActionSheetStyle;

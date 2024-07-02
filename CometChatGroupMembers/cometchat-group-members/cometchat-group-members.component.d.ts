@@ -1,8 +1,8 @@
-import { OnInit, ChangeDetectorRef, TemplateRef, OnChanges, SimpleChanges } from "@angular/core";
-import { CometChat } from "@cometchat/chat-sdk-javascript";
-import { AvatarStyle, ListItemStyle, ChangeScopeStyle, MenuListStyle, BackdropStyle } from "@cometchat/uikit-elements";
+import { AvatarStyle, BackdropStyle, ChangeScopeStyle, ListItemStyle, MenuListStyle } from "@cometchat/uikit-elements";
 import { GroupMembersStyle, ListStyle } from "@cometchat/uikit-shared";
+import { ChangeDetectorRef, OnChanges, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
 import { CometChatOption, SelectionMode, States, TitleAlignment, UserPresencePlacement } from "@cometchat/uikit-resources";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
 import { CometChatThemeService } from "../../CometChatTheme.service";
 import * as i0 from "@angular/core";
 /**
