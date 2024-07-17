@@ -694,7 +694,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
         textFont: string | undefined;
         textColor: string | undefined;
     };
-    loadingStyle: () => {
+    loadingStyle: {
         iconTint: string | undefined;
     };
     conversationStarterLoader: () => {

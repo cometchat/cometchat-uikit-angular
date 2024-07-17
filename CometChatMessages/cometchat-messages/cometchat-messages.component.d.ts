@@ -1,11 +1,11 @@
-import { OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, TemplateRef, ElementRef, EventEmitter } from "@angular/core";
+import { AvatarStyle, BaseStyle, ListItemStyle } from "@cometchat/uikit-elements";
+import { CallButtonsStyle, DetailsConfiguration, MessageComposerConfiguration, MessageComposerStyle, MessageHeaderConfiguration, MessageHeaderStyle, MessageListConfiguration, MessagesStyle, ThreadedMessagesConfiguration } from "@cometchat/uikit-shared";
+import { ChangeDetectorRef, ElementRef, EventEmitter, OnChanges, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
 import { CometChat } from "@cometchat/chat-sdk-javascript";
 import { CometChatMessageComposerComponent } from "../../CometChatMessageComposer/cometchat-message-composer/cometchat-message-composer.component";
 import { CometChatMessageListComponent } from "../../CometChatMessageList/cometchat-message-list/cometchat-message-list.component";
-import { ListItemStyle, AvatarStyle, BaseStyle } from "@cometchat/uikit-elements";
-import { Subscription } from "rxjs";
 import { CometChatThemeService } from "../../CometChatTheme.service";
-import { MessageHeaderConfiguration, MessageListConfiguration, MessageComposerConfiguration, ThreadedMessagesConfiguration, DetailsConfiguration, MessagesStyle, MessageComposerStyle, MessageHeaderStyle, CallButtonsStyle } from "@cometchat/uikit-shared";
+import { Subscription } from "rxjs";
 import * as i0 from "@angular/core";
 /**
  *
@@ -77,6 +77,7 @@ export declare class CometChatMessagesComponent implements OnInit, OnChanges {
     infoIconStyle: string;
     detailsButtonStyle: any;
     enableCalling: boolean;
+    liveReactionStyle: BaseStyle;
     ccLiveReaction: Subscription;
     ccGroupDeleted: Subscription;
     ccGroupLeft: Subscription;

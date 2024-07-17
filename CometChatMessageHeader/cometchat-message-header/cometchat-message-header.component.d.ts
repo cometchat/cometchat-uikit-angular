@@ -63,7 +63,7 @@ export declare class CometChatMessageHeaderComponent implements OnInit, OnChange
     setListItemStyle(): void;
     setAvatarStyle(): void;
     setStatusStyle(): void;
-    setHeadersStyle(): void;
+    getHeadersStyle(): MessageHeaderStyle;
     statusColor: any;
     backButtonStyle: any;
     checkStatusType: () => any;
