@@ -106,6 +106,12 @@ export declare class MessageUtils implements DataSource {
     getFileMessageTemplate(): CometChatMessageTemplate;
     getFormMessageTemplate(): CometChatMessageTemplate;
     getCardMessageTemplate(): CometChatMessageTemplate;
+    /**
+   * Function to check if a user's status should be visible
+   * @param {CometChat.User | CometChat.GroupMember} user - The user whose status visibility is to be checked.
+   * @return {boolean} - Returns `true` if the user's status should be hidden (blocked or offline), `false` otherwise.
+   */
+    getUserStatusVisibility(user?: CometChat.User | CometChat.GroupMember): boolean;
     getAllMessageTemplates(): Array<CometChatMessageTemplate>;
     getMessageTemplate(messageType: string, messageCategory: string): CometChatMessageTemplate | null;
     getMessageOptions(loggedInUser: CometChat.User, messageObject: CometChat.BaseMessage, theme: CometChatTheme, group?: CometChat.Group): Array<CometChatMessageOption>;

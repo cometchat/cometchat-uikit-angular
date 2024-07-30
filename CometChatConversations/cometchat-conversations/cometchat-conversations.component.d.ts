@@ -95,6 +95,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     ccGroupDeleted: Subscription;
     ccGroupLeft: Subscription;
     ccUserBlocked: Subscription;
+    ccUserUnblocked: Subscription;
     ccMessageRead: Subscription;
     onTextMessageReceived: Subscription;
     onMediaMessageReceived: Subscription;

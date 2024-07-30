@@ -54,6 +54,8 @@ export declare class CometChatMessageHeaderComponent implements OnInit, OnChange
     ccGroupMemberBanned: Subscription;
     ccOwnershipChanged: Subscription;
     onTypingStarted: Subscription;
+    ccUserBlocked: Subscription;
+    ccUserUnblocked: Subscription;
     onTypingEnded: Subscription;
     constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);
     ngOnChanges(changes: SimpleChanges): void;

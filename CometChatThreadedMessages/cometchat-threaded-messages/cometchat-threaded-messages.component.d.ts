@@ -1,6 +1,6 @@
 import { AvatarStyle, BaseStyle, ListItemStyle } from '@cometchat/uikit-elements';
 import { ChangeDetectorRef, OnChanges, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
-import { MessageComposerConfiguration, MessageComposerStyle, MessageListConfiguration, ThreadedMessagesStyle } from "@cometchat/uikit-shared";
+import { MessageComposerConfiguration, MessageComposerStyle, MessageListConfiguration, ThreadedMessagesStyle, UserMemberWrapperConfiguration } from "@cometchat/uikit-shared";
 import { CometChatThemeService } from "../../CometChatTheme.service";
 import { Subscription } from "rxjs";
 import * as i0 from "@angular/core";
@@ -24,6 +24,7 @@ export declare class CometChatThreadedMessagesComponent implements OnInit, OnCha
     bubbleView: TemplateRef<any>;
     messageActionView: TemplateRef<any>;
     messageListConfiguration: MessageListConfiguration;
+    userMemberWrapperConfiguration: UserMemberWrapperConfiguration;
     messageComposerConfiguration: MessageComposerConfiguration;
     threadedMessagesStyle: ThreadedMessagesStyle;
     hideMessageComposer: boolean;
@@ -77,5 +78,5 @@ export declare class CometChatThreadedMessagesComponent implements OnInit, OnCha
         borderRadius: string | undefined;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatThreadedMessagesComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatThreadedMessagesComponent, "cometchat-threaded-messages", never, { "onClose": "onClose"; "onError": "onError"; "parentMessage": "parentMessage"; "title": "title"; "closeIconURL": "closeIconURL"; "bubbleView": "bubbleView"; "messageActionView": "messageActionView"; "messageListConfiguration": "messageListConfiguration"; "messageComposerConfiguration": "messageComposerConfiguration"; "threadedMessagesStyle": "threadedMessagesStyle"; "hideMessageComposer": "hideMessageComposer"; "messageComposerView": "messageComposerView"; "messageListView": "messageListView"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatThreadedMessagesComponent, "cometchat-threaded-messages", never, { "onClose": "onClose"; "onError": "onError"; "parentMessage": "parentMessage"; "title": "title"; "closeIconURL": "closeIconURL"; "bubbleView": "bubbleView"; "messageActionView": "messageActionView"; "messageListConfiguration": "messageListConfiguration"; "userMemberWrapperConfiguration": "userMemberWrapperConfiguration"; "messageComposerConfiguration": "messageComposerConfiguration"; "threadedMessagesStyle": "threadedMessagesStyle"; "hideMessageComposer": "hideMessageComposer"; "messageComposerView": "messageComposerView"; "messageListView": "messageListView"; }, {}, never, never>;
 }
