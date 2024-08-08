@@ -1,6 +1,6 @@
 import { OnInit, ChangeDetectorRef, TemplateRef, OnChanges, SimpleChanges } from "@angular/core";
 import "@cometchat/uikit-elements";
-import { AvatarStyle, DateStyle, IconStyle, ListItemStyle } from "@cometchat/uikit-elements";
+import { AvatarStyle, DateStyle, IconStyle, LabelStyle, ListItemStyle } from "@cometchat/uikit-elements";
 import { CallButtonsStyle, CallButtonsConfiguration, CallLogDetailsStyle, CallLogParticipantsConfiguration, CallLogHistoryConfiguration, CallLogRecordingsConfiguration } from "@cometchat/uikit-shared";
 import { CometChatDetailsOption, CometChatDetailsTemplate, DatePatterns, CometChatCallDetailsOption } from "@cometchat/uikit-resources";
 import { CometChatThemeService } from "../../../CometChatTheme.service";
@@ -12,7 +12,7 @@ export declare class CometChatCallLogDetailsComponent implements OnInit, OnChang
     group: CometChat.Group;
     user: CometChat.User;
     title: string;
-    onBackClick: () => void;
+    onBackClick?: () => void;
     hideProfile: boolean;
     subtitleView: TemplateRef<any>;
     customProfileView: TemplateRef<any>;
@@ -27,6 +27,7 @@ export declare class CometChatCallLogDetailsComponent implements OnInit, OnChang
     datePattern2: DatePatterns;
     data: CometChatDetailsTemplate[];
     avatarStyle: AvatarStyle;
+    labelStyle: LabelStyle;
     callDetailsStyle: CallLogDetailsStyle;
     listItemStyle: ListItemStyle;
     dateStyle: DateStyle;
@@ -40,7 +41,6 @@ export declare class CometChatCallLogDetailsComponent implements OnInit, OnChang
     showParticipantsList: Boolean;
     showCallRecordingList: Boolean;
     showCallHistory: Boolean;
-    dividerStyle: any;
     getTitleStyle(): {
         textFont: string;
         textColor: string | undefined;
@@ -93,6 +93,23 @@ export declare class CometChatCallLogDetailsComponent implements OnInit, OnChang
         border: string | undefined;
         borderRadius: string | undefined;
         background: string | undefined;
+        padding: string;
+    };
+    profileContainerStyle: () => {
+        height: string;
+        width: string;
+        minHeight: string;
+        padding: string;
+        display: string;
+        flexDirection: string;
+        justifyContent: string;
+        alignItems: string;
+        boxSizing: string;
+        gap: string;
+    };
+    getTailViewStyle: () => {
+        font: string;
+        color: string | undefined;
     };
     getTailView(totalSeconds: number): string;
     getSubtitle(call: any): string;
@@ -115,5 +132,5 @@ export declare class CometChatCallLogDetailsComponent implements OnInit, OnChang
         hoverBackground: string | undefined;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatCallLogDetailsComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatCallLogDetailsComponent, "cometchat-call-log-details", never, { "call": "call"; "group": "group"; "user": "user"; "title": "title"; "onBackClick": "onBackClick"; "hideProfile": "hideProfile"; "subtitleView": "subtitleView"; "customProfileView": "customProfileView"; "backIconUrl": "backIconUrl"; "greaterThanIconURL": "greaterThanIconURL"; "callButtonsConfiguration": "callButtonsConfiguration"; "callLogParticipantsConfiguration": "callLogParticipantsConfiguration"; "callLogHistoryConfiguration": "callLogHistoryConfiguration"; "callLogRecordingsConfiguration": "callLogRecordingsConfiguration"; "onError": "onError"; "datePattern": "datePattern"; "datePattern2": "datePattern2"; "data": "data"; "avatarStyle": "avatarStyle"; "callDetailsStyle": "callDetailsStyle"; "listItemStyle": "listItemStyle"; "dateStyle": "dateStyle"; "callButtonsStyle": "callButtonsStyle"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatCallLogDetailsComponent, "cometchat-call-log-details", never, { "call": "call"; "group": "group"; "user": "user"; "title": "title"; "onBackClick": "onBackClick"; "hideProfile": "hideProfile"; "subtitleView": "subtitleView"; "customProfileView": "customProfileView"; "backIconUrl": "backIconUrl"; "greaterThanIconURL": "greaterThanIconURL"; "callButtonsConfiguration": "callButtonsConfiguration"; "callLogParticipantsConfiguration": "callLogParticipantsConfiguration"; "callLogHistoryConfiguration": "callLogHistoryConfiguration"; "callLogRecordingsConfiguration": "callLogRecordingsConfiguration"; "onError": "onError"; "datePattern": "datePattern"; "datePattern2": "datePattern2"; "data": "data"; "avatarStyle": "avatarStyle"; "labelStyle": "labelStyle"; "callDetailsStyle": "callDetailsStyle"; "listItemStyle": "listItemStyle"; "dateStyle": "dateStyle"; "callButtonsStyle": "callButtonsStyle"; }, {}, never, never>;
 }

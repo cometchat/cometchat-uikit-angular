@@ -55,7 +55,11 @@ export declare class CometChatAddMembersComponent implements OnInit {
     titleAlignmentEnum: typeof TitleAlignment;
     selectionmodeEnum: typeof SelectionMode;
     addMembersStyle: AddMembersStyle;
+    /**
+     * @deprecated This property is deprecated as of version 4.3.14. Use `statusIndicatorStyle` instead.
+     */
     StatusIndicatorStyle: BaseStyle;
+    statusIndicatorStyle: BaseStyle;
     avatarStyle: AvatarStyle;
     loggedInUser: CometChat.User | null;
     actionMessagesList: CometChat.Action[];
@@ -107,5 +111,5 @@ export declare class CometChatAddMembersComponent implements OnInit {
         padding: string | undefined;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatAddMembersComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatAddMembersComponent, "cometchat-add-members", never, { "usersRequestBuilder": "usersRequestBuilder"; "searchRequestBuilder": "searchRequestBuilder"; "subtitleView": "subtitleView"; "listItemView": "listItemView"; "disableUsersPresence": "disableUsersPresence"; "menu": "menu"; "options": "options"; "backButtonIconURL": "backButtonIconURL"; "closeButtonIconURL": "closeButtonIconURL"; "showBackButton": "showBackButton"; "hideSeparator": "hideSeparator"; "selectionMode": "selectionMode"; "searchPlaceholder": "searchPlaceholder"; "hideError": "hideError"; "searchIconURL": "searchIconURL"; "hideSearch": "hideSearch"; "title": "title"; "onError": "onError"; "onBack": "onBack"; "onClose": "onClose"; "onSelect": "onSelect"; "buttonText": "buttonText"; "group": "group"; "emptyStateView": "emptyStateView"; "errorStateView": "errorStateView"; "loadingIconURL": "loadingIconURL"; "listItemStyle": "listItemStyle"; "showSectionHeader": "showSectionHeader"; "sectionHeaderField": "sectionHeaderField"; "loadingStateView": "loadingStateView"; "emptyStateText": "emptyStateText"; "errorStateText": "errorStateText"; "onAddMembersButtonClick": "onAddMembersButtonClick"; "titleAlignment": "titleAlignment"; "addMembersStyle": "addMembersStyle"; "StatusIndicatorStyle": "StatusIndicatorStyle"; "avatarStyle": "avatarStyle"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatAddMembersComponent, "cometchat-add-members", never, { "usersRequestBuilder": "usersRequestBuilder"; "searchRequestBuilder": "searchRequestBuilder"; "subtitleView": "subtitleView"; "listItemView": "listItemView"; "disableUsersPresence": "disableUsersPresence"; "menu": "menu"; "options": "options"; "backButtonIconURL": "backButtonIconURL"; "closeButtonIconURL": "closeButtonIconURL"; "showBackButton": "showBackButton"; "hideSeparator": "hideSeparator"; "selectionMode": "selectionMode"; "searchPlaceholder": "searchPlaceholder"; "hideError": "hideError"; "searchIconURL": "searchIconURL"; "hideSearch": "hideSearch"; "title": "title"; "onError": "onError"; "onBack": "onBack"; "onClose": "onClose"; "onSelect": "onSelect"; "buttonText": "buttonText"; "group": "group"; "emptyStateView": "emptyStateView"; "errorStateView": "errorStateView"; "loadingIconURL": "loadingIconURL"; "listItemStyle": "listItemStyle"; "showSectionHeader": "showSectionHeader"; "sectionHeaderField": "sectionHeaderField"; "loadingStateView": "loadingStateView"; "emptyStateText": "emptyStateText"; "errorStateText": "errorStateText"; "onAddMembersButtonClick": "onAddMembersButtonClick"; "titleAlignment": "titleAlignment"; "addMembersStyle": "addMembersStyle"; "StatusIndicatorStyle": "StatusIndicatorStyle"; "statusIndicatorStyle": "statusIndicatorStyle"; "avatarStyle": "avatarStyle"; }, {}, never, never>;
 }

@@ -106,6 +106,8 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     onCustomInteractiveMessageReceived: Subscription;
     onMessagesRead: Subscription;
     onMessageDeleted: Subscription;
+    onMessagesReadByAll: Subscription;
+    onMessagesDeliveredToAll: Subscription;
     onMessageEdited: Subscription;
     onMessagesDelivered: Subscription;
     onTypingStarted: Subscription;
@@ -190,7 +192,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     deleteConversationOnClick: (() => void) | null;
     onConfirmClick: () => void;
     onConversationSelected(conversation: CometChat.Conversation, event: any): void;
-    setStatusIndicatorStyle: (conversation: CometChat.Conversation) => any;
+    getStatusIndicatorStyle: (conversation: CometChat.Conversation) => any;
     /**
      * @param  {CometChat.Conversation} conversation
      */

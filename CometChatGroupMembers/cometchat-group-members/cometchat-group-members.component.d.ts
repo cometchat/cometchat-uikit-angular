@@ -97,6 +97,10 @@ export declare class CometChatGroupMembersComponent implements OnInit, OnChanges
      * @param  {CometChat.GroupMember} member
      */
     getStatusIndicatorColor: (member: CometChat.GroupMember) => string | null | undefined;
+    /**
+   * @param  {CometChat.GroupMember} member
+   */
+    getStatusIndicatorStyle: (member: CometChat.GroupMember) => any;
     changeMemberScope(event: any): void;
     handleMenuAction: (menu: any, groupMember: CometChat.GroupMember) => void;
     blockMember: (member: CometChat.GroupMember) => void;

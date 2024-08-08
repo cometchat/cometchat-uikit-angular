@@ -215,6 +215,8 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     onMediaMessageReceived: Subscription;
     onMessagesDelivered: Subscription;
     onMessagesRead: Subscription;
+    onMessagesReadByAll: Subscription;
+    onMessagesDeliveredToAll: Subscription;
     onMessageDeleted: Subscription;
     onMessageEdited: Subscription;
     onTransientMessageReceived: Subscription;

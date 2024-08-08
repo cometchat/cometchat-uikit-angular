@@ -39,6 +39,8 @@ export declare class CometChatMessageInformationComponent implements OnInit, OnC
     errorStateView: TemplateRef<any>;
     onMessagesDelivered: Subscription;
     onMessagesRead: Subscription;
+    onMessagesReadByAll: Subscription;
+    onMessagesDeliveredToAll: Subscription;
     receipts: CometChat.MessageReceipt[];
     receiptStyle: ReceiptStyle;
     isUserType: boolean;
@@ -64,6 +66,7 @@ export declare class CometChatMessageInformationComponent implements OnInit, OnC
     getAvatarUrl(): string;
     getUserReceipt(): number;
     getMessageReceipt(): import("@cometchat/uikit-shared/dist/Utils/MessageReceiptUtils").receipts;
+    updateReceipt(receipt: CometChat.MessageReceipt): void;
     getMessageReceipts(): void;
     closeClicked(): void;
     closeButtonStyle: () => {

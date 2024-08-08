@@ -94,6 +94,10 @@ export declare class CometChatUsersComponent implements OnInit {
     /**
      * @param  {CometChat.User} user
      */
+    getStatusIndicatorStyle: (user: CometChat.User) => BaseStyle | null;
+    /**
+     * @param  {CometChat.User} user
+     */
     updateUser: (user: CometChat.User) => void;
     attachConnectionListeners(): void;
     attachListeners(): void;
