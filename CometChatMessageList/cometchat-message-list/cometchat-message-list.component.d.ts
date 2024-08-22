@@ -49,7 +49,13 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     loadingIconURL: string;
     user: CometChat.User;
     group: CometChat.Group;
+    /**
+     * @deprecated
+     *
+     * This property is deprecated as of version 4.3.16 due to newer property 'hideReceipt'. It will be removed in subsequent versions.
+     */
     disableReceipt: boolean;
+    hideReceipt: boolean;
     disableSoundForMessages: boolean;
     customSoundForMessages: string;
     readIcon: string;
@@ -649,6 +655,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     closeSmartReply: () => void;
     closeConversationSummary: () => void;
     showStatusInfo(message: CometChat.BaseMessage): boolean;
+    shouldShowMessage(message: CometChat.BaseMessage, disableReceipt: boolean, hideReceipt: boolean): boolean;
     sendReply: (event: any) => void;
     sendConversationStarter: (event: any) => void;
     fetchConversationStarter(): void;
@@ -802,5 +809,5 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
         justifyContent: string;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatMessageListComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatMessageListComponent, "cometchat-message-list", never, { "hideError": "hideError"; "hideDateSeparator": "hideDateSeparator"; "errorStateView": "errorStateView"; "loadingStateView": "loadingStateView"; "emptyStateView": "emptyStateView"; "errorStateText": "errorStateText"; "emptyStateText": "emptyStateText"; "loadingIconURL": "loadingIconURL"; "user": "user"; "group": "group"; "disableReceipt": "disableReceipt"; "disableSoundForMessages": "disableSoundForMessages"; "customSoundForMessages": "customSoundForMessages"; "readIcon": "readIcon"; "deliveredIcon": "deliveredIcon"; "sentIcon": "sentIcon"; "waitIcon": "waitIcon"; "errorIcon": "errorIcon"; "aiErrorIcon": "aiErrorIcon"; "aiEmptyIcon": "aiEmptyIcon"; "alignment": "alignment"; "showAvatar": "showAvatar"; "datePattern": "datePattern"; "timestampAlignment": "timestampAlignment"; "DateSeparatorPattern": "DateSeparatorPattern"; "templates": "templates"; "messagesRequestBuilder": "messagesRequestBuilder"; "newMessageIndicatorText": "newMessageIndicatorText"; "scrollToBottomOnNewMessages": "scrollToBottomOnNewMessages"; "thresholdValue": "thresholdValue"; "unreadMessageThreshold": "unreadMessageThreshold"; "reactionsConfiguration": "reactionsConfiguration"; "disableReactions": "disableReactions"; "emojiKeyboardStyle": "emojiKeyboardStyle"; "apiConfiguration": "apiConfiguration"; "onThreadRepliesClick": "onThreadRepliesClick"; "headerView": "headerView"; "footerView": "footerView"; "parentMessageId": "parentMessageId"; "threadIndicatorIcon": "threadIndicatorIcon"; "avatarStyle": "avatarStyle"; "backdropStyle": "backdropStyle"; "dateSeparatorStyle": "dateSeparatorStyle"; "messageListStyle": "messageListStyle"; "onError": "onError"; "messageInformationConfiguration": "messageInformationConfiguration"; "disableMentions": "disableMentions"; "textFormatters": "textFormatters"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatMessageListComponent, "cometchat-message-list", never, { "hideError": "hideError"; "hideDateSeparator": "hideDateSeparator"; "errorStateView": "errorStateView"; "loadingStateView": "loadingStateView"; "emptyStateView": "emptyStateView"; "errorStateText": "errorStateText"; "emptyStateText": "emptyStateText"; "loadingIconURL": "loadingIconURL"; "user": "user"; "group": "group"; "disableReceipt": "disableReceipt"; "hideReceipt": "hideReceipt"; "disableSoundForMessages": "disableSoundForMessages"; "customSoundForMessages": "customSoundForMessages"; "readIcon": "readIcon"; "deliveredIcon": "deliveredIcon"; "sentIcon": "sentIcon"; "waitIcon": "waitIcon"; "errorIcon": "errorIcon"; "aiErrorIcon": "aiErrorIcon"; "aiEmptyIcon": "aiEmptyIcon"; "alignment": "alignment"; "showAvatar": "showAvatar"; "datePattern": "datePattern"; "timestampAlignment": "timestampAlignment"; "DateSeparatorPattern": "DateSeparatorPattern"; "templates": "templates"; "messagesRequestBuilder": "messagesRequestBuilder"; "newMessageIndicatorText": "newMessageIndicatorText"; "scrollToBottomOnNewMessages": "scrollToBottomOnNewMessages"; "thresholdValue": "thresholdValue"; "unreadMessageThreshold": "unreadMessageThreshold"; "reactionsConfiguration": "reactionsConfiguration"; "disableReactions": "disableReactions"; "emojiKeyboardStyle": "emojiKeyboardStyle"; "apiConfiguration": "apiConfiguration"; "onThreadRepliesClick": "onThreadRepliesClick"; "headerView": "headerView"; "footerView": "footerView"; "parentMessageId": "parentMessageId"; "threadIndicatorIcon": "threadIndicatorIcon"; "avatarStyle": "avatarStyle"; "backdropStyle": "backdropStyle"; "dateSeparatorStyle": "dateSeparatorStyle"; "messageListStyle": "messageListStyle"; "onError": "onError"; "messageInformationConfiguration": "messageInformationConfiguration"; "disableMentions": "disableMentions"; "textFormatters": "textFormatters"; }, {}, never, never>;
 }

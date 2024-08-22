@@ -62,6 +62,9 @@ export declare class CometChatUsersComponent implements OnInit {
     connectionListenerId: string;
     previousSearchKeyword: string;
     isWebsocketReconnected: boolean;
+    selectedUsers: {
+        [uid: string]: CometChat.User;
+    };
     /**
      * Events
      */
@@ -78,7 +81,7 @@ export declare class CometChatUsersComponent implements OnInit {
     subscribeToEvents(): void;
     unsubscribeToEvents(): void;
     ngOnDestroy(): void;
-    isUserSelected(user: CometChat.User): boolean;
+    isUserSelected(user: CometChat.User): true | import("@cometchat/chat-sdk-javascript").User;
     /**
      * @param  {CometChat.User} user
      */
