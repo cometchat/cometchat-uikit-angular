@@ -515,7 +515,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     reInitializeMessageList(): void;
     reInitializeMessageBuilder: () => void;
     getMessageReceipt(message: CometChat.BaseMessage): import("@cometchat/uikit-shared/dist/Utils/MessageReceiptUtils").receipts;
-    messageReadAndDelivered(message: CometChat.MessageReceipt): void;
+    messageReadAndDelivered(message: CometChat.MessageReceipt, isGroupReceipt?: boolean): void;
     /**
      * @param  {CometChat.BaseMessage} readMessage
      */

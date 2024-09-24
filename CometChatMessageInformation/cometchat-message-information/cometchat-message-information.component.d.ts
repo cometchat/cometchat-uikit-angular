@@ -39,8 +39,6 @@ export declare class CometChatMessageInformationComponent implements OnInit, OnC
     errorStateView: TemplateRef<any>;
     onMessagesDelivered: Subscription;
     onMessagesRead: Subscription;
-    onMessagesReadByAll: Subscription;
-    onMessagesDeliveredToAll: Subscription;
     receipts: CometChat.MessageReceipt[];
     receiptStyle: ReceiptStyle;
     isUserType: boolean;

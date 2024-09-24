@@ -78,6 +78,7 @@ export declare class CometChatMessageHeaderComponent implements OnInit, OnChange
     getSubtitleView(): any;
     checkGroupType(): string;
     updateUserStatus(user: CometChat.User): void;
+    handleGroupEvent: (group: CometChat.Group, user: CometChat.User, hasJoined: boolean, newScope?: import("@cometchat/chat-sdk-javascript").GroupMemberScope | undefined) => void;
     attachListeners(): void;
     removeListener(): void;
     ngOnDestroy(): void;

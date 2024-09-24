@@ -94,6 +94,7 @@ export declare class CometChatGroupsComponent implements OnInit, OnChanges {
     getGroupIcon: (group: CometChat.Group) => string | null | undefined;
     fetchNewUsers(): void;
     attachConnectionListeners(): void;
+    findGroupIndex: (groupToFind: CometChat.Group) => number;
     attachListeners(): void;
     removeListener(): void;
     fetchNextGroupList: (state?: States) => void;

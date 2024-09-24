@@ -86,6 +86,7 @@ export declare class CometChatDetailsComponent implements OnInit, OnChanges {
     getCustomOptionView(option: CometChatDetailsOption): any;
     subtitleText: string;
     userListenerId: string;
+    membersListenerId: string;
     constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);
     ngOnChanges(changes: SimpleChanges): void;
     getTemplate(): void;
@@ -123,6 +124,7 @@ export declare class CometChatDetailsComponent implements OnInit, OnChanges {
     viewMembers: () => void;
     addMembers: () => void;
     bannedMembers: () => void;
+    onBackForAddMembers: () => void;
     leaveGroup(): void;
     showDeleteDialog(): void;
     deleteGroup(): void;
