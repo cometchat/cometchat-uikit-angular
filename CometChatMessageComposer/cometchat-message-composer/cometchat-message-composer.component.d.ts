@@ -167,6 +167,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     addAttachmentCallback(): void;
     subscribeToEvents(): void;
     openEditPreview(): void;
+    isPartOfCurrentChatForUIEvent: (message: CometChat.BaseMessage) => boolean;
     /**
      * Adds @ for every mention the message by matching uid
      *

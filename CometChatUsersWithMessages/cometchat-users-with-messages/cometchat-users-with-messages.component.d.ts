@@ -65,6 +65,7 @@ export declare class CometChatUsersWithMessagesComponent implements OnInit, OnCh
         border: string | undefined;
         borderRadius: string | undefined;
         background: string | undefined;
+        position: string;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatUsersWithMessagesComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<CometChatUsersWithMessagesComponent, "cometchat-users-with-messages", never, { "user": "user"; "isMobileView": "isMobileView"; "messageText": "messageText"; "usersWithMessagesStyle": "usersWithMessagesStyle"; "messagesConfiguration": "messagesConfiguration"; "usersConfiguration": "usersConfiguration"; "onError": "onError"; }, {}, never, never>;

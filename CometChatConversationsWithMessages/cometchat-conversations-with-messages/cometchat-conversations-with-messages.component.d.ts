@@ -88,6 +88,7 @@ export declare class CometChatConversationsWithMessagesComponent implements OnIn
         border: string | undefined;
         borderRadius: string | undefined;
         background: string | undefined;
+        position: string;
     };
     contactsWrapperStyles: () => {
         background: string | undefined;

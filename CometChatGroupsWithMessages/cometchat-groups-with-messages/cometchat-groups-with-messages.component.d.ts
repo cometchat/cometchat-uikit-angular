@@ -96,6 +96,7 @@ export declare class CometChatGroupsWithMessagesComponent implements OnInit, OnC
         border: string | undefined;
         borderRadius: string | undefined;
         background: string | undefined;
+        position: string;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatGroupsWithMessagesComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<CometChatGroupsWithMessagesComponent, "cometchat-groups-with-messages", never, { "group": "group"; "isMobileView": "isMobileView"; "hideCreateGroup": "hideCreateGroup"; "messageText": "messageText"; "groupsWithMessagesStyle": "groupsWithMessagesStyle"; "messagesConfiguration": "messagesConfiguration"; "createGroupConfiguration": "createGroupConfiguration"; "joinGroupConfiguration": "joinGroupConfiguration"; "groupsConfiguration": "groupsConfiguration"; "onError": "onError"; }, {}, never, never>;
