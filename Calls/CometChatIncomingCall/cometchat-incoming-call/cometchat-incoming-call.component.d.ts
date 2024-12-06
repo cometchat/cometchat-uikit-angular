@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, OnChanges, OnInit, SimpleChanges, TemplateRef } from '@angular/core';
-import { IncomingCallStyle, CometChatUIKitCalls } from "@cometchat/uikit-shared";
+import { IncomingCallStyle, CometChatUIKitCalls, CallScreenConfiguration } from "@cometchat/uikit-shared";
 import { CallscreenStyle } from '@cometchat/uikit-elements';
 import { AvatarStyle, IconStyle, ListItemStyle } from '@cometchat/uikit-elements';
 import { Subscription } from 'rxjs';
@@ -25,6 +25,7 @@ export declare class CometChatIncomingCallComponent implements OnInit, OnChanges
     acceptButtonText: string;
     declineButtonText: string;
     subtitleView: TemplateRef<any>;
+    ongoingCallConfiguration: CallScreenConfiguration;
     onError: (error: CometChat.CometChatException) => void;
     listItemStyle: ListItemStyle;
     avatarStyle: AvatarStyle;
@@ -76,5 +77,5 @@ export declare class CometChatIncomingCallComponent implements OnInit, OnChanges
         padding: string;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatIncomingCallComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatIncomingCallComponent, "cometchat-incoming-call", never, { "call": "call"; "disableSoundForCalls": "disableSoundForCalls"; "customSoundForCalls": "customSoundForCalls"; "onAccept": "onAccept"; "onDecline": "onDecline"; "acceptButtonText": "acceptButtonText"; "declineButtonText": "declineButtonText"; "subtitleView": "subtitleView"; "onError": "onError"; "listItemStyle": "listItemStyle"; "avatarStyle": "avatarStyle"; "incomingCallStyle": "incomingCallStyle"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatIncomingCallComponent, "cometchat-incoming-call", never, { "call": "call"; "disableSoundForCalls": "disableSoundForCalls"; "customSoundForCalls": "customSoundForCalls"; "onAccept": "onAccept"; "onDecline": "onDecline"; "acceptButtonText": "acceptButtonText"; "declineButtonText": "declineButtonText"; "subtitleView": "subtitleView"; "ongoingCallConfiguration": "ongoingCallConfiguration"; "onError": "onError"; "listItemStyle": "listItemStyle"; "avatarStyle": "avatarStyle"; "incomingCallStyle": "incomingCallStyle"; }, {}, never, never>;
 }
