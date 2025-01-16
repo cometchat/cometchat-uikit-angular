@@ -7,16 +7,16 @@ import { CometChatOngoingCall } from "../CometChatOngoingCall/cometchat-ongoing-
 import * as i0 from "@angular/core";
 export class CometChatIncomingCall {
 }
-CometChatIncomingCall.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatIncomingCall, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatIncomingCall.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatIncomingCall, declarations: [CometChatIncomingCallComponent], imports: [CommonModule,
+CometChatIncomingCall.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatIncomingCall, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatIncomingCall.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatIncomingCall, declarations: [CometChatIncomingCallComponent], imports: [CommonModule,
         CometChatList,
         CometChatOngoingCall], exports: [CometChatIncomingCallComponent] });
-CometChatIncomingCall.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatIncomingCall, imports: [[
+CometChatIncomingCall.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatIncomingCall, imports: [[
             CommonModule,
             CometChatList,
             CometChatOngoingCall
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatIncomingCall, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatIncomingCall, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatIncomingCallComponent],

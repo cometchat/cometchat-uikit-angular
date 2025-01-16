@@ -8,12 +8,12 @@ import { CometChatTransferOwnership } from "../CometChatTransferOwnership/cometc
 import * as i0 from "@angular/core";
 export class CometChatDetails {
 }
-CometChatDetails.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatDetails, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatDetails.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatDetails, declarations: [CometChatDetailsComponent], imports: [CommonModule, CometChatAddMembers, CometChatBannedMembers, CometChatGroupMembers, CometChatTransferOwnership], exports: [CometChatDetailsComponent] });
-CometChatDetails.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatDetails, imports: [[
+CometChatDetails.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatDetails, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatDetails.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatDetails, declarations: [CometChatDetailsComponent], imports: [CommonModule, CometChatAddMembers, CometChatBannedMembers, CometChatGroupMembers, CometChatTransferOwnership], exports: [CometChatDetailsComponent] });
+CometChatDetails.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatDetails, imports: [[
             CommonModule, CometChatAddMembers, CometChatBannedMembers, CometChatGroupMembers, CometChatTransferOwnership
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatDetails, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatDetails, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatDetailsComponent],

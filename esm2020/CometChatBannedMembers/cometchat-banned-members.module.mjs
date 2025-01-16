@@ -9,10 +9,10 @@ import { CometChatList } from "../CometChatList/cometchat-list.module";
 import * as i0 from "@angular/core";
 export class CometChatBannedMembers {
 }
-CometChatBannedMembers.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatBannedMembers, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatBannedMembers.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatBannedMembers, declarations: [CometChatBannedMembersComponent], imports: [CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList], exports: [CometChatBannedMembersComponent] });
-CometChatBannedMembers.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatBannedMembers, imports: [[CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatBannedMembers, decorators: [{
+CometChatBannedMembers.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatBannedMembers, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatBannedMembers.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatBannedMembers, declarations: [CometChatBannedMembersComponent], imports: [CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList], exports: [CometChatBannedMembersComponent] });
+CometChatBannedMembers.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatBannedMembers, imports: [[CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatBannedMembers, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatBannedMembersComponent],

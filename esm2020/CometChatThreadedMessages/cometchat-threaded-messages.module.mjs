@@ -8,18 +8,18 @@ import '@cometchat/uikit-elements';
 import * as i0 from "@angular/core";
 export class CometChatThreadedMessages {
 }
-CometChatThreadedMessages.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatThreadedMessages, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatThreadedMessages.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatThreadedMessages, declarations: [CometChatThreadedMessagesComponent], imports: [CommonModule,
+CometChatThreadedMessages.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatThreadedMessages, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatThreadedMessages.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatThreadedMessages, declarations: [CometChatThreadedMessagesComponent], imports: [CommonModule,
         CometChatMessageHeader,
         CometChatMessageList,
         CometChatMessageComposer], exports: [CometChatThreadedMessagesComponent] });
-CometChatThreadedMessages.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatThreadedMessages, imports: [[
+CometChatThreadedMessages.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatThreadedMessages, imports: [[
             CommonModule,
             CometChatMessageHeader,
             CometChatMessageList,
             CometChatMessageComposer,
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatThreadedMessages, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatThreadedMessages, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatThreadedMessagesComponent],

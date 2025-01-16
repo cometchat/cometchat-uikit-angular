@@ -7,10 +7,10 @@ import { FormsModule } from "@angular/forms";
 import * as i0 from "@angular/core";
 export class AIAssistBotMessageList {
 }
-AIAssistBotMessageList.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: AIAssistBotMessageList, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-AIAssistBotMessageList.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: AIAssistBotMessageList, declarations: [AIAssistBotMessageListComponent], imports: [CommonModule, CometChatList, CometChatMessageBubble, FormsModule], exports: [AIAssistBotMessageListComponent] });
-AIAssistBotMessageList.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: AIAssistBotMessageList, imports: [[CommonModule, CometChatList, CometChatMessageBubble, FormsModule]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: AIAssistBotMessageList, decorators: [{
+AIAssistBotMessageList.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: AIAssistBotMessageList, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+AIAssistBotMessageList.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: AIAssistBotMessageList, declarations: [AIAssistBotMessageListComponent], imports: [CommonModule, CometChatList, CometChatMessageBubble, FormsModule], exports: [AIAssistBotMessageListComponent] });
+AIAssistBotMessageList.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: AIAssistBotMessageList, imports: [[CommonModule, CometChatList, CometChatMessageBubble, FormsModule]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: AIAssistBotMessageList, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [AIAssistBotMessageListComponent],

@@ -4,12 +4,12 @@ import { CometChatMessageBubbleComponent } from "./cometchat-message-bubble/come
 import * as i0 from "@angular/core";
 export class CometChatMessageBubble {
 }
-CometChatMessageBubble.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageBubble, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatMessageBubble.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageBubble, declarations: [CometChatMessageBubbleComponent], imports: [CommonModule], exports: [CometChatMessageBubbleComponent] });
-CometChatMessageBubble.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageBubble, imports: [[
+CometChatMessageBubble.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageBubble, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatMessageBubble.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageBubble, declarations: [CometChatMessageBubbleComponent], imports: [CommonModule], exports: [CometChatMessageBubbleComponent] });
+CometChatMessageBubble.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageBubble, imports: [[
             CommonModule,
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageBubble, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageBubble, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatMessageBubbleComponent],

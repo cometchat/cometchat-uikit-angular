@@ -10,15 +10,15 @@ import { CometChatCallLogHistory } from "../CometChatCallLogHistory/cometchat-ca
 import * as i0 from "@angular/core";
 export class CometChatCallLogDetails {
 }
-CometChatCallLogDetails.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogDetails, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatCallLogDetails.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogDetails, declarations: [CometChatCallLogDetailsComponent], imports: [CommonModule,
+CometChatCallLogDetails.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogDetails, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatCallLogDetails.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogDetails, declarations: [CometChatCallLogDetailsComponent], imports: [CommonModule,
         CometChatCallButtons,
         CometChatList,
         CometChatCallLogParticipants,
         CometChatCallLogRecordings,
         CometChatCallLogHistory,
         CometChatCallLogs], exports: [CometChatCallLogDetailsComponent] });
-CometChatCallLogDetails.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogDetails, imports: [[
+CometChatCallLogDetails.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogDetails, imports: [[
             CommonModule,
             CometChatCallButtons,
             CometChatList,
@@ -27,7 +27,7 @@ CometChatCallLogDetails.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0",
             CometChatCallLogHistory,
             CometChatCallLogs,
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogDetails, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogDetails, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatCallLogDetailsComponent],

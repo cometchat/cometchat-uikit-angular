@@ -6,14 +6,14 @@ import '@cometchat/uikit-elements';
 import * as i0 from "@angular/core";
 export class CometChatList {
 }
-CometChatList.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatList, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatList.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatList, declarations: [CometchatListComponent], imports: [CommonModule,
+CometChatList.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatList, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatList.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatList, declarations: [CometchatListComponent], imports: [CommonModule,
         FormsModule], exports: [CometchatListComponent] });
-CometChatList.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatList, imports: [[
+CometChatList.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatList, imports: [[
             CommonModule,
             FormsModule,
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatList, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatList, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometchatListComponent],

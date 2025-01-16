@@ -8,10 +8,10 @@ import { CometChatGroups } from "../CometChatGroups/cometchat-groups.module";
 import * as i0 from "@angular/core";
 export class CometChatContacts {
 }
-CometChatContacts.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatContacts, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatContacts.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatContacts, declarations: [CometChatContactsComponent], imports: [CommonModule, FormsModule, CometChatUsers, CometChatTabs, CometChatGroups], exports: [CometChatContactsComponent] });
-CometChatContacts.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatContacts, imports: [[CommonModule, FormsModule, CometChatUsers, CometChatTabs, CometChatGroups]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatContacts, decorators: [{
+CometChatContacts.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatContacts, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatContacts.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatContacts, declarations: [CometChatContactsComponent], imports: [CommonModule, FormsModule, CometChatUsers, CometChatTabs, CometChatGroups], exports: [CometChatContactsComponent] });
+CometChatContacts.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatContacts, imports: [[CommonModule, FormsModule, CometChatUsers, CometChatTabs, CometChatGroups]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatContacts, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatContactsComponent],

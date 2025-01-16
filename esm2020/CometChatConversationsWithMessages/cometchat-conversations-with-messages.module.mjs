@@ -7,18 +7,18 @@ import { CometChatContacts } from "../CometChatContacts/cometchat-contacts.modul
 import * as i0 from "@angular/core";
 export class CometChatConversationsWithMessages {
 }
-CometChatConversationsWithMessages.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatConversationsWithMessages, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatConversationsWithMessages.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatConversationsWithMessages, declarations: [CometChatConversationsWithMessagesComponent], imports: [CommonModule,
+CometChatConversationsWithMessages.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatConversationsWithMessages, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatConversationsWithMessages.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatConversationsWithMessages, declarations: [CometChatConversationsWithMessagesComponent], imports: [CommonModule,
         CometChatConversations,
         CometChatMessages,
         CometChatContacts], exports: [CometChatConversationsWithMessagesComponent] });
-CometChatConversationsWithMessages.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatConversationsWithMessages, imports: [[
+CometChatConversationsWithMessages.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatConversationsWithMessages, imports: [[
             CommonModule,
             CometChatConversations,
             CometChatMessages,
             CometChatContacts
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatConversationsWithMessages, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatConversationsWithMessages, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatConversationsWithMessagesComponent],

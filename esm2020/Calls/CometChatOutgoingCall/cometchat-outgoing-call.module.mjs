@@ -6,14 +6,14 @@ import "@cometchat/uikit-elements";
 import * as i0 from "@angular/core";
 export class CometChatOutgoingCall {
 }
-CometChatOutgoingCall.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatOutgoingCall, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatOutgoingCall.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatOutgoingCall, declarations: [CometChatOutgoingCallComponent], imports: [CommonModule,
+CometChatOutgoingCall.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatOutgoingCall, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatOutgoingCall.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatOutgoingCall, declarations: [CometChatOutgoingCallComponent], imports: [CommonModule,
         CometChatList], exports: [CometChatOutgoingCallComponent] });
-CometChatOutgoingCall.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatOutgoingCall, imports: [[
+CometChatOutgoingCall.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatOutgoingCall, imports: [[
             CommonModule,
             CometChatList,
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatOutgoingCall, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatOutgoingCall, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatOutgoingCallComponent],

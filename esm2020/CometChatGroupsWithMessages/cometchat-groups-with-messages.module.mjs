@@ -7,18 +7,18 @@ import { CometChatMessageHeader } from "../CometChatMessageHeader/cometchat-mess
 import * as i0 from "@angular/core";
 export class CometChatGroupsWithMessages {
 }
-CometChatGroupsWithMessages.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupsWithMessages, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatGroupsWithMessages.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupsWithMessages, declarations: [CometChatGroupsWithMessagesComponent], imports: [CommonModule,
+CometChatGroupsWithMessages.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupsWithMessages, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatGroupsWithMessages.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupsWithMessages, declarations: [CometChatGroupsWithMessagesComponent], imports: [CommonModule,
         CometChatGroups,
         CometChatMessages,
         CometChatMessageHeader], exports: [CometChatGroupsWithMessagesComponent] });
-CometChatGroupsWithMessages.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupsWithMessages, imports: [[
+CometChatGroupsWithMessages.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupsWithMessages, imports: [[
             CommonModule,
             CometChatGroups,
             CometChatMessages,
             CometChatMessageHeader
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupsWithMessages, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupsWithMessages, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatGroupsWithMessagesComponent],

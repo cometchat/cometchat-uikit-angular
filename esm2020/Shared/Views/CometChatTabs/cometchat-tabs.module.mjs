@@ -4,12 +4,12 @@ import { CometChatTabsComponent } from './cometchat-tabs/cometchat-tabs.componen
 import * as i0 from "@angular/core";
 export class CometChatTabs {
 }
-CometChatTabs.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatTabs, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatTabs.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatTabs, declarations: [CometChatTabsComponent], imports: [CommonModule], exports: [CometChatTabsComponent] });
-CometChatTabs.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatTabs, imports: [[
+CometChatTabs.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatTabs, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatTabs.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatTabs, declarations: [CometChatTabsComponent], imports: [CommonModule], exports: [CometChatTabsComponent] });
+CometChatTabs.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatTabs, imports: [[
             CommonModule,
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatTabs, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatTabs, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatTabsComponent],

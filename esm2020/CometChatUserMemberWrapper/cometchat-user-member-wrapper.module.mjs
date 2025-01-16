@@ -7,10 +7,10 @@ import { CometChatGroupMembers } from "../CometChatGroupMembers/cometchat-group-
 import * as i0 from "@angular/core";
 export class CometChatUserMemberWrapper {
 }
-CometChatUserMemberWrapper.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatUserMemberWrapper, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatUserMemberWrapper.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatUserMemberWrapper, declarations: [CometChatUserMemberWrapperComponent], imports: [CommonModule, CometChatUsers, CometChatGroupMembers], exports: [CometChatUserMemberWrapperComponent] });
-CometChatUserMemberWrapper.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatUserMemberWrapper, imports: [[CommonModule, CometChatUsers, CometChatGroupMembers]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatUserMemberWrapper, decorators: [{
+CometChatUserMemberWrapper.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatUserMemberWrapper, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatUserMemberWrapper.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatUserMemberWrapper, declarations: [CometChatUserMemberWrapperComponent], imports: [CommonModule, CometChatUsers, CometChatGroupMembers], exports: [CometChatUserMemberWrapperComponent] });
+CometChatUserMemberWrapper.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatUserMemberWrapper, imports: [[CommonModule, CometChatUsers, CometChatGroupMembers]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatUserMemberWrapper, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatUserMemberWrapperComponent],

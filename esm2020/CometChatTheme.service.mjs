@@ -6,9 +6,9 @@ export class CometChatThemeService {
         this.theme = new CometChatTheme({});
     }
 }
-CometChatThemeService.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatThemeService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-CometChatThemeService.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatThemeService, providedIn: 'root' });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatThemeService, decorators: [{
+CometChatThemeService.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatThemeService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+CometChatThemeService.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatThemeService, providedIn: 'root' });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatThemeService, decorators: [{
             type: Injectable,
             args: [{
                     providedIn: 'root'

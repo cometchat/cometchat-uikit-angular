@@ -9,10 +9,10 @@ import { CometChatList } from "../CometChatList/cometchat-list.module";
 import * as i0 from "@angular/core";
 export class CometChatGroupMembers {
 }
-CometChatGroupMembers.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupMembers, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatGroupMembers.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupMembers, declarations: [CometChatGroupMembersComponent], imports: [CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList], exports: [CometChatGroupMembersComponent] });
-CometChatGroupMembers.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupMembers, imports: [[CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatGroupMembers, decorators: [{
+CometChatGroupMembers.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupMembers, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatGroupMembers.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupMembers, declarations: [CometChatGroupMembersComponent], imports: [CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList], exports: [CometChatGroupMembersComponent] });
+CometChatGroupMembers.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupMembers, imports: [[CommonModule, FormsModule, CometChatMessageHeader, CometChatUsers, CometChatList]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatGroupMembers, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatGroupMembersComponent],

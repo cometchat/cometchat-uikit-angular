@@ -6,10 +6,10 @@ import "@cometchat/uikit-elements";
 import * as i0 from "@angular/core";
 export class CometChatCallLogHistory {
 }
-CometChatCallLogHistory.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogHistory, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatCallLogHistory.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogHistory, declarations: [CometChatCallLogHistoryComponent], imports: [CommonModule, CometChatList], exports: [CometChatCallLogHistoryComponent] });
-CometChatCallLogHistory.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogHistory, imports: [[CommonModule, CometChatList]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogHistory, decorators: [{
+CometChatCallLogHistory.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogHistory, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatCallLogHistory.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogHistory, declarations: [CometChatCallLogHistoryComponent], imports: [CommonModule, CometChatList], exports: [CometChatCallLogHistoryComponent] });
+CometChatCallLogHistory.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogHistory, imports: [[CommonModule, CometChatList]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogHistory, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatCallLogHistoryComponent],

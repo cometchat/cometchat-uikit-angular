@@ -10,20 +10,20 @@ import { CometChatMessageInformation } from "../CometChatMessageInformation/come
 import * as i0 from "@angular/core";
 export class CometChatMessageList {
 }
-CometChatMessageList.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageList, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatMessageList.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageList, declarations: [CometChatMessageListComponent], imports: [CommonModule,
+CometChatMessageList.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageList, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatMessageList.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageList, declarations: [CometChatMessageListComponent], imports: [CommonModule,
         CometChatMessageBubble,
         CometChatOngoingCall,
         CometChatContacts,
         CometChatMessageInformation], exports: [CometChatMessageListComponent] });
-CometChatMessageList.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageList, providers: [DatePipe], imports: [[
+CometChatMessageList.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageList, providers: [DatePipe], imports: [[
             CommonModule,
             CometChatMessageBubble,
             CometChatOngoingCall,
             CometChatContacts,
             CometChatMessageInformation,
         ]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageList, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageList, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatMessageListComponent],

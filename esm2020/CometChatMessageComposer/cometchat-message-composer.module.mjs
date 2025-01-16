@@ -7,10 +7,10 @@ import { CometChatUserMemberWrapper } from "../CometChatUserMemberWrapper/cometc
 import * as i0 from "@angular/core";
 export class CometChatMessageComposer {
 }
-CometChatMessageComposer.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageComposer, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatMessageComposer.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageComposer, declarations: [CometChatMessageComposerComponent], imports: [CommonModule, AIAssistBotMessageList, CometChatUserMemberWrapper], exports: [CometChatMessageComposerComponent] });
-CometChatMessageComposer.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageComposer, imports: [[CommonModule, AIAssistBotMessageList, CometChatUserMemberWrapper]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatMessageComposer, decorators: [{
+CometChatMessageComposer.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageComposer, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatMessageComposer.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageComposer, declarations: [CometChatMessageComposerComponent], imports: [CommonModule, AIAssistBotMessageList, CometChatUserMemberWrapper], exports: [CometChatMessageComposerComponent] });
+CometChatMessageComposer.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageComposer, imports: [[CommonModule, AIAssistBotMessageList, CometChatUserMemberWrapper]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatMessageComposer, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatMessageComposerComponent],

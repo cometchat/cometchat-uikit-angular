@@ -6,10 +6,10 @@ import "@cometchat/uikit-elements";
 import * as i0 from "@angular/core";
 export class CometChatCallLogParticipants {
 }
-CometChatCallLogParticipants.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogParticipants, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-CometChatCallLogParticipants.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogParticipants, declarations: [CometChatCallLogParticipantsComponent], imports: [CommonModule, CometChatList], exports: [CometChatCallLogParticipantsComponent] });
-CometChatCallLogParticipants.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogParticipants, imports: [[CommonModule, CometChatList]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.11", ngImport: i0, type: CometChatCallLogParticipants, decorators: [{
+CometChatCallLogParticipants.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogParticipants, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+CometChatCallLogParticipants.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogParticipants, declarations: [CometChatCallLogParticipantsComponent], imports: [CommonModule, CometChatList], exports: [CometChatCallLogParticipantsComponent] });
+CometChatCallLogParticipants.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogParticipants, imports: [[CommonModule, CometChatList]] });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.3.12", ngImport: i0, type: CometChatCallLogParticipants, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [CometChatCallLogParticipantsComponent],
