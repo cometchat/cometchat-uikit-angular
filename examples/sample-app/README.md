@@ -4,7 +4,14 @@
 
 # Angular Sample App by CometChat
 
-This is a reference application showcasing the integration of [**CometChat's Angular UI Kit**](https://www.cometchat.com/docs/v4/angular-uikit/overview) within an Angular framework. It provides developers with examples of implementing real-time messaging and voice and video calling features in their own Angular-based applications.
+This is a reference application showcasing the integration of [CometChat's Angular UI Kit](https://www.cometchat.com/docs/v4/angular-uikit/overview) within an Angular framework. It provides developers with examples of implementing real-time messaging and voice and video calling features in their own Angular-based applications.
+
+<div style="
+    display: flex;
+    align-items: center;
+    justify-content: center;">
+   <img src="./Screenshots/overview_cometchat_screens.png" />
+</div>
 
 ## Prerequisites
 
@@ -37,9 +44,6 @@ This is a reference application showcasing the integration of [**CometChat's Ang
     ```
     npm run start
     ```
-<p align="left">
-  <img max-width="100%" height="600px" src="./Screenshots/login-page.png">
-</p>
 
 
 ## Help and Support
