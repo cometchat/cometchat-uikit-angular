@@ -686,6 +686,9 @@ class MessageUtils {
 class ChatConfigurator {
     static init(initialSource) {
         this.dataSource = initialSource !== null && initialSource !== void 0 ? initialSource : new MessageUtils();
+        if (!initialSource) {
+            this.names = [];
+        }
         this.names.push(this.dataSource.getId());
     }
     static enable(callback) {
@@ -1940,7 +1943,7 @@ class CometChatUIKit {
         if (window) {
             window.CometChatUiKit = {
                 name: "@cometchat/chat-uikit-angular",
-                version: "4.3.21",
+                version: "4.3.22",
             };
         }
         if (CometChatUIKitSharedSettings) {
@@ -9416,6 +9419,9 @@ class CometChatMessageListComponent {
             }
         };
         this.appendMessages = (messages) => {
+            if (!this.isPartOfCurrentChatForSDKEvent(messages[0])) {
+                return;
+            }
             this.messagesList.push(...messages);
             this.messageCount = this.messagesList.length;
             if (this.messageCount > this.thresholdValue) {
@@ -12002,6 +12008,9 @@ class CometChatMessageListComponent {
      */
     prependMessages(messages) {
         try {
+            if (!this.isPartOfCurrentChatForSDKEvent(messages[0])) {
+                return;
+            }
             this.messagesList = [...messages, ...this.messagesList];
             this.messageCount = this.messagesList.length;
             if (this.messageCount > this.thresholdValue) {
@@ -13981,6 +13990,10 @@ class CometChatMessageComposerComponent {
             this.showAiFeatures = false;
             if (action.onClick) {
                 action.onClick();
+            }
+            if (this.showActionSheetItem) {
+                this.showActionSheetItem = false;
+                this.actionSheetRef.nativeElement.click();
             }
         };
         this.inputChangeHandler = (event) => {
