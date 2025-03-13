@@ -78,6 +78,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     userMemberListType: UserMemberListType;
     disableMentions?: boolean;
     textFormatters?: Array<CometChatTextFormatter>;
+    sendButtonIconURL: string;
     composerId: ComposerId;
     mentionsFormatterInstanceId: string;
     composerActions: CometChatMessageComposerAction[];
@@ -142,7 +143,6 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     aiPopover: PopoverStyle;
     mediaRecordedPopover: PopoverStyle;
     popoverStyle: PopoverStyle;
-    sendButtonIconURL: string;
     emojiButtonIconURL: string;
     stickerButtonIconURL: string;
     actions: (CometChatMessageComposerAction | CometChatActionsView)[];
@@ -310,7 +310,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     };
     handleClickOutside: (event: any) => void;
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatMessageComposerComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatMessageComposerComponent, "cometchat-message-composer", never, { "user": "user"; "group": "group"; "disableSoundForMessages": "disableSoundForMessages"; "customSoundForMessage": "customSoundForMessage"; "customSoundForMessages": "customSoundForMessages"; "disableTypingEvents": "disableTypingEvents"; "text": "text"; "placeholderText": "placeholderText"; "headerView": "headerView"; "onTextChange": "onTextChange"; "attachmentIconURL": "attachmentIconURL"; "attachmentOptions": "attachmentOptions"; "secondaryButtonView": "secondaryButtonView"; "auxilaryButtonView": "auxilaryButtonView"; "auxiliaryButtonsAlignment": "auxiliaryButtonsAlignment"; "sendButtonView": "sendButtonView"; "parentMessageId": "parentMessageId"; "hideLiveReaction": "hideLiveReaction"; "LiveReactionIconURL": "LiveReactionIconURL"; "backButtonIconURL": "backButtonIconURL"; "mentionsWarningText": "mentionsWarningText"; "mentionsWarningStyle": "mentionsWarningStyle"; "messageComposerStyle": "messageComposerStyle"; "onSendButtonClick": "onSendButtonClick"; "onError": "onError"; "backdropStyle": "backdropStyle"; "actionSheetStyle": "actionSheetStyle"; "aiActionSheetStyle": "aiActionSheetStyle"; "hideVoiceRecording": "hideVoiceRecording"; "mediaRecorderStyle": "mediaRecorderStyle"; "aiOptionsStyle": "aiOptionsStyle"; "aiIconURL": "aiIconURL"; "voiceRecordingIconURL": "voiceRecordingIconURL"; "voiceRecordingCloseIconURL": "voiceRecordingCloseIconURL"; "voiceRecordingStartIconURL": "voiceRecordingStartIconURL"; "voiceRecordingStopIconURL": "voiceRecordingStopIconURL"; "voiceRecordingSubmitIconURL": "voiceRecordingSubmitIconURL"; "hideLayoutMode": "hideLayoutMode"; "emojiIconURL": "emojiIconURL"; "userMemberWrapperConfiguration": "userMemberWrapperConfiguration"; "disableMentions": "disableMentions"; "textFormatters": "textFormatters"; }, { "childEvent": "childEvent"; }, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatMessageComposerComponent, "cometchat-message-composer", never, { "user": "user"; "group": "group"; "disableSoundForMessages": "disableSoundForMessages"; "customSoundForMessage": "customSoundForMessage"; "customSoundForMessages": "customSoundForMessages"; "disableTypingEvents": "disableTypingEvents"; "text": "text"; "placeholderText": "placeholderText"; "headerView": "headerView"; "onTextChange": "onTextChange"; "attachmentIconURL": "attachmentIconURL"; "attachmentOptions": "attachmentOptions"; "secondaryButtonView": "secondaryButtonView"; "auxilaryButtonView": "auxilaryButtonView"; "auxiliaryButtonsAlignment": "auxiliaryButtonsAlignment"; "sendButtonView": "sendButtonView"; "parentMessageId": "parentMessageId"; "hideLiveReaction": "hideLiveReaction"; "LiveReactionIconURL": "LiveReactionIconURL"; "backButtonIconURL": "backButtonIconURL"; "mentionsWarningText": "mentionsWarningText"; "mentionsWarningStyle": "mentionsWarningStyle"; "messageComposerStyle": "messageComposerStyle"; "onSendButtonClick": "onSendButtonClick"; "onError": "onError"; "backdropStyle": "backdropStyle"; "actionSheetStyle": "actionSheetStyle"; "aiActionSheetStyle": "aiActionSheetStyle"; "hideVoiceRecording": "hideVoiceRecording"; "mediaRecorderStyle": "mediaRecorderStyle"; "aiOptionsStyle": "aiOptionsStyle"; "aiIconURL": "aiIconURL"; "voiceRecordingIconURL": "voiceRecordingIconURL"; "voiceRecordingCloseIconURL": "voiceRecordingCloseIconURL"; "voiceRecordingStartIconURL": "voiceRecordingStartIconURL"; "voiceRecordingStopIconURL": "voiceRecordingStopIconURL"; "voiceRecordingSubmitIconURL": "voiceRecordingSubmitIconURL"; "hideLayoutMode": "hideLayoutMode"; "emojiIconURL": "emojiIconURL"; "userMemberWrapperConfiguration": "userMemberWrapperConfiguration"; "disableMentions": "disableMentions"; "textFormatters": "textFormatters"; "sendButtonIconURL": "sendButtonIconURL"; }, { "childEvent": "childEvent"; }, never, never>;
 }
 export interface Buttons {
     title: string;
