@@ -1943,7 +1943,7 @@ class CometChatUIKit {
         if (window) {
             window.CometChatUiKit = {
                 name: "@cometchat/chat-uikit-angular",
-                version: "4.3.23",
+                version: "4.3.24",
             };
         }
         if (CometChatUIKitSharedSettings) {
@@ -11171,7 +11171,7 @@ class CometChatMessageListComponent {
                 var injectedObject = metadata === null || metadata === void 0 ? void 0 : metadata[ThumbnailGenerationConstants.injected];
                 var extensionsObject = injectedObject === null || injectedObject === void 0 ? void 0 : injectedObject.extensions;
                 var thumbnailGenerationObject = extensionsObject[ThumbnailGenerationConstants.thumbnail_generation];
-                var imageToDownload = thumbnailGenerationObject === null || thumbnailGenerationObject === void 0 ? void 0 : thumbnailGenerationObject.url_small;
+                var imageToDownload = thumbnailGenerationObject === null || thumbnailGenerationObject === void 0 ? void 0 : thumbnailGenerationObject.url_medium;
                 if (imageToDownload) {
                     imageURL = imageToDownload;
                 }
@@ -13713,6 +13713,7 @@ class CometChatMessageComposerComponent {
         this.lastEmptySearchTerm = "";
         this.smartReplyState = States.loading;
         this.showMentionsCountWarning = false;
+        this.initialText = "";
         this.loadingStateText = localize("GENERATING_REPLIES");
         this.errorStateText = localize("SOMETHING_WRONG");
         this.emptyStateText = localize("NO_MESSAGES_FOUND");
@@ -13871,11 +13872,10 @@ class CometChatMessageComposerComponent {
         this.smartReplies = [];
         this.mentionStyleLocal = new UserMentionStyle({});
         this.sendMessageOnEnter = (event) => {
-            var _a, _b;
             this.showMentionsCountWarning = false;
             this.showListForMentions = false;
             this.sendTextMessage(event.detail.value);
-            (_b = (_a = this.inputRef) === null || _a === void 0 ? void 0 : _a.nativeElement) === null || _b === void 0 ? void 0 : _b.emptyInputField();
+            this.clearComposer();
             this.showSendButton = false;
             this.disableSendButton();
         };
@@ -14507,10 +14507,8 @@ class CometChatMessageComposerComponent {
             });
     }
     openEditPreview() {
-        var _a, _b;
         let messageTextWithMentionTags = this.checkForMentions(this.messageToBeEdited);
-        this.text = "";
-        (_b = (_a = this.inputRef) === null || _a === void 0 ? void 0 : _a.nativeElement) === null || _b === void 0 ? void 0 : _b.emptyInputField();
+        this.clearComposer();
         this.inputRef.nativeElement.text = "";
         this.text = this.messageToBeEdited.getText();
         this.editPreviewText = messageTextWithMentionTags;
@@ -14583,9 +14581,24 @@ class CometChatMessageComposerComponent {
             child: { showConversationSummaryView: true },
         });
     }
+    clearComposer() {
+        var _a, _b;
+        this.text = "";
+        this.messageText = "";
+        (_b = (_a = this.inputRef) === null || _a === void 0 ? void 0 : _a.nativeElement) === null || _b === void 0 ? void 0 : _b.emptyInputField();
+    }
     ngOnChanges(changes) {
+        var _a;
         if (changes["user"] || changes["group"]) {
             this.userOrGroupChanged(changes);
+            if (this.initialText !== this.text) {
+                this.clearComposer();
+            }
+            this.text = this.initialText || "";
+        }
+        if ((_a = changes["text"]) === null || _a === void 0 ? void 0 : _a.currentValue) {
+            this.initialText = changes["text"].currentValue;
+            this.text = this.initialText;
         }
     }
     userOrGroupChanged(changes) {
@@ -14654,7 +14667,7 @@ class CometChatMessageComposerComponent {
      * @param  {String=""} textMsg
      */
     sendTextMessage(textMsg = "") {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c;
         this.endTyping();
         try {
             // Dont Send Blank text messages -- i.e --- messages that only contain spaces
@@ -14706,8 +14719,7 @@ class CometChatMessageComposerComponent {
                 this.playAudio();
             }
             //clearing Message Input Box
-            this.messageText = "";
-            (_e = (_d = this.inputRef) === null || _d === void 0 ? void 0 : _d.nativeElement) === null || _e === void 0 ? void 0 : _e.emptyInputField();
+            this.clearComposer();
             this.messageSending = false;
             for (let i = 0; i < this.textFormatterList.length; i++) {
                 textMessage = this.textFormatterList[i].formatMessageForSending(textMessage);
@@ -15352,16 +15364,13 @@ class CometChatMessageComposerComponent {
         }
     }
     closePreview() {
-        var _a, _b;
         this.showSendButton = false;
         this.showListForMentions = false;
         this.showMentionsCountWarning = false;
         this.showPreview = false;
         this.editPreviewText = "";
         this.messageToBeEdited = null;
-        this.text = "";
-        this.messageText = "";
-        (_b = (_a = this.inputRef) === null || _a === void 0 ? void 0 : _a.nativeElement) === null || _b === void 0 ? void 0 : _b.emptyInputField();
+        this.clearComposer();
         this.disableSendButton();
         this.ref.detectChanges();
     }

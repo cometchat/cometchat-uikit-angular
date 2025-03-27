@@ -92,6 +92,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     groupMembersRequestBuilder: CometChat.GroupMembersRequestBuilder;
     usersRequestBuilder: CometChat.UsersRequestBuilder;
     ccShowMentionsCountWarning: Subscription;
+    initialText: string;
     loadingStateText: string;
     errorStateText: string;
     emptyStateText: string;
@@ -185,6 +186,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     closeModals(): void;
     constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);
     callConversationSummaryMethod(): void;
+    clearComposer(): void;
     ngOnChanges(changes: SimpleChanges): void;
     userOrGroupChanged(changes: SimpleChanges): void;
     ngOnDestroy(): void;
