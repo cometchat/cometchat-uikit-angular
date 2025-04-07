@@ -1,5 +1,5 @@
 import "@cometchat/uikit-elements";
-import { AvatarStyle, BackdropStyle, BadgeStyle, ConfirmDialogStyle, DateStyle, ListItemStyle, ReceiptStyle } from "@cometchat/uikit-elements";
+import { AvatarStyle, BackdropStyle, BadgeStyle, CheckboxStyle, ConfirmDialogStyle, DateStyle, ListItemStyle, ReceiptStyle } from "@cometchat/uikit-elements";
 import { BaseStyle, CometChatTextFormatter, ConversationsStyle, ListStyle } from "@cometchat/uikit-shared";
 import { CometChatOption, DatePatterns, SelectionMode, States, TitleAlignment } from "@cometchat/uikit-resources";
 import { ChangeDetectorRef, NgZone, OnChanges, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
@@ -178,6 +178,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     contactsNotFound: boolean;
     chatSearch: boolean;
     requestBuilder: CometChat.ConversationsRequest;
+    checkboxStyle: CheckboxStyle;
     /**
      * Properties for internal use
      */

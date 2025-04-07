@@ -1,4 +1,4 @@
-import { AvatarStyle, BackdropStyle, ChangeScopeStyle, ListItemStyle, MenuListStyle } from "@cometchat/uikit-elements";
+import { AvatarStyle, BackdropStyle, ChangeScopeStyle, CheckboxStyle, ListItemStyle, MenuListStyle } from "@cometchat/uikit-elements";
 import { GroupMembersStyle, ListStyle } from "@cometchat/uikit-shared";
 import { ChangeDetectorRef, OnChanges, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
 import { CometChatOption, SelectionMode, States, TitleAlignment, UserPresencePlacement } from "@cometchat/uikit-resources";
@@ -81,6 +81,7 @@ export declare class CometChatGroupMembersComponent implements OnInit, OnChanges
     fetchingGroups: boolean;
     fetchTimeOut: any;
     previousSearchKeyword: string;
+    checkboxStyle: CheckboxStyle;
     constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);
     memberScope: any[];
     membersList: CometChat.GroupMember[];

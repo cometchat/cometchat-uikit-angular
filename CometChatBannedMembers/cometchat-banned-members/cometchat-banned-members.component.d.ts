@@ -4,7 +4,7 @@ import { Subscription } from "rxjs";
 import { BannedMembersStyle, ListStyle } from '@cometchat/uikit-shared';
 import { CometChatOption, SelectionMode, States, TitleAlignment } from '@cometchat/uikit-resources';
 import '@cometchat/uikit-elements';
-import { AvatarStyle, ListItemStyle } from '@cometchat/uikit-elements';
+import { AvatarStyle, CheckboxStyle, ListItemStyle } from '@cometchat/uikit-elements';
 import { CometChatThemeService } from "../../CometChatTheme.service";
 import * as i0 from "@angular/core";
 /**
@@ -88,6 +88,7 @@ export declare class CometChatBannedMembersComponent implements OnInit {
     constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);
     membersList: CometChat.GroupMember[];
     onScrolledToBottom: any;
+    checkboxStyle: CheckboxStyle;
     ngOnInit(): void;
     backClicked(): void;
     closeClicked(): void;

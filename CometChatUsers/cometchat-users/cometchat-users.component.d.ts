@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
 import { CometChat } from "@cometchat/chat-sdk-javascript";
-import { AvatarStyle, BaseStyle, ListItemStyle } from "@cometchat/uikit-elements";
+import { AvatarStyle, BaseStyle, CheckboxStyle, ListItemStyle } from "@cometchat/uikit-elements";
 import { Subscription } from "rxjs";
 import { CometChatOption, SelectionMode, TitleAlignment, States } from "@cometchat/uikit-resources";
 import { UsersStyle, ListStyle } from "@cometchat/uikit-shared";
@@ -65,6 +65,7 @@ export declare class CometChatUsersComponent implements OnInit {
     selectedUsers: {
         [uid: string]: CometChat.User;
     };
+    checkboxStyle: CheckboxStyle;
     /**
      * Events
      */

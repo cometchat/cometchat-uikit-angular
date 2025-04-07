@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, OnChanges, OnInit, SimpleChanges, TemplateRef } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { GroupsStyle, ListStyle } from "@cometchat/uikit-shared";
-import { AvatarStyle, ListItemStyle } from '@cometchat/uikit-elements';
+import { AvatarStyle, CheckboxStyle, ListItemStyle } from '@cometchat/uikit-elements';
 import { Subscription } from 'rxjs';
 import { CometChatThemeService } from '../../CometChatTheme.service';
 import { CometChatOption, States, TitleAlignment, SelectionMode } from '@cometchat/uikit-resources';
@@ -77,6 +77,7 @@ export declare class CometChatGroupsComponent implements OnInit, OnChanges {
     ccOwnershipChanged: Subscription;
     ccGroupDeleted: Subscription;
     ccGroupCreated: Subscription;
+    checkboxStyle: CheckboxStyle;
     constructor(ref: ChangeDetectorRef, themeService: CometChatThemeService);
     ngOnChanges(changes: SimpleChanges): void;
     ngOnInit(): void;
