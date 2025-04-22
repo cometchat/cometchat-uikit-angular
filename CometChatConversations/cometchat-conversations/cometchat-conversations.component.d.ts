@@ -229,12 +229,13 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     subscribeToEvents(): void;
     unsubscribeToEvents(): void;
     getConversationFromUser(user: CometChat.User): import("@cometchat/chat-sdk-javascript").Conversation | null;
+    getConversationFromId(id: string): import("@cometchat/chat-sdk-javascript").Conversation | null;
     getConversationFromGroup(group: CometChat.Group): CometChat.Conversation | null;
     ngOnChanges(change: SimpleChanges): void;
     ngOnDestroy(): void;
     setConversationOptions(): void;
     onClick(conversation: CometChat.Conversation): void;
-    resetUnreadCount(): void;
+    resetUnreadCount(conversationId?: string): void;
     setThemeStyle(): void;
     setListItemStyle(): void;
     setAvatarStyle(): void;

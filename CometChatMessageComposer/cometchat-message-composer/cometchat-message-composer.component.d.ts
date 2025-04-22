@@ -114,7 +114,6 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     textFormatterList: Array<CometChatTextFormatter>;
     mentionsTextFormatterInstance: CometChatMentionsFormatter;
     mentionedUsers: Array<CometChat.User | CometChat.GroupMember>;
-    acceptHandlers: any;
     enableStickerKeyboard: boolean;
     toggleMediaRecorded: boolean;
     showAiBotList: boolean;

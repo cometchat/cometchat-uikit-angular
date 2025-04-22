@@ -1943,7 +1943,7 @@ class CometChatUIKit {
         if (window) {
             window.CometChatUiKit = {
                 name: "@cometchat/chat-uikit-angular",
-                version: "4.3.25",
+                version: "4.3.26",
             };
         }
         if (CometChatUIKitSharedSettings) {
@@ -6692,6 +6692,12 @@ class CometChatConversationsComponent {
             this.ref.detectChanges();
         });
         this.ccMessageRead = CometChatMessageEvents.ccMessageRead.subscribe((messageObject) => {
+            let conversation = this.getConversationFromId(messageObject.getConversationId());
+            if (conversation) {
+                this.updateEditedMessage(conversation.getLastMessage());
+                this.resetUnreadCount(conversation.getConversationId());
+                return;
+            }
             if (!this.conversationType || this.conversationType == messageObject.getReceiverType()) {
                 CometChat.CometChatHelper.getConversationFromMessage(messageObject).then((conversation) => {
                     var _a;
@@ -6740,6 +6746,13 @@ class CometChatConversationsComponent {
             CometChatUIKitConstants.MessageReceiverType.user &&
             element.getConversationWith().getUid() ==
                 user.getUid());
+        if (index >= 0) {
+            return this.conversationList[index];
+        }
+        return null;
+    }
+    getConversationFromId(id) {
+        let index = this.conversationList.findIndex((element) => element.getConversationId() == id);
         if (index >= 0) {
             return this.conversationList[index];
         }
@@ -6807,29 +6820,26 @@ class CometChatConversationsComponent {
         }
     }
     // set unread count
-    resetUnreadCount() {
+    resetUnreadCount(conversationId) {
         var _a;
-        if (this.activeConversation) {
-            const conversationlist = [
-                ...this.conversationList,
-            ];
-            //Gets the index of user which comes offline/online
-            const conversationKey = conversationlist.findIndex((conversationObj) => {
-                var _a;
-                return (conversationObj === null || conversationObj === void 0 ? void 0 : conversationObj.getConversationId()) ===
-                    ((_a = this.activeConversation) === null || _a === void 0 ? void 0 : _a.getConversationId());
-            });
-            if (conversationKey > -1) {
-                let conversationObj = conversationlist[conversationKey];
-                let newConversationObj = conversationObj;
-                newConversationObj.setUnreadMessageCount(0);
-                //newConversationObj.setUnreadMentionInMessageCount(0);
-                (_a = newConversationObj.getLastMessage()) === null || _a === void 0 ? void 0 : _a.setMuid(this.getUinx());
-                conversationlist.splice(conversationKey, 1, newConversationObj);
-                this.conversationList = [...conversationlist];
-                this.ref.detectChanges();
-            }
+        const targetConversationId = conversationId || ((_a = this.activeConversation) === null || _a === void 0 ? void 0 : _a.getConversationId());
+        if (!targetConversationId)
+            return;
+        const conversationIndex = this.conversationList.findIndex((conv) => conv.getConversationId() === targetConversationId);
+        if (conversationIndex < 0)
+            return;
+        const updatedConversation = this.conversationList[conversationIndex];
+        updatedConversation.setUnreadMessageCount(0);
+        const lastMessage = updatedConversation.getLastMessage();
+        if (lastMessage instanceof CometChat.TextMessage) {
+            lastMessage.setMuid(this.getUinx());
         }
+        this.conversationList = [
+            ...this.conversationList.slice(0, conversationIndex),
+            updatedConversation,
+            ...this.conversationList.slice(conversationIndex + 1),
+        ];
+        this.ref.detectChanges();
     }
     // sets property from theme to style object
     setThemeStyle() {
@@ -9257,8 +9267,8 @@ class CometChatMessageListComponent {
                         !lastMessage.getDeliveredAt()) {
                         //mark the message as delivered
                         if (!this.disableReceipt) {
-                            CometChat.markAsDelivered(lastMessage).then((receipt) => {
-                                let messageKey = this.messagesList.findIndex((m) => m.getId() === Number(receipt === null || receipt === void 0 ? void 0 : receipt.getMessageId()));
+                            CometChat.markAsDelivered(lastMessage).then(() => {
+                                let messageKey = this.messagesList.findIndex((m) => m.getId() === (lastMessage === null || lastMessage === void 0 ? void 0 : lastMessage.getId()));
                                 if (messageKey > -1) {
                                     this.markAllMessagAsDelivered(messageKey);
                                 }
@@ -9268,8 +9278,8 @@ class CometChatMessageListComponent {
                     if (!(lastMessage === null || lastMessage === void 0 ? void 0 : lastMessage.getReadAt()) && !isSentByMe) {
                         if (!this.disableReceipt) {
                             CometChat.markAsRead(lastMessage)
-                                .then((receipt) => {
-                                let messageKey = this.messagesList.findIndex((m) => m.getId() === Number(receipt === null || receipt === void 0 ? void 0 : receipt.getMessageId()));
+                                .then(() => {
+                                let messageKey = this.messagesList.findIndex((m) => m.getId() === (lastMessage === null || lastMessage === void 0 ? void 0 : lastMessage.getId()));
                                 if (messageKey > -1) {
                                     this.markAllMessagAsRead(messageKey);
                                 }
@@ -13797,12 +13807,6 @@ class CometChatMessageComposerComponent {
             ? [...this.textFormatters]
             : [];
         this.mentionedUsers = [];
-        this.acceptHandlers = {
-            "image/*": this.onImageChange.bind(this),
-            "video/*": this.onVideoChange.bind(this),
-            "audio/*": this.onAudioChange.bind(this),
-            "file/*": this.onFileChange.bind(this),
-        };
         this.enableStickerKeyboard = false;
         this.toggleMediaRecorded = false;
         this.showAiBotList = false;
@@ -14066,9 +14070,24 @@ class CometChatMessageComposerComponent {
         };
         this.inputChangeHandler = (event) => {
             var _a, _b;
-            const handler = this.acceptHandlers[this.inputElementRef.nativeElement.accept] ||
-                this.onFileChange.bind(this);
-            handler(event);
+            const files = event.target.files;
+            if (!files || files.length === 0)
+                return;
+            Array.from(files).forEach((file) => {
+                const fileType = file.type;
+                if (fileType.startsWith("image/")) {
+                    this.onImageChange(event);
+                }
+                else if (fileType.startsWith("video/")) {
+                    this.onVideoChange(event);
+                }
+                else if (fileType.startsWith("audio/")) {
+                    this.onAudioChange(event);
+                }
+                else {
+                    this.onFileChange(event);
+                }
+            });
             if (((_a = this.inputElementRef) === null || _a === void 0 ? void 0 : _a.nativeElement) && ((_b = this.inputElementRef.nativeElement) === null || _b === void 0 ? void 0 : _b.value)) {
                 this.inputElementRef.nativeElement.value = "";
             }
