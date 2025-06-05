@@ -125,6 +125,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     getUnreadCount: any;
     ccHidePanel: Subscription;
     ccShowPanel: Subscription;
+    ccActivePppover: Subscription;
     smartReplyMessage: CometChat.BaseMessage | null;
     enableSmartReply: boolean;
     smartReplyConfig: SmartRepliesConfiguration;
@@ -268,6 +269,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     ngOnChanges(changes: SimpleChanges): void;
     sendMessage(message: CometChat.BaseMessage, receiverId: string, receiverType: string): Promise<unknown>;
     closeContactsPage: () => void;
+    onEmojiKeyboardClosed(): void;
     addReaction: (event: any) => void;
     getCallBubbleTitle(message: CometChat.BaseMessage): any;
     getCallActionMessage: (call: CometChat.Call) => string;

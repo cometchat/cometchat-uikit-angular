@@ -158,6 +158,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     smartReplies: string[];
     loggedInUser: CometChat.User | null;
     mentionStyleLocal: UserMentionStyle;
+    ccActivePopover: Subscription;
     sendMessageOnEnter: (event: any) => void;
     disableSendButton(): void;
     messageInputChanged: (event: any) => void;
@@ -171,6 +172,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     padZero(num: number): string;
     sendRecordedAudio: (file: Blob) => boolean;
     addAttachmentCallback(): void;
+    closeComposerPopover(): void;
     subscribeToEvents(): void;
     openEditPreview(): void;
     isPartOfCurrentChatForUIEvent: (message: CometChat.BaseMessage) => boolean;
@@ -242,6 +244,7 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
     closeSmartReply: () => void;
     openAiFeatures: (event: any) => void;
     openEmojiKeyboard: (event: any) => void;
+    triggerActivePopoverEvent(): void;
     openMediaRecorded: (event: any) => void;
     openStickerKeyboard: (event: any) => void;
     closePopovers(): void;
@@ -265,8 +268,11 @@ export declare class CometChatMessageComposerComponent implements OnInit, OnChan
         border: string | undefined;
         borderRadius: string | undefined;
     };
+    private isValidStyleValue;
+    private getThemeColors;
     setTheme(): void;
     setComposerStyle(): void;
+    onPreviewClosed(): void;
     closePreview(): void;
     backButtonStyle: () => {
         height: string;

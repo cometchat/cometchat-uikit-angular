@@ -122,6 +122,7 @@ export declare class CometChatConversationsComponent implements OnInit, OnChange
     ccCallRejected: Subscription;
     ccCallEnded: Subscription;
     ccCallAccepted: Subscription;
+    ccGroupCreated: Subscription;
     iconStyle: any;
     listStyle: ListStyle;
     menustyle: {
