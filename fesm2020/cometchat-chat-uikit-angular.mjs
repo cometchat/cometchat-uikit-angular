@@ -1912,7 +1912,7 @@ class CometChatUIKit {
         if (window) {
             window.CometChatUiKit = {
                 name: "@cometchat/chat-uikit-angular",
-                version: "4.3.27",
+                version: "4.3.28",
             };
         }
         if (CometChatUIKitSharedSettings) {
@@ -8858,12 +8858,12 @@ class CometChatMessageListComponent {
          * @returns {CometChatMessageOption[]} The filtered set of message options.
          */
         this.filterEmojiOptions = (options) => {
-            if (!this.disableReactions) {
-                return options;
+            if (this.disableReactions && options?.length > 0) {
+                return options.filter((option) => {
+                    return option.id !== CometChatUIKitConstants.MessageOption.reactToMessage;
+                });
             }
-            return options.filter((option) => {
-                return option.id !== CometChatUIKitConstants.MessageOption.reactToMessage;
-            });
+            return options;
         };
         /**
          * Checks if the 'statusInfoView' is present in the default template provided by the user
@@ -9219,9 +9219,11 @@ class CometChatMessageListComponent {
                         //mark the message as delivered
                         if (!this.disableReceipt) {
                             CometChat.markAsDelivered(lastMessage).then(() => {
-                                let messageKey = this.messagesList.findIndex((m) => m.getId() === lastMessage?.getId());
-                                if (messageKey > -1) {
-                                    this.markAllMessagAsDelivered(messageKey);
+                                if (lastMessage.getReceiverType() == CometChatUIKitConstants.MessageReceiverType.user) {
+                                    let messageKey = this.messagesList.findIndex((m) => m.getId() === lastMessage?.getId());
+                                    if (messageKey > -1) {
+                                        this.markAllMessagAsDelivered(messageKey);
+                                    }
                                 }
                             });
                         }
@@ -9230,9 +9232,11 @@ class CometChatMessageListComponent {
                         if (!this.disableReceipt) {
                             CometChat.markAsRead(lastMessage)
                                 .then(() => {
-                                let messageKey = this.messagesList.findIndex((m) => m.getId() === lastMessage?.getId());
-                                if (messageKey > -1) {
-                                    this.markAllMessagAsRead(messageKey);
+                                if (lastMessage.getReceiverType() == CometChatUIKitConstants.MessageReceiverType.user) {
+                                    let messageKey = this.messagesList.findIndex((m) => m.getId() === lastMessage?.getId());
+                                    if (messageKey > -1) {
+                                        this.markAllMessagAsRead(messageKey);
+                                    }
                                 }
                             })
                                 .catch((error) => {
@@ -10398,7 +10402,7 @@ class CometChatMessageListComponent {
     }
     openMessageInfo(messageObject) {
         this.openMessageInfoPage = true;
-        this.messageInfoObject = messageObject;
+        this.messageInfoObject = CometChatUIKitUtility.clone(messageObject);
         this.ref.detectChanges();
     }
     sendMessagePrivately(messageObject) {
