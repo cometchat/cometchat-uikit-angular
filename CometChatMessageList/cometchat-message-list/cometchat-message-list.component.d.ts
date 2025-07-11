@@ -456,6 +456,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     };
     createRequestBuilder(): void;
     computeUnreadCount(): void;
+    getActionMessage(message: CometChat.BaseMessage): string;
     /**
      * Listener To Receive Messages in Real Time
      * @param
