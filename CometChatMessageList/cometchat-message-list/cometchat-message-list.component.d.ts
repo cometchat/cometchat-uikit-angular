@@ -415,7 +415,8 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
     ngAfterViewInit(): void;
     getStartCallFunction(message: CometChat.CustomMessage): (sessionId: string) => void;
     startDirectCall: (sessionId: string, message: any) => void;
-    launchCollaborativeWhiteboardDocument: (url: string) => void;
+    launchCollaborativeDocument: (url: string) => void;
+    launchCollaborativeWhiteboard: (url: string) => void;
     /**
      * Extracting  types and categories from template
      *
