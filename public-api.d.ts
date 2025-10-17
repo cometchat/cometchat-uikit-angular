@@ -8,6 +8,7 @@ export { DataSourceDecorator } from "./Shared/Framework/DataSourceDecorator";
 export { ExtensionsDataSource } from "./Shared/Framework/ExtensionDataSource";
 export { AIExtensionDataSource } from "./Shared/Framework/AIExtensionDataSource";
 export { MessageUtils } from "./Shared/Utils/MessageUtils";
+export { shouldShowCustomMimeTypes } from "./Shared/Utils/UtilityFunctions";
 export { CometChatThemeService } from "./CometChatTheme.service";
 export { CollaborativeDocumentExtension } from "./Extensions/CollaborativeDocument/CollaborativeDocumentExtension";
 export { CollaborativeDocumentExtensionDecorator } from "./Extensions/CollaborativeDocument/CollaborativeDocumentExtensionDecorator";
