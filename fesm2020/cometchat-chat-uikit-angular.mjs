@@ -1912,7 +1912,7 @@ class CometChatUIKit {
         if (window) {
             window.CometChatUiKit = {
                 name: "@cometchat/chat-uikit-angular",
-                version: "4.3.32",
+                version: "4.3.33",
             };
         }
         if (CometChatUIKitSharedSettings) {
@@ -1934,6 +1934,9 @@ class CometChatUIKit {
         appSettingsBuilder.setRegion(uiKitSettings.getRegion());
         appSettingsBuilder.overrideAdminHost(uiKitSettings.getAdminHost());
         appSettingsBuilder.overrideClientHost(uiKitSettings.getClientHost());
+        if (uiKitSettings.getStorageMode()) {
+            appSettingsBuilder.setStorageMode(uiKitSettings.getStorageMode());
+        }
         const appSettings = appSettingsBuilder.build();
         return new Promise((resolve, reject) => {
             CometChat.init(uiKitSettings?.appId, appSettings)
@@ -10322,7 +10325,9 @@ class CometChatMessageListComponent {
                         });
                     }
                 }
-                this.scrollToBottom();
+                setTimeout(() => {
+                    this.scrollToBottom();
+                }, 10);
             }
         }
         catch (error) {
@@ -12133,7 +12138,9 @@ class CometChatMessageListComponent {
                     unreadMessageCount: this.getUnreadCount,
                 });
                 this.chatChanged = false;
-                this.scrollToBottom();
+                setTimeout(() => {
+                    this.scrollToBottom();
+                }, 10);
             }
         }
         catch (error) {
