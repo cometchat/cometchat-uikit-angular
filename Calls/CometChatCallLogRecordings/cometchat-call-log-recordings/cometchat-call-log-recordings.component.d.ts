@@ -52,6 +52,7 @@ export declare class CometChatCallLogRecordingsComponent implements OnInit {
         titleFont?: string | undefined;
         titleColor?: string | undefined;
         padding?: string | undefined;
+        cursor?: string | undefined;
         height?: string | undefined;
         width?: string | undefined;
         border?: string | undefined;

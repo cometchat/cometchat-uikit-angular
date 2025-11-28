@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, OnInit, SimpleChanges, TemplateRef } from "@angular/core";
+import { ChangeDetectorRef, ElementRef, OnInit, QueryList, SimpleChanges, TemplateRef } from "@angular/core";
 import { CometChat } from "@cometchat/chat-sdk-javascript";
 import { AvatarStyle, BaseStyle, CheckboxStyle, ListItemStyle } from "@cometchat/uikit-elements";
 import { Subscription } from "rxjs";
@@ -45,6 +45,8 @@ export declare class CometChatUsersComponent implements OnInit {
     onEmpty?: () => void;
     userPresencePlacement: UserPresencePlacement;
     disableLoadingState: boolean;
+    checkboxes: QueryList<ElementRef>;
+    radios: QueryList<ElementRef>;
     fetchingUsers: boolean;
     fetchTimeOut: any;
     userChecked: string;
@@ -87,6 +89,7 @@ export declare class CometChatUsersComponent implements OnInit {
      * @param  {CometChat.User} user
      */
     onClick: (user: CometChat.User) => void;
+    onRowClicked(uid: string): void;
     /**
      * @param  {CometChat.User} user
      */
