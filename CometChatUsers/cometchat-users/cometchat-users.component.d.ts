@@ -3,7 +3,7 @@ import { CometChat } from "@cometchat/chat-sdk-javascript";
 import { AvatarStyle, BaseStyle, CheckboxStyle, ListItemStyle } from "@cometchat/uikit-elements";
 import { Subscription } from "rxjs";
 import { CometChatOption, SelectionMode, TitleAlignment, States } from "@cometchat/uikit-resources";
-import { UsersStyle, ListStyle } from "@cometchat/uikit-shared";
+import { UsersStyle, ListStyle, SelectedUserPreviewStyle } from "@cometchat/uikit-shared";
 import { CometChatThemeService } from "../../CometChatTheme.service";
 import { UserPresencePlacement } from "@cometchat/uikit-resources";
 import * as i0 from "@angular/core";
@@ -40,6 +40,8 @@ export declare class CometChatUsersComponent implements OnInit {
     listItemStyle: ListItemStyle;
     statusIndicatorStyle: BaseStyle;
     avatarStyle: AvatarStyle;
+    selectedUserPreviewStyle: SelectedUserPreviewStyle;
+    showSelectedUsersPreview: boolean;
     onItemClick: (user: CometChat.User) => void;
     searchKeyword: string;
     onEmpty?: () => void;
@@ -68,6 +70,20 @@ export declare class CometChatUsersComponent implements OnInit {
         [uid: string]: CometChat.User;
     };
     checkboxStyle: CheckboxStyle;
+    removeMemberButtonStyle: {
+        height: string;
+        width: string;
+        iconHeight: string;
+        iconWidth: string;
+        border: string;
+        borderRadius: string;
+        background: string;
+        buttonIconTint: string;
+    };
+    selectedUsersPreviewWrapper: {};
+    private lastSelectedIndex;
+    private isShiftPressed;
+    selectedUserPillStyle: {};
     /**
      * Events
      */
@@ -110,6 +126,50 @@ export declare class CometChatUsersComponent implements OnInit {
     attachListeners(): void;
     removeListener(): void;
     addMembersToList: (user: CometChat.User, event: any) => void;
+    getUserNameStyle(): {
+        font: string;
+        color: string | undefined;
+    };
+    /**
+     * Handle checkbox click to detect shift key
+     */
+    onCheckboxClick: (user: CometChat.User, event: Event) => void;
+    /**
+     * Handle checkbox changed event
+     */
+    onCheckboxChanged: (user: CometChat.User, event: any) => void;
+    /**
+     * Handle keyboard events for accessibility
+     */
+    onKeyDown: (event: KeyboardEvent) => void;
+    /**
+     * Handle keyboard events for accessibility
+     */
+    onKeyUp: (event: KeyboardEvent) => void;
+    /**
+     * Handle bulk selection when shift+click is used
+     */
+    private handleBulkSelection;
+    /**
+     * Update checkbox state programmatically
+     */
+    private updateCheckboxState;
+    /**
+     * Get array of selected users for preview
+     */
+    getSelectedUsersArray(): CometChat.User[];
+    /**
+     * Get count of selected users
+     */
+    getSelectedUsersCount(): number;
+    /**
+     * Remove user from selection by triggering checkbox click
+     */
+    removeSelectedUser(user: CometChat.User): void;
+    /**
+     * Track by function for ngFor performance
+     */
+    trackByUserId(index: number, user: CometChat.User): string;
     fetchNextUsersList: (state?: States) => void;
     setRequestBuilder(): import("@cometchat/chat-sdk-javascript").UsersRequest;
     /**
@@ -121,6 +181,7 @@ export declare class CometChatUsersComponent implements OnInit {
     setAvatarStyle(): void;
     setStatusStyle(): void;
     setUsersStyle(): void;
+    setSelectedUserStyle(): void;
     userStyle: () => {
         height: string | undefined;
         width: string | undefined;
@@ -129,5 +190,5 @@ export declare class CometChatUsersComponent implements OnInit {
         borderRadius: string | undefined;
     };
     static ɵfac: i0.ɵɵFactoryDeclaration<CometChatUsersComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatUsersComponent, "cometchat-users", never, { "usersRequestBuilder": "usersRequestBuilder"; "searchRequestBuilder": "searchRequestBuilder"; "subtitleView": "subtitleView"; "disableUsersPresence": "disableUsersPresence"; "listItemView": "listItemView"; "menu": "menu"; "options": "options"; "activeUser": "activeUser"; "hideSeparator": "hideSeparator"; "searchPlaceholder": "searchPlaceholder"; "hideError": "hideError"; "selectionMode": "selectionMode"; "searchIconURL": "searchIconURL"; "hideSearch": "hideSearch"; "title": "title"; "onError": "onError"; "emptyStateView": "emptyStateView"; "onSelect": "onSelect"; "errorStateView": "errorStateView"; "loadingIconURL": "loadingIconURL"; "showSectionHeader": "showSectionHeader"; "sectionHeaderField": "sectionHeaderField"; "loadingStateView": "loadingStateView"; "emptyStateText": "emptyStateText"; "errorStateText": "errorStateText"; "titleAlignment": "titleAlignment"; "usersStyle": "usersStyle"; "listItemStyle": "listItemStyle"; "statusIndicatorStyle": "statusIndicatorStyle"; "avatarStyle": "avatarStyle"; "onItemClick": "onItemClick"; "searchKeyword": "searchKeyword"; "onEmpty": "onEmpty"; "userPresencePlacement": "userPresencePlacement"; "disableLoadingState": "disableLoadingState"; }, {}, never, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<CometChatUsersComponent, "cometchat-users", never, { "usersRequestBuilder": "usersRequestBuilder"; "searchRequestBuilder": "searchRequestBuilder"; "subtitleView": "subtitleView"; "disableUsersPresence": "disableUsersPresence"; "listItemView": "listItemView"; "menu": "menu"; "options": "options"; "activeUser": "activeUser"; "hideSeparator": "hideSeparator"; "searchPlaceholder": "searchPlaceholder"; "hideError": "hideError"; "selectionMode": "selectionMode"; "searchIconURL": "searchIconURL"; "hideSearch": "hideSearch"; "title": "title"; "onError": "onError"; "emptyStateView": "emptyStateView"; "onSelect": "onSelect"; "errorStateView": "errorStateView"; "loadingIconURL": "loadingIconURL"; "showSectionHeader": "showSectionHeader"; "sectionHeaderField": "sectionHeaderField"; "loadingStateView": "loadingStateView"; "emptyStateText": "emptyStateText"; "errorStateText": "errorStateText"; "titleAlignment": "titleAlignment"; "usersStyle": "usersStyle"; "listItemStyle": "listItemStyle"; "statusIndicatorStyle": "statusIndicatorStyle"; "avatarStyle": "avatarStyle"; "selectedUserPreviewStyle": "selectedUserPreviewStyle"; "showSelectedUsersPreview": "showSelectedUsersPreview"; "onItemClick": "onItemClick"; "searchKeyword": "searchKeyword"; "onEmpty": "onEmpty"; "userPresencePlacement": "userPresencePlacement"; "disableLoadingState": "disableLoadingState"; }, {}, never, never>;
 }
