@@ -515,7 +515,7 @@ export declare class CometChatMessageListComponent implements OnInit, OnDestroy,
      * @param  {CometChat.BaseMessage} message
      * @param  {string} type
      */
-    messageReceivedHandler: (message: CometChat.BaseMessage) => void;
+    messageReceivedHandler: (message: CometChat.BaseMessage, isSentByMeToUser?: boolean) => void;
     playAudio(): void;
     getCallBuilder: () => any;
     reInitializeMessageList(): void;

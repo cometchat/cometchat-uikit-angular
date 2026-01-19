@@ -1912,7 +1912,7 @@ class CometChatUIKit {
         if (window) {
             window.CometChatUiKit = {
                 name: "@cometchat/chat-uikit-angular",
-                version: "4.3.35",
+                version: "4.3.36",
             };
         }
         if (CometChatUIKitSharedSettings) {
@@ -4495,6 +4495,9 @@ class CometChatUsersComponent {
             if (input) {
                 input.click();
             }
+        }
+        else {
+            this.addMembersToList(user, { detail: { checked: false } });
         }
     }
     /**
@@ -9726,7 +9729,7 @@ class CometChatMessageListComponent {
          * @param  {CometChat.BaseMessage} message
          * @param  {string} type
          */
-        this.messageReceivedHandler = (message) => {
+        this.messageReceivedHandler = (message, isSentByMeToUser = false) => {
             ++this.messageCount;
             if (message.getParentMessageId()) {
                 // this.updateReplyCount(message);
@@ -9775,7 +9778,7 @@ class CometChatMessageListComponent {
             else if (message.hasOwnProperty("parentMessageId") === true &&
                 this.parentMessageId) {
                 if (message.getParentMessageId() === this.parentMessageId &&
-                    this.isOnBottom) {
+                    this.isOnBottom && !isSentByMeToUser) {
                     if (!this.disableReceipt) {
                         CometChat.markAsRead(message).then(() => {
                             CometChatMessageEvents.ccMessageRead.next(message);
@@ -12097,16 +12100,21 @@ class CometChatMessageListComponent {
      */
     messageReceived(message) {
         try {
+            const isReceivedByMeFromUser = message?.getSender().getUid() === this.user?.getUid() &&
+                message.getReceiverId() === this.loggedInUser?.getUid();
+            const isSentByMeToUser = this.isSentByMe(message) &&
+                message.getReceiverId() === this.user?.getUid();
             if (message.getReceiverId() === this.group?.getGuid() ||
-                (message?.getSender().getUid() === this.user?.getUid() &&
-                    message.getReceiverId() === this.loggedInUser?.getUid())) {
-                if ((!message?.getReadAt() &&
-                    !message?.getParentMessageId() &&
-                    this.isOnBottom) ||
-                    (!message?.getReadAt() &&
-                        message.getParentMessageId() &&
-                        this.parentMessageId &&
-                        this.isOnBottom)) {
+                isReceivedByMeFromUser ||
+                isSentByMeToUser) {
+                if (!isSentByMeToUser &&
+                    ((!message?.getReadAt() &&
+                        !message?.getParentMessageId() &&
+                        this.isOnBottom) ||
+                        (!message?.getReadAt() &&
+                            message.getParentMessageId() &&
+                            this.parentMessageId &&
+                            this.isOnBottom))) {
                     if (!this.disableReceipt) {
                         CometChat.markAsRead(message).then(() => {
                             CometChatMessageEvents.ccMessageRead.next(message);
@@ -12118,7 +12126,7 @@ class CometChatMessageListComponent {
                     }
                     CometChatMessageEvents.ccMessageRead.next(message);
                 }
-                this.messageReceivedHandler(message);
+                this.messageReceivedHandler(message, isSentByMeToUser);
             }
         }
         catch (error) {

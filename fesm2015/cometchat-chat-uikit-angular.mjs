@@ -1943,7 +1943,7 @@ class CometChatUIKit {
         if (window) {
             window.CometChatUiKit = {
                 name: "@cometchat/chat-uikit-angular",
-                version: "4.3.35",
+                version: "4.3.36",
             };
         }
         if (CometChatUIKitSharedSettings) {
@@ -4522,6 +4522,9 @@ class CometChatUsersComponent {
             if (input) {
                 input.click();
             }
+        }
+        else {
+            this.addMembersToList(user, { detail: { checked: false } });
         }
     }
     /**
@@ -9800,7 +9803,7 @@ class CometChatMessageListComponent {
          * @param  {CometChat.BaseMessage} message
          * @param  {string} type
          */
-        this.messageReceivedHandler = (message) => {
+        this.messageReceivedHandler = (message, isSentByMeToUser = false) => {
             ++this.messageCount;
             if (message.getParentMessageId()) {
                 // this.updateReplyCount(message);
@@ -9849,7 +9852,7 @@ class CometChatMessageListComponent {
             else if (message.hasOwnProperty("parentMessageId") === true &&
                 this.parentMessageId) {
                 if (message.getParentMessageId() === this.parentMessageId &&
-                    this.isOnBottom) {
+                    this.isOnBottom && !isSentByMeToUser) {
                     if (!this.disableReceipt) {
                         CometChat.markAsRead(message).then(() => {
                             CometChatMessageEvents.ccMessageRead.next(message);
@@ -12143,18 +12146,23 @@ class CometChatMessageListComponent {
      * @param  {CometChat.BaseMessage} message
      */
     messageReceived(message) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         try {
-            if (message.getReceiverId() === ((_a = this.group) === null || _a === void 0 ? void 0 : _a.getGuid()) ||
-                ((message === null || message === void 0 ? void 0 : message.getSender().getUid()) === ((_b = this.user) === null || _b === void 0 ? void 0 : _b.getUid()) &&
-                    message.getReceiverId() === ((_c = this.loggedInUser) === null || _c === void 0 ? void 0 : _c.getUid()))) {
-                if ((!(message === null || message === void 0 ? void 0 : message.getReadAt()) &&
-                    !(message === null || message === void 0 ? void 0 : message.getParentMessageId()) &&
-                    this.isOnBottom) ||
-                    (!(message === null || message === void 0 ? void 0 : message.getReadAt()) &&
-                        message.getParentMessageId() &&
-                        this.parentMessageId &&
-                        this.isOnBottom)) {
+            const isReceivedByMeFromUser = (message === null || message === void 0 ? void 0 : message.getSender().getUid()) === ((_a = this.user) === null || _a === void 0 ? void 0 : _a.getUid()) &&
+                message.getReceiverId() === ((_b = this.loggedInUser) === null || _b === void 0 ? void 0 : _b.getUid());
+            const isSentByMeToUser = this.isSentByMe(message) &&
+                message.getReceiverId() === ((_c = this.user) === null || _c === void 0 ? void 0 : _c.getUid());
+            if (message.getReceiverId() === ((_d = this.group) === null || _d === void 0 ? void 0 : _d.getGuid()) ||
+                isReceivedByMeFromUser ||
+                isSentByMeToUser) {
+                if (!isSentByMeToUser &&
+                    ((!(message === null || message === void 0 ? void 0 : message.getReadAt()) &&
+                        !(message === null || message === void 0 ? void 0 : message.getParentMessageId()) &&
+                        this.isOnBottom) ||
+                        (!(message === null || message === void 0 ? void 0 : message.getReadAt()) &&
+                            message.getParentMessageId() &&
+                            this.parentMessageId &&
+                            this.isOnBottom))) {
                     if (!this.disableReceipt) {
                         CometChat.markAsRead(message).then(() => {
                             CometChatMessageEvents.ccMessageRead.next(message);
@@ -12166,7 +12174,7 @@ class CometChatMessageListComponent {
                     }
                     CometChatMessageEvents.ccMessageRead.next(message);
                 }
-                this.messageReceivedHandler(message);
+                this.messageReceivedHandler(message, isSentByMeToUser);
             }
         }
         catch (error) {
