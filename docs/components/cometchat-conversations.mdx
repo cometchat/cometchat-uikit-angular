@@ -128,7 +128,6 @@ export class ChatComponent {
 
 ```typescript
 <cometchat-conversations
-  [title]="'My Chats'"
   [showSearchBar]="true"
   (itemClick)="onConversationClick($event)"
   (searchBarClick)="onSearchClick()"
@@ -1104,7 +1103,6 @@ import { CometChatConversationsComponent } from '@cometchat/chat-uikit-angular';
     <!-- This instance shows only user conversations -->
     <cometchat-conversations
       [conversationsRequestBuilder]="userConversationsBuilder"
-      [title]="'Direct Messages'"
       (itemClick)="onConversationClick($event)"
     ></cometchat-conversations>
   `
@@ -1444,7 +1442,6 @@ import { Subject, takeUntil } from 'rxjs';
       }
 
       <cometchat-conversations
-        [title]="'My Conversations'"
         [showSearchBar]="true"
         [conversationsRequestBuilder]="conversationsBuilder"
         [selectionMode]="selectionMode"

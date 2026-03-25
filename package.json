@@ -55,7 +55,7 @@
     "@axe-core/cli": "^4.11.0",
     "@axe-core/webdriverjs": "^4.11.0",
     "@chromatic-com/storybook": "^5.0.1",
-    "@cometchat/chat-uikit-angular": "^5.0.0-beta.1",
+    "@cometchat/chat-uikit-angular": "^5.0.0-beta.2",
     "@compodoc/compodoc": "^1.2.0",
     "@storybook/addon-a11y": "^10.2.16",
     "@storybook/addon-docs": "^10.2.16",

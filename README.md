@@ -10,6 +10,8 @@ The CometChat Angular UI Kit provides a pre-built user interface kit that develo
    <img src="./screenshots/sample_app_overview.png" />
 </div>
 
+> **Note:** This package is currently in beta (`5.0.0-beta.2`). APIs may change before the stable release.
+
 ## Prerequisites
 
 - Node.js >= 18
@@ -63,7 +65,7 @@ The core library lives in `projects/cometchat-uikit/` and is published as [`@com
 npm run build:lib
 ```
 
-Refer to the [Integration Steps](https://www.cometchat.com/docs/ui-kit/angular/integration) to integrate the UI Kit into your own Angular app.
+Refer to the [Integration Steps](https://www.cometchat.com/docs/ui-kit/angular/v5/integration) to integrate the UI Kit into your own Angular app.
 
 ## Sample App
 
@@ -105,4 +107,4 @@ npm run dev
 
 ## Help and Support
 
-For issues running the project or integrating with our UI Kits, consult our [documentation](https://www.cometchat.com/docs/ui-kit/angular/integration) or create a [support ticket](https://help.cometchat.com/hc/en-us) or seek real-time support via the [CometChat Dashboard](https://app.cometchat.com/).
+For issues running the project or integrating with our UI Kits, consult our [documentation](https://www.cometchat.com/docs/ui-kit/angular/v5/integration) or create a [support ticket](https://help.cometchat.com/hc/en-us) or seek real-time support via the [CometChat Dashboard](https://app.cometchat.com/).

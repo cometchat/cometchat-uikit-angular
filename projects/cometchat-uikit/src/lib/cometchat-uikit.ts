@@ -324,7 +324,7 @@ export class CometChatUIKit {
     return new Promise((resolve, reject) => {
       window.CometChatUiKit = {
         name: '@cometchat/chat-uikit-angular',
-        version: '5.0.0-beta.1',
+        version: '5.0.0-beta.2',
       };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
