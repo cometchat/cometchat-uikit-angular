@@ -1,0 +1,248 @@
+---
+title: "Localization"
+description: "Configure multi-language support, override translations globally, and add custom languages."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key class | `CometChatLocalize` (static class for all localization) |
+| Key pipe | `TranslatePipe` (`translate` pipe in templates) |
+| Required setup | `CometChatUIKit.init(uiKitSettings)` |
+| Purpose | Multi-language support with runtime switching and global overrides |
+| Features | 19 built-in languages, runtime switching, custom translations |
+| Related | [Date/Time Formatting](/customization/date-time-formatting) \| [Theming](/customization/theming) |
+
+</Accordion>
+
+CometChat UIKit supports 19 languages out of the box with runtime language switching. You can override translations globally without modifying source files.
+
+| Capability | Description |
+| --- | --- |
+| Built-in languages | en-US, en-GB, de, fr, es, ja, ko, zh, zh-TW, ru, hi, ms, pt, sv, lt, hu, it, nl, tr |
+| Runtime switching | Change language at any time via `setCurrentLanguage` |
+| Global overrides | Replace any translation key for a language |
+| Custom languages | Add entirely new languages at runtime |
+
+---
+
+## Setting the Language
+
+```typescript expandable
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+// Initialize with a specific language
+CometChatLocalize.init({
+  language: 'es',
+  timezone: 'Europe/Madrid'
+});
+
+// Switch language at runtime
+CometChatLocalize.setCurrentLanguage('fr');
+```
+
+---
+
+## Global Translation Overrides
+
+Override specific translation keys for any language:
+
+```typescript expandable
+CometChatLocalize.addTranslation({
+  'en-US': {
+    'conversation_chat_title': 'Conversations',
+    'conversation_delete': 'Remove',
+    'message_composer_placeholder': 'Write something...'
+  },
+  'es': {
+    'conversation_chat_title': 'Conversaciones',
+    'conversation_delete': 'Eliminar'
+  }
+});
+```
+
+Existing keys are replaced; new keys are added. All other translations remain unchanged.
+
+---
+
+## Using the Translate Pipe
+
+```html
+<!-- Basic usage -->
+<h2>{{ 'conversation_chat_title' | translate }}</h2>
+
+<!-- With parameters -->
+<span>{{ 'add_n_members' | translate:{ n: 5 } }}</span>
+```
+
+### Resolution Priority
+
+When resolving a translation key:
+
+1. Global translation for current language
+2. Fallback language translation (default: en-US)
+3. Returns the key itself if nothing found
+
+---
+
+## Adding a New Language
+
+```typescript expandable
+CometChatLocalize.addTranslation({
+  'custom-lang': {
+    'conversation_chat_title': 'Chats',
+    'conversation_delete': 'Delete',
+    'message_composer_placeholder': 'Type a message',
+    // Add all required keys
+  }
+});
+
+CometChatLocalize.setCurrentLanguage('custom-lang');
+```
+
+---
+
+## Programmatic Translation
+
+In TypeScript code (outside templates):
+
+```typescript
+const title = CometChatLocalize.getLocalizedString('conversation_chat_title');
+```
+
+---
+
+## Initialization Options
+
+```typescript expandable
+CometChatLocalize.init({
+  language: 'es',                    // Active language
+  fallbackLanguage: 'en-US',         // Fallback when key not found
+  timezone: 'Europe/Madrid',         // Timezone for date formatting
+  disableAutoDetection: false,       // Disable browser language detection
+  disableDateTimeLocalization: false, // Disable date/time localization
+  translationsForLanguage: {         // Custom translations to merge
+    'en-US': { 'custom_key': 'value' }
+  },
+  calendarObject: {                  // Custom date format (see Date/Time docs)
+    today: 'HH:mm',
+    yesterday: '[Yesterday]',
+    lastWeek: 'dddd',
+    otherDays: 'DD/MM/YYYY'
+  },
+  missingKeyHandler: (key) => {      // Called when a key is not found
+    console.warn(`Missing translation: ${key}`);
+  }
+});
+```
+
+---
+
+## Date & Time Localization
+
+### CalendarObject
+
+Use `CalendarObject` to customize how dates and times are displayed throughout the UIKit. Supports relative time formatting for minutes and hours.
+
+<Warning>
+Changing this format globally updates the date and time representation wherever it is used. If a component-specific `CalendarObject` is provided, it takes higher precedence over the global settings.
+</Warning>
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `today` | `string` | Format for dates on the same day. Example: `"Today at hh:mm A"` |
+| `yesterday` | `string` | Format for dates on the previous day. Example: `"Yesterday at hh:mm A"` |
+| `lastWeek` | `string` | Format for dates within the last 7 days. Example: `"Last week on dddd"` |
+| `otherDays` | `string` | Format for dates that do not fit other categories. Example: `"DD MMM YYYY, hh:mm A"` |
+| `relativeTime` | `object` | Custom formatting for relative time expressions |
+| `relativeTime.minute` | `string` | Single minute format. Example: `"%d minute ago"` |
+| `relativeTime.minutes` | `string` | Multiple minutes format. Example: `"%d minutes ago"` |
+| `relativeTime.hour` | `string` | Single hour format. Example: `"%d hour ago"` |
+| `relativeTime.hours` | `string` | Multiple hours format. Example: `"%d hours ago"` |
+
+```typescript expandable
+import { CometChatLocalize, CalendarObject } from '@cometchat/chat-uikit-angular';
+
+new CalendarObject({
+  today: '[Today at] hh:mm A',
+  yesterday: '[Yesterday at] hh:mm A',
+  lastWeek: '[Last week on] dddd',
+  otherDays: 'DD MMM YYYY, hh:mm A',
+  relativeTime: {
+    minute: '%d minute ago',
+    minutes: '%d minutes ago',
+    hour: '%d hour ago',
+    hours: '%d hours ago',
+  }
+})
+```
+
+### Global Configuration
+
+Apply a custom date format globally via `CometChatLocalize.init()`:
+
+```typescript expandable
+import { CometChatLocalize, CalendarObject } from '@cometchat/chat-uikit-angular';
+
+CometChatLocalize.init({
+  language: 'es',
+  timezone: 'Europe/Madrid',
+  calendarObject: new CalendarObject({
+    today: '[Hoy a las] hh:mm A',
+    yesterday: '[Ayer a las] hh:mm A',
+    lastWeek: '[Última semana el] dddd',
+    otherDays: 'DD MMM YYYY, hh:mm A',
+    relativeTime: {
+      minute: '%d minuto atrás',
+      minutes: '%d minutos atrás',
+      hour: '%d hora atrás',
+      hours: '%d horas atrás',
+    }
+  })
+});
+```
+
+### Component-Specific Configuration
+
+Pass a `CalendarObject` directly to a component to override the global format for that component only:
+
+```html
+<cometchat-message-header
+  [group]="groupObj"
+  [lastActiveAtDateTimeFormat]="customDateFormat"
+></cometchat-message-header>
+```
+
+```typescript
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+customDateFormat = new CalendarObject({
+  today: '[Today at] hh:mm A',
+  yesterday: '[Yesterday at] hh:mm A',
+  otherDays: 'DD MMM YYYY, hh:mm A'
+});
+```
+
+### formatDate
+
+Format a Unix timestamp using a `CalendarObject` directly:
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `timestamp` | `number` | Unix timestamp in seconds |
+| `calendarObject` | `CalendarObject` | Calendar configuration for formatting |
+
+Returns a formatted date `string`.
+
+```typescript expandable
+import { CometChatLocalize, CalendarObject } from '@cometchat/chat-uikit-angular';
+
+const formatted = CometChatLocalize.formatDate(1700000000, new CalendarObject({
+  today: 'hh:mm A',
+  yesterday: '[Yesterday]',
+  lastWeek: 'dddd',
+  otherDays: 'DD MMM YYYY, hh:mm A'
+}));
+```

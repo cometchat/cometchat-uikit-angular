@@ -1,0 +1,856 @@
+---
+title: DropDown
+description: "A reusable dropdown component with keyboard navigation, outside click detection, and full accessibility support"
+---
+The `CometChatDropDown` component provides a consistent, accessible dropdown implementation across the UIKit. It supports keyboard navigation, outside click detection, and full ARIA attributes for screen reader compatibility.
+
+## Overview
+
+The DropDown component is designed for selection patterns throughout your chat application:
+
+- **Keyboard Navigation**: Full support for Arrow keys, Enter, and Escape
+- **Outside Click Detection**: Automatically closes when clicking outside
+- **Accessibility**: Complete ARIA attributes and keyboard support
+- **Customizable**: CSS variable-based styling for easy theming
+- **Responsive**: Hover and focus states with visual feedback
+
+## Basic Usage
+
+### Simple Dropdown
+
+```html
+<cometchat-dropdown 
+  [options]="['Option 1', 'Option 2', 'Option 3']"
+  (optionsChanged)="onOptionChange($event)">
+</cometchat-dropdown>
+```
+
+### Dropdown with Selected Option
+
+```html
+<cometchat-dropdown 
+  [options]="['Small', 'Medium', 'Large']"
+  [selectedOption]="'Medium'"
+  (optionsChanged)="onSizeChange($event)">
+</cometchat-dropdown>
+```
+
+### Dropdown with Custom Placeholder
+
+```html
+<cometchat-dropdown 
+  [options]="languages"
+  [placeholder]="'Choose a language'"
+  (optionsChanged)="onLanguageChange($event)">
+</cometchat-dropdown>
+```
+
+<Info>
+  **Live Preview** — interact with the default dropdown.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-dropdown--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-dropdown--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "250px", border: "1px solid #e0e0e0"}}
+  title="Dropdown — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDropDownComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-settings-panel',
+  standalone: true,
+  imports: [CometChatDropDownComponent],
+  template: `
+    <div class="settings-panel">
+      <h3>Chat Settings</h3>
+      
+      <div class="setting-item">
+        <label>Theme</label>
+        <cometchat-dropdown 
+          [options]="themes"
+          [selectedOption]="selectedTheme"
+          (optionsChanged)="onThemeChange($event)">
+        </cometchat-dropdown>
+      </div>
+      
+      <div class="setting-item">
+        <label>Font Size</label>
+        <cometchat-dropdown 
+          [options]="fontSizes"
+          [selectedOption]="selectedFontSize"
+          (optionsChanged)="onFontSizeChange($event)">
+        </cometchat-dropdown>
+      </div>
+      
+      <div class="setting-item">
+        <label>Language</label>
+        <cometchat-dropdown 
+          [options]="languages"
+          [selectedOption]="selectedLanguage"
+          [placeholder]="'Select language'"
+          (optionsChanged)="onLanguageChange($event)">
+        </cometchat-dropdown>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .settings-panel {
+      padding: 20px;
+      max-width: 400px;
+    }
+    h3 {
+      margin: 0 0 20px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .setting-item {
+      margin-bottom: 16px;
+    }
+    .setting-item label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  `]
+})
+export class SettingsPanelComponent {
+  themes = ['Light', 'Dark', 'Auto'];
+  selectedTheme = 'Light';
+  
+  fontSizes = ['Small', 'Medium', 'Large'];
+  selectedFontSize = 'Medium';
+  
+  languages = ['English', 'Spanish', 'French', 'German', 'Japanese'];
+  selectedLanguage = 'English';
+
+  onThemeChange(event: { value: string }): void {
+    this.selectedTheme = event.value;
+    console.log('Theme changed to:', event.value);
+    // Apply theme logic here
+  }
+
+  onFontSizeChange(event: { value: string }): void {
+    this.selectedFontSize = event.value;
+    console.log('Font size changed to:', event.value);
+    // Apply font size logic here
+  }
+
+  onLanguageChange(event: { value: string }): void {
+    this.selectedLanguage = event.value;
+    console.log('Language changed to:', event.value);
+    // Apply language logic here
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `options` | `string[]` | `[]` | Array of options to display in the dropdown |
+| `selectedOption` | `string` | `''` | Currently selected option. If empty, first option is selected by default |
+| `placeholder` | `string` | `'Select an option'` | Placeholder text shown when no option is selected |
+| `ariaLabel` | `string` | `undefined` | Custom ARIA label for the dropdown button. If not provided, uses the display value |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `optionsChanged` | `EventEmitter<{ value: string }>` | Emitted when an option is selected. Provides the selected option value |
+
+## Behavior
+
+### Option Selection
+
+The dropdown can be controlled or uncontrolled:
+
+```typescript expandable
+// Controlled dropdown
+@Component({
+  template: `
+    <cometchat-dropdown 
+      [options]="options"
+      [selectedOption]="selectedValue"
+      (optionsChanged)="onOptionChange($event)">
+    </cometchat-dropdown>
+  `
+})
+export class ControlledDropdownComponent {
+  options = ['Option 1', 'Option 2', 'Option 3'];
+  selectedValue = 'Option 1';
+
+  onOptionChange(event: { value: string }): void {
+    this.selectedValue = event.value;
+  }
+}
+```
+
+### Default Selection
+
+If no `selectedOption` is provided, the first option in the array is selected by default:
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-dropdown 
+      [options]="['First', 'Second', 'Third']"
+      (optionsChanged)="onOptionChange($event)">
+    </cometchat-dropdown>
+    <!-- 'First' will be selected by default -->
+  `
+})
+export class DefaultSelectionComponent {
+  onOptionChange(event: { value: string }): void {
+    console.log('Selected:', event.value);
+  }
+}
+```
+
+### Outside Click Detection
+
+The dropdown automatically closes when clicking outside the component:
+
+```typescript
+// No additional configuration needed
+<cometchat-dropdown 
+  [options]="options"
+  (optionsChanged)="onOptionChange($event)">
+</cometchat-dropdown>
+```
+
+## Customization
+
+### Styling with CSS Variables
+
+The DropDown component uses CSS variables for comprehensive theming:
+
+```css expandable
+/* Custom dropdown styling */
+cometchat-dropdown {
+  --cometchat-background-color: #ffffff;
+  --cometchat-border-color: #e0e0e0;
+  --cometchat-primary-color: #3399ff;
+  --cometchat-text-color: #000000;
+  --cometchat-hover-background-color: #f5f5f5;
+  --cometchat-selected-background-color: #e6f2ff;
+  --cometchat-font-family: 'Inter', sans-serif;
+  --cometchat-font-size-medium: 14px;
+  --cometchat-border-radius: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-background-color` | Background color of button and menu | `#ffffff` |
+| `--cometchat-border-color` | Border color | `#e0e0e0` |
+| `--cometchat-primary-color` | Focus outline and selected text color | `#3399ff` |
+| `--cometchat-text-color` | Text color | `#000000` |
+| `--cometchat-hover-background-color` | Option hover background | `#f5f5f5` |
+| `--cometchat-selected-background-color` | Selected option background | `#e6f2ff` |
+| `--cometchat-font-family` | Font family | `inherit` |
+| `--cometchat-font-size-medium` | Font size | `14px` |
+| `--cometchat-border-radius` | Border radius | `4px` |
+| `--cometchat-spacing-2` | Small spacing | `8px` |
+| `--cometchat-spacing-3` | Medium spacing | `12px` |
+| `--cometchat-box-shadow` | Dropdown menu shadow | `0 2px 8px rgba(0, 0, 0, 0.15)` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Dark theme dropdown */
+.dropdown-dark cometchat-dropdown {
+  --cometchat-background-color: #2c2c2c;
+  --cometchat-border-color: #444444;
+  --cometchat-text-color: #ffffff;
+  --cometchat-hover-background-color: #3a3a3a;
+  --cometchat-selected-background-color: #1a4d7a;
+}
+
+/* Success dropdown */
+.dropdown-success cometchat-dropdown {
+  --cometchat-primary-color: #4CAF50;
+  --cometchat-selected-background-color: #e8f5e9;
+}
+
+/* Warning dropdown */
+.dropdown-warning cometchat-dropdown {
+  --cometchat-primary-color: #FF9800;
+  --cometchat-selected-background-color: #fff3e0;
+}
+```
+
+### Custom Sizes
+
+```css expandable
+/* Large dropdown */
+.dropdown-large cometchat-dropdown {
+  --cometchat-font-size-medium: 16px;
+  --cometchat-spacing-2: 12px;
+  --cometchat-spacing-3: 16px;
+}
+
+/* Small dropdown */
+.dropdown-small cometchat-dropdown {
+  --cometchat-font-size-medium: 12px;
+  --cometchat-spacing-2: 6px;
+  --cometchat-spacing-3: 8px;
+}
+
+/* Compact dropdown */
+.dropdown-compact .cometchat-dropdown__button {
+  padding: 4px 8px;
+}
+```
+
+<Info>
+  **Live Preview** — dropdown with categorized options.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-dropdown--with-options)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-dropdown--with-options&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "350px", border: "1px solid #e0e0e0"}}
+  title="Dropdown — With Categories"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The DropDown component includes comprehensive accessibility features following WCAG 2.1 Level AA guidelines:
+
+### Keyboard Support
+
+The dropdown provides full keyboard navigation support:
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Moves focus to/from the dropdown button |
+| `Shift + Tab` | Moves focus backward to previous element |
+| `Enter` or `Space` | Opens the dropdown (when closed) or selects the focused option (when open) |
+| `Escape` | Closes the dropdown and restores focus to the trigger button |
+| `ArrowDown` | Moves focus to the next option in the list (wraps to first when at end) |
+| `ArrowUp` | Moves focus to the previous option in the list (wraps to last when at beginning) |
+| `Home` | Moves focus to the first option in the list |
+| `End` | Moves focus to the last option in the list |
+| `Any letter/number` | Type-ahead search: jumps to the first option starting with the typed character(s) |
+
+### Type-Ahead Search
+
+The dropdown includes intelligent type-ahead search functionality:
+
+- **Single Character**: Type any letter to jump to the first option starting with that letter
+- **Multiple Characters**: Continue typing within 500ms to refine the search (e.g., type "ap" to find "Apple")
+- **Case Insensitive**: Works regardless of letter case
+- **Auto-Clear**: The search buffer clears after 500ms of no typing
+
+```typescript
+// Example: Options list
+options = ['Apple', 'Apricot', 'Banana', 'Cherry', 'Date'];
+
+// User types 'a' → focuses 'Apple'
+// User types 'p' (within 500ms) → focuses 'Apple' (starts with 'ap')
+// User types 'r' (within 500ms) → focuses 'Apricot' (starts with 'apr')
+```
+
+### Focus Management
+
+The dropdown implements proper focus management:
+
+- **Focus Trap**: When open, keyboard navigation is contained within the dropdown
+- **Focus Restoration**: When closed (via Escape, selection, or outside click), focus returns to the trigger button
+- **Initial Focus**: When opened, the currently selected option is focused (or first option if none selected)
+
+### ARIA Attributes
+
+The component uses proper ARIA attributes for screen reader compatibility:
+
+| Attribute | Element | Purpose |
+|-----------|---------|---------|
+| `role="button"` | Trigger button | Identifies the button as an interactive element |
+| `aria-expanded` | Trigger button | Indicates whether the dropdown is open (`"true"`) or closed (`"false"`) |
+| `aria-haspopup="menu"` | Trigger button | Indicates the button has a popup menu |
+| `aria-controls` | Trigger button | References the ID of the dropdown menu |
+| `aria-label` | Trigger button | Provides accessible label (uses `ariaLabel` input or display value) |
+| `role="menu"` | Dropdown menu | Identifies the dropdown as a menu |
+| `aria-label` | Dropdown menu | Provides accessible label for the menu |
+| `role="menuitem"` | Menu options | Identifies each option as a menu item |
+| `aria-selected` | Menu options | Indicates which option is currently selected (`"true"` or `"false"`) |
+| `aria-hidden="true"` | Icon | Hides decorative icon from screen readers |
+
+### Custom ARIA Labels
+
+You can provide custom ARIA labels for better screen reader experience:
+
+```html
+<cometchat-dropdown 
+  [options]="themes"
+  [selectedOption]="selectedTheme"
+  [ariaLabel]="'Theme selector'"
+  (optionsChanged)="onThemeChange($event)">
+</cometchat-dropdown>
+```
+
+### Focus Indicators
+
+The dropdown provides clear visual focus indicators that meet WCAG contrast requirements:
+
+- **Button Focus**: 2px solid outline in primary color with 2px offset
+- **Option Focus**: Background highlight on focused option
+- **Keyboard-Only**: Uses `:focus-visible` to show focus indicators only during keyboard navigation
+
+```css
+/* Focus styling is built-in and WCAG compliant */
+.cometchat-dropdown__button:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color, #3399ff);
+  outline-offset: 2px;
+}
+
+.cometchat-dropdown__option--focused {
+  background-color: var(--cometchat-hover-background-color, #f5f5f5);
+}
+```
+
+### Screen Reader Announcements
+
+The dropdown provides appropriate announcements for screen reader users:
+
+- **Button State**: Announces "collapsed" or "expanded" based on dropdown state
+- **Selected Option**: Announces the currently selected option
+- **Option Count**: Screen readers can navigate through options and hear "X of Y"
+- **Selection Change**: Announces when a new option is selected
+
+## Examples
+
+### User Role Selector
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDropDownComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-role-selector',
+  standalone: true,
+  imports: [CometChatDropDownComponent],
+  template: `
+    <div class="role-selector">
+      <h4>Select User Role</h4>
+      <cometchat-dropdown 
+        [options]="roles"
+        [selectedOption]="selectedRole"
+        (optionsChanged)="onRoleChange($event)">
+      </cometchat-dropdown>
+      <p class="role-description">{{ getRoleDescription() }}</p>
+    </div>
+  `,
+  styles: [`
+    .role-selector {
+      padding: 20px;
+      max-width: 300px;
+    }
+    h4 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+    }
+    .role-description {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #666;
+    }
+  `]
+})
+export class RoleSelectorComponent {
+  roles = ['Admin', 'Moderator', 'Member', 'Guest'];
+  selectedRole = 'Member';
+
+  roleDescriptions: { [key: string]: string } = {
+    'Admin': 'Full access to all features and settings',
+    'Moderator': 'Can manage users and content',
+    'Member': 'Standard user with basic permissions',
+    'Guest': 'Limited access, read-only mode'
+  };
+
+  onRoleChange(event: { value: string }): void {
+    this.selectedRole = event.value;
+    console.log('Role changed to:', event.value);
+  }
+
+  getRoleDescription(): string {
+    return this.roleDescriptions[this.selectedRole] || '';
+  }
+}
+```
+
+### Filter Dropdown
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatDropDownComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-filter',
+  standalone: true,
+  imports: [CommonModule, CometChatDropDownComponent],
+  template: `
+    <div class="message-filter">
+      <div class="filter-header">
+        <h3>Messages</h3>
+        <cometchat-dropdown 
+          [options]="filterOptions"
+          [selectedOption]="selectedFilter"
+          (optionsChanged)="onFilterChange($event)">
+        </cometchat-dropdown>
+      </div>
+      
+      <div class="message-list">
+        @for (message of filteredMessages; track message.id) {
+          <div class="message-item">
+            {{ message.text }}
+          </div>
+        }
+      </div>
+    </div>
+  `,
+  styles: [`
+    .message-filter {
+      padding: 20px;
+    }
+    .filter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .filter-header h3 {
+      margin: 0;
+    }
+    .filter-header cometchat-dropdown {
+      width: 150px;
+    }
+    .message-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .message-item {
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+  `]
+})
+export class MessageFilterComponent {
+  filterOptions = ['All', 'Unread', 'Starred', 'Archived'];
+  selectedFilter = 'All';
+
+  messages = [
+    { text: 'Hello there!', read: true, starred: false, archived: false },
+    { text: 'How are you?', read: false, starred: true, archived: false },
+    { text: 'Meeting at 3pm', read: false, starred: false, archived: false },
+    { text: 'Old message', read: true, starred: false, archived: true }
+  ];
+
+  get filteredMessages() {
+    switch (this.selectedFilter) {
+      case 'Unread':
+        return this.messages.filter(m => !m.read);
+      case 'Starred':
+        return this.messages.filter(m => m.starred);
+      case 'Archived':
+        return this.messages.filter(m => m.archived);
+      default:
+        return this.messages.filter(m => !m.archived);
+    }
+  }
+
+  onFilterChange(event: { value: string }): void {
+    this.selectedFilter = event.value;
+  }
+}
+```
+
+### Sort Dropdown
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatDropDownComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-conversation-list',
+  standalone: true,
+  imports: [CommonModule, CometChatDropDownComponent],
+  template: `
+    <div class="conversation-list">
+      <div class="list-header">
+        <h3>Conversations</h3>
+        <div class="sort-control">
+          <span>Sort by:</span>
+          <cometchat-dropdown 
+            [options]="sortOptions"
+            [selectedOption]="selectedSort"
+            (optionsChanged)="onSortChange($event)">
+          </cometchat-dropdown>
+        </div>
+      </div>
+      
+      <div class="conversations">
+        @for (conv of sortedConversations; track conv.id) {
+          <div class="conversation-item">
+            <strong>{{ conv.name }}</strong>
+            <span class="timestamp">{{ conv.timestamp }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  `,
+  styles: [`
+    .conversation-list {
+      padding: 20px;
+    }
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .list-header h3 {
+      margin: 0;
+    }
+    .sort-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sort-control span {
+      font-size: 14px;
+      color: #666;
+    }
+    .sort-control cometchat-dropdown {
+      width: 150px;
+    }
+    .conversations {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .conversation-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: #999;
+    }
+  `]
+})
+export class ConversationListComponent {
+  sortOptions = ['Recent', 'Name (A-Z)', 'Name (Z-A)', 'Unread First'];
+  selectedSort = 'Recent';
+
+  conversations = [
+    { name: 'Alice', timestamp: '2 min ago', unread: 3, time: Date.now() - 120000 },
+    { name: 'Bob', timestamp: '1 hour ago', unread: 0, time: Date.now() - 3600000 },
+    { name: 'Charlie', timestamp: '5 min ago', unread: 1, time: Date.now() - 300000 }
+  ];
+
+  get sortedConversations() {
+    const sorted = [...this.conversations];
+    
+    switch (this.selectedSort) {
+      case 'Recent':
+        return sorted.sort((a, b) => b.time - a.time);
+      case 'Name (A-Z)':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'Name (Z-A)':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'Unread First':
+        return sorted.sort((a, b) => b.unread - a.unread);
+      default:
+        return sorted;
+    }
+  }
+
+  onSortChange(event: { value: string }): void {
+    this.selectedSort = event.value;
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  Always provide meaningful option labels that clearly describe what each option does.
+</Tip>
+
+<Warning>
+  The dropdown automatically closes when an option is selected or when clicking outside. You don't need to manage the open/close state manually.
+</Warning>
+
+<Info>
+  The first option is selected by default if no `selectedOption` is provided. Make sure your first option is a sensible default.
+</Info>
+
+<Tip>
+  Use keyboard navigation for better accessibility. The dropdown fully supports Arrow keys, Enter, Space, Escape, Home, End, and type-ahead search.
+</Tip>
+
+<Tip>
+  Provide custom `ariaLabel` values for dropdowns that need more context than the selected value provides (e.g., "Theme selector" instead of just "Light").
+</Tip>
+
+### Accessibility Best Practices
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDropDownComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-accessible-settings',
+  standalone: true,
+  imports: [CometChatDropDownComponent],
+  template: `
+    <div class="settings-panel" role="region" aria-label="User settings">
+      <h3 id="settings-heading">Preferences</h3>
+      
+      <!-- Good: Custom aria-label for context -->
+      <div class="setting-item">
+        <label id="theme-label">Theme</label>
+        <cometchat-dropdown 
+          [options]="themes"
+          [selectedOption]="selectedTheme"
+          [ariaLabel]="'Theme selector'"
+          (optionsChanged)="onThemeChange($event)">
+        </cometchat-dropdown>
+      </div>
+      
+      <!-- Good: Descriptive options -->
+      <div class="setting-item">
+        <label id="font-label">Font Size</label>
+        <cometchat-dropdown 
+          [options]="fontSizes"
+          [selectedOption]="selectedFontSize"
+          [ariaLabel]="'Font size selector'"
+          (optionsChanged)="onFontSizeChange($event)">
+        </cometchat-dropdown>
+      </div>
+      
+      <!-- Good: Clear placeholder -->
+      <div class="setting-item">
+        <label id="language-label">Language</label>
+        <cometchat-dropdown 
+          [options]="languages"
+          [selectedOption]="selectedLanguage"
+          [placeholder]="'Select your language'"
+          [ariaLabel]="'Language selector'"
+          (optionsChanged)="onLanguageChange($event)">
+        </cometchat-dropdown>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .settings-panel {
+      padding: var(--cometchat-spacing-4);
+      max-width: 400px;
+    }
+    h3 {
+      margin: 0 0 var(--cometchat-spacing-4) 0;
+      font: var(--cometchat-font-heading3-bold);
+    }
+    .setting-item {
+      margin-bottom: var(--cometchat-spacing-3);
+    }
+    .setting-item label {
+      display: block;
+      margin-bottom: var(--cometchat-spacing-2);
+      font: var(--cometchat-font-body-medium);
+    }
+  `]
+})
+export class AccessibleSettingsComponent {
+  themes = ['Light', 'Dark', 'Auto'];
+  selectedTheme = 'Light';
+  
+  fontSizes = ['Small (12px)', 'Medium (14px)', 'Large (16px)', 'Extra Large (18px)'];
+  selectedFontSize = 'Medium (14px)';
+  
+  languages = ['English', 'Spanish', 'French', 'German', 'Japanese', 'Chinese'];
+  selectedLanguage = 'English';
+
+  onThemeChange(event: { value: string }): void {
+    this.selectedTheme = event.value;
+    // Announce change to screen readers
+    this.announceChange(`Theme changed to ${event.value}`);
+  }
+
+  onFontSizeChange(event: { value: string }): void {
+    this.selectedFontSize = event.value;
+    this.announceChange(`Font size changed to ${event.value}`);
+  }
+
+  onLanguageChange(event: { value: string }): void {
+    this.selectedLanguage = event.value;
+    this.announceChange(`Language changed to ${event.value}`);
+  }
+
+  private announceChange(message: string): void {
+    // Create a live region for screen reader announcements
+    const announcement = document.createElement('div');
+    announcement.setAttribute('role', 'status');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    document.body.appendChild(announcement);
+    
+    // Remove after announcement
+    setTimeout(() => {
+      document.body.removeChild(announcement);
+    }, 1000);
+  }
+}
+```
+
+## Related Components
+
+- **CometChatCheckbox**: For multiple selections
+- **CometChatRadioButton**: For mutually exclusive selections without a dropdown
+- **CometChatSearchBar**: For searchable selection lists
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule
+- **Bundle Size**: Minimal footprint (~4KB with type-ahead search)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+  - Full keyboard navigation support
+  - Proper ARIA attributes and roles
+  - Focus management and restoration
+  - Type-ahead search functionality
+  - Screen reader compatible
+- **Outside Click Detection**: Uses HostListener for efficient event handling
+- **Focus Indicators**: Uses `:focus-visible` for keyboard-only focus indicators
+
+
+

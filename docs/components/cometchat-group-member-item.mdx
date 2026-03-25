@@ -1,0 +1,192 @@
+---
+title: "CometChatGroupMemberItem"
+description: "A standalone Angular component for rendering a single group member item with avatar, role badge, status indicator, and context menu support"
+---
+
+## Overview
+
+The CometChatGroupMemberItem component renders a single group member entry within a member list. It displays the member's avatar, name, online/offline status indicator, and a role badge (owner, admin, moderator). The component supports custom templates for all visual sections, integrates a context menu for member-specific actions (kick, ban, change scope), and provides full keyboard accessibility with ARIA support.
+
+### Key Features
+
+- **State Management**: Active, selected, and focused states with distinct visual styling
+- **Member Avatar**: Displays the member's avatar image with an online/offline status indicator
+- **Role Badge**: Shows the member's scope/role (owner, admin, moderator) as a visual badge
+- **Custom Templates**: Template projection for leading, title, subtitle, and trailing sections
+- **Context Menu**: Configurable context menu options for member management (kick, ban, change scope)
+- **Keyboard Accessibility**: Full keyboard support with Enter, Space, and Shift+F10 shortcuts
+- **Global Config Priority**: Supports a three-tier priority system (Input > GlobalConfig > Default)
+
+
+<Info>
+  **Live Preview** — default group member item preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-groups-cometchat-group-member-item--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-groups-cometchat-group-member-item--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="CometChat Group Member Item — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatGroupMemberItemComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-member-item-demo',
+  standalone: true,
+  imports: [CometChatGroupMemberItemComponent],
+  template: `
+    <cometchat-group-member-item
+      [member]="member"
+      [isActive]="false"
+      (itemClick)="onItemClick($event)"
+    ></cometchat-group-member-item>
+  `
+})
+export class GroupMemberItemDemoComponent {
+  member!: CometChat.GroupMember;
+
+  onItemClick(member: CometChat.GroupMember): void {
+    console.log('Member clicked:', member.getName());
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `member` | `CometChat.GroupMember` | *required* | The group member object to render. Primary data source for the component. |
+| `isActive` | `boolean` | `false` | Whether this member item is currently active/selected for viewing. Applies active styling. |
+| `isSelected` | `boolean` | `false` | Whether this member item is selected in selection mode. Shows selection indicator. |
+| `isFocused` | `boolean` | `false` | Whether this member item currently has keyboard focus. Applies focus styling. |
+| `tabIndex` | `number` | `-1` | The tabindex for roving tabindex pattern. Only the focused item should have `0`. |
+| `hideUserStatus` | `boolean` | `false` | Whether to hide the member online/offline status indicator. Supports global config override. |
+| `disableDefaultContextMenu` | `boolean` | `true` | Whether to disable the browser's default context menu on right-click/long-press. |
+| `contextMenuOptions` | `CometChatOption[]` | `undefined` | Options for the context menu (kick, ban, change scope). |
+| `leadingView` | `TemplateRef<{ $implicit: CometChat.GroupMember }>` | `undefined` | Custom template for the leading section (avatar area). |
+| `titleView` | `TemplateRef<{ $implicit: CometChat.GroupMember }>` | `undefined` | Custom template for the title section. |
+| `subtitleView` | `TemplateRef<{ $implicit: CometChat.GroupMember }>` | `undefined` | Custom template for the subtitle section. |
+| `trailingView` | `TemplateRef<{ $implicit: CometChat.GroupMember }>` | `undefined` | Custom template for the trailing section. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `CometChat.GroupMember` | Emitted when the member item is clicked or activated via keyboard. |
+| `itemFocus` | `void` | Emitted when the item's inner container receives native focus. Used by the parent list for roving tabindex management. |
+| `contextMenuOptionClick` | `{ option: CometChatOption; member: CometChat.GroupMember }` | Emitted when a context menu option is clicked. |
+
+## Customization
+
+### CSS Variable Overrides
+
+The component uses CometChat CSS variables for theming. Override them on the host element or a parent wrapper:
+
+```css
+cometchat-group-member-item {
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-background-color-03: #e8e8e8;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-success-color: #09C26F;
+  --cometchat-border-color-light: #e8e8e8;
+}
+```
+
+### Custom Templates
+
+Provide custom templates via inputs to override any visual section:
+
+```html expandable
+<cometchat-group-member-item
+  [member]="member"
+  [subtitleView]="customSubtitle"
+  [trailingView]="customTrailing"
+>
+  <ng-template #customSubtitle let-member>
+    <span class="member-role">{{ member.getScope() }}</span>
+  </ng-template>
+
+  <ng-template #customTrailing let-member>
+    <button (click)="changeMemberScope(member); $event.stopPropagation()">
+      Change Role
+    </button>
+  </ng-template>
+</cometchat-group-member-item>
+```
+
+### Context Menu for Member Management
+
+Provide context menu options for common member management actions:
+
+```typescript expandable
+import { CometChatOption } from '@cometchat/chat-uikit-angular';
+
+getContextMenuOptions(member: CometChat.GroupMember): CometChatOption[] {
+  return [
+    {
+      id: 'kick',
+      title: 'Kick Member',
+      iconURL: 'assets/kick-icon.svg',
+      onClick: () => this.kickMember(member)
+    },
+    {
+      id: 'ban',
+      title: 'Ban Member',
+      iconURL: 'assets/ban-icon.svg',
+      onClick: () => this.banMember(member)
+    },
+    {
+      id: 'change-scope',
+      title: 'Change Scope',
+      iconURL: 'assets/scope-icon.svg',
+      onClick: () => this.changeScope(member)
+    }
+  ];
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Activate the member item (emits `itemClick`) |
+| `Space` | Activate the member item (emits `itemClick`) |
+| `Shift + F10` | Open the context menu |
+| `ContextMenu` | Open the context menu |
+
+### ARIA Attributes
+
+- `role="option"` on the item container
+- `aria-selected` reflects the current selection state
+- `aria-label` combines the member name, scope/role, and online/offline status for screen readers
+- `aria-hidden="true"` on the scope badge (decorative; scope is included in the accessible label)
+- Proper `tabindex` management via roving tabindex pattern
+
+### Focus Management
+
+- Visible focus indicator with minimum 3:1 contrast ratio
+- Mouse clicks prevent focus outline (focus ring only appears for keyboard navigation)
+- Roving tabindex pattern for efficient list navigation
+- `itemFocus` output enables parent list to track focus position
+- Scope change control is focusable via Tab
+
+## Related Components
+
+- [CometChatGroupMembers](./cometchat-group-members.mdx) — Parent list component that renders multiple group member items
+- [CometChatAvatar](./cometchat-avatar.mdx) — Used internally for the member avatar
+- [CometChatContextMenu](./cometchat-context-menu.mdx) — Used internally for the context menu
+- [CometChatUserItem](./cometchat-user-item.mdx) — Similar component for rendering user items
+- [CometChatGroupItem](./cometchat-group-item.mdx) — Similar component for rendering group items

@@ -1,0 +1,44 @@
+@if (hasTypingUsers) {
+  <div 
+    class="cometchat-typing-indicator"
+    role="status"
+    [attr.aria-label]="ariaLabel"
+    aria-live="polite"
+  >
+    <div class="cometchat-typing-indicator__content">
+      <!-- Display text based on context -->
+      @if (!isGroupChat) {
+        <!-- 1-on-1 chat: "typing..." -->
+        <span class="cometchat-typing-indicator__text">
+          {{ 'message_header_typing' | translate }}
+        </span>
+      } @else if (typingUsersCount === 1) {
+        <!-- Group chat with 1 user: "{name} is typing..." -->
+        <span class="cometchat-typing-indicator__text">
+          <span class="cometchat-typing-indicator__name">{{ firstTypingUserName }}</span>
+          {{ 'message_header_is_typing' | translate }}
+        </span>
+      } @else if (typingUsersCount === 2) {
+        <!-- Group chat with 2 users: "{name1} and {name2} are typing..." -->
+        <span class="cometchat-typing-indicator__text">
+          <span class="cometchat-typing-indicator__name">{{ firstTypingUserName }}</span>
+          {{ 'message_header_and' | translate }}
+          <span class="cometchat-typing-indicator__name">{{ secondTypingUserName }}</span>
+          {{ 'message_header_are_typing' | translate }}
+        </span>
+      } @else {
+        <!-- Group chat with 3+ users: "Multiple people are typing..." -->
+        <span class="cometchat-typing-indicator__text">
+          {{ 'message_header_others_typing' | translate }}
+        </span>
+      }
+
+      <!-- Animated typing dots -->
+      <span class="cometchat-typing-indicator__dots" aria-hidden="true">
+        <span class="cometchat-typing-indicator__dot"></span>
+        <span class="cometchat-typing-indicator__dot"></span>
+        <span class="cometchat-typing-indicator__dot"></span>
+      </span>
+    </div>
+  </div>
+}

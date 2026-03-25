@@ -1,0 +1,100 @@
+/**
+ * CometChatThreadView Component Styles
+ * 
+ * BEM Naming Convention:
+ * - Block: cometchat-thread-view
+ * - Elements: __icon, __count, __unread-indicator
+ * - Modifiers: --unread, --panel
+ * 
+ * @see Requirement 2.1 - Standalone Angular component with BEM styling
+ */
+
+/* ==================== Block ==================== */
+
+.cometchat-thread-view {
+  display: var(--cometchat-thread-view-display, inline-flex);
+  align-items: var(--cometchat-thread-view-align-items, center);
+  gap: var(--cometchat-thread-view-gap, var(--cometchat-spacing-1, 4px));
+  padding: var(--cometchat-thread-view-padding, var(--cometchat-padding-1, 4px) var(--cometchat-padding-2, 8px));
+  border-radius: var(--cometchat-thread-view-border-radius, var(--cometchat-radius-2, 8px));
+  background: var(--cometchat-thread-view-background, transparent);
+  cursor: var(--cometchat-thread-view-cursor, pointer);
+  transition: var(--cometchat-thread-view-transition, background-color 0.2s ease);
+  user-select: var(--cometchat-thread-view-user-select, none);
+}
+
+
+.cometchat-thread-view:focus {
+  outline: var(--cometchat-thread-view-outline-focus, none);
+  box-shadow: var(--cometchat-thread-view-box-shadow-focus, 0 0 0 2px var(--cometchat-primary-color, #6852D6));
+}
+
+.cometchat-thread-view:focus-visible {
+  outline: var(--cometchat-thread-view-outline-focus-visible, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-thread-view-outline-offset-focus-visible, 2px);
+}
+
+/* ==================== Elements ==================== */
+
+/* Thread Icon */
+.cometchat-thread-view__icon {
+  width: var(--cometchat-thread-view-icon-width, 16px);
+  height: var(--cometchat-thread-view-icon-height, 16px);
+  flex-shrink: var(--cometchat-thread-view-icon-flex-shrink, 0);
+}
+
+/* Reply Count Text */
+.cometchat-thread-view__count {
+  font: var(--cometchat-thread-view-count-font, var(--cometchat-font-caption1-regular));
+  color: var(--cometchat-thread-view-count-color, var(--cometchat-text-color-primary));
+  white-space: var(--cometchat-thread-view-count-white-space, nowrap);
+}
+
+/* Unread Indicator Dot */
+.cometchat-thread-view__unread-indicator {
+  width: var(--cometchat-thread-view-unread-indicator-width, 8px);
+  height: var(--cometchat-thread-view-unread-indicator-height, 8px);
+  border-radius: var(--cometchat-thread-view-unread-indicator-border-radius, var(--cometchat-radius-max, 1000px));
+  background: var(--cometchat-thread-view-unread-indicator-background, var(--cometchat-primary-color, #6852D6));
+  flex-shrink: var(--cometchat-thread-view-unread-indicator-flex-shrink, 0);
+}
+
+/* ==================== Modifiers ==================== */
+
+/* Unread state - slightly different styling to draw attention */
+.cometchat-thread-view--unread .cometchat-thread-view__count {
+  font: var(--cometchat-thread-view-count-font-unread, var(--cometchat-font-caption1-bold, 700 12px/14.4px Roboto));
+}
+
+/* ==================== Panel Mode ==================== */
+
+/**
+ * Panel mode styles for thread container
+ * @see Requirement 13.3 - role="complementary" container
+ */
+.cometchat-thread-view--panel {
+  display: var(--cometchat-thread-view-panel-display, flex);
+  flex-direction: var(--cometchat-thread-view-panel-flex-direction, column);
+  width: var(--cometchat-thread-view-panel-width, 100%);
+  height: var(--cometchat-thread-view-panel-height, 100%);
+  background: var(--cometchat-thread-view-panel-background, var(--cometchat-background-color-01, #FFFFFF));
+  border-left: var(--cometchat-thread-view-panel-border-left, 1px solid var(--cometchat-border-color-light, #E8E8E8));
+  padding: var(--cometchat-thread-view-panel-padding, 0);
+  cursor: var(--cometchat-thread-view-panel-cursor, default);
+  user-select: var(--cometchat-thread-view-panel-user-select, auto);
+}
+
+/* Panel mode should not have hover/focus styles like indicator mode */
+.cometchat-thread-view--panel:hover {
+  background: var(--cometchat-thread-view-panel-background, var(--cometchat-background-color-01, #FFFFFF));
+}
+
+.cometchat-thread-view--panel:focus {
+  outline: var(--cometchat-thread-view-panel-outline-focus, none);
+  box-shadow: var(--cometchat-thread-view-panel-box-shadow-focus, none);
+}
+
+.cometchat-thread-view--panel:focus-visible {
+  outline: var(--cometchat-thread-view-panel-outline-focus-visible, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-thread-view-panel-outline-offset-focus-visible, -2px);
+}

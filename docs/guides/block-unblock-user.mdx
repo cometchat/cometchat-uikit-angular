@@ -1,0 +1,219 @@
+---
+title: "Block/Unblock Users"
+sidebarTitle: "Block/Unblock Users"
+description: "Implement block and unblock user functionality in CometChat Angular UIKit with composer state management."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key methods | `CometChat.blockUsers()`, `CometChat.unblockUsers()` |
+| Events | `CometChatUserEvents.ccUserBlocked`, `CometChatUserEvents.ccUserUnblocked` |
+| UI helpers | `cometchat-confirm-dialog` |
+| Init | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Related | [All Guides](/guides/overview) |
+
+</Accordion>
+
+Block/Unblock lets users prevent specific users from sending them messages. When blocked, the message composer is hidden and replaced with an unblock prompt.
+
+Before starting, complete the [Integration Guide](/integration).
+
+---
+
+## Components
+
+| Component / Method | Role |
+|:---|:---|
+| `CometChat.blockUsers()` | SDK method to block specific users |
+| `CometChat.unblockUsers()` | SDK method to unblock previously blocked users |
+| `CometChatUserEvents.ccUserBlocked` | RxJS subject fired when a user is blocked |
+| `CometChatUserEvents.ccUserUnblocked` | RxJS subject fired when a user is unblocked |
+| `cometchat-confirm-dialog` | Confirmation dialog for block/unblock actions |
+
+---
+
+## Implementation Steps
+
+### 1. Block User
+
+Call `CometChat.blockUsers()` with the target UID. On success, update the local user object with `setBlockedByMe(true)` and emit `ccUserBlocked` so all subscribed components react to the change.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatUserEvents,
+  CometChatLocalize
+} from '@cometchat/chat-uikit-angular';
+
+async blockUser(user: CometChat.User): Promise<void> {
+  const uid = user.getUid();
+
+  try {
+    await CometChat.blockUsers([uid]);
+    user.setBlockedByMe(true);
+    CometChatUserEvents.ccUserBlocked.next(user);
+    this.toastMessage = CometChatLocalize.getLocalizedString('blocked_successfully');
+    this.showToast = true;
+  } catch (error) {
+    console.error('Blocking user failed:', error);
+  }
+}
+```
+
+---
+
+### 2. Unblock User
+
+Call `CometChat.unblockUsers()` with the target UID. On success, update the local user object and emit `ccUserUnblocked` to restore the composer.
+
+```typescript expandable
+unblockUser(user: CometChat.User): void {
+  const uid = user.getUid();
+
+  CometChat.unblockUsers([uid])
+    .then(() => {
+      user.setBlockedByMe(false);
+      CometChatUserEvents.ccUserUnblocked.next(user);
+    })
+    .catch((error) => {
+      console.error('Unblocking user failed:', error);
+    });
+}
+```
+
+---
+
+### 3. Confirmation Dialog
+
+Show a confirmation dialog before blocking. This prevents accidental blocks.
+
+```html expandable
+@if (showBlockUserDialog) {
+  <div class="cometchat-block-user-dialog__backdrop">
+    <cometchat-confirm-dialog
+      [title]="'block_contact' | translate"
+      [messageText]="'confirm_block_contact' | translate"
+      [confirmButtonText]="'user_details_block' | translate"
+      (cancelClick)="showBlockUserDialog = false"
+      (confirmClick)="onBlockConfirmed()">
+    </cometchat-confirm-dialog>
+  </div>
+}
+```
+
+```typescript expandable
+showBlockUserDialog = false;
+
+promptBlockUser(): void {
+  this.showBlockUserDialog = true;
+}
+
+async onBlockConfirmed(): Promise<void> {
+  this.showBlockUserDialog = false;
+  await this.blockUser(this.selectedUser!);
+}
+```
+
+---
+
+### 4. Composer Blocked State
+
+When a user is blocked, the composer is replaced with an unblock prompt.
+
+```html expandable
+@if (showComposer) {
+  <cometchat-message-composer
+    [user]="selectedUser">
+  </cometchat-message-composer>
+} @else {
+  <div class="message-composer-blocked" (click)="unblockUser(selectedUser!)">
+    <div class="message-composer-blocked__text">
+      {{ 'cannot_send_to_blocked_user' | translate }}
+      <a>{{ 'click_to_unblock' | translate }}</a>
+    </div>
+  </div>
+}
+```
+
+---
+
+### 5. Event Listeners
+
+Subscribe to block/unblock events to update the UI in real time. Clean up subscriptions in `ngOnDestroy`.
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { CometChatUserEvents } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-messages',
+  standalone: true,
+  imports: [],
+  template: `<!-- see steps above -->`
+})
+export class ChatMessagesComponent implements OnInit, OnDestroy {
+  showComposer = true;
+  private subscriptions: Subscription[] = [];
+
+  ngOnInit(): void {
+    this.subscriptions.push(
+      CometChatUserEvents.ccUserBlocked.subscribe((user) => {
+        if (user.getBlockedByMe()) {
+          this.showComposer = false;
+        }
+      })
+    );
+
+    this.subscriptions.push(
+      CometChatUserEvents.ccUserUnblocked.subscribe((user) => {
+        if (!user.getBlockedByMe()) {
+          this.showComposer = true;
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+}
+```
+
+---
+
+## Feature Matrix
+
+| Feature | Component / Method | Description |
+|:---|:---|:---|
+| Block user | `CometChat.blockUsers([uid])` | Blocks a user by UID |
+| Unblock user | `CometChat.unblockUsers([uid])` | Unblocks a previously blocked user |
+| Check blocked status | `user.getBlockedByMe()` | Returns whether the user is blocked |
+| Block confirmation | `cometchat-confirm-dialog` | Prevents accidental blocks |
+| Blocked composer state | `showComposer` flag | Hides composer and shows unblock prompt |
+| Block event | `CometChatUserEvents.ccUserBlocked` | RxJS subject for block notifications |
+| Unblock event | `CometChatUserEvents.ccUserUnblocked` | RxJS subject for unblock notifications |
+| Subscription cleanup | `ngOnDestroy` | Unsubscribes from all event listeners |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Users" href="/components/cometchat-users">
+    Display and manage user lists.
+  </Card>
+  <Card title="Message Composer" href="/components/cometchat-message-composer">
+    Customize the message input component.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Sample App" href="https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app">
+    Full working sample application on GitHub.
+  </Card>
+</CardGroup>

@@ -1,0 +1,35 @@
+{
+  "name": "@cometchat/chat-uikit-angular",
+  "version": "5.0.0-beta.1",
+  "license": "https://www.cometchat.com/legal-terms-of-service",
+  "homepage": "https://www.cometchat.com",
+  "repository": "https://github.com/cometchat/cometchat-uikit-angular",
+  "keywords": [
+    "CometChat",
+    "chat",
+    "messaging",
+    "chat",
+    "uikit",
+    "pro",
+    "message",
+    "uikit",
+    "messaging",
+    "uikit",
+    "audio",
+    "chat",
+    "video",
+    "chat",
+    "webRTC",
+    "Angular"
+  ],
+  "description": "Ready-to-use Chat UI Components for Angular (JavaScript/Web)",
+  "peerDependencies": {
+    "@angular/common": ">=17.0.0 <22.0.0",
+    "@angular/core": ">=17.0.0 <22.0.0",
+    "@cometchat/chat-sdk-javascript": "^4.1.8"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": ["*.css"]
+}

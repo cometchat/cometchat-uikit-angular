@@ -1,0 +1,396 @@
+/**
+ * CometChatFileBubble Styles
+ *
+ * BEM CSS methodology with CSS variables for theming.
+ * All values use CSS variables from css-variables.css.
+ *
+ * @see Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 2.1, 2.2
+ */
+
+/* ============================================
+   Block: cometchat-file-bubble
+   ============================================ */
+
+.cometchat-file-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-file-bubble-gap, var(--cometchat-spacing-2, 8px));
+  width: var(--cometchat-file-bubble-width,280px);
+  position: relative;
+  /* Overflow containment - Requirements 2.4, 2.5, 2.6, 2.7, 2.8 */
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Background Inheritance: Message Bubble Context
+   @see Requirements 2.1, 2.2
+   
+   NOTE: Parent override is handled via CSS custom property
+   --cometchat-file-bubble-background which can be set by parent
+   components. The bubble uses this variable with a fallback to
+   the default theme background color.
+   ============================================ */
+
+/* ============================================
+   Modifiers: Alignment Variants
+   ============================================ */
+
+/**
+ * Sender message styling (right alignment)
+ * Primary color background with white text
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 2.7
+ */
+.cometchat-file-bubble--sender {
+  align-items: flex-end;
+}
+
+.cometchat-file-bubble--sender .cometchat-file-bubble__container {
+  background: var(--cometchat-file-bubble-background, var(--cometchat-primary-color));
+  /* border: 1px solid var(--cometchat-primary-color); */
+}
+
+.cometchat-file-bubble--sender .cometchat-file-bubble__filename {
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-file-bubble--sender .cometchat-file-bubble__filesize {
+    color: var(--cometchat-static-white);
+}
+
+
+
+/**
+ * Receiver message styling (left alignment)
+ * Neutral background with primary text
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 2.8
+ */
+.cometchat-file-bubble--receiver {
+  align-items: flex-start;
+}
+
+.cometchat-file-bubble--receiver .cometchat-file-bubble__container {
+  background: var(--cometchat-file-bubble-background, var(--cometchat-background-color-02));
+  /* border: 1px solid var(--cometchat-border-color-light); */
+}
+
+.cometchat-file-bubble--receiver .cometchat-file-bubble__filename {
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-file-bubble--receiver .cometchat-file-bubble__filesize {
+  color: var(--cometchat-text-color-secondary);
+}
+
+
+/* ============================================
+   Element: Container
+   ============================================ */
+
+.cometchat-file-bubble__container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--cometchat-file-bubble-container-max-width, 400px);
+  padding: var(--cometchat-file-bubble-container-padding, var(--cometchat-padding-2));
+  padding-bottom: var(--cometchat-file-bubble-container-padding-bottom, var(--cometchat-padding-1));
+  border-radius: var(--cometchat-file-bubble-container-border-radius, var(--cometchat-radius-2));
+  gap: var(--cometchat-file-bubble-container-gap, var(--cometchat-spacing-2));
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Element: File Item
+   ============================================ */
+
+.cometchat-file-bubble__file-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-file-bubble-file-item-gap, var(--cometchat-spacing-3, 12px));
+  width: 100%;
+}
+
+/* ============================================
+   Element: File Icon
+   ============================================ */
+
+.cometchat-file-bubble__icon {
+  width: var(--cometchat-file-bubble-icon-width, 40px);
+  height: var(--cometchat-file-bubble-icon-height, 40px);
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* ============================================
+   Element: Metadata Container
+   ============================================ */
+
+.cometchat-file-bubble__metadata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-file-bubble-metadata-gap, var(--cometchat-spacing-1, 4px));
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+}
+
+/* ============================================
+   Element: Filename
+   ============================================ */
+
+.cometchat-file-bubble__filename {
+  font: var(--cometchat-file-bubble-filename-font, var(--cometchat-font-body-medium));
+  color: var(--cometchat-file-bubble-filename-color, var(--cometchat-text-color-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Element: File Size
+   ============================================ */
+
+.cometchat-file-bubble__filesize {
+  font: var(--cometchat-file-bubble-filesize-font, var(--cometchat-font-caption1-regular));
+  color: var(--cometchat-file-bubble-filesize-color, var(--cometchat-static-white));
+}
+
+/* ============================================
+   Element: Download Link
+   ============================================ */
+
+.cometchat-file-bubble__download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-file-bubble-download-size, 32px);
+  height: var(--cometchat-file-bubble-download-size, 32px);
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--cometchat-file-bubble-download-border-radius, var(--cometchat-radius-1));
+  transition: background-color 0.2s ease;
+  background: transparent;
+  border: none;
+  border-radius: 0px;
+}
+
+
+.cometchat-file-bubble__download:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+/* ============================================
+   Element: Download Icon (mask-image technique)
+   @see Requirements 1.2, 1.4, 6.1, 6.2, 6.3, 6.4
+   ============================================ */
+
+.cometchat-file-bubble__download-icon {
+  width: var(--cometchat-file-bubble-download-icon-size, 24px);
+  height: var(--cometchat-file-bubble-download-icon-size, 24px);
+  -webkit-mask-image: url('../../assets/download.svg');
+  mask-image: url('../../assets/download.svg');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background: var(--cometchat-file-bubble-download-icon-color, var(--cometchat-icon-color-primary));
+}
+
+.cometchat-file-bubble__download-icon--disabled {
+  background: var(--cometchat-icon-color-tertiary);
+}
+
+/* Disabled download button styling */
+.cometchat-file-bubble__download--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cometchat-file-bubble__download--disabled:hover {
+  background: transparent;
+}
+
+.cometchat-file-bubble__download--disabled:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Sender-specific download icon color */
+.cometchat-file-bubble--sender .cometchat-file-bubble__download-icon {
+  background: var(--cometchat-static-white);
+}
+
+/* Sender-specific download link styling */
+
+.cometchat-file-bubble--sender .cometchat-file-bubble__download:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-static-white);
+}
+
+/* Receiver-specific download icon color */
+.cometchat-file-bubble--receiver .cometchat-file-bubble__download-icon {
+  background: var(--cometchat-primary-color);
+}
+
+/* Receiver-specific download link styling */
+.cometchat-file-bubble--receiver .cometchat-file-bubble__download:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+/* ============================================
+   Element: Expand Indicator
+   ============================================ */
+
+/**
+ * +N indicator button for multiple files
+ * @see Requirements 3.4, 3.5
+ */
+.cometchat-file-bubble__expand-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: var(--cometchat-file-bubble-expand-indicator-padding, var(--cometchat-padding-1) var(--cometchat-padding-3));
+  background: var(--cometchat-file-bubble-expand-indicator-background, var(--cometchat-primary-color));
+  color: var(--cometchat-file-bubble-expand-indicator-color, var(--cometchat-static-white));
+  border: none;
+  border-radius: var(--cometchat-file-bubble-expand-indicator-border-radius, var(--cometchat-radius-max));
+  font: var(--cometchat-file-bubble-expand-indicator-font, var(--cometchat-font-caption1-bold));
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.cometchat-file-bubble__expand-indicator:hover {
+  background: var(--cometchat-extended-primary-color-700);
+  transform: scale(1.05);
+}
+
+.cometchat-file-bubble__expand-indicator:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cometchat-background-color-01),
+              0 0 0 4px var(--cometchat-primary-color);
+}
+
+.cometchat-file-bubble__expand-indicator:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   Element: File List (Expanded)
+   ============================================ */
+
+/**
+ * Container for additional files in expanded state
+ * @see Requirements 5.1, 5.7
+ */
+.cometchat-file-bubble__file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-file-bubble-file-list-gap, var(--cometchat-spacing-2));
+  width: 100%;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  opacity: 1;
+  max-height: var(--cometchat-file-bubble-file-list-max-height, 2000px); /* Large enough for reasonable file counts */
+}
+
+/* Animation for entering */
+.cometchat-file-bubble__file-list {
+  animation: expandFileList 0.3s ease-in-out;
+}
+
+@keyframes expandFileList {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: var(--cometchat-file-bubble-file-list-max-height, 2000px);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   Element: Collapse Control
+   ============================================ */
+
+/**
+ * Collapse button in expanded state
+ * @see Requirements 4.5, 4.6
+ */
+.cometchat-file-bubble__collapse-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: var(--cometchat-file-bubble-collapse-control-padding, var(--cometchat-padding-2) var(--cometchat-padding-3));
+  background: var(--cometchat-file-bubble-collapse-control-background, transparent);
+  color: var(--cometchat-file-bubble-collapse-control-color, var(--cometchat-primary-color));
+  border: var(--cometchat-file-bubble-collapse-control-border, 1px solid var(--cometchat-primary-color));
+  border-radius: var(--cometchat-file-bubble-collapse-control-border-radius, var(--cometchat-radius-1));
+  font: var(--cometchat-file-bubble-collapse-control-font, var(--cometchat-font-body-medium));
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cometchat-file-bubble__collapse-control:hover {
+  background: var(--cometchat-extended-primary-color-50);
+}
+
+.cometchat-file-bubble__collapse-control:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cometchat-background-color-01),
+              0 0 0 4px var(--cometchat-primary-color);
+}
+
+.cometchat-file-bubble__collapse-control:active {
+  background: var(--cometchat-extended-primary-color-100);
+}
+
+/* ============================================
+   Element: Caption
+   ============================================ */
+
+/**
+ * Caption container using TextMessageBubbleComponent
+ * @see Requirements 6.1, 6.2, 6.3, 6.4
+ */
+.cometchat-file-bubble__caption {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/**
+ * Mobile and tablet adjustments
+ */
+@media (max-width: 768px) {
+  .cometchat-file-bubble__container {
+    max-width: 100%;
+  }
+
+  .cometchat-file-bubble__filename {
+    font: var(--cometchat-file-bubble-filename-font-mobile, var(--cometchat-font-caption1-medium));
+  }
+}
+
+@media (max-width: 480px) {
+  .cometchat-file-bubble__icon {
+    width: var(--cometchat-file-bubble-icon-width-mobile, 32px);
+    height: var(--cometchat-file-bubble-icon-height-mobile, 32px);
+  }
+
+  .cometchat-file-bubble__file-item {
+    gap: var(--cometchat-file-bubble-file-item-gap-mobile, var(--cometchat-spacing-2, 8px));
+  }
+}

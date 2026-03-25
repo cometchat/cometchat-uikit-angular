@@ -1,0 +1,135 @@
+<div class="cometchat">
+  <div class="cometchat-menu-list" role="menu" [attr.aria-label]="'context_menu_aria_label' | translate">
+    <!-- Main Menu -->
+    <div class="cometchat-menu-list__main-menu">
+      <!-- Top Menu Items -->
+      <ng-container *ngFor="let item of topMenu; let i = index; let last = last; trackBy: trackByItem">
+        <div class="cometchat-menu-list__menu-wrapper">
+          <div
+            [id]="getItemId(item)"
+            [class]="i === 0 || topMenu.length <= 2 ? '' : 'cometchat-menu-list__menu'"
+          >
+            <div
+              #topMenuItemRef
+              class="cometchat-menu-list__main-menu-item"
+              [class.cometchat-menu-list__main-menu-item--destructive]="getItemId(item) === 'delete'"
+              [title]="getItemTitle(item)"
+              [attr.aria-label]="getItemTitle(item)"
+              [attr.aria-selected]="focusedTopMenuIndex === i"
+              role="menuitem"
+              tabindex="0"
+              (click)="onMenuItemClick(item, $event)"
+              (keydown.enter)="onMenuItemClick(item, $event)"
+              (keydown.space)="$event.preventDefault(); onMenuItemClick(item, $event)"
+            >
+              <div
+                class="cometchat-menu-list__main-menu-item-icon cometchat-menu-list__main-menu-item-icon-{{ getItemId(item) }}"
+                [ngStyle]="getIconStyle(item)"
+              ></div>
+            </div>
+          </div>
+
+          <!-- More Button (shown after last top menu item) -->
+          <ng-container *ngIf="last && shouldShowMoreButton">
+            <div
+              #moreButtonRef
+              class="cometchat-menu-list__sub-menu"
+              
+              [attr.aria-label]="moreIconHoverText || 'More options'"
+              [attr.aria-expanded]="showSubMenu"
+              aria-haspopup="menu"
+              role="button"
+              tabindex="0"
+              [ngStyle]="{
+                'z-index': disableBackgroundInteraction && showSubMenu ? '1000' : 'auto',
+                'pointer-events': disableBackgroundInteraction && showSubMenu ? 'auto' : 'auto'
+              }"
+              (click)="handleMenuClick($event)"
+              (keydown.enter)="handleMenuClick($event)"
+              (keydown.space)="$event.preventDefault(); handleMenuClick($event)"
+              (mouseenter)="onMoreButtonMouseEnter()"
+            >
+              <div class="cometchat-menu-list__sub-menu-icon"></div>
+            </div>
+          </ng-container>
+        </div>
+      </ng-container>
+
+      <!-- More Button when no top menu items -->
+      <ng-container *ngIf="topMenu.length === 0 && shouldShowMoreButton">
+        <div class="cometchat-menu-list__menu-wrapper">
+          <div
+            #moreButtonRef
+            class="cometchat-menu-list__sub-menu"
+            [attr.aria-label]="moreIconHoverText || 'More options'"
+            [attr.aria-expanded]="showSubMenu"
+            aria-haspopup="menu"
+            role="button"
+            tabindex="0"
+            [ngStyle]="{
+              'z-index': disableBackgroundInteraction && showSubMenu ? '1000' : 'auto',
+              'pointer-events': disableBackgroundInteraction && showSubMenu ? 'auto' : 'auto'
+            }"
+            (click)="handleMenuClick($event)"
+            (keydown.enter)="handleMenuClick($event)"
+            (keydown.space)="$event.preventDefault(); handleMenuClick($event)"
+            (mouseenter)="onMoreButtonMouseEnter()"
+          >
+            <div class="cometchat-menu-list__sub-menu-icon"></div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Full Screen Overlay (when disableBackgroundInteraction is true) -->
+    <div
+      *ngIf="disableBackgroundInteraction && showSubMenu"
+      class="cometchat-popover__overlay"
+      (click)="onOverlayClick($event)"
+      (wheel)="$event.stopPropagation()"
+      (mousemove)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    ></div>
+
+    <!-- Sub Menu List -->
+    <div
+      #subMenuRef
+      class="cometchat-menu-list__sub-menu-list"
+      id="subMenuContext"
+      role="menu"
+      [attr.aria-label]="'Submenu options'"
+      [attr.data-visible]="showSubMenu"
+      [ngStyle]="{
+        top: positionStyle['top'] || 'auto',
+        left: positionStyle['left'] || 'auto',
+        position: positionStyle['position'] || null,
+        display: showSubMenu ? 'flex' : 'none',
+        'z-index': disableBackgroundInteraction && showSubMenu ? '1000' : '1001'
+      }"
+    >
+      <ng-container *ngFor="let item of subMenu; let i = index; trackBy: trackByItem">
+        <div
+          #menuItemRef
+          [id]="getItemId(item)"
+          class="cometchat-menu-list__sub-menu-list-item"
+          [class.cometchat-menu-list__sub-menu-list-item--destructive]="getItemId(item) === 'delete'"
+          [title]="getItemTitle(item)"
+          [attr.aria-label]="getItemTitle(item)"
+          [attr.aria-selected]="focusedItemIndex === i"
+          role="menuitem"
+          tabindex="0"
+          (click)="onMenuItemClick(item, $event)"
+        >
+          <div
+            *ngIf="item.iconURL"
+            class="cometchat-menu-list__sub-menu-list-item-icon cometchat-menu-list__sub-menu-list-item-icon-{{ getItemId(item) }}"
+            [ngStyle]="getIconStyle(item)"
+          ></div>
+          <label class="cometchat-menu-list__sub-menu-item-title cometchat-menu-list__sub-menu-item-title-{{ getItemId(item) }}">
+            {{ getItemTitle(item) }}
+          </label>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

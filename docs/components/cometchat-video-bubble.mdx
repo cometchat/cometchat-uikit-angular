@@ -1,0 +1,601 @@
+---
+title: "CometChatVideoBubble"
+description: "A comprehensive Angular component for rendering video messages with thumbnails, play overlays, duration badges, and fullscreen video player"
+---
+The `CometChatVideoBubble` component is a sophisticated video message display component that renders video messages with advanced layout capabilities. It serves as the primary content renderer for video-based messages in the CometChat Angular UIKit, handling everything from single video display to complex multi-video grid layouts with fullscreen playback capabilities.
+
+## Overview
+
+The Video Bubble component renders video messages with advanced layout capabilities while maintaining visual consistency with the design system and ensuring full accessibility:
+
+- **Message Object Processing**: Extracts attachments and metadata from CometChat.MediaMessage objects
+- **Single Video Display**: Thumbnail with play button overlay and duration badge
+- **Fullscreen Player**: Modal video player with standard HTML5 controls
+- **Duration Formatting**: Displays video length in M:SS or H:MM:SS format
+- **Caption Support**: Renders captions using TextMessageBubbleComponent
+- **Lazy Loading**: Performance optimization for thumbnail and video loading
+- **Dual Styling**: Supports sender (outgoing) and receiver (incoming) visual variants
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+
+<Info>
+  **Live Preview** — Default video bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--video)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--video&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "400px", border: "1px solid #e0e0e0"}}
+  title="CometChat Video Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Video Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVideoBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatVideoBubbleComponent],
+  template: `
+    <cometchat-video-bubble
+      [message]="videoMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-video-bubble>
+  `
+})
+export class ChatMessageComponent {
+  videoMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVideoBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatVideoBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-video-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-video-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-video-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.RIGHT"
+    ></cometchat-video-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### With Event Handlers
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVideoBubbleComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-interactive-message',
+  standalone: true,
+  imports: [CometChatVideoBubbleComponent],
+  template: `
+    <cometchat-video-bubble
+      [message]="videoMessage"
+      (videoClick)="onVideoClick($event)"
+      (playerOpen)="onPlayerOpen()"
+      (playerClose)="onPlayerClose()"
+    ></cometchat-video-bubble>
+  `
+})
+export class InteractiveMessageComponent {
+  videoMessage!: CometChat.MediaMessage;
+
+  onVideoClick(event: { attachment: MediaAttachment; index: number }): void {
+    console.log('Video clicked:', event.attachment.url, 'at index:', event.index);
+    // Handle video click - player viewer opens automatically
+  }
+
+  onPlayerOpen(): void {
+    console.log('Video player opened');
+    // Track analytics or perform other actions
+  }
+
+  onPlayerClose(): void {
+    console.log('Video player closed');
+    // Track analytics or perform other actions
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The CometChat.MediaMessage object to render. Contains video attachments, metadata, and sender information |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.LEFT` | The alignment of the message bubble. `LEFT` for incoming/receiver messages, `RIGHT` for outgoing/sender messages |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `videoClick` | `{ attachment: MediaAttachment; index: number }` | Emitted when a video thumbnail is clicked. Contains the clicked attachment object and its index in the attachments array |
+| `playerOpen` | `void` | Emitted when the fullscreen video player is opened |
+| `playerClose` | `void` | Emitted when the fullscreen video player is closed |
+
+## Advanced Usage
+
+### Single Video Message
+
+The component displays single video messages with thumbnail, play button, and duration badge:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVideoBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-single-video',
+  standalone: true,
+  imports: [CometChatVideoBubbleComponent],
+  template: `
+    <cometchat-video-bubble
+      [message]="singleVideoMessage"
+    ></cometchat-video-bubble>
+  `
+})
+export class SingleVideoComponent {
+  singleVideoMessage!: CometChat.MediaMessage;
+}
+```
+
+**Single Video Features:**
+- Thumbnail image display (if available)
+- Play button overlay centered on thumbnail
+- Duration badge showing video length (e.g., "2:05" or "1:01:05")
+- Lazy loading for thumbnail
+- Click to open fullscreen video player
+- ARIA label for accessibility
+
+### Videos with Captions
+
+The component automatically renders captions using the TextMessageBubbleComponent:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVideoBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-captioned-video',
+  standalone: true,
+  imports: [CometChatVideoBubbleComponent],
+  template: `
+    <cometchat-video-bubble
+      [message]="captionedVideoMessage"
+    ></cometchat-video-bubble>
+  `
+})
+export class CaptionedVideoComponent {
+  captionedVideoMessage!: CometChat.MediaMessage;
+  
+  // Message with caption in metadata:
+  // message.getText() returns "Check out this amazing tutorial!"
+  // OR
+  // message.getData()?.text returns "Check out this amazing tutorial!"
+}
+```
+
+**Caption Features:**
+- Displays below the video(s)
+- Supports rich text formatting (bold, italic, etc.)
+- Supports @mentions with click events
+- Supports URLs with click events
+- Supports read more/less for long captions
+- Inherits alignment from parent bubble
+
+
+### Fullscreen Video Player
+
+The component includes an integrated fullscreen video player with standard HTML5 controls:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVideoBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-player-demo',
+  standalone: true,
+  imports: [CometChatVideoBubbleComponent],
+  template: `
+    <cometchat-video-bubble
+      [message]="videoMessage"
+      (playerOpen)="onPlayerOpen()"
+      (playerClose)="onPlayerClose()"
+    ></cometchat-video-bubble>
+  `
+})
+export class PlayerDemoComponent {
+  videoMessage!: CometChat.MediaMessage;
+
+  onPlayerOpen(): void {
+    console.log('Video player opened - track analytics');
+    // Body scroll is automatically prevented
+  }
+
+  onPlayerClose(): void {
+    console.log('Video player closed - track analytics');
+    // Body scroll is automatically restored
+    // Video playback is automatically stopped
+  }
+}
+```
+
+**Video Player Features:**
+- Fullscreen modal overlay
+- HTML5 video element with standard controls:
+  - Play/Pause button
+  - Seek bar for navigation
+  - Volume controls
+  - Fullscreen toggle
+  - Current time / Duration display
+- Navigation controls for multiple videos (previous/next buttons)
+- Video counter (e.g., "2 of 5")
+- Close button
+- Keyboard navigation:
+  - `Escape` - Close player
+- Click backdrop to close
+- Focus trap for accessibility
+- Body scroll prevention while open
+- Automatic video stop on close
+
+### Duration Formatting
+
+The component automatically formats video durations:
+
+```typescript
+// Duration examples:
+// 45 seconds → "0:45"
+// 125 seconds (2 min 5 sec) → "2:05"
+// 3665 seconds (1 hr 1 min 5 sec) → "1:01:05"
+```
+
+**Duration Display:**
+- Shows as "M:SS" for videos under 1 hour
+- Shows as "H:MM:SS" for videos 1 hour or longer
+- Positioned in corner of video thumbnail
+- Uses CSS variables for styling
+
+## Customization
+
+### Styling with CSS Variables
+
+The Video Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom video bubble styling */
+cometchat-video-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+
+  /* Colors - Incoming messages */
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-border-color-light: #E0E0E0;
+
+  /* Colors - Outgoing messages */
+  --cometchat-primary-button-background: #6852D6;
+
+  /* Play button overlay */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-static-white: #FFFFFF;
+
+  /* Duration badge */
+  --cometchat-font-caption1-regular: 400 12px 'Roboto';
+  --cometchat-text-color-white: #FFFFFF;
+
+  /* Overflow overlay */
+  --cometchat-font-heading2-bold: 600 20px 'Roboto';
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` | Grid gap, padding | `4px` |
+| `--cometchat-spacing-2` to `--cometchat-spacing-4` | Various spacing | `8px` to `16px` |
+| `--cometchat-radius-2` | Thumbnail border radius | `8px` |
+| `--cometchat-radius-3` | Bubble border radius | `12px` |
+| `--cometchat-background-color-02` | Incoming bubble background | `#F5F5F5` |
+| `--cometchat-primary-button-background` | Outgoing bubble background | `#6852D6` |
+| `--cometchat-primary-color` | Play button color | `#6852D6` |
+| `--cometchat-border-color-light` | Border color | `#E0E0E0` |
+| `--cometchat-text-color-white` | Duration badge text | `#FFFFFF` |
+| `--cometchat-static-white` | Play button icon | `#FFFFFF` |
+| `--cometchat-font-caption1-regular` | Duration badge font | `400 12px Roboto` |
+| `--cometchat-font-heading2-bold` | Overflow text font | `600 20px Roboto` |
+
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for incoming messages */
+.theme-blue cometchat-video-bubble {
+  --cometchat-background-color-02: #E3F2FD;
+  --cometchat-border-color-light: #90CAF9;
+}
+
+/* Green theme for outgoing messages */
+.theme-green cometchat-video-bubble {
+  --cometchat-primary-button-background: #4CAF50;
+  --cometchat-primary-color: #4CAF50;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-video-bubble {
+  --cometchat-background-color-02: #2C2C2C;
+  --cometchat-border-color-light: #404040;
+}
+```
+
+### Custom Play Button Styling
+
+```css expandable
+/* Custom play button overlay */
+::ng-deep .cometchat-video-bubble__play-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+}
+
+::ng-deep .cometchat-video-bubble__play-icon {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+```
+
+### Custom Duration Badge Styling
+
+```css expandable
+/* Custom duration badge */
+::ng-deep .cometchat-video-bubble__duration-badge {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 4px;
+  padding: 4px 8px;
+  bottom: 8px;
+  right: 8px;
+}
+
+::ng-deep .cometchat-video-bubble__duration-text {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+```
+
+### Custom Video Player Styling
+
+```css expandable
+/* Custom fullscreen viewer backdrop */
+::ng-deep .cometchat-fullscreen-viewer__backdrop {
+  background: rgba(0, 0, 0, 0.95);
+}
+
+/* Custom video element */
+::ng-deep .cometchat-fullscreen-viewer__media video {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 8px;
+}
+
+/* Custom navigation buttons */
+::ng-deep .cometchat-fullscreen-viewer__nav-button {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+}
+
+::ng-deep .cometchat-fullscreen-viewer__nav-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+```
+
+## Accessibility
+
+The Video Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: All video thumbnails have ARIA labels
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators in video player
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names
+
+### Keyboard Support
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate to video thumbnails | When thumbnails are focusable |
+| `Enter` | Open video player | When thumbnail is focused |
+| `Space` | Open video player | When thumbnail is focused |
+| `Escape` | Close video player | In video player |
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `aria-label` | Video thumbnail | `"Video, [duration]"` | Provides text alternative |
+| `role` | Video player | `"dialog"` | Identifies the player as a dialog |
+| `aria-modal` | Video player | `"true"` | Indicates modal behavior |
+| `aria-label` | Navigation buttons | `"Next video"`, `"Previous video"` | Describes button actions |
+| `aria-label` | Close button | `"Close player"` | Describes close action |
+| `aria-label` | Overflow indicator | `"+N more videos"` | Describes additional videos |
+| `aria-label` | Play button | `"Play video"` | Describes play action |
+
+### Screen Reader Behavior
+
+Screen readers announce the video bubble with:
+1. **Single video**: "Video, duration 2 minutes 5 seconds"
+2. **Multiple videos**: "Video 1 of 3, duration 1 minute 30 seconds"
+3. **Overflow indicator**: "+3 more videos"
+4. **Video player**: "Dialog, Video player, 2 of 5"
+5. **Navigation**: "Button, Next video" / "Button, Previous video"
+6. **Play button**: "Button, Play video"
+
+
+### Accessibility Best Practices
+
+<Tip>
+  The component automatically handles all accessibility requirements. No additional ARIA attributes or keyboard handling is needed.
+</Tip>
+
+<Warning>
+  When handling `videoClick` events, ensure your custom actions maintain accessibility by managing focus appropriately.
+</Warning>
+
+<Info>
+  All interactive elements (video thumbnails, navigation buttons, play button) are keyboard accessible and have visible focus indicators.
+</Info>
+
+## Best Practices
+
+<Tip>
+  Always provide the complete CometChat.MediaMessage object to ensure all features (attachments, captions, metadata, duration) work correctly.
+</Tip>
+
+<Warning>
+  The component expects video attachments with valid URLs and thumbnails. Ensure your message objects have properly formatted attachment data.
+</Warning>
+
+<Info>
+  Use the `alignment` property to distinguish between incoming and outgoing messages for proper visual styling.
+</Info>
+
+<Tip>
+  Handle `playerOpen` and `playerClose` events to track analytics or perform custom actions when the video player is used.
+</Tip>
+
+<Warning>
+  The video player prevents body scroll while open. Avoid programmatically scrolling the page while the player is active.
+</Warning>
+
+<Info>
+  The component uses lazy loading for video thumbnails. Thumbnails outside the viewport won't load until they're scrolled into view.
+</Info>
+
+<Warning>
+  Video streams are only loaded when the player is opened. This prevents unnecessary bandwidth usage for videos that aren't played.
+</Warning>
+
+## Related Components
+
+- **CometChatImageBubble**: Displays image messages with grid layouts and gallery
+- **CometChatTextBubble**: Used for rendering captions in video messages
+- **CometChatMessageBubble**: Uses Video Bubble as the content view for video messages
+- **CometChatMessageList**: Displays lists of messages including video bubbles
+- **VideoPlayerViewer**: Internal component for fullscreen video playback
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: 
+  - Angular CommonModule
+  - CometChat SDK for message types
+  - TranslatePipe for localization
+  - CometChatTextBubbleComponent for captions
+  - VideoPlayerViewerComponent for fullscreen playback
+- **Bundle Size**: Minimal footprint (~14KB including video player)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+
+## Performance Considerations
+
+### Optimization Strategies
+
+**Change Detection:**
+- Uses OnPush strategy to minimize unnecessary re-renders
+- Only updates when inputs change or events are emitted
+
+**Lazy Loading:**
+- Video thumbnails use native `loading="lazy"` attribute
+- Thumbnails outside viewport don't load until scrolled into view
+- Video streams only load when player is opened
+- Reduces initial page load time and bandwidth usage significantly
+
+**Layout Determination:**
+- Layout type calculated once during message processing
+- Avoids repeated calculations during rendering
+
+**Video Player:**
+- Only rendered when open (conditional rendering)
+- Video stops automatically on close to free resources
+- Body scroll prevention uses efficient CSS approach
+- Focus trap implemented with minimal DOM manipulation
+
+**Duration Formatting:**
+- Duration formatted once during message processing
+- Cached for display in template
+
+### Best Practices for Performance
+
+<Tip>
+  The component uses OnPush change detection. Ensure message objects are immutable for optimal performance.
+</Tip>
+
+<Info>
+  Lazy loading is automatic. Video thumbnails will load as they enter the viewport during scrolling.
+</Info>
+
+<Warning>
+  Avoid frequently changing the message input. Each change triggers re-processing of attachments and layout determination.
+</Warning>
+
+<Info>
+  Video streams are only loaded when the player opens. This prevents unnecessary bandwidth usage for videos that aren't played.
+</Info>
+
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatvideobubble).
+</Info>
+

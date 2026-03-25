@@ -1,0 +1,391 @@
+/*
+ * CometChat Media Recorder Component CSS Custom Properties
+ *
+ * --cometchat-media-recorder-inline-gap
+ * --cometchat-media-recorder-inline-padding
+ * --cometchat-media-recorder-inline-delete-width
+ * --cometchat-media-recorder-inline-delete-height
+ * --cometchat-media-recorder-inline-delete-border-radius
+ * --cometchat-media-recorder-inline-delete-background-hover
+ * --cometchat-media-recorder-inline-delete-icon-width
+ * --cometchat-media-recorder-inline-delete-icon-height
+ * --cometchat-media-recorder-inline-delete-icon-color
+ * --cometchat-media-recorder-recording-dot-width
+ * --cometchat-media-recorder-recording-dot-height
+ * --cometchat-media-recorder-recording-dot-border-radius
+ * --cometchat-media-recorder-recording-dot-background
+ * --cometchat-media-recorder-inline-record-width
+ * --cometchat-media-recorder-inline-record-height
+ * --cometchat-media-recorder-inline-record-border-radius
+ * --cometchat-media-recorder-inline-record-border
+ * --cometchat-media-recorder-inline-record-background
+ * --cometchat-media-recorder-inline-record-background-hover
+ * --cometchat-media-recorder-inline-record-icon-width
+ * --cometchat-media-recorder-inline-record-icon-height
+ * --cometchat-media-recorder-inline-record-icon-color
+ * --cometchat-media-recorder-waveform-gap
+ * --cometchat-media-recorder-waveform-height
+ * --cometchat-media-recorder-waveform-bar-width
+ * --cometchat-media-recorder-waveform-bar-height
+ * --cometchat-media-recorder-waveform-bar-border-radius
+ * --cometchat-media-recorder-waveform-bar-background
+ * --cometchat-media-recorder-waveform-bar-background-active
+ * --cometchat-media-recorder-waveform-preview-height
+ * --cometchat-media-recorder-waveform-preview-min-width
+ * --cometchat-media-recorder-timer-font
+ * --cometchat-media-recorder-timer-color
+ * --cometchat-media-recorder-timer-min-width
+ * --cometchat-media-recorder-inline-pause-width
+ * --cometchat-media-recorder-inline-pause-height
+ * --cometchat-media-recorder-inline-pause-border-radius
+ * --cometchat-media-recorder-inline-pause-border
+ * --cometchat-media-recorder-inline-pause-background
+ * --cometchat-media-recorder-inline-pause-background-hover
+ * --cometchat-media-recorder-inline-pause-icon-width
+ * --cometchat-media-recorder-inline-pause-icon-height
+ * --cometchat-media-recorder-inline-pause-icon-color
+ * --cometchat-media-recorder-inline-play-width
+ * --cometchat-media-recorder-inline-play-height
+ * --cometchat-media-recorder-inline-play-border-radius
+ * --cometchat-media-recorder-inline-play-border
+ * --cometchat-media-recorder-inline-play-background
+ * --cometchat-media-recorder-inline-play-background-hover
+ * --cometchat-media-recorder-inline-play-icon-width
+ * --cometchat-media-recorder-inline-play-icon-height
+ * --cometchat-media-recorder-inline-play-icon-color
+ * --cometchat-media-recorder-inline-resume-width
+ * --cometchat-media-recorder-inline-resume-height
+ * --cometchat-media-recorder-inline-resume-border-radius
+ * --cometchat-media-recorder-inline-resume-border
+ * --cometchat-media-recorder-inline-resume-background
+ * --cometchat-media-recorder-inline-resume-background-hover
+ * --cometchat-media-recorder-inline-resume-icon-width
+ * --cometchat-media-recorder-inline-resume-icon-height
+ * --cometchat-media-recorder-inline-resume-icon-color
+ * --cometchat-media-recorder-inline-error-gap
+ * --cometchat-media-recorder-inline-error-icon-width
+ * --cometchat-media-recorder-inline-error-icon-height
+ * --cometchat-media-recorder-inline-error-icon-color
+ * --cometchat-media-recorder-inline-error-text-font
+ * --cometchat-media-recorder-inline-error-text-color
+ * --cometchat-media-recorder-inline-close-width
+ * --cometchat-media-recorder-inline-close-height
+ * --cometchat-media-recorder-inline-close-border-radius
+ * --cometchat-media-recorder-inline-close-background-hover
+ * --cometchat-media-recorder-inline-close-icon-width
+ * --cometchat-media-recorder-inline-close-icon-height
+ * --cometchat-media-recorder-inline-close-icon-color
+ */
+
+/* Screen Reader Only */
+.cometchat-media-recorder__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Container */
+.cometchat-media-recorder--inline {
+  display: flex;
+  gap: var(--cometchat-media-recorder-inline-gap, var(--cometchat-spacing-2, 8px));
+  width: 100%;
+  height: 100%;
+  padding: var(--cometchat-media-recorder-inline-padding, 0 var(--cometchat-padding-2, 8px));
+  box-sizing: border-box;
+  justify-content: flex-start;
+    align-items: center;
+    width: fit-content;
+    margin-left: auto;
+}
+
+
+/* Delete Button */
+.cometchat-media-recorder__inline-delete {
+  display: flex;
+  width: var(--cometchat-media-recorder-inline-delete-width, 28px);
+  height: var(--cometchat-media-recorder-inline-delete-height, 28px);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--cometchat-media-recorder-inline-delete-border-radius, var(--cometchat-radius-max));
+  transition: background-color 0.15s ease;
+}
+
+.cometchat-media-recorder__inline-delete:hover {
+  background: var(--cometchat-media-recorder-inline-delete-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-media-recorder__inline-delete-icon {
+  width: var(--cometchat-media-recorder-inline-delete-icon-width, 20px);
+  height: var(--cometchat-media-recorder-inline-delete-icon-height, 20px);
+  flex-shrink: 0;
+  -webkit-mask: url('../../../assets/delete.svg') center center no-repeat;
+  mask: url('../../../assets/delete.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-media-recorder-inline-delete-icon-color, var(--cometchat-icon-color-secondary));
+}
+
+/* Recording Indicator Dot */
+.cometchat-media-recorder__recording-dot {
+  width: var(--cometchat-media-recorder-recording-dot-width, 10px);
+  height: var(--cometchat-media-recorder-recording-dot-height, 10px);
+  flex-shrink: 0;
+  border-radius: var(--cometchat-media-recorder-recording-dot-border-radius, var(--cometchat-radius-max));
+  background: var(--cometchat-media-recorder-recording-dot-background, var(--cometchat-error-color));
+  animation: cometchat-recording-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cometchat-recording-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Record Button (idle state) */
+.cometchat-media-recorder__inline-record {
+  display: flex;
+  width: var(--cometchat-media-recorder-inline-record-width, 28px);
+  height: var(--cometchat-media-recorder-inline-record-height, 28px);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--cometchat-media-recorder-inline-record-border-radius, var(--cometchat-radius-max));
+  border: var(--cometchat-media-recorder-inline-record-border, 1px solid var(--cometchat-border-color-light));
+  background: var(--cometchat-media-recorder-inline-record-background, var(--cometchat-background-color-01));
+}
+
+.cometchat-media-recorder__inline-record:hover {
+  background: var(--cometchat-media-recorder-inline-record-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-media-recorder__inline-record-icon {
+  width: var(--cometchat-media-recorder-inline-record-icon-width, 20px);
+  height: var(--cometchat-media-recorder-inline-record-icon-height, 20px);
+  flex-shrink: 0;
+  -webkit-mask: url('../../../assets/recording_resume.svg') center center no-repeat;
+  mask: url('../../../assets/recording_resume.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-media-recorder-inline-record-icon-color, var(--cometchat-primary-color));
+}
+
+/* Real-time Waveform Visualization */
+.cometchat-media-recorder__waveform {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-media-recorder-waveform-gap, 2px);
+  flex: 1;
+  height: var(--cometchat-media-recorder-waveform-height, 28px);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cometchat-media-recorder__waveform-bar {
+  width: var(--cometchat-media-recorder-waveform-bar-width, 3px);
+  height: var(--cometchat-media-recorder-waveform-bar-height, 4px);
+  min-height: 4px;
+  border-radius: var(--cometchat-media-recorder-waveform-bar-border-radius, var(--cometchat-radius-max));
+  background: var(--cometchat-media-recorder-waveform-bar-background, var(--cometchat-icon-color-secondary));
+  flex-shrink: 0;
+  transition: height 0.15s ease;
+}
+
+.cometchat-media-recorder__waveform-bar--active {
+  background: var(--cometchat-media-recorder-waveform-bar-background-active, var(--cometchat-primary-color));
+}
+
+/* WaveSurfer Preview Container (paused state) */
+.cometchat-media-recorder__waveform-preview {
+  flex: 1;
+  height: var(--cometchat-media-recorder-waveform-preview-height, 28px);
+  overflow: hidden;
+  min-width: var(--cometchat-media-recorder-waveform-preview-min-width, 130px);
+}
+
+/* Timer Display */
+.cometchat-media-recorder__timer {
+  font: var(--cometchat-media-recorder-timer-font, var(--cometchat-font-caption1-medium));
+  color: var(--cometchat-media-recorder-timer-color, var(--cometchat-text-color-primary));
+  flex-shrink: 0;
+  min-width: var(--cometchat-media-recorder-timer-min-width, 32px);
+  text-align: center;
+  user-select: none;
+}
+
+/* Pause Button (during recording) */
+.cometchat-media-recorder__inline-pause {
+  display: flex;
+  width: var(--cometchat-media-recorder-inline-pause-width, 28px);
+  height: var(--cometchat-media-recorder-inline-pause-height, 28px);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--cometchat-media-recorder-inline-pause-border-radius, var(--cometchat-radius-max));
+  border: var(--cometchat-media-recorder-inline-pause-border, 1px solid var(--cometchat-border-color-light));
+  background: var(--cometchat-media-recorder-inline-pause-background, var(--cometchat-background-color-01));
+  transition: background-color 0.15s ease;
+}
+
+.cometchat-media-recorder__inline-pause:hover {
+  background: var(--cometchat-media-recorder-inline-pause-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-media-recorder__inline-pause-icon {
+  width: var(--cometchat-media-recorder-inline-pause-icon-width, 16px);
+  height: var(--cometchat-media-recorder-inline-pause-icon-height, 16px);
+  flex-shrink: 0;
+  -webkit-mask: url('../../../assets/pause.svg') center center no-repeat;
+  mask: url('../../../assets/pause.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-media-recorder-inline-pause-icon-color, var(--cometchat-icon-color-secondary));
+}
+
+/* Play Preview Button (paused state - left side) */
+.cometchat-media-recorder__inline-play {
+  display: flex;
+  width: var(--cometchat-media-recorder-inline-play-width, 28px);
+  height: var(--cometchat-media-recorder-inline-play-height, 28px);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--cometchat-media-recorder-inline-play-border-radius, var(--cometchat-radius-max));
+  border: var(--cometchat-media-recorder-inline-play-border, 1px solid var(--cometchat-border-color-light));
+  background: var(--cometchat-media-recorder-inline-play-background, var(--cometchat-background-color-01));
+  transition: background-color 0.15s ease;
+}
+
+.cometchat-media-recorder__inline-play:hover {
+  background: var(--cometchat-media-recorder-inline-play-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-media-recorder__inline-play-icon {
+  width: var(--cometchat-media-recorder-inline-play-icon-width, 16px);
+  height: var(--cometchat-media-recorder-inline-play-icon-height, 16px);
+  flex-shrink: 0;
+  -webkit-mask: url('../../../assets/play_arrow.svg') center center no-repeat;
+  mask: url('../../../assets/play_arrow.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-media-recorder-inline-play-icon-color, var(--cometchat-primary-color));
+}
+
+.cometchat-media-recorder__inline-play-icon--playing {
+  -webkit-mask-image: url('../../../assets/pause.svg');
+  mask-image: url('../../../assets/pause.svg');
+  background: var(--cometchat-media-recorder-inline-play-icon-color, var(--cometchat-primary-color));
+}
+
+/* Resume Recording Button (paused state - right side) */
+.cometchat-media-recorder__inline-resume {
+  display: flex;
+  width: var(--cometchat-media-recorder-inline-resume-width, 28px);
+  height: var(--cometchat-media-recorder-inline-resume-height, 28px);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--cometchat-media-recorder-inline-resume-border-radius, var(--cometchat-radius-max));
+  border: var(--cometchat-media-recorder-inline-resume-border, 1px solid var(--cometchat-border-color-light));
+  background: var(--cometchat-media-recorder-inline-resume-background, var(--cometchat-background-color-01));
+  transition: background-color 0.15s ease;
+}
+
+.cometchat-media-recorder__inline-resume:hover {
+  background: var(--cometchat-media-recorder-inline-resume-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-media-recorder__inline-resume-icon {
+  width: var(--cometchat-media-recorder-inline-resume-icon-width, 16px);
+  height: var(--cometchat-media-recorder-inline-resume-icon-height, 16px);
+  flex-shrink: 0;
+  -webkit-mask: url('../../../assets/recording_resume.svg') center center no-repeat;
+  mask: url('../../../assets/recording_resume.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-media-recorder-inline-resume-icon-color, var(--cometchat-primary-color));
+}
+
+/* Error State */
+.cometchat-media-recorder__inline-error {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-media-recorder-inline-error-gap, var(--cometchat-spacing-2, 8px));
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-media-recorder__inline-error-icon {
+  width: var(--cometchat-media-recorder-inline-error-icon-width, 20px);
+  height: var(--cometchat-media-recorder-inline-error-icon-height, 20px);
+  flex-shrink: 0;
+  -webkit-mask: url('../../../assets/mic_off.svg') center center no-repeat;
+  mask: url('../../../assets/mic_off.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-media-recorder-inline-error-icon-color, var(--cometchat-error-color));
+}
+
+.cometchat-media-recorder__inline-error-text {
+  font: var(--cometchat-media-recorder-inline-error-text-font, var(--cometchat-font-caption1-regular));
+  color: var(--cometchat-media-recorder-inline-error-text-color, var(--cometchat-error-color));
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cometchat-media-recorder__inline-close {
+  display: flex;
+  width: var(--cometchat-media-recorder-inline-close-width, 28px);
+  height: var(--cometchat-media-recorder-inline-close-height, 28px);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--cometchat-media-recorder-inline-close-border-radius, var(--cometchat-radius-max));
+  transition: background-color 0.15s ease;
+}
+
+.cometchat-media-recorder__inline-close:hover {
+  background: var(--cometchat-media-recorder-inline-close-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-media-recorder__inline-close-icon {
+  width: var(--cometchat-media-recorder-inline-close-icon-width, 20px);
+  height: var(--cometchat-media-recorder-inline-close-icon-height, 20px);
+  flex-shrink: 0;
+  -webkit-mask: url('../../../assets/close.svg') center center no-repeat;
+  mask: url('../../../assets/close.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-media-recorder-inline-close-icon-color, var(--cometchat-icon-color-secondary));
+}
+
+/* Focus States */
+.cometchat-media-recorder__inline-delete:focus-visible,
+.cometchat-media-recorder__inline-record:focus-visible,
+.cometchat-media-recorder__inline-pause:focus-visible,
+.cometchat-media-recorder__inline-play:focus-visible,
+.cometchat-media-recorder__inline-resume:focus-visible,
+.cometchat-media-recorder__inline-close:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .cometchat-media-recorder__waveform{
+    max-width: 45%;
+  }
+}

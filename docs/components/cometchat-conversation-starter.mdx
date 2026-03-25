@@ -1,0 +1,147 @@
+---
+title: "CometChatConversationStarter"
+description: "An AI-powered component that displays conversation starter suggestions for new or empty conversations"
+---
+The `CometChatConversationStarter` component displays AI-generated conversation starter suggestions as clickable chips. It integrates with the CometChat AI extension to generate up to 4 contextual prompts for starting a conversation.
+
+## Overview
+
+The Conversation Starter component helps users initiate conversations:
+
+- **AI-Generated Starters**: Fetches up to 4 conversation starter suggestions from the CometChat AI extension
+- **Context-Aware**: Generates starters based on the user or group context provided
+- **Loading State**: Displays a loading indicator while fetching suggestions from the AI service
+- **Error Handling**: Manages error states gracefully when the AI service is unavailable
+- **Keyboard Accessible**: Full keyboard navigation with Tab, Enter/Space to select, and ArrowLeft/ArrowRight between starters with wrap-around
+
+
+<Info>
+  **Live Preview** — default conversation starter preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-ai-conversation-starter--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-ai-conversation-starter--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "150px", border: "1px solid #e0e0e0"}}
+  title="CometChat Conversation Starter — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### With a User
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationStarterComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-conversation-starter-demo',
+  standalone: true,
+  imports: [CometChatConversationStarterComponent],
+  template: `
+    <cometchat-conversation-starter
+      [user]="activeUser"
+      (starterClick)="onStarterClick($event)">
+    </cometchat-conversation-starter>
+  `
+})
+export class ConversationStarterDemoComponent {
+  activeUser!: CometChat.User;
+
+  onStarterClick(starter: string): void {
+    console.log('Conversation starter selected:', starter);
+  }
+}
+```
+
+### With a Group
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationStarterComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-starter-demo',
+  standalone: true,
+  imports: [CometChatConversationStarterComponent],
+  template: `
+    <cometchat-conversation-starter
+      [group]="activeGroup"
+      (starterClick)="onStarterClick($event)">
+    </cometchat-conversation-starter>
+  `
+})
+export class GroupStarterDemoComponent {
+  activeGroup!: CometChat.Group;
+
+  onStarterClick(starter: string): void {
+    console.log('Starter selected:', starter);
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user` | `CometChat.User` | `undefined` | The user context for generating conversation starters. Required for 1-on-1 conversations. |
+| `group` | `CometChat.Group` | `undefined` | The group context for generating conversation starters. Required for group conversations. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `starterClick` | `string` | Emitted when a conversation starter chip is clicked. The payload is the starter text that was selected. |
+
+## Customization
+
+### CSS Variables
+
+The Conversation Starter component uses BEM-style CSS classes that can be customized with CSS variables:
+
+```css expandable
+/* Conversation starter container */
+.cometchat-conversation-starter {
+  padding: var(--cometchat-spacing-2);
+  gap: var(--cometchat-spacing-2);
+}
+
+/* Individual starter chip */
+.cometchat-conversation-starter__starter {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  background: var(--cometchat-background-color-03);
+  border-radius: var(--cometchat-radius-max);
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-3);
+}
+
+/* Starter chip hover state */
+.cometchat-conversation-starter__starter:hover {
+  background: var(--cometchat-background-color-04);
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Tab**: Focus moves into the conversation starters container and to the first starter chip
+- **ArrowRight / ArrowLeft**: Navigate between starter chips with wrap-around
+- **Enter / Space**: Select the focused starter chip, emitting the `starterClick` event
+- Focus is managed using a roving tabindex pattern
+
+### Screen Reader Support
+
+- The container has `role="group"` with `aria-label="Conversation starters"`
+- Each starter chip has an `aria-label` with the starter text
+- Screen readers announce "Conversation starters available" when the component appears
+
+## Related Components
+
+- [CometChatSmartReplies](/components/cometchat-smart-replies) - AI-generated smart reply suggestions for received messages
+- [CometChatMessageList](/components/cometchat-message-list) - Message list that hosts the conversation starter component

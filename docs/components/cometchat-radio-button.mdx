@@ -1,0 +1,806 @@
+---
+title: Radio Button
+description: "A reusable radio button component with group support, full keyboard accessibility, and Angular forms integration"
+---
+The `CometChatRadioButton` component provides a consistent, accessible radio button implementation across the UIKit. It supports radio button grouping, keyboard navigation with arrow keys, and Angular forms integration via ControlValueAccessor.
+
+## Overview
+
+The Radio Button component is designed for single-selection patterns throughout your chat application:
+
+- **Radio Grouping**: Automatically manages selection within named groups
+- **Forms Integration**: Implements ControlValueAccessor for seamless Angular forms support
+- **Keyboard Navigation**: Full keyboard support with Space, Arrow keys for group navigation
+- **Accessibility**: ARIA attributes and screen reader support
+- **Customizable**: CSS variable-based styling for easy theming
+- **Responsive**: Hover and focus states with visual feedback
+
+## Basic Usage
+
+### Simple Radio Button
+
+```html
+<cometchat-radio-button 
+  [name]="'size'"
+  [value]="'small'"
+  [labelText]="'Small'" 
+  (radioChanged)="onRadioChange($event)">
+</cometchat-radio-button>
+```
+
+### Radio Button Group
+
+```html expandable
+<div class="radio-group">
+  <cometchat-radio-button 
+    [name]="'size'"
+    [value]="'small'"
+    [labelText]="'Small'" 
+    (radioChanged)="onSizeChange($event)">
+  </cometchat-radio-button>
+  
+  <cometchat-radio-button 
+    [name]="'size'"
+    [value]="'medium'"
+    [checked]="true"
+    [labelText]="'Medium'" 
+    (radioChanged)="onSizeChange($event)">
+  </cometchat-radio-button>
+  
+  <cometchat-radio-button 
+    [name]="'size'"
+    [value]="'large'"
+    [labelText]="'Large'" 
+    (radioChanged)="onSizeChange($event)">
+  </cometchat-radio-button>
+</div>
+```
+
+### Disabled Radio Button
+
+```html
+<cometchat-radio-button 
+  [name]="'option'"
+  [value]="'unavailable'"
+  [labelText]="'Unavailable option'" 
+  [disabled]="true">
+</cometchat-radio-button>
+```
+
+<Info>
+  **Live Preview** — interact with the default radio button.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-radio-button--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-radio-button--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "80px", border: "1px solid #e0e0e0"}}
+  title="Radio Button — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatRadioButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-notification-settings',
+  standalone: true,
+  imports: [CometChatRadioButtonComponent],
+  template: `
+    <div class="settings-form">
+      <h3>Notification Frequency</h3>
+      
+      <div class="radio-group">
+        <cometchat-radio-button 
+          [name]="'frequency'"
+          [value]="'realtime'"
+          [checked]="selectedFrequency === 'realtime'"
+          [labelText]="'Real-time'" 
+          (radioChanged)="onFrequencyChange($event)">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'frequency'"
+          [value]="'hourly'"
+          [checked]="selectedFrequency === 'hourly'"
+          [labelText]="'Hourly digest'" 
+          (radioChanged)="onFrequencyChange($event)">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'frequency'"
+          [value]="'daily'"
+          [checked]="selectedFrequency === 'daily'"
+          [labelText]="'Daily digest'" 
+          (radioChanged)="onFrequencyChange($event)">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'frequency'"
+          [value]="'never'"
+          [checked]="selectedFrequency === 'never'"
+          [labelText]="'Never'" 
+          (radioChanged)="onFrequencyChange($event)">
+        </cometchat-radio-button>
+      </div>
+
+      <h3>Message Sound</h3>
+      
+      <div class="radio-group">
+        <cometchat-radio-button 
+          [name]="'sound'"
+          [value]="'default'"
+          [checked]="selectedSound === 'default'"
+          [labelText]="'Default'" 
+          (radioChanged)="onSoundChange($event)">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'sound'"
+          [value]="'chime'"
+          [checked]="selectedSound === 'chime'"
+          [labelText]="'Chime'" 
+          (radioChanged)="onSoundChange($event)">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'sound'"
+          [value]="'none'"
+          [checked]="selectedSound === 'none'"
+          [labelText]="'None'" 
+          (radioChanged)="onSoundChange($event)">
+        </cometchat-radio-button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .settings-form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 20px;
+    }
+    
+    h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  `]
+})
+export class NotificationSettingsComponent {
+  selectedFrequency = 'realtime';
+  selectedSound = 'default';
+
+  onFrequencyChange(event: { checked: boolean; labelText: string; id: string }): void {
+    if (event.checked) {
+      // Extract value from the radio button that emitted the event
+      const radioButtons = document.getElementsByName('frequency') as NodeListOf<HTMLInputElement>;
+      radioButtons.forEach(radio => {
+        if (radio.checked) {
+          this.selectedFrequency = radio.value;
+        }
+      });
+      console.log('Frequency changed to:', this.selectedFrequency);
+    }
+  }
+
+  onSoundChange(event: { checked: boolean; labelText: string; id: string }): void {
+    if (event.checked) {
+      const radioButtons = document.getElementsByName('sound') as NodeListOf<HTMLInputElement>;
+      radioButtons.forEach(radio => {
+        if (radio.checked) {
+          this.selectedSound = radio.value;
+        }
+      });
+      console.log('Sound changed to:', this.selectedSound);
+    }
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `checked` | `boolean` | `false` | Checked state of the radio button |
+| `name` | `string` | `'radio-group'` | Name for grouping radio buttons. All radio buttons with the same name belong to the same group |
+| `labelText` | `string` | `''` | Label text displayed next to the radio button |
+| `disabled` | `boolean` | `false` | Disables the radio button, preventing interaction |
+| `id` | `string` | `auto-generated` | Unique identifier for the radio button. Auto-generated if not provided |
+| `value` | `any` | `''` | Value of the radio button. Used for form integration and identification |
+| `ariaLabel` | `string` | `undefined` | Custom aria-label for accessibility (overrides default label for screen readers) |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `radioChanged` | `EventEmitter<{ checked: boolean; labelText: string; id: string }>` | Emitted when radio button state changes. Provides the checked state, label text, and unique id |
+
+## Behavior
+
+### Radio Button Grouping
+
+Radio buttons with the same `name` attribute form a group where only one can be selected at a time:
+
+```typescript expandable
+@Component({
+  template: `
+    <div class="radio-group">
+      <!-- All these radio buttons belong to the 'theme' group -->
+      <cometchat-radio-button 
+        [name]="'theme'"
+        [value]="'light'"
+        [labelText]="'Light theme'" 
+        (radioChanged)="onThemeChange($event)">
+      </cometchat-radio-button>
+      
+      <cometchat-radio-button 
+        [name]="'theme'"
+        [value]="'dark'"
+        [labelText]="'Dark theme'" 
+        (radioChanged)="onThemeChange($event)">
+      </cometchat-radio-button>
+      
+      <cometchat-radio-button 
+        [name]="'theme'"
+        [value]="'auto'"
+        [labelText]="'Auto (system)'" 
+        (radioChanged)="onThemeChange($event)">
+      </cometchat-radio-button>
+    </div>
+  `
+})
+export class ThemeSelectionComponent {
+  onThemeChange(event: { checked: boolean; labelText: string; id: string }): void {
+    if (event.checked) {
+      console.log('Theme changed to:', event.labelText);
+    }
+  }
+}
+```
+
+### Controlled Radio Buttons
+
+You can control the selected radio button programmatically:
+
+```typescript expandable
+@Component({
+  template: `
+    <div>
+      <div class="radio-group">
+        <cometchat-radio-button 
+          [name]="'priority'"
+          [value]="'low'"
+          [checked]="selectedPriority === 'low'"
+          [labelText]="'Low'" 
+          (radioChanged)="onPriorityChange('low')">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'priority'"
+          [value]="'medium'"
+          [checked]="selectedPriority === 'medium'"
+          [labelText]="'Medium'" 
+          (radioChanged)="onPriorityChange('medium')">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'priority'"
+          [value]="'high'"
+          [checked]="selectedPriority === 'high'"
+          [labelText]="'High'" 
+          (radioChanged)="onPriorityChange('high')">
+        </cometchat-radio-button>
+      </div>
+      
+      <button (click)="resetToDefault()">Reset to Default</button>
+    </div>
+  `
+})
+export class PrioritySelectionComponent {
+  selectedPriority = 'medium';
+
+  onPriorityChange(priority: string): void {
+    this.selectedPriority = priority;
+    console.log('Priority changed to:', priority);
+  }
+
+  resetToDefault(): void {
+    this.selectedPriority = 'medium';
+  }
+}
+```
+
+### Disabled State
+
+When `disabled` is `true`:
+- Radio button shows reduced opacity (0.5)
+- Cursor changes to `not-allowed`
+- Click and keyboard events are blocked
+- ARIA attribute `aria-disabled="true"` is set
+- Radio button is excluded from keyboard navigation
+
+## Angular Forms Integration
+
+The radio button implements `ControlValueAccessor`, allowing seamless integration with Angular forms:
+
+### Reactive Forms
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CometChatRadioButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reactive-form',
+  standalone: true,
+  imports: [ReactiveFormsModule, CometChatRadioButtonComponent],
+  template: `
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <h3>Select your plan</h3>
+      
+      <div class="radio-group">
+        <cometchat-radio-button 
+          formControlName="plan"
+          [name]="'plan'"
+          [value]="'free'"
+          [labelText]="'Free - $0/month'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          formControlName="plan"
+          [name]="'plan'"
+          [value]="'pro'"
+          [labelText]="'Pro - $9/month'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          formControlName="plan"
+          [name]="'plan'"
+          [value]="'enterprise'"
+          [labelText]="'Enterprise - Contact us'">
+        </cometchat-radio-button>
+      </div>
+      
+      <button type="submit" [disabled]="!form.valid">Continue</button>
+    </form>
+  `
+})
+export class ReactiveFormComponent {
+  form: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.form = this.fb.group({
+      plan: ['pro', Validators.required]
+    });
+  }
+
+  onSubmit(): void {
+    console.log('Selected plan:', this.form.value.plan);
+  }
+}
+```
+
+### Template-Driven Forms
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CometChatRadioButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-template-form',
+  standalone: true,
+  imports: [FormsModule, CometChatRadioButtonComponent],
+  template: `
+    <form #form="ngForm" (ngSubmit)="onSubmit()">
+      <h3>Delivery method</h3>
+      
+      <div class="radio-group">
+        <cometchat-radio-button 
+          [(ngModel)]="model.deliveryMethod"
+          name="deliveryMethod"
+          [value]="'standard'"
+          [labelText]="'Standard (5-7 days)'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [(ngModel)]="model.deliveryMethod"
+          name="deliveryMethod"
+          [value]="'express'"
+          [labelText]="'Express (2-3 days)'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [(ngModel)]="model.deliveryMethod"
+          name="deliveryMethod"
+          [value]="'overnight'"
+          [labelText]="'Overnight'">
+        </cometchat-radio-button>
+      </div>
+      
+      <button type="submit">Continue</button>
+    </form>
+  `
+})
+export class TemplateFormComponent {
+  model = {
+    deliveryMethod: 'standard'
+  };
+
+  onSubmit(): void {
+    console.log('Delivery method:', this.model.deliveryMethod);
+  }
+}
+```
+
+## Keyboard Accessibility
+
+The radio button component provides full keyboard support:
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Move focus to the radio button group. Focus moves to the checked radio button, or the first radio button if none are checked |
+| `Space` | Select the focused radio button |
+| `Arrow Down` / `Arrow Right` | Move focus to and select the next radio button in the group. Wraps to the first radio button if at the end |
+| `Arrow Up` / `Arrow Left` | Move focus to and select the previous radio button in the group. Wraps to the last radio button if at the beginning |
+
+### Keyboard Navigation Example
+
+```typescript expandable
+@Component({
+  template: `
+    <div>
+      <p>Use Tab to focus the radio group, then use Arrow keys to navigate:</p>
+      
+      <div class="radio-group" role="radiogroup" aria-label="Size selection">
+        <cometchat-radio-button 
+          [name]="'size'"
+          [value]="'xs'"
+          [labelText]="'Extra Small'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'size'"
+          [value]="'s'"
+          [labelText]="'Small'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'size'"
+          [value]="'m'"
+          [checked]="true"
+          [labelText]="'Medium'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'size'"
+          [value]="'l'"
+          [labelText]="'Large'">
+        </cometchat-radio-button>
+        
+        <cometchat-radio-button 
+          [name]="'size'"
+          [value]="'xl'"
+          [labelText]="'Extra Large'">
+        </cometchat-radio-button>
+      </div>
+    </div>
+  `
+})
+export class KeyboardNavigationComponent {}
+```
+
+## Customization
+
+### CSS Variables
+
+The component uses CSS variables for easy theming:
+
+```css expandable
+:root {
+  /* Border colors */
+  --cometchat-border-color-default: #e0e0e0;
+  --cometchat-border-color-disabled: #cccccc;
+  
+  /* Primary color (checked state) */
+  --cometchat-primary-color: #3399ff;
+  
+  /* Background */
+  --cometchat-background-color: #ffffff;
+  
+  /* Text colors */
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-disabled: #999999;
+  
+  /* Spacing */
+  --cometchat-spacing-2: 8px;
+  
+  /* Typography */
+  --cometchat-font-family: 'Inter', sans-serif;
+  --cometchat-font-size-body: 14px;
+}
+```
+
+### Custom Styling Example
+
+```typescript expandable
+@Component({
+  selector: 'app-custom-radio',
+  standalone: true,
+  imports: [CometChatRadioButtonComponent],
+  template: `
+    <div class="custom-radio-group">
+      <cometchat-radio-button 
+        [name]="'custom'"
+        [value]="'option1'"
+        [labelText]="'Option 1'">
+      </cometchat-radio-button>
+      
+      <cometchat-radio-button 
+        [name]="'custom'"
+        [value]="'option2'"
+        [labelText]="'Option 2'">
+      </cometchat-radio-button>
+    </div>
+  `,
+  styles: [`
+    .custom-radio-group {
+      --cometchat-primary-color: #ff6b6b;
+      --cometchat-border-color-default: #ddd;
+      --cometchat-font-size-body: 16px;
+      --cometchat-spacing-2: 12px;
+    }
+  `]
+})
+export class CustomRadioComponent {}
+```
+
+<Info>
+  **Live Preview** — all radio button states (default, selected, disabled).
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-radio-button--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-radio-button--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Radio Button — All States"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The component follows WAI-ARIA best practices for radio buttons:
+
+### ARIA Attributes
+
+- `role="radio"`: Identifies the element as a radio button
+- `aria-checked`: Indicates the checked state (`true` or `false`)
+- `aria-disabled`: Indicates the disabled state when applicable
+
+### Screen Reader Support
+
+- Radio button label is properly associated with the input
+- State changes are announced to screen readers
+- Disabled state is communicated to assistive technologies
+
+### Focus Management
+
+- Visible focus indicators with 2px outline
+- Focus outline uses primary color from CSS variables
+- Focus is properly managed during keyboard navigation
+- Disabled radio buttons are excluded from tab order
+
+## Best Practices
+
+### Radio Button Groups
+
+1. **Always use the same `name`** for radio buttons that belong to the same group
+2. **Provide meaningful labels** that clearly describe each option
+3. **Set one radio button as checked by default** to avoid an empty selection state
+4. **Use radio buttons for 2-7 options**. For more options, consider a dropdown
+
+### Accessibility
+
+1. **Wrap radio groups in a container** with `role="radiogroup"` and `aria-label`
+2. **Provide clear, descriptive labels** for each radio button
+3. **Don't rely solely on color** to indicate state
+4. **Test with keyboard navigation** to ensure all options are accessible
+
+### Forms Integration
+
+1. **Use unique `value` attributes** for each radio button in a group
+2. **Validate required selections** in your form logic
+3. **Provide feedback** when a selection is required but not made
+4. **Consider default selections** to improve user experience
+
+## Angular Version Compatibility
+
+This component is compatible with Angular versions 14 through 21.
+
+### Compatibility Matrix
+
+| Angular Version | Status | Notes |
+|----------------|--------|-------|
+| 14.x | ✅ Supported | Standalone components, inject() available |
+| 15.x - 21.x | ✅ Supported | All features work |
+
+### API Stability
+
+The component uses only stable Angular APIs:
+- `@Component`, `@Input`, `@Output` (Angular 2+)
+- `@HostListener` (Angular 2+)
+- `EventEmitter`, `ElementRef`, `Renderer2` (Angular 2+)
+- `ControlValueAccessor` (Angular 2+)
+- Standalone components (Angular 14+)
+
+### Upgrade Path
+
+No changes required when upgrading from Angular 14 to 21. The component uses stable APIs and follows Angular best practices.
+
+## Integration and Isolation
+
+### Event Listener Scoping
+
+This component uses component-scoped event listeners that don't interfere with your application:
+
+```typescript
+@HostListener('keydown', ['$event'])
+handleKeydown(event: KeyboardEvent): void {
+  // Only handles events within this component
+  // Arrow keys navigate between radio buttons in the same group
+}
+```
+
+### Focus Management
+
+Focus management is isolated to this component:
+- Native radio element handles focus automatically
+- Roving tabindex implemented for keyboard navigation
+- Focus indicators only appear during keyboard navigation (`:focus-visible`)
+- No global focus manipulation
+
+### Radio Group Management
+
+**Note**: The component uses `document.getElementsByName()` for radio group management:
+- This is the standard HTML pattern for radio button groups
+- Radio buttons are inherently grouped by the `name` attribute
+- This approach is acceptable and follows W3C standards
+- No accessibility impact - works correctly with screen readers
+
+### Non-Interference
+
+The component is designed to not interfere with your application:
+- ✅ No global event listeners (except standard radio group queries)
+- ✅ No document-level DOM manipulation
+- ✅ Component-scoped styles with ViewEncapsulation
+- ✅ Proper cleanup in `ngOnDestroy()`
+
+### Multiple Instances
+
+Multiple radio button groups work independently without interference:
+
+```typescript
+// Group 1 - works independently
+<cometchat-radio-button [name]="'group1'" [value]="'a'"></cometchat-radio-button>
+<cometchat-radio-button [name]="'group1'" [value]="'b'"></cometchat-radio-button>
+
+// Group 2 - works independently
+<cometchat-radio-button [name]="'group2'" [value]="'x'"></cometchat-radio-button>
+<cometchat-radio-button [name]="'group2'" [value]="'y'"></cometchat-radio-button>
+```
+
+### Cleanup
+
+The component properly cleans up all resources when destroyed:
+- Event listeners are removed automatically
+- No subscriptions to clean up
+- No memory leaks
+
+## Common Patterns
+
+### Horizontal Radio Group
+
+```typescript expandable
+@Component({
+  template: `
+    <div class="horizontal-radio-group">
+      <cometchat-radio-button 
+        [name]="'alignment'"
+        [value]="'left'"
+        [labelText]="'Left'">
+      </cometchat-radio-button>
+      
+      <cometchat-radio-button 
+        [name]="'alignment'"
+        [value]="'center'"
+        [labelText]="'Center'">
+      </cometchat-radio-button>
+      
+      <cometchat-radio-button 
+        [name]="'alignment'"
+        [value]="'right'"
+        [labelText]="'Right'">
+      </cometchat-radio-button>
+    </div>
+  `,
+  styles: [`
+    .horizontal-radio-group {
+      display: flex;
+      gap: 24px;
+    }
+  `]
+})
+export class HorizontalRadioGroupComponent {}
+```
+
+### Radio Group with Descriptions
+
+```typescript expandable
+@Component({
+  template: `
+    <div class="radio-group-with-descriptions">
+      <div class="radio-option">
+        <cometchat-radio-button 
+          [name]="'plan'"
+          [value]="'basic'"
+          [labelText]="'Basic Plan'">
+        </cometchat-radio-button>
+        <p class="description">Perfect for individuals</p>
+      </div>
+      
+      <div class="radio-option">
+        <cometchat-radio-button 
+          [name]="'plan'"
+          [value]="'pro'"
+          [labelText]="'Pro Plan'">
+        </cometchat-radio-button>
+        <p class="description">Best for small teams</p>
+      </div>
+      
+      <div class="radio-option">
+        <cometchat-radio-button 
+          [name]="'plan'"
+          [value]="'enterprise'"
+          [labelText]="'Enterprise Plan'">
+        </cometchat-radio-button>
+        <p class="description">For large organizations</p>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .radio-group-with-descriptions {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .radio-option {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .description {
+      margin: 0 0 0 28px;
+      font-size: 12px;
+      color: #666;
+    }
+  `]
+})
+export class RadioGroupWithDescriptionsComponent {}
+```

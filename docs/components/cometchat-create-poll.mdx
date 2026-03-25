@@ -1,0 +1,167 @@
+---
+title: "CometChatCreatePoll"
+description: "A modal dialog component for creating poll messages with a question and multiple answer options"
+---
+The `CometChatCreatePoll` component provides a modal dialog for composing poll messages. Users enter a question and define multiple answer options (2–12), then submit the poll to a user or group conversation.
+
+## Overview
+
+The Create Poll component provides:
+
+- **Question Input**: Text field for the poll question
+- **Dynamic Answer Options**: Add or remove answer options (minimum 2, maximum 12)
+- **Validation**: Ensures a non-empty question and at least two non-empty options before submission
+- **Loading State**: Disables the create button and shows a loading indicator during submission
+- **Error Handling**: Displays localized error messages on validation or API failure
+- **Focus Trap**: Keeps keyboard focus within the modal while open
+- **Focus Restoration**: Returns focus to the previously focused element on close
+
+
+<Info>
+  **Live Preview** — default create poll dialog preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-create-poll--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-create-poll--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "430px", border: "1px solid #e0e0e0"}}
+  title="CometChat Create Poll — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCreatePollComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-create-poll-demo',
+  standalone: true,
+  imports: [CometChatCreatePollComponent],
+  template: `
+    <cometchat-create-poll
+      [user]="selectedUser"
+      [group]="selectedGroup"
+      (closeClick)="onClose()"
+      (pollCreated)="onPollCreated()"
+      (error)="onError($event)">
+    </cometchat-create-poll>
+  `
+})
+export class CreatePollDemoComponent {
+  selectedUser!: CometChat.User;
+  selectedGroup!: CometChat.Group;
+
+  onClose(): void {
+    console.log('Poll dialog closed');
+  }
+
+  onPollCreated(): void {
+    console.log('Poll created successfully');
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Poll creation error:', error);
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `title` | `string` | `undefined` | Custom title for the poll creation form |
+| `user` | `CometChat.User` | `undefined` | The user to send the poll to (for 1-on-1 conversations) |
+| `group` | `CometChat.Group` | `undefined` | The group to send the poll to (for group conversations) |
+| `replyToMessage` | `CometChat.BaseMessage` | `undefined` | Message to reply to (for quoted replies) |
+| `defaultAnswers` | `number` | `2` | Default number of answer option fields shown initially (minimum 2) |
+| `questionPlaceholderText` | `string` | `undefined` | Custom placeholder text for the question input |
+| `answerPlaceholderText` | `string` | `undefined` | Custom placeholder text for answer option inputs |
+| `answerHelpText` | `string` | `undefined` | Help text displayed in the answers section |
+| `addAnswerText` | `string` | `undefined` | Custom text for the add-option button |
+| `createPollButtonText` | `string` | `undefined` | Custom text for the create poll button |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeClick` | `void` | Emitted when the close button is clicked or Escape is pressed |
+| `pollCreated` | `void` | Emitted when the poll is created successfully |
+| `error` | `CometChat.CometChatException` | Emitted when an error occurs during poll creation |
+
+## Customization
+
+### CSS Variables
+
+The Create Poll component uses BEM-style CSS classes with CSS variable overrides:
+
+```css expandable
+/* Modal overlay */
+.cometchat-create-poll {
+  background: var(--cometchat-background-color-01);
+}
+
+/* Header */
+.cometchat-create-poll__header {
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+/* Title */
+.cometchat-create-poll__title {
+  font: var(--cometchat-font-heading4-bold);
+  color: var(--cometchat-text-color-primary);
+}
+
+/* Question input */
+.cometchat-create-poll__question-input {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  border: 1px solid var(--cometchat-border-color-light);
+  border-radius: var(--cometchat-radius-2);
+}
+
+/* Option input */
+.cometchat-create-poll__option-input {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  border: 1px solid var(--cometchat-border-color-light);
+  border-radius: var(--cometchat-radius-2);
+}
+
+/* Error message */
+.cometchat-create-poll__error {
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-error-color);
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Tab / Shift+Tab**: Cycles focus through all interactive elements within the modal (focus trap)
+- **Escape**: Closes the modal and restores focus to the previously focused element
+- **Enter**: Submits the form when the create button is focused
+
+### Focus Management
+
+- Focus is trapped within the modal while it is open
+- Initial focus is set to the close button on open
+- When an option is added, focus moves to the new input field
+- When an option is removed, focus moves to the nearest remaining option input
+- On close, focus is restored to the element that was focused before the modal opened
+
+### Screen Reader Support
+
+- The modal uses `role="dialog"` with `aria-modal="true"`
+- Form fields include associated labels for screen reader context
+
+## Related Components
+
+- [CometChatMessageComposer](/components/cometchat-message-composer) - Parent component that triggers the poll creation dialog
+- [CometChatPollBubble](/components/cometchat-poll-bubble) - Renders poll messages in the message list

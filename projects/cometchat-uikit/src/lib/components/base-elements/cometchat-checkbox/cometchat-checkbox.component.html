@@ -1,0 +1,21 @@
+<div class="cometchat-checkbox">
+  <input
+    type="checkbox"
+    class="cometchat-checkbox__input"
+    [id]="checkboxId"
+    [checked]="isChecked"
+    [disabled]="disabled"
+    [indeterminate]="indeterminate"
+    [attr.aria-checked]="indeterminate ? 'mixed' : isChecked"
+    [attr.aria-disabled]="disabled || null"
+    [attr.aria-label]="accessibleLabel"
+    (change)="onCheckboxChange($event)"
+    (keydown)="onKeyDown($event)"
+  />
+  <label class="cometchat-checkbox__label" [for]="checkboxId">
+    <span class="cometchat-checkbox__checkmark"></span>
+    @if (labelText) {
+      <span class="cometchat-checkbox__text">{{ labelText }}</span>
+    }
+  </label>
+</div>

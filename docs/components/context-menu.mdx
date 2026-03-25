@@ -1,0 +1,894 @@
+---
+title: Context Menu
+description: "Display contextual actions in a positioned menu with overflow handling"
+---
+The `CometChatContextMenu` component displays a list of contextual actions in a menu format. It intelligently handles overflow by showing a subset of actions directly and placing additional actions in a submenu accessible via a "more" button. The component includes smart positioning logic to ensure menus stay within viewport boundaries.
+
+## Overview
+
+The ContextMenu component provides a flexible way to display contextual actions:
+
+- **Smart Overflow**: Automatically splits actions into main menu and submenu based on `topMenuSize`
+- **Intelligent Positioning**: Adapts placement based on available space (viewport, parent container, or centered)
+- **Keyboard Accessible**: Full keyboard navigation with arrow keys, Enter, and Escape
+- **ARIA Compliant**: Proper roles and attributes for screen readers
+- **Focus Management**: Automatic focus handling and trapping within submenu
+- **Customizable**: CSS variable-based styling for easy theming
+
+## Basic Usage
+
+### Simple Context Menu
+
+```html
+<cometchat-context-menu 
+  [data]="menuItems"
+  [topMenuSize]="3"
+  (optionClick)="onOptionClick($event)">
+</cometchat-context-menu>
+```
+
+### Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatContextMenuComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatOption } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-actions',
+  standalone: true,
+  imports: [CometChatContextMenuComponent],
+  template: `
+    <div class="message-container">
+      <div class="message-content">
+        <p>Hello, how are you?</p>
+      </div>
+      
+      <cometchat-context-menu 
+        [data]="messageActions"
+        [topMenuSize]="3"
+        [placement]="'left'"
+        [moreIconHoverText]="'More actions'"
+        (optionClick)="handleAction($event)">
+      </cometchat-context-menu>
+    </div>
+  `,
+  styles: [`
+    .message-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    .message-content {
+      flex: 1;
+    }
+  `]
+})
+export class MessageActionsComponent {
+  messageActions: CometChatOption[] = [
+    new CometChatOption({
+      id: 'reply',
+      title: 'Reply',
+      iconURL: 'assets/icons/reply.svg'
+    }),
+    new CometChatOption({
+      id: 'forward',
+      title: 'Forward',
+      iconURL: 'assets/icons/forward.svg'
+    }),
+    new CometChatOption({
+      id: 'copy',
+      title: 'Copy',
+      iconURL: 'assets/icons/copy.svg'
+    }),
+    new CometChatOption({
+      id: 'edit',
+      title: 'Edit',
+      iconURL: 'assets/icons/edit.svg'
+    }),
+    new CometChatOption({
+      id: 'delete',
+      title: 'Delete',
+      iconURL: 'assets/icons/delete.svg'
+    })
+  ];
+
+  handleAction(option: CometChatOption): void {
+    console.log('Action selected:', option.title);
+    
+    switch (option.id) {
+      case 'reply':
+        this.replyToMessage();
+        break;
+      case 'forward':
+        this.forwardMessage();
+        break;
+      case 'copy':
+        this.copyMessage();
+        break;
+      case 'edit':
+        this.editMessage();
+        break;
+      case 'delete':
+        this.deleteMessage();
+        break;
+    }
+  }
+
+  replyToMessage(): void {
+    console.log('Replying to message');
+  }
+
+  forwardMessage(): void {
+    console.log('Forwarding message');
+  }
+
+  copyMessage(): void {
+    console.log('Copying message');
+  }
+
+  editMessage(): void {
+    console.log('Editing message');
+  }
+
+  deleteMessage(): void {
+    console.log('Deleting message');
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default context menu.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-context-menu--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-context-menu--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "250px", border: "1px solid #e0e0e0"}}
+  title="Context Menu — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `data` | `ContextMenuItem[]` | `[]` | Array of menu items to display. Can be `CometChatOption`, `CometChatActionsIcon`, or `CometChatActionsView` |
+| `topMenuSize` | `number` | `2` | Number of items visible in main menu before "more" button. Actual visible items = `topMenuSize - 1` to leave room for more button |
+| `moreIconHoverText` | `string` | `undefined` | Tooltip text for the "more" button |
+| `placement` | `Placement` | `Placement.left` | Menu placement position: `left`, `right`, `top`, or `bottom` |
+| `closeOnOutsideClick` | `boolean` | `false` | Close submenu when clicking outside |
+| `disableBackgroundInteraction` | `boolean` | `false` | Show overlay and disable background interaction when submenu is open |
+| `useParentContainer` | `boolean` | `false` | Use parent element as viewport for positioning calculations |
+| `useParentHeight` | `boolean` | `false` | Use parent height for positioning calculations |
+| `forceStaticPlacement` | `boolean` | `false` | Force static placement without intelligent positioning logic |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `optionClick` | `EventEmitter<ContextMenuItem>` | Emitted when a menu option is clicked. Provides the clicked menu item object |
+
+## Menu Item Types
+
+### CometChatOption
+
+The primary menu item type:
+
+```typescript
+class CometChatOption {
+  id: string;              // Unique identifier
+  title: string;           // Display text
+  iconURL: string;         // Icon image URL
+  onClick?: (index: number) => void;  // Optional click handler
+}
+```
+
+### CometChatActionsIcon
+
+Icon-only action item:
+
+```typescript
+class CometChatActionsIcon {
+  id: string;
+  iconURL: string;
+  onClick?: (index: number) => void;
+}
+```
+
+### CometChatActionsView
+
+Custom view action item:
+
+```typescript
+class CometChatActionsView {
+  id: string;
+  title?: string;
+  iconURL?: string;
+  customView?: TemplateRef<any>;  // Custom Angular template
+}
+```
+
+### Creating Menu Items
+
+```typescript expandable
+import { CometChatOption } from '@cometchat/chat-uikit-angular';
+
+const editOption = new CometChatOption({
+  id: 'edit',
+  title: 'Edit Message',
+  iconURL: 'assets/icons/edit.svg',
+  onClick: (index) => {
+    console.log('Edit clicked at index:', index);
+  }
+});
+```
+
+## Behavior
+
+### Menu Splitting Logic
+
+The ContextMenu automatically splits items into main menu and submenu:
+
+- **Main Menu**: Shows first `topMenuSize - 1` items directly
+- **More Button**: Shown when there are more items than `topMenuSize - 1`
+- **Submenu**: Contains remaining items from `topMenuSize - 1` onwards
+
+Example with `topMenuSize="3"` and 5 items:
+- Main menu shows: Item 1, Item 2, More button
+- Submenu contains: Item 3, Item 4, Item 5
+
+### Positioning Strategies
+
+The component supports three positioning strategies:
+
+#### 1. Viewport Positioning (Default)
+
+```typescript
+// Uses window viewport as boundary
+<cometchat-context-menu 
+  [data]="items"
+  [placement]="'left'">
+</cometchat-context-menu>
+```
+
+#### 2. Parent Container Positioning
+
+```typescript
+// Uses nearest parent with 'cometchat' class as boundary
+<cometchat-context-menu 
+  [data]="items"
+  [useParentContainer]="true"
+  [placement]="'bottom'">
+</cometchat-context-menu>
+```
+
+#### 3. Centered Positioning
+
+```typescript
+// Centers menu relative to trigger button
+<cometchat-context-menu 
+  [data]="items"
+  [useParentHeight]="true"
+  [placement]="'bottom'">
+</cometchat-context-menu>
+```
+
+#### 4. Static Positioning
+
+```typescript
+// Forces exact placement without intelligent adjustments
+<cometchat-context-menu 
+  [data]="items"
+  [forceStaticPlacement]="true"
+  [placement]="'left'">
+</cometchat-context-menu>
+```
+
+### Keyboard Navigation
+
+The ContextMenu provides comprehensive keyboard support for full accessibility:
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate to/from more button | Moves focus to the more button or next focusable element |
+| `Shift + Tab` | Navigate backwards | Moves focus to previous focusable element |
+| `Enter` | Activate | Opens submenu (on more button) or selects item (in submenu) |
+| `Space` | Activate | Opens submenu (on more button) or selects item (in submenu) |
+| `Arrow Down` | Navigate down | Moves focus to next item in submenu (wraps to first) |
+| `Arrow Up` | Navigate up | Moves focus to previous item in submenu (wraps to last) |
+| `Escape` | Close | Closes submenu and returns focus to more button |
+
+**Keyboard Navigation Features:**
+- **Automatic Focus**: When submenu opens, focus automatically moves to the first item
+- **Wrapping Navigation**: Arrow keys wrap around from last to first item and vice versa
+- **Focus Restoration**: When submenu closes (via Escape or selection), focus returns to the more button
+- **Tab Behavior**: Tab key closes the submenu and moves focus to the next element in the page
+- **Visual Feedback**: Focused items are highlighted with clear visual indicators
+
+## Customization
+
+### Styling with CSS Variables
+
+The ContextMenu component uses CSS variables for easy customization:
+
+```css expandable
+/* Custom context menu styling */
+cometchat-context-menu {
+  --cometchat-radius-2: 12px;
+  --cometchat-radius-max: 1000px;
+  --cometchat-border-color-light: #E0E0E0;
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-white-hover: #F5F5F5;
+  --cometchat-primary-color: #4A90E2;
+  --cometchat-icon-color-secondary: #757575;
+  --cometchat-text-color-primary: #000000;
+  --cometchat-font-body-regular: 400 14px 'Inter';
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-radius-2` | Submenu border radius | `8px` |
+| `--cometchat-radius-max` | Button border radius (circular) | `1000px` |
+| `--cometchat-border-color-light` | Submenu border color | `#F5F5F5` |
+| `--cometchat-background-color-01` | Background color | `#FFF` |
+| `--cometchat-white-hover` | Hover/focus background | `rgba(0,0,0,0.04)` |
+| `--cometchat-primary-color` | Focus outline color | `#3399FF` |
+| `--cometchat-icon-color-secondary` | Icon color | `#A1A1A1` |
+| `--cometchat-text-color-primary` | Text color | `#141414` |
+| `--cometchat-font-body-regular` | Menu item text font | `400 14px Roboto` |
+| `--cometchat-spacing-2` | Item gap spacing | `8px` |
+| `--cometchat-spacing-3` | Item padding | `12px` |
+
+### Custom Colors
+
+```css expandable
+/* Dark theme context menu */
+.dark-theme cometchat-context-menu {
+  --cometchat-background-color-01: #1E1E1E;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-border-color-light: #333333;
+  --cometchat-white-hover: rgba(255, 255, 255, 0.1);
+  --cometchat-icon-color-secondary: #B0B0B0;
+  --cometchat-primary-color: #BB86FC;
+}
+
+/* Custom brand colors */
+.branded-menu cometchat-context-menu {
+  --cometchat-icon-color-secondary: #FF6B35;
+  --cometchat-primary-color: #FF6B35;
+}
+```
+
+### Custom Dimensions
+
+```css expandable
+/* Wider submenu */
+.wide-menu .cometchat-menu-list__sub-menu-list {
+  width: 200px;
+}
+
+/* Larger icons */
+.large-icons .cometchat-menu-list__main-menu-item {
+  width: 32px;
+  height: 32px;
+}
+
+.large-icons .cometchat-menu-list__main-menu-item-icon {
+  width: 20px;
+  height: 20px;
+}
+```
+
+<Info>
+  **Live Preview** — interactive context menu with live controls.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-context-menu--default-menu-items)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-context-menu--default-menu-items&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="Context Menu — Interactive"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The ContextMenu component includes comprehensive accessibility features:
+
+### ARIA Attributes
+
+- **Menu Roles**: `role="menu"` for both main menu and submenu
+- **Menu Items**: `role="menuitem"` for each action item
+- **Button Role**: `role="button"` for the more button
+- **Expanded State**: `aria-expanded` indicates submenu open/closed state
+- **Popup Indicator**: `aria-haspopup="true"` on more button
+- **Selection State**: `aria-selected` for focused items
+- **Labels**: `aria-label` on menu and items for screen reader context
+
+### Screen Reader Support
+
+Screen readers will announce:
+- "Context menu" when focusing the component
+- "More options, button, collapsed/expanded" for the more button
+- Each action's title as users navigate
+- "Selected" when an action is activated
+
+### Focus Management
+
+- **Initial Focus**: Automatically set to first submenu item when opened
+- **Focus Trapping**: Arrow keys cycle through submenu items
+- **Focus Restoration**: When closed, focus returns to more button
+- **Tab Behavior**: Tab key closes submenu and moves to next focusable element
+
+### Visual Focus Indicators
+
+Clear focus indicators for keyboard navigation:
+- 2px solid outline in primary color
+- Inset outline (-2px offset) for submenu items
+- Background highlight on focus
+- High contrast mode support with 3px outline
+
+## Examples
+
+### Message Context Actions
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatContextMenuComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatOption } from '@cometchat/chat-uikit-angular';
+import { Placement } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-context',
+  standalone: true,
+  imports: [CometChatContextMenuComponent],
+  template: `
+    <div class="message-bubble">
+      <p>{{ messageText }}</p>
+      
+      <cometchat-context-menu 
+        [data]="contextActions"
+        [topMenuSize]="4"
+        [placement]="Placement.left"
+        [closeOnOutsideClick]="true"
+        (optionClick)="handleContextAction($event)">
+      </cometchat-context-menu>
+    </div>
+  `,
+  styles: [`
+    .message-bubble {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #E3F2FD;
+      border-radius: 12px;
+      max-width: 400px;
+    }
+    .message-bubble p {
+      flex: 1;
+      margin: 0;
+    }
+  `]
+})
+export class MessageContextComponent {
+  Placement = Placement;
+  messageText = 'Hello, how are you doing today?';
+  
+  contextActions: CometChatOption[] = [
+    new CometChatOption({
+      id: 'reply',
+      title: 'Reply',
+      iconURL: 'assets/icons/reply.svg'
+    }),
+    new CometChatOption({
+      id: 'react',
+      title: 'Add Reaction',
+      iconURL: 'assets/icons/emoji.svg'
+    }),
+    new CometChatOption({
+      id: 'forward',
+      title: 'Forward',
+      iconURL: 'assets/icons/forward.svg'
+    }),
+    new CometChatOption({
+      id: 'copy',
+      title: 'Copy Text',
+      iconURL: 'assets/icons/copy.svg'
+    }),
+    new CometChatOption({
+      id: 'edit',
+      title: 'Edit',
+      iconURL: 'assets/icons/edit.svg'
+    }),
+    new CometChatOption({
+      id: 'delete',
+      title: 'Delete',
+      iconURL: 'assets/icons/delete.svg'
+    }),
+    new CometChatOption({
+      id: 'info',
+      title: 'Message Info',
+      iconURL: 'assets/icons/info.svg'
+    })
+  ];
+
+  handleContextAction(option: CometChatOption): void {
+    console.log('Context action:', option.id);
+    // Handle action
+  }
+}
+```
+
+### Conversation List Actions
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatContextMenuComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatOption } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-conversation-item',
+  standalone: true,
+  imports: [CommonModule, CometChatContextMenuComponent],
+  template: `
+    <div class="conversation-item">
+      <div class="conversation-info">
+        <h4>{{ conversationName }}</h4>
+        <p>{{ lastMessage }}</p>
+      </div>
+      
+      <cometchat-context-menu 
+        [data]="conversationActions"
+        [topMenuSize]="2"
+        [placement]="'left'"
+        [disableBackgroundInteraction]="true"
+        (optionClick)="handleAction($event)">
+      </cometchat-context-menu>
+    </div>
+  `,
+  styles: [`
+    .conversation-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+    }
+    .conversation-item:hover {
+      background: #f9f9f9;
+    }
+    .conversation-info {
+      flex: 1;
+    }
+    .conversation-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+    }
+    .conversation-info p {
+      margin: 0;
+      font-size: 14px;
+      color: #666;
+    }
+  `]
+})
+export class ConversationItemComponent {
+  conversationName = 'John Doe';
+  lastMessage = 'Hey, are you available for a call?';
+  
+  conversationActions: CometChatOption[] = [
+    new CometChatOption({
+      id: 'pin',
+      title: 'Pin Conversation',
+      iconURL: 'assets/icons/pin.svg'
+    }),
+    new CometChatOption({
+      id: 'mute',
+      title: 'Mute Notifications',
+      iconURL: 'assets/icons/mute.svg'
+    }),
+    new CometChatOption({
+      id: 'archive',
+      title: 'Archive',
+      iconURL: 'assets/icons/archive.svg'
+    }),
+    new CometChatOption({
+      id: 'delete',
+      title: 'Delete Conversation',
+      iconURL: 'assets/icons/delete.svg'
+    })
+  ];
+
+  handleAction(option: CometChatOption): void {
+    console.log('Conversation action:', option.id);
+    // Handle action
+  }
+}
+```
+
+### Dynamic Actions Based on Permissions
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatContextMenuComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatOption } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-permission-based-menu',
+  standalone: true,
+  imports: [CommonModule, CometChatContextMenuComponent],
+  template: `
+    <div class="content-item">
+      <p>{{ contentTitle }}</p>
+      
+      <cometchat-context-menu 
+        [data]="availableActions"
+        [topMenuSize]="3"
+        (optionClick)="handleAction($event)">
+      </cometchat-context-menu>
+    </div>
+  `
+})
+export class PermissionBasedMenuComponent implements OnInit {
+  contentTitle = 'Important Document';
+  availableActions: CometChatOption[] = [];
+  
+  private allActions: CometChatOption[] = [
+    new CometChatOption({
+      id: 'view',
+      title: 'View',
+      iconURL: 'assets/icons/view.svg'
+    }),
+    new CometChatOption({
+      id: 'download',
+      title: 'Download',
+      iconURL: 'assets/icons/download.svg'
+    }),
+    new CometChatOption({
+      id: 'edit',
+      title: 'Edit',
+      iconURL: 'assets/icons/edit.svg'
+    }),
+    new CometChatOption({
+      id: 'share',
+      title: 'Share',
+      iconURL: 'assets/icons/share.svg'
+    }),
+    new CometChatOption({
+      id: 'delete',
+      title: 'Delete',
+      iconURL: 'assets/icons/delete.svg'
+    })
+  ];
+
+  ngOnInit(): void {
+    this.updateAvailableActions();
+  }
+
+  updateAvailableActions(): void {
+    const permissions = this.getUserPermissions();
+    
+    this.availableActions = this.allActions.filter(action => {
+      switch (action.id) {
+        case 'view':
+        case 'download':
+          return true; // Everyone can view and download
+        case 'edit':
+          return permissions.canEdit;
+        case 'share':
+          return permissions.canShare;
+        case 'delete':
+          return permissions.canDelete;
+        default:
+          return false;
+      }
+    });
+  }
+
+  getUserPermissions() {
+    // Mock permissions - replace with actual permission check
+    return {
+      canEdit: true,
+      canShare: true,
+      canDelete: false
+    };
+  }
+
+  handleAction(option: CometChatOption): void {
+    console.log('Action:', option.id);
+  }
+}
+```
+
+### With Background Overlay
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatContextMenuComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatOption } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-modal-menu',
+  standalone: true,
+  imports: [CometChatContextMenuComponent],
+  template: `
+    <div class="content">
+      <h3>Select an action</h3>
+      
+      <cometchat-context-menu 
+        [data]="actions"
+        [topMenuSize]="2"
+        [disableBackgroundInteraction]="true"
+        [closeOnOutsideClick]="true"
+        (optionClick)="handleAction($event)">
+      </cometchat-context-menu>
+    </div>
+  `,
+  styles: [`
+    .content {
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+    }
+  `]
+})
+export class ModalMenuComponent {
+  actions: CometChatOption[] = [
+    new CometChatOption({
+      id: 'option1',
+      title: 'Option 1',
+      iconURL: 'assets/icons/option1.svg'
+    }),
+    new CometChatOption({
+      id: 'option2',
+      title: 'Option 2',
+      iconURL: 'assets/icons/option2.svg'
+    }),
+    new CometChatOption({
+      id: 'option3',
+      title: 'Option 3',
+      iconURL: 'assets/icons/option3.svg'
+    })
+  ];
+
+  handleAction(option: CometChatOption): void {
+    console.log('Selected:', option.title);
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  Set `topMenuSize` to show the most frequently used actions directly in the main menu for quick access.
+</Tip>
+
+<Warning>
+  The actual number of visible main menu items is `topMenuSize - 1` to leave room for the "more" button. Plan accordingly.
+</Warning>
+
+<Info>
+  Icons are displayed using CSS mask, which allows them to inherit the icon color from CSS variables. Use SVG icons for best results.
+</Info>
+
+<Tip>
+  Use `disableBackgroundInteraction` when you want to ensure users focus on the menu without accidentally interacting with background elements.
+</Tip>
+
+<Warning>
+  When using `useParentContainer`, ensure the parent element has the `cometchat` class for proper boundary detection.
+</Warning>
+
+<Tip>
+  Enable `closeOnOutsideClick` for better UX when the menu should dismiss automatically when users click elsewhere.
+</Tip>
+
+## Integration Patterns
+
+### With Message Bubbles
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatContextMenuComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-with-menu',
+  standalone: true,
+  imports: [CommonModule, CometChatContextMenuComponent],
+  template: `
+    <div class="message-wrapper" [class.message-wrapper--sent]="isSent">
+      <div class="message-bubble">
+        <p>{{ message.text }}</p>
+        <span class="message-time">{{ message.time }}</span>
+      </div>
+      
+      <cometchat-context-menu 
+        [data]="getActionsForMessage()"
+        [topMenuSize]="3"
+        [placement]="isSent ? 'left' : 'right'"
+        (optionClick)="handleMessageAction($event)">
+      </cometchat-context-menu>
+    </div>
+  `,
+  styles: [`
+    .message-wrapper {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .message-wrapper--sent {
+      flex-direction: row-reverse;
+    }
+    .message-bubble {
+      max-width: 400px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #E3F2FD;
+    }
+    .message-wrapper--sent .message-bubble {
+      background: #6852D6;
+      color: white;
+    }
+    .message-time {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+  `]
+})
+export class MessageWithMenuComponent {
+  isSent = true;
+  message = {
+    text: 'Hello, how are you?',
+    time: '10:30 AM'
+  };
+
+  getActionsForMessage() {
+    // Return different actions based on message type
+    return [/* actions */];
+  }
+
+  handleMessageAction(option: any): void {
+    // Handle action
+  }
+}
+```
+
+## Related Components
+
+- **CometChatActionSheet**: Alternative bottom sheet menu for mobile-friendly action selection
+- **CometChatButton**: Often used alongside ContextMenu for primary actions
+- **CometChatListItem**: Uses ContextMenu for item-level actions
+- **CometChatMessageList**: Integrates ContextMenu for message actions
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule
+- **Bundle Size**: Minimal footprint (~6KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **Positioning**: Dynamic positioning with viewport/parent/centered strategies
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatcontextmenu).
+</Info>
+
+

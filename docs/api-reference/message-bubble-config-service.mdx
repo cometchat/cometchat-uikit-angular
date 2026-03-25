@@ -1,0 +1,310 @@
+---
+title: "Message Bubble Config Service"
+description: "API reference for the centralized message bubble view configuration service in CometChat Angular UIKit"
+---
+`MessageBubbleConfigService` is the centralized Angular service for configuring how message bubbles are rendered across the CometChat Angular UIKit. It lets you customize individual sections of any message bubble — globally or per message type — without touching component templates.
+
+The service is `providedIn: 'root'` (singleton by default). All `cometchat-message-list` instances share the same configuration unless you [scope the service](#scoping-for-multiple-instances).
+
+## Import
+
+```typescript
+import { MessageBubbleConfigService, BubblePart, BubblePartMap, MessageTypeKey } from '@cometchat/chat-uikit-angular';
+```
+
+## Priority Logic
+
+When the message bubble resolves a view for a given message type and part, it follows this order:
+
+1. Component `@Input` template (passed directly to `cometchat-message-bubble`)
+2. Type-specific service view (`setBubbleView()`)
+3. Global service view (`setGlobalView()` / `setGlobalViews()`)
+4. Default rendering
+
+## Types
+
+### BubblePart
+
+The sections of a message bubble that can be customized:
+
+| Value | Description |
+|-------|-------------|
+| `bubbleView` | The entire bubble wrapper |
+| `contentView` | Main message content area |
+| `bottomView` | Area below content (e.g., reactions) |
+| `footerView` | Footer area of the bubble |
+| `leadingView` | Leading area (e.g., avatar for incoming messages) |
+| `headerView` | Header area (e.g., sender name) |
+| `statusInfoView` | Status info area (e.g., timestamp, receipts) |
+| `replyView` | Reply preview area for quoted messages |
+| `threadView` | Thread indicator area for messages with replies |
+
+### MessageTypeKey
+
+A string in the format `{type}_{category}`. Standard keys:
+
+| Key | Description |
+|-----|-------------|
+| `text_message` | Text messages |
+| `image_message` | Image messages |
+| `video_message` | Video messages |
+| `audio_message` | Audio messages |
+| `file_message` | File messages |
+| `delete_action` | Deleted messages |
+| `groupMember_action` | Group member action messages |
+| `audio_call` | Audio call messages |
+| `video_call` | Video call messages |
+| `extension_poll_custom` | Poll messages |
+| `extension_sticker_custom` | Sticker messages |
+| `extension_document_custom` | Document messages |
+| `extension_whiteboard_custom` | Whiteboard messages |
+| `meeting_custom` | Meeting messages |
+
+For custom message types, use `{yourType}_custom` (e.g., `location_custom`).
+
+### BubblePartMap
+
+```typescript expandable
+interface BubblePartMap {
+  bubbleView?: TemplateRef<any> | null;
+  contentView?: TemplateRef<any> | null;
+  bottomView?: TemplateRef<any> | null;
+  footerView?: TemplateRef<any> | null;
+  leadingView?: TemplateRef<any> | null;
+  headerView?: TemplateRef<any> | null;
+  statusInfoView?: TemplateRef<any> | null;
+  replyView?: TemplateRef<any> | null;
+  threadView?: TemplateRef<any> | null;
+}
+```
+
+## Methods
+
+### setBubbleView
+
+Sets a custom view for one or more bubble parts for a specific message type. Merges with any existing configuration for that type.
+
+```typescript
+setBubbleView(messageType: MessageTypeKey, partMap: BubblePartMap): void
+```
+
+```typescript
+this.bubbleConfig.setBubbleView('text_message', {
+  contentView: this.customTextContent,
+  footerView: this.customFooter,
+});
+```
+
+### setGlobalView
+
+Sets a single global view that applies to all message types as a fallback.
+
+```typescript
+setGlobalView(part: BubblePart, view: TemplateRef<any> | null): void
+```
+
+```typescript
+// Apply a custom status info view to every message type
+this.bubbleConfig.setGlobalView('statusInfoView', this.customStatusInfo);
+
+// Clear a global view
+this.bubbleConfig.setGlobalView('footerView', null);
+```
+
+### setGlobalViews
+
+Sets multiple global views at once. Merges with existing global configuration.
+
+```typescript
+setGlobalViews(partMap: BubblePartMap): void
+```
+
+```typescript
+this.bubbleConfig.setGlobalViews({
+  footerView: this.customFooter,
+  statusInfoView: this.customStatusInfo,
+  leadingView: this.customAvatar,
+});
+```
+
+### setMessageTemplates
+
+Batch-configures multiple message types in a single call.
+
+```typescript
+setMessageTemplates(templates: Record<MessageTypeKey, BubblePartMap>): void
+```
+
+```typescript
+this.bubbleConfig.setMessageTemplates({
+  text_message: { contentView: this.textContent },
+  image_message: { contentView: this.imageContent, headerView: this.imageHeader },
+  video_message: { contentView: this.videoContent },
+});
+```
+
+### getView
+
+Retrieves the resolved view for a message type and bubble part, applying the priority chain.
+
+```typescript
+getView(messageType: MessageTypeKey, part: BubblePart): TemplateRef<any> | null
+```
+
+Returns `null` if no view is configured (component uses default rendering).
+
+### clearAll
+
+Clears all type-specific and global configurations, resetting to default rendering.
+
+```typescript
+clearAll(): void
+```
+
+### clearType
+
+Clears configuration for a specific message type. Global views and other types are unaffected.
+
+```typescript
+clearType(messageType: MessageTypeKey): void
+```
+
+### clearGlobalViews
+
+Clears all global views. Type-specific configurations are unaffected.
+
+```typescript
+clearGlobalViews(): void
+```
+
+## Reactive Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `configVersion` | `Signal<number>` | Increments on every configuration change. Read in templates to trigger re-renders. |
+| `configChanged$` | `Subject<void>` | Emits on every configuration change. Subscribe in `OnPush` components to call `markForCheck()`. |
+
+## Usage Examples
+
+### Customize a Specific Message Type
+
+```typescript expandable
+import { Component, ViewChild, TemplateRef, AfterViewInit, inject } from '@angular/core';
+import { MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  standalone: true,
+  template: `
+    <ng-template #customTextContent let-context>
+      <div class="my-text-bubble">{{ context.message.getText() }}</div>
+    </ng-template>
+
+    <cometchat-message-list [user]="user"></cometchat-message-list>
+  `
+})
+export class ChatComponent implements AfterViewInit {
+  @ViewChild('customTextContent') customTextContent!: TemplateRef<any>;
+  private bubbleConfig = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    this.bubbleConfig.setBubbleView('text_message', {
+      contentView: this.customTextContent,
+    });
+  }
+}
+```
+
+### Apply a Global View to All Message Types
+
+```typescript expandable
+@Component({
+  standalone: true,
+  template: `
+    <ng-template #customStatus let-context>
+      <span class="my-status">{{ context.message.getSentAt() | date:'shortTime' }}</span>
+    </ng-template>
+
+    <cometchat-message-list [user]="user"></cometchat-message-list>
+  `
+})
+export class ChatComponent implements AfterViewInit {
+  @ViewChild('customStatus') customStatus!: TemplateRef<any>;
+  private bubbleConfig = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    // Applies to every message type
+    this.bubbleConfig.setGlobalView('statusInfoView', this.customStatus);
+  }
+}
+```
+
+### Batch Configure Multiple Types
+
+```typescript
+ngAfterViewInit(): void {
+  this.bubbleConfig.setMessageTemplates({
+    text_message: { contentView: this.textContent },
+    image_message: { contentView: this.imageContent },
+    audio_message: { contentView: this.audioContent },
+  });
+}
+```
+
+### React to Configuration Changes (OnPush)
+
+```typescript expandable
+import { ChangeDetectorRef, inject } from '@angular/core';
+import { MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+export class MyOnPushComponent {
+  private bubbleConfig = inject(MessageBubbleConfigService);
+  private cdr = inject(ChangeDetectorRef);
+
+  ngOnInit(): void {
+    this.bubbleConfig.configChanged$.subscribe(() => {
+      this.cdr.markForCheck();
+    });
+  }
+}
+```
+
+## Scoping for Multiple Instances
+
+By default, `MessageBubbleConfigService` is a root-level singleton — all message lists share the same configuration. To give a specific component subtree its own independent configuration (e.g., a thread panel with different bubble styles), provide the service at the wrapper component level:
+
+```typescript expandable
+import { Component, inject } from '@angular/core';
+import { CometChatMessageListComponent, MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-panel',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  providers: [MessageBubbleConfigService], // Creates a new instance for this subtree
+  template: `<cometchat-message-list [user]="user" [parentMessageId]="parentMessageId"></cometchat-message-list>`
+})
+export class ThreadPanelComponent {
+  // Injects the LOCAL instance, not the root singleton
+  private bubbleConfig = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    this.bubbleConfig.setBubbleView('text_message', {
+      contentView: this.threadTextTemplate,
+    });
+  }
+}
+```
+
+The main chat panel continues to use the root singleton, unaffected by the thread panel's configuration.
+
+<Note>
+  Each `cometchat-message-list` provides its own `MessageListService` internally. The scoping technique above applies only to customization services like `MessageBubbleConfigService` and `FormatterConfigService`.
+</Note>
+
+## See Also
+
+- [CometChatMessageList](/components/cometchat-message-list) — The primary consumer of this service
+- [CometChatMessageBubble](/components/cometchat-message-bubble) — Individual bubble component
+- [Custom Message Types](/guides/custom-message-types) — Register templates for custom message types
+- [State Management Guide — Scoping](/guides/state-management#scoping-customization-services-for-multiple-instances) — DI scoping patterns
+- [API Reference Introduction](/api-reference/introduction) — Overview of all services

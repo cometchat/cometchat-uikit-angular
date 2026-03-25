@@ -1,0 +1,1334 @@
+---
+title: "CometChatMessageComposer"
+description: "A comprehensive Angular component for composing and sending messages with rich text editing, attachments, emoji picker, voice recording, and @mentions"
+---
+
+## Overview
+
+The CometChatMessageComposer is a feature-rich Angular component for composing and sending messages in chat applications. It provides a comprehensive set of features including text input, file attachments, emoji picker, voice recording, @mentions, and optional rich text editing capabilities similar to Slack.
+
+The component follows a **Service-Based Architecture** where:
+- **MessageComposerService** handles all SDK interactions for sending messages, typing indicators, and file uploads
+- **RichTextEditorService** manages rich text editing functionality when enabled (custom implementation using native browser APIs)
+- **Component @Input properties** provide extensive customization options
+- **Angular Signals** power reactive state management for optimal performance
+
+### Key Features
+
+- **Auto-Expanding Text Input**: Textarea that grows with content up to a configurable maximum height
+- **Multiple Attachments**: Support for images, videos, audio, and files with drag-and-drop
+- **Rich Text Editing**: Optional rich text formatting using custom RichTextEditorService (bold, italic, lists, code blocks, etc.)
+- **Emoji Picker**: Built-in emoji keyboard with category navigation
+- **Voice Recording**: Record and send audio messages with waveform visualization
+- **@Mentions**: Tag users in messages with autocomplete suggestions
+- **Reply & Edit Modes**: Reply to specific messages or edit existing ones
+- **Full Accessibility**: WCAG 2.1 Level AA compliant with keyboard navigation and screen reader support
+- **Extensive Customization**: Template inputs for all UI sections
+- **Lightweight**: No external rich text editor dependencies (100KB+ smaller bundle)
+
+
+<Info>
+  **Live Preview** — default message composer preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-cometchat-message-composer--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-cometchat-message-composer--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "200px", border: "1px solid #e0e0e0"}}
+  title="CometChat Message Composer — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Implementation with User
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      (sendButtonClick)="onMessageSent($event)"
+      (error)="onError($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class ChatComponent {
+  selectedUser!: CometChat.User;
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Message sent:', message);
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+### Simple Implementation with Group
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-chat',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [group]="selectedGroup"
+      [placeholderText]="'Type a message to the group...'"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class GroupChatComponent {
+  selectedGroup!: CometChat.Group;
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Group message sent:', message);
+  }
+}
+```
+
+
+### With Rich Text Editing
+
+```typescript
+<cometchat-message-composer
+  [user]="selectedUser"
+  [enableRichText]="true"
+  (sendButtonClick)="onMessageSent($event)"
+  (textChange)="onTextChange($event)"
+></cometchat-message-composer>
+```
+
+### With Attachments and Drag-Drop
+
+```typescript
+<cometchat-message-composer
+  [user]="selectedUser"
+  [enableDragDrop]="true"
+  [maxAttachments]="5"
+  [maxFileSize]="10485760"
+  [showAttachmentPreview]="true"
+  (attachmentAdded)="onAttachmentAdded($event)"
+  (attachmentRemoved)="onAttachmentRemoved($event)"
+></cometchat-message-composer>
+```
+
+## Layout Modes
+
+The CometChatMessageComposer supports two layout modes to accommodate different UI requirements and screen sizes.
+
+### Single-Line Layout (Default)
+
+The single-line layout arranges elements horizontally in a row:
+- Attachment button on the left
+- Input area in the center (grows to fill available space)
+- Auxiliary buttons (emoji, stickers, voice) on the right
+- Send button on the far right
+
+This layout is ideal for:
+- Desktop applications with ample horizontal space
+- Chat interfaces where vertical space is limited
+- Traditional messaging UIs similar to Slack or Teams
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-single-line-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [layout]="'single-line'"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class SingleLineComposerComponent {
+  selectedUser!: CometChat.User;
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Message sent:', message);
+  }
+}
+```
+
+### Multiline Layout
+
+The multiline layout arranges elements vertically:
+- Input area at the top spanning full width
+- All action buttons in a horizontal row below (attachment, emoji, stickers, voice, send)
+
+This layout is ideal for:
+- Mobile applications where horizontal space is limited
+- Interfaces where you want to maximize input area width
+- Chat UIs that prioritize typing space over button visibility
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-multiline-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [layout]="'multiline'"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class MultilineComposerComponent {
+  selectedUser!: CometChat.User;
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Message sent:', message);
+  }
+}
+```
+
+### Dynamic Layout Switching
+
+You can dynamically switch between layouts based on screen size or user preferences:
+
+```typescript expandable
+import { Component, HostListener } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-responsive-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [layout]="composerLayout"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class ResponsiveComposerComponent {
+  selectedUser!: CometChat.User;
+  composerLayout: 'single-line' | 'multiline' = 'single-line';
+
+  @HostListener('window:resize', ['$event'])
+  onResize(): void {
+    // Switch to multiline layout on mobile devices
+    this.composerLayout = window.innerWidth < 768 ? 'multiline' : 'single-line';
+  }
+
+  ngOnInit(): void {
+    this.onResize(); // Set initial layout
+  }
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Message sent:', message);
+  }
+}
+```
+
+### Layout with Rich Text Editing
+
+Both layouts work seamlessly with rich text editing:
+
+```typescript expandable
+<!-- Single-line layout with rich text -->
+<cometchat-message-composer
+  [user]="selectedUser"
+  [layout]="'single-line'"
+  [enableRichText]="true"
+></cometchat-message-composer>
+
+<!-- Multiline layout with rich text -->
+<cometchat-message-composer
+  [user]="selectedUser"
+  [layout]="'multiline'"
+  [enableRichText]="true"
+></cometchat-message-composer>
+```
+
+**Note:** All composer features (attachments, emoji picker, voice recording, mentions, etc.) work identically in both layouts. The only difference is the visual arrangement of elements.
+
+## Properties
+
+### Entity Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user` | `CometChat.User` | `undefined` | The user to send messages to (for 1-on-1 conversations). Mutually exclusive with `group`. |
+| `group` | `CometChat.Group` | `undefined` | The group to send messages to (for group conversations). Mutually exclusive with `user`. |
+| `parentMessageId` | `number` | `undefined` | Parent message ID for threaded replies. When set, messages are sent as replies. |
+
+### Layout Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `layout` | `'single-line' \| 'multiline'` | `'single-line'` | Layout mode for the composer. `'single-line'` arranges elements horizontally (attachment button on left, input in center, auxiliary buttons on right). `'multiline'` arranges elements vertically (input area on top spanning full width, all buttons in a row below). |
+
+### Text Input Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `placeholderText` | `string` | `'message_composer_placeholder'` | Placeholder text for the input area (localization key) |
+| `initialComposerText` | `string` | `''` | Initial text to pre-fill in the composer |
+| `text` | `string` | `''` | Controlled text value for the composer |
+| `maxHeight` | `number` | `200` | Maximum height for the text input area in pixels |
+| `enterKeyBehavior` | `EnterKeyBehavior` | `SendMessage` | Behavior when Enter is pressed: `SendMessage`, `NewLine`, or `None` |
+
+
+### Attachment Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `attachmentOptions` | `CometChatMessageComposerAction[]` | `undefined` | Custom attachment options for the attachment menu |
+| `maxAttachments` | `number` | `10` | Maximum number of attachments allowed |
+| `allowedFileTypes` | `string[]` | `undefined` | Allowed MIME types for attachments (e.g., `['image/*', 'application/pdf']`) |
+| `maxFileSize` | `number` | `undefined` | Maximum file size in bytes |
+| `showAttachmentPreview` | `boolean` | `true` | Show attachment preview thumbnails before sending |
+| `enableDragDrop` | `boolean` | `true` | Enable drag-and-drop file uploads |
+
+### Hide Option Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideAttachmentButton` | `boolean` | `false` | Hide the attachment button |
+| `hideImageAttachmentOption` | `boolean` | `false` | Hide image option in attachment menu |
+| `hideVideoAttachmentOption` | `boolean` | `false` | Hide video option in attachment menu |
+| `hideAudioAttachmentOption` | `boolean` | `false` | Hide audio option in attachment menu |
+| `hideFileAttachmentOption` | `boolean` | `false` | Hide file option in attachment menu |
+| `hidePollsOption` | `boolean` | `false` | Hide polls option in attachment menu |
+| `hideCollaborativeDocumentOption` | `boolean` | `false` | Hide collaborative document option |
+| `hideCollaborativeWhiteboardOption` | `boolean` | `false` | Hide collaborative whiteboard option |
+| `hideEmojiKeyboardButton` | `boolean` | `false` | Hide the emoji picker button |
+| `hideVoiceRecordingButton` | `boolean` | `false` | Hide the voice recording button |
+| `hideStickersButton` | `boolean` | `false` | Hide the stickers button |
+| `hideLiveReaction` | `boolean` | `false` | Hide the live reaction button |
+| `hideSendButton` | `boolean` | `false` | Hide the send button |
+
+
+### Mentions Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `disableMentions` | `boolean` | `false` | Disable @mentions functionality |
+| `disableMentionAll` | `boolean` | `false` | Disable @all mention option in groups |
+| `mentionAllLabel` | `string` | `'all'` | Label for the @all mention option |
+| `mentionsUsersRequestBuilder` | `CometChat.UsersRequestBuilder` | `undefined` | Custom request builder for fetching users for mentions |
+| `mentionsGroupMembersRequestBuilder` | `CometChat.GroupMembersRequestBuilder` | `undefined` | Custom request builder for fetching group members for mentions |
+
+### Rich Text Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `enableRichText` | `boolean` | `true` | Enable rich text editing. When disabled, toolbar toggle button is hidden and pasting/adding content won't apply rich text formatting. Mentions and other formatters still work independently. |
+| `hideRichTextToolbar` | `boolean` | `false` | Hide the rich text formatting toolbar. When showToolbarToggle is enabled, the toggle overrides this setting. |
+| `showBubbleMenuOnSelection` | `boolean` | `true` | Show floating bubble menu when text is selected (Web/Desktop only) |
+| `showToolbarToggle` | `boolean` | `true` | Show a toggle button to show/hide the fixed toolbar. Emits toolbarToggleClick with 'active' or 'inactive' state. |
+
+### Other Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `disableTypingEvents` | `boolean` | `false` | Disable sending typing indicator events |
+| `disableSoundForMessage` | `boolean` | `false` | Disable sound when sending messages |
+| `customSoundForMessage` | `string` | `undefined` | Custom sound URL for message sent notification |
+| `liveReactionIcon` | `string` | `undefined` | Custom icon for live reaction button |
+| `messageToEdit` | `CometChat.BaseMessage` | `undefined` | Message to edit (enables edit mode) |
+| `messageToReply` | `CometChat.BaseMessage` | `undefined` | Message to reply to (enables reply preview) |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Array of text formatters to apply |
+| `showToolbarToggle` | `boolean` | `true` | Whether to show the toolbar toggle button for expanding/collapsing the action toolbar |
+
+
+### Template Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `headerView` | `TemplateRef<any>` | `undefined` | Custom template for the header section above the input |
+| `footerView` | `TemplateRef<any>` | `undefined` | Custom template for the footer section below the input |
+| `sendButtonView` | `TemplateRef<any>` | `undefined` | Custom template for the send button |
+| `auxiliaryButtonView` | `TemplateRef<any>` | `undefined` | Custom template for auxiliary action buttons |
+| `secondaryButtonView` | `TemplateRef<any>` | `undefined` | Custom template for secondary action buttons |
+| `attachmentIconView` | `TemplateRef<any>` | `undefined` | Custom template for the attachment icon |
+| `voiceRecordingIconView` | `TemplateRef<any>` | `undefined` | Custom template for the voice recording icon |
+| `emojiIconView` | `TemplateRef<any>` | `undefined` | Custom template for the emoji icon |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `textChange` | `string` | Emitted when the text content changes |
+| `sendButtonClick` | `CometChat.BaseMessage` | Emitted when a message is sent successfully |
+| `error` | `CometChat.CometChatException` | Emitted when an error occurs |
+| `closePreview` | `void` | Emitted when the reply/edit preview is closed |
+| `attachmentAdded` | `File` | Emitted when an attachment is added |
+| `attachmentRemoved` | `File` | Emitted when an attachment is removed |
+| `mentionSelected` | `CometChat.User \| CometChat.GroupMember` | Emitted when a mention is selected |
+
+## Usage Patterns
+
+CometChatMessageComposer supports two usage patterns for receiving the active user or group context.
+
+<Tabs>
+<Tab title="Using Service">
+
+When used alongside `cometchat-conversations`, the composer automatically subscribes to `ChatStateService`. No explicit `[user]` or `[group]` input is needed — the component sends messages to the active conversation.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <cometchat-conversations
+        (itemClick)="onConversationClick($event)"
+      ></cometchat-conversations>
+
+      <div class="chat-panel">
+        <cometchat-message-header></cometchat-message-header>
+        <cometchat-message-list></cometchat-message-list>
+        <!-- Automatically targets the active conversation -->
+        <cometchat-message-composer></cometchat-message-composer>
+      </div>
+    </div>
+  `,
+})
+export class ChatComponent {
+  onConversationClick(conversation: any): void {}
+}
+```
+
+<Tip>
+  This is the recommended approach. The composer stays in sync with the conversation list without manual wiring.
+</Tip>
+
+</Tab>
+<Tab title="Using Props">
+
+Pass `[user]` or `[group]` directly to control which conversation the composer targets. This overrides `ChatStateService` state.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `,
+})
+export class ChatComponent {
+  selectedUser!: CometChat.User;
+  onMessageSent(message: CometChat.BaseMessage): void {}
+}
+```
+
+For group conversations:
+
+```typescript
+<cometchat-message-composer
+  [group]="selectedGroup"
+  (sendButtonClick)="onMessageSent($event)"
+></cometchat-message-composer>
+```
+
+<Note>
+  When `[user]` or `[group]` inputs are provided, they take priority over `ChatStateService` state for that component instance.
+</Note>
+
+</Tab>
+</Tabs>
+
+## Advanced Usage
+
+### Reply Mode (Threaded Messages)
+
+Enable reply mode by setting the `parentMessageId` to reply to a specific message:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reply-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [parentMessageId]="replyToMessageId"
+      (sendButtonClick)="onReplySent($event)"
+      (closePreview)="cancelReply()"
+    ></cometchat-message-composer>
+  `
+})
+export class ReplyComposerComponent {
+  selectedUser!: CometChat.User;
+  replyToMessageId?: number;
+
+  replyToMessage(message: CometChat.BaseMessage): void {
+    this.replyToMessageId = message.getId();
+  }
+
+  onReplySent(message: CometChat.BaseMessage): void {
+    console.log('Reply sent:', message);
+    this.replyToMessageId = undefined;
+  }
+
+  cancelReply(): void {
+    this.replyToMessageId = undefined;
+  }
+}
+```
+
+### Edit Mode
+
+Enable edit mode by setting the `messageToEdit` property:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-edit-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [messageToEdit]="editingMessage"
+      (sendButtonClick)="onMessageEdited($event)"
+      (closePreview)="cancelEdit()"
+    ></cometchat-message-composer>
+  `
+})
+export class EditComposerComponent {
+  selectedUser!: CometChat.User;
+  editingMessage?: CometChat.BaseMessage;
+
+  editMessage(message: CometChat.BaseMessage): void {
+    this.editingMessage = message;
+  }
+
+  onMessageEdited(message: CometChat.BaseMessage): void {
+    console.log('Message edited:', message);
+    this.editingMessage = undefined;
+  }
+
+  cancelEdit(): void {
+    this.editingMessage = undefined;
+  }
+}
+```
+
+
+### Rich Text Editing
+
+Enable Slack-like rich text editing with formatting toolbar using the custom RichTextEditorService:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-rich-text-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [enableRichText]="true"
+      [hideRichTextToolbar]="false"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class RichTextComposerComponent {
+  selectedUser!: CometChat.User;
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Rich text message sent:', message);
+    // Message metadata will contain rich text formatting info
+  }
+}
+```
+
+**Rich Text Toolbar Features:**
+- **Bold** (Ctrl+B / Cmd+B): Make text bold
+- **Italic** (Ctrl+I / Cmd+I): Make text italic
+- **Underline** (Ctrl+U / Cmd+U): Underline text
+- **Strikethrough**: Strike through text
+- **Inline Code**: Format as inline code
+- **Link**: Insert hyperlinks with validation
+- **Ordered List**: Create numbered lists
+- **Bullet List**: Create bulleted lists
+- **Code Block**: Insert code blocks
+- **Blockquote**: Add quoted text
+
+**Implementation Details:**
+- Uses custom `RichTextEditorService` built on native browser APIs
+- No external dependencies
+- Smaller bundle size (100KB+ reduction)
+- Full keyboard shortcut support
+- XSS protection with HTML sanitization
+- Unicode and emoji support
+- Undo/redo with history grouping (500ms delay)
+
+### Rich Text Enhancements
+
+The message composer includes advanced rich text features for improved user experience:
+
+#### Floating Bubble Menu
+
+Enable a Slack-like floating bubble menu that appears when text is selected (Web/Desktop only):
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-bubble-menu-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [enableRichText]="true"
+      [showBubbleMenuOnSelection]="true"
+      [hideRichTextToolbar]="true"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class BubbleMenuComposerComponent {
+  selectedUser!: CometChat.User;
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Message sent:', message);
+  }
+}
+```
+
+**Bubble Menu Features:**
+- Appears only when text is selected
+- Automatically disabled on mobile/touch devices
+- Quick access to formatting: bold, italic, underline, strikethrough, link
+- Smart positioning above selected text
+- Keyboard support (Escape to close)
+- Smooth fade in/out animations
+
+#### Always-Visible Toolbar
+
+Keep the formatting toolbar visible at all times for improved discoverability:
+
+```typescript
+<cometchat-message-composer
+  [user]="selectedUser"
+  [enableRichText]="true"
+  (sendButtonClick)="onMessageSent($event)"
+></cometchat-message-composer>
+```
+
+**Benefits:**
+- Toolbar remains visible even when editor is empty
+- Improved discoverability of formatting options
+- Consistent UI with no layout shifts
+- Ideal for professional/business contexts
+
+#### Combining All Features
+
+Use all rich text enhancements together:
+
+```typescript
+<cometchat-message-composer
+  [user]="selectedUser"
+  [enableRichText]="true"
+  [showBubbleMenuOnSelection]="true"
+  (sendButtonClick)="onMessageSent($event)"
+></cometchat-message-composer>
+```
+
+This configuration provides:
+- Floating bubble menu for quick text selection formatting
+- Toolbar toggle button for showing/hiding the fixed toolbar
+- Full keyboard shortcut support
+
+### @Mentions with Custom Request Builder
+
+Configure mentions with custom user/member fetching:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-mentions-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [group]="selectedGroup"
+      [disableMentions]="false"
+      [disableMentionAll]="false"
+      [mentionAllLabel]="'everyone'"
+      [mentionsGroupMembersRequestBuilder]="membersBuilder"
+      (mentionSelected)="onMentionSelected($event)"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class MentionsComposerComponent implements OnInit {
+  selectedGroup!: CometChat.Group;
+  membersBuilder!: CometChat.GroupMembersRequestBuilder;
+
+  ngOnInit(): void {
+    // Custom builder to fetch only active members
+    this.membersBuilder = new CometChat.GroupMembersRequestBuilder(this.selectedGroup.getGuid())
+      .setLimit(20)
+      .setScopes(['admin', 'moderator', 'participant']);
+  }
+
+  onMentionSelected(user: CometChat.User | CometChat.GroupMember): void {
+    console.log('Mentioned:', user.getName());
+  }
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    console.log('Message with mentions sent:', message);
+    // Message metadata will contain mention information
+  }
+}
+```
+
+### File Attachments with Validation
+
+Configure attachment handling with file type and size validation:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-attachments-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [enableDragDrop]="true"
+      [maxAttachments]="5"
+      [maxFileSize]="10485760"
+      [allowedFileTypes]="allowedTypes"
+      [showAttachmentPreview]="true"
+      (attachmentAdded)="onAttachmentAdded($event)"
+      (attachmentRemoved)="onAttachmentRemoved($event)"
+      (error)="onError($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class AttachmentsComposerComponent {
+  selectedUser!: CometChat.User;
+  
+  // Allow images, PDFs, and common document types
+  allowedTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+
+  onAttachmentAdded(file: File): void {
+    console.log('Attachment added:', file.name, file.size);
+  }
+
+  onAttachmentRemoved(file: File): void {
+    console.log('Attachment removed:', file.name);
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    // Handle file validation errors
+    console.error('Error:', error.message);
+  }
+}
+```
+
+
+### Voice Recording
+
+The composer includes built-in voice recording functionality:
+
+```typescript
+<cometchat-message-composer
+  [user]="selectedUser"
+  [hideVoiceRecordingButton]="false"
+  (sendButtonClick)="onMessageSent($event)"
+></cometchat-message-composer>
+```
+
+When the microphone button is clicked:
+1. The CometChatMediaRecorder component appears
+2. User can record audio with waveform visualization
+3. Recording duration is displayed
+4. User can cancel or complete the recording
+5. Completed recordings are sent as audio messages
+
+## Customization with Templates
+
+### Custom Send Button
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-send',
+  standalone: true,
+  imports: [CommonModule, CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [sendButtonView]="customSendButton"
+    >
+      <ng-template #customSendButton>
+        <button 
+          class="custom-send-btn"
+          aria-label="Send message">
+          <span class="send-icon">➤</span>
+          <span class="send-text">Send</span>
+        </button>
+      </ng-template>
+    </cometchat-message-composer>
+  `,
+  styles: [`
+    .custom-send-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #6852D6, #8B7AFF);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .custom-send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(104, 82, 214, 0.4);
+    }
+    .custom-send-btn:focus {
+      outline: 2px solid #6852D6;
+      outline-offset: 2px;
+    }
+    .send-icon {
+      font-size: 14px;
+    }
+  `]
+})
+export class CustomSendComponent {
+  selectedUser!: CometChat.User;
+}
+```
+
+
+### Custom Header View (Reply/Edit Preview)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-header',
+  standalone: true,
+  imports: [CommonModule, CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [parentMessageId]="replyToMessageId"
+      [headerView]="customHeader"
+      (closePreview)="cancelReply()"
+    >
+      <ng-template #customHeader>
+        @if (replyToMessage) {
+          <div class="custom-reply-preview">
+            <div class="reply-indicator">
+              <span class="reply-icon">↩</span>
+              <span class="reply-label">Replying to {{ replyToMessage.getSender().getName() }}</span>
+            </div>
+            <div class="reply-content">
+              {{ getMessagePreview(replyToMessage) }}
+            </div>
+            <button 
+              class="close-btn" 
+              (click)="cancelReply()"
+              aria-label="Cancel reply">
+              ✕
+            </button>
+          </div>
+        }
+      </ng-template>
+    </cometchat-message-composer>
+  `,
+  styles: [`
+    .custom-reply-preview {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f5f5f5;
+      border-left: 3px solid #6852D6;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .reply-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #6852D6;
+      font-weight: 500;
+      font-size: 12px;
+    }
+    .reply-content {
+      flex: 1;
+      margin-left: 12px;
+      color: #666;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 14px;
+    }
+    .close-btn:hover {
+      color: #333;
+    }
+  `]
+})
+export class CustomHeaderComponent {
+  selectedUser!: CometChat.User;
+  replyToMessageId?: number;
+  replyToMessage?: CometChat.BaseMessage;
+
+  getMessagePreview(message: CometChat.BaseMessage): string {
+    if (message.getType() === 'text') {
+      return (message as CometChat.TextMessage).getText();
+    }
+    return `[${message.getType()}]`;
+  }
+
+  cancelReply(): void {
+    this.replyToMessageId = undefined;
+    this.replyToMessage = undefined;
+  }
+}
+```
+
+
+### Custom Auxiliary Buttons
+
+Add custom action buttons alongside the default emoji and voice buttons:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-auxiliary',
+  standalone: true,
+  imports: [CommonModule, CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [auxiliaryButtonView]="customAuxiliary"
+    >
+      <ng-template #customAuxiliary>
+        <div class="custom-auxiliary-buttons">
+          <button 
+            class="aux-btn" 
+            (click)="openGifPicker()"
+            aria-label="Send GIF">
+            🎬
+          </button>
+          <button 
+            class="aux-btn" 
+            (click)="openLocationPicker()"
+            aria-label="Share location">
+            📍
+          </button>
+          <button 
+            class="aux-btn" 
+            (click)="openScheduler()"
+            aria-label="Schedule message">
+            ⏰
+          </button>
+        </div>
+      </ng-template>
+    </cometchat-message-composer>
+  `,
+  styles: [`
+    .custom-auxiliary-buttons {
+      display: flex;
+      gap: 4px;
+    }
+    .aux-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    .aux-btn:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    .aux-btn:focus {
+      outline: 2px solid #6852D6;
+      outline-offset: 2px;
+    }
+  `]
+})
+export class CustomAuxiliaryComponent {
+  selectedUser!: CometChat.User;
+
+  openGifPicker(): void {
+    console.log('Opening GIF picker');
+  }
+
+  openLocationPicker(): void {
+    console.log('Opening location picker');
+  }
+
+  openScheduler(): void {
+    console.log('Opening message scheduler');
+  }
+}
+```
+
+## Keyboard Accessibility
+
+CometChatMessageComposer is fully keyboard accessible and meets WCAG 2.1 Level AA standards.
+
+### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate between interactive elements | Global |
+| `Shift + Tab` | Navigate backwards | Global |
+| `Enter` | Send message (when `enterKeyBehavior` is `SendMessage`) | Text input focused |
+| `Shift + Enter` | Insert new line | Text input focused |
+| `Enter` / `Space` | Activate focused button | When button is focused |
+| `Escape` | Close open popups (emoji, attachments, mentions) | When popup is open |
+| `↓` (Down Arrow) | Navigate to next mention suggestion | When mentions panel is open |
+| `↑` (Up Arrow) | Navigate to previous mention suggestion | When mentions panel is open |
+| `Enter` / `Tab` | Select focused mention | When mention is focused |
+| `Ctrl + B` | Toggle bold (rich text mode) | When rich text is enabled |
+| `Ctrl + I` | Toggle italic (rich text mode) | When rich text is enabled |
+| `Ctrl + U` | Toggle underline (rich text mode) | When rich text is enabled |
+
+
+### Accessibility Features
+
+**ARIA Attributes:**
+- `role="textbox"` with `aria-multiline="true"` on the text input
+- `aria-label` describing the input purpose
+- `aria-haspopup="menu"` and `aria-expanded` on attachment button
+- `aria-haspopup="dialog"` and `aria-expanded` on emoji button
+- `aria-label="Send message"` on send button
+- `aria-label` and `aria-pressed` on voice recording button
+- `role="menu"` with `role="menuitem"` for attachment options
+- `role="listbox"` with `role="option"` for mention suggestions
+- `role="toolbar"` on rich text toolbar with proper button labels
+
+**Screen Reader Support:**
+- Announces reply/edit preview when shown via `aria-live="polite"`
+- Announces recording state changes via `aria-live="assertive"`
+- Announces message sent confirmation via `aria-live="polite"`
+- Announces attachment added/removed via `aria-live="polite"`
+- Announces errors via `aria-live="assertive"`
+
+**Focus Management:**
+- Visible focus indicators (2px border) meeting WCAG contrast requirements
+- Logical tab order through interactive elements
+- Focus returns to input after closing popups
+- Focus trap within menus when open
+
+**WCAG 2.1 Compliance:**
+- ✅ 2.1.1 Keyboard (Level A) - All functionality available via keyboard
+- ✅ 2.1.2 No Keyboard Trap (Level A) - Users can navigate away using keyboard
+- ✅ 2.4.3 Focus Order (Level A) - Logical focus order
+- ✅ 2.4.7 Focus Visible (Level AA) - Visible focus indicators
+- ✅ 4.1.2 Name, Role, Value (Level A) - Proper ARIA attributes
+- ✅ 4.1.3 Status Messages (Level AA) - Screen reader announcements
+
+## Styling with CSS Variables
+
+The CometChatMessageComposer component uses CSS variables for comprehensive theming:
+
+```css expandable
+cometchat-message-composer {
+  /* Background colors */
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-background-color-02: #f5f5f5;
+  --cometchat-background-color-03: #e8e8e8;
+  
+  /* Text colors */
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-text-color-tertiary: #999999;
+  
+  /* Border colors */
+  --cometchat-border-color-light: #e8e8e8;
+  --cometchat-border-color-default: #dcdcdc;
+  
+  /* Primary color */
+  --cometchat-primary-color: #6852D6;
+  
+  /* Status colors */
+  --cometchat-success-color: #09C26F;
+  --cometchat-error-color: #FF3B30;
+  
+  /* Typography */
+  --cometchat-font-body-regular: 400 14px/20px Inter, sans-serif;
+  --cometchat-font-caption1-regular: 400 12px/16px Inter, sans-serif;
+  
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+  --cometchat-radius-max: 9999px;
+}
+```
+
+
+### Dark Theme Example
+
+```css expandable
+.dark-theme cometchat-message-composer {
+  --cometchat-background-color-01: #1a1a1a;
+  --cometchat-background-color-02: #2a2a2a;
+  --cometchat-background-color-03: #3a3a3a;
+  --cometchat-text-color-primary: #ffffff;
+  --cometchat-text-color-secondary: #cccccc;
+  --cometchat-text-color-tertiary: #999999;
+  --cometchat-border-color-light: #333333;
+  --cometchat-border-color-default: #444444;
+}
+```
+
+### Custom Brand Colors
+
+```css
+.branded-composer cometchat-message-composer {
+  --cometchat-primary-color: #FF6B35;
+  --cometchat-success-color: #00C853;
+}
+```
+
+## Text Formatters
+
+The component supports custom text formatters for automatic text transformation and metadata extraction.
+
+### Built-in Formatters
+
+**CometChatMentionsFormatter:**
+- Detects @mention patterns in text
+- Highlights mentions with distinct styling
+- Extracts mention metadata (user ID, name, position)
+- Supports @all mentions for groups
+
+**CometChatUrlFormatter:**
+- Detects URL patterns (http://, https://, www.)
+- Converts URLs to clickable links
+- Opens links in new tabs
+- Extracts URL metadata
+
+### Using Custom Formatters
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageComposerComponent,
+  CometChatMentionsFormatter,
+  CometChatUrlFormatter
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-formatted-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      [textFormatters]="formatters"
+      (sendButtonClick)="onMessageSent($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class FormattedComposerComponent {
+  selectedUser!: CometChat.User;
+  
+  formatters = [
+    new CometChatMentionsFormatter(),
+    new CometChatUrlFormatter()
+  ];
+
+  onMessageSent(message: CometChat.BaseMessage): void {
+    // Message metadata will contain formatter results
+    const metadata = message.getMetadata();
+    console.log('Mentions:', metadata?.mentions);
+    console.log('URLs:', metadata?.urls);
+  }
+}
+```
+
+
+## Error Handling
+
+The component provides comprehensive error handling through the `error` event:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-error-handling',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="selectedUser"
+      (error)="handleError($event)"
+    ></cometchat-message-composer>
+  `
+})
+export class ErrorHandlingComponent {
+  selectedUser!: CometChat.User;
+
+  handleError(error: CometChat.CometChatException): void {
+    console.error('Composer error:', error);
+    
+    switch (error.code) {
+      case 'COMPONENT_ERROR':
+        // Handle component-level errors
+        break;
+      case 'COMPOSER_ERROR':
+        // Handle message sending errors
+        break;
+      case 'UNKNOWN_ERROR':
+        // Handle unexpected errors
+        break;
+      default:
+        // Handle other errors
+        break;
+    }
+  }
+}
+```
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatmessagecomposer).
+</Info>
+
+### Troubleshooting
+
+**Issue:** Enter key creates line breaks when I want it to send messages
+
+**Solution:** Set `enterKeyBehavior` to `SendMessage`:
+```typescript
+import { EnterKeyBehavior } from '@cometchat/chat-uikit-angular';
+
+<cometchat-message-composer
+  [enterKeyBehavior]="EnterKeyBehavior.SendMessage"
+></cometchat-message-composer>
+```
+
+**Issue:** I need a compact single-line input
+
+**Solution:** Use the `single-line` layout with `maxHeight`:
+```typescript
+<cometchat-message-composer
+  [layout]="'single-line'"
+  [maxHeight]="50"
+></cometchat-message-composer>
+```
+
+**Issue:** My custom toggle button is gone
+
+**Solution:** The built-in toggle was removed. Implement your own toggle control as shown in Scenario 3 above.
+
+
+## See Also
+
+- [CometChatMessageList](./cometchat-message-list.mdx) - Display messages in a conversation
+- [CometChatConversations](./cometchat-conversations.mdx) - List of conversations
+- [RichTextEditorService API](../api-reference/rich-text-editor-service.mdx) - Rich text editor service documentation
+- [Rich Text Formatting Guide](../guides/rich-text-formatting.mdx) - Comprehensive guide to rich text features

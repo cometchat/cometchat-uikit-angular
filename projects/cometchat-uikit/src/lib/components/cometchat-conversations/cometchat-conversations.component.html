@@ -1,0 +1,196 @@
+<!-- CometChatConversations Component Template (Refactored)
+     Uses CometChatPaginatedList for list rendering and CometChatConversationItem for item rendering.
+     Maintains full backward compatibility with existing template inputs.
+-->
+<div class="cometchat cometchat-conversations" 
+     (keydown)="handleKeydown($event)" 
+     (focusin)="handleFocusIn($event)"
+     (click)="handleContainerClick($event)"
+     [attr.aria-label]="'accessibility_conversations_list' | translate">
+  <!-- ==================== Header Section ==================== -->
+  <div class="cometchat-conversations__header">
+    @if (headerView || headerViewContent) {
+      <ng-container *ngTemplateOutlet="headerView || headerViewContent"></ng-container>
+    } @else {
+      <div class="cometchat-conversations__header-default">
+        <h2 class="cometchat-conversations__title">
+          {{ 'conversation_chat_title' | translate }}
+        </h2>
+        @if (menuView || menuViewContent) {
+          <ng-container *ngTemplateOutlet="menuView || menuViewContent"></ng-container>
+        }
+      </div>
+    }
+
+    @if (effectiveShowSearchBar()) {
+      <div class="cometchat-conversations__search-section">
+        @if (searchView || searchViewContent) {
+          <ng-container *ngTemplateOutlet="searchView || searchViewContent"></ng-container>
+        } @else {
+          <cometchat-search-bar
+            #searchBar
+            [searchText]="currentSearchText"
+            [placeholderText]="'conversation_search_placeholder' | translate"
+            (click)="handleSearchBarClick()">
+          </cometchat-search-bar>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ==================== List Body using CometChatPaginatedList ==================== -->
+  <cometchat-paginated-list
+    #paginatedList
+    [items]="conversations()"
+    [trackByFn]="trackByConversation.bind(this)"
+    [isLoading]="loadingState()"
+    [hasMore]="hasMore()"
+    [error]="errorState()"
+    [showScrollbar]="effectiveShowScrollbar()"
+    [loadingTemplate]="loadingTemplateRef"
+    [emptyTemplate]="emptyTemplateRef"
+    [errorTemplate]="errorTemplateRef"
+    [itemTemplate]="itemTemplateRef"
+    (loadMore)="handleLoadMore()"
+    (scrollToBottom)="handleScrollToBottom()">
+  </cometchat-paginated-list>
+
+  <!-- ==================== Loading Template ==================== -->
+  <ng-template #loadingTemplateRef>
+    @if (effectiveLoadingView) {
+      <ng-container *ngTemplateOutlet="effectiveLoadingView"></ng-container>
+    } @else {
+      <div class="cometchat-conversations__shimmer">
+        @for (item of shimmerList; track item) {
+          <div class="cometchat-conversations__shimmer-item">
+            <div class="cometchat-conversations__shimmer-avatar"></div>
+            <div class="cometchat-conversations__shimmer-content">
+              <div class="cometchat-conversations__shimmer-line cometchat-conversations__shimmer-line--long"></div>
+              <div class="cometchat-conversations__shimmer-line cometchat-conversations__shimmer-line--short"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </ng-template>
+
+  <!-- ==================== Empty Template ==================== -->
+  <ng-template #emptyTemplateRef>
+    @if (effectiveEmptyView) {
+      <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
+    } @else {
+      <div class="cometchat-conversations__empty-content">
+        <div class="cometchat-conversations__empty-icon">
+          <span class="cometchat-conversations__empty-icon-mask" aria-hidden="true"></span>
+        </div>
+        <h3 class="cometchat-conversations__empty-title">{{ 'conversation_empty_title' | translate }}</h3>
+        <p class="cometchat-conversations__empty-message">{{ 'conversation_empty_subtitle' | translate }}</p>
+      </div>
+    }
+  </ng-template>
+
+  <!-- ==================== Error Template ==================== -->
+  <ng-template #errorTemplateRef let-error>
+    @if (!effectiveHideError()) {
+      @if (effectiveErrorView) {
+        <ng-container *ngTemplateOutlet="effectiveErrorView; context: { $implicit: error }"></ng-container>
+      } @else {
+        <div class="cometchat-conversations__error-content">
+          <div class="cometchat-conversations__error-icon">
+            <span class="cometchat-conversations__error-icon-mask" aria-hidden="true"></span>
+          </div>
+          <h3 class="cometchat-conversations__error-title">{{ 'conversation_error_title' | translate }}</h3>
+          <p class="cometchat-conversations__error-message">{{ 'conversation_error_subtitle' | translate }}</p>
+          <button 
+            class="cometchat-conversations__error-retry-button"
+            (click)="handleRetryClick()"
+            type="button">
+              {{ 'error_boundary_retry' | translate }}
+          </button>
+        </div>
+      }
+    }
+  </ng-template>
+
+  <!-- ==================== Item Template ==================== -->
+  <ng-template #itemTemplateRef let-conversation let-index="index">
+    <div class="cometchat-conversations__list-item-wrapper"
+         [class.cometchat-conversations__list-item-wrapper--focused]="focusedIndex() === index"
+         [class.cometchat-conversations__list-item--active]="isConversationActive(conversation)">
+
+      <!-- Custom Item View or CometChatConversationItem -->
+      @if (effectiveItemView) {
+        <ng-container *ngTemplateOutlet="effectiveItemView; context: { $implicit: conversation }"></ng-container>
+      } @else {
+        <cometchat-conversation-item
+          [conversation]="conversation"
+          [isActive]="isConversationActive(conversation)"
+          [isSelected]="isConversationSelected(conversation)"
+          [isFocused]="focusedIndex() === index"
+          [tabIndex]="focusedIndex() === -1 ? (index === 0 ? 0 : -1) : (focusedIndex() === index ? 0 : -1)"
+          [typingIndicator]="getTypingIndicator(conversation)"
+          [loggedInUser]="loggedInUser"
+          [hideReceipts]="effectiveHideReceipts()"
+          [hideUserStatus]="effectiveHideUserStatus()"
+          [hideGroupType]="effectiveHideGroupType()"
+          [dateFormat]="lastMessageDateTimeFormat || getDefaultDateTimeFormat()"
+          [textFormatters]="activeFormatters"
+          [slots]="slots"
+          [contextMenuOptions]="selectionMode !== SelectionMode.none ? [] : getContextMenuOptions(conversation)"
+          [disableDefaultContextMenu]="effectiveDisableDefaultContextMenu()"
+          [leadingView]="effectiveLeadingView"
+          [titleView]="effectiveTitleView"
+          [subtitleView]="effectiveSubtitleView"
+          [trailingView]="selectionMode !== SelectionMode.none ? selectionControlTemplate : effectiveTrailingView"
+          (itemClick)="handleConversationClick($event)"
+          (itemSelect)="handleConversationSelect($event)"
+          (contextMenuOpen)="handleContextMenuOpen($event)"
+          (contextMenuOptionClick)="handleContextMenuOptionClick($event)">
+        </cometchat-conversation-item>
+      }
+    </div>
+  </ng-template>
+
+  <!-- ==================== Selection Control Template (for trailing view) ==================== -->
+  <ng-template #selectionControlTemplate let-conversation>
+    <div class="cometchat-conversations__selection-control" 
+         (click)="$event.stopPropagation()">
+      @if (selectionMode === SelectionMode.multiple) {
+        <cometchat-checkbox
+          [checked]="isConversationSelected(conversation)"
+          [ariaLabel]="'Select ' + (conversation.getConversationWith().getName() || '')"
+          (checkboxChanged)="handleSelectionClick(conversation)">
+        </cometchat-checkbox>
+      } @else if (selectionMode === SelectionMode.single) {
+        <cometchat-radio-button
+          [checked]="isConversationSelected(conversation)"
+          [ariaLabel]="'Select ' + (conversation.getConversationWith().getName() || '')"
+          (radioChanged)="handleSelectionClick(conversation)">
+        </cometchat-radio-button>
+      }
+    </div>
+  </ng-template>
+
+  <!-- ==================== Delete Confirmation Dialog ==================== -->
+  @if (showDeleteConfirmDialog()) {
+    <div class="cometchat-conversations__dialog-overlay" 
+         (click)="handleDeleteCancel()"
+         (keydown)="handleDialogKeydown($event)"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="delete-dialog-title"
+         tabindex="-1"
+         #dialogOverlay>
+      <div class="cometchat-conversations__dialog-container" (click)="$event.stopPropagation()">
+        <cometchat-confirm-dialog
+          [title]="'conversation_delete_title' | translate"
+          [messageText]="'conversation_delete_subtitle' | translate"
+          [confirmButtonText]="'conversation_delete_confirm_yes' | translate"
+          [cancelButtonText]="'conversation_delete_confirm_no' | translate"
+          (confirmClick)="handleDeleteConfirm()"
+          (cancelClick)="handleDeleteCancel()">
+        </cometchat-confirm-dialog>
+      </div>
+    </div>
+  }
+</div>

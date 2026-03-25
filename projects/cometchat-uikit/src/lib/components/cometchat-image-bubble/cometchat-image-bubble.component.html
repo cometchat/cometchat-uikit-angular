@@ -1,0 +1,138 @@
+<!-- Image Bubble Component Template -->
+<div 
+  class="cometchat-image-bubble"
+  [class.cometchat-image-bubble--incoming]="alignment === MessageBubbleAlignment.left"
+  [class.cometchat-image-bubble--outgoing]="alignment === MessageBubbleAlignment.right"
+  [class.cometchat-image-bubble--single]="layoutType === 'single'"
+  [class.cometchat-image-bubble--grid]="layoutType === 'grid'"
+  [class.cometchat-image-bubble--grid-2x2]="layoutType === 'grid-2x2'"
+  [class.cometchat-image-bubble--overflow]="layoutType === 'overflow'">
+  
+  <!-- Single Image Layout -->
+  <div 
+    *ngIf="layoutType === 'single' && attachments.length > 0"
+    class="cometchat-image-bubble__container">
+    <div 
+      class="cometchat-image-bubble__image-wrapper"
+      (click)="onImageClick(0)"
+      (keydown)="onImageKeyDown($event, 0)"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="imageAriaLabel">
+      <img
+        loading="lazy"
+        class="cometchat-image-bubble__image"
+        [src]="attachments[0].url"
+        [alt]="captionText || ('image_bubble_image_alt' | translate)" />
+    </div>
+  </div>
+
+  <!-- Grid Layout (2-3 images) -->
+  <div 
+    *ngIf="layoutType === 'grid' && attachments.length >= 2 && attachments.length <= 3"
+    class="cometchat-image-bubble__container">
+    <div 
+      class="cometchat-image-bubble__grid"
+      [class.cometchat-image-bubble__grid--two-col]="attachments.length === 2"
+      [class.cometchat-image-bubble__grid--three-col]="attachments.length === 3">
+      <div 
+        *ngFor="let attachment of attachments; let i = index; trackBy: trackByAttachment"
+        class="cometchat-image-bubble__image-wrapper"
+        (click)="onImageClick(i)"
+        (keydown)="onImageKeyDown($event, i)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="imageAriaLabel">
+        <img
+          class="cometchat-image-bubble__image"
+          [src]="attachment.url"
+          [alt]="captionText || ('image_bubble_image_alt' | translate)"
+          loading="lazy" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 2×2 Grid Layout (4 images) -->
+  <div 
+    *ngIf="layoutType === 'grid-2x2' && attachments.length === 4"
+    class="cometchat-image-bubble__container">
+    <div class="cometchat-image-bubble__grid cometchat-image-bubble__grid--2x2">
+      <div 
+        *ngFor="let attachment of attachments; let i = index; trackBy: trackByAttachment"
+        class="cometchat-image-bubble__image-wrapper"
+        (click)="onImageClick(i)"
+        (keydown)="onImageKeyDown($event, i)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="imageAriaLabel">
+        <img
+          class="cometchat-image-bubble__image"
+          [src]="attachment.url"
+          [alt]="captionText || ('image_bubble_image_alt' | translate)"
+          loading="lazy" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Overflow Layout (>4 images) -->
+  <div 
+    *ngIf="layoutType === 'overflow' && attachments.length > 4"
+    class="cometchat-image-bubble__container">
+    <div class="cometchat-image-bubble__grid cometchat-image-bubble__grid--overflow">
+      <!-- First 3 images displayed normally -->
+      <div 
+        *ngFor="let attachment of attachments.slice(0, 3); let i = index; trackBy: trackByAttachment"
+        class="cometchat-image-bubble__image-wrapper"
+        (click)="onImageClick(i)"
+        (keydown)="onImageKeyDown($event, i)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="imageAriaLabel">
+        <img
+          class="cometchat-image-bubble__image"
+          [src]="attachment.url"
+          [alt]="captionText || ('image_bubble_image_alt' | translate)"
+          loading="lazy" />
+      </div>
+
+      <!-- 4th tile with overflow indicator -->
+      <div 
+        class="cometchat-image-bubble__overflow-tile"
+        (click)="onImageClick(3)"
+        (keydown)="onImageKeyDown($event, 3)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="overflowAriaLabel"
+        [style.background-image]="'url(' + attachments[3].url + ')'">
+        <div class="cometchat-image-bubble__overflow-overlay">
+          <span class="cometchat-image-bubble__overflow-text" aria-hidden="true">
+            {{ getOverflowText() }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TODO: Caption (Task 4.5) -->
+  
+  <!-- Caption Rendering -->
+  <div 
+    *ngIf="captionText"
+    class="cometchat-image-bubble__caption">
+    <cometchat-text-bubble
+      [message]="$any(message)"
+      [alignment]="alignment">
+    </cometchat-text-bubble>
+  </div>
+</div>
+
+<!-- Fullscreen Viewer (Gallery Mode) -->
+<cometchat-fullscreen-viewer
+  *ngIf="showGalleryViewer"
+  [attachments]="attachments"
+  [startIndex]="galleryStartIndex"
+  [isOpen]="showGalleryViewer"
+  [explicitSenderName]="senderName"
+  [explicitSenderAvatarUrl]="senderAvatarUrl"
+  (closeClick)="closeGalleryViewer()">
+</cometchat-fullscreen-viewer>

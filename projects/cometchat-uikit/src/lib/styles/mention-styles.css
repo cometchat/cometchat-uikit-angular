@@ -1,0 +1,190 @@
+/**
+ * Mention Styles
+ *
+ * Global CSS rules for @mention spans across all rendering contexts:
+ * - Message text bubbles (incoming/outgoing)
+ * - Conversation subtitles
+ * - Message composer input
+ * - Reply preview
+ *
+ * Imported via css-variables.css so styles are available globally
+ * regardless of Angular view encapsulation.
+ *
+ * Class structure matches React UIKit:
+ *   .cometchat-mentions              — base mention styling
+ *   .cometchat-mentions-you          — self mention (logged-in user)
+ *   .cometchat-mentions-other        — other user mention
+ *   .cometchat-mentions-incoming     — mention inside an incoming (left) bubble
+ *   .cometchat-mentions-outgoing     — mention inside an outgoing (right) bubble
+ *
+ * @see Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
+ */
+
+/* ==================== Base Mention Styles ==================== */
+
+/**
+ * Base mention styling (singular class for individual mention spans)
+ * Applied to all mention <span> elements before specific variants
+ * @see Requirements 10.1, 10.2
+ */
+.cometchat-mention {
+  display: inline;
+  padding: var(--cometchat-spacing) var(--cometchat-spacing-1);
+  border-radius: var(--cometchat-radius-1);
+  font: var(--cometchat-font-body-medium);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-mentions {
+  display: inline-block;
+  white-space: nowrap;
+  color: var(--cometchat-text-color-highlight);
+  font: var(--cometchat-font-body-regular);
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+/* ==================== Direction Variants (Incoming / Outgoing) ==================== */
+
+.cometchat-mentions-outgoing,
+.cometchat-mentions-incoming {
+  border-radius: var(--cometchat-radius);
+  display: inline-block;
+  padding: 0px var(--cometchat-padding);
+  cursor: pointer;
+}
+
+/* ==================== Combined Direction + Self/Other Backgrounds ==================== */
+
+/**
+ * Incoming + Self mention
+ * @see Requirement 5.3
+ */
+.cometchat-mentions-incoming.cometchat-mentions-you {
+  background: rgba(255, 171, 0, 0.20);
+}
+
+/**
+ * Incoming + Other mention
+ * @see Requirement 5.4
+ */
+.cometchat-mentions-incoming.cometchat-mentions-other {
+  background: rgba(104, 82, 214, 0.20);
+}
+
+/**
+ * Outgoing + Self mention
+ * @see Requirement 5.3
+ */
+.cometchat-mentions-outgoing.cometchat-mentions-you {
+  background: rgba(255, 171, 0, 0.20);
+}
+
+/**
+ * Outgoing + Other mention
+ * @see Requirement 5.5
+ */
+.cometchat-mentions-outgoing.cometchat-mentions-other {
+  background: rgba(249, 248, 253, 0.20);
+}
+
+/* ==================== Combined Direction + Self/Other Text Colors ==================== */
+
+/**
+ * Incoming + Self mention text
+ * @see Requirement 5.3
+ */
+.cometchat-mentions-incoming.cometchat-mentions-you  {
+  color: var(--cometchat-warning-color);
+}
+
+/**
+ * Incoming + Other mention text
+ * @see Requirement 5.4
+ */
+.cometchat-mentions-incoming.cometchat-mentions-other  {
+  color: var(--cometchat-text-color-highlight);
+}
+
+/**
+ * Outgoing + Self mention text
+ * @see Requirement 5.3
+ */
+.cometchat-mentions-outgoing.cometchat-mentions-you  {
+  color: var(--cometchat-warning-color);
+}
+
+/**
+ * Outgoing + Other mention text
+ * @see Requirement 5.5
+ */
+.cometchat-mentions-outgoing.cometchat-mentions-other  {
+  color: var(--cometchat-static-white);
+}
+
+/* ==================== Context: Conversation Subtitle ==================== */
+
+/**
+ * Mentions in conversation subtitle — no direction context,
+ * so style based on self/other only.
+ * @see Requirement 5.6
+ */
+.cometchat-conversation-item__subtitle-text .cometchat-mentions {
+  border-radius: var(--cometchat-radius);
+  background: rgba(104, 82, 214, 0.20);
+  padding: 0px var(--cometchat-padding);
+  color: var(--cometchat-text-color-highlight);
+  font: var(--cometchat-font-body-regular);
+}
+
+.cometchat-conversation-item__subtitle-text .cometchat-mentions-you {
+  border-radius: var(--cometchat-radius);
+  background: rgba(255, 171, 0, 0.20);
+  padding: 0px var(--cometchat-padding);
+    color: var(--cometchat-warning-color);
+  font: var(--cometchat-font-body-regular);
+}
+
+/* ==================== Context: Composer Input ==================== */
+
+/**
+ * Mentions in the message composer input — no direction context,
+ * so style based on self/other only.
+ * @see Requirement 5.6
+ */
+.cometchat-message-composer .cometchat-rich-text-editor__content .cometchat-mentions  {
+  color: var(--cometchat-text-color-highlight);
+  font: var(--cometchat-font-body-regular);
+  display: inline;
+}
+
+.cometchat-message-composer .cometchat-rich-text-editor__content .cometchat-mentions-you  {
+  color: var(--cometchat-warning-color);
+  font: var(--cometchat-font-body-regular);
+}
+
+/* ==================== Context: Reply/Edit Preview ==================== */
+
+/**
+ * Mentions in reply/edit preview subtitle — no direction context,
+ * so style based on self/other only.
+ * @see Requirement 5.6
+ */
+.cometchat-message-composer__reply-preview-subtitle .cometchat-mentions,
+.cometchat-message-composer__edit-preview-subtitle .cometchat-mentions {
+  border-radius: var(--cometchat-radius);
+  background: rgba(104, 82, 214, 0.20);
+  padding: 0px var(--cometchat-padding);
+  color: var(--cometchat-text-color-highlight);
+  font: var(--cometchat-font-caption1-regular);
+}
+
+.cometchat-message-composer__reply-preview-subtitle .cometchat-mentions-you,
+.cometchat-message-composer__edit-preview-subtitle .cometchat-mentions-you {
+  border-radius: var(--cometchat-radius);
+  background: rgba(255, 171, 0, 0.20);
+  padding: 0px var(--cometchat-padding);
+  color: var(--cometchat-warning-color);
+  font: var(--cometchat-font-caption1-regular);
+}

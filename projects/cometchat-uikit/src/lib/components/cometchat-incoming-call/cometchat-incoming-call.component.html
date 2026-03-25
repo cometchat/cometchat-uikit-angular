@@ -1,0 +1,99 @@
+@if (effectiveCall) {
+  <div
+    #dialogContainer
+    class="cometchat-incoming-call"
+    role="alertdialog"
+    aria-modal="true"
+    aria-live="assertive"
+    aria-labelledby="incoming-call-title"
+    [attr.aria-label]="callerName + ' ' + ('incoming_call_subtitle' | translate)">
+
+    <!-- Item View: custom template or default ListItem -->
+    @if (itemView) {
+      <ng-container *ngTemplateOutlet="itemView; context: templateContext"></ng-container>
+    } @else {
+      <cometchat-list-item
+        [title]="callerName"
+        [avatarName]="callerName"
+        [avatarURL]="callerAvatar"
+        [titleView]="titleView ?? defaultTitleView"
+        [subtitleView]="subtitleView ?? defaultSubtitleView"
+        [leadingView]="leadingView ?? emptyLeadingView"
+        [trailingView]="trailingView ?? defaultTrailingView">
+      </cometchat-list-item>
+    }
+
+    <!-- Button Group -->
+    <div class="cometchat-incoming-call__button-group">
+      <!-- Decline Button -->
+      @if (declineButtonView) {
+        <ng-container *ngTemplateOutlet="declineButtonView; context: templateContext"></ng-container>
+      } @else {
+        <div class="cometchat-incoming-call__button-decline">
+          <cometchat-button
+            [text]="'incoming_call_confirm_no' | translate"
+            [ariaLabel]="'incoming_call_confirm_no' | translate"
+            (buttonClick)="onDeclineClick()">
+          </cometchat-button>
+        </div>
+      }
+
+      <!-- Accept Button -->
+      @if (acceptButtonView) {
+        <ng-container *ngTemplateOutlet="acceptButtonView; context: templateContext"></ng-container>
+      } @else {
+        <div #acceptButton class="cometchat-incoming-call__button-accept">
+          <cometchat-button
+            [text]="'incoming_call_confirm_yes' | translate"
+            [ariaLabel]="'incoming_call_confirm_yes' | translate"
+            (buttonClick)="onAcceptClick()">
+          </cometchat-button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Empty leading view to suppress default avatar in ListItem -->
+<ng-template #emptyLeadingView></ng-template>
+
+<!-- Default Title Template: caller name with id for aria-labelledby -->
+<ng-template #defaultTitleView>
+  <span id="incoming-call-title" class="cometchat-incoming-call__title">
+    {{ callerName }}
+  </span>
+</ng-template>
+
+<!-- Default Subtitle Template: call type icon + "Incoming Call" text -->
+<ng-template #defaultSubtitleView>
+  <div class="cometchat-incoming-call__subtitle">
+    <div
+      class="cometchat-incoming-call__subtitle-icon"
+      [style.-webkit-mask-image]="'url(' + callTypeIconUrl + ')'"
+      [style.mask-image]="'url(' + callTypeIconUrl + ')'"
+      aria-hidden="true">
+    </div>
+    <span class="cometchat-incoming-call__subtitle-text">
+      {{ 'incoming_call_subtitle' | translate }}
+    </span>
+  </div>
+</ng-template>
+
+<!-- Default Trailing View Template: 48x48 caller avatar -->
+<ng-template #defaultTrailingView>
+  <div class="cometchat-incoming-call__avatar">
+    <cometchat-avatar
+      [image]="callerAvatar"
+      [name]="callerName">
+    </cometchat-avatar>
+  </div>
+</ng-template>
+
+<!-- Ongoing Call Screen (shown after accepting the call) -->
+@if (showOngoingCallScreen() && ongoingCallSessionId()) {
+  <cometchat-ongoing-call
+    [sessionID]="ongoingCallSessionId()"
+    [callWorkflow]="defaultCallingWorkflow"
+    [isAudioOnly]="incomingCallIsAudioOnly">
+  </cometchat-ongoing-call>
+}

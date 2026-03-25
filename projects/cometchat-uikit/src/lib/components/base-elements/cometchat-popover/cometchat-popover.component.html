@@ -1,0 +1,74 @@
+<div class="cometchat">
+  <div class="cometchat-popover">
+    <!-- Background overlay when disableBackgroundInteraction is true -->
+    <div
+      *ngIf="disableBackgroundInteraction && isOpen"
+      class="cometchat-popover__overlay"
+      (click)="closePopover()"
+      (wheel)="$event.stopPropagation()"
+      (mousemove)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+      role="presentation"
+      aria-hidden="true">
+    </div>
+
+    <!-- Trigger element (projected content) -->
+    <div
+      #childRef
+      class="cometchat-popover__button"
+      [ngStyle]="disableBackgroundInteraction && isOpen ? {
+        position: 'relative',
+        zIndex: '1000',
+        pointerEvents: 'auto'
+      } : {}"
+      (click)="onChildClick($event)"
+      (keydown.enter)="onChildKeydown($event)"
+      (keydown.space)="onChildKeydown($event)"
+      (mouseenter)="onPopoverMouseEnter()"
+      (mouseleave)="onPopoverMouseLeave()"
+      [attr.aria-expanded]="isOpen"
+      [attr.aria-haspopup]="showTooltip ? 'false' : 'dialog'"
+      [attr.aria-controls]="isOpen ? popoverId : null">
+      <ng-content></ng-content>
+    </div>
+
+    <!-- Popover content -->
+    <div
+      *ngIf="isOpen"
+      #popoverRef
+      class="cometchat-popover__content"
+      [ngClass]="{
+        'cometchat-popover__content--top': availablePlacement === Placement.top,
+        'cometchat-popover__content--bottom': availablePlacement === Placement.bottom,
+        'cometchat-popover__content--left': availablePlacement === Placement.left,
+        'cometchat-popover__content--right': availablePlacement === Placement.right,
+        'cometchat-popover__content--positioned': isPositioned
+      }"
+      [ngStyle]="getPopoverContentStyle()"
+      [attr.id]="popoverId"
+      [attr.role]="showTooltip ? 'tooltip' : 'dialog'"
+      [attr.aria-modal]="!showTooltip && trapFocus ? 'true' : null"
+      [attr.aria-label]="ariaLabel"
+      [attr.aria-labelledby]="ariaLabelledBy"
+      [attr.aria-describedby]="ariaDescribedBy"
+      [attr.tabindex]="trapFocus && focusableElements.length === 0 ? '0' : null">
+      
+      <!-- Tooltip arrow for top placement -->
+      <div
+        *ngIf="showTooltip && availablePlacement === Placement.top"
+        class="cometchat-popover__content-tooltip-top"
+        aria-hidden="true">
+      </div>
+
+      <!-- Popover content template -->
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+
+      <!-- Tooltip arrow for bottom placement -->
+      <div
+        *ngIf="showTooltip && availablePlacement === Placement.bottom"
+        class="cometchat-popover__content-tooltip-bottom"
+        aria-hidden="true">
+      </div>
+    </div>
+  </div>
+</div>

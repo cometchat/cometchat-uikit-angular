@@ -1,0 +1,206 @@
+/* CometChatToast Component Styles */
+
+.cometchat-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cometchat-toast-gap, var(--cometchat-spacing-2, 8px));
+  padding: var(--cometchat-toast-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  border-radius: var(--cometchat-toast-border-radius, var(--cometchat-radius-1, 4px));
+  background: var(--cometchat-toast-background, var(--cometchat-static-black, #000000));
+  color: var(--cometchat-toast-color, var(--cometchat-static-white, #FFFFFF));
+  font: var(--cometchat-toast-font, var(--cometchat-font-caption1-regular));
+  position: fixed;
+  bottom: var(--cometchat-toast-bottom, 80px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--cometchat-toast-z-index, 1000);
+  min-width: var(--cometchat-toast-min-width, 200px);
+  max-width: var(--cometchat-toast-max-width, 560px);
+  box-shadow: var(--cometchat-toast-box-shadow, var(--cometchat-shadow-2, 0 2px 8px rgba(0, 0, 0, 0.15)));
+  animation: cometchat-toast-slide-up var(--cometchat-toast-animation-duration, 0.3s) ease-out;
+}
+
+@keyframes cometchat-toast-slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(var(--cometchat-toast-animation-translate-from, 20px));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Toast Content */
+.cometchat-toast__content {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-toast-content-gap, var(--cometchat-spacing-2, 8px));
+  flex: 1;
+  min-width: 0;
+}
+
+/* Toast Text */
+.cometchat-toast__text {
+  flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Toast Icon */
+.cometchat-toast__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-toast-icon-size, 20px);
+  height: var(--cometchat-toast-icon-size, 20px);
+}
+
+.cometchat-toast__icon-mask {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-toast__icon-mask--success {
+  -webkit-mask-image: url('../../../assets/toast_check_circle.svg');
+  mask-image: url('../../../assets/toast_check_circle.svg');
+}
+
+.cometchat-toast__icon-mask--error {
+  -webkit-mask-image: url('../../../assets/toast_error.svg');
+  mask-image: url('../../../assets/toast_error.svg');
+}
+
+.cometchat-toast__icon-mask--warning {
+  -webkit-mask-image: url('../../../assets/toast_warning.svg');
+  mask-image: url('../../../assets/toast_warning.svg');
+}
+
+.cometchat-toast__icon-mask--info {
+  -webkit-mask-image: url('../../../assets/toast_info.svg');
+  mask-image: url('../../../assets/toast_info.svg');
+}
+
+/* Toast Type Modifiers
+ * Default: all types use the base black background + white text.
+ * Users can opt-in to colored variants via CSS variables:
+ *   --cometchat-toast-background-success, --cometchat-toast-background-error, etc.
+ */
+.cometchat-toast--success {
+  background: var(--cometchat-toast-background-success, var(--cometchat-toast-background, var(--cometchat-static-black, #000000)));
+  color: var(--cometchat-toast-color-success, var(--cometchat-toast-color, var(--cometchat-static-white, #FFFFFF)));
+}
+
+.cometchat-toast--error {
+  background: var(--cometchat-toast-background-error, var(--cometchat-toast-background, var(--cometchat-static-black, #000000)));
+  color: var(--cometchat-toast-color-error, var(--cometchat-toast-color, var(--cometchat-static-white, #FFFFFF)));
+}
+
+.cometchat-toast--warning {
+  background: var(--cometchat-toast-background-warning, var(--cometchat-toast-background, var(--cometchat-static-black, #000000)));
+  color: var(--cometchat-toast-color-warning, var(--cometchat-toast-color, var(--cometchat-static-white, #FFFFFF)));
+}
+
+.cometchat-toast--info {
+  background: var(--cometchat-toast-background-info, var(--cometchat-toast-background, var(--cometchat-static-black, #000000)));
+  color: var(--cometchat-toast-color-info, var(--cometchat-toast-color, var(--cometchat-static-white, #FFFFFF)));
+}
+
+/* Icon Type Modifiers */
+.cometchat-toast__icon--success {
+  color: var(--cometchat-toast-icon-color-success, var(--cometchat-static-white, #FFFFFF));
+}
+
+.cometchat-toast__icon--error {
+  color: var(--cometchat-toast-icon-color-error, var(--cometchat-static-white, #FFFFFF));
+}
+
+.cometchat-toast__icon--warning {
+  color: var(--cometchat-toast-icon-color-warning, var(--cometchat-static-white, #FFFFFF));
+}
+
+.cometchat-toast__icon--info {
+  color: var(--cometchat-toast-icon-color-info, var(--cometchat-static-white, #FFFFFF));
+}
+
+/* Close Button */
+.cometchat-toast__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-toast-close-button-size, 24px);
+  height: var(--cometchat-toast-close-button-size, 24px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  border-radius: var(--cometchat-toast-close-button-border-radius, var(--cometchat-radius-1, 4px));
+  transition: background-color var(--cometchat-toast-close-button-transition-duration, 0.2s) ease;
+}
+
+.cometchat-toast__close:hover {
+  background: var(--cometchat-toast-close-button-background-hover, rgba(255, 255, 255, 0.1));
+}
+
+.cometchat-toast__close:focus {
+  outline: var(--cometchat-toast-close-button-focus-outline, 2px solid var(--cometchat-focus-color, rgba(255, 255, 255, 0.5)));
+  outline-offset: var(--cometchat-toast-close-button-focus-outline-offset, 2px);
+}
+
+.cometchat-toast__close:active {
+  background: var(--cometchat-toast-close-button-background-active, rgba(255, 255, 255, 0.2));
+}
+
+.cometchat-toast__close-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  -webkit-mask: url('../../../assets/close.svg') center center no-repeat;
+  mask: url('../../../assets/close.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Inline modifier — used when toast is managed by CometChatToastService container */
+.cometchat-toast--inline {
+  position: static;
+  transform: none;
+  animation: none;
+  left: auto;
+  bottom: auto;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .cometchat-toast {
+    min-width: var(--cometchat-toast-min-width-mobile, 200px);
+    max-width: var(--cometchat-toast-max-width-mobile, calc(100vw - 32px));
+    left: var(--cometchat-toast-left-mobile, 16px);
+    right: var(--cometchat-toast-right-mobile, 16px);
+    transform: none;
+  }
+  
+  @keyframes cometchat-toast-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(var(--cometchat-toast-animation-translate-from-mobile, 20px));
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

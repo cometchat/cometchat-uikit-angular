@@ -1,0 +1,43 @@
+<!-- Collaborative Document Bubble Component Template -->
+<div class="cometchat">
+  <div
+    class="cometchat-collaborative-document-bubble"
+    [class.cometchat-collaborative-document-bubble--outgoing]="isOutgoing"
+    [class.cometchat-collaborative-document-bubble--incoming]="!isOutgoing">
+
+    <!-- Banner Image -->
+    <div
+      *ngIf="bannerImage && !bannerImageError"
+      class="cometchat-collaborative-document-bubble__banner-image">
+      <img
+        [src]="bannerImage"
+        alt=""
+        (error)="onBannerImageError()" />
+    </div>
+
+    <!-- Body Content -->
+    <div class="cometchat-collaborative-document-bubble__body">
+      <div class="cometchat-collaborative-document-bubble__body-icon"></div>
+      <div class="cometchat-collaborative-document-bubble__body-content">
+        <div class="cometchat-collaborative-document-bubble__body-content-name">
+          <label [title]="title">{{ title }}</label>
+        </div>
+        <div class="cometchat-collaborative-document-bubble__body-content-description">
+          <label [title]="subtitle">{{ subtitle }}</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Button -->
+    <button
+      class="cometchat-collaborative-document-bubble__button"
+      [title]="buttonText"
+      [disabled]="disableInteraction || isButtonDisabled()"
+      [attr.aria-label]="buttonText"
+      (click)="onButtonClick()"
+      (keydown.enter)="onButtonClick()"
+      (keydown.space)="onButtonClick(); $event.preventDefault()">
+      {{ buttonText }}
+    </button>
+  </div>
+</div>

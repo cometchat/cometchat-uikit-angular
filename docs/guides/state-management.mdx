@@ -1,0 +1,446 @@
+---
+title: "State Management"
+description: "Understanding the Hybrid Approach architecture for managing chat state in the CometChat Angular UIKit"
+---
+
+## Overview
+
+The CometChat Angular UIKit uses a **Hybrid Approach** for managing active chat state. At its core, `ChatStateService` acts as a single source of truth for the currently active chat entity — a `CometChat.User`, `CometChat.Group`, or `CometChat.Conversation`.
+
+The Hybrid Approach gives you two ways to wire components:
+
+1. **Service-based (default)** — Components automatically subscribe to `ChatStateService` and react when the active entity changes. No prop passing required.
+2. **Props override** — Pass `[user]` or `[group]` via `@Input()` bindings to override the service state for a specific component instance.
+
+This design exists because most applications need a simple, zero-config wiring mechanism (service-based), while advanced use cases — like multi-panel layouts or isolated chat windows — require explicit control (props-based). The Hybrid Approach delivers both without forcing a choice upfront.
+
+`ChatStateService` is provided at the root level (`providedIn: 'root'`) and exposes both Angular Signals and RxJS Observables, so you can choose whichever reactive API fits your codebase.
+
+## Decision Matrix
+
+Use this table to decide which pattern fits your use case:
+
+| Criteria | Service-Based | Props-Based |
+|----------|--------------|-------------|
+| **Setup complexity** | Zero config — components auto-subscribe | Manual — you manage and pass state |
+| **Boilerplate** | Minimal | More wiring code |
+| **Multi-panel layouts** | Not ideal — single active entity | Required — each panel gets its own entity |
+| **Component isolation** | Shared state across all instances | Each instance can have independent state |
+| **When to use** | Single chat view, standard layouts | Multi-panel, embedded widgets, testing |
+| **State sync** | Automatic across all Chat-Aware Components | You control sync manually |
+| **Recommended for** | Most applications | Advanced or custom layouts |
+
+<Tip>
+  Start with the service-based pattern. It covers the majority of use cases with zero boilerplate.
+  Switch to props-based only when you need independent state per component instance.
+</Tip>
+
+## Service-Based Pattern
+
+With the service-based pattern, you place Chat-Aware Components in your template and they automatically subscribe to `ChatStateService`. When a user selects a conversation, the service updates and all downstream components react — no explicit binding needed.
+
+```typescript expandable
+import { Component, inject } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+  ChatStateService,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <aside class="sidebar">
+        <cometchat-conversations></cometchat-conversations>
+      </aside>
+
+      @if (chatStateService.activeUser() || chatStateService.activeGroup()) {
+        <main class="chat-panel">
+          <cometchat-message-header></cometchat-message-header>
+          <cometchat-message-list></cometchat-message-list>
+          <cometchat-message-composer></cometchat-message-composer>
+        </main>
+      } @else {
+        <main class="chat-panel empty">
+          <p>Select a conversation to start chatting</p>
+        </main>
+      }
+    </div>
+  `,
+  styles: [`
+    .chat-layout { display: flex; height: 100vh; }
+    .sidebar { width: 360px; border-right: 1px solid #e0e0e0; }
+    .chat-panel { flex: 1; display: flex; flex-direction: column; }
+    .chat-panel.empty { align-items: center; justify-content: center; }
+  `]
+})
+export class ChatComponent {
+  chatStateService = inject(ChatStateService);
+}
+```
+
+In this example:
+- `<cometchat-conversations>` calls `ChatStateService.setActiveConversation()` when a conversation is clicked
+- `setActiveConversation()` extracts the `CometChat.User` or `CometChat.Group` from the conversation and sets it as the active entity
+- `<cometchat-message-header>`, `<cometchat-message-list>`, and `<cometchat-message-composer>` automatically subscribe to the active user/group and update their UI
+
+<Tip>
+  This is the recommended approach for most applications. It reduces boilerplate and keeps
+  components in sync automatically. You don't need to handle `(itemClick)` events or pass
+  data between components — `ChatStateService` handles the wiring.
+</Tip>
+
+## Props-Based Pattern
+
+With the props-based pattern, you manage state yourself and pass `[user]` or `[group]` directly to each component via `@Input()` bindings. This gives you full control over which entity each component displays.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <aside class="sidebar">
+        <cometchat-conversations
+          (itemClick)="onConversationClick($event)"
+        ></cometchat-conversations>
+      </aside>
+
+      @if (selectedUser) {
+        <main class="chat-panel">
+          <cometchat-message-header [user]="selectedUser"></cometchat-message-header>
+          <cometchat-message-list [user]="selectedUser"></cometchat-message-list>
+          <cometchat-message-composer [user]="selectedUser"></cometchat-message-composer>
+        </main>
+      }
+
+      @if (selectedGroup) {
+        <main class="chat-panel">
+          <cometchat-message-header [group]="selectedGroup"></cometchat-message-header>
+          <cometchat-message-list [group]="selectedGroup"></cometchat-message-list>
+          <cometchat-message-composer [group]="selectedGroup"></cometchat-message-composer>
+        </main>
+      }
+    </div>
+  `,
+  styles: [`
+    .chat-layout { display: flex; height: 100vh; }
+    .sidebar { width: 360px; border-right: 1px solid #e0e0e0; }
+    .chat-panel { flex: 1; display: flex; flex-direction: column; }
+  `]
+})
+export class ChatComponent {
+  selectedUser: CometChat.User | null = null;
+  selectedGroup: CometChat.Group | null = null;
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    const conversationWith = conversation.getConversationWith();
+
+    if (conversationWith instanceof CometChat.User) {
+      this.selectedUser = conversationWith;
+      this.selectedGroup = null;
+    } else if (conversationWith instanceof CometChat.Group) {
+      this.selectedGroup = conversationWith;
+      this.selectedUser = null;
+    }
+  }
+}
+```
+
+<Note>
+  When `[user]` or `[group]` `@Input()` bindings are provided, they take priority over
+  `ChatStateService` state for that component instance. Other component instances without
+  explicit bindings continue to read from the service.
+</Note>
+
+## Mutual Exclusivity
+
+`ChatStateService` enforces that only one chat entity — a `CometChat.User` or a `CometChat.Group` — can be active at any given time:
+
+- Calling `setActiveUser(user)` with a non-null value automatically sets `activeGroup` to `null`
+- Calling `setActiveGroup(group)` with a non-null value automatically sets `activeUser` to `null`
+- Calling `setActiveConversation(conversation)` extracts the entity and delegates to `setActiveUser()` or `setActiveGroup()`, applying the same rule
+- Calling `clearActiveChat()` resets all state to `null`
+
+This prevents ambiguous states where both a user and a group appear active simultaneously.
+
+```typescript expandable
+import { Component, inject } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-nav',
+  standalone: true,
+  template: `
+    <button (click)="selectUser()">Chat with Alice</button>
+    <button (click)="selectGroup()">Open Team Chat</button>
+    <p>Active user: {{ chatStateService.activeUser()?.getName() ?? 'none' }}</p>
+    <p>Active group: {{ chatStateService.activeGroup()?.getName() ?? 'none' }}</p>
+  `
+})
+export class ChatNavComponent {
+  chatStateService = inject(ChatStateService);
+
+  selectUser(): void {
+    const user = new CometChat.User('alice');
+    user.setName('Alice');
+    this.chatStateService.setActiveUser(user);
+
+    // At this point:
+    // chatStateService.activeUser()  → Alice
+    // chatStateService.activeGroup() → null  (automatically cleared)
+  }
+
+  selectGroup(): void {
+    const group = new CometChat.Group('team', 'Team Chat', 'public');
+    this.chatStateService.setActiveGroup(group);
+
+    // At this point:
+    // chatStateService.activeGroup() → Team Chat
+    // chatStateService.activeUser()  → null  (automatically cleared)
+  }
+}
+```
+
+<Warning>
+  Setting a user clears the group, and setting a group clears the user. You do not need
+  to manually clear the previous entity before setting a new one — `ChatStateService`
+  handles this automatically.
+</Warning>
+
+## Advanced Patterns
+
+### Multi-Panel Chat Layouts
+
+For applications that display multiple chat panels side by side (e.g., a support dashboard), use the props-based pattern to give each panel its own independent state:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-multi-panel',
+  standalone: true,
+  imports: [
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="multi-panel-layout">
+      <!-- Panel 1: Direct message with a user -->
+      @if (userA) {
+        <div class="chat-panel">
+          <cometchat-message-header [user]="userA"></cometchat-message-header>
+          <cometchat-message-list [user]="userA"></cometchat-message-list>
+          <cometchat-message-composer [user]="userA"></cometchat-message-composer>
+        </div>
+      }
+
+      <!-- Panel 2: Group conversation -->
+      @if (teamGroup) {
+        <div class="chat-panel">
+          <cometchat-message-header [group]="teamGroup"></cometchat-message-header>
+          <cometchat-message-list [group]="teamGroup"></cometchat-message-list>
+          <cometchat-message-composer [group]="teamGroup"></cometchat-message-composer>
+        </div>
+      }
+    </div>
+  `,
+  styles: [`
+    .multi-panel-layout { display: flex; height: 100vh; gap: 1px; }
+    .chat-panel { flex: 1; display: flex; flex-direction: column; border: 1px solid #e0e0e0; }
+  `]
+})
+export class MultiPanelComponent {
+  userA: CometChat.User | null = null;
+  teamGroup: CometChat.Group | null = null;
+
+  async ngOnInit(): Promise<void> {
+    // Fetch specific entities for each panel
+    this.userA = await CometChat.getUser('alice');
+    this.teamGroup = await CometChat.getGroup('team-engineering');
+  }
+}
+```
+
+<Note>
+  Each panel receives its own `[user]` or `[group]` binding, so they operate independently
+  of `ChatStateService`. This avoids the mutual exclusivity constraint that applies to
+  service-based state.
+</Note>
+
+### Programmatic Navigation
+
+Use `ChatStateService` to programmatically switch the active chat — for example, when navigating from a notification or deep link:
+
+```typescript expandable
+import { Component, inject } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-notification-handler',
+  standalone: true,
+  template: `<button (click)="openChat()">Open Chat</button>`
+})
+export class NotificationHandlerComponent {
+  private chatStateService = inject(ChatStateService);
+
+  async openChat(): Promise<void> {
+    // Fetch the user from a notification payload
+    const user: CometChat.User = await CometChat.getUser('alice');
+
+    // Set as active — all subscribed components update automatically
+    this.chatStateService.setActiveUser(user);
+  }
+
+  async openGroupChat(groupId: string): Promise<void> {
+    const group: CometChat.Group = await CometChat.getGroup(groupId);
+    this.chatStateService.setActiveGroup(group);
+  }
+}
+```
+
+### Cleanup via `clearActiveChat()`
+
+Call `clearActiveChat()` to reset all active state when the user logs out, navigates away from the chat interface, or closes a chat window:
+
+```typescript expandable
+import { Component, inject, OnDestroy } from '@angular/core';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-chat-container',
+  standalone: true,
+  template: `
+    <div class="chat-container">
+      <button (click)="logout()">Logout</button>
+      <!-- Chat components here -->
+    </div>
+  `
+})
+export class ChatContainerComponent implements OnDestroy {
+  private chatStateService = inject(ChatStateService);
+
+  logout(): void {
+    // Clear all chat state before logging out
+    this.chatStateService.clearActiveChat();
+    CometChat.logout();
+  }
+
+  ngOnDestroy(): void {
+    // Clean up when navigating away from the chat view
+    this.chatStateService.clearActiveChat();
+  }
+}
+```
+
+<Tip>
+  Always call `clearActiveChat()` during logout to ensure no stale state persists
+  across sessions.
+</Tip>
+
+## Scoping Customization Services for Multiple Instances
+
+The sections above cover `ChatStateService` and how to use props to give each panel its own data. But there's a related concern: customization services like `MessageBubbleConfigService` and `FormatterConfigService` are also root-level singletons. If you configure custom bubble templates or formatters globally, those customizations apply to every message list in the app.
+
+When you need different customizations per panel (e.g., a main chat with full bubble styling and a thread panel with minimal styling), use Angular's hierarchical dependency injection to scope the service:
+
+```typescript expandable
+import { Component, inject, AfterViewInit, TemplateRef, ViewChild, Input } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatMessageListComponent,
+  MessageBubbleConfigService,
+  FormatterConfigService,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-panel',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  // These create NEW instances scoped to this component and its children
+  providers: [MessageBubbleConfigService, FormatterConfigService],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [group]="group"
+      [parentMessageId]="parentMessageId"
+    ></cometchat-message-list>
+  `,
+})
+export class ThreadPanelComponent implements AfterViewInit {
+  @Input() user?: CometChat.User;
+  @Input() group?: CometChat.Group;
+  @Input() parentMessageId?: number;
+
+  // Injects the LOCAL instance, not the root singleton
+  private bubbleConfig = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    // Customizations here only affect the thread panel
+  }
+}
+```
+
+The main panel's customizations (set on the root singleton) do not affect the thread panel, and vice versa.
+
+**Services you can scope this way:**
+
+| Service | What it customizes |
+|---------|-------------------|
+| `MessageBubbleConfigService` | Bubble templates per message type |
+| `FormatterConfigService` | Text formatters (mentions, URLs, custom) |
+| `CometChatTemplatesService` | Shared and component-specific list templates (loading, empty, error, item views) |
+| `RichTextEditorService` | Rich text editor configuration |
+
+<Warning>
+  Do not scope `ChatStateService`. It is intentionally a singleton that tracks the app-wide active conversation. Scoping it would break cross-component state synchronization. Use the props-based pattern instead for independent panels.
+</Warning>
+
+See [CometChatMessageList — Multiple Message Lists with Different Configurations](/components/cometchat-message-list#multiple-message-lists-with-different-configurations) for a complete example with two panels.
+
+## Related Resources
+
+- [ChatStateService API Reference](/api-reference/chat-state-service) — Full API documentation for signals, observables, setters, getters, and mutual exclusivity behavior
+- [CometChatConversations](/components/cometchat-conversations) — Conversation list component that calls `setActiveConversation()` on selection
+- [CometChatMessageHeader](/components/cometchat-message-header) — Message header that subscribes to `activeUser` / `activeGroup`
+- [CometChatMessageList](/components/cometchat-message-list) — Message list that subscribes to `activeUser` / `activeGroup`
+- [CometChatMessageComposer](/components/cometchat-message-composer) — Message composer that subscribes to `activeUser` / `activeGroup`
+- [CometChatUsers](/components/cometchat-users) — User list that calls `setActiveUser()` on selection
+- [CometChatGroups](/components/cometchat-groups) — Group list that calls `setActiveGroup()` on selection
+- [CometChatGroupMembers](/components/cometchat-group-members) — Group members list that subscribes to `activeGroup`

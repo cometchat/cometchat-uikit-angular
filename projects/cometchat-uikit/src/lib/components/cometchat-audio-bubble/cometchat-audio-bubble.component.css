@@ -1,0 +1,635 @@
+/**
+ * CometChatAudioBubble Component Styles
+ *
+ * BEM naming convention:
+ * - Block: .cometchat-audio-bubble
+ * - Elements: __container, __audio-item, __leading-view, __body, __waveform, __time, __tail-view, etc.
+ * - Modifiers: --sender, --receiver, --loading, --error
+ *
+ * @see Requirements 11.1, 11.2, 11.3, 11.5, 11.6, 11.7, 2.1, 2.2
+ */
+
+/* ============================================
+   Block: Audio Bubble
+   ============================================ */
+
+.cometchat-audio-bubble {
+  display: flex;
+  flex-direction: column;
+  width: var(--cometchat-audio-bubble-width, 240px);
+  max-width: 100%;
+  border-radius: var(--cometchat-audio-bubble-border-radius, var(--cometchat-radius-3));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Background Inheritance: Message Bubble Context
+   @see Requirements 2.1, 2.2
+   
+   NOTE: Parent override is handled via CSS custom property
+   --cometchat-audio-bubble-background which can be set by parent
+   components. The bubble uses this variable with a fallback to
+   the default theme background color.
+   ============================================ */
+
+/* ============================================
+   Modifiers: Sender/Receiver Variants
+   @see Requirements 9.1-9.10
+   ============================================ */
+
+/* Sender variant (outgoing message) */
+/* Uses CSS variable for background to allow parent override */
+/* @see Requirements 9.1, 9.2, 9.3, 9.4, 9.5 */
+.cometchat-audio-bubble--sender {
+  background: var(--cometchat-audio-bubble-background, var(--cometchat-primary-color));
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__time {
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__play-button,
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__pause-button {
+  background-color: var(--cometchat-static-white);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__play-button::before {
+  border-left-color: var(--cometchat-primary-color);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__pause-button::before,
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__pause-button::after {
+  background-color: var(--cometchat-primary-color);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__download-button {
+  background-color: var(--cometchat-static-white);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__download-button:disabled {
+  background-color: var(--cometchat-static-white);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__progress-bg {
+  stroke: var(--cometchat-neutral-color-500);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__progress-fg {
+  stroke: var(--cometchat-static-white);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__cancel-button {
+  background-image: url('../../assets/close.svg');
+  filter: brightness(0) invert(1);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__expand-indicator,
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__collapse-control {
+  color: var(--cometchat-static-white);
+  border-color: var(--cometchat-outgoing-border-subtle);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__expand-indicator:hover,
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__collapse-control:hover {
+  background-color: var(--cometchat-outgoing-hover-background);
+}
+
+.cometchat-audio-bubble--sender .cometchat-audio-bubble__error-message {
+  color: var(--cometchat-static-white);
+}
+
+/* Receiver variant (incoming message) */
+/* Uses CSS variable for background to allow parent override */
+/* @see Requirements 9.6, 9.7, 9.8, 9.9, 9.10 */
+.cometchat-audio-bubble--receiver {
+  background: var(--cometchat-audio-bubble-background, var(--cometchat-neutral-color-300));
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__time {
+  color: var(--cometchat-neutral-color-600);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__play-button,
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__pause-button {
+  background-color: var(--cometchat-static-white);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__play-button::before {
+  border-left-color: var(--cometchat-primary-color);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__pause-button::before,
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__pause-button::after {
+  background-color: var(--cometchat-primary-color);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__download-button {
+  background-color: var(--cometchat-primary-color);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__progress-bg {
+  stroke: var(--cometchat-neutral-color-400);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__progress-fg {
+  stroke: var(--cometchat-primary-color);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__cancel-button {
+  background-image: url('../../assets/close.svg');
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__expand-indicator,
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__collapse-control {
+  color: var(--cometchat-neutral-color-600);
+  border-color: var(--cometchat-border-color-light);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__expand-indicator:hover,
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__collapse-control:hover {
+  background-color: var(--cometchat-receiver-hover-background);
+}
+
+.cometchat-audio-bubble--receiver .cometchat-audio-bubble__error-message {
+  color: var(--cometchat-neutral-color-600);
+}
+
+/* ============================================
+   Element: Container
+   ============================================ */
+
+.cometchat-audio-bubble__container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--cometchat-audio-bubble-container-padding, var(--cometchat-padding-3, 12px));
+  gap: var(--cometchat-audio-bubble-container-gap, var(--cometchat-spacing-2, 8px));
+}
+
+/* ============================================
+   Element: Audio Item
+   ============================================ */
+
+.cometchat-audio-bubble__audio-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-audio-bubble-audio-item-gap, var(--cometchat-spacing-2, 8px));
+}
+
+/* Loading state modifier */
+/* @see Requirements 13.1, 13.2 */
+.cometchat-audio-bubble__audio-item--loading {
+  cursor: wait;
+}
+
+.cometchat-audio-bubble__audio-item--loading .cometchat-audio-bubble__leading-view,
+.cometchat-audio-bubble__audio-item--loading .cometchat-audio-bubble__tail-view {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Error state modifier */
+/* @see Requirements 13.4, 14.5 */
+.cometchat-audio-bubble__audio-item--error {
+  opacity: 0.8;
+}
+
+.cometchat-audio-bubble__audio-item--error .cometchat-audio-bubble__leading-view,
+.cometchat-audio-bubble__audio-item--error .cometchat-audio-bubble__tail-view {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ============================================
+   Element: Leading View (Play/Pause)
+   @see Requirements 5.7, 5.8
+   ============================================ */
+
+.cometchat-audio-bubble__leading-view {
+  flex-shrink: 0;
+}
+
+.cometchat-audio-bubble__play-button,
+.cometchat-audio-bubble__pause-button {
+  width: var(--cometchat-audio-bubble-play-button-size, 32px);
+  height: var(--cometchat-audio-bubble-play-button-size, 32px);
+  border-radius: var(--cometchat-audio-bubble-play-button-border-radius, var(--cometchat-radius-max));
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.cometchat-audio-bubble__play-button:hover,
+.cometchat-audio-bubble__pause-button:hover {
+  transform: scale(1.05);
+}
+
+.cometchat-audio-bubble__play-button:active,
+.cometchat-audio-bubble__pause-button:active {
+  transform: scale(0.98);
+}
+
+.cometchat-audio-bubble__play-button:focus,
+.cometchat-audio-bubble__pause-button:focus {
+  outline: none;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-audio-bubble__play-button:focus-visible,
+.cometchat-audio-bubble__pause-button:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+.cometchat-audio-bubble__play-button:disabled,
+.cometchat-audio-bubble__pause-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+/* Play button triangle */
+.cometchat-audio-bubble__play-button::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: var(--cometchat-audio-bubble-play-icon-size, 6px) solid transparent;
+  border-bottom: var(--cometchat-audio-bubble-play-icon-size, 6px) solid transparent;
+  border-left: var(--cometchat-audio-bubble-play-icon-width, 10px) solid;
+  margin-left: var(--cometchat-audio-bubble-play-icon-offset, 2px);
+}
+
+/* Pause button bars */
+.cometchat-audio-bubble__pause-button::before,
+.cometchat-audio-bubble__pause-button::after {
+  content: '';
+  width: var(--cometchat-audio-bubble-pause-bar-width, 3px);
+  height: var(--cometchat-audio-bubble-pause-bar-height, 12px);
+  border-radius: var(--cometchat-audio-bubble-pause-bar-border-radius, 1px);
+}
+
+.cometchat-audio-bubble__pause-button::before {
+  margin-right: var(--cometchat-audio-bubble-pause-bar-gap, 3px);
+}
+
+/* ============================================
+   Element: Body (Waveform + Time)
+   @see Requirements 4.6, 4.7
+   ============================================ */
+
+.cometchat-audio-bubble__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-audio-bubble-body-gap, var(--cometchat-spacing-1, 4px));
+  min-width: 0;
+  justify-content: center;
+}
+
+.cometchat-audio-bubble__waveform {
+  width: var(--cometchat-audio-bubble-waveform-width, 140px);
+  height: var(--cometchat-audio-bubble-waveform-height, 16px);
+  cursor: pointer;
+  border-radius: var(--cometchat-audio-bubble-waveform-border-radius, var(--cometchat-radius-1));
+}
+
+/* Waveform loading state */
+/* @see Requirements 13.2 */
+.cometchat-audio-bubble__waveform--loading {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.cometchat-audio-bubble__waveform:focus {
+  outline: none;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-audio-bubble__waveform:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+.cometchat-audio-bubble__time {
+  font: var(--cometchat-audio-bubble-time-font, var(--cometchat-font-caption2-regular));
+  white-space: nowrap;
+}
+
+/* Error message element */
+/* @see Requirements 13.4 */
+.cometchat-audio-bubble__error-message {
+  font: var(--cometchat-audio-bubble-error-message-font, var(--cometchat-font-caption2-regular));
+  white-space: nowrap;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  min-height: 16px;
+}
+
+/* ============================================
+   Element: Tail View (Download)
+   @see Requirements 7.8, 7.9
+   ============================================ */
+
+.cometchat-audio-bubble__tail-view {
+  flex-shrink: 0;
+}
+
+.cometchat-audio-bubble__download-button {
+  width: var(--cometchat-audio-bubble-download-button-size, 24px);
+  height: var(--cometchat-audio-bubble-download-button-size, 24px);
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+  border-radius: var(--cometchat-audio-bubble-download-button-border-radius, var(--cometchat-radius-1));
+  /* Use mask for icon so we can control color */
+  -webkit-mask-image: url('../../assets/download.svg');
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-image: url('../../assets/download.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.cometchat-audio-bubble__download-button:hover {
+  transform: scale(1.1);
+}
+
+.cometchat-audio-bubble__download-button:active {
+  transform: scale(0.95);
+}
+
+.cometchat-audio-bubble__download-button:focus {
+  outline: none;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-audio-bubble__download-button:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+.cometchat-audio-bubble__download-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+/* ============================================
+   Element: Download Progress
+   @see Requirements 7.2, 7.3, 7.4
+   ============================================ */
+
+.cometchat-audio-bubble__download-progress {
+  position: relative;
+  width: var(--cometchat-audio-bubble-progress-size, 24px);
+  height: var(--cometchat-audio-bubble-progress-size, 24px);
+}
+
+.cometchat-audio-bubble__download-progress svg {
+  transform: rotate(-90deg);
+}
+
+.cometchat-audio-bubble__progress-bg {
+  fill: none;
+  stroke-width: var(--cometchat-audio-bubble-progress-stroke-width, 2);
+}
+
+.cometchat-audio-bubble__progress-fg {
+  fill: none;
+  stroke-width: var(--cometchat-audio-bubble-progress-stroke-width, 2);
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.1s ease;
+}
+
+.cometchat-audio-bubble__cancel-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--cometchat-audio-bubble-cancel-button-size, 12px);
+  height: var(--cometchat-audio-bubble-cancel-button-size, 12px);
+  border: none;
+  background-color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  border-radius: var(--cometchat-audio-bubble-cancel-button-border-radius, var(--cometchat-radius-1));
+  transition: transform 0.1s ease;
+}
+
+.cometchat-audio-bubble__cancel-button:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.cometchat-audio-bubble__cancel-button:focus {
+  outline: none;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-audio-bubble__cancel-button:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+/* ============================================
+   Element: Expand Indicator
+   @see Requirements 3.2
+   ============================================ */
+
+.cometchat-audio-bubble__expand-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-audio-bubble-expand-indicator-padding, var(--cometchat-padding-1) var(--cometchat-padding-2));
+  border: 1px solid;
+  border-radius: var(--cometchat-audio-bubble-expand-indicator-border-radius, var(--cometchat-radius-2));
+  background: transparent;
+  font: var(--cometchat-audio-bubble-expand-indicator-font, var(--cometchat-font-caption1-medium));
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.cometchat-audio-bubble__expand-indicator:active {
+  transform: scale(0.98);
+}
+
+.cometchat-audio-bubble__expand-indicator:focus {
+  outline: none;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-audio-bubble__expand-indicator:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+/* ============================================
+   Element: Audio List (Expanded)
+   @see Requirements 3.6
+   ============================================ */
+
+.cometchat-audio-bubble__audio-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-audio-bubble-audio-list-gap, var(--cometchat-spacing-2, 8px));
+  overflow: hidden;
+}
+
+/* Expand animation */
+.cometchat-audio-bubble__audio-list--expanding {
+  animation: audioListExpand 0.25s ease-out forwards;
+}
+
+/* Collapse animation */
+.cometchat-audio-bubble__audio-list--collapsing {
+  animation: audioListCollapse 0.2s ease-in forwards;
+}
+
+/* Default expand animation (applied when list appears) */
+.cometchat-audio-bubble__audio-list {
+  animation: audioListExpand 0.25s ease-out;
+}
+
+@keyframes audioListExpand {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(var(--cometchat-audio-bubble-expand-translate, -8px));
+  }
+  to {
+    opacity: 1;
+    max-height: var(--cometchat-audio-bubble-list-max-height, 500px);
+    transform: translateY(0);
+  }
+}
+
+@keyframes audioListCollapse {
+  from {
+    opacity: 1;
+    max-height: var(--cometchat-audio-bubble-list-max-height, 500px);
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(var(--cometchat-audio-bubble-expand-translate, -8px));
+  }
+}
+
+/* Individual audio item animation within the list */
+.cometchat-audio-bubble__audio-list .cometchat-audio-bubble__audio-item {
+  animation: audioItemFadeIn 0.2s ease-out;
+  animation-fill-mode: both;
+}
+
+.cometchat-audio-bubble__audio-list .cometchat-audio-bubble__audio-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.cometchat-audio-bubble__audio-list .cometchat-audio-bubble__audio-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.cometchat-audio-bubble__audio-list .cometchat-audio-bubble__audio-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.cometchat-audio-bubble__audio-list .cometchat-audio-bubble__audio-item:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.cometchat-audio-bubble__audio-list .cometchat-audio-bubble__audio-item:nth-child(n+5) {
+  animation-delay: 0.25s;
+}
+
+@keyframes audioItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(var(--cometchat-audio-bubble-item-translate, -4px));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   Element: Collapse Control
+   @see Requirements 3.4
+   ============================================ */
+
+.cometchat-audio-bubble__collapse-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-audio-bubble-collapse-control-padding, var(--cometchat-padding-1) var(--cometchat-padding-2));
+  border: 1px solid;
+  border-radius: var(--cometchat-audio-bubble-collapse-control-border-radius, var(--cometchat-radius-2));
+  background: transparent;
+  font: var(--cometchat-audio-bubble-collapse-control-font, var(--cometchat-font-caption1-medium));
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.cometchat-audio-bubble__collapse-control:active {
+  transform: scale(0.98);
+}
+
+.cometchat-audio-bubble__collapse-control:focus {
+  outline: none;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-audio-bubble__collapse-control:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+/* ============================================
+   Element: Caption
+   @see Requirements 8.1, 8.2
+   ============================================ */
+
+.cometchat-audio-bubble__caption {
+  padding: var(--cometchat-audio-bubble-caption-padding, 0 var(--cometchat-padding-3) var(--cometchat-padding-3));
+}
+
+/* ============================================
+   Reduced Motion Support
+   @see Accessibility best practices
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-audio-bubble__play-button,
+  .cometchat-audio-bubble__pause-button,
+  .cometchat-audio-bubble__download-button,
+  .cometchat-audio-bubble__cancel-button,
+  .cometchat-audio-bubble__expand-indicator,
+  .cometchat-audio-bubble__collapse-control {
+    transition: none;
+  }
+
+  .cometchat-audio-bubble__audio-list,
+  .cometchat-audio-bubble__audio-list .cometchat-audio-bubble__audio-item {
+    animation: none;
+  }
+
+  .cometchat-audio-bubble__progress-fg {
+    transition: none;
+  }
+}

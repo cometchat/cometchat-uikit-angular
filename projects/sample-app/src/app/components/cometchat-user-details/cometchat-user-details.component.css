@@ -1,0 +1,179 @@
+/* Header */
+.cometchat-user-details__header {
+  display: flex;
+  min-height: 64px;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-4);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  align-self: stretch;
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+  background: var(--cometchat-background-color-01);
+  box-sizing: border-box;
+}
+
+.cometchat-user-details__header-icon {
+  -webkit-mask: url("../../../assets/close.svg") center center no-repeat;
+  mask: url("../../../assets/close.svg") center center no-repeat;
+  background: var(--cometchat-icon-color-primary);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+}
+
+.cometchat-user-details__header-icon:hover {
+  background: var(--cometchat-icon-color-highlight);
+}
+
+.cometchat-user-details__header-text {
+  overflow: hidden;
+  color: var(--cometchat-text-color-primary);
+  text-overflow: ellipsis;
+  font: var(--cometchat-font-heading3-bold);
+}
+
+/* Content */
+.cometchat-user-details__content {
+  display: flex;
+  padding-top: 40px;
+  height: calc(100vh - 64px);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--cometchat-spacing-5);
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.cometchat-user-details__content-avatar {
+  display: flex;
+  width: 120px;
+  height: 120px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: var(--cometchat-radius-max);
+}
+
+.cometchat-user-details__content-avatar ::ng-deep .cometchat-avatar,
+.cometchat-user-details__content-avatar ::ng-deep .cometchat-avatar__image,
+.cometchat-user-details__content-avatar ::ng-deep .cometchat-avatar__text {
+  width: 120px;
+  height: 120px;
+}
+
+.cometchat-user-details__content-avatar ::ng-deep .cometchat-avatar__text {
+  font: 700 64px/76.8px var(--cometchat-font-family);
+  height: fit-content;
+  width: fit-content;
+  font-style: normal;
+}
+
+.cometchat-user-details__content-title {
+  overflow: hidden;
+  color: var(--cometchat-text-color-primary);
+  text-align: center;
+  text-overflow: ellipsis;
+  font: var(--cometchat-font-heading3-medium);
+}
+
+.cometchat-user-details__content-description {
+  overflow: hidden;
+  color: var(--cometchat-text-color-secondary);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--cometchat-font-caption1-regular);
+}
+
+/* Action items */
+.cometchat-user-details__content-action {
+  width: 100%;
+  border-top: 1px solid var(--cometchat-border-color-light);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+.cometchat-user-details__content-action-item {
+  display: flex;
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-5);
+  align-items: center;
+  gap: var(--cometchat-spacing-3);
+  align-self: stretch;
+  cursor: pointer;
+}
+
+.cometchat-user-details__content-action-item-icon {
+  background: var(--cometchat-error-color);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  width: 24px;
+  height: 24px;
+}
+
+.cometchat-user-details__content-action-item-icon--block {
+  -webkit-mask: url("../../../assets/block.svg") center center no-repeat;
+  mask: url("../../../assets/block.svg") center center no-repeat;
+}
+
+.cometchat-user-details__content-action-item-icon--delete {
+  -webkit-mask: url("../../../assets/delete.svg") center center no-repeat;
+  mask: url("../../../assets/delete.svg") center center no-repeat;
+}
+
+.cometchat-user-details__content-action-item-text {
+  color: var(--cometchat-error-color);
+  font: var(--cometchat-font-heading4-regular);
+}
+
+/* Disabled state */
+.cometchat-user-details__content-action-item-disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.cometchat-user-details__content-action-item-disabled .cometchat-user-details__content-action-item-icon {
+  background: var(--cometchat-text-color-disabled);
+}
+
+.cometchat-user-details__content-action-item-disabled .cometchat-user-details__content-action-item-text {
+  color: var(--cometchat-text-color-disabled);
+}
+
+/* Confirmation dialog backdrops */
+.cometchat-block-user-dialog__backdrop,
+.cometchat-delete-chat-dialog__backdrop {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.cometchat-block-user-dialog__backdrop ::ng-deep .cometchat-confirm-dialog__icon-wrapper-icon {
+  -webkit-mask: url("../../../assets/block.svg") center center no-repeat;
+  mask: url("../../../assets/block.svg") center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ── Responsive Design ── */
+
+@media (max-width: 480px) {
+  .cometchat-user-details__header-text {
+    font: var(--cometchat-font-heading4-bold);
+  }
+
+  .cometchat-user-details__content-title {
+    font: var(--cometchat-font-heading4-medium);
+  }
+
+  .cometchat-user-details__content-action-item-text {
+    font: var(--cometchat-font-body-regular);
+  }
+}

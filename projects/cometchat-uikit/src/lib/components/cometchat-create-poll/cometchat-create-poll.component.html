@@ -1,0 +1,141 @@
+<div class="cometchat">
+  <div
+    #modalContainer
+    class="cometchat-create-poll"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cometchat-create-poll-title"
+  >
+    <!-- Header Section -->
+    <div class="cometchat-create-poll__header">
+      <h2 id="cometchat-create-poll-title" class="cometchat-create-poll__title">
+        {{ title || ('polls_title' | translate) }}
+      </h2>
+      <button
+        #closeButton
+        type="button"
+        class="cometchat-create-poll__close-button"
+        [attr.aria-label]="'polls_close_hover' | translate"
+        (click)="onCloseClick()"
+      >
+        <span class="cometchat-create-poll__close-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Body Section -->
+    <div class="cometchat-create-poll__body">
+      <!-- Question Section -->
+      <div class="cometchat-create-poll__section">
+        <label
+          for="poll-question"
+          class="cometchat-create-poll__label"
+        >
+          {{ 'polls_question' | translate }}
+        </label>
+        <input
+          id="poll-question"
+          type="text"
+          class="cometchat-create-poll__input"
+          [placeholder]="questionPlaceholderText || ('polls_question_placeholder' | translate)"
+          [value]="question()"
+          (input)="onQuestionChange($any($event.target).value)"
+          [attr.aria-invalid]="errorMessage() ? 'true' : null"
+          [attr.aria-describedby]="errorMessage() ? 'poll-error-message' : null"
+          aria-required="true"
+        />
+      </div>
+
+      <!-- Options Section -->
+      <div class="cometchat-create-poll__section" role="group" aria-labelledby="poll-options-label">
+        <label id="poll-options-label" class="cometchat-create-poll__label">
+          {{ answerHelpText || ('polls_options' | translate) }}
+        </label>
+        
+        <div 
+          class="cometchat-create-poll__options-list"
+          role="list"
+          [attr.aria-label]="'polls_options' | translate"
+        >
+          @for (option of options(); track trackByOptionId($index, option); let i = $index) {
+            <div class="cometchat-create-poll__option-row" role="listitem">
+              <input
+                type="text"
+                class="cometchat-create-poll__input cometchat-create-poll__option-input"
+                [placeholder]="answerPlaceholderText || ('polls_add_placeholder' | translate)"
+                [value]="option.value"
+                (input)="onOptionChange(i, $any($event.target).value)"
+                [attr.aria-label]="('polls_options' | translate) + ' ' + (i + 1)"
+                aria-required="true"
+              />
+              @if (canRemoveOption(i)) {
+                <button
+                  type="button"
+                  class="cometchat-create-poll__remove-button"
+                  [attr.aria-label]="('polls_remove_option' | translate) + ' ' + (i + 1)"
+                  (click)="removeOption(i)"
+                >
+                  <span class="cometchat-create-poll__remove-icon" aria-hidden="true"></span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Add Option Button -->
+        <button
+          type="button"
+          class="cometchat-create-poll__add-button"
+          [disabled]="isAddDisabled()"
+          [attr.aria-disabled]="isAddDisabled()"
+          [attr.aria-describedby]="limitMessage() ? 'poll-limit-message' : null"
+          (click)="addOption()"
+        >
+          <span class="cometchat-create-poll__add-icon" aria-hidden="true"></span>
+          <span class="cometchat-create-poll__add-text">
+            {{ addAnswerText || ('polls_add_option_button' | translate) }}
+          </span>
+        </button>
+
+        <!-- Limit Message -->
+        @if (limitMessage()) {
+          <p 
+            id="poll-limit-message"
+            class="cometchat-create-poll__limit-message" 
+            role="status"
+            aria-live="polite"
+          >
+            {{ limitMessage() }}
+          </p>
+        }
+      </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="cometchat-create-poll__footer">
+      <!-- Error Message - aria-live region for screen reader announcements -->
+      <!-- @see Requirement 7.5 -->
+      <div 
+        id="poll-error-message"
+        class="cometchat-create-poll__error-container"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        @if (errorMessage()) {
+          <p class="cometchat-create-poll__error">
+            {{ errorMessage() }}
+          </p>
+        }
+      </div>
+
+      <!-- Create Button -->
+      <cometchat-button
+        [text]="createPollButtonText || ('polls_create_button' | translate)"
+        [disabled]="!canCreate()"
+        [isLoading]="isLoading()"
+        [ariaLabel]="createPollButtonText || ('polls_create_button' | translate)"
+        (buttonClick)="onCreateClick()"
+      ></cometchat-button>
+    </div>
+  </div>
+</div>

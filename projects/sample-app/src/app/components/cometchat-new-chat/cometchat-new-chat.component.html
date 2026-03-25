@@ -1,0 +1,57 @@
+<div class="cometchat-new-chat" role="region" [attr.aria-label]="'new_chat_title' | translate">
+  <!-- Header with back button and title -->
+  <div class="cometchat-new-chat__header">
+    <button
+      class="cometchat-new-chat__back-button"
+      (click)="onBack()"
+      [attr.aria-label]="'new_chat_back' | translate"
+      type="button"
+    >
+      <span class="cometchat-new-chat__back-icon" aria-hidden="true"></span>
+    </button>
+    <span class="cometchat-new-chat__title">{{ 'new_chat_title' | translate }}</span>
+  </div>
+
+  <!-- Tab bar: Users / Groups -->
+  <div class="cometchat-new-chat__tabs-wrapper">
+    <div class="cometchat-new-chat__tabs" role="tablist">
+      <button
+        class="cometchat-new-chat__tab"
+        [class.cometchat-new-chat__tab--active]="activeTab() === 'users'"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'users'"
+        [tabindex]="activeTab() === 'users' ? 0 : -1"
+        (click)="onTabChange('users')"
+        (keydown)="onTabKeydown($event)"
+      >
+        {{ 'new_chat_tab_users' | translate }}
+      </button>
+      <button
+        class="cometchat-new-chat__tab"
+        [class.cometchat-new-chat__tab--active]="activeTab() === 'groups'"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'groups'"
+        [tabindex]="activeTab() === 'groups' ? 0 : -1"
+        (click)="onTabChange('groups')"
+        (keydown)="onTabKeydown($event)"
+      >
+        {{ 'new_chat_tab_groups' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab content -->
+  <div class="cometchat-new-chat__content" role="tabpanel">
+    @if (activeTab() === 'users') {
+      <cometchat-users
+        (itemClick)="onUserClick($event)"
+      ></cometchat-users>
+    }
+
+    @if (activeTab() === 'groups') {
+      <cometchat-groups
+        (itemClick)="onGroupClick($event)"
+      ></cometchat-groups>
+    }
+  </div>
+</div>

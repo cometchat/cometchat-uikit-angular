@@ -1,0 +1,223 @@
+@if (group(); as activeGroup) {
+  <!-- Delete chat confirmation dialog -->
+  @if (showDeleteChatConfirm()) {
+    <div class="cometchat-delete-chat-dialog__backdrop">
+      <cometchat-confirm-dialog
+        #deleteChatDialog
+        [title]="'delete_chat' | translate"
+        [messageText]="'confirm_delete_chat' | translate"
+        [confirmButtonText]="'conversation_delete_title' | translate"
+        (confirmClick)="onDeleteChatConfirm()"
+        (cancelClick)="onDeleteChatCancel()"
+      ></cometchat-confirm-dialog>
+    </div>
+  }
+
+  <!-- Delete & exit confirmation dialog -->
+  @if (showDeleteGroupConfirm()) {
+    <div class="cometchat-delete-group-dialog__backdrop">
+      <cometchat-confirm-dialog
+        #deleteGroupDialog
+        [title]="'delete_and_exit' | translate"
+        [messageText]="'confirm_delete_and_exit' | translate"
+        [confirmButtonText]="'delete_and_exit_label' | translate"
+        (confirmClick)="onDeleteGroupConfirm()"
+        (cancelClick)="onDeleteGroupCancel()"
+      ></cometchat-confirm-dialog>
+    </div>
+  }
+
+  <!-- Leave group confirmation dialog (non-owner path) -->
+  @if (showLeaveGroupConfirm()) {
+    <div class="cometchat-leave-group-dialog__backdrop">
+      <cometchat-confirm-dialog
+        #leaveGroupDialog
+        [title]="'details_leave_group' | translate"
+        [messageText]="'confirm_leave_group' | translate"
+        [confirmButtonText]="'leave_group_label' | translate"
+        (confirmClick)="onLeaveGroupConfirm()"
+        (cancelClick)="onLeaveGroupCancel()"
+      ></cometchat-confirm-dialog>
+    </div>
+  }
+
+  <!-- Transfer ownership confirmation dialog (owner path - when owner clicks Leave Group) -->
+  @if (showTransferOwnershipDialog()) {
+    <div class="cometchat-transfer-ownership-dialog__backdrop">
+      <cometchat-confirm-dialog
+        [title]="'details_transfer_ownership_title' | translate"
+        [messageText]="'details_transfer_ownership_message' | translate"
+        [confirmButtonText]="'details_transfer_ownership_confirm' | translate"
+        (confirmClick)="onTransferOwnershipClick()"
+        (cancelClick)="onTransferOwnershipCancel()"
+      ></cometchat-confirm-dialog>
+    </div>
+  }
+
+  <!-- Transfer ownership modal (centered overlay) -->
+  @if (showTransferOwnershipPanel()) {
+    <div class="cometchat-transfer-ownership-modal__backdrop">
+      <div class="cometchat-transfer-ownership-modal__container">
+        <cometchat-transfer-ownership
+          (closeClick)="onTransferOwnershipPanelClose()"
+        ></cometchat-transfer-ownership>
+      </div>
+    </div>
+  }
+
+  <div class="cometchat-group-details">
+    <!-- Header -->
+    <div class="cometchat-group-details__header">
+      <div class="cometchat-group-details__header-text">{{ 'group_info' | translate }}</div>
+      <div
+        class="cometchat-group-details__header-icon"
+        (click)="onClose()"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'thread_close_hover' | translate"
+        (keydown.enter)="onClose()"
+        (keydown.space)="onClose()"
+      ></div>
+    </div>
+
+    <!-- Content -->
+    <div class="cometchat-group-details__content">
+      <div class="cometchat-group-details__content-group">
+        <div class="cometchat-group-details__content-avatar">
+          <cometchat-avatar
+            [image]="activeGroup.getIcon()"
+            [name]="activeGroup.getName()"
+          ></cometchat-avatar>
+        </div>
+        <div>
+          <div class="cometchat-group-details__content-title">{{ activeGroup.getName() }}</div>
+          <div class="cometchat-group-details__content-description">
+            {{ memberCount() }} {{ 'details_members' | translate }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action items -->
+      <div class="cometchat-group-details__content-action">
+        @if (canAddMembers()) {
+          <div
+            class="cometchat-group-details__content-action-item"
+            (click)="onAddMembers()"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="onAddMembers()"
+            (keydown.space)="onAddMembers()"
+          >
+            <div class="cometchat-group-details__content-action-item-icon-default cometchat-group-details__content-action-item-icon--add-members"></div>
+            <div class="cometchat-group-details__content-action-item-text-default">
+              {{ 'add_members' | translate }}
+            </div>
+          </div>
+        }
+
+        <div
+          class="cometchat-group-details__content-action-item"
+          [class.cometchat-group-details__content-action-item-disabled]="isDeleteChatDisabled()"
+          (click)="onDeleteChatClick()"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="onDeleteChatClick()"
+          (keydown.space)="onDeleteChatClick()"
+        >
+          <div class="cometchat-group-details__content-action-item-icon cometchat-group-details__content-action-item-icon--delete"></div>
+          <div class="cometchat-group-details__content-action-item-text">
+            {{ 'delete_chat' | translate }}
+          </div>
+        </div>
+
+        <div
+          class="cometchat-group-details__content-action-item"
+          (click)="onLeaveGroupClick()"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="onLeaveGroupClick()"
+          (keydown.space)="onLeaveGroupClick()"
+        >
+          <div class="cometchat-group-details__content-action-item-icon cometchat-group-details__content-action-item-icon--leave"></div>
+          <div class="cometchat-group-details__content-action-item-text">
+            {{ 'details_leave_group' | translate }}
+          </div>
+        </div>
+
+        @if (canDeleteGroup()) {
+          <div
+            class="cometchat-group-details__content-action-item"
+            (click)="onDeleteGroupClick()"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="onDeleteGroupClick()"
+            (keydown.space)="onDeleteGroupClick()"
+          >
+            <div class="cometchat-group-details__content-action-item-icon cometchat-group-details__content-action-item-icon--delete"></div>
+            <div class="cometchat-group-details__content-action-item-text">
+              {{ 'delete_and_exit' | translate }}
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Members / Banned toggle -->
+      @if (canViewBanned()) {
+        <div class="cometchat-group-details__tab-toggle-wrapper">
+          <div class="cometchat-group-details__tab-toggle">
+            <div
+              class="cometchat-group-details__tab-button"
+              [class.cometchat-group-details__tab-button--active]="activeListTab() === 'members'"
+              (click)="setActiveListTab('members')"
+              role="tab"
+              tabindex="0"
+              [attr.aria-selected]="activeListTab() === 'members'"
+              (keydown.enter)="setActiveListTab('members')"
+              (keydown.space)="setActiveListTab('members')"
+            >
+              <span
+                class="cometchat-group-details__tab-text"
+                [class.cometchat-group-details__tab-text--active]="activeListTab() === 'members'"
+              >{{ 'details_members' | translate }}</span>
+            </div>
+            <div
+              class="cometchat-group-details__tab-button"
+              [class.cometchat-group-details__tab-button--active]="activeListTab() === 'banned'"
+              (click)="setActiveListTab('banned')"
+              role="tab"
+              tabindex="0"
+              [attr.aria-selected]="activeListTab() === 'banned'"
+              (keydown.enter)="setActiveListTab('banned')"
+              (keydown.space)="setActiveListTab('banned')"
+            >
+              <span
+                class="cometchat-group-details__tab-text"
+                [class.cometchat-group-details__tab-text--active]="activeListTab() === 'banned'"
+              >{{ 'details_banned_members' | translate }}</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Members list or Banned list -->
+      <div class="cometchat-group-details__list">
+        @if (activeListTab() === 'members') {
+          <cometchat-group-members
+            [group]="activeGroup"
+            [headerView]="emptyHeader"
+          ></cometchat-group-members>
+        } @else {
+          <cometchat-banned-members
+            [group]="activeGroup"
+            [hideHeader]="true"
+          ></cometchat-banned-members>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Empty header template to hide the default group-members header -->
+<ng-template #emptyHeader>
+  <div style="display:none"></div>
+</ng-template>

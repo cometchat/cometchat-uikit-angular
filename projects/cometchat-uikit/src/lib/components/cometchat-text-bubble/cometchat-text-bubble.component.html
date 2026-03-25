@@ -1,0 +1,145 @@
+<!--
+  CometChatTextBubble Template
+
+  Renders text messages with rich formatting capabilities including:
+  - Link previews
+  - Message translations
+  - Mentions formatting
+  - URL detection
+  - Content truncation with read more/less
+  - Single emoji display
+
+  @see Requirements 14.1, 14.5
+-->
+
+<div
+  class="cometchat-text-bubble"
+  [class.cometchat-text-bubble-incoming]="alignment === MessageBubbleAlignment.left"
+  [class.cometchat-text-bubble-outgoing]="alignment === MessageBubbleAlignment.right"
+  [class.cometchat-text-bubble--single-emoji]="isSingleEmoji"
+  [class.cometchat-text-bubble--truncated]="isContentTruncated && !isExpanded"
+  [class.cometchat-text-bubble--expanded]="isExpanded"
+  [class.cometchat-text-bubble--has-link-preview]="linkPreviews.length > 0"
+>
+  <!-- Link Previews Section -->
+  <!-- Matches React UIKit LinkPreview component structure -->
+  @if (linkPreviews.length > 0) {
+    <div class="cometchat-text-bubble__link-preview-container">
+      @for (preview of linkPreviews; track preview.url) {
+        <div
+          class="cometchat-text-bubble__link-preview"
+          role="article"
+          [attr.aria-label]="'Link preview for ' + getDomainFromUrl(preview.url)"
+          tabindex="0"
+          (click)="onLinkPreviewClick(preview.url)"
+          (keydown.enter)="onLinkPreviewClick(preview.url)"
+          (keydown.space)="onLinkPreviewClick(preview.url)"
+        >
+          <!-- Preview Image (shown at top when available) -->
+          @if (preview.image) {
+            <div class="cometchat-text-bubble__link-preview-image-container">
+              <img
+                class="cometchat-text-bubble__link-preview-image"
+                [src]="preview.image"
+                [alt]="preview.title || 'Link preview image'"
+                loading="lazy"
+              />
+            </div>
+          }
+
+          <!-- Preview Content Body -->
+          <div class="cometchat-text-bubble__link-preview-content">
+            <!-- Text content (title, description, domain) -->
+            <div class="cometchat-text-bubble__link-preview-text">
+              @if (preview.title) {
+                <span class="cometchat-text-bubble__link-preview-title">
+                  {{ preview.title }}
+                </span>
+              }
+
+              @if (preview.description) {
+                <span class="cometchat-text-bubble__link-preview-description">
+                  {{ preview.description }}
+                </span>
+              }
+
+              <span class="cometchat-text-bubble__link-preview-domain">
+                {{ getDomainFromUrl(preview.url) }}
+              </span>
+            </div>
+
+            <!-- Large favicon on right side when no image -->
+            @if (preview.favicon && !preview.image) {
+              <img
+                class="cometchat-text-bubble__link-preview-favicon-large"
+                [src]="preview.favicon"
+                alt=""
+                loading="lazy"
+              />
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Translation Section -->
+  <!-- TODO: Task 9 - Implement translation display -->
+  @if (translatedText) {
+    <div class="cometchat-text-bubble__translation-container">
+      <!-- Original Text -->
+      <div
+        class="cometchat-text-bubble__text"
+        [innerHTML]="formattedText"
+        (click)="onTextContentClick($event)"
+      ></div>
+
+      <!-- Separator -->
+      <div class="cometchat-text-bubble__translation-separator"></div>
+
+      <!-- Translation Label -->
+      <span class="cometchat-text-bubble__translation-label">
+        {{ 'text_bubble_translated_message' | translate }}
+      </span>
+
+      <!-- Translated Text -->
+      <div
+        class="cometchat-text-bubble__translation-text"
+        [innerHTML]="formattedTranslatedText"
+        (click)="onTextContentClick($event)"
+      ></div>
+    </div>
+  } @else {
+    <!-- Main Text Content -->
+    <div class="cometchat-text-bubble__content" #contentElement>
+      <div
+        class="cometchat-text-bubble__text"
+        [class.cometchat-text-bubble__text--truncated]="isContentTruncated && !isExpanded"
+        [innerHTML]="formattedText"
+        (click)="onTextContentClick($event)"
+      ></div>
+    </div>
+  }
+
+  <!-- Read More/Less Controls -->
+  <!-- TODO: Task 10 - Implement read more/less functionality -->
+  @if (isContentTruncated) {
+    <div class="cometchat-text-bubble__read-more">
+      <button
+        type="button"
+        class="cometchat-text-bubble__read-more-button"
+        [attr.aria-label]="isExpanded ? 'Show less' : 'Read more'"
+        [attr.aria-expanded]="isExpanded"
+        (click)="toggleReadMore()"
+        (keydown.enter)="toggleReadMore()"
+        (keydown.space)="toggleReadMore(); $event.preventDefault()"
+      >
+        @if (isExpanded) {
+          {{ 'text_bubble_show_less' | translate }}
+        } @else {
+          {{ 'text_bubble_read_more' | translate }}
+        }
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,41 @@
+<div class="cometchat-add-members">
+  <!-- User list with multi-select, custom header with back button -->
+  <div class="cometchat-add-members__content">
+    <cometchat-users
+      [showSectionHeader]="false"
+      [selectionMode]="SelectionMode.multiple"
+      [showSelectedUsersPreview]="true"
+      [headerView]="customHeader"
+      (select)="onSelectionChange($event)"
+      (itemClick)="onUserItemClick($event)"
+    ></cometchat-users>
+  </div>
+
+  <!-- Footer with Add Members button -->
+  <div class="cometchat-add-members__footer">
+    <button
+      class="cometchat-add-members__add-button"
+      (click)="onAddMembers()"
+      [disabled]="addLoading() || selectedCount() === 0"
+      type="button"
+      [attr.aria-label]="'add_members' | translate"
+    >
+      {{ 'add_members' | translate }}
+    </button>
+  </div>
+</div>
+
+<!-- Custom header template for cometchat-users: back button + "Users" title -->
+<ng-template #customHeader>
+  <div class="cometchat-add-members__users-header">
+    <button
+      class="cometchat-add-members__back-button"
+      (click)="onClose()"
+      [attr.aria-label]="'thread_close_hover' | translate"
+      type="button"
+    >
+      <span class="cometchat-add-members__back-icon" aria-hidden="true"></span>
+    </button>
+    <h2 class="cometchat-add-members__users-title">{{ 'user_title' | translate }}</h2>
+  </div>
+</ng-template>

@@ -1,0 +1,51 @@
+@if (effectiveCall) {
+  <div
+    #dialogContainer
+    class="cometchat-outgoing-call"
+    role="dialog"
+    aria-modal="true"
+    aria-live="assertive"
+    aria-labelledby="outgoing-call-title"
+    [attr.aria-label]="receiverName + ' ' + ('calls_outgoing' | translate)">
+
+    <!-- Title + Subtitle -->
+    <div class="cometchat-outgoing-call__title-container">
+      @if (titleView) {
+        <ng-container *ngTemplateOutlet="titleView; context: templateContext"></ng-container>
+      } @else {
+        <div id="outgoing-call-title" class="cometchat-outgoing-call__title">{{ receiverName }}</div>
+      }
+
+      @if (subtitleView) {
+        <ng-container *ngTemplateOutlet="subtitleView; context: templateContext"></ng-container>
+      } @else {
+        <div class="cometchat-outgoing-call__subtitle">{{ 'calls_outgoing' | translate }}</div>
+      }
+    </div>
+
+    <!-- Avatar -->
+    @if (avatarView) {
+      <ng-container *ngTemplateOutlet="avatarView; context: templateContext"></ng-container>
+    } @else {
+      <div class="cometchat-outgoing-call__avatar">
+        <cometchat-avatar [name]="receiverName" [image]="receiverAvatar"></cometchat-avatar>
+      </div>
+    }
+
+    <!-- Cancel Button -->
+    @if (cancelButtonView) {
+      <ng-container *ngTemplateOutlet="cancelButtonView; context: templateContext"></ng-container>
+    } @else {
+      <div #cancelButton class="cometchat-outgoing-call__button">
+        <cometchat-button
+          [iconURL]="endCallIconUrl"
+          (click)="onCancelClick()"
+          (keydown.enter)="onCancelClick()"
+          (keydown.space)="onCancelClick()"
+          [attr.aria-label]="'accessibility_cancel_call' | translate"
+          tabindex="0">
+        </cometchat-button>
+      </div>
+    }
+  </div>
+}

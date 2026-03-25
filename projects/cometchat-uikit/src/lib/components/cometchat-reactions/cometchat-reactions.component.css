@@ -1,0 +1,116 @@
+/* ============================================
+   CometChatReactions Component Styles
+   BEM Naming Convention: cometchat-reactions__{element}--{modifier}
+   @see Requirements 1.1, 1.2, 2.1, 2.2, 3.2, 4.1, 4.2, 4.3
+   ============================================ */
+
+/* Main container for reactions */
+.cometchat-reactions {
+  display: var(--cometchat-reactions-display, flex);
+  padding: var(--cometchat-reactions-padding, 0 var(--cometchat-padding-1, 4px));
+  align-items: var(--cometchat-reactions-align-items, flex-start);
+  align-content: var(--cometchat-reactions-align-content, flex-start);
+  gap: var(--cometchat-reactions-gap, var(--cometchat-spacing, 2px));
+  align-self: var(--cometchat-reactions-align-self, stretch);
+  width: var(--cometchat-reactions-width, fit-content);
+  height: var(--cometchat-reactions-height, fit-content);
+  overflow-anchor: none;
+}
+
+/* Individual reaction item and more reactions button */
+.cometchat-reactions__reaction,
+.cometchat-reactions__more-reaction {
+  display: var(--cometchat-reactions-item-display, inline-flex);
+  height: var(--cometchat-reactions-item-height, 24px);
+  padding: var(--cometchat-reactions-item-padding, var(--cometchat-padding, 2px) var(--cometchat-padding-2, 8px));
+  align-items: var(--cometchat-reactions-item-align-items, center);
+  gap: var(--cometchat-reactions-item-gap, var(--cometchat-spacing-1, 4px));
+  flex-shrink: var(--cometchat-reactions-item-flex-shrink, 0);
+  border-radius: var(--cometchat-reactions-item-border-radius, var(--cometchat-radius-5, 20px));
+  border: var(--cometchat-reactions-item-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+  background: var(--cometchat-reactions-item-background, var(--cometchat-background-color-01, #fff));
+  cursor: var(--cometchat-reactions-item-cursor, pointer);
+  transition: var(--cometchat-reactions-item-transition, background-color 0.2s ease, border-color 0.2s ease);
+}
+
+/* Hover state for reaction items */
+.cometchat-reactions__reaction:hover,
+.cometchat-reactions__more-reaction:hover {
+  background: var(--cometchat-reactions-item-background-hover, var(--cometchat-background-color-02, #f5f5f5));
+  border-color: var(--cometchat-reactions-item-border-color-hover, var(--cometchat-border-color-default, #d1d1d1));
+}
+
+/* Active state for reaction items */
+.cometchat-reactions__reaction:active,
+.cometchat-reactions__more-reaction:active {
+  background: var(--cometchat-reactions-item-background-active, var(--cometchat-neutral-color-100, #fafafa));
+}
+
+/* Reaction item when user has reacted */
+.cometchat-reactions__reaction-you {
+  display: var(--cometchat-reactions-item-you-display, inline-flex);
+  height: var(--cometchat-reactions-item-you-height, 23px);
+  padding: var(--cometchat-reactions-item-you-padding, var(--cometchat-padding, 2px) var(--cometchat-padding-2, 8px));
+  align-items: var(--cometchat-reactions-item-you-align-items, center);
+  gap: var(--cometchat-reactions-item-you-gap, var(--cometchat-spacing-1, 4px));
+  flex-shrink: var(--cometchat-reactions-item-you-flex-shrink, 0);
+  border-radius: var(--cometchat-reactions-item-you-border-radius, var(--cometchat-radius-5, 20px));
+  border: var(--cometchat-reactions-item-you-border, 1px solid var(--cometchat-extended-primary-color-300, #b8a9f0));
+  background: var(--cometchat-reactions-item-you-background, var(--cometchat-extended-primary-color-100, #e8e2fa));
+  cursor: var(--cometchat-reactions-item-you-cursor, pointer);
+  transition: var(--cometchat-reactions-item-you-transition, background-color 0.2s ease, border-color 0.2s ease);
+}
+
+/* Hover state for user's reaction */
+.cometchat-reactions__reaction-you:hover {
+  background: var(--cometchat-reactions-item-you-background-hover, var(--cometchat-extended-primary-color-200, #d4c7f5));
+  border-color: var(--cometchat-reactions-item-you-border-color-hover, var(--cometchat-extended-primary-color-400, #9d8ae6));
+}
+
+/* Active state for user's reaction */
+.cometchat-reactions__reaction-you:active {
+  background: var(--cometchat-reactions-item-you-background-active, var(--cometchat-extended-primary-color-300, #b8a9f0));
+}
+
+/* Focus states for all reaction items */
+/* @see Requirements 21.1-21.6 */
+.cometchat-reactions__reaction:focus-visible,
+.cometchat-reactions__reaction-you:focus-visible,
+.cometchat-reactions__more-reaction:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 1px);
+}
+
+.cometchat-reactions__reaction:focus:not(:focus-visible),
+.cometchat-reactions__reaction-you:focus:not(:focus-visible),
+.cometchat-reactions__more-reaction:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reaction emoji */
+.cometchat-reactions__reaction-emoji {
+  color: var(--cometchat-reactions-emoji-color, var(--cometchat-text-color-primary, #141414));
+  font: var(--cometchat-reactions-emoji-font, var(--cometchat-font-body-regular, 400 14px Roboto));
+  line-height: var(--cometchat-reactions-emoji-line-height, 1);
+}
+
+/* Reaction count */
+.cometchat-reactions__reaction-count,
+.cometchat-reactions__more-reaction-count {
+  color: var(--cometchat-reactions-count-color, var(--cometchat-text-color-primary, #141414));
+  font: var(--cometchat-reactions-count-font, var(--cometchat-font-caption1-regular, 400 12px Roboto));
+  line-height: var(--cometchat-reactions-count-line-height, 1);
+}
+
+/* Reaction info wrapper popover customization */
+/* Note: Popover internal styles are controlled via [contentStyle] input,
+   not CSS selectors, due to Angular view encapsulation. */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-reactions__reaction,
+  .cometchat-reactions__more-reaction,
+  .cometchat-reactions__reaction-you {
+    transition: none;
+  }
+}

@@ -1,0 +1,243 @@
+@if (callLog(); as call) {
+  <div class="cometchat-call-log-details">
+    <!-- Outgoing Call Overlay -->
+    @if (showOutgoingCallScreen()) {
+      <div class="cometchat-call-log-details__outgoing-call">
+        <cometchat-outgoing-call
+          [call]="activeCallObject()"
+          (callCanceled)="onOutgoingCallCanceled()">
+        </cometchat-outgoing-call>
+      </div>
+    }
+
+    <!-- Header -->
+    <div class="cometchat-call-log-details__header">
+      <button
+        class="cometchat-call-log-details__back-button"
+        (click)="onClose()"
+        [attr.aria-label]="'thread_close_hover' | translate"
+        type="button"
+      >
+        <div class="cometchat-call-log-details__back-icon"></div>
+      </button>
+      <span class="cometchat-call-log-details__title">{{ 'calls_call_details' | translate }}</span>
+    </div>
+
+    <!-- User summary with avatar, name, status, and call buttons -->
+    <div class="cometchat-call-log-details__user-section">
+      <div class="cometchat-call-log-details__user-info">
+        <div class="cometchat-call-log-details__avatar">
+          <cometchat-avatar
+            [image]="otherUser()?.getAvatar?.() ?? ''"
+            [name]="otherUser()?.getName?.() ?? getOtherParty(call)?.getName?.() ?? ''"
+          ></cometchat-avatar>
+        </div>
+        <div class="cometchat-call-log-details__user-text">
+          <span class="cometchat-call-log-details__user-name">
+            {{ otherUser()?.getName?.() ?? getOtherParty(call)?.getName?.() ?? 'Unknown' }}
+          </span>
+          <span class="cometchat-call-log-details__user-status">
+            {{ subtitleText() }}
+          </span>
+        </div>
+      </div>
+      <div class="cometchat-call-log-details__call-buttons">
+        <button
+          class="cometchat-call-log-details__call-btn"
+          (click)="onVoiceCall()"
+          type="button"
+          [attr.aria-label]="'call_button_voice_hover' | translate"
+        >
+          <div class="cometchat-call-log-details__call-btn-icon cometchat-call-log-details__call-btn-icon--voice"></div>
+        </button>
+        <button
+          class="cometchat-call-log-details__call-btn"
+          (click)="onVideoCall()"
+          type="button"
+          [attr.aria-label]="'call_button_video_hover' | translate"
+        >
+          <div class="cometchat-call-log-details__call-btn-icon cometchat-call-log-details__call-btn-icon--video"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Call Info row (below user section, like React's CometChatCallDetailsInfo) -->
+    <div class="cometchat-call-log-details__info-row">
+      <div class="cometchat-call-log-details__info-icon" [ngClass]="getCallIconClass(call)"></div>
+      <div class="cometchat-call-log-details__info-body">
+        <span class="cometchat-call-log-details__info-title">{{ getCallStatusLabel(call) }}</span>
+        <span class="cometchat-call-log-details__info-subtitle">
+          @if (initiatedAt()) {
+            <cometchat-date
+              [timestamp]="initiatedAt()!"
+              [calendarObject]="getDateFormat()"
+            ></cometchat-date>
+          }
+        </span>
+      </div>
+      <span class="cometchat-call-log-details__info-duration"
+        [class.cometchat-call-log-details__info-duration--disabled]="!hasCallDuration(call)"
+      >
+        {{ hasCallDuration(call) ? getCallDuration(call) : '00:00' }}
+      </span>
+    </div>
+
+    <!-- Tabs: Participants, Recording, History (no Call Info tab) -->
+    <div class="cometchat-call-log-details__tabs" role="tablist">
+      <button
+        class="cometchat-call-log-details__tab"
+        [class.cometchat-call-log-details__tab--active]="activeTab() === 'participants'"
+        (click)="onTabChange('participants')"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'participants'"
+        type="button"
+      >
+        {{ 'calls_call_participants' | translate }}
+      </button>
+      <button
+        class="cometchat-call-log-details__tab"
+        [class.cometchat-call-log-details__tab--active]="activeTab() === 'recording'"
+        (click)="onTabChange('recording')"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'recording'"
+        type="button"
+      >
+        {{ 'calls_call_recordings' | translate }}
+      </button>
+      <button
+        class="cometchat-call-log-details__tab"
+        [class.cometchat-call-log-details__tab--active]="activeTab() === 'history'"
+        (click)="onTabChange('history')"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'history'"
+        type="button"
+      >
+        {{ 'calls_call_history' | translate }}
+      </button>
+    </div>
+
+    <!-- Tab content -->
+    <div class="cometchat-call-log-details__content" role="tabpanel">
+      @switch (activeTab()) {
+        @case ('participants') {
+          @if (participants().length === 0) {
+            <div class="cometchat-call-log-details__empty">
+              <span class="cometchat-call-log-details__empty-text">{{ 'calls_no_participants' | translate }}</span>
+            </div>
+          } @else {
+            <div class="cometchat-call-log-details__list">
+              @for (participant of participants(); track $index) {
+                <div class="cometchat-call-log-details__list-item">
+                  <div class="cometchat-call-log-details__list-item-avatar">
+                    <cometchat-avatar
+                      [image]="participant?.getAvatar?.() ?? ''"
+                      [name]="participant?.getName?.() ?? ''"
+                    ></cometchat-avatar>
+                  </div>
+                  <div class="cometchat-call-log-details__list-item-body">
+                    <span class="cometchat-call-log-details__list-item-title">
+                      {{ participant?.getName?.() ?? 'Unknown' }}
+                    </span>
+                    <span class="cometchat-call-log-details__list-item-subtitle">
+                      @if (initiatedAt()) {
+                        <cometchat-date
+                          [timestamp]="initiatedAt()!"
+                          [calendarObject]="getDateFormat()"
+                        ></cometchat-date>
+                      }
+                    </span>
+                  </div>
+                  <span class="cometchat-call-log-details__list-item-tail"
+                    [class.cometchat-call-log-details__list-item-tail--disabled]="!hasParticipantDuration(participant)"
+                  >
+                    {{ getParticipantDuration(participant) }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        @case ('recording') {
+          @if (recordings().length === 0) {
+            <div class="cometchat-call-log-details__empty cometchat-call-log-details__empty--centered">
+              <div class="cometchat-call-log-details__empty-icon"></div>
+              <span class="cometchat-call-log-details__empty-text">{{ 'calls_no_recordings' | translate }}</span>
+            </div>
+          } @else {
+            <div class="cometchat-call-log-details__list">
+              @for (recording of recordings(); track $index) {
+                <div class="cometchat-call-log-details__list-item">
+                  <div class="cometchat-call-log-details__list-item-body">
+                    <span class="cometchat-call-log-details__list-item-title">
+                      {{ recording?.getRid?.() ?? ('calls_recording' | translate) + ' ' + ($index + 1) }}
+                    </span>
+                    <span class="cometchat-call-log-details__list-item-subtitle">
+                      @if (getRecordingStartTime(recording)) {
+                        <cometchat-date
+                          [timestamp]="getRecordingStartTime(recording)"
+                          [calendarObject]="getDateFormat()"
+                        ></cometchat-date>
+                      }
+                    </span>
+                  </div>
+                  <button
+                    class="cometchat-call-log-details__download-btn"
+                    (click)="handleDownloadRecording(recording)"
+                    type="button"
+                    [attr.aria-label]="'calls_play_recording' | translate"
+                  ></button>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        @case ('history') {
+          @if (callHistoryLoading()) {
+            <div class="cometchat-call-log-details__shimmer" role="status" aria-label="Loading call history">
+              @for (item of [1, 2, 3, 4, 5]; track item) {
+                <div class="cometchat-call-log-details__shimmer-item">
+                  <div class="cometchat-call-log-details__shimmer-icon"></div>
+                  <div class="cometchat-call-log-details__shimmer-body">
+                    <div class="cometchat-call-log-details__shimmer-title"></div>
+                    <div class="cometchat-call-log-details__shimmer-subtitle"></div>
+                  </div>
+                  <div class="cometchat-call-log-details__shimmer-tail"></div>
+                </div>
+              }
+            </div>
+          } @else if (callHistory().length === 0) {
+            <div class="cometchat-call-log-details__empty">
+              <span class="cometchat-call-log-details__empty-text">{{ 'calls_no_call_history' | translate }}</span>
+            </div>
+          } @else {
+            <div class="cometchat-call-log-details__list">
+              @for (historyItem of callHistory(); track $index) {
+                <div class="cometchat-call-log-details__list-item">
+                  <div class="cometchat-call-log-details__info-icon" [ngClass]="getCallIconClass(historyItem)"></div>
+                  <div class="cometchat-call-log-details__list-item-body">
+                    <span class="cometchat-call-log-details__list-item-title">
+                      {{ getCallStatusLabel(historyItem) }}
+                    </span>
+                    <span class="cometchat-call-log-details__list-item-subtitle">
+                      <cometchat-date
+                        [timestamp]="historyItem?.getInitiatedAt?.()"
+                        [calendarObject]="getDateFormat()"
+                      ></cometchat-date>
+                    </span>
+                  </div>
+                  <span class="cometchat-call-log-details__list-item-tail"
+                    [class.cometchat-call-log-details__list-item-tail--disabled]="!hasCallDuration(historyItem)"
+                  >
+                    {{ hasCallDuration(historyItem) ? getCallDuration(historyItem) : '00:00' }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+        }
+      }
+    </div>
+  </div>
+}

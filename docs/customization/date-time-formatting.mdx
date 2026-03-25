@@ -1,0 +1,281 @@
+---
+title: "Date & Time Formatting"
+description: "Customize date and time display globally or per-component with language-aware defaults."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key class | `CometChatLocalize` (global CalendarObject management) |
+| Key component | `CometChatDateComponent` (`cometchat-date` element) |
+| Required setup | `CometChatUIKit.init(uiKitSettings)` |
+| Purpose | Customize date/time formatting globally, per-component, or per-language |
+| Features | Language-specific defaults, global override, per-instance override, relative time |
+| Related | [Localization](/customization/localization) \| [Theming](/customization/theming) |
+
+</Accordion>
+
+CometChat UIKit provides flexible date/time formatting with language-aware defaults. Dates automatically adapt when you switch languages, and you can override formats globally or per-component.
+
+| Capability | Description |
+| --- | --- |
+| Language-specific defaults | Date formats auto-adapt per language (e.g., MM/DD/YYYY for en-US, DD/MM/YYYY for en-GB) |
+| Global override | Set a custom CalendarObject that applies to all components |
+| Per-component override | Pass a CalendarObject input to individual `cometchat-date` instances |
+| Relative time | Configure "X minutes ago" style formatting |
+| Timezone support | Set timezone globally via `CometChatLocalize` |
+
+---
+
+## How It Works
+
+The `cometchat-date` component resolves its date format using a fallback chain:
+
+1. Component `[calendarObject]` input (highest priority)
+2. Global CalendarObject from `CometChatLocalize.getCalendarObject()`
+3. Hardcoded fallback: `hh:mm A` / `[Yesterday]` / `dddd` / `DD/MM/YYYY`
+
+---
+
+## Language-Specific Defaults
+
+When you switch languages, date formats automatically adapt:
+
+| Language | Today | Yesterday | Other Days |
+| --- | --- | --- | --- |
+| en-US | `hh:mm A` | `[Yesterday]` | `MM/DD/YYYY` |
+| en-GB | `HH:mm` | `[Yesterday]` | `DD/MM/YYYY` |
+| de | `HH:mm` | `[Gestern]` | `DD.MM.YYYY` |
+| fr | `HH:mm` | `[Hier]` | `DD/MM/YYYY` |
+| es | `HH:mm` | `[Ayer]` | `DD/MM/YYYY` |
+| ja | `HH:mm` | `[昨日]` | `YYYY/MM/DD` |
+| ko | `HH:mm` | `[어제]` | `YYYY/MM/DD` |
+| zh | `HH:mm` | `[昨天]` | `YYYY/MM/DD` |
+| ru | `HH:mm` | `[Вчера]` | `DD.MM.YYYY` |
+| sv | `HH:mm` | `[Igår]` | `YYYY-MM-DD` |
+
+```typescript
+// Switching language automatically updates date formats
+CometChatLocalize.setCurrentLanguage('ja');
+// Dates now show YYYY/MM/DD format with Japanese "yesterday" label
+```
+
+---
+
+## Global Date Format Override
+
+Set a custom CalendarObject that applies to all `cometchat-date` instances:
+
+```typescript
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+// Set global date format
+CometChatLocalize.setGlobalCalendarObject({
+  today: 'HH:mm',
+  yesterday: '[Yesterday] HH:mm',
+  lastWeek: 'dddd HH:mm',
+  otherDays: 'DD/MM/YYYY'
+});
+```
+
+<Note>
+Once you set a custom global CalendarObject, switching languages will NOT override it. Your custom format is preserved across language changes. To revert to language-specific defaults, you would need to reset the CalendarObject.
+</Note>
+
+### Via Initialization
+
+```typescript
+CometChatLocalize.init({
+  language: 'en-US',
+  calendarObject: {
+    today: 'h:mm A',
+    yesterday: '[Yesterday] h:mm A',
+    lastWeek: 'dddd h:mm A',
+    otherDays: 'MMM DD, YYYY'
+  }
+});
+```
+
+---
+
+## Per-Component Override
+
+Pass a `calendarObject` input to individual `cometchat-date` instances:
+
+```html
+<cometchat-date
+  [timestamp]="message.getSentAt()"
+  [calendarObject]="customFormat">
+</cometchat-date>
+```
+
+```typescript
+customFormat: CalendarObject = {
+  today: 'HH:mm:ss',
+  yesterday: '[Yesterday] HH:mm',
+  lastWeek: 'ddd DD MMM',
+  otherDays: 'DD MMM YYYY'
+};
+```
+
+The component input always takes priority over the global CalendarObject.
+
+---
+
+## CalendarObject Reference
+
+```typescript expandable
+interface CalendarObject {
+  today?: string;       // Format for today's dates
+  yesterday?: string;   // Format for yesterday's dates
+  lastWeek?: string;    // Format for dates within last 7 days
+  otherDays?: string;   // Format for all other dates
+  relativeTime?: {
+    minute?: string;    // "1 minute ago" (use %d for number)
+    minutes?: string;   // "X minutes ago" (use %d for number)
+    hour?: string;      // "1 hour ago" (use %d for number)
+    hours?: string;     // "X hours ago" (use %d for number)
+  };
+}
+```
+
+### Format Tokens
+
+| Token | Output | Example |
+| --- | --- | --- |
+| `YYYY` | 4-digit year | 2026 |
+| `YY` | 2-digit year | 26 |
+| `MM` | 2-digit month | 03 |
+| `DD` | 2-digit day | 23 |
+| `dddd` | Full weekday | Monday |
+| `ddd` | Short weekday | Mon |
+| `HH` | 24-hour hour | 14 |
+| `hh` | 12-hour hour | 02 |
+| `mm` | Minutes | 30 |
+| `A` | AM/PM | PM |
+| `[text]` | Literal text | [Yesterday] → Yesterday |
+
+---
+
+## Relative Time
+
+Enable "X minutes ago" style formatting:
+
+```typescript expandable
+CometChatLocalize.setGlobalCalendarObject({
+  today: 'hh:mm A',
+  yesterday: '[Yesterday]',
+  lastWeek: 'dddd',
+  otherDays: 'DD/MM/YYYY',
+  relativeTime: {
+    minute: '1 minute ago',
+    minutes: '%d minutes ago',
+    hour: '1 hour ago',
+    hours: '%d hours ago'
+  }
+});
+```
+
+When `relativeTime` is configured, recent messages show relative timestamps instead of absolute times.
+
+---
+
+## Timezone
+
+```typescript
+// Set timezone globally
+CometChatLocalize.init({
+  language: 'en-US',
+  timezone: 'America/Los_Angeles'
+});
+
+// Or check current timezone
+const tz = CometChatLocalize.getTimezone();
+```
+
+---
+
+## Example: Custom Date Formats
+
+<Tabs>
+<Tab title="Global Override">
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-root',
+  template: `<cometchat-message-list [user]="user"></cometchat-message-list>`
+})
+export class AppComponent implements OnInit {
+  ngOnInit() {
+    // All dates in the app use this format
+    CometChatLocalize.setGlobalCalendarObject({
+      today: 'h:mm A',
+      yesterday: '[Yesterday] h:mm A',
+      lastWeek: 'ddd, MMM DD',
+      otherDays: 'MMM DD, YYYY',
+      relativeTime: {
+        minute: 'Just now',
+        minutes: '%d min ago',
+        hour: '1 hr ago',
+        hours: '%d hrs ago'
+      }
+    });
+  }
+}
+```
+</Tab>
+
+<Tab title="Per-Component">
+```typescript expandable
+import { Component } from '@angular/core';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  template: `
+    <!-- Message list uses global format -->
+    <cometchat-message-list [user]="user"></cometchat-message-list>
+
+    <!-- This specific date uses a custom format -->
+    <cometchat-date
+      [timestamp]="lastSeen"
+      [calendarObject]="compactFormat">
+    </cometchat-date>
+  `
+})
+export class ChatComponent {
+  lastSeen = 1640000000;
+
+  compactFormat: CalendarObject = {
+    today: 'HH:mm',
+    yesterday: '[Yest]',
+    lastWeek: 'ddd',
+    otherDays: 'DD/MM'
+  };
+}
+```
+</Tab>
+</Tabs>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Localization" href="/customization/localization">
+    Override translations globally or per-component.
+  </Card>
+  <Card title="Theming" href="/customization/theming">
+    Customize colors, fonts, and spacing.
+  </Card>
+  <Card title="Custom Message Types" href="/guides/custom-message-types">
+    Add custom message types with templates.
+  </Card>
+  <Card title="Global Config" href="/customization/global-config">
+    Configure global UIKit settings.
+  </Card>
+</CardGroup>

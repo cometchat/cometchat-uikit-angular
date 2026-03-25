@@ -1,0 +1,434 @@
+---
+title: "CometChatPollBubble"
+description: "An Angular component for displaying poll messages with voting functionality in a chat interface"
+---
+The `CometChatPollBubble` component is a standalone Angular component that renders poll messages with voting functionality within chat conversations. It extracts poll data from CometChat CustomMessage metadata and displays the poll question, voting options with radio buttons, vote counts, progress bars, and voter avatars.
+
+## Overview
+
+The Poll Bubble component provides a comprehensive display for poll messages with support for both sender (outgoing) and receiver (incoming) styling variants:
+
+- **Poll Question Display**: Shows the poll question prominently at the top
+- **Voting Options**: Displays all poll options with radio buttons for selection
+- **Vote Counts**: Shows the number of votes for each option
+- **Progress Bars**: Visual representation of vote distribution percentages
+- **Voter Avatars**: Displays up to 3 voter avatars per option in a stacked layout
+- **Vote Submission**: Allows users to vote by clicking options via CometChat polls extension API
+- **Sender/Receiver Variants**: Different styling for outgoing vs incoming poll messages
+- **Full Accessibility Support**: ARIA labels, keyboard navigation, and screen reader support
+- **CSS Variable-Based Theming**: Easy customization via CSS variables
+- **OnPush Change Detection**: Optimized performance
+
+
+<Info>
+  **Live Preview** — Default poll bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--poll)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--poll&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Poll Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Poll Bubble (Receiver Variant)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatPollBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatPollBubbleComponent],
+  template: `
+    <cometchat-poll-bubble
+      [message]="pollMessage"
+    ></cometchat-poll-bubble>
+  `
+})
+export class ChatMessageComponent {
+  pollMessage!: CometChat.CustomMessage;
+}
+```
+
+### Sender Variant (Outgoing Poll)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatPollBubbleComponent,
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatPollBubbleComponent],
+  template: `
+    <cometchat-poll-bubble
+      [message]="pollMessage"
+      [alignment]="MessageBubbleAlignment.right"
+    ></cometchat-poll-bubble>
+  `
+})
+export class ChatMessageComponent {
+  pollMessage!: CometChat.CustomMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### With Logged-In User and Vote Events
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatPollBubbleComponent,
+  PollVoteEvent,
+  PollVoteErrorEvent 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatPollBubbleComponent],
+  template: `
+    <cometchat-poll-bubble
+      [message]="pollMessage"
+      [loggedInUser]="currentUser"
+      (voteSubmit)="onVoteSubmit($event)"
+      (voteError)="onVoteError($event)"
+    ></cometchat-poll-bubble>
+  `
+})
+export class ChatMessageComponent {
+  pollMessage!: CometChat.CustomMessage;
+  currentUser!: CometChat.User;
+
+  onVoteSubmit(event: PollVoteEvent): void {
+    console.log('Vote submitted:', event.optionText);
+    console.log('Poll ID:', event.pollId);
+  }
+
+  onVoteError(event: PollVoteErrorEvent): void {
+    console.error('Vote failed:', event.error.message);
+  }
+}
+```
+
+### Incoming vs Outgoing Polls
+
+```typescript expandable
+import { Component, Input } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatPollBubbleComponent,
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatPollBubbleComponent],
+  template: `
+    <!-- Incoming poll (receiver variant) -->
+    <cometchat-poll-bubble
+      [message]="incomingPoll"
+      [alignment]="MessageBubbleAlignment.left"
+      [loggedInUser]="currentUser"
+    ></cometchat-poll-bubble>
+
+    <!-- Outgoing poll (sender variant) -->
+    <cometchat-poll-bubble
+      [message]="outgoingPoll"
+      [alignment]="MessageBubbleAlignment.right"
+      [loggedInUser]="currentUser"
+    ></cometchat-poll-bubble>
+  `
+})
+export class MessageListComponent {
+  @Input() incomingPoll!: CometChat.CustomMessage;
+  @Input() outgoingPoll!: CometChat.CustomMessage;
+  @Input() currentUser!: CometChat.User;
+  
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.CustomMessage` | **required** | The CometChat CustomMessage object containing poll data in its metadata. Poll data is extracted from the path `@injected.extensions.polls` |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | Determines sender (right) or receiver (left) styling. When `right`, applies primary color background with white text. When `left`, applies neutral background with neutral text |
+| `loggedInUser` | `CometChat.User` | `undefined` | The currently logged-in user. Used to determine which poll options the user has selected (shows checked radio button) |
+| `disableInteraction` | `boolean` | `false` | When true, disables voting and other interactive elements within the poll bubble |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `voteSubmit` | `EventEmitter<PollVoteEvent>` | Emitted when a vote is successfully submitted via the CometChat polls extension API |
+| `voteError` | `EventEmitter<PollVoteErrorEvent>` | Emitted when vote submission fails |
+| `voteUpdate` | `EventEmitter<PollData>` | Emitted when poll data is updated (e.g., after a vote is processed) |
+
+### PollVoteEvent Interface
+
+```typescript expandable
+interface PollVoteEvent {
+  /** The poll ID */
+  pollId: string | number;
+  /** The selected option ID */
+  optionId: string;
+  /** The selected option text */
+  optionText: string;
+  /** The message containing the poll */
+  message: CometChat.CustomMessage;
+}
+```
+
+### PollVoteErrorEvent Interface
+
+```typescript expandable
+interface PollVoteErrorEvent {
+  /** The poll ID */
+  pollId: string | number;
+  /** The attempted option ID */
+  optionId: string;
+  /** The error that occurred */
+  error: Error;
+  /** The message containing the poll */
+  message: CometChat.CustomMessage;
+}
+```
+
+## Poll Data Structure
+
+The component extracts poll data from the message metadata at the path `@injected.extensions.polls`. The expected structure is:
+
+```typescript expandable
+interface PollData {
+  /** Unique identifier for the poll */
+  id: string | number;
+  /** The poll question text */
+  question: string;
+  /** Map of option IDs to option text */
+  options: Record<string, string>;
+  /** Poll results including total votes and per-option results */
+  results: {
+    total: number;
+    options: Record<string, {
+      count: number;
+      voters: Record<string, { name: string; avatar?: string }>;
+    }>;
+  };
+}
+```
+
+## Customization
+
+### Styling with CSS Variables
+
+The Poll Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom poll bubble styling */
+cometchat-poll-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Typography */
+  --cometchat-font-heading4-medium: 500 16px/19.2px 'Roboto';
+  --cometchat-font-body-regular: 400 14px/16.8px 'Roboto';
+  --cometchat-font-caption1-medium: 500 12px/14.4px 'Roboto';
+
+  /* Colors - Sender variant */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-static-white: #FFFFFF;
+
+  /* Colors - Receiver variant */
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-text-color-tertiary: #999999;
+  --cometchat-extended-primary-color-200: #D4CCEF;
+
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+  --cometchat-radius-max: 1000px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` | Option item padding, body gap | `4px` |
+| `--cometchat-spacing-2` | Container gap, option gap, content gap | `8px` |
+| `--cometchat-spacing-3` | Container padding | `12px` |
+| `--cometchat-spacing-4` | Empty state padding | `16px` |
+| `--cometchat-font-heading4-medium` | Question text font | `500 16px/19.2px Roboto` |
+| `--cometchat-font-body-regular` | Option text font | `400 14px/16.8px Roboto` |
+| `--cometchat-font-caption1-medium` | Vote count font | `500 12px/14.4px Roboto` |
+| `--cometchat-primary-color` | Sender background, focus outline | `#6852D6` |
+| `--cometchat-static-white` | Sender text/icon color | `#FFFFFF` |
+| `--cometchat-background-color-02` | Receiver background | `#F5F5F5` |
+| `--cometchat-background-color-01` | Avatar border color | `#FFFFFF` |
+| `--cometchat-text-color-primary` | Receiver question/option text | `#141414` |
+| `--cometchat-text-color-secondary` | Receiver vote count | `#727272` |
+| `--cometchat-text-color-tertiary` | Empty state text | `#999999` |
+| `--cometchat-extended-primary-color-200` | Receiver progress bar fill | `#D4CCEF` |
+| `--cometchat-radius-2` | Option item border radius | `8px` |
+| `--cometchat-radius-3` | Container border radius | `12px` |
+| `--cometchat-radius-max` | Progress bar, avatar border radius | `1000px` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for sender variant */
+.theme-blue cometchat-poll-bubble {
+  --cometchat-primary-color: #1976D2;
+  --cometchat-extended-primary-color-200: #BBDEFB;
+}
+
+/* Green theme for sender variant */
+.theme-green cometchat-poll-bubble {
+  --cometchat-primary-color: #4CAF50;
+  --cometchat-extended-primary-color-200: #C8E6C9;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-poll-bubble {
+  --cometchat-background-color-02: #424242;
+  --cometchat-background-color-01: #303030;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-text-color-secondary: #B0B0B0;
+  --cometchat-text-color-tertiary: #757575;
+}
+```
+
+### Custom Sizing
+
+```css expandable
+/* Wider poll bubble */
+.wide-poll cometchat-poll-bubble {
+  --poll-min-width: 300px;
+  --poll-max-width: 400px;
+}
+
+/* Override in component CSS */
+::ng-deep .cometchat-poll-bubble {
+  min-width: 300px;
+  max-width: 400px;
+}
+```
+
+## Accessibility
+
+The Poll Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: Progress bars have aria-label with percentage information
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with role="radiogroup" and role="radio"
+- ✅ **1.4.3 Contrast (Minimum) (Level AA)**: Sufficient color contrast for text readability
+- ✅ **2.1.1 Keyboard (Level A)**: All options are keyboard accessible via Tab, Enter, and Space
+- ✅ **2.4.7 Focus Visible (Level AA)**: Visible focus indicators on interactive elements
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Options list | `"radiogroup"` | Indicates this is a group of radio options |
+| `aria-label` | Options list | Localized "Poll options" | Provides accessible name for the group |
+| `role` | Option item | `"radio"` | Indicates this is a radio option |
+| `aria-checked` | Option item | `true/false` | Indicates selection state |
+| `aria-label` | Option item | `"{option text} - {count} votes"` | Provides accessible name with vote count |
+| `role` | Progress bar | `"progressbar"` | Indicates this is a progress indicator |
+| `aria-valuenow` | Progress bar | Vote count | Current value |
+| `aria-valuemax` | Progress bar | Total votes | Maximum value |
+| `aria-label` | Progress bar | `"{option text} {percentage}"` | Describes the progress |
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Move focus between poll options |
+| `Enter` | Submit vote for focused option |
+| `Space` | Submit vote for focused option |
+
+### Screen Reader Behavior
+
+Screen readers announce each poll option with its text and vote count (e.g., "Option A - 5 votes"). The radiogroup role ensures screen readers understand this is a selection interface. Progress bars are announced with their percentage values.
+
+### Color Contrast
+
+Both sender and receiver variants maintain sufficient color contrast:
+- **Sender variant**: White text on primary color background (typically purple #6852D6)
+- **Receiver variant**: Primary text color on neutral background
+
+## Best Practices
+
+<Tip>
+  Use the poll bubble to display poll messages in your chat interface, allowing users to vote and see real-time results.
+</Tip>
+
+<Warning>
+  The component requires a valid CometChat.CustomMessage with poll data in its metadata at the path `@injected.extensions.polls`. Ensure the polls extension is enabled in your CometChat dashboard.
+</Warning>
+
+<Info>
+  Pass the `loggedInUser` input to show which options the current user has selected. Without this, all radio buttons will appear unselected.
+</Info>
+
+<Tip>
+  Listen to the `voteSubmit` event to update your local message state after a successful vote. The CometChat SDK will also send real-time updates for poll votes.
+</Tip>
+
+<Info>
+  All text in the component is localized. The component uses localization keys like `poll_bubble_options_label`, `poll_bubble_votes`, and `poll_bubble_no_options`.
+</Info>
+
+<Warning>
+  Users can change their vote by clicking a different option. The component does not prevent re-voting - this is handled by the CometChat polls extension.
+</Warning>
+
+## Related Components
+
+- **CometChatTextBubble**: Displays text messages
+- **CometChatImageBubble**: Displays image messages
+- **CometChatFileBubble**: Displays file messages
+- **CometChatDeleteBubble**: Displays deleted message placeholders
+- **CometChatActionBubble**: Displays action/system messages
+- **CometChatMessageList**: Displays lists of messages including poll messages
+- **CometChatRadioButton**: Used internally for option selection
+- **CometChatAvatar**: Used internally for voter avatars
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: Uses CometChatLocalize for text localization, CometChatRadioButton for options, CometChatAvatar for voter display
+- **Bundle Size**: Minimal footprint (~5KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **Width**: Min 240px, Max 300px for consistent bubble sizing
+- **Voter Avatars**: Maximum 3 displayed per option with stacked layout
+- **Vote API**: Uses `CometChat.callExtension('polls', 'POST', 'v2/vote', {...})` for vote submission

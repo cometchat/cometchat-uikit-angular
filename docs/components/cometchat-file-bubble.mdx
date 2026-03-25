@@ -1,0 +1,503 @@
+---
+title: "CometChatFileBubble"
+description: "A comprehensive Angular component for rendering file attachment messages with inline expand/collapse, file type icons, and caption support"
+---
+The File Bubble component renders file attachments within chat messages while maintaining visual consistency with the design system and ensuring full accessibility:
+
+- **Message Object Processing**: Extracts attachments and metadata from CometChat.MediaMessage objects
+- **Single File Display**: File icon, name, size, and download action
+- **File Type Icons**: Automatic icon mapping based on file extension or MIME type
+- **File Size Formatting**: Human-readable size display (B, KB, MB, GB)
+- **Caption Support**: Renders captions using TextMessageBubbleComponent
+- **Download Actions**: Direct download links for all files
+- **Dual Styling**: Supports sender (outgoing) and receiver (incoming) visual variants
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+
+<Info>
+  **Live Preview** — Default file bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--file)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--file&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "250px", border: "1px solid #e0e0e0"}}
+  title="CometChat File Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple File Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFileBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatFileBubbleComponent],
+  template: `
+    <cometchat-file-bubble
+      [message]="fileMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-file-bubble>
+  `
+})
+export class ChatMessageComponent {
+  fileMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFileBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatFileBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-file-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-file-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-file-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.RIGHT"
+    ></cometchat-file-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The CometChat.MediaMessage object to render. Contains file attachments, metadata, and sender information |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.LEFT` | The alignment of the message bubble. `LEFT` for incoming/receiver messages, `RIGHT` for outgoing/sender messages |
+
+## Advanced Usage
+
+### Single File Message
+
+The component displays single file messages with file icon, name, size, and download button:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFileBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-single-file',
+  standalone: true,
+  imports: [CometChatFileBubbleComponent],
+  template: `
+    <cometchat-file-bubble
+      [message]="singleFileMessage"
+    ></cometchat-file-bubble>
+  `
+})
+export class SingleFileComponent {
+  singleFileMessage!: CometChat.MediaMessage;
+}
+```
+
+**Single File Features:**
+- File type icon based on extension
+- File name display
+- File size in human-readable format
+- Download button
+
+### Files with Captions
+
+The component automatically renders captions using the TextMessageBubbleComponent:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFileBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-captioned-file',
+  standalone: true,
+  imports: [CometChatFileBubbleComponent],
+  template: `
+    <cometchat-file-bubble
+      [message]="captionedFileMessage"
+    ></cometchat-file-bubble>
+  `
+})
+export class CaptionedFileComponent {
+  captionedFileMessage!: CometChat.MediaMessage;
+  
+  // Message with caption:
+  // message.getText() returns "Here are the project documents"
+}
+```
+
+**Caption Features:**
+- Displays below the file(s)
+- Supports rich text formatting (bold, italic, etc.)
+- Supports @mentions with click events
+- Supports URLs with click events
+- Supports read more/less for long captions
+- Inherits alignment from parent bubble
+
+
+### File Type Icons
+
+The component automatically selects appropriate icons based on file type:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFileBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-file-types',
+  standalone: true,
+  imports: [CometChatFileBubbleComponent],
+  template: `
+    <!-- PDF document -->
+    <cometchat-file-bubble [message]="pdfMessage"></cometchat-file-bubble>
+    
+    <!-- Excel spreadsheet -->
+    <cometchat-file-bubble [message]="excelMessage"></cometchat-file-bubble>
+    
+    <!-- PowerPoint presentation -->
+    <cometchat-file-bubble [message]="pptMessage"></cometchat-file-bubble>
+    
+    <!-- ZIP archive -->
+    <cometchat-file-bubble [message]="zipMessage"></cometchat-file-bubble>
+    
+    <!-- Unknown file type -->
+    <cometchat-file-bubble [message]="unknownMessage"></cometchat-file-bubble>
+  `
+})
+export class FileTypesComponent {
+  pdfMessage!: CometChat.MediaMessage;      // Shows PDF icon
+  excelMessage!: CometChat.MediaMessage;    // Shows spreadsheet icon
+  pptMessage!: CometChat.MediaMessage;      // Shows presentation icon
+  zipMessage!: CometChat.MediaMessage;      // Shows archive icon
+  unknownMessage!: CometChat.MediaMessage;  // Shows generic file icon
+}
+```
+
+**Supported File Types:**
+- **Documents**: PDF, DOC, DOCX, TXT
+- **Spreadsheets**: XLS, XLSX, CSV
+- **Presentations**: PPT, PPTX
+- **Code Files**: JS, TS, HTML, CSS, JSON
+- **Archives**: ZIP, RAR, TAR, GZ
+- **Media**: JPG, PNG, MP3, MP4, MOV
+- **Unknown**: Generic file icon for unsupported types
+
+### File Size Formatting
+
+The component automatically formats file sizes in human-readable units:
+
+```typescript
+// File size examples:
+// 512 bytes → "512 B"
+// 2048 bytes → "2.00 KB"
+// 5242880 bytes → "5.00 MB"
+// 2147483648 bytes → "2.00 GB"
+// null or 0 → "Size unknown"
+```
+
+**Size Formatting Rules:**
+- Less than 1024 bytes: Displays in bytes (B)
+- Less than 1 MB: Displays in kilobytes (KB)
+- Less than 1 GB: Displays in megabytes (MB)
+- 1 GB or more: Displays in gigabytes (GB)
+- Always rounds to 2 decimal places
+- Handles missing size gracefully
+
+## Customization
+
+### Styling with CSS Variables
+
+The File Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom file bubble styling */
+cometchat-file-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Typography */
+  --cometchat-font-body-medium: 500 14px 'Inter';
+  --cometchat-font-caption1-regular: 400 12px 'Inter';
+  --cometchat-font-caption1-bold: 600 12px 'Inter';
+
+  /* Colors - Incoming messages */
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #666666;
+
+  /* Colors - Outgoing messages */
+  --cometchat-primary-button-background: #6852D6;
+  --cometchat-primary-button-text: #FFFFFF;
+
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-max: 1000px;
+
+  /* Border colors */
+  --cometchat-border-color-light: #E0E0E0;
+}
+```
+
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` to `--cometchat-spacing-4` | Padding, margin, gap | `4px` to `16px` |
+| `--cometchat-font-body-medium` | File name font | `500 14px Roboto` |
+| `--cometchat-font-caption1-regular` | File size font | `400 12px Roboto` |
+| `--cometchat-font-caption1-bold` | Expand indicator font | `600 12px Roboto` |
+| `--cometchat-background-color-01` | Incoming bubble background | `#FFFFFF` |
+| `--cometchat-background-color-02` | Incoming file item background | `#F5F5F5` |
+| `--cometchat-text-color-primary` | File name color | `#141414` |
+| `--cometchat-text-color-secondary` | File size color | `#666666` |
+| `--cometchat-primary-button-background` | Outgoing bubble background | `#6852D6` |
+| `--cometchat-primary-button-text` | Outgoing text color | `#FFFFFF` |
+| `--cometchat-primary-color` | Expand indicator background | `#6852D6` |
+| `--cometchat-radius-2` | Border radius | `8px` |
+| `--cometchat-radius-max` | Expand indicator radius | `1000px` (circular) |
+| `--cometchat-border-color-light` | Border color | `#E0E0E0` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for incoming messages */
+.theme-blue cometchat-file-bubble {
+  --cometchat-background-color-02: #E3F2FD;
+  --cometchat-border-color-light: #90CAF9;
+}
+
+/* Green theme for outgoing messages */
+.theme-green cometchat-file-bubble {
+  --cometchat-primary-button-background: #4CAF50;
+  --cometchat-primary-color: #4CAF50;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-file-bubble {
+  --cometchat-background-color-01: #1E1E1E;
+  --cometchat-background-color-02: #2C2C2C;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-text-color-secondary: #B0B0B0;
+  --cometchat-border-color-light: #404040;
+}
+```
+
+### Custom Expand Indicator Styling
+
+```css expandable
+/* Custom expand indicator button */
+::ng-deep .cometchat-file-bubble__expand-indicator {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+::ng-deep .cometchat-file-bubble__expand-indicator:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+```
+
+### Custom File Item Styling
+
+```css expandable
+/* Custom file item styling */
+::ng-deep .cometchat-file-bubble__file-item {
+  background: #FAFAFA;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 12px;
+  transition: background-color 0.2s;
+}
+
+::ng-deep .cometchat-file-bubble__file-item:hover {
+  background: #F5F5F5;
+}
+
+::ng-deep .cometchat-file-bubble__filename {
+  font-weight: 600;
+  color: #141414;
+}
+
+::ng-deep .cometchat-file-bubble__filesize {
+  font-size: 11px;
+  color: #999999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+```
+
+
+## Accessibility
+
+The File Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: All file icons have descriptive text alternatives
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with buttons and links
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators on all interactive elements
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### Keyboard Support
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate to download links | When files are displayed |
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `aria-label` | Download links | `"Download [filename]"` | Describes download action for each file |
+
+### Screen Reader Behavior
+
+Screen readers announce the file bubble with:
+1. **Single file**: "File, [filename], [size], Download button"
+2. **Download links**: "Link, Download [filename]"
+
+### Accessibility Best Practices
+
+<Tip>
+  The component automatically handles all accessibility requirements. No additional ARIA attributes or keyboard handling is needed.
+</Tip>
+
+<Warning>
+  Ensure file names are descriptive for screen reader users. Avoid cryptic filenames like "IMG_1234.jpg".
+</Warning>
+
+<Info>
+  All interactive elements (expand indicator, collapse button, download links) are keyboard accessible and have visible focus indicators.
+</Info>
+
+## Best Practices
+
+<Tip>
+  Always provide the complete CometChat.MediaMessage object to ensure all features (attachments, captions, metadata) work correctly.
+</Tip>
+
+<Warning>
+  The component expects file attachments with valid URLs. Ensure your message objects have properly formatted attachment data.
+</Warning>
+
+<Info>
+  Use the `alignment` property to distinguish between incoming and outgoing messages for proper visual styling.
+</Info>
+
+<Tip>
+  File names should be descriptive and include file extensions for better user experience and accessibility.
+</Tip>
+
+<Warning>
+  The component does NOT open a modal or fullscreen view. Expansion happens inline within the message bubble.
+</Warning>
+
+<Info>
+  The component handles missing or invalid data gracefully, displaying "Size unknown" for missing file sizes and generic icons for unknown file types.
+</Info>
+
+
+## Related Components
+
+- **CometChatTextBubble**: Used for rendering captions in file messages
+- **CometChatImageBubble**: Displays image messages with grid layouts and gallery
+- **CometChatVideoBubble**: Displays video messages with thumbnails and player
+- **CometChatMessageBubble**: Uses File Bubble as the content view for file messages
+- **CometChatMessageList**: Displays lists of messages including file bubbles
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: 
+  - Angular CommonModule
+  - CometChat SDK for message types
+  - TranslatePipe for localization
+  - CometChatTextBubbleComponent for captions
+- **Bundle Size**: Minimal footprint (~8KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+
+## Performance Considerations
+
+### Optimization Strategies
+
+**Change Detection:**
+- Uses OnPush strategy to minimize unnecessary re-renders
+- Only updates when inputs change or events are emitted
+
+**State Management:**
+- Minimal internal state (only UI state for expand/collapse)
+- All data derived from message input
+- No SDK calls or service dependencies
+
+**Layout Determination:**
+- Attachments extracted once during message processing
+- File type and size formatting cached
+- Avoids repeated calculations during rendering
+
+**Expand/Collapse Animation:**
+- Uses CSS transitions for smooth animations
+- Efficient height animation without JavaScript
+- Focus management optimized with setTimeout
+
+### Best Practices for Performance
+
+<Tip>
+  The component uses OnPush change detection. Ensure message objects are immutable for optimal performance.
+</Tip>
+
+<Info>
+  The component does not make any SDK calls or service calls. All data is derived from the input message object.
+</Info>
+
+<Warning>
+  Avoid frequently changing the message input. Each change triggers re-processing of attachments and metadata.
+</Warning>
+
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatfilebubble).
+</Info>

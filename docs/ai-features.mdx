@@ -1,0 +1,145 @@
+---
+title: "AI Smart Chat Features"
+description: "AI-powered features in CometChat's Angular UIKit: Conversation Starter, Smart Replies, and Conversation Summary."
+---
+
+## Overview
+
+CometChat AI Smart Chat Features enhance user interaction by providing contextual suggestions and summaries. Each feature must be enabled from the CometChat Dashboard first, then activated in your Angular components via input properties.
+
+<Note>
+AI Smart Chat Features must be enabled from the [CometChat Dashboard](https://app.cometchat.com). Once activated in the dashboard, you enable them in your Angular components using the inputs described below.
+</Note>
+
+## Smart Chat Features
+
+### Conversation Starter
+
+Displays AI-generated opening lines when a user starts a new or empty conversation. Helps break the ice by suggesting relevant topics.
+
+Enable it on `cometchat-message-list`:
+
+```html
+<cometchat-message-list
+  [user]="activeUser"
+  [showConversationStarters]="true">
+</cometchat-message-list>
+```
+
+Or using `ChatStateService` for shared state:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list [showConversationStarters]="true">
+    </cometchat-message-list>
+  `
+})
+export class ChatComponent {
+  constructor(private chatState: ChatStateService) {}
+
+  openChat(user: CometChat.User): void {
+    this.chatState.setActiveUser(user);
+  }
+}
+```
+
+See [CometChatConversationStarter](/components/cometchat-conversation-starter) for the standalone component docs.
+
+---
+
+### Smart Replies
+
+AI-generated response suggestions based on the last received message. Users can tap a suggestion to send it instantly.
+
+Enable it on `cometchat-message-list`:
+
+```html
+<cometchat-message-list
+  [user]="activeUser"
+  [showSmartReplies]="true">
+</cometchat-message-list>
+```
+
+Smart replies appear above the message composer when a qualifying message is received. The component respects configurable trigger keywords and a delay before showing suggestions.
+
+See [CometChatSmartReplies](/components/cometchat-smart-replies) for the standalone component docs.
+
+---
+
+### Conversation Summary
+
+AI-generated recap of long conversations. Useful for catching up on missed messages without scrolling through the entire thread.
+
+Enable it on `cometchat-message-header`:
+
+```html
+<!-- Enable in message header -->
+<cometchat-message-header
+  [user]="activeUser"
+  [showConversationSummaryButton]="true">
+</cometchat-message-header>
+```
+
+Full example combining the header with conversation starters and smart replies in the message list:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatMessageListComponent,
+  CometChatMessageHeaderComponent,
+  ChatStateService
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-view',
+  standalone: true,
+  imports: [CometChatMessageListComponent, CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [showConversationSummaryButton]="true">
+    </cometchat-message-header>
+
+    <cometchat-message-list
+      [showConversationStarters]="true"
+      [showSmartReplies]="true">
+    </cometchat-message-list>
+  `
+})
+export class ChatViewComponent {
+  constructor(private chatState: ChatStateService) {}
+
+  openChat(user: CometChat.User): void {
+    this.chatState.setActiveUser(user);
+  }
+}
+```
+
+See [CometChatConversationSummary](/components/cometchat-conversation-summary) for the standalone component docs.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Message List" icon="messages" href="/components/cometchat-message-list">
+    Customize the message list where AI Smart Chat Features appear
+  </Card>
+  <Card title="Message Header" icon="heading" href="/components/cometchat-message-header">
+    Enable Conversation Summary in the header
+  </Card>
+  <Card title="Conversation Starter" icon="comment" href="/components/cometchat-conversation-starter">
+    Standalone Conversation Starter component
+  </Card>
+  <Card title="Smart Replies" icon="reply" href="/components/cometchat-smart-replies">
+    Standalone Smart Replies component
+  </Card>
+</CardGroup>

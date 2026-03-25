@@ -1,0 +1,673 @@
+---
+title: "CometChatAudioBubble"
+description: "A comprehensive Angular component for rendering audio messages with real-time waveform visualization, playback controls, download functionality, and caption support"
+---
+The `CometChatAudioBubble` component is a sophisticated audio message display component that renders audio messages with real-time waveform visualization and playback controls. It serves as the primary content renderer for audio-based messages in the CometChat Angular UIKit, handling everything from single audio display to complex multi-audio layouts with expand/collapse behavior.
+
+## Overview
+
+The Audio Bubble component renders audio messages with waveform visualization and playback controls while maintaining visual consistency with the design system and ensuring full accessibility:
+
+- **Message Object Processing**: Extracts attachments and metadata from CometChat.MediaMessage objects
+- **Single Audio Display**: Waveform visualization with play/pause button and time display
+- **Real-time Waveform**: Visual representation of audio amplitude with seek support via WaveSurfer
+- **Playback Controls**: Play/pause with single audio player policy (only one audio plays at a time)
+- **Time Display**: Current time / duration in M:SS format
+- **Download with Progress**: Circular progress indicator with cancellation support
+- **Caption Support**: Renders captions using TextMessageBubbleComponent
+- **Dual Styling**: Supports sender (outgoing) and receiver (incoming) visual variants
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+
+<Info>
+  **Live Preview** — Default audio bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--audio)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--audio&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "250px", border: "1px solid #e0e0e0"}}
+  title="CometChat Audio Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Audio Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    <cometchat-audio-bubble
+      [message]="audioMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-audio-bubble>
+  `
+})
+export class ChatMessageComponent {
+  audioMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-audio-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-audio-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-audio-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.RIGHT"
+    ></cometchat-audio-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### With Event Handlers
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent, AudioAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-interactive-message',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    <cometchat-audio-bubble
+      [message]="audioMessage"
+      (playStateChange)="onPlayStateChange($event)"
+      (downloadStart)="onDownloadStart($event)"
+      (downloadComplete)="onDownloadComplete($event)"
+      (downloadError)="onDownloadError($event)"
+    ></cometchat-audio-bubble>
+  `
+})
+export class InteractiveMessageComponent {
+  audioMessage!: CometChat.MediaMessage;
+
+  onPlayStateChange(event: { isPlaying: boolean; attachment: AudioAttachment }): void {
+    console.log('Playback state changed:', event.isPlaying ? 'Playing' : 'Paused');
+  }
+
+  onDownloadStart(attachment: AudioAttachment): void {
+    console.log('Download started:', attachment.name);
+  }
+
+  onDownloadComplete(attachment: AudioAttachment): void {
+    console.log('Download completed:', attachment.name);
+  }
+
+  onDownloadError(event: { attachment: AudioAttachment; error: Error }): void {
+    console.error('Download failed:', event.error.message);
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The CometChat.MediaMessage object to render. Contains audio attachments, metadata, and sender information |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.LEFT` | The alignment of the message bubble. `LEFT` for incoming/receiver messages, `RIGHT` for outgoing/sender messages |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `playStateChange` | `{ isPlaying: boolean; attachment: AudioAttachment }` | Emitted when playback state changes (play/pause). Contains the current playing state and the associated attachment |
+| `downloadStart` | `AudioAttachment` | Emitted when download begins for an audio file |
+| `downloadComplete` | `AudioAttachment` | Emitted when download completes successfully |
+| `downloadError` | `{ attachment: AudioAttachment; error: Error }` | Emitted when download fails. Contains the attachment and error details |
+
+## Advanced Usage
+
+### Single Audio Message
+
+The component displays single audio messages with waveform visualization and playback controls:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-single-audio',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    <cometchat-audio-bubble
+      [message]="singleAudioMessage"
+    ></cometchat-audio-bubble>
+  `
+})
+export class SingleAudioComponent {
+  singleAudioMessage!: CometChat.MediaMessage;
+}
+```
+
+**Single Audio Features:**
+- Play/pause button on the left
+- Real-time waveform visualization with seek support
+- Current time / duration display (M:SS format)
+- Download button on the right
+- Fixed width of 240px for consistent layout
+
+### Audios with Captions
+
+The component automatically renders captions using the TextMessageBubbleComponent:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-captioned-audio',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    <cometchat-audio-bubble
+      [message]="captionedAudioMessage"
+    ></cometchat-audio-bubble>
+  `
+})
+export class CaptionedAudioComponent {
+  captionedAudioMessage!: CometChat.MediaMessage;
+  
+  // Message with caption:
+  // message.getText() returns "Check out this podcast episode!"
+}
+```
+
+**Caption Features:**
+- Displays below the audio(s)
+- Supports rich text formatting (bold, italic, etc.)
+- Supports @mentions with click events
+- Supports URLs with click events
+- Supports read more/less for long captions
+- Inherits alignment from parent bubble
+
+### Waveform Visualization
+
+The component uses an embedded WaveSurfer library for real-time waveform visualization:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-waveform-demo',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    <!-- Sender variant: white progress, neutral-500 wave -->
+    <cometchat-audio-bubble
+      [message]="audioMessage"
+      [alignment]="MessageBubbleAlignment.RIGHT"
+    ></cometchat-audio-bubble>
+
+    <!-- Receiver variant: primary color progress, extended-primary-300 wave -->
+    <cometchat-audio-bubble
+      [message]="audioMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-audio-bubble>
+  `
+})
+export class WaveformDemoComponent {
+  audioMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+**Waveform Features:**
+- Real-time audio amplitude visualization
+- Click to seek to any position
+- Drag to seek with real-time updates
+- Different colors for played vs unplayed portions
+- Sender variant: white progress, neutral-500 wave color
+- Receiver variant: primary color progress, extended-primary-300 wave color
+- Fixed width of 140px within the audio bubble
+- Height of 16px for waveform bars
+
+
+### Download with Progress
+
+The component provides download functionality with a circular progress indicator:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent, AudioAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-download-demo',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    <cometchat-audio-bubble
+      [message]="audioMessage"
+      (downloadStart)="onDownloadStart($event)"
+      (downloadComplete)="onDownloadComplete($event)"
+      (downloadError)="onDownloadError($event)"
+    ></cometchat-audio-bubble>
+  `
+})
+export class DownloadDemoComponent {
+  audioMessage!: CometChat.MediaMessage;
+
+  onDownloadStart(attachment: AudioAttachment): void {
+    console.log('Starting download:', attachment.name);
+  }
+
+  onDownloadComplete(attachment: AudioAttachment): void {
+    console.log('Download complete:', attachment.name);
+    // File is automatically saved with original filename
+  }
+
+  onDownloadError(event: { attachment: AudioAttachment; error: Error }): void {
+    console.error('Download failed:', event.error.message);
+  }
+}
+```
+
+**Download Features:**
+- Circular progress indicator showing completion percentage (0-100%)
+- Cancel button in the center of the progress circle
+- Automatic file download with original filename on completion
+- Error handling with event emission
+- Sender variant: white download icon and progress
+- Receiver variant: primary color download icon and progress
+
+### Single Audio Player Policy
+
+The component implements a single audio player policy - only one audio can play at a time across all audio bubbles:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudioBubbleComponent, AudioAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-audio-list',
+  standalone: true,
+  imports: [CometChatAudioBubbleComponent],
+  template: `
+    @for (message of audioMessages; track message.getId()) {
+      <cometchat-audio-bubble
+        [message]="message"
+        (playStateChange)="onPlayStateChange($event)"
+      ></cometchat-audio-bubble>
+    }
+  `
+})
+export class AudioListComponent {
+  audioMessages: CometChat.MediaMessage[] = [];
+
+  onPlayStateChange(event: { isPlaying: boolean; attachment: AudioAttachment }): void {
+    // When one audio starts playing, any other playing audio is automatically paused
+    if (event.isPlaying) {
+      console.log('Now playing:', event.attachment.name);
+    }
+  }
+}
+```
+
+**Single Player Policy Features:**
+- Only one audio plays at a time across all audio bubbles
+- Starting a new audio automatically pauses any currently playing audio
+- Global singleton tracks the currently playing audio
+- Automatic cleanup on component destruction
+
+### Time Display
+
+The component displays current playback time and total duration:
+
+```typescript
+// Time format examples:
+// 0 seconds → "0:00"
+// 45 seconds → "0:45"
+// 125 seconds (2 min 5 sec) → "2:05"
+// 3665 seconds (1 hr 1 min 5 sec) → "61:05"
+```
+
+**Time Display Features:**
+- Format: "M:SS / M:SS" (current / total)
+- Updates continuously during playback
+- Updates immediately on seek via waveform
+- Sender variant: white text color
+- Receiver variant: neutral-600 text color
+
+## Customization
+
+### Styling with CSS Variables
+
+The Audio Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom audio bubble styling */
+cometchat-audio-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Typography */
+  --cometchat-font-caption1-regular: 400 12px 'Inter';
+  --cometchat-font-caption1-bold: 600 12px 'Inter';
+
+  /* Colors - Incoming messages */
+  --cometchat-neutral-color-300: #E0E0E0;
+  --cometchat-neutral-color-600: #666666;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-extended-primary-color-300: #B8A8F0;
+
+  /* Colors - Outgoing messages */
+  --cometchat-primary-button-background: #6852D6;
+  --cometchat-static-white: #FFFFFF;
+  --cometchat-neutral-color-500: #9E9E9E;
+
+  /* Border radius */
+  --cometchat-radius-3: 12px;
+  --cometchat-radius-max: 1000px;
+}
+```
+
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` to `--cometchat-spacing-4` | Padding, margin, gap | `4px` to `16px` |
+| `--cometchat-font-caption1-regular` | Time display font | `400 12px Roboto` |
+| `--cometchat-font-caption1-bold` | Expand indicator font | `600 12px Roboto` |
+| `--cometchat-primary-color` | Receiver waveform progress, download icon | `#6852D6` |
+| `--cometchat-extended-primary-color-300` | Receiver waveform wave color | `#B8A8F0` |
+| `--cometchat-neutral-color-300` | Receiver bubble background | `#E0E0E0` |
+| `--cometchat-neutral-color-500` | Sender waveform wave color | `#9E9E9E` |
+| `--cometchat-neutral-color-600` | Receiver time text color | `#666666` |
+| `--cometchat-static-white` | Sender waveform progress, text, icons | `#FFFFFF` |
+| `--cometchat-primary-button-background` | Sender bubble background | `#6852D6` |
+| `--cometchat-radius-3` | Bubble border radius | `12px` |
+| `--cometchat-radius-max` | Play button, expand indicator radius | `1000px` (circular) |
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for incoming messages */
+.theme-blue cometchat-audio-bubble {
+  --cometchat-neutral-color-300: #E3F2FD;
+  --cometchat-primary-color: #1976D2;
+  --cometchat-extended-primary-color-300: #90CAF9;
+}
+
+/* Green theme for outgoing messages */
+.theme-green cometchat-audio-bubble {
+  --cometchat-primary-button-background: #4CAF50;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-audio-bubble {
+  --cometchat-neutral-color-300: #2C2C2C;
+  --cometchat-neutral-color-600: #B0B0B0;
+}
+```
+
+### Custom Play Button Styling
+
+```css expandable
+/* Custom play/pause button styling */
+::ng-deep .cometchat-audio-bubble__play-button,
+::ng-deep .cometchat-audio-bubble__pause-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+::ng-deep .cometchat-audio-bubble__play-button:hover,
+::ng-deep .cometchat-audio-bubble__pause-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+```
+
+### Custom Expand Indicator Styling
+
+```css expandable
+/* Custom expand indicator button */
+::ng-deep .cometchat-audio-bubble__expand-indicator {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+::ng-deep .cometchat-audio-bubble__expand-indicator:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+```
+
+### Custom Download Progress Styling
+
+```css expandable
+/* Custom download progress indicator */
+::ng-deep .cometchat-audio-bubble__download-progress {
+  position: relative;
+}
+
+::ng-deep .cometchat-audio-bubble__progress-bg {
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 2;
+  fill: none;
+}
+
+::ng-deep .cometchat-audio-bubble__progress-fg {
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dasharray 0.3s ease;
+}
+```
+
+## Accessibility
+
+The Audio Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: All controls have descriptive ARIA labels
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with buttons
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators on all interactive elements
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### Keyboard Support
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate to play/pause button | When audio bubble is focused |
+| `Shift + Tab` | Navigate backwards | When any control is focused |
+| `Enter` | Toggle play/pause | When play/pause button is focused |
+| `Space` | Toggle play/pause | When play/pause button is focused |
+| `Enter` | Start download | When download button is focused |
+| `Enter` | Cancel download | When cancel button is focused |
+| `Arrow Left/Right` | Seek audio | When waveform is focused |
+
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `aria-label` | Play button | `"Play audio"` | Describes the play action |
+| `aria-label` | Pause button | `"Pause audio"` | Describes the pause action |
+| `aria-label` | Download button | `"Download audio"` | Describes the download action |
+| `aria-label` | Cancel button | `"Cancel download"` | Describes the cancel action |
+| `aria-label` | Waveform | `"Audio waveform, use arrow keys to seek"` | Describes waveform interaction |
+
+### Screen Reader Behavior
+
+Screen readers announce the audio bubble with:
+1. **Play button**: "Button, Play audio"
+2. **Pause button**: "Button, Pause audio"
+3. **Download button**: "Button, Download audio"
+4. **Expand indicator**: "Button, Show 3 more, collapsed"
+5. **Collapse button**: "Button, Show less, expanded"
+6. **State changes**: Announces playback state changes
+
+### Accessibility Best Practices
+
+<Tip>
+  The component automatically handles all accessibility requirements. No additional ARIA attributes or keyboard handling is needed.
+</Tip>
+
+<Warning>
+  When handling `playStateChange` events, ensure your custom actions maintain accessibility by managing focus appropriately.
+</Warning>
+
+<Info>
+  All interactive elements (play/pause, download, expand/collapse, waveform) are keyboard accessible and have visible focus indicators.
+</Info>
+
+## Best Practices
+
+<Tip>
+  Always provide the complete CometChat.MediaMessage object to ensure all features (attachments, captions, metadata) work correctly.
+</Tip>
+
+<Warning>
+  The component expects audio attachments with valid URLs. Ensure your message objects have properly formatted attachment data.
+</Warning>
+
+<Info>
+  Use the `alignment` property to distinguish between incoming and outgoing messages for proper visual styling.
+</Info>
+
+<Tip>
+  Handle `playStateChange` events to track analytics or perform custom actions when audio playback state changes.
+</Tip>
+
+<Warning>
+  The component does NOT open a modal or fullscreen view. Expansion happens inline within the message bubble.
+</Warning>
+
+<Info>
+  The component handles missing or invalid data gracefully, displaying error states without breaking the UI.
+</Info>
+
+<Tip>
+  The single audio player policy ensures a good user experience - only one audio plays at a time across all audio bubbles.
+</Tip>
+
+## Related Components
+
+- **CometChatTextBubble**: Used for rendering captions in audio messages
+- **CometChatFileBubble**: Displays file messages with download functionality
+- **CometChatImageBubble**: Displays image messages with grid layouts and gallery
+- **CometChatVideoBubble**: Displays video messages with thumbnails and player
+- **CometChatMessageBubble**: Uses Audio Bubble as the content view for audio messages
+- **CometChatMessageList**: Displays lists of messages including audio bubbles
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: 
+  - Angular CommonModule
+  - CometChat SDK for message types
+  - TranslatePipe for localization
+  - CometChatTextBubbleComponent for captions
+  - Embedded WaveSurfer library for waveform visualization
+- **Bundle Size**: Minimal footprint (~15KB including WaveSurfer)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+
+## Performance Considerations
+
+### Optimization Strategies
+
+**Change Detection:**
+- Uses OnPush strategy to minimize unnecessary re-renders
+- Only updates when inputs change or events are emitted
+
+**WaveSurfer Initialization:**
+- WaveSurfer instances are created lazily (only when visible)
+- Instances are properly destroyed on component destruction
+- Audio decoding happens asynchronously to avoid blocking UI
+
+**Single Audio Player Policy:**
+- Global singleton ensures only one audio plays at a time
+- Reduces memory usage and improves performance
+- Automatic cleanup when components are destroyed
+
+**Download Progress:**
+- Uses ReadableStream for efficient progress tracking
+- Supports cancellation via AbortController
+- Progress updates are throttled to avoid excessive re-renders
+
+### Best Practices for Performance
+
+<Tip>
+  The component uses OnPush change detection. Ensure message objects are immutable for optimal performance.
+</Tip>
+
+<Info>
+  WaveSurfer instances are created lazily. Only visible audio attachments have active waveform visualizations.
+</Info>
+
+<Warning>
+  Avoid frequently changing the message input. Each change triggers re-processing of attachments and WaveSurfer re-initialization.
+</Warning>
+
+<Info>
+  The embedded WaveSurfer library is optimized for the audio bubble use case with minimal configuration.
+</Info>
+
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchataudiobubble).
+</Info>
+

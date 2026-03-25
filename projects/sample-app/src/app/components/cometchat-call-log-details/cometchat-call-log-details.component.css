@@ -1,0 +1,528 @@
+/* ═══════════════════════════════════════════════════
+   CometChatCallLogDetails — Side panel for call log details
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-call-log-details {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--cometchat-background-color-01);
+  border-left: 1px solid var(--cometchat-border-color-light);
+  position: relative;
+}
+
+/* ── Outgoing Call Overlay ── */
+
+.cometchat-call-log-details__outgoing-call {
+  background: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Header ── */
+
+.cometchat-call-log-details__header {
+  display: flex;
+  height: 64px;
+  min-height: 64px;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-4);
+  align-items: center;
+  gap: var(--cometchat-spacing-3);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+  box-sizing: border-box;
+}
+
+.cometchat-call-log-details__back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cometchat-call-log-details__back-icon {
+  width: 24px;
+  height: 24px;
+  -webkit-mask: url("../../../assets/arrow_back.svg") center center no-repeat;
+  mask: url("../../../assets/arrow_back.svg") center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-icon-color-primary);
+}
+
+.cometchat-call-log-details__back-button:hover .cometchat-call-log-details__back-icon {
+  background: var(--cometchat-icon-color-highlight);
+}
+
+.cometchat-call-log-details__back-button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+  border-radius: var(--cometchat-radius-max);
+}
+
+.cometchat-call-log-details__title {
+  flex: 1;
+  overflow: hidden;
+  color: var(--cometchat-text-color-primary);
+  text-overflow: ellipsis;
+  font: var(--cometchat-font-heading4-medium);
+}
+
+/* ── User Section (avatar + name + status + call buttons) ── */
+
+.cometchat-call-log-details__user-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cometchat-spacing-5);
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4) var(--cometchat-spacing-5) var(--cometchat-spacing-4);
+}
+
+.cometchat-call-log-details__user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-call-log-details__avatar {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.cometchat-call-log-details__avatar ::ng-deep .cometchat-avatar,
+.cometchat-call-log-details__avatar ::ng-deep .cometchat-avatar__image {
+  width: 60px;
+  height: 60px;
+}
+
+.cometchat-call-log-details__avatar ::ng-deep .cometchat-avatar__text {
+  font: var(--cometchat-font-heading1-bold);
+  height: fit-content;
+  width: fit-content;
+}
+
+.cometchat-call-log-details__user-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-1);
+  min-width: 0;
+}
+
+.cometchat-call-log-details__user-name {
+  font: var(--cometchat-font-heading4-medium);
+  color: var(--cometchat-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cometchat-call-log-details__user-status {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Call Buttons ── */
+
+.cometchat-call-log-details__call-buttons {
+  display: flex;
+  gap: var(--cometchat-spacing-2);
+}
+
+.cometchat-call-log-details__call-btn {
+  display: flex;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-5);
+  justify-content: center;
+  align-items: center;
+  border-radius: var(--cometchat-radius-2);
+  border: 1px solid var(--cometchat-border-color-default, var(--cometchat-border-color-light));
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-call-log-details__call-btn:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+.cometchat-call-log-details__call-btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+.cometchat-call-log-details__call-btn-icon {
+  width: 24px;
+  height: 24px;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-icon-color-highlight, var(--cometchat-primary-color));
+}
+
+.cometchat-call-log-details__call-btn-icon--voice {
+  -webkit-mask: url("../../../assets/call.svg") center center no-repeat;
+  mask: url("../../../assets/call.svg") center center no-repeat;
+}
+
+.cometchat-call-log-details__call-btn-icon--video {
+  -webkit-mask: url("../../../assets/videocam.svg") center center no-repeat;
+  mask: url("../../../assets/videocam.svg") center center no-repeat;
+}
+
+/* ── Call Info Row (below user section) ── */
+
+.cometchat-call-log-details__info-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-3);
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+  margin-bottom: var(--cometchat-padding-4);
+  background: var(--cometchat-background-color-03, var(--cometchat-background-color-02));
+}
+
+.cometchat-call-log-details__info-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-call-log-details__call-icon--outgoing {
+  background: url("../../../assets/outgoing_call_success.svg") center center no-repeat;
+  background-size: contain;
+}
+
+.cometchat-call-log-details__call-icon--incoming {
+  background: url("../../../assets/incoming_call_success.svg") center center no-repeat;
+  background-size: contain;
+}
+
+.cometchat-call-log-details__call-icon--missed {
+  background: url("../../../assets/missed_call_icon.svg") center center no-repeat;
+  background-size: contain;
+}
+
+.cometchat-call-log-details__info-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-call-log-details__info-title {
+  font: var(--cometchat-font-heading4-medium);
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-call-log-details__info-subtitle {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+
+.cometchat-call-log-details__info-subtitle ::ng-deep .cometchat-date {
+  padding: 0;
+  overflow: hidden;
+  color: var(--cometchat-text-color-secondary);
+  text-overflow: ellipsis;
+  font: var(--cometchat-font-body-regular);
+}
+
+.cometchat-call-log-details__info-duration {
+  font: var(--cometchat-font-body-medium);
+  color: var(--cometchat-text-color-primary);
+  white-space: nowrap;
+}
+
+.cometchat-call-log-details__info-duration--disabled {
+  color: var(--cometchat-text-color-tertiary);
+}
+
+/* ── Tabs ── */
+
+.cometchat-call-log-details__tabs {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+.cometchat-call-log-details__tab {
+  display: flex;
+  height: 40px;
+  padding: var(--cometchat-padding-3);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 0 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--cometchat-radius-1) var(--cometchat-radius-1) 0 0;
+  background: transparent;
+  color: var(--cometchat-text-color-secondary);
+  text-align: center;
+  font: var(--cometchat-font-heading4-medium);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.cometchat-call-log-details__tab:hover {
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-call-log-details__tab--active {
+  color: var(--cometchat-text-color-highlight, var(--cometchat-primary-color));
+  border-bottom-color: var(--cometchat-primary-color);
+}
+
+.cometchat-call-log-details__tab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+/* ── Content ── */
+
+.cometchat-call-log-details__content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Shared List Items (Participants, History, Recordings) ── */
+
+.cometchat-call-log-details__list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.cometchat-call-log-details__list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-3);
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+.cometchat-call-log-details__list-item-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.cometchat-call-log-details__list-item-avatar ::ng-deep .cometchat-avatar,
+.cometchat-call-log-details__list-item-avatar ::ng-deep .cometchat-avatar__image {
+  width: 40px;
+  height: 40px;
+}
+
+.cometchat-call-log-details__list-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-call-log-details__list-item-title {
+  font: var(--cometchat-font-heading4-medium);
+  color: var(--cometchat-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cometchat-call-log-details__list-item-subtitle {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+
+.cometchat-call-log-details__list-item-subtitle ::ng-deep .cometchat-date {
+  padding: 0;
+  overflow: hidden;
+  color: var(--cometchat-text-color-secondary);
+  text-overflow: ellipsis;
+  font: var(--cometchat-font-body-regular);
+}
+
+.cometchat-call-log-details__list-item-tail {
+  font: var(--cometchat-font-body-medium);
+  color: var(--cometchat-text-color-primary);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.cometchat-call-log-details__list-item-tail--disabled {
+  color: var(--cometchat-text-color-tertiary);
+}
+
+/* ── Download Button (Recordings) ── */
+
+.cometchat-call-log-details__download-btn {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  -webkit-mask: url("../../../assets/download.svg") center center no-repeat;
+  mask: url("../../../assets/download.svg") center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-icon-color-highlight, var(--cometchat-primary-color));
+}
+
+.cometchat-call-log-details__download-btn:hover {
+  opacity: 0.8;
+}
+
+.cometchat-call-log-details__download-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cometchat-primary-color);
+  border-radius: var(--cometchat-radius-1);
+}
+
+/* ── Empty State ── */
+
+.cometchat-call-log-details__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-spacing-8);
+}
+
+.cometchat-call-log-details__empty--centered {
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2);
+  height: 100%;
+  flex: 1;
+}
+
+.cometchat-call-log-details__empty-icon {
+  width: 60px;
+  height: 60px;
+  -webkit-mask: url("../../../assets/call_recording_empty.svg") center center no-repeat;
+  mask: url("../../../assets/call_recording_empty.svg") center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  background: var(--cometchat-icon-color-tertiary);
+}
+
+.cometchat-call-log-details__empty-text {
+  color: var(--cometchat-text-color-primary);
+  text-align: center;
+  font: var(--cometchat-font-heading4-medium);
+}
+
+/* ── Shimmer Loading ── */
+
+.cometchat-call-log-details__shimmer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cometchat-call-log-details__shimmer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-3);
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+.cometchat-call-log-details__shimmer-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: var(--cometchat-radius-2);
+  background: var(--cometchat-shimmer-gradient-color, linear-gradient(90deg, #e0e0e0 0%, #eee 100%));
+  background-size: 800px 100%;
+  animation: cometchat-call-log-details-shimmer 2s infinite linear;
+}
+
+.cometchat-call-log-details__shimmer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-call-log-details__shimmer-title {
+  width: 70%;
+  height: 16px;
+  border-radius: var(--cometchat-radius-2);
+  background: var(--cometchat-shimmer-gradient-color, linear-gradient(90deg, #e0e0e0 0%, #eee 100%));
+  background-size: 800px 100%;
+  animation: cometchat-call-log-details-shimmer 2s infinite linear;
+}
+
+.cometchat-call-log-details__shimmer-subtitle {
+  width: 50%;
+  height: 10px;
+  border-radius: var(--cometchat-radius-2);
+  background: var(--cometchat-shimmer-gradient-color, linear-gradient(90deg, #e0e0e0 0%, #eee 100%));
+  background-size: 800px 100%;
+  animation: cometchat-call-log-details-shimmer 2s infinite linear;
+}
+
+.cometchat-call-log-details__shimmer-tail {
+  width: 40px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: var(--cometchat-radius-2);
+  background: var(--cometchat-shimmer-gradient-color, linear-gradient(90deg, #e0e0e0 0%, #eee 100%));
+  background-size: 800px 100%;
+  animation: cometchat-call-log-details-shimmer 2s infinite linear;
+}
+
+@keyframes cometchat-call-log-details-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Mobile / Desktop ── */
+
+@media (min-width: 769px) {
+  .cometchat-call-log-details__back-button {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .cometchat-call-log-details {
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 3;
+  }
+
+  .cometchat-call-log-details__call-btn {
+    padding: var(--cometchat-spacing-2);
+  }
+}

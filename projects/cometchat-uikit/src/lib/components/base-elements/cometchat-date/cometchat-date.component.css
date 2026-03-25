@@ -1,0 +1,30 @@
+/* 
+ * CometChatDate Component Styles
+ * 
+ * CSS Custom Properties (shared component - global Date variables):
+ * --cometchat-date-color: Text color (default: var(--cometchat-text-color-secondary))
+ * --cometchat-date-font: Font style (default: var(--cometchat-font-caption1-regular))
+ * --cometchat-date-background: Background color (default: transparent)
+ * --cometchat-date-padding: Padding (default: 0)
+ * --cometchat-date-border: Border style (default: none)
+ * --cometchat-date-border-radius: Border radius (default: var(--cometchat-radius-1))
+ * 
+ * Usage from parent component:
+ * .parent-container cometchat-date {
+ *   --cometchat-date-color: var(--cometchat-text-color-primary);
+ *   --cometchat-date-font: var(--cometchat-font-caption2-regular);
+ * }
+ */
+
+.cometchat-date__wrapper {
+  display: contents;
+}
+
+.cometchat-date {
+  color: var(--cometchat-date-color, var(--cometchat-text-color-secondary, #727272));
+  font: var(--cometchat-date-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px Roboto));
+  background: var(--cometchat-date-background, transparent);
+  padding: var(--cometchat-date-padding, 0);
+  border: var(--cometchat-date-border, none);
+  border-radius: var(--cometchat-date-border-radius, var(--cometchat-radius-1, 4px));
+}

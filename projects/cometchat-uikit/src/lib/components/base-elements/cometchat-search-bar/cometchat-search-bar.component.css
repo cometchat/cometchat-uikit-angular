@@ -1,0 +1,142 @@
+/*
+ * CometChat Search Bar Component CSS Custom Properties
+ *
+ * --cometchat-search-bar-gap
+ * --cometchat-search-bar-padding
+ * --cometchat-search-bar-background
+ * --cometchat-search-bar-border-radius
+ * --cometchat-search-bar-border
+ * --cometchat-search-bar-transition-duration
+ * --cometchat-search-bar-border-color-focus
+ * --cometchat-search-bar-icon-size
+ * --cometchat-search-bar-icon-color
+ * --cometchat-search-bar-input-font
+ * --cometchat-search-bar-input-color
+ * --cometchat-search-bar-input-placeholder-color
+ * --cometchat-search-bar-clear-button-size
+ * --cometchat-search-bar-clear-button-transition-duration
+ * --cometchat-search-bar-clear-button-opacity-hover
+ * --cometchat-search-bar-clear-button-focus-outline
+ * --cometchat-search-bar-clear-button-focus-outline-offset
+ * --cometchat-search-bar-clear-button-focus-border-radius
+ * --cometchat-search-bar-clear-icon-size
+ * --cometchat-search-bar-clear-icon-color
+ * --cometchat-search-bar-border-high-contrast
+ * --cometchat-search-bar-clear-button-focus-outline-high-contrast
+ */
+
+/* SearchBar Block */
+.cometchat-search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-search-bar-gap, var(--cometchat-spacing-2, 8px));
+  padding: var(--cometchat-search-bar-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  background-color: var(--cometchat-search-bar-background, var(--cometchat-background-color-03));
+  border-radius: var(--cometchat-search-bar-border-radius, var(--cometchat-radius-max, 1000px));
+  border: var(--cometchat-search-bar-border, 1px solid transparent);
+  transition: border-color var(--cometchat-search-bar-transition-duration, 0.2s) ease;
+  height: var(--cometchat-search-bar-height,42px);
+  box-sizing: border-box;
+}
+
+/* Only show focus border for keyboard navigation, not mouse clicks or page load */
+.cometchat-search-bar:has(:focus-visible) {
+  border-color: var(--cometchat-search-bar-border-color-focus, var(--cometchat-primary-color, #6852D6));
+}
+
+/* Search Icon Element */
+.cometchat-search-bar__icon {
+  width: var(--cometchat-search-bar-icon-size, 20px);
+  height: var(--cometchat-search-bar-icon-size, 20px);
+  flex-shrink: 0;
+  background-color: var(--cometchat-search-bar-icon-color, var(--cometchat-icon-color-secondary));
+  -webkit-mask: url('../../../assets/search.svg') center center no-repeat;
+  mask: url('../../../assets/search.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Input Element */
+.cometchat-search-bar__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  font: var(--cometchat-search-bar-input-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-search-bar-input-color, var(--cometchat-text-color-primary));
+  caret-color: var(--cometchat-search-bar-input-color, var(--cometchat-text-color-primary));
+  -webkit-text-fill-color: var(--cometchat-search-bar-input-color, var(--cometchat-text-color-primary));
+  min-width: 0;
+}
+
+.cometchat-search-bar__input::placeholder {
+  color: var(--cometchat-search-bar-input-placeholder-color, var(--cometchat-text-color-secondary));
+}
+
+.cometchat-search-bar__input:focus {
+  border: none;
+  outline: none;
+}
+
+/* Remove default search input clear button in WebKit browsers */
+.cometchat-search-bar__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* Clear Button Element */
+.cometchat-search-bar__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-search-bar-clear-button-size, 20px);
+  height: var(--cometchat-search-bar-clear-button-size, 20px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--cometchat-search-bar-clear-button-transition-duration, 0.2s) ease;
+}
+
+.cometchat-search-bar__clear:hover {
+  opacity: var(--cometchat-search-bar-clear-button-opacity-hover, 0.7);
+}
+
+.cometchat-search-bar__clear:focus {
+  outline: var(--cometchat-search-bar-clear-button-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-search-bar-clear-button-focus-outline-offset, 2px);
+  border-radius: var(--cometchat-search-bar-clear-button-focus-border-radius, var(--cometchat-radius-1, 4px));
+}
+
+.cometchat-search-bar__clear:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cometchat-search-bar__clear:focus-visible {
+  outline: var(--cometchat-search-bar-clear-button-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-search-bar-clear-button-focus-outline-offset, 2px);
+}
+
+/* Clear Icon Element */
+.cometchat-search-bar__clear-icon {
+  width: var(--cometchat-search-bar-clear-icon-size, 16px);
+  height: var(--cometchat-search-bar-clear-icon-size, 16px);
+  background-color: var(--cometchat-search-bar-clear-icon-color, var(--cometchat-icon-color-secondary));
+  -webkit-mask: url('../../../assets/close.svg') center center no-repeat;
+  mask: url('../../../assets/close.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .cometchat-search-bar {
+    border: var(--cometchat-search-bar-border-high-contrast, 2px solid currentColor);
+  }
+  
+  .cometchat-search-bar__clear:focus-visible {
+    outline: var(--cometchat-search-bar-clear-button-focus-outline-high-contrast, 3px solid currentColor);
+  }
+}

@@ -1,0 +1,453 @@
+/* Rich Text Editor Styles
+ * BEM-based CSS for custom rich text editor component
+ * Uses CSS variables from css-variables.css for all values
+ * @see Requirements 12.1
+ */
+
+/* ============================================
+   Editor Container
+   ============================================ */
+
+.cometchat-rich-text-editor {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 100px;
+  background: var(--cometchat-background-color-01);
+  border: 1px solid var(--cometchat-border-color-default);
+  border-radius: var(--cometchat-radius-2);
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  transition: border-color 0.2s ease;
+  overflow: hidden;
+}
+
+.cometchat-rich-text-editor:hover {
+  border-color: var(--cometchat-border-color-dark);
+}
+
+/* .cometchat-rich-text-editor--focused {
+  border-color: var(--cometchat-border-color-highlight);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(104, 82, 214, 0.1);
+} */
+
+.cometchat-rich-text-editor--disabled {
+  /* background: var(--cometchat-background-color-03);
+  color: var(--cometchat-text-color-disabled);
+  cursor: not-allowed;
+  opacity: 0.6; */
+}
+
+.cometchat-rich-text-editor--error {
+  border-color: var(--cometchat-error-color);
+}
+
+/* ============================================
+   Content Editable Area
+   ============================================ */
+
+.cometchat-rich-text-editor__content {
+  position: relative;
+  padding: var(--cometchat-spacing-3);
+  min-height: 100px;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  outline: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+
+  
+}
+
+/* Placeholder shown when editor is empty 
+   Note: contenteditable often has <br> tags even when "empty", so we use class-based approach
+*/
+.cometchat-rich-text-editor__content--empty::before {
+  content: attr(data-placeholder);
+  color: var(--cometchat-text-color-tertiary);
+  pointer-events: none;
+  position: absolute;
+  left: var(--cometchat-spacing-3);
+  top: var(--cometchat-spacing-3);
+}
+
+/* ============================================
+   Inline Formatting Styles
+   ============================================ */
+
+.cometchat-rich-text-editor__content strong,
+.cometchat-rich-text-editor__content b {
+  font-weight: 700;
+}
+
+.cometchat-rich-text-editor__content em,
+.cometchat-rich-text-editor__content i {
+  font-style: italic;
+}
+
+.cometchat-rich-text-editor__content u {
+  text-decoration: underline;
+}
+
+.cometchat-rich-text-editor__content s,
+.cometchat-rich-text-editor__content strike {
+  text-decoration: line-through;
+}
+
+.cometchat-rich-text-editor__content code {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  background: var(--cometchat-extended-primary-color-100);
+  color: var(--cometchat-primary-color);
+  padding: var(--cometchat-spacing) var(--cometchat-spacing-1);
+  border-radius: var(--cometchat-radius-1);
+}
+
+/* ============================================
+   Block Formatting Styles
+   ============================================ */
+
+.cometchat-rich-text-editor__content pre {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  background: var(--cometchat-neutral-color-100);
+  color: var(--cometchat-text-color-primary);
+  padding: var(--cometchat-spacing-3);
+  border-radius: var(--cometchat-radius-2);
+  margin: var(--cometchat-spacing-2) 0;
+  overflow-x: auto;
+  white-space: pre;
+  border: 1px solid var(--cometchat-border-color-light);
+}
+
+.cometchat-rich-text-editor__content pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.cometchat-rich-text-editor__content blockquote {
+  border-left: 4px solid var(--cometchat-neutral-color-300);
+  padding-left: var(--cometchat-spacing-3);
+  margin: var(--cometchat-spacing-2) 0;
+  color: var(--cometchat-text-color-secondary);
+  background: var(--cometchat-background-color-02);
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+  border-radius: var(--cometchat-radius-1);
+}
+
+/* ============================================
+   List Styles
+   ============================================ */
+
+.cometchat-rich-text-editor__content ul,
+.cometchat-rich-text-editor__content ol {
+  margin: var(--cometchat-spacing-2) 0;
+  padding-left: var(--cometchat-spacing-6);
+}
+
+.cometchat-rich-text-editor__content ul {
+  list-style-type: disc;
+}
+
+.cometchat-rich-text-editor__content ol {
+  list-style-type: decimal;
+}
+
+.cometchat-rich-text-editor__content li {
+  margin: var(--cometchat-spacing-1) 0;
+  padding-left: var(--cometchat-spacing-1);
+}
+
+.cometchat-rich-text-editor__content ul ul,
+.cometchat-rich-text-editor__content ol ul {
+  list-style-type: circle;
+}
+
+.cometchat-rich-text-editor__content ul ul ul,
+.cometchat-rich-text-editor__content ol ul ul {
+  list-style-type: square;
+}
+
+/* ============================================
+   Link Styles
+   ============================================ */
+
+.cometchat-rich-text-editor__content a {
+  color: var(--cometchat-primary-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cometchat-rich-text-editor__content a:hover {
+  color: var(--cometchat-primary-color);
+  text-decoration: underline;
+}
+
+.cometchat-rich-text-editor__content a:focus {
+  outline: 2px solid var(--cometchat-border-color-highlight);
+  outline-offset: 2px;
+  border-radius: var(--cometchat-radius-1);
+}
+
+/* ============================================
+   Mention Styles (Atomic Nodes)
+   ============================================ */
+
+.cometchat-rich-text-editor__mention {
+  display: inline-block;
+  padding: var(--cometchat-spacing) var(--cometchat-spacing-2);
+  border-radius: var(--cometchat-radius-1);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.cometchat-rich-text-editor__mention--self {
+  background: var(--cometchat-extended-primary-color-100);
+  color: var(--cometchat-primary-color);
+}
+
+.cometchat-rich-text-editor__mention--other {
+  background: var(--cometchat-background-color-03);
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-rich-text-editor__mention:hover {
+  opacity: 0.8;
+}
+
+/* ============================================
+   Placeholder Styles
+   ============================================ */
+
+.cometchat-rich-text-editor__placeholder {
+  position: absolute;
+  top: var(--cometchat-spacing-3);
+  left: var(--cometchat-spacing-3);
+  right: var(--cometchat-spacing-3);
+  color: var(--cometchat-text-color-tertiary);
+  pointer-events: none;
+  font: var(--cometchat-font-body-regular);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cometchat-rich-text-editor__placeholder--hidden {
+  display: none;
+}
+
+/* ============================================
+   Focus Indicator
+   ============================================ */
+
+.cometchat-rich-text-editor__focus-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--cometchat-primary-color);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+/* 
+.cometchat-rich-text-editor--focused .cometchat-rich-text-editor__focus-indicator {
+  transform: scaleX(1);
+} */
+
+/* ============================================
+   Character Counter
+   ============================================ */
+
+.cometchat-rich-text-editor__counter {
+  position: absolute;
+  bottom: var(--cometchat-spacing-2);
+  right: var(--cometchat-spacing-3);
+  font: var(--cometchat-font-caption2-regular);
+  color: var(--cometchat-text-color-tertiary);
+  pointer-events: none;
+}
+
+.cometchat-rich-text-editor__counter--warning {
+  color: var(--cometchat-warning-color);
+}
+
+.cometchat-rich-text-editor__counter--error {
+  color: var(--cometchat-error-color);
+}
+
+/* ============================================
+   Scrollbar Styles
+   ============================================ */
+
+.cometchat-rich-text-editor__content::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* ============================================
+   Selection Styles
+   ============================================ */
+
+.cometchat-rich-text-editor__content::selection {
+  background: rgba(104, 82, 214, 0.2);
+  color: inherit;
+}
+
+.cometchat-rich-text-editor__content ::-moz-selection {
+  background: rgba(104, 82, 214, 0.2);
+  color: inherit;
+}
+
+/* ============================================
+   Accessibility - Screen Reader Only
+   ============================================ */
+
+.cometchat-rich-text-editor__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ============================================
+   Format State Indicators
+   ============================================ */
+
+.cometchat-rich-text-editor__format-indicator {
+  position: absolute;
+  top: var(--cometchat-spacing-2);
+  right: var(--cometchat-spacing-2);
+  display: flex;
+  gap: var(--cometchat-spacing-1);
+  pointer-events: none;
+}
+
+.cometchat-rich-text-editor__format-badge {
+  padding: var(--cometchat-spacing) var(--cometchat-spacing-2);
+  background: var(--cometchat-background-color-03);
+  color: var(--cometchat-text-color-secondary);
+  font: var(--cometchat-font-caption2-medium);
+  border-radius: var(--cometchat-radius-1);
+}
+
+.cometchat-rich-text-editor__format-badge--active {
+  background: var(--cometchat-primary-color);
+  color: var(--cometchat-static-white);
+}
+
+/* ============================================
+   Loading State
+   ============================================ */
+
+.cometchat-rich-text-editor--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.cometchat-rich-text-editor__loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 10;
+}
+
+.cometchat-rich-text-editor__spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--cometchat-border-color-light);
+  border-top-color: var(--cometchat-primary-color);
+  border-radius: 50%;
+  animation: cometchat-rich-text-editor-spin 0.8s linear infinite;
+}
+
+@keyframes cometchat-rich-text-editor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   Error Message
+   ============================================ */
+
+.cometchat-rich-text-editor__error-message {
+  margin-top: var(--cometchat-spacing-1);
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-error-color);
+}
+
+/* ============================================
+   Helper Text
+   ============================================ */
+
+.cometchat-rich-text-editor__helper-text {
+  margin-top: var(--cometchat-spacing-1);
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+.cometchat-message-composer--single-line .cometchat-message-composer__rich-text-editor{
+  padding-bottom: var(--cometchat-padding-1);
+}
+.cometchat-message-composer--single-line .cometchat-message-composer__attachment-button-wrapper{
+    padding-bottom: var(--cometchat-padding-2);
+}
+.cometchat-message-composer__rich-text-editor .cometchat-rich-text-editor__content{
+  min-height: inherit !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  padding-top: 8px;
+}
+
+/* Safari-specific: ensure contenteditable in single-line mode has proper appearance */
+.cometchat-message-composer--single-line .cometchat-message-composer__rich-text-editor .cometchat-rich-text-editor__content {
+  -webkit-appearance: none;
+  appearance: none;
+  overflow-y: hidden !important;
+}
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+  .cometchat-rich-text-editor__content {
+    padding: var(--cometchat-spacing-2);
+    min-height: 80px;
+  }
+
+  .cometchat-rich-text-editor__placeholder {
+    top: var(--cometchat-spacing-2);
+    left: var(--cometchat-spacing-2);
+    right: var(--cometchat-spacing-2);
+  }
+}
+
+/* ============================================
+   Dark Theme Adjustments
+   ============================================ */
+
+[data-theme="dark"] .cometchat-rich-text-editor__content::selection {
+  background: rgba(104, 82, 214, 0.3);
+}
+
+[data-theme="dark"] .cometchat-rich-text-editor__loading-overlay {
+  background: rgba(20, 20, 20, 0.8);
+}

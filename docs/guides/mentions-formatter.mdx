@@ -1,0 +1,144 @@
+---
+title: "Mentions Formatter"
+description: "Add @mentions with styled tokens, suggestion list, and click handling in CometChat Angular UI Kit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key class | `CometChatMentionsFormatter` (extends `CometChatTextFormatter`) |
+| Required setup | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Purpose | Format @mentions with styled tokens, suggestion list, and click handling for users and group members |
+| Related | [Custom Text Formatter](/guides/custom-text-formatter) \| [All Guides](/guides/overview) |
+
+</Accordion>
+
+`CometChatMentionsFormatter` extends [CometChatTextFormatter](/guides/custom-text-formatter) to format @mentions in text messages. It styles mention tokens, generates suggestion lists as users type, and handles click events on rendered mentions.
+
+| Capability | Description |
+| --- | --- |
+| Mention formatting | Auto-formats `<@uid:...>` placeholders into styled tokens |
+| Custom styles | Colors, fonts, and backgrounds for mention text |
+| User and group mentions | Works with both individual users and group members |
+| Suggestion list | Generates mention candidates from user input |
+| Click handling | Listener interface for tap/click on rendered mentions |
+
+---
+
+## Usage
+
+### 1. Initialize the formatter
+
+```typescript
+import { CometChatMentionsFormatter } from "@cometchat/chat-uikit-angular";
+
+const mentionsFormatter = new CometChatMentionsFormatter();
+mentionsFormatter.setCometChatUserGroupMembers(userList);
+```
+
+### 2. Format a message
+
+Provide the raw message string containing mention placeholders, then apply the formatter:
+
+```typescript
+const unformattedMessage = "<@uid:aliceuid> just shared a photo!";
+const formattedMessage = mentionsFormatter.getFormattedText(unformattedMessage);
+// Render formattedMessage in your message component
+```
+
+The output contains HTML with styled mentions ready for rendering.
+
+### 3. Pass to components
+
+Use the `textFormatters` input on `cometchat-message-list`, `cometchat-message-composer`, or `cometchat-conversations`.
+
+```typescript expandable
+import { Component, OnInit } from "@angular/core";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+import {
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+  CometChatMentionsFormatter,
+} from "@cometchat/chat-uikit-angular";
+
+@Component({
+  selector: "app-mentions-demo",
+  standalone: true,
+  imports: [CometChatMessageListComponent, CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-list
+      [user]="chatUser"
+      [textFormatters]="textFormatters">
+    </cometchat-message-list>
+    <cometchat-message-composer
+      [user]="chatUser"
+      [textFormatters]="textFormatters">
+    </cometchat-message-composer>
+  `,
+})
+export class MentionsDemoComponent implements OnInit {
+  chatUser: CometChat.User | undefined;
+  textFormatters = [new CometChatMentionsFormatter()];
+
+  ngOnInit() {
+    CometChat.getUser("uid").then((user) => {
+      this.chatUser = user;
+    });
+  }
+}
+```
+
+<Note>
+The `CometChatMentionsFormatter` is included by default in the message composer and message list. You only need to pass it explicitly if you want to customize its behavior or combine it with other formatters.
+</Note>
+
+---
+
+## Customization
+
+### Custom mention styles
+
+Override the default mention token styles by setting CSS properties:
+
+```typescript
+const mentionsFormatter = new CometChatMentionsFormatter();
+mentionsFormatter.setMentionStyle({
+  color: "#7c4dff",
+  backgroundColor: "#ede7f6",
+  fontWeight: "600",
+  borderRadius: "4px",
+  padding: "0 4px",
+});
+```
+
+### Custom click handler
+
+Handle clicks on mention tokens to navigate to user profiles or show details:
+
+```typescript
+mentionsFormatter.setOnMentionClick((user: CometChat.User) => {
+  console.log("Mention clicked:", user.getName());
+  // Navigate to user profile or show details panel
+});
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Text Formatter" href="/guides/custom-text-formatter">
+    Build custom inline text patterns.
+  </Card>
+  <Card title="Message List" href="/components/cometchat-message-list">
+    Render real-time message threads.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="URL Formatter" href="/guides/url-formatter">
+    Auto-detect and style URLs as clickable links.
+  </Card>
+</CardGroup>

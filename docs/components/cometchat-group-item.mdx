@@ -1,0 +1,160 @@
+---
+title: "CometChatGroupItem"
+description: "A standalone Angular component for rendering a single group item with avatar, group type indicator, member count, and context menu support"
+---
+
+## Overview
+
+The CometChatGroupItem component renders a single group entry within a list. It displays the group's icon/avatar, name, type indicator (public, private, password-protected), and member count. The component supports custom templates for all visual sections, integrates a context menu for group-specific actions, and provides full keyboard accessibility with ARIA support.
+
+### Key Features
+
+- **State Management**: Active, selected, and focused states with distinct visual styling
+- **Group Avatar**: Displays the group icon with a group type indicator badge
+- **Member Count**: Shows the localized member count below the group name
+- **Custom Templates**: Template projection for leading, title, subtitle, and trailing sections
+- **Context Menu**: Configurable context menu options on hover or right-click
+- **Keyboard Accessibility**: Full keyboard support with Enter, Space, and Shift+F10 shortcuts
+- **Global Config Priority**: Supports a three-tier priority system (Input > GlobalConfig > Default)
+
+
+<Info>
+  **Live Preview** — default group item preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-groups-cometchat-group-item--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-groups-cometchat-group-item--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="CometChat Group Item — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatGroupItemComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-item-demo',
+  standalone: true,
+  imports: [CometChatGroupItemComponent],
+  template: `
+    <cometchat-group-item
+      [group]="group"
+      [isActive]="false"
+      (itemClick)="onItemClick($event)"
+    ></cometchat-group-item>
+  `
+})
+export class GroupItemDemoComponent {
+  group!: CometChat.Group;
+
+  onItemClick(group: CometChat.Group): void {
+    console.log('Group clicked:', group.getName());
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `group` | `CometChat.Group` | *required* | The group object to render. Primary data source for the component. |
+| `isActive` | `boolean` | `false` | Whether this group item is currently active/selected for viewing. Applies active styling. |
+| `isSelected` | `boolean` | `false` | Whether this group item is selected in selection mode. Shows selection indicator. |
+| `isFocused` | `boolean` | `false` | Whether this group item currently has keyboard focus. Applies focus styling. |
+| `tabIndex` | `number` | `-1` | The tabindex for roving tabindex pattern. Only the focused item should have `0`. |
+| `hideGroupType` | `boolean` | `false` | Whether to hide the group type indicator (public, private, password). Supports global config override. |
+| `disableDefaultContextMenu` | `boolean` | `true` | Whether to disable the browser's default context menu on right-click/long-press. |
+| `contextMenuOptions` | `CometChatOption[]` | `undefined` | Options for the context menu displayed on hover/right-click. |
+| `leadingView` | `TemplateRef<{ $implicit: CometChat.Group }>` | `undefined` | Custom template for the leading section (icon/avatar area). |
+| `titleView` | `TemplateRef<{ $implicit: CometChat.Group }>` | `undefined` | Custom template for the title section. |
+| `subtitleView` | `TemplateRef<{ $implicit: CometChat.Group }>` | `undefined` | Custom template for the subtitle section. |
+| `trailingView` | `TemplateRef<{ $implicit: CometChat.Group }>` | `undefined` | Custom template for the trailing section. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `CometChat.Group` | Emitted when the group item is clicked or activated via keyboard. |
+| `itemSelect` | `{ group: CometChat.Group; selected: boolean }` | Emitted when the group is selected/deselected in selection mode. |
+| `contextMenuOpen` | `CometChat.Group` | Emitted when the context menu is opened. |
+| `contextMenuOptionClick` | `{ option: CometChatOption; group: CometChat.Group }` | Emitted when a context menu option is clicked. |
+| `itemFocus` | `void` | Emitted when the item's inner container receives native focus. Used by the parent list for roving tabindex management. |
+
+## Customization
+
+### CSS Variable Overrides
+
+The component uses CometChat CSS variables for theming. Override them on the host element or a parent wrapper:
+
+```css
+cometchat-group-item {
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-background-color-03: #e8e8e8;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-border-color-light: #e8e8e8;
+}
+```
+
+### Custom Templates
+
+Provide custom templates via inputs to override any visual section:
+
+```html expandable
+<cometchat-group-item
+  [group]="group"
+  [subtitleView]="customSubtitle"
+  [trailingView]="customTrailing"
+>
+  <ng-template #customSubtitle let-group>
+    <span class="member-count">
+      {{ group.getMembersCount() }} members
+    </span>
+  </ng-template>
+
+  <ng-template #customTrailing let-group>
+    <button (click)="joinGroup(group); $event.stopPropagation()">
+      Join
+    </button>
+  </ng-template>
+</cometchat-group-item>
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Activate the group item (emits `itemClick`) |
+| `Space` | Activate the group item (emits `itemClick`) |
+| `Shift + F10` | Open the context menu |
+| `ContextMenu` | Open the context menu |
+
+### ARIA Attributes
+
+- `role="option"` on the item container
+- `aria-selected` reflects the current selection state
+- `aria-label` combines the group name, type, and member count for screen readers
+- Proper `tabindex` management via roving tabindex pattern
+
+### Focus Management
+
+- Visible focus indicator meeting WCAG contrast requirements
+- Mouse clicks prevent focus outline (focus ring only appears for keyboard navigation)
+- Roving tabindex pattern for efficient list navigation
+- `itemFocus` output enables parent list to track focus position
+
+## Related Components
+
+- [CometChatGroups](./cometchat-groups.mdx) — Parent list component that renders multiple group items
+- [CometChatAvatar](./cometchat-avatar.mdx) — Used internally for the group avatar
+- [CometChatContextMenu](./cometchat-context-menu.mdx) — Used internally for the context menu

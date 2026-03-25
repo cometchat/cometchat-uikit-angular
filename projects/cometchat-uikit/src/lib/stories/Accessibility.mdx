@@ -1,0 +1,816 @@
+import { Meta } from 'storybook/blocks';
+
+<Meta title="Documentation/Accessibility" />
+
+# Accessibility Guidelines
+
+CometChat Angular UIKit is built with accessibility as a core principle, ensuring that all users can interact with chat applications regardless of their abilities.
+
+## Overview
+
+Our accessibility commitment includes:
+
+- **WCAG 2.1 Level AA Compliance** - Meeting international accessibility standards
+- **Keyboard Navigation** - Full functionality without a mouse
+- **Screen Reader Support** - Proper ARIA labels and semantic HTML
+- **Focus Management** - Clear visual focus indicators
+- **Color Contrast** - Sufficient contrast ratios for readability
+- **Responsive Design** - Accessible across all device sizes
+
+## Using the A11y Addon in Storybook
+
+### Accessibility Panel
+
+Storybook includes an accessibility testing addon:
+
+1. Select any story from the sidebar
+2. Open the **"Accessibility"** tab at the bottom
+3. View automated accessibility checks
+4. See violations organized by severity:
+   - **Critical** - Must fix immediately
+   - **Serious** - Should fix soon
+   - **Moderate** - Fix when possible
+   - **Minor** - Nice to have
+
+### Running Checks
+
+The a11y addon automatically runs checks when:
+- A story loads
+- Component props change
+- Theme switches
+- Viewport changes
+
+### Understanding Violations
+
+Each violation shows:
+- **Description** - What the issue is
+- **Impact** - Severity level
+- **Element** - Which element has the issue
+- **Remediation** - How to fix it
+- **Learn More** - Link to detailed documentation
+
+## WCAG 2.1 Level AA Requirements
+
+### Perceivable
+
+#### 1.1 Text Alternatives
+Provide text alternatives for non-text content.
+
+**✅ Good:**
+```html
+<img 
+  src="avatar.jpg" 
+  alt="John Doe's profile picture">
+
+<button aria-label="Send message">
+  <svg><!-- icon --></svg>
+</button>
+```
+
+**❌ Bad:**
+```html
+<img src="avatar.jpg">
+
+<button>
+  <svg><!-- icon --></svg>
+</button>
+```
+
+#### 1.3 Adaptable
+Create content that can be presented in different ways.
+
+**✅ Good:**
+```html
+<nav aria-label="Main navigation">
+  <ul>
+    <li><a href="/conversations">Conversations</a></li>
+    <li><a href="/users">Users</a></li>
+  </ul>
+</nav>
+```
+
+#### 1.4 Distinguishable
+Make it easier for users to see and hear content.
+
+**Color Contrast Requirements:**
+- Normal text: 4.5:1 minimum
+- Large text (18pt+): 3:1 minimum
+- UI components: 3:1 minimum
+
+**✅ Good:**
+```css
+.text-primary {
+  color: #141414; /* Black text */
+  background: #FFFFFF; /* White background */
+  /* Contrast ratio: 16:1 ✓ */
+}
+```
+
+**❌ Bad:**
+```css
+.text-light {
+  color: #CCCCCC; /* Light gray text */
+  background: #FFFFFF; /* White background */
+  /* Contrast ratio: 1.6:1 ✗ */
+}
+```
+
+### Operable
+
+#### 2.1 Keyboard Accessible
+Make all functionality available from a keyboard.
+
+**✅ Good:**
+```html
+<!-- Keyboard accessible button -->
+<button 
+  (click)="sendMessage()"
+  (keydown.enter)="sendMessage()">
+  Send
+</button>
+
+<!-- Keyboard accessible custom component -->
+<div 
+  role="button"
+  tabindex="0"
+  (click)="handleClick()"
+  (keydown.enter)="handleClick()"
+  (keydown.space)="handleClick()">
+  Custom Button
+</div>
+```
+
+**❌ Bad:**
+```html
+<!-- Not keyboard accessible -->
+<div (click)="handleClick()">
+  Click me
+</div>
+```
+
+#### 2.4 Navigable
+Provide ways to help users navigate and find content.
+
+**✅ Good:**
+```html
+<!-- Skip to main content -->
+<a href="#main-content" class="skip-link">
+  Skip to main content
+</a>
+
+<!-- Descriptive page title -->
+<title>Conversations - CometChat</title>
+
+<!-- Logical heading structure -->
+<h1>Chat Application</h1>
+<h2>Conversations</h2>
+<h3>Recent Chats</h3>
+```
+
+#### 2.5 Input Modalities
+Make it easier for users to operate functionality through various inputs.
+
+**✅ Good:**
+```html
+<!-- Large touch targets (44x44px minimum) -->
+<button style="min-width: 44px; min-height: 44px;">
+  Send
+</button>
+```
+
+### Understandable
+
+#### 3.1 Readable
+Make text content readable and understandable.
+
+**✅ Good:**
+```html
+<!-- Language specified -->
+<html lang="en">
+
+<!-- Language changes marked -->
+<p>
+  Welcome! 
+  <span lang="es">¡Bienvenido!</span>
+</p>
+```
+
+#### 3.2 Predictable
+Make web pages appear and operate in predictable ways.
+
+**✅ Good:**
+```typescript
+// Consistent navigation
+@Component({
+  template: `
+    <nav>
+      <a routerLink="/conversations">Conversations</a>
+      <a routerLink="/users">Users</a>
+      <a routerLink="/groups">Groups</a>
+    </nav>
+  `
+})
+```
+
+#### 3.3 Input Assistance
+Help users avoid and correct mistakes.
+
+**✅ Good:**
+```html
+<!-- Clear error messages -->
+<input 
+  type="email"
+  [(ngModel)]="email"
+  aria-describedby="email-error"
+  [attr.aria-invalid]="emailError ? 'true' : null">
+
+<div 
+  id="email-error" 
+  role="alert"
+  *ngIf="emailError">
+  Please enter a valid email address
+</div>
+```
+
+### Robust
+
+#### 4.1 Compatible
+Maximize compatibility with current and future user agents.
+
+**✅ Good:**
+```html
+<!-- Valid HTML with proper ARIA -->
+<button 
+  type="button"
+  aria-label="Close dialog"
+  aria-pressed="false">
+  Close
+</button>
+```
+
+## Keyboard Navigation
+
+### Standard Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Move focus forward |
+| `Shift + Tab` | Move focus backward |
+| `Enter` | Activate button/link |
+| `Space` | Activate button/checkbox |
+| `Escape` | Close dialog/menu |
+| `Arrow Keys` | Navigate lists/menus |
+| `Home` | Jump to first item |
+| `End` | Jump to last item |
+
+### Implementing Keyboard Navigation
+
+```typescript
+@Component({
+  selector: 'app-conversation-list',
+  template: `
+    <div 
+      class="conversation-list"
+      role="list"
+      (keydown)="handleKeyDown($event)">
+      
+      <div 
+        *ngFor="let conversation of conversations; let i = index"
+        role="listitem"
+        [tabindex]="selectedIndex === i ? 0 : -1"
+        [attr.aria-selected]="selectedIndex === i"
+        (click)="selectConversation(i)"
+        (keydown.enter)="selectConversation(i)"
+        (keydown.space)="selectConversation(i)">
+        {{ conversation.name }}
+      </div>
+    </div>
+  `
+})
+export class ConversationListComponent {
+  conversations: any[] = [];
+  selectedIndex = 0;
+  
+  handleKeyDown(event: KeyboardEvent) {
+    switch(event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.moveSelection(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.moveSelection(-1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        this.selectedIndex = 0;
+        break;
+      case 'End':
+        event.preventDefault();
+        this.selectedIndex = this.conversations.length - 1;
+        break;
+    }
+  }
+  
+  moveSelection(direction: number) {
+    const newIndex = this.selectedIndex + direction;
+    if (newIndex >= 0 && newIndex < this.conversations.length) {
+      this.selectedIndex = newIndex;
+    }
+  }
+  
+  selectConversation(index: number) {
+    this.selectedIndex = index;
+    // Handle selection
+  }
+}
+```
+
+### Focus Management
+
+```typescript
+@Component({
+  selector: 'app-dialog',
+  template: `
+    <div 
+      class="dialog"
+      role="dialog"
+      aria-labelledby="dialog-title"
+      aria-modal="true"
+      #dialogElement>
+      
+      <h2 id="dialog-title">{{ title }}</h2>
+      
+      <div class="dialog-content">
+        {{ content }}
+      </div>
+      
+      <div class="dialog-actions">
+        <button (click)="cancel()" #cancelButton>
+          Cancel
+        </button>
+        <button (click)="confirm()">
+          Confirm
+        </button>
+      </div>
+    </div>
+  `
+})
+export class DialogComponent implements AfterViewInit {
+  @ViewChild('dialogElement') dialogElement!: ElementRef;
+  @ViewChild('cancelButton') cancelButton!: ElementRef;
+  
+  private previousFocus?: HTMLElement;
+  
+  ngAfterViewInit() {
+    // Save current focus
+    this.previousFocus = document.activeElement as HTMLElement;
+    
+    // Focus first interactive element
+    this.cancelButton.nativeElement.focus();
+    
+    // Trap focus within dialog
+    this.trapFocus();
+  }
+  
+  trapFocus() {
+    const focusableElements = this.dialogElement.nativeElement.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+    
+    this.dialogElement.nativeElement.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    });
+  }
+  
+  close() {
+    // Restore previous focus
+    if (this.previousFocus) {
+      this.previousFocus.focus();
+    }
+  }
+}
+```
+
+## Screen Reader Support
+
+### ARIA Roles
+
+Use appropriate ARIA roles for custom components:
+
+```html
+<!-- Navigation -->
+<nav role="navigation" aria-label="Main navigation">
+  <ul role="list">
+    <li role="listitem">
+      <a href="/conversations">Conversations</a>
+    </li>
+  </ul>
+</nav>
+
+<!-- Button -->
+<div 
+  role="button"
+  tabindex="0"
+  aria-pressed="false">
+  Toggle
+</div>
+
+<!-- Alert -->
+<div role="alert" aria-live="assertive">
+  Message sent successfully
+</div>
+
+<!-- Dialog -->
+<div 
+  role="dialog"
+  aria-labelledby="dialog-title"
+  aria-modal="true">
+  <h2 id="dialog-title">Confirm Action</h2>
+</div>
+```
+
+### ARIA Labels
+
+Provide descriptive labels for interactive elements:
+
+```html
+<!-- Button with icon only -->
+<button aria-label="Send message">
+  <svg><!-- send icon --></svg>
+</button>
+
+<!-- Input with label -->
+<label for="search-input">Search conversations</label>
+<input 
+  id="search-input"
+  type="text"
+  aria-describedby="search-help">
+<div id="search-help">
+  Enter a name or keyword to search
+</div>
+
+<!-- Status indicator -->
+<span 
+  class="status-indicator"
+  aria-label="User is online">
+</span>
+```
+
+### Live Regions
+
+Announce dynamic content changes:
+
+```html
+<!-- Polite announcement (doesn't interrupt) -->
+<div 
+  role="status"
+  aria-live="polite"
+  aria-atomic="true">
+  {{ statusMessage }}
+</div>
+
+<!-- Assertive announcement (interrupts) -->
+<div 
+  role="alert"
+  aria-live="assertive"
+  aria-atomic="true">
+  {{ errorMessage }}
+</div>
+```
+
+```typescript
+@Component({
+  selector: 'app-message-composer',
+  template: `
+    <div class="composer">
+      <textarea 
+        [(ngModel)]="message"
+        (input)="handleInput()">
+      </textarea>
+      
+      <div 
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        class="sr-only">
+        {{ typingStatus }}
+      </div>
+      
+      <button (click)="sendMessage()">
+        Send
+      </button>
+    </div>
+  `
+})
+export class MessageComposerComponent {
+  message = '';
+  typingStatus = '';
+  
+  handleInput() {
+    if (this.message.length > 0) {
+      this.typingStatus = 'Typing message';
+    } else {
+      this.typingStatus = '';
+    }
+  }
+  
+  sendMessage() {
+    // Send logic
+    this.typingStatus = 'Message sent';
+  }
+}
+```
+
+## Visual Design
+
+### Focus Indicators
+
+Provide clear visual focus indicators:
+
+```css
+/* Default focus style */
+button:focus {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+/* Custom focus style */
+.conversation-item:focus {
+  box-shadow: 0 0 0 3px var(--cometchat-primary-color);
+  background: var(--cometchat-background-color-02);
+}
+
+/* Never remove focus outline without replacement */
+button:focus {
+  outline: none; /* ❌ Bad */
+}
+
+button:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color); /* ✅ Good */
+}
+```
+
+### Color Contrast
+
+Ensure sufficient color contrast:
+
+```css
+/* Good contrast (16:1) */
+.text-primary {
+  color: #141414;
+  background: #FFFFFF;
+}
+
+/* Good contrast for large text (4.5:1) */
+.heading {
+  color: #666666;
+  background: #FFFFFF;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Bad contrast (2.1:1) */
+.text-light {
+  color: #CCCCCC; /* ❌ Too light */
+  background: #FFFFFF;
+}
+```
+
+### Don't Rely on Color Alone
+
+Use multiple indicators:
+
+```html
+<!-- Good - icon + color + text -->
+<div class="status-indicator status-indicator--online">
+  <svg aria-hidden="true"><!-- check icon --></svg>
+  <span>Online</span>
+</div>
+
+<!-- Bad - color only -->
+<div class="status-indicator status-indicator--online">
+  <!-- No text or icon -->
+</div>
+```
+
+## Testing Checklist
+
+### Manual Testing
+
+- [ ] **Keyboard Navigation**
+  - [ ] Can reach all interactive elements with Tab
+  - [ ] Can activate all buttons with Enter/Space
+  - [ ] Can close dialogs with Escape
+  - [ ] Can navigate lists with arrow keys
+  - [ ] Focus order is logical
+
+- [ ] **Screen Reader**
+  - [ ] All images have alt text
+  - [ ] All buttons have labels
+  - [ ] Form inputs have labels
+  - [ ] Dynamic content is announced
+  - [ ] Page structure is logical
+
+- [ ] **Visual**
+  - [ ] Focus indicators are visible
+  - [ ] Color contrast meets WCAG AA
+  - [ ] Text is readable at 200% zoom
+  - [ ] No information conveyed by color alone
+
+- [ ] **Responsive**
+  - [ ] Works on mobile devices
+  - [ ] Touch targets are 44x44px minimum
+  - [ ] Content reflows properly
+
+### Automated Testing
+
+Use the Storybook a11y addon:
+
+1. Open any story
+2. Check the Accessibility panel
+3. Fix any violations found
+4. Re-run checks
+5. Repeat until no violations
+
+### Screen Reader Testing
+
+Test with popular screen readers:
+
+- **Windows**: NVDA (free) or JAWS
+- **macOS**: VoiceOver (built-in)
+- **iOS**: VoiceOver (built-in)
+- **Android**: TalkBack (built-in)
+
+## Common Accessibility Patterns
+
+### Accessible Button
+
+```typescript
+@Component({
+  selector: 'app-icon-button',
+  template: `
+    <button
+      type="button"
+      [attr.aria-label]="ariaLabel"
+      [attr.aria-pressed]="pressed"
+      [disabled]="disabled"
+      (click)="handleClick()">
+      <ng-content></ng-content>
+    </button>
+  `
+})
+export class IconButtonComponent {
+  @Input() ariaLabel!: string;
+  @Input() pressed?: boolean;
+  @Input() disabled = false;
+  @Output() onClick = new EventEmitter<void>();
+  
+  handleClick() {
+    if (!this.disabled) {
+      this.onClick.emit();
+    }
+  }
+}
+```
+
+### Accessible Dialog
+
+```typescript
+@Component({
+  selector: 'app-accessible-dialog',
+  template: `
+    <div 
+      class="dialog-backdrop"
+      (click)="close()"
+      *ngIf="isOpen">
+      
+      <div 
+        class="dialog"
+        role="dialog"
+        [attr.aria-labelledby]="titleId"
+        [attr.aria-describedby]="descriptionId"
+        aria-modal="true"
+        (click)="$event.stopPropagation()">
+        
+        <h2 [id]="titleId">{{ title }}</h2>
+        <p [id]="descriptionId">{{ description }}</p>
+        
+        <div class="dialog-actions">
+          <button (click)="close()">
+            {{ 'action_cancel' | translate }}
+          </button>
+          <button (click)="confirm()">
+            {{ 'action_confirm' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class AccessibleDialogComponent {
+  @Input() title!: string;
+  @Input() description!: string;
+  @Input() isOpen = false;
+  @Output() onClose = new EventEmitter<void>();
+  @Output() onConfirm = new EventEmitter<void>();
+  
+  titleId = `dialog-title-${Math.random()}`;
+  descriptionId = `dialog-desc-${Math.random()}`;
+  
+  close() {
+    this.isOpen = false;
+    this.onClose.emit();
+  }
+  
+  confirm() {
+    this.onConfirm.emit();
+    this.close();
+  }
+}
+```
+
+### Accessible Form
+
+```typescript
+@Component({
+  selector: 'app-accessible-form',
+  template: `
+    <form (submit)="handleSubmit($event)">
+      <div class="form-field">
+        <label for="username">
+          {{ 'form_username' | translate }}
+          <span aria-label="required">*</span>
+        </label>
+        <input
+          id="username"
+          type="text"
+          [(ngModel)]="username"
+          name="username"
+          required
+          [attr.aria-invalid]="usernameError ? 'true' : null"
+          [attr.aria-describedby]="usernameError ? 'username-error' : null">
+        
+        <div 
+          id="username-error"
+          role="alert"
+          *ngIf="usernameError">
+          {{ usernameError }}
+        </div>
+      </div>
+      
+      <button type="submit">
+        {{ 'action_submit' | translate }}
+      </button>
+    </form>
+  `
+})
+export class AccessibleFormComponent {
+  username = '';
+  usernameError = '';
+  
+  handleSubmit(event: Event) {
+    event.preventDefault();
+    
+    if (!this.username) {
+      this.usernameError = 'Username is required';
+      return;
+    }
+    
+    // Submit logic
+  }
+}
+```
+
+## Resources
+
+### Tools
+
+- **axe DevTools** - Browser extension for accessibility testing
+- **WAVE** - Web accessibility evaluation tool
+- **Lighthouse** - Chrome DevTools accessibility audit
+- **NVDA** - Free screen reader for Windows
+- **VoiceOver** - Built-in screen reader for macOS/iOS
+
+### Guidelines
+
+- **WCAG 2.1** - [w3.org/WAI/WCAG21/quickref](https://www.w3.org/WAI/WCAG21/quickref/)
+- **ARIA Authoring Practices** - [w3.org/WAI/ARIA/apg](https://www.w3.org/WAI/ARIA/apg/)
+- **WebAIM** - [webaim.org](https://webaim.org/)
+
+---
+
+<div style={{ padding: '16px', background: '#fff3e0', borderRadius: '8px', marginTop: '32px' }}>
+  <strong>⚠️ Remember:</strong> Accessibility is not optional. It's a legal requirement in many jurisdictions and ensures your application is usable by everyone.
+</div>

@@ -1,0 +1,335 @@
+---
+title: "EmojiKeyboard"
+description: "A comprehensive emoji picker component with category browsing, search functionality, and keyboard navigation support"
+---
+
+## Overview
+
+The CometChatEmojiKeyboard component is a comprehensive emoji picker that allows users to browse and select emojis organized by categories. It features a search functionality, category tabs, and keyboard navigation support for accessibility.
+
+## Basic Usage
+
+### Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatEmojiKeyboardComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CometChatEmojiKeyboardComponent],
+  template: `
+    <cometchat-emoji-keyboard
+      (emojiClick)="onEmojiSelected($event)"
+    ></cometchat-emoji-keyboard>
+  `
+})
+export class AppComponent {
+  onEmojiSelected(emoji: string): void {
+    console.log('Selected emoji:', emoji);
+  }
+}
+```
+
+### With Custom Emoji Data
+
+```typescript expandable
+import { CometChatEmojiCategory } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  template: `
+    <cometchat-emoji-keyboard
+      [emojiData]="customEmojis"
+      (emojiClick)="onEmojiSelected($event)"
+    ></cometchat-emoji-keyboard>
+  `
+})
+export class AppComponent {
+  customEmojis: CometChatEmojiCategory[] = [
+    {
+      id: 'custom',
+      name: 'Custom Emojis',
+      symbolURL: 'path/to/icon.svg',
+      emojies: {
+        'smile': { char: '😊' },
+        'heart': { char: '❤️' }
+      }
+    }
+  ];
+  
+  onEmojiSelected(emoji: string): void {
+    console.log('Selected emoji:', emoji);
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the full emoji keyboard.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-emoji-keyboard--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-emoji-keyboard--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "450px", border: "1px solid #e0e0e0"}}
+  title="Emoji Keyboard — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| emojiData | `CometChatEmojiCategory[]` | `[]` | Array of emoji categories to display. If empty, default emoji set is loaded. |
+| ariaLabel | `string` | `'Emoji picker'` | Custom ARIA label for the emoji picker dialog. |
+| autoFocus | `boolean` | `true` | Whether to automatically focus the first tab when the picker opens. |
+| trapFocus | `boolean` | `true` | Whether to trap keyboard focus within the emoji picker. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| emojiClick | `string` | Emitted when an emoji is clicked. Returns the emoji character. |
+| closeKeyboard | `void` | Emitted when the Escape key is pressed to close the picker. |
+
+## Interfaces
+
+### CometChatEmojiCategory
+
+```typescript
+interface CometChatEmojiCategory {
+  id: string;              // Unique identifier for the category
+  name: string;            // Localization key for category name
+  symbolURL: string;       // Icon URL for the category tab
+  emojies: {               // Object map of emojis keyed by name
+    [key: string]: CometChatEmoji;
+  };
+}
+```
+
+### CometChatEmoji
+
+```typescript
+interface CometChatEmoji {
+  char: string;            // The emoji character
+}
+```
+
+## Features
+
+### Category Navigation
+
+The emoji keyboard organizes emojis into categories:
+- Smileys & People
+- Animals & Nature
+- Food & Drink
+- Travel & Places
+- Activities
+- Objects
+- Symbols
+- Flags
+
+Users can click on category tabs to quickly navigate to a specific category.
+
+### Search Functionality
+
+The built-in search bar allows users to filter emojis by name. Simply type to search across all categories.
+
+### Keyboard Accessibility
+
+The component supports full keyboard navigation:
+- **Tab**: Navigate between category tabs, search bar, and emoji grid
+- **Shift+Tab**: Navigate backwards through focusable elements
+- **Arrow Left/Right**: Navigate between category tabs (with wrapping)
+- **Arrow Up/Down/Left/Right**: Navigate within emoji grid (2D navigation with wrapping)
+- **Enter/Space**: Select emoji or activate category tab
+- **Escape**: Close the emoji picker (emits `closeKeyboard` event)
+- **/**: Focus the search bar (keyboard shortcut)
+
+### Focus Management
+
+The emoji keyboard implements proper focus management:
+- **Auto-focus**: First tab receives focus when picker opens (configurable via `autoFocus`)
+- **Focus trap**: Focus is trapped within the picker when `trapFocus` is enabled
+- **Focus cycling**: Tab/Shift+Tab cycles through all focusable elements
+- **Focus restoration**: Parent component should restore focus when picker closes
+
+## Customization
+
+### Styling with CSS Variables
+
+```css expandable
+/* Customize emoji keyboard appearance */
+:root {
+  --cometchat-emoji-keyboard-background: #ffffff;
+  --cometchat-emoji-keyboard-tab-hover-background: #f0f0f0;
+  --cometchat-emoji-keyboard-tab-active-background: #e3f2fd;
+  --cometchat-emoji-keyboard-tab-icon-color: #666666;
+  --cometchat-emoji-keyboard-tab-active-icon-color: #2196f3;
+  --cometchat-emoji-keyboard-emoji-hover-background: #f5f5f5;
+  --cometchat-emoji-keyboard-emoji-active-background: #eeeeee;
+}
+```
+
+### Custom Category Icons
+
+You can provide custom category icons through the `emojiData` input:
+
+```typescript expandable
+const customCategory: CometChatEmojiCategory = {
+  id: 'favorites',
+  name: 'Favorites',
+  symbolURL: 'assets/star-icon.svg',
+  emojies: {
+    'thumbs_up': { char: '👍' },
+    'heart': { char: '❤️' },
+    'fire': { char: '🔥' }
+  }
+};
+```
+
+## Advanced Usage
+
+### Integration with Message Composer
+
+```typescript expandable
+@Component({
+  template: `
+    <div class="message-composer">
+      <input 
+        [(ngModel)]="messageText" 
+        placeholder="Type a message..."
+      />
+      <button (click)="toggleEmojiPicker()">😊</button>
+      
+      @if (showEmojiPicker) {
+        <div class="emoji-picker-popup">
+          <cometchat-emoji-keyboard
+            (emojiClick)="insertEmoji($event)"
+          ></cometchat-emoji-keyboard>
+        </div>
+      }
+    </div>
+  `
+})
+export class MessageComposerComponent {
+  messageText: string = '';
+  showEmojiPicker: boolean = false;
+  
+  toggleEmojiPicker(): void {
+    this.showEmojiPicker = !this.showEmojiPicker;
+  }
+  
+  insertEmoji(emoji: string): void {
+    this.messageText += emoji;
+    this.showEmojiPicker = false;
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interactive emoji keyboard with live controls.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-emoji-keyboard--emoji-selection)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-emoji-keyboard--emoji-selection&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "450px", border: "1px solid #e0e0e0"}}
+  title="Emoji Keyboard — Interactive"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The CometChatEmojiKeyboard component is fully WCAG 2.1 Level AA compliant:
+
+### ARIA Attributes
+
+- **Dialog role**: `role="dialog"` with `aria-modal="true"` on main container
+- **Tablist**: `role="tablist"` for category tabs container
+- **Tabs**: `role="tab"` with `aria-selected` for each category tab
+- **Grid**: `role="grid"` for emoji containers
+- **Gridcells**: `role="gridcell"` with `aria-label` for each emoji
+- **Labels**: Descriptive `aria-label` attributes for screen readers
+
+### Keyboard Navigation
+
+Complete keyboard support for all interactions:
+
+| Key | Action | Context |
+|-----|--------|---------|
+| **Tab** | Move focus forward | Cycles through tabs → search → emojis |
+| **Shift+Tab** | Move focus backward | Reverse cycling with focus trap |
+| **Arrow Left** | Previous tab | Category tabs (wraps to last) |
+| **Arrow Right** | Next tab | Category tabs (wraps to first) |
+| **Arrow Up** | Move up in grid | Emoji grid (wraps to bottom) |
+| **Arrow Down** | Move down in grid | Emoji grid (wraps to top) |
+| **Arrow Left** | Move left in grid | Emoji grid (wraps to end of row) |
+| **Arrow Right** | Move right in grid | Emoji grid (wraps to start of row) |
+| **Enter** | Activate/Select | Tabs and emojis |
+| **Space** | Activate/Select | Tabs and emojis |
+| **Escape** | Close picker | Emits `closeKeyboard` event |
+| **/** | Focus search | Quick access to search bar |
+
+### Focus Management
+
+- **Initial focus**: First category tab receives focus on open (when `autoFocus` is true)
+- **Focus trap**: Focus stays within picker when `trapFocus` is enabled
+- **Focus indicators**: Visible 2px outline in primary color with proper contrast
+- **Focus cycling**: Tab wraps from last to first element and vice versa
+
+### Screen Reader Support
+
+- All interactive elements have descriptive labels
+- Category names are localized and announced
+- Emoji names are announced when focused
+- State changes (active tab) are communicated via `aria-selected`
+- Dialog role ensures proper context for screen readers
+
+### Customization
+
+```typescript expandable
+// Disable auto-focus
+<cometchat-emoji-keyboard
+  [autoFocus]="false"
+  (emojiClick)="onEmojiSelected($event)"
+></cometchat-emoji-keyboard>
+
+// Disable focus trap (not recommended)
+<cometchat-emoji-keyboard
+  [trapFocus]="false"
+  (emojiClick)="onEmojiSelected($event)"
+></cometchat-emoji-keyboard>
+
+// Custom ARIA label
+<cometchat-emoji-keyboard
+  [ariaLabel]="'Select an emoji for your message'"
+  (emojiClick)="onEmojiSelected($event)"
+></cometchat-emoji-keyboard>
+
+// Handle close event
+<cometchat-emoji-keyboard
+  (emojiClick)="onEmojiSelected($event)"
+  (closeKeyboard)="closeEmojiPicker()"
+></cometchat-emoji-keyboard>
+```
+
+### Best Practices
+
+1. **Always handle the `closeKeyboard` event** to properly close the picker when Escape is pressed
+2. **Restore focus** to the trigger element (e.g., emoji button) when picker closes
+3. **Keep `trapFocus` enabled** (default) to prevent keyboard users from accidentally leaving the picker
+4. **Use descriptive `ariaLabel`** to provide context about the picker's purpose
+5. **Test with keyboard only** to ensure all functionality is accessible
+6. **Test with screen readers** (NVDA, JAWS, VoiceOver) to verify announcements
+
+## Notes
+
+- The component loads a comprehensive default emoji set if no `emojiData` is provided
+- Emoji search is case-insensitive and searches across all categories
+- Category tabs support horizontal scrolling with mouse wheel
+- The component handles hyper-scroll devices for smooth scrolling experience

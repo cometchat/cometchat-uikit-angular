@@ -1,0 +1,1098 @@
+---
+title: "CometChatUsers"
+description: "A comprehensive Angular component for displaying and managing real-time user lists with extensive customization options"
+---
+
+## Overview
+
+The CometChatUsers component displays a real-time, scrollable list of users with support for search, selection modes, and extensive customization. It provides an integral search functionality, allowing you to locate any specific user swiftly and easily. For each user listed, the component displays the user's name by default, in conjunction with their avatar when available. Furthermore, it includes a status indicator, visually informing you whether a user is currently online or offline.
+
+The component follows a **Manager-based Architecture** where:
+- **UsersManager** handles SDK request building and pagination
+- **Component** manages state, real-time listeners, and UI rendering
+- **Templates** allow extensive customization of all UI sections
+
+### Key Features
+
+- **Real-time Updates**: Automatic updates for user online/offline status changes
+- **Flexible Customization**: Extensive template projection for all UI sections
+- **Selection Modes**: Support for single and multiple user selection with shift-click range selection
+- **Selected Users Preview**: Display chips for selected users in multiple selection mode
+- **Alphabetical Section Headers**: Group users by first letter of name
+- **Search Functionality**: Built-in search with 300ms debouncing
+- **Keyboard Navigation**: Full keyboard accessibility with arrow keys and shortcuts (WCAG 2.1 Level AA compliant)
+- **Context Menu**: Customizable actions for each user
+- **Error Handling**: Comprehensive error handling with custom error views
+
+
+<Info>
+  **Live Preview** — default users list preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-users-cometchat-users--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-users-cometchat-users--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Users — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Keyboard Accessibility
+
+CometChatUsers is fully keyboard accessible and meets WCAG 2.1 Level AA standards. All functionality can be accessed using only the keyboard.
+
+### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate between UI elements | Global |
+| `Shift + Tab` | Navigate backwards | Global |
+| `↓` (Down Arrow) | Focus next user | When list is focused |
+| `↑` (Up Arrow) | Focus previous user | When list is focused |
+| `Enter` | Select/activate focused user | When user is focused |
+| `Space` | Toggle selection (in multiple mode) | When user is focused |
+| `Escape` | Clear search and reset focus | When list is focused |
+
+### Accessibility Features
+
+**ARIA Attributes:**
+- `role="list"` on users container
+- `role="listitem"` on each user item
+- `aria-label` with user name and status
+- `aria-selected` indicates selected users
+- Proper `tabindex` management (roving tabindex pattern)
+
+**Screen Reader Support:**
+- Announces user details when focused
+- Announces selection state changes
+- Announces online/offline status
+- Semantic HTML structure
+
+**Focus Management:**
+- Visible focus indicators (2px border) meeting WCAG contrast requirements
+- Focus restoration after interactions
+- Roving tabindex for efficient keyboard navigation
+
+**WCAG 2.1 Compliance:**
+- ✅ 2.1.1 Keyboard (Level A) - All functionality available via keyboard
+- ✅ 2.1.2 No Keyboard Trap (Level A) - Users can navigate away using keyboard
+- ✅ 2.4.3 Focus Order (Level A) - Logical focus order
+- ✅ 2.4.7 Focus Visible (Level AA) - Visible focus indicators
+- ✅ 4.1.2 Name, Role, Value (Level A) - Proper ARIA attributes
+
+## Basic Usage
+
+### Simple Implementation
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatUsersComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-users',
+  standalone: true,
+  imports: [CometChatUsersComponent],
+  template: `
+    <cometchat-users
+      (itemClick)="onUserClick($event)"
+    ></cometchat-users>
+  `
+})
+export class UsersComponent {
+  onUserClick(user: any): void {
+    console.log('Selected user:', user);
+    // Navigate to messages view or handle user selection
+  }
+}
+```
+
+### With Search and Section Headers
+
+```typescript
+<cometchat-users
+  [hideSearch]="false"
+  [showSectionHeader]="true"
+  (itemClick)="onUserClick($event)"
+  (error)="onError($event)"
+></cometchat-users>
+```
+
+## Properties
+
+### Display Control Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideSearch` | `boolean` | `false` | Hide the search bar |
+| `showSectionHeader` | `boolean` | `true` | Show alphabetical section headers (A, B, C...) |
+| `hideError` | `boolean` | `false` | Hide error views when errors occur |
+| `disableLoadingState` | `boolean` | `false` | Disable loading state (maintains list during search) |
+| `hideUserStatus` | `boolean` | `false` | Hide online/offline status indicators |
+| `showScrollbar` | `boolean` | `false` | Show/hide scrollbar in user list |
+| `disableDefaultContextMenu` | `boolean` | `true` | When true, prevents the browser's native context menu and shows the custom context menu instead |
+| `showSelectedUsersPreview` | `boolean` | `false` | Show selected users preview chips (multiple mode only) |
+
+### Data Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `usersRequestBuilder` | `CometChat.UsersRequestBuilder` | `undefined` | Custom request builder for filtering and pagination |
+| `searchRequestBuilder` | `CometChat.UsersRequestBuilder` | `undefined` | Custom request builder specifically for search queries |
+| `searchKeyword` | `string` | `''` | Initial search keyword to filter users |
+| `sectionHeaderKey` | `keyof CometChat.User` | `'getName'` | Key to extract section header value from user object |
+| `activeUser` | `CometChat.User` | `undefined` | Currently active/highlighted user |
+| `selectionMode` | `SelectionMode` | `'none'` | Selection mode: `'none'`, `'single'`, or `'multiple'` |
+
+### Customization Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `options` | `(user: CometChat.User) => CometChatOption[]` | `undefined` | Function to provide custom context menu options |
+
+### Template Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `headerView` | `TemplateRef<any>` | `undefined` | Custom template for entire header section |
+| `menuView` | `TemplateRef<any>` | `undefined` | Custom template for menu area in the header (e.g., action buttons, 3-dot menu) |
+| `loadingView` | `TemplateRef<any>` | `undefined` | Custom template for loading state |
+| `emptyView` | `TemplateRef<any>` | `undefined` | Custom template for empty state |
+| `errorView` | `TemplateRef<any>` | `undefined` | Custom template for error state |
+| `itemView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for entire user item |
+| `leadingView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for leading section (avatar area) |
+| `titleView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for title section |
+| `subtitleView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for subtitle section |
+| `trailingView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for trailing section (selection controls) |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `CometChat.User` | Emitted when a user item is clicked |
+| `select` | `{user: CometChat.User, selected: boolean}` | Emitted when a user is selected/deselected |
+| `error` | `CometChat.CometChatException` | Emitted when an error occurs |
+| `empty` | `void` | Emitted when the user list is empty after initial fetch |
+| `selectionChange` | `SelectionState` | Emitted when the selection state changes in selection mode |
+
+## Usage Patterns
+
+CometChatUsers supports two usage patterns for communicating the selected user to downstream components.
+
+<Tabs>
+<Tab title="Using Service">
+
+When a user is selected, `ChatStateService` stores the active user. Downstream components like `cometchat-message-header`, `cometchat-message-list`, and `cometchat-message-composer` automatically subscribe to the change.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatUsersComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-users-chat',
+  standalone: true,
+  imports: [
+    CometChatUsersComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <cometchat-users
+        (itemClick)="onUserClick($event)"
+      ></cometchat-users>
+
+      <div class="chat-panel">
+        <!-- Auto-subscribe to ChatStateService active user -->
+        <cometchat-message-header></cometchat-message-header>
+        <cometchat-message-list></cometchat-message-list>
+        <cometchat-message-composer></cometchat-message-composer>
+      </div>
+    </div>
+  `,
+})
+export class UsersChatComponent {
+  onUserClick(user: any): void {
+    // ChatStateService is updated automatically
+  }
+}
+```
+
+<Tip>
+  This is the recommended approach. Selecting a user automatically updates all downstream message components.
+</Tip>
+
+</Tab>
+<Tab title="Using Props">
+
+Pass `[user]` directly to downstream components to override `ChatStateService` state. This is useful when you manage user selection yourself.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatUsersComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-users-chat',
+  standalone: true,
+  imports: [
+    CometChatUsersComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <cometchat-users
+        (itemClick)="onUserClick($event)"
+      ></cometchat-users>
+
+      @if (activeUser) {
+        <div class="chat-panel">
+          <cometchat-message-header [user]="activeUser"></cometchat-message-header>
+          <cometchat-message-list [user]="activeUser"></cometchat-message-list>
+          <cometchat-message-composer [user]="activeUser"></cometchat-message-composer>
+        </div>
+      }
+    </div>
+  `,
+})
+export class UsersChatComponent {
+  activeUser: CometChat.User | null = null;
+
+  onUserClick(user: CometChat.User): void {
+    this.activeUser = user;
+  }
+}
+```
+
+<Note>
+  When `[user]` inputs are provided, they take priority over `ChatStateService` state for that component instance.
+</Note>
+
+</Tab>
+</Tabs>
+
+## Advanced Usage
+
+### Filtering Users with Request Builder
+
+Use the `usersRequestBuilder` to filter users by various criteria:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUsersComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-filtered-users',
+  standalone: true,
+  imports: [CometChatUsersComponent],
+  template: `
+    <cometchat-users
+      [usersRequestBuilder]="usersBuilder"
+      (itemClick)="onUserClick($event)"
+    ></cometchat-users>
+  `
+})
+export class FilteredUsersComponent implements OnInit {
+  usersBuilder!: CometChat.UsersRequestBuilder;
+
+  ngOnInit(): void {
+    // Show only online friends with limit of 20
+    this.usersBuilder = new CometChat.UsersRequestBuilder()
+      .setLimit(20)
+      .friendsOnly(true)
+      .setStatus('online');
+  }
+
+  onUserClick(user: CometChat.User): void {
+    console.log('User clicked:', user);
+  }
+}
+```
+
+### UserRequestBuilder Methods
+
+| Method | Type | Description |
+|--------|------|-------------|
+| `setLimit` | `number` | Sets the number of users fetched per request (pagination) |
+| `setSearchKeyword` | `string` | Fetches users matching the search string |
+| `hideBlockedUsers` | `boolean` | Excludes users blocked by the logged-in user |
+| `friendsOnly` | `boolean` | Fetches only friends of the logged-in user |
+| `setRoles` | `string[]` | Fetches users with specified roles |
+| `setTags` | `string[]` | Fetches users with specified tags |
+| `withTags` | `boolean` | Includes tag information in response |
+| `setStatus` | `string` | Filters by status ('online' or 'offline') |
+| `setUIDs` | `string[]` | Fetches specific users by UIDs |
+
+### Selection Modes
+
+Enable single or multiple user selection:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUsersComponent, SelectionMode } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-selectable-users',
+  standalone: true,
+  imports: [CometChatUsersComponent],
+  template: `
+    <div class="user-selection">
+      @if (selectedUsers.length > 0) {
+        <div class="toolbar">
+          <span>{{ selectedUsers.length }} users selected</span>
+          <button (click)="createGroup()">Create Group</button>
+        </div>
+      }
+      
+      <cometchat-users
+        [selectionMode]="selectionMode"
+        [showSelectedUsersPreview]="true"
+        (select)="onUserSelect($event)"
+        (itemClick)="onUserClick($event)"
+      ></cometchat-users>
+    </div>
+  `
+})
+export class SelectableUsersComponent {
+  selectionMode = SelectionMode.multiple;
+  selectedUsers: CometChat.User[] = [];
+
+  onUserSelect(event: { user: CometChat.User; selected: boolean }): void {
+    if (event.selected) {
+      this.selectedUsers.push(event.user);
+    } else {
+      this.selectedUsers = this.selectedUsers.filter(
+        u => u.getUid() !== event.user.getUid()
+      );
+    }
+  }
+
+  onUserClick(user: CometChat.User): void {
+    console.log('User clicked:', user);
+  }
+
+  createGroup(): void {
+    console.log('Creating group with users:', this.selectedUsers);
+    // Implement group creation logic
+  }
+}
+```
+
+### Shift-Click Range Selection
+
+In multiple selection mode, users can use Shift+Click to select a range of users:
+
+1. Click on a user to set the anchor point
+2. Hold Shift and click on another user
+3. All users between the anchor and clicked user will be selected/deselected
+
+This feature is built-in and requires no additional configuration.
+
+### Custom Context Menu Options
+
+Provide custom actions for each user:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUsersComponent, CometChatOption } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-menu-users',
+  standalone: true,
+  imports: [CometChatUsersComponent],
+  template: `
+    <cometchat-users
+      [options]="getCustomOptions"
+      (itemClick)="onUserClick($event)"
+    ></cometchat-users>
+  `
+})
+export class CustomMenuUsersComponent {
+  getCustomOptions = (user: CometChat.User): CometChatOption[] => {
+    return [
+      {
+        id: 'message',
+        title: 'Send Message',
+        iconURL: 'assets/message-icon.svg',
+        onClick: () => this.sendMessage(user)
+      },
+      {
+        id: 'call',
+        title: 'Start Call',
+        iconURL: 'assets/call-icon.svg',
+        onClick: () => this.startCall(user)
+      },
+      {
+        id: 'block',
+        title: 'Block User',
+        iconURL: 'assets/block-icon.svg',
+        onClick: () => this.blockUser(user)
+      }
+    ];
+  };
+
+  sendMessage(user: CometChat.User): void {
+    console.log('Sending message to:', user.getName());
+  }
+
+  startCall(user: CometChat.User): void {
+    console.log('Starting call with:', user.getName());
+  }
+
+  blockUser(user: CometChat.User): void {
+    console.log('Blocking user:', user.getName());
+  }
+
+  onUserClick(user: CometChat.User): void {
+    console.log('User clicked:', user);
+  }
+}
+```
+
+## Customization with Templates
+
+### Custom Subtitle View
+
+Customize the subtitle section to show additional user information:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUsersComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-subtitle',
+  standalone: true,
+  imports: [CommonModule, CometChatUsersComponent],
+  template: `
+    <cometchat-users
+      [subtitleView]="customSubtitle"
+      (itemClick)="onUserClick($event)"
+    >
+      <ng-template #customSubtitle let-user>
+        <div class="custom-subtitle">
+          <span class="status" [class.online]="user.getStatus() === 'online'">
+            {{ user.getStatus() }}
+          </span>
+          @if (user.getStatus() !== 'online') {
+            <span class="last-active">
+              Last seen: {{ formatLastActive(user.getLastActiveAt()) }}
+            </span>
+          }
+        </div>
+      </ng-template>
+    </cometchat-users>
+  `,
+  styles: [`
+    .custom-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .status {
+      color: #999;
+      text-transform: capitalize;
+    }
+    .status.online {
+      color: #4CAF50;
+    }
+    .last-active {
+      color: #666;
+    }
+  `]
+})
+export class CustomSubtitleComponent {
+  formatLastActive(timestamp: number): string {
+    if (!timestamp) return 'Unknown';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString();
+  }
+
+  onUserClick(user: CometChat.User): void {
+    console.log('User clicked:', user);
+  }
+}
+```
+
+### Custom Leading View
+
+Customize the avatar and status indicator area:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUsersComponent, CometChatAvatarComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-leading',
+  standalone: true,
+  imports: [CommonModule, CometChatUsersComponent, CometChatAvatarComponent],
+  template: `
+    <cometchat-users
+      [leadingView]="customLeading"
+      (itemClick)="onUserClick($event)"
+    >
+      <ng-template #customLeading let-user>
+        <div class="custom-leading">
+          <div class="avatar-wrapper">
+            <cometchat-avatar
+              [image]="user.getAvatar()"
+              [name]="user.getName()"
+            ></cometchat-avatar>
+            @if (user.getStatus() === 'online') {
+              <span class="online-badge"></span>
+            }
+          </div>
+          @if (user.getRole()) {
+            <span class="role-badge">
+              {{ user.getRole() }}
+            </span>
+          }
+        </div>
+      </ng-template>
+    </cometchat-users>
+  `,
+  styles: [`
+    .custom-leading {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .avatar-wrapper {
+      position: relative;
+    }
+    .online-badge {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 10px;
+      height: 10px;
+      background-color: #4CAF50;
+      border: 2px solid white;
+      border-radius: 50%;
+    }
+    .role-badge {
+      margin-top: 4px;
+      padding: 2px 6px;
+      background-color: #6852D6;
+      color: white;
+      font-size: 8px;
+      font-weight: 600;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+  `]
+})
+export class CustomLeadingComponent {
+  onUserClick(user: CometChat.User): void {
+    console.log('User clicked:', user);
+  }
+}
+```
+
+### Custom Trailing View
+
+Customize the trailing section with action buttons:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUsersComponent, CometChatButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-trailing',
+  standalone: true,
+  imports: [CommonModule, CometChatUsersComponent, CometChatButtonComponent],
+  template: `
+    <cometchat-users
+      [trailingView]="customTrailing"
+      (itemClick)="onUserClick($event)"
+    >
+      <ng-template #customTrailing let-user>
+        <div class="custom-trailing">
+          <cometchat-button
+            [iconURL]="'assets/chat-icon.svg'"
+            (click)="startChat(user); $event.stopPropagation()"
+          ></cometchat-button>
+          <cometchat-button
+            [iconURL]="'assets/call-icon.svg'"
+            (click)="startCall(user); $event.stopPropagation()"
+          ></cometchat-button>
+        </div>
+      </ng-template>
+    </cometchat-users>
+  `,
+  styles: [`
+    .custom-trailing {
+      display: flex;
+      gap: 8px;
+    }
+  `]
+})
+export class CustomTrailingComponent {
+  startChat(user: CometChat.User): void {
+    console.log('Starting chat with:', user.getName());
+  }
+
+  startCall(user: CometChat.User): void {
+    console.log('Starting call with:', user.getName());
+  }
+
+  onUserClick(user: CometChat.User): void {
+    console.log('User clicked:', user);
+  }
+}
+```
+
+### Custom Empty and Error States
+
+Provide custom views for empty and error states:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatUsersComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-states',
+  standalone: true,
+  imports: [CommonModule, CometChatUsersComponent],
+  template: `
+    <cometchat-users
+      [emptyView]="customEmpty"
+      [errorView]="customError"
+      (itemClick)="onUserClick($event)"
+      (error)="onError($event)"
+    >
+      <ng-template #customEmpty>
+        <div class="custom-empty-state">
+          <img src="assets/no-users.svg" alt="No users" />
+          <h3>No Users Found</h3>
+          <p>There are no users available at the moment</p>
+          <button (click)="refreshUsers()">Refresh</button>
+        </div>
+      </ng-template>
+
+      <ng-template #customError>
+        <div class="custom-error-state">
+          <img src="assets/error-icon.svg" alt="Error" />
+          <h3>Something went wrong</h3>
+          <p>We couldn't load the users list</p>
+          <button (click)="retryLoading()">Try Again</button>
+        </div>
+      </ng-template>
+    </cometchat-users>
+  `,
+  styles: [`
+    .custom-empty-state,
+    .custom-error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .custom-empty-state img,
+    .custom-error-state img {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 16px;
+    }
+    .custom-empty-state h3,
+    .custom-error-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+    .custom-empty-state p,
+    .custom-error-state p {
+      font-size: 14px;
+      color: #666;
+      margin: 0 0 16px 0;
+    }
+    button {
+      padding: 10px 24px;
+      background-color: #6852D6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #5742B8;
+    }
+  `]
+})
+export class CustomStatesComponent {
+  refreshUsers(): void {
+    console.log('Refreshing users');
+    // Trigger refresh
+  }
+
+  retryLoading(): void {
+    console.log('Retrying to load users');
+    // Trigger retry
+  }
+
+  onUserClick(user: any): void {
+    console.log('User clicked:', user);
+  }
+
+  onError(error: any): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+## Styling with CSS Variables
+
+The CometChatUsers component uses CSS variables for comprehensive theming:
+
+```css expandable
+cometchat-users {
+  /* Background colors */
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-background-color-02: #f5f5f5;
+  --cometchat-background-color-03: #e8e8e8;
+  
+  /* Text colors */
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  
+  /* Border colors */
+  --cometchat-border-color-light: #e8e8e8;
+  
+  /* Primary color */
+  --cometchat-primary-color: #6852D6;
+  
+  /* Status colors */
+  --cometchat-success-color: #09C26F;
+  --cometchat-neutral-color-300: #999999;
+  
+  /* Typography */
+  --cometchat-font-heading2-bold: 700 20px/24px Roboto;
+  --cometchat-font-body-regular: 400 14px/16.8px Roboto;
+  --cometchat-font-caption1-medium: 500 12px/14.4px Roboto;
+  
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-max: 1000px;
+}
+```
+
+### Dark Theme Example
+
+```css
+.dark-theme cometchat-users {
+  --cometchat-background-color-01: #1a1a1a;
+  --cometchat-background-color-02: #2a2a2a;
+  --cometchat-background-color-03: #333333;
+  --cometchat-text-color-primary: #ffffff;
+  --cometchat-text-color-secondary: #cccccc;
+  --cometchat-border-color-light: #444444;
+}
+```
+
+### Custom Brand Colors
+
+```css
+.branded-users cometchat-users {
+  --cometchat-primary-color: #FF6B35;
+  --cometchat-success-color: #00C853;
+}
+```
+
+## Real-Time Features
+
+### Automatic Updates
+
+The component automatically updates in real-time for:
+
+- **User Status**: Online/offline status changes are reflected immediately
+- **User Blocked/Unblocked**: Updates when users are blocked or unblocked via CometChatUserEvents
+- **Connection Recovery**: Automatically refreshes the list when connection is re-established
+
+### Event Subscriptions
+
+The component subscribes to the following events:
+
+```typescript expandable
+// SDK UserListener events
+CometChat.UserListener.onUserOnline(user)
+CometChat.UserListener.onUserOffline(user)
+
+// CometChatUserEvents
+CometChatUserEvents.ccUserBlocked
+CometChatUserEvents.ccUserUnblocked
+
+// Connection events
+CometChat.ConnectionListener.onConnected()
+```
+
+## Error Handling
+
+### Built-in Error Handling
+
+The component includes comprehensive error handling:
+
+```typescript
+<cometchat-users
+  [hideError]="false"
+  (error)="handleError($event)"
+  (itemClick)="onUserClick($event)"
+></cometchat-users>
+```
+
+```typescript expandable
+handleError(error: CometChat.CometChatException): void {
+  console.error('Users error:', error);
+  
+  if (error.code === 'NETWORK_ERROR') {
+    this.showToast('Network error. Please check your connection.');
+  } else if (error.code === 'AUTH_ERROR') {
+    this.showToast('Authentication error. Please log in again.');
+  } else {
+    this.showToast('An error occurred. Please try again.');
+  }
+}
+```
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatusers).
+</Info>
+
+## Best Practices
+
+<Tip>
+  Use `usersRequestBuilder` to limit the initial fetch size for better performance. The default limit is 30 users per page.
+</Tip>
+
+<Warning>
+  Always handle the `error` event to provide feedback to users when something goes wrong.
+</Warning>
+
+<Info>
+  The component uses `OnPush` change detection strategy for optimal performance. If you're using custom templates with external state, ensure proper change detection triggering.
+</Info>
+
+<Tip>
+  Use `showSelectedUsersPreview` with `selectionMode="multiple"` to provide visual feedback of selected users.
+</Tip>
+
+<Warning>
+  When using custom context menu options, ensure the `onClick` handlers are properly bound to avoid `this` context issues. Use arrow functions.
+</Warning>
+
+## Complete Example
+
+Here's a comprehensive example combining multiple features:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatUsersComponent,
+  SelectionMode,
+  CometChatOption
+} from '@cometchat/chat-uikit-angular';
+import { Subject, takeUntil } from 'rxjs';
+
+@Component({
+  selector: 'app-users-demo',
+  standalone: true,
+  imports: [CommonModule, CometChatUsersComponent],
+  template: `
+    <div class="users-container">
+      @if (selectedUsers.length > 0) {
+        <div class="toolbar">
+          <span>{{ selectedUsers.length }} selected</span>
+          <button (click)="createGroupChat()">Create Group</button>
+          <button (click)="clearSelection()">Clear</button>
+        </div>
+      }
+
+      <cometchat-users
+        [usersRequestBuilder]="usersBuilder"
+        [selectionMode]="selectionMode"
+        [showSelectedUsersPreview]="true"
+        [showSectionHeader]="true"
+        [options]="getCustomOptions"
+        [subtitleView]="customSubtitle"
+        (itemClick)="onUserClick($event)"
+        (select)="onUserSelect($event)"
+        (error)="handleError($event)"
+        (empty)="handleEmpty()"
+      >
+        <ng-template #customSubtitle let-user>
+          <div class="user-subtitle">
+            <span [class.online]="user.getStatus() === 'online'">
+              {{ user.getStatus() }}
+            </span>
+          </div>
+        </ng-template>
+      </cometchat-users>
+    </div>
+  `,
+  styles: [`
+    .users-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background-color: #f5f5f5;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .toolbar span {
+      flex: 1;
+      font-weight: 500;
+    }
+    .toolbar button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .toolbar button:first-of-type {
+      background-color: #6852D6;
+      color: white;
+    }
+    .toolbar button:last-of-type {
+      background-color: #e8e8e8;
+    }
+    .user-subtitle {
+      font-size: 12px;
+      color: #666;
+    }
+    .user-subtitle .online {
+      color: #4CAF50;
+    }
+  `]
+})
+export class UsersDemoComponent implements OnInit, OnDestroy {
+  usersBuilder!: CometChat.UsersRequestBuilder;
+  selectionMode = SelectionMode.multiple;
+  selectedUsers: CometChat.User[] = [];
+  
+  private destroy$ = new Subject<void>();
+
+  ngOnInit(): void {
+    this.usersBuilder = new CometChat.UsersRequestBuilder()
+      .setLimit(30)
+      .hideBlockedUsers(true);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  getCustomOptions = (user: CometChat.User): CometChatOption[] => {
+    return [
+      {
+        id: 'message',
+        title: 'Message',
+        iconURL: 'assets/chat.svg',
+        onClick: () => this.startChat(user)
+      },
+      {
+        id: 'block',
+        title: 'Block',
+        iconURL: 'assets/block.svg',
+        onClick: () => this.blockUser(user)
+      }
+    ];
+  };
+
+  onUserClick(user: CometChat.User): void {
+    console.log('User clicked:', user.getName());
+  }
+
+  onUserSelect(event: { user: CometChat.User; selected: boolean }): void {
+    if (event.selected) {
+      this.selectedUsers.push(event.user);
+    } else {
+      this.selectedUsers = this.selectedUsers.filter(
+        u => u.getUid() !== event.user.getUid()
+      );
+    }
+  }
+
+  handleError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+
+  handleEmpty(): void {
+    console.log('No users found');
+  }
+
+  startChat(user: CometChat.User): void {
+    console.log('Starting chat with:', user.getName());
+  }
+
+  blockUser(user: CometChat.User): void {
+    console.log('Blocking:', user.getName());
+  }
+
+  createGroupChat(): void {
+    console.log('Creating group with:', this.selectedUsers.map(u => u.getName()));
+  }
+
+  clearSelection(): void {
+    this.selectedUsers = [];
+  }
+}
+```
+
+## Related Components
+
+- **CometChatGroups**: List and select groups
+- **CometChatConversations**: Display conversations list
+- **CometChatMessageList**: Display messages for a selected user
+- **CometChatAvatar**: Avatar component used in user items
+- **CometChatListItem**: List item component used for rendering users
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses `OnPush` strategy for optimal performance
+- **Manager Architecture**: UsersManager handles SDK interactions
+- **Real-time Updates**: Automatic via SDK listeners
+- **Pagination**: Automatic on scroll with intersection observers
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **BEM CSS**: Follows Block Element Modifier naming convention

@@ -1,0 +1,425 @@
+---
+title: "Hashtag Formatter"
+description: "Build a custom hashtag formatter that highlights #tags in the message composer, message bubbles, conversation last message, and edit view."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key class | `CometChatTextFormatter` (abstract base class) |
+| Required setup | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Purpose | Detect `#word` patterns and render them as styled, highlighted hashtags |
+| Surfaces | Message composer, message bubbles (text bubble), conversation last message, edit view |
+| Related | [Custom Text Formatter](/guides/custom-text-formatter) · [Mentions Formatter](/guides/mentions-formatter) · [All Guides](/guides/overview) |
+
+</Accordion>
+
+This guide walks through building a hashtag formatter that detects `#word` patterns and renders them as highlighted, styled tokens. The formatter works across all text surfaces: the message composer (live as you type), message bubbles, conversation subtitle (last message preview), and the message edit view.
+
+---
+
+## How It Works
+
+1. User types `#angular` in the composer.
+2. On space or enter, the formatter wraps the hashtag in a styled `<span>`.
+3. When the message is sent, the raw text (`#angular`) is stored in the message body.
+4. When the message is rendered in the message list, conversation list, or edit view, the formatter re-applies the highlight.
+
+The formatter plugs into the `textFormatters` input on `cometchat-message-list`, `cometchat-message-composer`, and `cometchat-conversations`.
+
+---
+
+## Prerequisites
+
+- Angular UIKit installed and initialized ([Integration Guide](/integration))
+- A logged-in CometChat user
+- Basic understanding of the [Custom Text Formatter](/guides/custom-text-formatter) pattern
+
+---
+
+## Step 1: Create the Formatter Class
+
+Create a file `hashtag-formatter.ts` in your project:
+
+```typescript expandable
+import { CometChatTextFormatter } from "@cometchat/chat-uikit-angular";
+
+export class HashtagFormatter extends CometChatTextFormatter {
+  readonly id = "hashtag-formatter";
+  override priority = 15;
+
+  private hashtags: string[] = [];
+
+  constructor() {
+    super();
+  }
+
+  getRegex(): RegExp {
+    return /\B#(\w{1,50})\b/g;
+  }
+
+  format(text: string): string {
+    if (!text) {
+      this.originalText = "";
+      this.formattedText = "";
+      this.hashtags = [];
+      this.metadata = { hashtags: this.hashtags };
+      return "";
+    }
+
+    this.originalText = text;
+    this.hashtags = [];
+
+    this.formattedText = text.replace(this.getRegex(), (match, tag) => {
+      this.hashtags.push(`#${tag}`);
+      return `<span class="cometchat-hashtag" style="color: var(--cometchat-primary-color); font-weight: 600;">#${tag}</span>`;
+    });
+
+    this.metadata = { hashtags: this.hashtags };
+    return this.formattedText;
+  }
+
+  getHashtags(): string[] {
+    return [...this.hashtags];
+  }
+
+  override reset(): void {
+    super.reset();
+    this.hashtags = [];
+  }
+}
+```
+
+
+Key points:
+- `priority = 15` places it after the URL formatter (10) but before mentions (20), so URLs inside hashtags aren't broken.
+- The regex `\B#(\w{1,50})\b` matches `#` preceded by a non-word boundary, followed by 1–50 word characters. This avoids matching `#` in URLs or hex colors.
+- The `<span>` uses `var(--cometchat-primary-color)` so it respects the active theme.
+
+---
+
+## Step 2: Use in Message List and Composer
+
+Pass the formatter to both the message list (for rendering) and the composer (for live preview and edit view):
+
+```typescript expandable
+import { Component, OnInit } from "@angular/core";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+import {
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from "@cometchat/chat-uikit-angular";
+import { HashtagFormatter } from "./hashtag-formatter";
+
+@Component({
+  selector: "app-chat",
+  standalone: true,
+  imports: [CometChatMessageListComponent, CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-list
+      [user]="chatUser"
+      [textFormatters]="formatters">
+    </cometchat-message-list>
+    <cometchat-message-composer
+      [user]="chatUser"
+      [textFormatters]="formatters">
+    </cometchat-message-composer>
+  `,
+})
+export class ChatComponent implements OnInit {
+  chatUser: CometChat.User | undefined;
+  formatters = [new HashtagFormatter()];
+
+  ngOnInit(): void {
+    CometChat.getUser("uid").then((user) => {
+      this.chatUser = user;
+    });
+  }
+}
+```
+
+The `textFormatters` input accepts an array. The UIKit merges your custom formatters with the built-in ones (URL, mentions, emoji, markdown) and applies them in priority order.
+
+---
+
+## Step 3: Use in Conversations (Last Message Preview)
+
+To highlight hashtags in the conversation list's last message subtitle, pass the same formatter to `cometchat-conversations`:
+
+```typescript expandable
+import { Component } from "@angular/core";
+import { CometChatConversationsComponent } from "@cometchat/chat-uikit-angular";
+import { HashtagFormatter } from "./hashtag-formatter";
+
+@Component({
+  selector: "app-conversations",
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <cometchat-conversations
+      [textFormatters]="formatters"
+      (itemClick)="onConversationClick($event)">
+    </cometchat-conversations>
+  `,
+})
+export class ConversationsComponent {
+  formatters = [new HashtagFormatter()];
+
+  onConversationClick(conversation: any): void {
+    // handle conversation selection
+  }
+}
+```
+
+This ensures `#angular` in the last message preview renders with the same highlight styling.
+
+---
+
+## Step 4: Style the Hashtag
+
+The inline `style` attribute handles the base color, but you can add a global CSS rule for more control:
+
+```css
+.cometchat-hashtag {
+  color: var(--cometchat-primary-color);
+  font: var(--cometchat-font-body-medium);
+  cursor: pointer;
+}
+
+.cometchat-hashtag:hover {
+  text-decoration: underline;
+}
+```
+
+Add this to your global `styles.css` or `styles.scss`.
+
+---
+
+## Step 5: Handle Hashtag Clicks (Optional)
+
+To make hashtags interactive (e.g., filter messages by tag), extend the formatter to emit click events:
+
+```typescript expandable
+import { CometChatTextFormatter } from "@cometchat/chat-uikit-angular";
+import { Subject } from "rxjs";
+
+export class HashtagFormatter extends CometChatTextFormatter {
+  readonly id = "hashtag-formatter";
+  override priority = 15;
+
+  /** Emits the clicked hashtag string */
+  hashtagClick$ = new Subject<string>();
+
+  private hashtags: string[] = [];
+
+  getRegex(): RegExp {
+    return /\B#(\w{1,50})\b/g;
+  }
+
+  format(text: string): string {
+    if (!text) {
+      this.originalText = "";
+      this.formattedText = "";
+      this.hashtags = [];
+      this.metadata = { hashtags: this.hashtags };
+      return "";
+    }
+
+    this.originalText = text;
+    this.hashtags = [];
+
+    this.formattedText = text.replace(this.getRegex(), (match, tag) => {
+      this.hashtags.push(`#${tag}`);
+      return `<span class="cometchat-hashtag" data-hashtag="${tag}" style="color: var(--cometchat-primary-color); font-weight: 600; cursor: pointer;">#${tag}</span>`;
+    });
+
+    this.metadata = { hashtags: this.hashtags };
+    return this.formattedText;
+  }
+
+  getHashtags(): string[] {
+    return [...this.hashtags];
+  }
+
+  override reset(): void {
+    super.reset();
+    this.hashtags = [];
+  }
+}
+```
+
+Then in your component, listen for clicks on `.cometchat-hashtag` elements:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy, HostListener } from "@angular/core";
+import { Subscription } from "rxjs";
+import { HashtagFormatter } from "./hashtag-formatter";
+
+@Component({ /* ... */ })
+export class ChatComponent implements OnInit, OnDestroy {
+  private hashtagFormatter = new HashtagFormatter();
+  private sub?: Subscription;
+  formatters = [this.hashtagFormatter];
+
+  ngOnInit(): void {
+    this.sub = this.hashtagFormatter.hashtagClick$.subscribe((tag) => {
+      console.log("Hashtag clicked:", tag);
+      // e.g., filter messages by tag, open search, etc.
+    });
+  }
+
+  @HostListener("click", ["$event"])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains("cometchat-hashtag")) {
+      const tag = target.dataset["hashtag"];
+      if (tag) {
+        this.hashtagFormatter.hashtagClick$.next(`#${tag}`);
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+}
+```
+
+---
+
+## Complete Example
+
+A full two-panel layout with hashtag formatting across all surfaces:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy, HostListener } from "@angular/core";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+import { Subscription } from "rxjs";
+import {
+  CometChatConversationsComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+  CometChatMessageHeaderComponent,
+} from "@cometchat/chat-uikit-angular";
+import { HashtagFormatter } from "./hashtag-formatter";
+
+@Component({
+  selector: "app-chat-layout",
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+    CometChatMessageHeaderComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <aside class="sidebar">
+        <cometchat-conversations
+          [textFormatters]="formatters"
+          (itemClick)="onConversationClick($event)">
+        </cometchat-conversations>
+      </aside>
+      <main class="messages">
+        @if (chatUser || chatGroup) {
+          <cometchat-message-header
+            [user]="chatUser"
+            [group]="chatGroup">
+          </cometchat-message-header>
+          <cometchat-message-list
+            [user]="chatUser"
+            [group]="chatGroup"
+            [textFormatters]="formatters">
+          </cometchat-message-list>
+          <cometchat-message-composer
+            [user]="chatUser"
+            [group]="chatGroup"
+            [textFormatters]="formatters">
+          </cometchat-message-composer>
+        }
+      </main>
+    </div>
+  `,
+  styles: [`
+    .chat-layout { display: flex; height: 100vh; }
+    .sidebar { width: 360px; border-right: 1px solid var(--cometchat-border-color-light); }
+    .messages { flex: 1; display: flex; flex-direction: column; }
+  `],
+})
+export class ChatLayoutComponent implements OnInit, OnDestroy {
+  chatUser: CometChat.User | undefined;
+  chatGroup: CometChat.Group | undefined;
+
+  private hashtagFormatter = new HashtagFormatter();
+  private sub?: Subscription;
+  formatters = [this.hashtagFormatter];
+
+  ngOnInit(): void {
+    this.sub = this.hashtagFormatter.hashtagClick$.subscribe((tag) => {
+      console.log("Hashtag clicked:", tag);
+    });
+  }
+
+  onConversationClick(conversation: any): void {
+    const conversationType = conversation?.getConversationType?.();
+    if (conversationType === "user") {
+      this.chatUser = conversation.getConversationWith() as CometChat.User;
+      this.chatGroup = undefined;
+    } else if (conversationType === "group") {
+      this.chatGroup = conversation.getConversationWith() as CometChat.Group;
+      this.chatUser = undefined;
+    }
+  }
+
+  @HostListener("click", ["$event"])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains("cometchat-hashtag")) {
+      const tag = target.dataset["hashtag"];
+      if (tag) {
+        this.hashtagFormatter.hashtagClick$.next(`#${tag}`);
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+}
+```
+
+---
+
+## Where Hashtags Appear
+
+| Surface | How | Input |
+|:--------|:----|:------|
+| Message composer | Live formatting as you type; hashtags highlight on space/enter | `[textFormatters]` on `cometchat-message-composer` |
+| Message bubbles | Formatted when rendering text messages in the list | `[textFormatters]` on `cometchat-message-list` |
+| Conversation last message | Formatted in the subtitle of each conversation item | `[textFormatters]` on `cometchat-conversations` |
+| Edit view | Same formatters apply when editing a message in the composer | `[textFormatters]` on `cometchat-message-composer` |
+
+<Note>
+The raw message text stored on the server is always plain text (e.g., `Check out #angular`). Formatting is applied at render time by the formatter pipeline. This means hashtag highlighting works retroactively on older messages too.
+</Note>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Text Formatter" href="/guides/custom-text-formatter">
+    Learn the full formatter API and lifecycle.
+  </Card>
+  <Card title="Mentions Formatter" href="/guides/mentions-formatter">
+    Add @mentions with suggestion lists.
+  </Card>
+  <Card title="Message Composer" href="/components/cometchat-message-composer">
+    Customize the message input component.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+</CardGroup>

@@ -1,0 +1,317 @@
+---
+title: "Chat State Service"
+description: "Service Reference for the centralized chat state management service in CometChat Angular UIKit"
+---
+## Overview
+
+`ChatStateService` is the centralized Angular service for managing active chat state across the CometChat Angular UIKit. It provides a single source of truth for the currently active chat entity (User, Group, or Conversation) in your application.
+
+The service is provided at the root level (`providedIn: 'root'`) and is available throughout your application via Angular dependency injection.
+
+### Hybrid Approach
+
+`ChatStateService` implements the Hybrid Approach pattern:
+
+1. **Service-based (default)** — Components automatically subscribe to `ChatStateService` and react to state changes.
+2. **Props override** — When `@Input()` bindings are provided, they take priority over service state for that component instance.
+
+This gives you zero-config wiring out of the box while preserving full control when you need it.
+
+### Import
+
+```typescript
+import { inject } from '@angular/core';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+
+export class MyComponent {
+  private chatStateService = inject(ChatStateService);
+}
+```
+
+## Signals (Readonly)
+
+`ChatStateService` exposes Angular Signals for synchronous, fine-grained reactivity with automatic dependency tracking and efficient change detection.
+
+| Signal | Type | Description |
+|--------|------|-------------|
+| `activeUser` | `Signal<CometChat.User \| null>` | Readonly signal for the currently active user. Returns `null` when no user is active. |
+| `activeGroup` | `Signal<CometChat.Group \| null>` | Readonly signal for the currently active group. Returns `null` when no group is active. |
+| `activeConversation` | `Signal<CometChat.Conversation \| null>` | Readonly signal for the currently active conversation. Returns `null` when no conversation is active. |
+
+
+## Observables
+
+For RxJS-based reactivity and integration with existing observable-based code, `ChatStateService` provides Observable streams derived from the underlying signals via `toObservable()`.
+
+| Observable | Type | Description |
+|------------|------|-------------|
+| `activeUser$` | `Observable<CometChat.User \| null>` | Observable stream that emits whenever the active user changes. |
+| `activeGroup$` | `Observable<CometChat.Group \| null>` | Observable stream that emits whenever the active group changes. |
+| `activeConversation$` | `Observable<CometChat.Conversation \| null>` | Observable stream that emits whenever the active conversation changes. |
+
+## Setter Methods
+
+Setter methods update the active chat state. They enforce mutual exclusivity — only one chat entity (User or Group) can be active at a time.
+
+| Method | Parameters | Return Type | Description |
+|--------|-----------|-------------|-------------|
+| `setActiveUser(user)` | `user: CometChat.User \| null` | `void` | Sets the active user. If `user` is non-null, automatically clears the active group (mutual exclusivity). |
+| `setActiveGroup(group)` | `group: CometChat.Group \| null` | `void` | Sets the active group. If `group` is non-null, automatically clears the active user (mutual exclusivity). |
+| `setActiveConversation(conversation)` | `conversation: CometChat.Conversation \| null` | `void` | Sets the active conversation and extracts the `conversationWith` entity. If the entity is a `CometChat.User`, calls `setActiveUser()`; if a `CometChat.Group`, calls `setActiveGroup()`. Passing `null` clears user and group. |
+| `clearActiveChat()` | — | `void` | Clears all active state: user, group, and conversation are set to `null`. Also clears the internal active conversation in `ConversationsService`. |
+
+## Getter Methods (Snapshots)
+
+Getter methods return the current value of a signal as a one-time read without subscribing to changes. Use these in event handlers or one-time operations.
+
+| Method | Return Type | Description |
+|--------|-------------|-------------|
+| `getActiveUser()` | `CometChat.User \| null` | Returns the current active user, or `null` if no user is active. |
+| `getActiveGroup()` | `CometChat.Group \| null` | Returns the current active group, or `null` if no group is active. |
+| `getActiveConversation()` | `CometChat.Conversation \| null` | Returns the current active conversation, or `null` if no conversation is active. |
+| `getActiveChatEntity()` | `CometChat.User \| CometChat.Group \| null` | Returns whichever entity is currently active (user takes precedence). Returns `null` if neither is active. |
+
+
+## Mutual Exclusivity
+
+`ChatStateService` enforces that only one chat entity — a `CometChat.User` or a `CometChat.Group` — can be active at any given time:
+
+- Calling `setActiveUser(user)` with a non-null value automatically sets `activeGroup` to `null`.
+- Calling `setActiveGroup(group)` with a non-null value automatically sets `activeUser` to `null`.
+- Calling `setActiveConversation(conversation)` extracts the entity and delegates to `setActiveUser()` or `setActiveGroup()`, which applies the same rule.
+- Calling `clearActiveChat()` resets all three signals to `null`.
+
+This prevents ambiguous states and ensures components always know which entity they are working with.
+
+<Warning>
+  Setting a user clears the group, and setting a group clears the user. Design your
+  navigation flow with this in mind — you do not need to manually clear the previous
+  entity before setting a new one.
+</Warning>
+
+```typescript expandable
+import { inject } from '@angular/core';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+export class ChatNavigationComponent {
+  private chatStateService = inject(ChatStateService);
+
+  selectUser(user: CometChat.User): void {
+    this.chatStateService.setActiveUser(user);
+
+    // At this point:
+    // activeUser()  → user
+    // activeGroup() → null  (automatically cleared)
+  }
+
+  selectGroup(group: CometChat.Group): void {
+    this.chatStateService.setActiveGroup(group);
+
+    // At this point:
+    // activeGroup() → group
+    // activeUser()  → null  (automatically cleared)
+  }
+}
+```
+
+
+## Usage Examples
+
+### Signal-Based (Recommended)
+
+Signals provide synchronous, fine-grained reactivity with automatic dependency tracking. This is the recommended approach for new code.
+
+<Tip>
+  Signals are the preferred API for reading chat state. They integrate natively with
+  Angular's change detection and require no manual subscription management.
+</Tip>
+
+<Tabs>
+<Tab title="Component">
+
+```typescript expandable
+import { Component, inject, computed } from '@angular/core';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-chat-panel',
+  template: `
+    @if (activeUser()) {
+      <span>Chatting with: {{ activeUser()!.getName() }}</span>
+    }
+    @if (activeGroup()) {
+      <span>Group: {{ activeGroup()!.getName() }}</span>
+    }
+    <p>{{ chatLabel() }}</p>
+  `
+})
+export class ChatPanelComponent {
+  private chatStateService = inject(ChatStateService);
+
+  activeUser = this.chatStateService.activeUser;
+  activeGroup = this.chatStateService.activeGroup;
+
+  chatLabel = computed(() => {
+    const user = this.chatStateService.activeUser();
+    const group = this.chatStateService.activeGroup();
+    if (user) return `1:1 chat with ${user.getName()}`;
+    if (group) return `Group: ${group.getName()}`;
+    return 'No active chat';
+  });
+
+  selectUser(user: CometChat.User): void {
+    this.chatStateService.setActiveUser(user);
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Observable-Based
+
+Observables integrate with existing RxJS-based code and the `async` pipe.
+
+<Tabs>
+<Tab title="Component">
+
+```typescript expandable
+import { Component, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-chat-panel',
+  imports: [AsyncPipe],
+  template: `
+    @if (chatStateService.activeUser$ | async; as user) {
+      <span>Chatting with: {{ user.getName() }}</span>
+    }
+    @if (chatStateService.activeGroup$ | async; as group) {
+      <span>Group: {{ group.getName() }}</span>
+    }
+  `
+})
+export class ChatPanelComponent {
+  chatStateService = inject(ChatStateService);
+}
+```
+
+</Tab>
+</Tabs>
+
+### Snapshot (One-Time Read)
+
+Use getter methods when you need the current value once without subscribing to changes — for example, inside event handlers.
+
+<Tabs>
+<Tab title="Component">
+
+```typescript expandable
+import { Component, inject } from '@angular/core';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-message-actions',
+  template: `<button (click)="sendMessage()">Send</button>`
+})
+export class MessageActionsComponent {
+  private chatStateService = inject(ChatStateService);
+
+  sendMessage(): void {
+    const user = this.chatStateService.getActiveUser();
+    const group = this.chatStateService.getActiveGroup();
+
+    if (user) {
+      console.log('Sending message to user:', user.getName());
+    } else if (group) {
+      console.log('Sending message to group:', group.getName());
+    }
+  }
+
+  hasActiveChat(): boolean {
+    return this.chatStateService.getActiveChatEntity() !== null;
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Hybrid Approach (Props Override Service)
+
+Components can accept optional `@Input()` bindings that take priority over `ChatStateService` state. This lets you override the service for specific component instances while keeping the default wiring elsewhere.
+
+<Note>
+  When `@Input()` bindings are provided, they take priority over `ChatStateService`
+  state for that component instance. Other components continue to read from the service.
+</Note>
+
+<Tabs>
+<Tab title="Component">
+
+```typescript expandable
+import { Component, Input, inject, computed, signal } from '@angular/core';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-message-header',
+  template: `
+    @if (effectiveUser()) {
+      <h3>{{ effectiveUser()!.getName() }}</h3>
+    }
+  `
+})
+export class MessageHeaderComponent {
+  private chatStateService = inject(ChatStateService);
+
+  /** Optional prop override — if provided, takes priority over service state. */
+  @Input() user?: CometChat.User;
+
+  effectiveUser = computed(() =>
+    this.user ?? this.chatStateService.activeUser()
+  );
+}
+```
+
+</Tab>
+<Tab title="Usage">
+
+```html
+<!-- Service-based: component reads from ChatStateService automatically -->
+<app-message-header />
+
+<!-- Props-based: explicit binding overrides service state -->
+<app-message-header [user]="specificUser" />
+```
+
+</Tab>
+</Tabs>
+
+
+## Related Components
+
+The following Chat-Aware Components integrate with `ChatStateService`. Each supports the Hybrid Approach — they auto-subscribe to the service by default and accept `@Input()` overrides.
+
+| Component | Key Inputs | Service Integration |
+|-----------|-----------|---------------------|
+| [CometChatConversations](/components/cometchat-conversations) | — | Calls `setActiveConversation()` when a conversation is selected |
+| [CometChatMessageHeader](/components/cometchat-message-header) | `[user]`, `[group]` | Subscribes to `activeUser` / `activeGroup` |
+| [CometChatMessageList](/components/cometchat-message-list) | `[user]`, `[group]` | Subscribes to `activeUser` / `activeGroup` |
+| [CometChatMessageComposer](/components/cometchat-message-composer) | `[user]`, `[group]` | Subscribes to `activeUser` / `activeGroup` |
+| [CometChatUsers](/components/cometchat-users) | — | Calls `setActiveUser()` when a user is selected |
+| [CometChatGroups](/components/cometchat-groups) | — | Calls `setActiveGroup()` when a group is selected |
+| [CometChatGroupMembers](/components/cometchat-group-members) | `[group]` | Subscribes to `activeGroup` |
+| [CometChatThreadHeader](/components/cometchat-thread-header) | `[parentMessage]` | Receives parent message context from ChatStateService |
+
+## See Also
+
+- [State Management Guide](/guides/state-management) — Hybrid Approach architecture and decision matrix
+- [Service Reference](/api-reference/introduction) — Overview of all documented services
+- [FormatterConfigService](/api-reference/formatter-config-service) — Text formatter configuration service
+- [RichTextEditorService](/api-reference/rich-text-editor-service) — Rich text editor configuration service

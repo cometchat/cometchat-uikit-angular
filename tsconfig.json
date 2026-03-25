@@ -1,0 +1,45 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+     "resolveJsonModule": true, 
+     "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve",
+    // Uncomment this to use the local UI Kit path instead of the npm path
+    // "paths": {
+    //   "@cometchat/chat-uikit-angular": [
+    //     "./projects/cometchat-uikit/src/public-api.ts"
+    //   ]
+    // }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/cometchat-uikit/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cometchat-uikit/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/sample-app/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/sample-app/tsconfig.spec.json"
+    }
+  ]
+}

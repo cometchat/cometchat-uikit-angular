@@ -1,0 +1,88 @@
+/**
+ * CometChatTypingIndicator Component Styles
+ *
+ * BEM Naming Convention:
+ * - Block: .cometchat-typing-indicator
+ * - Elements: __content, __text, __name, __dots, __dot
+ * - Modifiers: (none currently)
+ *
+ * CSS Custom Properties (three-tier: component → global → hardcoded):
+ * --cometchat-typing-indicator-padding
+ * --cometchat-typing-indicator-background
+ * --cometchat-typing-indicator-content-gap
+ * --cometchat-typing-indicator-text-font
+ * --cometchat-typing-indicator-text-color
+ * --cometchat-typing-indicator-name-font
+ * --cometchat-typing-indicator-name-color
+ * --cometchat-typing-indicator-dots-gap
+ * --cometchat-typing-indicator-dots-margin-left
+ * --cometchat-typing-indicator-dot-width
+ * --cometchat-typing-indicator-dot-height
+ * --cometchat-typing-indicator-dot-border-radius
+ * --cometchat-typing-indicator-dot-color
+ *
+ * @see Requirement 1.6 - Positioned at bottom of message list
+ */
+
+.cometchat-typing-indicator {
+  display: flex;
+  align-items: center;
+  padding: var(--cometchat-typing-indicator-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-4, 16px));
+  background: var(--cometchat-typing-indicator-background, var(--cometchat-background-color-01, #fff));
+}
+
+.cometchat-typing-indicator__content {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-typing-indicator-content-gap, var(--cometchat-spacing-1, 4px));
+}
+
+.cometchat-typing-indicator__text {
+  font: var(--cometchat-typing-indicator-text-font, var(--cometchat-font-caption1-regular, normal 12px sans-serif));
+  color: var(--cometchat-typing-indicator-text-color, var(--cometchat-text-color-secondary, #727272));
+}
+
+.cometchat-typing-indicator__name {
+  font: var(--cometchat-typing-indicator-name-font, var(--cometchat-font-caption1-medium, 500 12px sans-serif));
+  color: var(--cometchat-typing-indicator-name-color, var(--cometchat-text-color-secondary, #727272));
+}
+
+.cometchat-typing-indicator__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cometchat-typing-indicator-dots-gap, var(--cometchat-spacing, 2px));
+  margin-left: var(--cometchat-typing-indicator-dots-margin-left, var(--cometchat-margin-1, 4px));
+}
+
+.cometchat-typing-indicator__dot {
+  width: var(--cometchat-typing-indicator-dot-width, 4px);
+  height: var(--cometchat-typing-indicator-dot-height, 4px);
+  border-radius: var(--cometchat-typing-indicator-dot-border-radius, var(--cometchat-radius-max, 1000px));
+  background-color: var(--cometchat-typing-indicator-dot-color, var(--cometchat-text-color-secondary, #727272));
+  animation: cometchat-typing-indicator-bounce 1.4s infinite ease-in-out both;
+}
+
+.cometchat-typing-indicator__dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.cometchat-typing-indicator__dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.cometchat-typing-indicator__dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes cometchat-typing-indicator-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

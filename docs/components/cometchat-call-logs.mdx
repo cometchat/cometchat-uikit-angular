@@ -1,0 +1,709 @@
+---
+title: "CometChatCallLogs"
+description: "A comprehensive Angular component for displaying call history with support for audio/video call initiation, custom templates, and real-time call overlays"
+---
+
+## Overview
+
+The CometChatCallLogs component displays a paginated, scrollable list of call history records for the logged-in user. Each call log entry shows the other party's avatar and name, the call direction (incoming, outgoing, or missed), the call type (audio or video), and the timestamp. Users can initiate new calls directly from the list and view real-time call overlays for outgoing and ongoing calls.
+
+The component follows a **Service-based Architecture** where:
+- **CallLogsService** handles call log fetching, pagination, call initiation, call lifecycle listeners, and state management via Angular signals
+- **Component** manages UI rendering, template overrides, and user interactions
+- **Templates** allow extensive customization of all UI sections
+
+### Key Features
+
+- **Pagination**: Automatic infinite-scroll pagination via `CallLogRequestBuilder` from the CometChat Calls SDK
+- **Call Initiation**: Start audio or video calls directly from a call log entry's trailing button
+- **Call Overlays**: Built-in outgoing call screen and ongoing call screen overlays with automatic lifecycle management
+- **Template Overrides**: Extensive `ng-template` projection for item, leading, title, subtitle, trailing, loading, empty, and error views
+- **Keyboard Accessibility**: Full keyboard navigation with arrow keys, Enter, and Tab support (WCAG 2.1 Level AA compliant)
+- **Active Call Highlighting**: Highlight a specific call log entry via the `activeCall` input
+- **Custom Date Formatting**: Configurable call timestamp formatting with `CalendarObject` support
+- **Error Handling**: Comprehensive error handling with custom error views and `onError` callback
+
+
+<Info>
+  **Live Preview** — default call logs preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-calls-cometchat-call-logs--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-calls-cometchat-call-logs--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Call Logs — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Keyboard Accessibility
+
+CometChatCallLogs is fully keyboard accessible and meets WCAG 2.1 Level AA standards. All functionality can be accessed using only the keyboard.
+
+### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate between UI elements (header, list items, call buttons) | Global |
+| `Shift + Tab` | Navigate backwards | Global |
+| `↓` (Down Arrow) | Focus next call log item | When list is focused |
+| `↑` (Up Arrow) | Focus previous call log item | When list is focused |
+| `Enter` | Select/activate focused call log item | When call log item is focused |
+| `Space` | Activate focused call log item or call button | When item or button is focused |
+| `M` | Toggle context menu on focused item | When call log item is focused |
+
+### Accessibility Features
+
+**ARIA Attributes:**
+- `role="list"` on the paginated list container
+- `role="listitem"` on each call log item via `cometchat-list-item`
+- `aria-label` with user name and call type (e.g., "John Doe, Video call")
+- `aria-busy` on the list container during loading
+- `aria-live="polite"` on loading and status indicators
+- `role="button"` on the trailing call type icon with descriptive `aria-label` (e.g., "Audio call John Doe")
+- `role="alert"` on the error state view
+- `role="status"` on the empty state view
+
+**Screen Reader Support:**
+- Announces call log details (user name and call type) when focused
+- Announces loading and error states via live regions
+- Semantic HTML structure with proper heading hierarchy
+
+**Focus Management:**
+- Visible focus indicators (2px outline) meeting WCAG contrast requirements
+- `focus-visible` styling on trailing call buttons with `outline-offset`
+- Roving `tabindex` on list items for efficient keyboard navigation
+- Trailing call buttons are independently focusable with `tabindex="0"`
+
+**WCAG 2.1 Compliance:**
+- ✅ 2.1.1 Keyboard (Level A) — All functionality available via keyboard
+- ✅ 2.1.2 No Keyboard Trap (Level A) — Users can navigate away using keyboard
+- ✅ 2.4.3 Focus Order (Level A) — Logical focus order through list items and call buttons
+- ✅ 2.4.7 Focus Visible (Level AA) — Visible focus indicators on all interactive elements
+- ✅ 4.1.2 Name, Role, Value (Level A) — Proper ARIA attributes on all elements
+
+**Reduced Motion Support:**
+- Shimmer loading animations are disabled when `prefers-reduced-motion: reduce` is active
+
+## Basic Usage
+
+### Simple Implementation
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-call-logs',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      (itemClick)="onCallLogClick($event)"
+    ></cometchat-call-logs>
+  `
+})
+export class CallLogsComponent {
+  onCallLogClick(callLog: any): void {
+    console.log('Selected call log:', callLog);
+    // Navigate to call details or handle call log selection
+  }
+}
+```
+
+### With Call Button Handler
+
+```typescript
+<cometchat-call-logs
+  (itemClick)="onCallLogClick($event)"
+  (callButtonClicked)="onCallButtonClicked($event)"
+></cometchat-call-logs>
+```
+
+When `callButtonClicked` has no observers, clicking the trailing call button automatically initiates a call of the same type (audio/video) to the other party. When a handler is bound, the call log is emitted to the handler instead, giving you full control over call initiation.
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `activeCall` | `any` | `null` | The currently selected/active call log for highlighting. When set, the matching call log entry is visually highlighted in the list. |
+| `callLogRequestBuilder` | `any` | `null` | Custom `CallLogRequestBuilder` from `CometChatCalls`. When provided, overrides the default builder (limit 30, category "call"). |
+| `callInitiatedDateTimeFormat` | `CalendarObject \| null` | `null` | Custom date format for the call initiation timestamp. Merged with global and default `CalendarObject` formats (component-level wins). |
+| `showScrollbar` | `boolean` | `false` | Whether to show the scrollbar on the call logs list. |
+| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` to override the default call settings used in the ongoing call overlay. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
+| `onError` | `((error: CometChat.CometChatException) => void) \| null` | `null` | Error callback invoked when any error occurs during operations such as fetching call logs or initiating calls. |
+
+### Template Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `itemView` | `TemplateRef<any>` | `undefined` | Custom template for each call log item (replaces the entire list item). |
+| `leadingView` | `TemplateRef<any>` | `undefined` | Custom template for the leading position (replaces the avatar). |
+| `titleView` | `TemplateRef<any>` | `undefined` | Custom template for the title (replaces the other party's name). |
+| `subtitleView` | `TemplateRef<any>` | `undefined` | Custom template for the subtitle (replaces the direction icon and date). |
+| `trailingView` | `TemplateRef<any>` | `undefined` | Custom template for the trailing position (replaces the call button). |
+
+<Info>
+  The default trailing call button is only visible when calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`. When calling is not enabled, the trailing button is hidden automatically. You can still provide a custom `trailingView` template to render your own trailing content regardless of the calling setting.
+</Info>
+
+| `menuView` | `TemplateRef<any>` | `undefined` | Custom template for menu area in the header (e.g., action buttons, 3-dot menu). |
+| `loadingView` | `TemplateRef<any>` | `undefined` | Custom template for the loading state (replaces the default shimmer). |
+| `emptyView` | `TemplateRef<any>` | `undefined` | Custom template for the empty state when no call logs are available. |
+| `errorView` | `TemplateRef<any>` | `undefined` | Custom template for the error state when call log fetching fails. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `any` (call log object) | Emitted when a call log list item is clicked. |
+| `callButtonClicked` | `any` (call log object) | Emitted when the trailing call button is clicked. When this event has no observers, clicking the button automatically initiates a call of the same type (audio/video) to the other party. |
+
+## Advanced Usage
+
+### Custom CallLogRequestBuilder
+
+Use the `callLogRequestBuilder` input to customize how call logs are fetched. The builder comes from `CometChatCalls` (the Calls SDK), not the core Chat SDK:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
+
+@Component({
+  selector: 'app-filtered-call-logs',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      [callLogRequestBuilder]="callLogBuilder"
+      (itemClick)="onCallLogClick($event)"
+    ></cometchat-call-logs>
+  `
+})
+export class FilteredCallLogsComponent implements OnInit {
+  callLogBuilder: any;
+
+  ngOnInit(): void {
+    // Fetch only the last 15 video calls
+    this.callLogBuilder = new CometChatCalls.CallLogRequestBuilder()
+      .setLimit(15)
+      .setCallCategory('call')
+      .setCallType('video')
+      .setAuthToken(authToken);
+  }
+
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+}
+```
+
+### CallLogRequestBuilder Methods
+
+| Method | Type | Description |
+|--------|------|-------------|
+| `setLimit` | `number` | Sets the number of call logs fetched per page (default: 30) |
+| `setCallCategory` | `string` | Filters by call category (e.g., `'call'`) |
+| `setCallType` | `string` | Filters by call type (`'audio'` or `'video'`) |
+| `setAuthToken` | `string` | Sets the authentication token for the request |
+
+### Custom Date Formatting
+
+Override the default call timestamp format using `callInitiatedDateTimeFormat`:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatCallLogsComponent, CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-date-call-logs',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      [callInitiatedDateTimeFormat]="dateFormat"
+      (itemClick)="onCallLogClick($event)"
+    ></cometchat-call-logs>
+  `
+})
+export class CustomDateCallLogsComponent {
+  dateFormat: CalendarObject = {
+    today: 'hh:mm A',
+    yesterday: '[Yesterday] hh:mm A',
+    otherDays: 'MMM DD, YYYY',
+  };
+
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+}
+```
+
+### Handling Call Button Events
+
+By default, clicking the trailing call button automatically initiates a call of the same type (audio/video) to the other party. Bind `callButtonClicked` to override this behavior:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-call-action',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      (itemClick)="onCallLogClick($event)"
+      (callButtonClicked)="onCallButtonClicked($event)"
+    ></cometchat-call-logs>
+  `
+})
+export class CustomCallActionComponent {
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+
+  onCallButtonClicked(callLog: any): void {
+    const callType = callLog.type === 'video' ? 'Video' : 'Audio';
+    console.log(`Custom ${callType} call action for:`, callLog);
+    // Implement your own call initiation logic
+  }
+}
+```
+
+### Active Call Highlighting
+
+Highlight a specific call log entry by passing it to the `activeCall` input:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-active-call-logs',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      [activeCall]="selectedCallLog"
+      (itemClick)="onCallLogClick($event)"
+    ></cometchat-call-logs>
+  `
+})
+export class ActiveCallLogsComponent {
+  selectedCallLog: any = null;
+
+  onCallLogClick(callLog: any): void {
+    this.selectedCallLog = callLog;
+  }
+}
+```
+
+### Custom Call Settings
+
+Override the default `CallSettingsBuilder` used in the ongoing call overlay when a call is initiated from the call logs:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-call-settings-logs',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      [callSettingsBuilder]="customCallSettings"
+      (itemClick)="onCallLogClick($event)">
+    </cometchat-call-logs>
+  `
+})
+export class CustomCallSettingsLogsComponent implements OnInit {
+  customCallSettings: any;
+
+  ngOnInit(): void {
+    this.customCallSettings = new CometChatCalls.CallSettingsBuilder()
+      .enableDefaultLayout(true)
+      .setIsAudioOnlyCall(false);
+  }
+
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+}
+```
+
+<Tip>
+  You can also set `callSettingsBuilder` globally via [GlobalConfig](/customization/global-config) so all call components use the same settings without passing the input to each one.
+</Tip>
+
+## Customization with Templates
+
+### Custom Subtitle View
+
+Customize the subtitle section to show additional call details:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-subtitle-call-logs',
+  standalone: true,
+  imports: [CommonModule, CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      [subtitleView]="customSubtitle"
+      (itemClick)="onCallLogClick($event)"
+    >
+      <ng-template #customSubtitle let-call>
+        <div class="custom-subtitle">
+          <span class="call-type" [class.video]="call.type === 'video'">
+            {{ call.type === 'video' ? 'Video' : 'Audio' }}
+          </span>
+          @if (call.totalDurationInMinutes) {
+            <span class="call-duration">
+              {{ call.totalDurationInMinutes }} min
+            </span>
+          }
+          <span class="call-time">
+            {{ formatTimestamp(call.initiatedAt) }}
+          </span>
+        </div>
+      </ng-template>
+    </cometchat-call-logs>
+  `,
+  styles: [`
+    .custom-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .call-type {
+      color: #999;
+      text-transform: capitalize;
+    }
+    .call-type.video {
+      color: #6852D6;
+    }
+    .call-duration {
+      color: #666;
+    }
+    .call-time {
+      color: #999;
+    }
+  `]
+})
+export class CustomSubtitleCallLogsComponent {
+  formatTimestamp(timestamp: number): string {
+    if (!timestamp) return '';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+}
+```
+
+### Custom Trailing View
+
+Replace the default call button with custom action buttons:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatCallLogsComponent, CometChatButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-trailing-call-logs',
+  standalone: true,
+  imports: [CommonModule, CometChatCallLogsComponent, CometChatButtonComponent],
+  template: `
+    <cometchat-call-logs
+      [trailingView]="customTrailing"
+      (itemClick)="onCallLogClick($event)"
+    >
+      <ng-template #customTrailing let-call>
+        <div class="custom-trailing">
+          <cometchat-button
+            [iconURL]="'assets/call-log-audio.svg'"
+            (click)="startAudioCall(call); $event.stopPropagation()"
+          ></cometchat-button>
+          <cometchat-button
+            [iconURL]="'assets/call-log_video.svg'"
+            (click)="startVideoCall(call); $event.stopPropagation()"
+          ></cometchat-button>
+        </div>
+      </ng-template>
+    </cometchat-call-logs>
+  `,
+  styles: [`
+    .custom-trailing {
+      display: flex;
+      gap: 8px;
+    }
+  `]
+})
+export class CustomTrailingCallLogsComponent {
+  startAudioCall(callLog: any): void {
+    console.log('Starting audio call from log:', callLog);
+  }
+
+  startVideoCall(callLog: any): void {
+    console.log('Starting video call from log:', callLog);
+  }
+
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+}
+```
+
+### Custom Empty and Error States
+
+Provide custom views for empty and error states:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-states-call-logs',
+  standalone: true,
+  imports: [CommonModule, CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      [emptyView]="customEmpty"
+      [errorView]="customError"
+      (itemClick)="onCallLogClick($event)"
+    >
+      <ng-template #customEmpty>
+        <div class="custom-empty-state">
+          <img src="assets/no-calls.svg" alt="No call logs" />
+          <h3>No Call History</h3>
+          <p>Your call history will appear here once you make or receive calls</p>
+        </div>
+      </ng-template>
+
+      <ng-template #customError>
+        <div class="custom-error-state">
+          <img src="assets/error-icon.svg" alt="Error" />
+          <h3>Unable to Load Call Logs</h3>
+          <p>Please check your connection and try again</p>
+          <button (click)="retryLoading()">Retry</button>
+        </div>
+      </ng-template>
+    </cometchat-call-logs>
+  `,
+  styles: [`
+    .custom-empty-state,
+    .custom-error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .custom-empty-state img,
+    .custom-error-state img {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 16px;
+    }
+    .custom-empty-state h3,
+    .custom-error-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+    .custom-empty-state p,
+    .custom-error-state p {
+      font-size: 14px;
+      color: #666;
+      margin: 0 0 16px 0;
+    }
+    button {
+      padding: 10px 24px;
+      background-color: #6852D6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #5742B8;
+    }
+  `]
+})
+export class CustomStatesCallLogsComponent {
+  retryLoading(): void {
+    console.log('Retrying call log fetch');
+    // Trigger a retry by re-rendering the component
+  }
+
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+}
+```
+
+## Styling with CSS Variables
+
+The CometChatCallLogs component uses CSS variables for comprehensive theming:
+
+```css expandable
+cometchat-call-logs {
+  /* Background colors */
+  --cometchat-background-color-01: #ffffff;
+  
+  /* Text colors */
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  
+  /* Icon colors */
+  --cometchat-icon-color-primary: #141414;
+  
+  /* Border colors */
+  --cometchat-border-color-light: #e8e8e8;
+  
+  /* Primary color (active call highlight, focus indicators) */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-extended-primary-color-50: #F5F3FF;
+  
+  /* Call direction icon colors */
+  --cometchat-success-color: #09C26F;
+  --cometchat-error-color: #F44649;
+  
+  /* Typography */
+  --cometchat-font-heading1-bold: 700 24px/28.8px Roboto;
+  --cometchat-font-heading3-bold: 700 18px/21.6px Roboto;
+  --cometchat-font-body-regular: 400 14px/16.8px Roboto;
+  
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  --cometchat-spacing-5: 20px;
+  
+  /* Border radius */
+  --cometchat-radius-1: 4px;
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-max: 1000px;
+}
+```
+
+### Dark Theme Example
+
+```css
+.dark-theme cometchat-call-logs {
+  --cometchat-background-color-01: #1a1a1a;
+  --cometchat-text-color-primary: #ffffff;
+  --cometchat-text-color-secondary: #cccccc;
+  --cometchat-icon-color-primary: #ffffff;
+  --cometchat-border-color-light: #444444;
+  --cometchat-extended-primary-color-50: #2d2654;
+}
+```
+
+### Custom Brand Colors
+
+```css
+.branded-call-logs cometchat-call-logs {
+  --cometchat-primary-color: #FF6B35;
+  --cometchat-success-color: #00C853;
+  --cometchat-error-color: #D32F2F;
+}
+```
+
+## Error Handling
+
+### Built-in Error Handling
+
+The component includes comprehensive error handling through the `onError` callback and built-in error state view:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-call-logs-with-errors',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <cometchat-call-logs
+      [onError]="handleError"
+      (itemClick)="onCallLogClick($event)"
+    ></cometchat-call-logs>
+  `
+})
+export class CallLogsWithErrorsComponent {
+  handleError = (error: CometChat.CometChatException): void => {
+    console.error('Call logs error:', error);
+
+    if (error.code === 'NETWORK_ERROR') {
+      this.showToast('Network error. Please check your connection.');
+    } else if (error.code === 'AUTH_ERROR') {
+      this.showToast('Authentication error. Please log in again.');
+    } else if (error.code === 'CALL_LOGS_ERROR') {
+      this.showToast('Failed to load call logs. Please try again.');
+    } else {
+      this.showToast('An error occurred. Please try again.');
+    }
+  };
+
+  onCallLogClick(callLog: any): void {
+    console.log('Call log clicked:', callLog);
+  }
+
+  private showToast(message: string): void {
+    // Implement your toast/notification logic
+  }
+}
+```
+
+### Error Flow
+
+Errors are handled at two levels:
+
+1. **Service level**: `CallLogsService` catches errors during fetch and call initiation, wraps them in `CometChat.CometChatException`, and forwards to the `onError` callback
+2. **Component level**: The component catches errors in event handlers and delegates to the same error handling pipeline
+
+When a fetch error occurs and no call logs have been loaded yet, the component transitions to the error state and displays the built-in error view (or your custom `errorView` template).
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatcalllogs).
+</Info>
+
+## Related Components
+
+- **CometChatOutgoingCall**: Outgoing call overlay displayed when a call is initiated from the call logs
+- **CometChatOngoingCall**: Ongoing call screen displayed when an outgoing call is accepted
+- **CometChatCallButtons**: Standalone call buttons component for initiating audio/video calls
+- **CometChatAvatar**: Avatar component used in call log items
+- **CometChatListItem**: List item component used for rendering each call log entry
+- **CometChatDate**: Date component used for formatting call timestamps
+- **CometChatPaginatedList**: Paginated list component providing infinite scroll
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses `OnPush` strategy for optimal performance
+- **Service Architecture**: `CallLogsService` handles all business logic (fetching, pagination, call initiation, call lifecycle)
+- **Signal-based State**: Uses Angular signals for reactive state management
+- **Pagination**: Automatic infinite scroll via `CometChatPaginatedList` with intersection observers
+- **Call Lifecycle**: Manages outgoing call → accepted → ongoing call → ended flow with overlays
+- **Accessibility**: WCAG 2.1 Level AA compliant with full keyboard navigation
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Reduced Motion**: Respects `prefers-reduced-motion` media query for shimmer animations

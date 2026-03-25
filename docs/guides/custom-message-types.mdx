@@ -1,0 +1,370 @@
+---
+title: "Custom Message Types"
+description: "Register custom message bubble types, override conversation subtitles, and include custom messages in fetching."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key services | `MessageBubbleConfigService`, `ConversationSubtitleService`, `MessageListService` |
+| Required setup | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Purpose | Add custom message types with custom bubble templates, subtitle overrides, and fetch inclusion |
+| Features | Custom bubble rendering, subtitle formatting, icon overrides, message type fetching |
+| Related | [Message Bubble](/components/cometchat-message-bubble) \| [Conversations](/components/cometchat-conversations) \| [Message List](/components/cometchat-message-list) |
+
+</Accordion>
+
+The CometChat Angular UIKit supports extending the message system with custom message types. You can register custom bubble templates, override how messages appear in the conversation list, and include custom types in message fetching — all without modifying UIKit source code.
+
+| Capability | Description |
+| --- | --- |
+| Custom bubble templates | Register `ng-template` views for new message types |
+| Conversation subtitle override | Control last message text per message type |
+| Icon overrides | Set custom icons for conversation list items |
+| Fetch inclusion | Include custom types in the message request builder |
+
+---
+
+## Custom Message Bubble
+
+Use `MessageBubbleConfigService` to register templates for custom message types. The message type key format is `{type}_{category}` (e.g., `location_custom`).
+
+### Register a Custom Content View
+
+```typescript expandable
+import { Component, ViewChild, TemplateRef, AfterViewInit, inject } from '@angular/core';
+import { MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  template: `
+    <ng-template #locationBubble let-message>
+      <div class="location-bubble">
+        <img [src]="getMapUrl(message)" alt="Location" />
+        <span>{{ getLocationLabel(message) }}</span>
+      </div>
+    </ng-template>
+
+    <cometchat-message-list [user]="user"></cometchat-message-list>
+  `
+})
+export class ChatComponent implements AfterViewInit {
+  @ViewChild('locationBubble') locationBubble!: TemplateRef<any>;
+
+  private bubbleConfig = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit() {
+    this.bubbleConfig.setBubbleView('location_custom', {
+      contentView: this.locationBubble
+    });
+  }
+
+  getMapUrl(message: any): string {
+    const data = message.getCustomData();
+    return `https://maps.example.com/static?lat=${data.latitude}&lng=${data.longitude}`;
+  }
+
+  getLocationLabel(message: any): string {
+    return message.getCustomData()?.label || 'Shared location';
+  }
+}
+```
+
+The template receives the message object as `$implicit` context, so `let-message` gives you full access to the `CometChat.BaseMessage`.
+
+### Full Bubble Override
+
+To replace the entire bubble structure (header, content, footer, status), register a `bubbleView`:
+
+```typescript
+this.bubbleConfig.setBubbleView('location_custom', {
+  bubbleView: this.fullLocationBubble
+});
+```
+
+The `bubbleView` template context includes `$implicit` (message), `alignment`, and `group`.
+
+### Partial Override
+
+Register only the parts you want to customize. Unregistered parts use defaults:
+
+```typescript
+this.bubbleConfig.setBubbleView('location_custom', {
+  contentView: this.locationContent,
+  footerView: this.locationFooter
+  // headerView, statusInfoView, etc. use defaults
+});
+```
+
+---
+
+## Conversation Subtitle Override
+
+Use `ConversationSubtitleService` to control the last message text shown in the conversation list for specific message types.
+
+### Register a Subtitle Formatter
+
+```typescript expandable
+import { inject } from '@angular/core';
+import { ConversationSubtitleService } from '@cometchat/chat-uikit-angular';
+
+export class AppComponent {
+  private subtitleService = inject(ConversationSubtitleService);
+
+  ngOnInit() {
+    // Override subtitle for location messages
+    this.subtitleService.registerSubtitleFormatter('location_custom', (message) => {
+      return '📍 Shared a location';
+    });
+
+    // Override subtitle for payment messages
+    this.subtitleService.registerSubtitleFormatter('payment_custom', (message) => {
+      const data = (message as any).getCustomData();
+      return `💰 Payment: $${data.amount}`;
+    });
+  }
+}
+```
+
+### Override Subtitle Icon
+
+```typescript
+this.subtitleService.registerSubtitleIconOverride('location_custom', 'location-pin');
+```
+
+### Unregister
+
+```typescript
+this.subtitleService.unregisterSubtitleFormatter('location_custom');
+```
+
+---
+
+## Custom Message Fetching
+
+By default, the message list fetches these types and categories:
+
+**Default Types:** `text`, `file`, `image`, `audio`, `video`, `groupMember`, `form`, `scheduler`, `card`, `assistant`, `extension_sticker`, `extension_poll`, `extension_whiteboard`, `extension_document`, `meeting`
+
+**Default Categories:** `message`, `custom`, `call`, `interactive`, `agentic`, `action` (action is excluded when `hideGroupActionMessages` is true)
+
+### Inspect Current Defaults
+
+```typescript expandable
+import { inject } from '@angular/core';
+import { MessageListService } from '@cometchat/chat-uikit-angular';
+
+export class AppComponent {
+  private messageListService = inject(MessageListService);
+
+  ngOnInit() {
+    console.log(this.messageListService.getAllMessageTypes());
+    console.log(this.messageListService.getAllMessageCategories());
+  }
+}
+```
+
+### Add Custom Types and Categories
+
+Append to the existing defaults:
+
+```typescript
+// Add custom message types alongside defaults
+this.messageListService.addCustomMessageTypes(['location', 'payment']);
+
+// Add custom categories alongside defaults
+this.messageListService.addCustomMessageCategories(['custom']);
+```
+
+### Replace Types and Categories Entirely
+
+Fully replace the defaults with your own list:
+
+```typescript
+// Only fetch text and image messages
+this.messageListService.setMessageTypes(['text', 'image', 'location']);
+
+// Only fetch message and custom categories
+this.messageListService.setMessageCategories(['message', 'custom']);
+```
+
+Pass `null` to revert to the built-in defaults:
+
+```typescript
+this.messageListService.setMessageTypes(null);
+this.messageListService.setMessageCategories(null);
+```
+
+### Remove Custom Types
+
+```typescript
+this.messageListService.removeCustomMessageTypes(['location']);
+this.messageListService.removeCustomMessageCategories(['custom']);
+```
+
+<Note>
+If you provide a custom `MessagesRequestBuilder` via `setMessagesRequestBuilder`, custom types/categories registered via `addCustomMessageTypes`/`addCustomMessageCategories` are not appended. The custom builder is used as-is.
+</Note>
+
+---
+
+## End-to-End Example: Location Sharing
+
+A complete example showing a custom "location" message type with bubble template, subtitle override, and fetch inclusion.
+
+<Tabs>
+<Tab title="Component">
+```typescript expandable
+import {
+  Component, ViewChild, TemplateRef, AfterViewInit, inject, OnInit
+} from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  MessageBubbleConfigService,
+  ConversationSubtitleService,
+  MessageListService,
+  CometChatMessageListComponent,
+  CometChatConversationsComponent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-location-demo',
+  standalone: true,
+  imports: [CometChatMessageListComponent, CometChatConversationsComponent],
+  template: `
+    <ng-template #locationBubble let-message>
+      <div style="padding: 8px;">
+        <div style="font-weight: bold;">📍 Location</div>
+        <div>{{ getAddress(message) }}</div>
+        <a [href]="getMapsLink(message)" target="_blank">Open in Maps</a>
+      </div>
+    </ng-template>
+
+    <cometchat-conversations></cometchat-conversations>
+    <cometchat-message-list [user]="user"></cometchat-message-list>
+  `
+})
+export class LocationDemoComponent implements OnInit, AfterViewInit {
+  @ViewChild('locationBubble') locationBubble!: TemplateRef<any>;
+
+  user: CometChat.User | undefined;
+
+  private bubbleConfig = inject(MessageBubbleConfigService);
+  private subtitleService = inject(ConversationSubtitleService);
+  private messageListService = inject(MessageListService);
+
+  ngOnInit() {
+    // 1. Include 'location' type in message fetching
+    this.messageListService.addCustomMessageTypes(['location']);
+
+    // 2. Override conversation subtitle
+    this.subtitleService.registerSubtitleFormatter('location_custom', (msg) => {
+      const data = (msg as CometChat.CustomMessage).getCustomData() as any;
+      return `📍 ${data?.address || 'Shared a location'}`;
+    });
+
+    // Load user
+    CometChat.getUser('uid').then(u => this.user = u);
+  }
+
+  ngAfterViewInit() {
+    // 3. Register custom bubble template
+    this.bubbleConfig.setBubbleView('location_custom', {
+      contentView: this.locationBubble
+    });
+  }
+
+  getAddress(message: any): string {
+    return message.getCustomData()?.address || 'Unknown location';
+  }
+
+  getMapsLink(message: any): string {
+    const data = message.getCustomData();
+    return `https://maps.google.com/?q=${data?.latitude},${data?.longitude}`;
+  }
+}
+```
+</Tab>
+
+<Tab title="Sending a Location Message">
+```typescript expandable
+// Send a custom location message
+const receiverID = 'uid';
+const customData = {
+  latitude: 37.7749,
+  longitude: -122.4194,
+  address: '123 Main St, San Francisco, CA'
+};
+
+const customMessage = new CometChat.CustomMessage(
+  receiverID,
+  CometChat.RECEIVER_TYPE.USER,
+  'location',
+  customData
+);
+
+CometChat.sendCustomMessage(customMessage).then(
+  (message) => console.log('Location sent:', message),
+  (error) => console.error('Error:', error)
+);
+```
+</Tab>
+</Tabs>
+
+---
+
+## API Reference
+
+### MessageBubbleConfigService
+
+| Method | Description |
+| --- | --- |
+| `setBubbleView(typeKey, partMap)` | Register templates for a message type |
+| `setMessageTemplates(maps)` | Register templates for multiple types at once |
+| `setGlobalView(part, template)` | Set a global template for a bubble part |
+| `getView(typeKey, part)` | Get the configured template for a type and part |
+
+### ConversationSubtitleService
+
+| Method | Description |
+| --- | --- |
+| `registerSubtitleFormatter(typeKey, formatter)` | Register a subtitle formatter callback |
+| `unregisterSubtitleFormatter(typeKey)` | Remove a subtitle formatter |
+| `registerSubtitleIconOverride(typeKey, iconName)` | Override the subtitle icon |
+| `getSubtitle(typeKey, message)` | Get formatted subtitle (or null) |
+| `getIconOverride(typeKey)` | Get icon override (or null) |
+| `hasFormatter(typeKey)` | Check if a formatter is registered |
+
+### MessageListService
+
+| Method | Description |
+| --- | --- |
+| `getAllMessageTypes()` | Get the current effective list of message types |
+| `getAllMessageCategories()` | Get the current effective list of message categories |
+| `addCustomMessageTypes(types)` | Append custom types to the defaults |
+| `addCustomMessageCategories(categories)` | Append custom categories to the defaults |
+| `setMessageTypes(types)` | Replace the entire types array (pass `null` to reset) |
+| `setMessageCategories(categories)` | Replace the entire categories array (pass `null` to reset) |
+| `removeCustomMessageTypes(types)` | Remove previously added custom types |
+| `removeCustomMessageCategories(categories)` | Remove previously added custom categories |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Message Bubble" href="/components/cometchat-message-bubble">
+    Customize the message bubble component.
+  </Card>
+  <Card title="Conversations" href="/components/cometchat-conversations">
+    Customize the conversations list.
+  </Card>
+  <Card title="Localization" href="/customization/localization">
+    Override text and translations.
+  </Card>
+  <Card title="Date/Time Formatting" href="/customization/date-time-formatting">
+    Customize date and time display.
+  </Card>
+</CardGroup>

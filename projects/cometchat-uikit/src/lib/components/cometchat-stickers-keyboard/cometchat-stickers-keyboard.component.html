@@ -1,0 +1,117 @@
+<div
+  class="cometchat-stickers-keyboard"
+  role="dialog"
+  [attr.aria-label]="'sticker_keyboard' | translate"
+  aria-modal="true"
+>
+  <!-- Loading State (Shimmer) -->
+  @if (componentState() === 'loading') {
+    <div class="cometchat-stickers-keyboard__shimmer" role="status" aria-live="polite">
+      <div class="cometchat-stickers-keyboard__shimmer-tabs">
+        @for (i of shimmerTabs; track i) {
+          <div class="cometchat-stickers-keyboard__shimmer-tab"></div>
+        }
+      </div>
+      <div class="cometchat-stickers-keyboard__shimmer-grid">
+        @for (i of shimmerStickers; track i) {
+          <div class="cometchat-stickers-keyboard__shimmer-sticker"></div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (componentState() === 'error') {
+    <div class="cometchat-stickers-keyboard__error" role="alert" aria-live="assertive">
+      <div class="cometchat-stickers-keyboard__error-icon">
+        <span class="cometchat-stickers-keyboard__error-icon-mask" aria-hidden="true"></span>
+      </div>
+      <span class="cometchat-stickers-keyboard__error-text">{{ getErrorText() }}</span>
+      <button
+        class="cometchat-stickers-keyboard__retry-button"
+        (click)="handleRetry()"
+        type="button"
+        [attr.aria-label]="'sticker_retry' | translate"
+      >
+        {{ 'sticker_retry' | translate }}
+      </button>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (componentState() === 'empty') {
+    <div class="cometchat-stickers-keyboard__empty" role="status" aria-live="polite">
+      <div class="cometchat-stickers-keyboard__empty-icon">
+        <span class="cometchat-stickers-keyboard__empty-icon-mask" aria-hidden="true"></span>
+      </div>
+      <span class="cometchat-stickers-keyboard__empty-text">{{ getEmptyText() }}</span>
+    </div>
+  }
+
+  <!-- Loaded State -->
+  @if (componentState() === 'loaded') {
+    <!-- Category tabs with horizontal scroll -->
+    <div
+      class="cometchat-stickers-keyboard__tabs"
+      #tabsContainer
+      (wheel)="onWheel($event)"
+      role="tablist"
+      [attr.aria-label]="'sticker_categories_aria_label' | translate"
+    >
+      @for (categoryName of categoryNames(); track trackByCategoryName($index, categoryName); let i = $index) {
+        <div
+          class="cometchat-stickers-keyboard__tab"
+          [class.cometchat-stickers-keyboard__tab--active]="activeCategory() === categoryName"
+          (click)="onCategoryClick(categoryName)"
+          (keydown)="onTabKeydown($event, categoryName, i)"
+          [title]="categoryName"
+          role="tab"
+          [attr.aria-selected]="activeCategory() === categoryName"
+          [attr.aria-label]="categoryName"
+          tabindex="0"
+        >
+          <img
+            class="cometchat-stickers-keyboard__tab-icon"
+            [src]="getCategoryIcon(categoryName)"
+            [alt]="categoryName"
+            loading="lazy"
+          />
+        </div>
+      }
+    </div>
+
+    <!-- Sticker grid -->
+    <div
+      class="cometchat-stickers-keyboard__grid"
+      role="grid"
+      [attr.aria-label]="activeCategory() + ' stickers'"
+      aria-rowcount="-1"
+    >
+      @for (sticker of currentStickers(); track trackByStickerUrl($index, sticker); let i = $index) {
+        <div
+          class="cometchat-stickers-keyboard__sticker-item"
+          (click)="handleStickerClick(sticker)"
+          (keydown)="onStickerKeydown($event, sticker, i)"
+          [title]="sticker.stickerSetName"
+          role="gridcell"
+          tabindex="0"
+          [attr.aria-label]="'Sticker ' + (i + 1) + ' from ' + sticker.stickerSetName"
+          [attr.aria-rowindex]="getRowIndex(i)"
+          [attr.aria-colindex]="getColIndex(i)"
+        >
+          @if (!loadedImages().has(sticker.stickerUrl)) {
+            <div class="cometchat-stickers-keyboard__sticker-shimmer"></div>
+          }
+          <img
+            class="cometchat-stickers-keyboard__sticker-image"
+            [class.cometchat-stickers-keyboard__sticker-image--loaded]="loadedImages().has(sticker.stickerUrl)"
+            [src]="sticker.stickerUrl"
+            [alt]="sticker.stickerSetName"
+            loading="lazy"
+            (load)="onImageLoaded(sticker.stickerUrl)"
+          />
+        </div>
+      }
+    </div>
+  }
+</div>

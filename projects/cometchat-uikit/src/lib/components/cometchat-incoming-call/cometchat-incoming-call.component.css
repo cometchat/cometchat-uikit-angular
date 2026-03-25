@@ -1,0 +1,142 @@
+/* ============================================================
+   CometChat Incoming Call Component Styles
+   BEM: .cometchat-incoming-call
+   Requirements: 1.6, 8.4
+   ============================================================ */
+
+/* Card container: notification card */
+.cometchat-incoming-call {
+  display: var(--cometchat-incoming-call-display, flex);
+  width: var(--cometchat-incoming-call-width, 360px);
+  padding: var(--cometchat-incoming-call-padding, var(--cometchat-padding-5, 20px));
+  flex-direction: var(--cometchat-incoming-call-flex-direction, column);
+  align-items: var(--cometchat-incoming-call-align-items, center);
+  gap: var(--cometchat-incoming-call-gap, var(--cometchat-spacing-4, 16px));
+  border-radius: var(--cometchat-incoming-call-border-radius, var(--cometchat-radius-3, 12px));
+  border: var(--cometchat-incoming-call-border, 1px solid var(--cometchat-border-color-light, #F5F5F5));
+  background: var(--cometchat-incoming-call-background, var(--cometchat-background-color-01, #FFF));
+  box-shadow: var(--cometchat-incoming-call-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+  position: var(--cometchat-incoming-call-position, absolute);
+  z-index: var(--cometchat-incoming-call-z-index, 10);
+  box-sizing: var(--cometchat-incoming-call-box-sizing, border-box);
+  top: 8px;
+  left: 8px;
+}
+
+/* ListItem: override via exposed CSS custom property tokens */
+.cometchat-incoming-call cometchat-list-item {
+  --cometchat-list-item-width: var(--cometchat-incoming-call-list-item-width, 100%);
+  --cometchat-list-item-padding: var(--cometchat-incoming-call-list-item-padding, 0);
+  --cometchat-list-item-background: var(--cometchat-incoming-call-list-item-background, transparent);
+  --cometchat-list-item-background-hover: var(--cometchat-incoming-call-list-item-background-hover, transparent);
+  --cometchat-list-item-background-active: var(--cometchat-incoming-call-list-item-background-active, transparent);
+  --cometchat-list-item-title-font: var(--cometchat-incoming-call-list-item-title-font, var(--cometchat-font-heading3-bold, 700 18px Roboto));
+  --cometchat-list-item-title-color: var(--cometchat-incoming-call-list-item-title-color, var(--cometchat-text-color-primary, #141414));
+  --cometchat-list-item-title-height: var(--cometchat-incoming-call-list-item-title-height, auto);
+  --cometchat-list-item-trailing-view-width: var(--cometchat-incoming-call-list-item-trailing-view-width, 48px);
+  --cometchat-list-item-trailing-view-height: var(--cometchat-incoming-call-list-item-trailing-view-height, 48px);
+  width: var(--cometchat-incoming-call-list-item-width-override, 100%);
+}
+
+/* Subtitle: icon + text row */
+.cometchat-incoming-call__subtitle {
+  display: var(--cometchat-incoming-call-subtitle-display, flex);
+  align-items: var(--cometchat-incoming-call-subtitle-align-items, center);
+  gap: var(--cometchat-incoming-call-subtitle-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Call type icon in subtitle — uses mask-image for theming */
+.cometchat-incoming-call__subtitle-icon {
+  width: var(--cometchat-incoming-call-subtitle-icon-width, 16px);
+  height: var(--cometchat-incoming-call-subtitle-icon-height, 16px);
+  background-color: var(--cometchat-incoming-call-subtitle-icon-background, var(--cometchat-icon-color-secondary, #8A8A8A));
+  -webkit-mask-size: var(--cometchat-incoming-call-subtitle-icon-mask-size, contain);
+  mask-size: var(--cometchat-incoming-call-subtitle-icon-mask-size, contain);
+  -webkit-mask-repeat: var(--cometchat-incoming-call-subtitle-icon-mask-repeat, no-repeat);
+  mask-repeat: var(--cometchat-incoming-call-subtitle-icon-mask-repeat, no-repeat);
+  -webkit-mask-position: var(--cometchat-incoming-call-subtitle-icon-mask-position, center);
+  mask-position: var(--cometchat-incoming-call-subtitle-icon-mask-position, center);
+  flex-shrink: var(--cometchat-incoming-call-subtitle-icon-flex-shrink, 0);
+}
+
+/* "Incoming Call" text in subtitle */
+.cometchat-incoming-call__subtitle-text {
+  font: var(--cometchat-incoming-call-subtitle-text-font, var(--cometchat-font-body-regular, 400 14px Roboto));
+  color: var(--cometchat-incoming-call-subtitle-text-color, var(--cometchat-text-color-secondary, #8A8A8A));
+}
+
+/* Title text styling */
+.cometchat-incoming-call__title {
+  font: var(--cometchat-incoming-call-title-font, var(--cometchat-font-heading3-bold, 700 18px Roboto));
+  color: var(--cometchat-incoming-call-title-color, var(--cometchat-text-color-primary, #141414));
+}
+
+/* Trailing avatar: 48×48 circular */
+.cometchat-incoming-call__avatar {
+  --cometchat-avatar-size: var(--cometchat-incoming-call-avatar-size, 48px);
+  flex-shrink: var(--cometchat-incoming-call-avatar-flex-shrink, 0);
+}
+
+/* Button group: flex row with gap, stretch to card width */
+.cometchat-incoming-call__button-group {
+  display: var(--cometchat-incoming-call-button-group-display, flex);
+  gap: var(--cometchat-incoming-call-button-group-gap, var(--cometchat-spacing-4, 16px));
+  align-self: var(--cometchat-incoming-call-button-group-align-self, stretch);
+}
+
+/* Decline button wrapper */
+.cometchat-incoming-call__button-decline {
+  --cometchat-button-background: var(--cometchat-incoming-call-button-decline-background, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-hover: var(--cometchat-incoming-call-button-decline-background-hover, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-active: var(--cometchat-incoming-call-button-decline-background-active, var(--cometchat-error-color, #F44649));
+  --cometchat-button-text-color: var(--cometchat-incoming-call-button-decline-text-color, var(--cometchat-static-white, #FFFFFF));
+  --cometchat-button-width: var(--cometchat-incoming-call-button-decline-width, 100%);
+  --cometchat-button-hover-padding: var(--cometchat-incoming-call-button-decline-padding, var(--cometchat-spacing-2, 8px) var(--cometchat-spacing-5, 20px));
+  --cometchat-button-hover-border-radius: var(--cometchat-incoming-call-button-decline-border-radius, var(--cometchat-radius-2, 8px));
+  flex: var(--cometchat-incoming-call-button-decline-flex, 1);
+  min-width: var(--cometchat-incoming-call-button-decline-min-width, 0);
+}
+
+/* Accept button wrapper */
+.cometchat-incoming-call__button-accept {
+  --cometchat-button-background: var(--cometchat-incoming-call-button-accept-background, var(--cometchat-success-color, #09C26F));
+  --cometchat-button-background-hover: var(--cometchat-incoming-call-button-accept-background-hover, var(--cometchat-success-color, #09C26F));
+  --cometchat-button-background-active: var(--cometchat-incoming-call-button-accept-background-active, var(--cometchat-success-color, #09C26F));
+  --cometchat-button-text-color: var(--cometchat-incoming-call-button-accept-text-color, var(--cometchat-static-white, #FFFFFF));
+  --cometchat-button-width: var(--cometchat-incoming-call-button-accept-width, 100%);
+  --cometchat-button-hover-padding: var(--cometchat-incoming-call-button-accept-padding, var(--cometchat-spacing-2, 8px) var(--cometchat-spacing-5, 20px));
+  --cometchat-button-hover-border-radius: var(--cometchat-incoming-call-button-accept-border-radius, var(--cometchat-radius-2, 8px));
+  flex: var(--cometchat-incoming-call-button-accept-flex, 1);
+  min-width: var(--cometchat-incoming-call-button-accept-min-width, 0);
+}
+.cometchat-incoming-call{
+  --cometchat-list-item-body-padding: var(--cometchat-incoming-call-list-item-body-padding, 0px);
+}
+
+/* Visible focus indicators on buttons (Requirement 8.4) */
+.cometchat-incoming-call__button-decline .cometchat-button:focus-visible,
+.cometchat-incoming-call__button-accept .cometchat-button:focus-visible {
+  outline: var(--cometchat-incoming-call-button-outline-focus, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-incoming-call-button-outline-offset-focus, 2px);
+}
+
+@media (prefers-contrast: high) {
+  .cometchat-incoming-call__button-decline .cometchat-button:focus-visible,
+  .cometchat-incoming-call__button-accept .cometchat-button:focus-visible {
+    outline: var(--cometchat-incoming-call-button-outline-focus-high-contrast, 3px solid currentColor);
+  }
+}
+
+/* ============================================================
+   Host element: full-screen container when ongoing call is active.
+   The ongoing call component uses position: absolute with inset: 0,
+   so the host must provide a positioned container with full dimensions.
+   Without this, the host collapses and the ongoing call UI is invisible.
+   ============================================================ */
+
+:host(.cometchat-incoming-call--ongoing) {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}

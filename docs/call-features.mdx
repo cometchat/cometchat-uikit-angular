@@ -1,0 +1,93 @@
+---
+title: "Call Features"
+description: "Overview of CometChat's audio and video calling features including incoming calls, outgoing calls, and call logs — with the Angular UIKit components that power each feature."
+---
+
+## Overview
+
+CometChat Calls integrates 1:1 and group audio/video calling into the Angular UIKit. Install the Calls SDK and the UIKit auto-detects it, enabling call components.
+
+<Note>
+Ensure `CometChatUIKit.init()` has completed and the user is logged in before using call features.
+</Note>
+
+## Integration
+
+Install the Calls SDK:
+
+```bash
+npm install @cometchat/calls-sdk-javascript@5.0.0-beta.1
+```
+
+Then enable calling in your `UIKitSettingsBuilder`:
+
+```typescript
+const settings = new UIKitSettingsBuilder()
+  .setAppId('APP_ID')
+  .setRegion('REGION')
+  .setAuthKey('AUTH_KEY')
+  .setCallingEnabled(true)
+  .build();
+```
+
+<Warning>
+  Both steps are required. Installing the Calls SDK alone is not enough — you must also call `.setCallingEnabled(true)` on the builder. Without it, call buttons remain hidden and the Calls SDK is not initialized.
+</Warning>
+
+When enabled, [cometchat-call-buttons](/components/cometchat-call-buttons) renders in [cometchat-message-header](/components/cometchat-message-header) and the trailing call button appears in [cometchat-call-logs](/components/cometchat-call-logs).
+
+### Custom Call App Settings
+
+By default the UIKit builds `CallAppSettings` from your `appId` and `region`. If you need custom configuration (e.g. a different region for the Calls SDK or additional settings), pass your own `CallAppSettings`:
+
+```typescript
+import { CometChatUIKitCalls } from '@cometchat/calls-sdk-javascript';
+
+const callAppSettings = new CometChatUIKitCalls.CallAppSettingsBuilder()
+  .setAppId('APP_ID')
+  .setRegion('REGION')
+  .build();
+
+const settings = new UIKitSettingsBuilder()
+  .setAppId('APP_ID')
+  .setRegion('REGION')
+  .setAuthKey('AUTH_KEY')
+  .setCallingEnabled(true)
+  .setCallAppSettings(callAppSettings)
+  .build();
+```
+
+<Info>
+  `setCallAppSettings` is optional. When omitted, the UIKit automatically creates settings from the `appId` and `region` you already provided.
+</Info>
+
+## Features
+
+### Incoming Call
+
+The [cometchat-incoming-call](/components/cometchat-incoming-call) component displays a call screen when a call is received, showing caller info with accept/reject options.
+
+### Outgoing Call
+
+The [cometchat-outgoing-call](/components/cometchat-outgoing-call) component displays an outgoing call screen with recipient info and call status. Transitions to the ongoing call screen when the receiver accepts.
+
+### Call Logs
+
+The [cometchat-call-logs](/components/cometchat-call-logs) component displays call history — caller, time, and duration.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Call Buttons" icon="phone-flip" href="/components/cometchat-call-buttons">
+    Audio and video call buttons
+  </Card>
+  <Card title="Incoming Call" icon="phone-arrow-down-left" href="/components/cometchat-incoming-call">
+    Incoming call notifications and UI
+  </Card>
+  <Card title="Call Logs" icon="clock-rotate-left" href="/components/cometchat-call-logs">
+    Call history and details
+  </Card>
+  <Card title="Core Features" icon="comments" href="/core-features">
+    Core chat features
+  </Card>
+</CardGroup>

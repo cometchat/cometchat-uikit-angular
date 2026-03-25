@@ -1,0 +1,21 @@
+<!--
+  CometChatStickerBubble Template
+
+  Renders sticker messages as images with incoming/outgoing alignment variants.
+  Uses BEM CSS methodology and localized accessibility text.
+
+  @see Requirements 3.1, 3.3, 3.4, 3.5, 3.6, 4.1, 4.2, 4.3
+-->
+
+<div
+  class="cometchat-sticker-bubble"
+  [class.cometchat-sticker-bubble--incoming]="alignment === MessageBubbleAlignment.left"
+  [class.cometchat-sticker-bubble--outgoing]="alignment === MessageBubbleAlignment.right"
+  role="img"
+  [attr.aria-label]="'conversation_subtitle_sticker' | translate">
+  <img
+    *ngIf="stickerUrl"
+    [src]="stickerUrl"
+    [alt]="'conversation_subtitle_sticker' | translate"
+    class="cometchat-sticker-bubble__image" />
+</div>

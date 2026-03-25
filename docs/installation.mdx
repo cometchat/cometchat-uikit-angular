@@ -1,0 +1,54 @@
+---
+title: Installation
+description: "Quick reference for installing CometChat UIKit Angular"
+---
+
+## Quick Install
+
+<Warning>
+This is a beta release. Install the exact beta version as shown below.
+</Warning>
+
+```bash
+npm install @cometchat/chat-uikit-angular@5.0.0-beta.1 @cometchat/chat-sdk-javascript
+```
+
+Then import the CSS variables in your `angular.json` styles array or global stylesheet:
+
+```css
+@import '@cometchat/chat-uikit-angular/styles/css-variables.css';
+```
+
+## Register UIKit Assets
+
+The UIKit ships icons, images, and audio files that Angular's build system won't serve automatically. Add the assets path to your `angular.json` so they are copied to the build output:
+
+```json expandable
+{
+  "projects": {
+    "your-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "node_modules/@cometchat/chat-uikit-angular/src/lib/assets",
+                "output": "assets"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+<Warning>
+  Skipping this step will cause all UIKit icons, empty-state images, and notification sounds to fail with 404 errors.
+</Warning>
+
+<Info>
+  For the full setup guide — including initialization, authentication, and your first component — see the [Integration Guide](/integration).
+</Info>

@@ -1,0 +1,164 @@
+<div
+  class="cometchat-home"
+  [class.cometchat-home--mobile]="isMobile()"
+  [class.cometchat-home--resizing]="resizingPanel() !== null"
+  [style.height]="mobileHeightStyle()"
+>
+  <!-- ═══ Left Panel: Selector + Tabs (tabs at bottom like React app) ═══ -->
+  <nav
+    [attr.aria-label]="'nav_landmark_label' | translate"
+    tabindex="-1"
+    #leftPanel
+    class="cometchat-home__left-panel"
+    [class.cometchat-home__left-panel--hidden]="isMobile() && mobilePanel() !== 'selector'"
+    [style.width]="!isMobile() && leftPanelWidth() ? leftPanelWidth() + 'px' : null"
+    [style.flex]="!isMobile() && leftPanelWidth() ? '0 0 ' + leftPanelWidth() + 'px' : null"
+    [style.min-width]="!isMobile() && leftPanelWidth() ? leftPanelWidth() + 'px' : null"
+    [style.max-width]="!isMobile() && leftPanelWidth() ? 'none' : null"
+  >
+    <cometchat-selector></cometchat-selector>
+
+    <cometchat-tabs></cometchat-tabs>
+  </nav>
+
+  <!-- ═══ Resize Handle: Left ↔ Center ═══ -->
+  @if (!isMobile()) {
+    <div
+      class="cometchat-home__resize-handle"
+      [class.cometchat-home__resize-handle--active]="resizingPanel() === 'left'"
+      (mousedown)="onResizeStart($event, 'left')"
+    ></div>
+  }
+
+  <!-- ═══ Center Panel: Messages / New Chat ═══ -->
+  <main
+    [attr.aria-label]="'main_landmark_label' | translate"
+    id="main-content"
+    tabindex="-1"
+    #centerPanel
+    class="cometchat-home__center-panel"
+    [class.cometchat-home__center-panel--hidden]="(isMobile() && mobilePanel() !== 'messages') || (!isMobile() && isCallLogDetailsActive())"
+  >
+    @if (showNewChat()) {
+      <cometchat-new-chat></cometchat-new-chat>
+    } @else if (hasActiveEntity()) {
+      <cometchat-messages></cometchat-messages>
+    } @else {
+      <cometchat-empty-state></cometchat-empty-state>
+    }
+  </main>
+
+  <!-- ═══ Right Panel: Side Panel / Thread ═══ -->
+  @if (showRightPanel()) {
+    <!-- ═══ Resize Handle: Center ↔ Right ═══ -->
+    @if (!isMobile() && !isCallLogDetailsActive()) {
+      <div
+        class="cometchat-home__resize-handle"
+        [class.cometchat-home__resize-handle--active]="resizingPanel() === 'right'"
+        (mousedown)="onResizeStart($event, 'right')"
+      ></div>
+    }
+
+    <aside
+      [attr.aria-label]="'aside_landmark_label' | translate"
+      tabindex="-1"
+      #rightPanel
+      class="cometchat-home__right-panel"
+      [class.cometchat-home__right-panel--hidden]="isMobile() && mobilePanel() !== 'side-panel'"
+      [class.cometchat-home__right-panel--expanded]="!isMobile() && isCallLogDetailsActive()"
+      [style.width]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? rightPanelWidth() + 'px' : null"
+      [style.flex]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? '0 0 ' + rightPanelWidth() + 'px' : null"
+      [style.min-width]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? rightPanelWidth() + 'px' : null"
+      [style.max-width]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? 'none' : null"
+    >
+      <!-- Side panel views (mutually exclusive with thread) -->
+      @if (showThread()) {
+        <cometchat-threaded-messages></cometchat-threaded-messages>
+      } @else {
+        <!-- Group details stays alive while add-members is shown -->
+        @if (sidePanelView() === 'group-details' || sidePanelView() === 'add-members') {
+          <cometchat-group-details [hidden]="sidePanelView() === 'add-members'"></cometchat-group-details>
+          @if (sidePanelView() === 'add-members') {
+            <cometchat-add-members class="cometchat-home__overlay-panel"></cometchat-add-members>
+          }
+        }
+
+        @switch (sidePanelView()) {
+          @case ('user-details') {
+            <cometchat-user-details></cometchat-user-details>
+          }
+          @case ('banned-members') {
+            <cometchat-banned-members></cometchat-banned-members>
+          }
+          @case ('transfer-ownership') {
+            <cometchat-transfer-ownership></cometchat-transfer-ownership>
+          }
+          @case ('call-log-details') {
+            <cometchat-call-log-details></cometchat-call-log-details>
+          }
+        }
+      }
+    </aside>
+  }
+
+  <!-- ═══ Dialog Overlays ═══ -->
+  @if (showCreateGroup()) {
+    <cometchat-create-group></cometchat-create-group>
+  }
+
+  @if (showJoinGroup()) {
+    <cometchat-join-group></cometchat-join-group>
+  }
+
+  <!-- ═══ Panel Overlay ═══ -->
+  @if (appStateService.panelContent(); as panel) {
+    <div class="cometchat-home__panel-overlay">
+      <ng-container *ngTemplateOutlet="panel.child"></ng-container>
+    </div>
+  }
+
+  <!-- ═══ Modal Overlay ═══ -->
+  @if (appStateService.modalContent(); as modal) {
+    <div
+      class="cometchat-home__modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      (click)="onModalBackdropClick()"
+      (keydown.escape)="onModalBackdropClick()"
+      #modalOverlay
+    >
+      <div
+        class="cometchat-home__modal-content"
+        role="document"
+        tabindex="-1"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <ng-container *ngTemplateOutlet="modal.child"></ng-container>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ Dialog Overlay ═══ -->
+  @if (appStateService.dialogContent(); as dialog) {
+    <div class="cometchat-home__dialog-backdrop" #dialogOverlay>
+      <div class="cometchat-home__dialog-content">
+        <ng-container *ngTemplateOutlet="dialog.child"></ng-container>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ Ongoing Call Overlay ═══ -->
+  <!-- @if (appStateService.ongoingCallContent(); as ongoingCall) {
+    <div class="cometchat-home__ongoing-call-overlay">
+      <ng-container *ngTemplateOutlet="ongoingCall.child"></ng-container>
+    </div>
+  } -->
+
+  <!-- ═══ Incoming Call Overlay (UIKit) ═══ -->
+  <cometchat-incoming-call></cometchat-incoming-call>
+
+  <!-- ═══ Toast Notifications ═══ -->
+  <cometchat-toast-container></cometchat-toast-container>
+</div>

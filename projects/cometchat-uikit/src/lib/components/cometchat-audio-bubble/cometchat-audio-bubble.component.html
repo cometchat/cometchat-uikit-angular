@@ -1,0 +1,331 @@
+<!-- Audio Bubble Component Template -->
+<!-- @see Requirements 2.1, 2.2, 2.3, 2.4, 7.1-7.10, 10.1-10.11 -->
+<div
+  class="cometchat-audio-bubble"
+  [class.cometchat-audio-bubble--sender]="isOutgoing"
+  [class.cometchat-audio-bubble--receiver]="!isOutgoing"
+  role="region"
+  [attr.aria-label]="getAudioRegionAriaLabel(0)">
+
+  <!-- Audio Container -->
+  <div class="cometchat-audio-bubble__container">
+
+    <!-- First Audio (Always Visible) -->
+    @if (attachments.length > 0) {
+      <div
+        class="cometchat-audio-bubble__audio-item"
+        [class.cometchat-audio-bubble__audio-item--loading]="getAudioState(0).isLoading"
+        [class.cometchat-audio-bubble__audio-item--error]="getAudioState(0).hasError"
+        role="group"
+        [attr.aria-label]="attachments[0]?.name || ('audio_bubble_audio' | translate)">
+
+        <!-- Leading View: Play/Pause Button -->
+        <!-- @see Requirements 7.1, 7.2, 7.7, 10.1, 10.2, 10.3 -->
+        <div class="cometchat-audio-bubble__leading-view">
+          @if (getAudioState(0).hasError) {
+            <!-- Error state: show disabled play button -->
+            <button
+              type="button"
+              class="cometchat-audio-bubble__play-button"
+              disabled
+              [attr.aria-label]="'audio_bubble_load_error' | translate"
+              [attr.aria-disabled]="true">
+            </button>
+          } @else if (!getAudioState(0).isPlaying) {
+            <button
+              type="button"
+              class="cometchat-audio-bubble__play-button"
+              (click)="onPlayPause(0)"
+              (keydown)="onPlayPauseKeydown($event, 0)"
+              [disabled]="getAudioState(0).isLoading"
+              [attr.aria-label]="getPlayPauseAriaLabel(0)"
+              [attr.aria-disabled]="getAudioState(0).isLoading">
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="cometchat-audio-bubble__pause-button"
+              (click)="onPlayPause(0)"
+              (keydown)="onPlayPauseKeydown($event, 0)"
+              [attr.aria-label]="getPlayPauseAriaLabel(0)">
+            </button>
+          }
+        </div>
+
+        <!-- Body: Waveform + Time -->
+        <!-- @see Requirements 7.3, 7.4, 7.5, 7.6, 7.8, 10.7, 10.8 -->
+        <div class="cometchat-audio-bubble__body">
+          @if (getAudioState(0).hasError) {
+            <!-- Error state: show error message -->
+            <div 
+              class="cometchat-audio-bubble__error-message"
+              role="alert"
+              aria-live="polite">
+              {{ 'audio_bubble_load_error' | translate }}
+            </div>
+          } @else {
+            <div
+              #waveformContainer
+              class="cometchat-audio-bubble__waveform"
+              [class.cometchat-audio-bubble__waveform--loading]="getAudioState(0).isLoading"
+              [attr.data-index]="0"
+              tabindex="0"
+              role="slider"
+              [attr.aria-label]="'audio_bubble_waveform' | translate"
+              [attr.aria-valuemin]="0"
+              [attr.aria-valuemax]="getAudioState(0).duration"
+              [attr.aria-valuenow]="getAudioState(0).currentTime"
+              [attr.aria-valuetext]="getProgressValueText(0)"
+              [attr.aria-disabled]="getAudioState(0).isLoading"
+              (keydown)="onWaveformKeydown($event, 0)">
+            </div>
+            <div 
+              class="cometchat-audio-bubble__time"
+              aria-hidden="true">
+              @if (getAudioState(0).isLoading) {
+                {{ 'audio_bubble_loading' | translate }}
+              } @else {
+                {{ formatTime(getAudioState(0).currentTime) }} / {{ formatTime(getAudioState(0).duration) }}
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Tail View: Download -->
+        <!-- @see Requirements 7.9, 10.4, 10.5, 10.6 -->
+        <div class="cometchat-audio-bubble__tail-view">
+          @if (!getAudioState(0).isDownloading) {
+            <button
+              type="button"
+              class="cometchat-audio-bubble__download-button"
+              (click)="onDownload(0)"
+              (keydown)="onDownloadKeydown($event, 0)"
+              [disabled]="getAudioState(0).isLoading || getAudioState(0).hasError"
+              [attr.aria-label]="'audio_bubble_download' | translate"
+              [attr.aria-disabled]="getAudioState(0).isLoading || getAudioState(0).hasError">
+            </button>
+          } @else {
+            <!-- Download Progress -->
+            <div 
+              class="cometchat-audio-bubble__download-progress"
+              role="progressbar"
+              [attr.aria-valuenow]="getAudioState(0).downloadProgress"
+              [attr.aria-valuemin]="0"
+              [attr.aria-valuemax]="100"
+              [attr.aria-label]="'audio_bubble_downloading' | translate">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true">
+                <circle
+                  class="cometchat-audio-bubble__progress-bg"
+                  cx="12"
+                  cy="12"
+                  r="10" />
+                <circle
+                  class="cometchat-audio-bubble__progress-fg"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  [style.strokeDasharray]="getProgressDashArray(0)" />
+              </svg>
+              <button
+                type="button"
+                class="cometchat-audio-bubble__cancel-button"
+                (click)="onCancelDownload(0)"
+                (keydown)="onCancelDownloadKeydown($event, 0)"
+                [attr.aria-label]="'audio_bubble_cancel_download' | translate">
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Expand Indicator (Multiple Audios, Collapsed) -->
+    <!-- @see Requirements 10.9 -->
+    @if (attachments.length > 1 && !isExpanded) {
+      <button
+        #expandIndicator
+        type="button"
+        class="cometchat-audio-bubble__expand-indicator"
+        (click)="toggleExpanded()"
+        (keydown)="onExpandCollapseKeydown($event)"
+        [attr.aria-label]="getExpandAriaLabel()"
+        [attr.aria-expanded]="false"
+        aria-controls="audio-list">
+        +{{ getRemainingAudiosCount() }}
+      </button>
+    }
+
+    <!-- Additional Audios (Expanded) -->
+    @if (isExpanded && attachments.length > 1) {
+      <div 
+        id="audio-list"
+        class="cometchat-audio-bubble__audio-list"
+        role="list"
+        [attr.aria-label]="'audio_bubble_additional_audios' | translate">
+        @for (attachment of attachments.slice(1); track attachment.url; let i = $index) {
+          <div
+            class="cometchat-audio-bubble__audio-item"
+            [class.cometchat-audio-bubble__audio-item--loading]="getAudioState(i + 1).isLoading"
+            [class.cometchat-audio-bubble__audio-item--error]="getAudioState(i + 1).hasError"
+            role="listitem"
+            [attr.aria-label]="getAudioRegionAriaLabel(i + 1)">
+
+            <!-- Leading View: Play/Pause Button -->
+            <!-- @see Requirements 7.1, 7.2, 7.7 -->
+            <div class="cometchat-audio-bubble__leading-view">
+              @if (getAudioState(i + 1).hasError) {
+                <!-- Error state: show disabled play button -->
+                <button
+                  type="button"
+                  class="cometchat-audio-bubble__play-button"
+                  disabled
+                  [attr.aria-label]="'audio_bubble_load_error' | translate"
+                  [attr.aria-disabled]="true">
+                </button>
+              } @else if (!getAudioState(i + 1).isPlaying) {
+                <button
+                  type="button"
+                  class="cometchat-audio-bubble__play-button"
+                  (click)="onPlayPause(i + 1)"
+                  (keydown)="onPlayPauseKeydown($event, i + 1)"
+                  [disabled]="getAudioState(i + 1).isLoading"
+                  [attr.aria-label]="getPlayPauseAriaLabel(i + 1)"
+                  [attr.aria-disabled]="getAudioState(i + 1).isLoading">
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="cometchat-audio-bubble__pause-button"
+                  (click)="onPlayPause(i + 1)"
+                  (keydown)="onPlayPauseKeydown($event, i + 1)"
+                  [attr.aria-label]="getPlayPauseAriaLabel(i + 1)">
+                </button>
+              }
+            </div>
+
+            <!-- Body: Waveform + Time -->
+            <!-- @see Requirements 7.3, 7.4, 7.5, 7.6, 7.8 -->
+            <div class="cometchat-audio-bubble__body">
+              @if (getAudioState(i + 1).hasError) {
+                <!-- Error state: show error message -->
+                <div 
+                  class="cometchat-audio-bubble__error-message"
+                  role="alert"
+                  aria-live="polite">
+                  {{ 'audio_bubble_load_error' | translate }}
+                </div>
+              } @else {
+                <div
+                  #waveformContainer
+                  class="cometchat-audio-bubble__waveform"
+                  [class.cometchat-audio-bubble__waveform--loading]="getAudioState(i + 1).isLoading"
+                  [attr.data-index]="i + 1"
+                  tabindex="0"
+                  role="slider"
+                  [attr.aria-label]="'audio_bubble_waveform' | translate"
+                  [attr.aria-valuemin]="0"
+                  [attr.aria-valuemax]="getAudioState(i + 1).duration"
+                  [attr.aria-valuenow]="getAudioState(i + 1).currentTime"
+                  [attr.aria-valuetext]="getProgressValueText(i + 1)"
+                  [attr.aria-disabled]="getAudioState(i + 1).isLoading"
+                  (keydown)="onWaveformKeydown($event, i + 1)">
+                </div>
+                <div 
+                  class="cometchat-audio-bubble__time"
+                  aria-hidden="true">
+                  @if (getAudioState(i + 1).isLoading) {
+                    {{ 'audio_bubble_loading' | translate }}
+                  } @else {
+                    {{ formatTime(getAudioState(i + 1).currentTime) }} / {{ formatTime(getAudioState(i + 1).duration) }}
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Tail View: Download -->
+            <!-- @see Requirements 7.9 -->
+            <div class="cometchat-audio-bubble__tail-view">
+              @if (!getAudioState(i + 1).isDownloading) {
+                <button
+                  type="button"
+                  class="cometchat-audio-bubble__download-button"
+                  (click)="onDownload(i + 1)"
+                  (keydown)="onDownloadKeydown($event, i + 1)"
+                  [disabled]="getAudioState(i + 1).isLoading || getAudioState(i + 1).hasError"
+                  [attr.aria-label]="'audio_bubble_download' | translate"
+                  [attr.aria-disabled]="getAudioState(i + 1).isLoading || getAudioState(i + 1).hasError">
+                </button>
+              } @else {
+                <!-- Download Progress -->
+                <div 
+                  class="cometchat-audio-bubble__download-progress"
+                  role="progressbar"
+                  [attr.aria-valuenow]="getAudioState(i + 1).downloadProgress"
+                  [attr.aria-valuemin]="0"
+                  [attr.aria-valuemax]="100"
+                  [attr.aria-label]="'audio_bubble_downloading' | translate">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true">
+                    <circle
+                      class="cometchat-audio-bubble__progress-bg"
+                      cx="12"
+                      cy="12"
+                      r="10" />
+                    <circle
+                      class="cometchat-audio-bubble__progress-fg"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      [style.strokeDasharray]="getProgressDashArray(i + 1)" />
+                  </svg>
+                  <button
+                    type="button"
+                    class="cometchat-audio-bubble__cancel-button"
+                    (click)="onCancelDownload(i + 1)"
+                    (keydown)="onCancelDownloadKeydown($event, i + 1)"
+                    [attr.aria-label]="'audio_bubble_cancel_download' | translate">
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Collapse Control (Expanded) -->
+    <!-- @see Requirements 10.9 -->
+    @if (isExpanded && attachments.length > 1) {
+      <button
+        #collapseButton
+        type="button"
+        class="cometchat-audio-bubble__collapse-control"
+        (click)="toggleExpanded()"
+        (keydown)="onExpandCollapseKeydown($event)"
+        [attr.aria-label]="'audio_bubble_show_less' | translate"
+        [attr.aria-expanded]="true"
+        aria-controls="audio-list">
+        {{ 'audio_bubble_show_less' | translate }}
+      </button>
+    }
+  </div>
+
+  <!-- Caption -->
+  @if (hasCaption) {
+    <div class="cometchat-audio-bubble__caption">
+      <cometchat-text-bubble
+        [message]="$any(message)"
+        [alignment]="alignment">
+      </cometchat-text-bubble>
+    </div>
+  }
+</div>

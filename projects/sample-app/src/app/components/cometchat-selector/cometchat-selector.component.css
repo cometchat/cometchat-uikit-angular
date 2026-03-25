@@ -1,0 +1,200 @@
+/* ═══════════════════════════════════════════════════
+   CometChatSelector — Switches UIKit list components
+   based on the active tab.
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-selector {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cometchat-selector__panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Header (shared between conversations & groups) ── */
+
+.cometchat-selector__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+}
+
+.cometchat-selector__header-title {
+  font: var(--cometchat-font-heading1-bold);
+  color: var(--cometchat-text-color-primary);
+}
+
+/* ── Context menu (Chats tab) ── */
+
+.cometchat-selector__menu-wrapper {
+  position: relative;
+}
+
+.cometchat-selector__menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--cometchat-radius-max);
+  background: transparent;
+  color: var(--cometchat-icon-color-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-selector__menu-button:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+.cometchat-selector__menu-button:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+.cometchat-selector__menu-button-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-color: var(--cometchat-icon-color-primary);
+  -webkit-mask: url('../../../assets/more_vert.svg') center center / contain no-repeat;
+  mask: url('../../../assets/more_vert.svg') center center / contain no-repeat;
+}
+
+.cometchat-selector__context-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  min-width: 160px;
+  padding: var(--cometchat-spacing-1) 0;
+  background: var(--cometchat-background-color-01);
+  border: 1px solid var(--cometchat-border-color-light);
+  border-radius: var(--cometchat-radius-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.cometchat-selector__context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-2);
+  width: 100%;
+  padding: var(--cometchat-padding-3);
+  border: none;
+  background: transparent;
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.cometchat-selector__context-menu-item:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+.cometchat-selector__context-menu-item:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: -2px;
+}
+
+.cometchat-selector__context-menu-item--danger {
+  color: var(--cometchat-error-color);
+}
+
+.cometchat-selector__context-menu-user {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-2);
+  width: 100%;
+  padding: var(--cometchat-padding-3);
+  font: var(--cometchat-font-body-medium);
+  color: var(--cometchat-text-color-primary);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+/* ── Create group button (Groups tab) ── */
+
+.cometchat-selector__create-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--cometchat-radius-max);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-selector__create-button:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+.cometchat-selector__create-button:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+.cometchat-selector__create-button-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-color: var(--cometchat-icon-color-primary);
+  -webkit-mask: url('../../../assets/create-group.svg') center center / contain no-repeat;
+  mask: url('../../../assets/create-group.svg') center center / contain no-repeat;
+}
+
+/* ── Context menu icons ── */
+
+.cometchat-selector__context-menu-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background-color: var(--cometchat-icon-color-secondary);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-selector__context-menu-icon--user {
+  -webkit-mask-image: url('../../../assets/person.svg');
+  mask-image: url('../../../assets/person.svg');
+}
+
+.cometchat-selector__context-menu-icon--chat {
+  -webkit-mask-image: url('../../../assets/new-chat.svg');
+  mask-image: url('../../../assets/new-chat.svg');
+}
+
+.cometchat-selector__context-menu-icon--logout {
+  -webkit-mask-image: url('../../../assets/logout.svg');
+  mask-image: url('../../../assets/logout.svg');
+  background-color: var(--cometchat-error-color);
+}
+
+/* ── Responsive Design ── */
+
+@media (max-width: 480px) {
+  .cometchat-selector__header-title {
+    font: var(--cometchat-font-heading4-bold);
+  }
+}

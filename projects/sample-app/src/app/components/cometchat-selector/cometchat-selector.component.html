@@ -1,0 +1,102 @@
+<div class="cometchat-selector">
+  <!-- ═══ Chats Tab ═══ -->
+  @if (activeTab() === 'chats') {
+    <div class="cometchat-selector__panel">
+      <cometchat-conversations
+        [menuView]="conversationsMenu"
+        [showSearchBar]="false"
+        (itemClick)="onConversationClick($event)"
+      ></cometchat-conversations>
+    </div>
+  }
+
+  <!-- ═══ Calls Tab ═══ -->
+  @if (activeTab() === 'calls') {
+    <div class="cometchat-selector__panel">
+      <cometchat-call-logs
+        (itemClick)="onCallLogClick($event)"
+      ></cometchat-call-logs>
+    </div>
+  }
+
+  <!-- ═══ Users Tab ═══ -->
+  @if (activeTab() === 'users') {
+    <div class="cometchat-selector__panel">
+      <cometchat-users
+        (itemClick)="onUserClick($event)"
+      ></cometchat-users>
+    </div>
+  }
+
+  <!-- ═══ Groups Tab ═══ -->
+  @if (activeTab() === 'groups') {
+    <div class="cometchat-selector__panel">
+      <cometchat-groups
+        [menuView]="groupsMenu"
+        (itemClick)="onGroupClick($event)"
+      ></cometchat-groups>
+    </div>
+  }
+</div>
+
+<!-- ═══ Custom menu for Conversations with context menu ═══ -->
+<ng-template #conversationsMenu>
+  <div class="cometchat-selector__menu-wrapper">
+    <button
+      class="cometchat-selector__menu-button"
+      (click)="toggleContextMenu()"
+      aria-haspopup="true"
+      [attr.aria-expanded]="showContextMenu()"
+      [attr.aria-label]="'selector_title' | translate"
+    >
+      <span
+        class="cometchat-selector__menu-button-icon"
+        aria-hidden="true"
+      ></span>
+    </button>
+
+    @if (showContextMenu()) {
+      <div
+        class="cometchat-selector__context-menu"
+        role="menu"
+      >
+        @if (loggedInUserName()) {
+          <div class="cometchat-selector__context-menu-user" role="menuitem">
+            <span class="cometchat-selector__context-menu-icon cometchat-selector__context-menu-icon--user" aria-hidden="true"></span>
+            {{ loggedInUserName() }}
+          </div>
+        }
+        <button
+          class="cometchat-selector__context-menu-item"
+          role="menuitem"
+          (click)="onNewChat()"
+        >
+          <span class="cometchat-selector__context-menu-icon cometchat-selector__context-menu-icon--chat" aria-hidden="true"></span>
+          {{ 'selector_create_conversation' | translate }}
+        </button>
+        <button
+          class="cometchat-selector__context-menu-item cometchat-selector__context-menu-item--danger"
+          role="menuitem"
+          (click)="onLogout()"
+        >
+          <span class="cometchat-selector__context-menu-icon cometchat-selector__context-menu-icon--logout" aria-hidden="true"></span>
+          {{ 'selector_logout' | translate }}
+        </button>
+      </div>
+    }
+  </div>
+</ng-template>
+
+<!-- ═══ Custom menu for Groups with create button ═══ -->
+<ng-template #groupsMenu>
+  <button
+    class="cometchat-selector__create-button"
+    (click)="onCreateGroup()"
+    [attr.aria-label]="'selector_create_group' | translate"
+  >
+    <span
+      class="cometchat-selector__create-button-icon"
+      aria-hidden="true"
+    ></span>
+  </button>
+</ng-template>

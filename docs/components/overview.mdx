@@ -1,0 +1,216 @@
+---
+title: Components Overview
+description: "Overview of all available UI components"
+---
+CometChat UIKit provides a comprehensive set of pre-built components for building chat experiences.
+
+## Component Categories
+
+### Conversations
+
+Components for displaying and managing chat conversations.
+
+| Component | Description |
+|-----------|-------------|
+| `cometchat-conversations` | List of all conversations |
+
+### Messages
+
+Components for displaying and sending messages.
+
+| Component | Description |
+|-----------|-------------|
+| `cometchat-message-list` | Scrollable list of messages |
+| `cometchat-message-composer` | Message input with attachments, emoji, and rich text |
+| `cometchat-message-header` | Header showing conversation info and actions |
+| `cometchat-message-bubble` | Individual message bubble |
+| `cometchat-thread-header` | Header for threaded message view |
+
+### Users
+
+Components for user management and display.
+
+| Component | Description |
+|-----------|-------------|
+| `cometchat-users` | List of users |
+
+### Groups
+
+Components for group chat functionality.
+
+| Component | Description |
+|-----------|-------------|
+| `cometchat-groups` | List of groups |
+| `cometchat-group-members` | List of group members |
+
+---
+
+## Component API Pattern
+
+All Angular UIKit components share a consistent API surface.
+
+### Actions
+
+Actions control component behavior. They split into two categories:
+
+**Predefined Actions** are built into the component and execute automatically on user interaction (e.g., clicking send dispatches the message). No configuration needed.
+
+**User-Defined Actions** are `@Output()` callbacks that fire on specific events. Override them to customize behavior:
+
+```html
+<cometchat-message-list
+  [user]="chatUser"
+  (threadRepliesClick)="onThreadRepliesClick($event)"
+  (error)="onError($event)">
+</cometchat-message-list>
+```
+
+Each component page documents its available outputs in the Actions section.
+
+### Events
+
+Events enable decoupled communication between components. A component emits events that other parts of the application can subscribe to without direct references.
+
+```typescript expandable
+import { CometChatMessageEvents } from '@cometchat/chat-uikit-angular';
+import { Subscription } from 'rxjs';
+
+// Subscribe in ngOnInit
+this.subscription = CometChatMessageEvents.ccMessageSent.subscribe((message) => {
+  // react to sent message
+});
+
+// Cleanup in ngOnDestroy
+this.subscription?.unsubscribe();
+```
+
+Each component page documents its emitted events in the Events section. See [Events](/events) for the full reference.
+
+### Filters
+
+List-based components accept `RequestBuilder` inputs to control which data loads:
+
+```html
+<cometchat-message-list
+  [user]="chatUser"
+  [messagesRequestBuilder]="messagesRequestBuilder">
+</cometchat-message-list>
+```
+
+```typescript
+this.messagesRequestBuilder = new CometChat.MessagesRequestBuilder().setLimit(20);
+```
+
+### Custom View Slots
+
+Components expose named `ng-template` inputs to replace sections of the default UI:
+
+```html expandable
+<cometchat-message-header
+  [user]="chatUser"
+  [titleView]="customTitle"
+  [subtitleView]="customSubtitle"
+  [leadingView]="customAvatar">
+</cometchat-message-header>
+
+<ng-template #customTitle let-user>
+  <span>{{ user.getName() }}</span>
+</ng-template>
+
+<ng-template #customSubtitle let-user>
+  <span>Custom subtitle</span>
+</ng-template>
+
+<ng-template #customAvatar let-user>
+  <img [src]="user.getAvatar()" alt="avatar" />
+</ng-template>
+```
+
+### CSS Overrides
+
+Every component has a root CSS class (`.cometchat-<component>`) for style customization:
+
+```css
+.cometchat .cometchat-message-list .cometchat-text-bubble__body-text {
+  font-family: "SF Pro";
+}
+```
+
+---
+
+## Component Catalog
+
+All components are imported from `@cometchat/chat-uikit-angular`.
+
+### Conversations and Lists
+
+| Component | Purpose | Key Inputs | Page |
+| --- | --- | --- | --- |
+| cometchat-conversations | Scrollable list of recent conversations | `conversationsRequestBuilder`, `itemClick`, `error` | [Conversations](/components/cometchat-conversations) |
+| cometchat-users | Scrollable list of users | `usersRequestBuilder`, `itemClick`, `error` | [Users](/components/cometchat-users) |
+| cometchat-groups | Scrollable list of groups | `groupsRequestBuilder`, `itemClick`, `error` | [Groups](/components/cometchat-groups) |
+| cometchat-group-members | Scrollable list of group members | `group`, `groupMemberRequestBuilder`, `itemClick` | [Group Members](/components/cometchat-group-members) |
+
+### Messages
+
+| Component | Purpose | Key Inputs | Page |
+| --- | --- | --- | --- |
+| cometchat-message-header | Toolbar with avatar, name, status, typing indicator | `user`, `group` | [Message Header](/components/cometchat-message-header) |
+| cometchat-message-list | Scrollable message list with reactions, receipts, threads | `user`, `group`, `messagesRequestBuilder` | [Message List](/components/cometchat-message-list) |
+| cometchat-message-composer | Rich text input with attachments, mentions, voice notes | `user`, `group`, `placeholderText` | [Message Composer](/components/cometchat-message-composer) |
+| cometchat-thread-header | Parent message bubble and reply count for threaded view | `parentMessage` | [Thread Header](/components/cometchat-thread-header) |
+
+### Calling
+
+| Component | Purpose | Key Inputs | Page |
+| --- | --- | --- | --- |
+| cometchat-call-buttons | Voice and video call initiation buttons | `user`, `group` | [Call Buttons](/components/cometchat-call-buttons) |
+| cometchat-incoming-call | Incoming call notification with accept/decline | `call` | [Incoming Call](/components/cometchat-incoming-call) |
+| cometchat-outgoing-call | Outgoing call screen with cancel control | `call` | [Outgoing Call](/components/cometchat-outgoing-call) |
+| cometchat-call-logs | Scrollable list of call history | `callLogsRequestBuilder` | [Call Logs](/components/cometchat-call-logs) |
+
+### AI
+
+| Component | Purpose | Key Inputs | Page |
+| --- | --- | --- | --- |
+| cometchat-smart-replies | AI-generated response suggestions | — | [Smart Replies](/components/cometchat-smart-replies) |
+| cometchat-conversation-starter | AI-generated opening lines for new chats | — | [Conversation Starter](/components/cometchat-conversation-starter) |
+| cometchat-conversation-summary | AI-generated conversation summary panel | `getConversationSummary` | [Conversation Summary](/components/cometchat-conversation-summary) |
+
+---
+
+## Architecture
+
+The UIKit is a set of independent components that compose into chat layouts. A typical two-panel layout uses four core components:
+
+- **cometchat-conversations** — sidebar listing recent conversations (users and groups)
+- **cometchat-message-header** — toolbar showing avatar, name, online status, and typing indicator
+- **cometchat-message-list** — scrollable message feed with reactions, receipts, and threads
+- **cometchat-message-composer** — rich text input with attachments, mentions, and voice notes
+
+Data flow: selecting a conversation in `cometchat-conversations` yields a `CometChat.User` or `CometChat.Group` object. That object is passed as an input (`[user]` or `[group]`) to `cometchat-message-header`, `cometchat-message-list`, and `cometchat-message-composer`. The message components use the SDK internally — `cometchat-message-composer` sends messages, `cometchat-message-list` receives them via real-time listeners.
+
+The UIKit supports a Hybrid Approach for wiring components: by default, components subscribe to `ChatStateService` for active chat state, but explicit `@Input()` bindings always take priority. This lets you start with zero-config service-based wiring and override individual components as needed. See the [State Management guide](/guides/state-management) for a full comparison and code examples.
+
+Components communicate through a publish/subscribe event bus (`CometChatMessageEvents`, `CometChatConversationEvents`, `CometChatGroupEvents`, etc.). A component emits events that other components or application code can subscribe to without direct references. See [Events](/events) for the full list.
+
+Each component accepts `@Output()` callbacks, `ng-template` view slot inputs for replacing UI sections, `RequestBuilder` inputs for data filtering, and CSS variable overrides on `.cometchat-<component>` classes.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Core Features" icon="comments" href="/core-features">
+    Chat features included out of the box
+  </Card>
+  <Card title="Theming" icon="paintbrush" href="/customization/theming">
+    Customize colors, fonts, and styles
+  </Card>
+  <Card title="Extensions" icon="puzzle-piece" href="/extensions">
+    Add-on features like polls, stickers, and translation
+  </Card>
+  <Card title="Guides" icon="book" href="/guides/overview">
+    Task-oriented tutorials for common patterns
+  </Card>
+</CardGroup>

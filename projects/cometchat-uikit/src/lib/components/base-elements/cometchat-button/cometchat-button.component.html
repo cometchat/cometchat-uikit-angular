@@ -1,0 +1,38 @@
+<div class="cometchat-button__wrapper">
+  <button
+    class="cometchat-button"
+    [class.cometchat-button--icon-only]="iconOnly && !text"
+    type="button"
+    [title]="hoverText || ''"
+    [disabled]="isDisabled"
+    [attr.aria-disabled]="isDisabled || null"
+    [attr.aria-label]="accessibleLabel"
+    [attr.aria-busy]="isLoading || null"
+    (click)="onButtonClick($event)"
+    (keydown)="onKeyDown($event)"
+    (mouseup)="onMouseEvent($event)"
+    (mousedown)="onMouseEvent($event)"
+  >
+    @if (isLoading) {
+      <img
+        [src]="loadingIconURL"
+        [attr.alt]="'button_loading_alt' | translate"
+        aria-hidden="true"
+        class="cometchat-button__loading-view"
+      />
+      <span class="cometchat-button__sr-only">{{ 'button_loading_text' | translate }}</span>
+    } @else {
+      @if (iconURL) {
+        <div
+          class="cometchat-button__icon cometchat-button__icon-default"
+          [style.webkitMask]="'url(' + iconURL + ') center center no-repeat'"
+          [style.mask]="'url(' + iconURL + ') center center no-repeat'"
+          aria-hidden="true"
+        ></div>
+      }
+      @if (text) {
+        <label class="cometchat-button__text">{{ text }}</label>
+      }
+    }
+  </button>
+</div>

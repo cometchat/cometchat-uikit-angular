@@ -1,0 +1,65 @@
+---
+title: "CometChatOngoingCall"
+description: "An Angular component that renders a full-screen container for an active CometChat call session"
+---
+
+The `CometChatOngoingCall` component is a standalone Angular component that provides a full-screen overlay for rendering an active call session using the CometChat Calls SDK.
+
+## Overview
+
+The Ongoing Call component acts as a thin UI layer that delegates call logic to `OngoingCallService`. When a non-empty `sessionID` is provided, it renders a full-screen container and starts the call session.
+
+- **Full-Screen Call UI**: Renders the Calls SDK interface in a dedicated container
+- **Default and Direct Calling Workflows**: Supports both `defaultCalling` and `directCalling` workflows
+- **Audio/Video Support**: Configurable for audio-only or video calls
+- **Custom Call Settings**: Accepts a custom `CallSettingsBuilder` for advanced configuration
+- **Template Override**: Supports replacing the entire call screen via `callScreenView` input
+- **Accessibility**: ARIA announcements for call state changes, keyboard event handling
+- **OnPush Change Detection**: Optimized rendering performance
+
+## Usage
+
+```html
+<cometchat-ongoing-call
+  [sessionID]="activeSessionId"
+  [callWorkflow]="workflow"
+  [isAudioOnly]="false"
+  (callEnded)="onCallEnded()"
+  (error)="onError($event)">
+</cometchat-ongoing-call>
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `sessionID` | `string` | `''` | Session ID for the call. Required for the call to render. |
+| `callSettingsBuilder` | `CallSettingsBuilder` | `null` | Custom call settings builder. Overrides the default builder. |
+| `callWorkflow` | `CallWorkflow` | `defaultCalling` | Call workflow type: `defaultCalling` or `directCalling`. |
+| `isAudioOnly` | `boolean` | `false` | Whether this is an audio-only call. |
+| `onError` | `(error: CometChatException) => void` | `null` | Error callback for call operation errors. |
+| `callScreenView` | `TemplateRef` | `null` | Custom template to replace the entire call screen. |
+
+## Events
+
+| Event | Type | Description |
+|-------|------|-------------|
+| `callEnded` | `EventEmitter<void>` | Emitted when the call ends. |
+| `error` | `EventEmitter<CometChatException>` | Emitted on any error during call operations. |
+
+## Customization
+
+### Custom Call Screen Template
+
+```html
+<cometchat-ongoing-call
+  [sessionID]="sessionId"
+  [callScreenView]="customCallScreen">
+</cometchat-ongoing-call>
+
+<ng-template #customCallScreen let-ctx>
+  <div class="custom-call-ui">
+    <p>Session: {{ ctx.sessionID }}</p>
+  </div>
+</ng-template>
+```

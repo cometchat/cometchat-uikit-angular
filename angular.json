@@ -1,0 +1,128 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": {
+    "packageManager": "npm"
+  },
+  "newProjectRoot": "projects",
+  "projects": {
+    "cometchat-uikit": {
+      "projectType": "library",
+      "root": "projects/cometchat-uikit",
+      "sourceRoot": "projects/cometchat-uikit/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/cometchat-uikit/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/cometchat-uikit/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/cometchat-uikit/tsconfig.spec.json"
+          }
+        }
+      }
+    },
+    "sample-app": {
+      "projectType": "application",
+      "root": "projects/sample-app",
+      "sourceRoot": "projects/sample-app/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/sample-app/src/main.ts",
+            "tsConfig": "projects/sample-app/tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/sample-app/public"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/sample-app/src/assets",
+                "output": "assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/cometchat-uikit/src/lib/assets",
+                "output": "assets"
+              }
+            ],
+            "styles": [
+              "projects/sample-app/src/styles.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "10MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8000kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "sample-app:build:production"
+            },
+            "development": {
+              "buildTarget": "sample-app:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test"
+        },
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "sample-app:build",
+            "compodoc": false,
+            "port": 6006,
+            "tsConfig": ".storybook/tsconfig.json"
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "sample-app:build",
+            "compodoc": false,
+            "outputDir": "storybook-static",
+            "tsConfig": ".storybook/tsconfig.json"
+          }
+        }
+      }
+    }
+  }
+}

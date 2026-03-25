@@ -1,0 +1,20 @@
+/* ============================================================
+   CometChat Ongoing Call Component Styles
+   BEM: .cometchat-ongoing-call
+   Requirements: 4.3, 9.2, 9.3
+   ============================================================ */
+
+/* Full-screen overlay container for the CometChat Calls SDK to render into */
+.cometchat-ongoing-call {
+  width: var(--cometchat-ongoing-call-width, 100%);
+  height: var(--cometchat-ongoing-call-height, 100%);
+  position: var(--cometchat-ongoing-call-position, absolute);
+  left: var(--cometchat-ongoing-call-left, 0);
+  top: var(--cometchat-ongoing-call-top, 0);
+  z-index: var(--cometchat-ongoing-call-z-index, 1000);
+  border: var(--cometchat-ongoing-call-border, none);
+  border-radius: var(--cometchat-ongoing-call-border-radius, 0);
+  background: var(--cometchat-ongoing-call-background, var(--cometchat-background-color-04, #000000));
+  box-sizing: var(--cometchat-ongoing-call-box-sizing, border-box);
+  overflow: var(--cometchat-ongoing-call-overflow, hidden);
+}

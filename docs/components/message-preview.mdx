@@ -1,0 +1,857 @@
+---
+title: Message Preview
+description: "Display a preview of messages being replied to or edited with customizable templates"
+---
+The `CometChatMessagePreview` component displays a preview of a message that is being replied to or edited. It provides a compact view with customizable title and subtitle templates, and handles deleted messages gracefully with a special UI.
+
+## Overview
+
+The MessagePreview component is designed for contextual message interactions:
+
+- **Template Support**: Fully customizable title and subtitle via Angular TemplateRef
+- **Deleted Message Handling**: Automatically displays special UI for deleted messages
+- **Flexible Display Modes**: Supports both composer view (with close button) and bubble view (embedded)
+- **Accessibility**: Full keyboard support for close button interaction
+- **Responsive**: Adapts width based on parent container in bubble view mode
+
+## Basic Usage
+
+### Simple Message Preview
+
+```html expandable
+<cometchat-message-preview
+  [message]="replyMessage"
+  (closeClick)="onClosePreview()">
+  <ng-template #previewTitle>
+    <span>Replying to {{ replyMessage.sender.name }}</span>
+  </ng-template>
+  <ng-template #previewSubtitle>
+    <span>{{ replyMessage.text }}</span>
+  </ng-template>
+</cometchat-message-preview>
+```
+
+### With Custom Templates
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessagePreviewComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reply-composer',
+  standalone: true,
+  imports: [CometChatMessagePreviewComponent],
+  template: `
+    <cometchat-message-preview
+      [previewTitle]="titleTemplate"
+      [previewSubtitle]="subtitleTemplate"
+      [message]="replyMessage"
+      (closeClick)="clearReply()">
+    </cometchat-message-preview>
+
+    <ng-template #titleTemplate>
+      <div class="preview-title">
+        <span class="reply-icon">↩</span>
+        <span>{{ replyMessage?.sender?.name || 'Unknown' }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template #subtitleTemplate>
+      <div class="preview-subtitle">
+        {{ getMessagePreview(replyMessage) }}
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .preview-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+    .reply-icon {
+      font-size: 16px;
+    }
+    .preview-subtitle {
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  `]
+})
+export class ReplyComposerComponent {
+  replyMessage: CometChat.BaseMessage | null = null;
+
+  clearReply(): void {
+    this.replyMessage = null;
+  }
+
+  getMessagePreview(message: CometChat.BaseMessage | null): string {
+    if (!message) return '';
+    
+    if (message.getType() === 'text') {
+      return (message as CometChat.TextMessage).getText();
+    } else if (message.getType() === 'image') {
+      return '📷 Image';
+    } else if (message.getType() === 'video') {
+      return '🎥 Video';
+    }
+    return 'Message';
+  }
+}
+```
+
+### Bubble View Mode (Without Close Button)
+
+```html
+<cometchat-message-preview
+  [previewTitle]="titleTemplate"
+  [previewSubtitle]="subtitleTemplate"
+  [message]="quotedMessage"
+  [hideCloseButton]="true">
+</cometchat-message-preview>
+```
+
+<Info>
+  **Live Preview** — interact with the default message preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-message-preview--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-message-preview--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "200px", border: "1px solid #e0e0e0"}}
+  title="Message Preview — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessagePreviewComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-composer-with-reply',
+  standalone: true,
+  imports: [CommonModule, CometChatMessagePreviewComponent],
+  template: `
+    <div class="composer-container">
+      <!-- Message Preview (shown when replying) -->
+      @if (replyToMessage) {
+        <cometchat-message-preview
+          [previewTitle]="titleTemplate"
+          [previewSubtitle]="subtitleTemplate"
+          [message]="replyToMessage"
+          (closeClick)="cancelReply()">
+        </cometchat-message-preview>
+      }
+
+      <!-- Message Input -->
+      <div class="message-input">
+        <textarea
+          [(ngModel)]="messageText"
+          placeholder="Type a message..."
+          (keydown.enter)="sendMessage($event)">
+        </textarea>
+        <button (click)="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <ng-template #titleTemplate>
+      <div class="reply-title">
+        <span class="reply-label">Replying to</span>
+        <span class="sender-name">{{ replyToMessage?.sender?.name }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template #subtitleTemplate>
+      <div class="reply-content">
+        {{ getMessageContent(replyToMessage) }}
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .composer-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    .message-input {
+      display: flex;
+      gap: 8px;
+    }
+    textarea {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: none;
+      min-height: 40px;
+    }
+    .reply-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .reply-label {
+      font-size: 12px;
+      color: #666;
+    }
+    .sender-name {
+      font-weight: 600;
+      color: #333;
+    }
+    .reply-content {
+      font-size: 14px;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  `]
+})
+export class MessageComposerWithReplyComponent {
+  replyToMessage: CometChat.BaseMessage | null = null;
+  messageText = '';
+
+  setReplyMessage(message: CometChat.BaseMessage): void {
+    this.replyToMessage = message;
+  }
+
+  cancelReply(): void {
+    this.replyToMessage = null;
+  }
+
+  getMessageContent(message: CometChat.BaseMessage | null): string {
+    if (!message) return '';
+    
+    const type = message.getType();
+    if (type === 'text') {
+      return (message as CometChat.TextMessage).getText();
+    } else if (type === 'image') {
+      return '📷 Photo';
+    } else if (type === 'video') {
+      return '🎥 Video';
+    } else if (type === 'audio') {
+      return '🎵 Audio';
+    } else if (type === 'file') {
+      return '📎 File';
+    }
+    return 'Message';
+  }
+
+  sendMessage(event?: KeyboardEvent): void {
+    if (event && !event.shiftKey) {
+      event.preventDefault();
+    } else if (event) {
+      return; // Allow Shift+Enter for new line
+    }
+
+    if (!this.messageText.trim()) return;
+
+    // Send message with reply metadata
+    console.log('Sending message:', this.messageText);
+    console.log('Reply to:', this.replyToMessage?.getId());
+
+    // Clear after sending
+    this.messageText = '';
+    this.replyToMessage = null;
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `previewTitle` | `TemplateRef<any> \| null` | `null` | Template for the preview title section. Typically shows sender name or "Replying to" label |
+| `previewSubtitle` | `TemplateRef<any> \| null` | `null` | Template for the preview subtitle section. Typically shows message content preview |
+| `hideCloseButton` | `boolean` | `false` | When true, hides the close button. Used for bubble view mode where preview is embedded in message |
+| `message` | `CometChat.BaseMessage` | `undefined` | The message object being previewed. Used to detect deleted messages |
+| `isMessageModerated` | `boolean` | `false` | Indicates if the message has been moderated. Affects width calculation in bubble view |
+| `textFormatters` | `any[]` | `[]` | Array of text formatters for message content (reserved for future use) |
+| `ariaLabel` | `string` | `undefined` | Custom ARIA label for the preview container (for screen readers) |
+| `mode` | `MessagePreviewMode` | `'reply'` | Display mode of the preview: `'reply'` for standalone reply bar, `'bubble'` for embedded in message bubble |
+
+<Info>
+  **Live Preview** — interactive message preview with live controls.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-message-preview--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-message-preview--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Message Preview — Interactive"
+  allow="clipboard-write"
+></iframe>
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeClick` | `EventEmitter<void>` | Emitted when the close button is clicked. Use this to clear the reply/edit state |
+
+## Behavior
+
+### Deleted Message Handling
+
+When a message has been deleted (detected via `message.getDeletedAt()`), the component automatically displays a special UI:
+
+- Shows a deleted message icon
+- Displays localized "message_deleted" text
+- Hides the subtitle template
+- Maintains the same layout structure
+
+```typescript
+// The component automatically detects deleted messages
+<cometchat-message-preview
+  [message]="deletedMessage"
+  [previewTitle]="titleTemplate"
+  [previewSubtitle]="subtitleTemplate">
+</cometchat-message-preview>
+
+// Will show: [Icon] "This message was deleted"
+```
+
+### View Modes
+
+The component supports two display modes:
+
+**Composer View** (default):
+- Shows close button
+- Full width container
+- Used in message composer for reply/edit
+
+**Bubble View** (`hideCloseButton="true"`):
+- No close button
+- Responsive width based on parent
+- Used inside message bubbles for quoted messages
+- Automatically adjusts width using ResizeObserver
+
+### Width Calculation
+
+In bubble view mode, the component:
+1. Observes the parent message bubble's content width
+2. Adjusts its own width to match
+3. Handles moderated messages with minimum 240px width
+4. Updates dynamically on resize
+
+## Customization
+
+### Styling with CSS Variables
+
+The MessagePreview component uses CSS variables for theming:
+
+```css expandable
+/* Custom preview styling */
+cometchat-message-preview {
+  --cometchat-background-color-1: #F5F5F5;
+  --cometchat-extended-primary-color-100: #E8E4F8;
+  --cometchat-extended-primary-color-500: #6852D6;
+  --cometchat-font-body-regular: 400 14px 'Inter';
+  --cometchat-font-caption-medium: 500 12px 'Inter';
+  --cometchat-padding-1: 4px;
+  --cometchat-padding-2: 8px;
+  --cometchat-radius-1: 4px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-background-color-1` | Preview background color | `#F8F8F8` |
+| `--cometchat-extended-primary-color-100` | Title background color | `#E8E4F8` |
+| `--cometchat-extended-primary-color-500` | Close button color | `#6852D6` |
+| `--cometchat-font-body-regular` | Subtitle font | `400 14px Roboto` |
+| `--cometchat-font-caption-medium` | Title font | `500 12px Roboto` |
+| `--cometchat-padding-1` | Small padding | `4px` |
+| `--cometchat-padding-2` | Medium padding | `8px` |
+| `--cometchat-radius-1` | Border radius | `4px` |
+
+### Custom Template Styling
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-preview
+      [previewTitle]="customTitle"
+      [previewSubtitle]="customSubtitle"
+      [message]="message"
+      class="custom-preview">
+    </cometchat-message-preview>
+
+    <ng-template #customTitle>
+      <div class="custom-title">
+        <img [src]="message.sender.avatar" class="sender-avatar" />
+        <div class="title-text">
+          <span class="label">Reply to</span>
+          <span class="name">{{ message.sender.name }}</span>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #customSubtitle>
+      <div class="custom-subtitle">
+        <span class="message-type-icon">{{ getTypeIcon(message) }}</span>
+        <span class="message-text">{{ getMessageText(message) }}</span>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .custom-preview {
+      border-left: 3px solid #6852D6;
+    }
+    .custom-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sender-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+    .title-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .label {
+      font-size: 10px;
+      color: #999;
+      text-transform: uppercase;
+    }
+    .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+    }
+    .custom-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .message-type-icon {
+      font-size: 16px;
+    }
+    .message-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #666;
+    }
+  `]
+})
+export class CustomPreviewComponent {
+  // Implementation
+}
+```
+
+## Accessibility
+
+The MessagePreview component includes comprehensive accessibility features to ensure WCAG 2.1 Level AA compliance:
+
+### Keyboard Support
+
+The component is fully keyboard accessible with the following keyboard shortcuts:
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Moves focus to the close button | When close button is visible |
+| `Shift + Tab` | Moves focus to previous focusable element | Reverse tab order |
+| `Enter` | Activates the close button and closes the preview | When close button is focused |
+| `Space` | Activates the close button and closes the preview | When close button is focused |
+
+**Note**: The Space key press prevents default scrolling behavior to avoid unintended page scrolling.
+
+### ARIA Attributes
+
+The component implements proper ARIA attributes for screen reader support:
+
+| Element | ARIA Attribute | Purpose |
+|---------|---------------|---------|
+| Container | `role="region"` | Identifies the preview as a distinct region |
+| Container | `aria-label` | Provides accessible name for the region (customizable via `ariaLabel` input) |
+| Close button | `role="button"` | Identifies the element as a button |
+| Close button | `aria-label` | Provides localized "Close" label for screen readers |
+| Close button | `tabindex="0"` | Makes the button keyboard focusable |
+| Deleted message icon | `aria-hidden="true"` | Hides decorative icon from screen readers |
+
+### Custom ARIA Labels
+
+You can provide custom ARIA labels for better context:
+
+```html
+<cometchat-message-preview
+  [message]="replyMessage"
+  [ariaLabel]="'Reply to message from ' + replyMessage.sender.name"
+  (closeClick)="onClosePreview()">
+</cometchat-message-preview>
+```
+
+### Focus Management
+
+The component provides clear visual focus indicators:
+
+- **Visible Focus Ring**: 2px solid outline in primary color when focused via keyboard
+- **Focus Offset**: 2px offset for better visibility
+- **Focus-Visible Support**: Focus indicators only appear for keyboard navigation, not mouse clicks
+- **WCAG Contrast**: Focus indicators meet WCAG 2.1 Level AA contrast requirements (3:1 minimum)
+
+```css
+/* Focus indicator styling */
+.cometchat-message-preview__close:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color, #3399FF);
+  outline-offset: 2px;
+  border-radius: var(--cometchat-radius-1, 4px);
+}
+```
+
+### Nested Interactive Elements
+
+The component supports nested interactive elements within templates:
+
+**Requirements**:
+- All nested interactive elements (buttons, links) in `previewTitle` and `previewSubtitle` templates are independently focusable
+- Tab order follows visual layout: title → subtitle → close button
+- Nested element activation does not trigger parent actions
+- Each nested element maintains its own focus state
+
+**Example with nested elements**:
+
+```html expandable
+<cometchat-message-preview
+  [previewTitle]="titleWithButton"
+  [previewSubtitle]="subtitleWithLink"
+  [message]="message"
+  (closeClick)="onClose()">
+</cometchat-message-preview>
+
+<ng-template #titleWithButton>
+  <div class="title-container">
+    <span>Replying to {{ message.sender.name }}</span>
+    <button (click)="viewProfile($event)" aria-label="View profile">
+      👤
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #subtitleWithLink>
+  <div class="subtitle-container">
+    <a [href]="messageLink" target="_blank" rel="noopener">
+      View original message
+    </a>
+  </div>
+</ng-template>
+```
+
+**Best Practices for Nested Elements**:
+1. Ensure all interactive elements have proper `aria-label` attributes
+2. Use semantic HTML (`<button>`, `<a>`) instead of `<div>` with click handlers
+3. Stop event propagation in nested element handlers to prevent parent activation
+4. Maintain logical tab order by placing elements in visual order in the DOM
+
+### Screen Reader Support
+
+The component provides comprehensive screen reader support:
+
+**Announcements**:
+- Container region is announced with its label (e.g., "Message preview region")
+- Close button is announced as "Close button"
+- Deleted message text is announced when message is deleted
+- All interactive elements are properly labeled
+
+**Deleted Message Handling**:
+```html
+<!-- Screen reader will announce: "This message was deleted" -->
+<div class="cometchat-message-preview-deleted__message">
+  <div class="cometchat-message-preview-deleted__message__icon" aria-hidden="true"></div>
+  <div class="cometchat-message-preview-deleted__message__text">
+    {{ deletedMessageText }}
+  </div>
+</div>
+```
+
+### Testing Accessibility
+
+To test keyboard accessibility:
+
+```typescript expandable
+// Test keyboard navigation
+it('should close preview when Enter key is pressed on close button', () => {
+  const closeButton = fixture.nativeElement.querySelector('.cometchat-message-preview__close');
+  const event = new KeyboardEvent('keydown', { key: 'Enter' });
+  closeButton.dispatchEvent(event);
+  expect(component.closeClick.emit).toHaveBeenCalled();
+});
+
+// Test ARIA attributes
+it('should have proper ARIA attributes', () => {
+  const container = fixture.nativeElement.querySelector('[role="region"]');
+  expect(container.getAttribute('aria-label')).toBeTruthy();
+  
+  const closeButton = fixture.nativeElement.querySelector('[role="button"]');
+  expect(closeButton.getAttribute('aria-label')).toBe('Close');
+  expect(closeButton.getAttribute('tabindex')).toBe('0');
+});
+```
+
+### Accessibility Compliance
+
+The MessagePreview component meets the following WCAG 2.1 Level AA criteria:
+
+- ✅ **1.3.1 Info and Relationships**: Proper semantic structure and ARIA roles
+- ✅ **2.1.1 Keyboard**: All functionality available via keyboard
+- ✅ **2.1.2 No Keyboard Trap**: Focus can move away from component
+- ✅ **2.4.3 Focus Order**: Logical tab order maintained
+- ✅ **2.4.7 Focus Visible**: Clear focus indicators for keyboard navigation
+- ✅ **4.1.2 Name, Role, Value**: Proper ARIA attributes for all interactive elements
+
+### Keyboard Accessibility Implementation
+
+The component implements keyboard accessibility through event handlers:
+
+```typescript
+// Keyboard event handler for close button
+onCloseKeyDown(event: KeyboardEvent): void {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault(); // Prevent default space scrolling
+    this.handleClose();
+  }
+}
+```
+
+This ensures:
+- Enter and Space keys activate the close button
+- Space key doesn't cause page scrolling
+- Other keys are ignored (no unintended actions)
+- Consistent behavior with native button elements
+
+## Examples
+
+### Edit Message Preview
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatMessagePreviewComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-edit-message',
+  standalone: true,
+  imports: [CometChatMessagePreviewComponent],
+  template: `
+    @if (editingMessage) {
+      <cometchat-message-preview
+        [previewTitle]="editTitle"
+        [previewSubtitle]="editSubtitle"
+        [message]="editingMessage"
+        (closeClick)="cancelEdit()">
+      </cometchat-message-preview>
+    }
+
+    <ng-template #editTitle>
+      <div class="edit-title">
+        <span class="edit-icon">✏️</span>
+        <span>Edit Message</span>
+      </div>
+    </ng-template>
+
+    <ng-template #editSubtitle>
+      <div class="edit-content">
+        {{ editingMessage?.text }}
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .edit-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #FF9800;
+      font-weight: 600;
+    }
+    .edit-content {
+      font-style: italic;
+      color: #666;
+    }
+  `]
+})
+export class EditMessageComponent {
+  editingMessage: any = null;
+
+  startEdit(message: any): void {
+    this.editingMessage = message;
+  }
+
+  cancelEdit(): void {
+    this.editingMessage = null;
+  }
+}
+```
+
+### Message Thread Preview
+
+```typescript expandable
+@Component({
+  selector: 'app-thread-preview',
+  standalone: true,
+  imports: [CometChatMessagePreviewComponent],
+  template: `
+    <cometchat-message-preview
+      [previewTitle]="threadTitle"
+      [previewSubtitle]="threadSubtitle"
+      [message]="parentMessage"
+      [hideCloseButton]="true">
+    </cometchat-message-preview>
+
+    <ng-template #threadTitle>
+      <div class="thread-title">
+        <span class="thread-icon">💬</span>
+        <span>Thread</span>
+        <span class="reply-count">{{ replyCount }} replies</span>
+      </div>
+    </ng-template>
+
+    <ng-template #threadSubtitle>
+      <div class="thread-content">
+        {{ parentMessage?.text }}
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .thread-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .reply-count {
+      color: #6852D6;
+      font-weight: 600;
+    }
+    .thread-content {
+      font-size: 13px;
+      color: #666;
+      max-height: 40px;
+      overflow: hidden;
+    }
+  `]
+})
+export class ThreadPreviewComponent {
+  parentMessage: any = null;
+  replyCount = 0;
+}
+```
+
+### Multi-Media Preview
+
+```typescript expandable
+@Component({
+  selector: 'app-media-preview',
+  standalone: true,
+  imports: [CommonModule, CometChatMessagePreviewComponent],
+  template: `
+    <cometchat-message-preview
+      [previewTitle]="mediaTitle"
+      [previewSubtitle]="mediaSubtitle"
+      [message]="mediaMessage"
+      (closeClick)="clearPreview()">
+    </cometchat-message-preview>
+
+    <ng-template #mediaTitle>
+      <div class="media-title">
+        <span>{{ mediaMessage?.sender?.name }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template #mediaSubtitle>
+      <div class="media-content">
+        @if (mediaMessage?.type === 'image') {
+          <img [src]="getMediaUrl(mediaMessage)" class="preview-thumbnail" />
+          <span>📷 Photo</span>
+        } @else if (mediaMessage?.type === 'video') {
+          <span>🎥 Video</span>
+        } @else if (mediaMessage?.type === 'audio') {
+          <span>🎵 Audio</span>
+        } @else {
+          <span>{{ mediaMessage?.text }}</span>
+        }
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .media-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-thumbnail {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+  `]
+})
+export class MediaPreviewComponent {
+  mediaMessage: any = null;
+
+  clearPreview(): void {
+    this.mediaMessage = null;
+  }
+
+  getMediaUrl(message: any): string {
+    return message?.data?.url || '';
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  Always provide both title and subtitle templates for a complete preview experience. The title typically shows who sent the message, while the subtitle shows the content.
+</Tip>
+
+<Warning>
+  The component automatically handles deleted messages. Don't try to hide the component when a message is deleted - let it show the deleted message UI instead.
+</Warning>
+
+<Info>
+  Use `hideCloseButton="true"` when embedding the preview inside message bubbles. Use the default mode (with close button) in message composers.
+</Info>
+
+<Tip>
+  Keep subtitle content concise. Use text truncation (ellipsis) for long messages to maintain a clean preview.
+</Tip>
+
+## Related Components
+
+- **CometChatMessageComposer**: Uses MessagePreview for reply and edit functionality
+- **CometChatMessageBubble**: Can embed MessagePreview for quoted messages
+- **CometChatThreadView**: Uses MessagePreview to show parent message context
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule
+- **Bundle Size**: Minimal footprint (~4KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **ResizeObserver**: Uses native ResizeObserver API for responsive width in bubble view
+- **Lifecycle Hooks**: Implements AfterViewInit and OnDestroy for proper cleanup
+
+

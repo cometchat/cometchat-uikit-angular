@@ -1,0 +1,62 @@
+/* 
+ * CometChatAvatar Component Styles
+ * 
+ * CSS Custom Properties (shared component - global Avatar variables):
+ * --cometchat-avatar-size: Controls avatar width/height (default: 48px)
+ * --cometchat-avatar-width: Override width independently (falls back to --cometchat-avatar-size)
+ * --cometchat-avatar-height: Override height independently (falls back to --cometchat-avatar-size)
+ * --cometchat-avatar-border-radius: Border radius (default: var(--cometchat-radius-max, 1000px))
+ * --cometchat-avatar-background: Background color (default: var(--cometchat-extended-primary-color-500))
+ * --cometchat-avatar-border: Border style (default: none)
+ * --cometchat-avatar-text-font: Font for text initials (default: var(--cometchat-font-heading2-bold))
+ * --cometchat-avatar-text-color: Color for text initials (default: var(--cometchat-primary-button-icon))
+ * --cometchat-avatar-font-size: Override font size for initials
+ * --cometchat-avatar-image-font: Font for image fallback text
+ * --cometchat-avatar-image-color: Color for image fallback text
+ * --cometchat-avatar-image-border-radius: Border radius for image element
+ * 
+ * Usage from parent component:
+ * .parent-container cometchat-avatar {
+ *   --cometchat-avatar-size: 40px;
+ *   --cometchat-avatar-font-size: 16px;
+ * }
+ */
+
+.cometchat-avatar {
+  display: flex;
+  width: var(--cometchat-avatar-width, var(--cometchat-avatar-size, 48px));
+  height: var(--cometchat-avatar-height, var(--cometchat-avatar-size, 48px));
+  background: var(--cometchat-avatar-background, var(--cometchat-extended-primary-color-500, #AA9EE8));
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: var(--cometchat-avatar-border-radius, var(--cometchat-radius-max, 1000px));
+  border: var(--cometchat-avatar-border, none);
+}
+
+.cometchat-avatar__image {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--cometchat-avatar-image-color, var(--cometchat-primary-button-icon, #FFF));
+  text-align: center;
+  font: var(--cometchat-avatar-image-font, var(--cometchat-font-title-bold, 700 32px Roboto));
+  border-radius: var(--cometchat-avatar-image-border-radius, var(--cometchat-radius-max, 1000px));
+  object-fit: cover;
+}
+
+.cometchat-avatar__text {
+  display: flex;
+  width: calc(var(--cometchat-avatar-size, 48px) * 0.5);
+  height: calc(var(--cometchat-avatar-size, 48px) * 0.5);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  font: var(--cometchat-avatar-text-font, var(--cometchat-font-heading2-bold, 700 16px Roboto));
+  font-size: var(--cometchat-avatar-font-size, calc(var(--cometchat-avatar-size, 48px) * 0.42));
+  color: var(--cometchat-avatar-text-color, var(--cometchat-primary-button-icon, #FFF));
+  text-align: center;
+}

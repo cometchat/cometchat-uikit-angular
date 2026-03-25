@@ -1,0 +1,17 @@
+<div 
+  class="cometchat-avatar"
+  role="img"
+  [attr.aria-label]="ariaLabel"
+>
+  @if (showImage) {
+    <img
+      loading="lazy"
+      [src]="image"
+      class="cometchat-avatar__image"
+      (error)="onImageError()"
+      [alt]="name || 'avatar'"
+    />
+  } @else {
+    <span class="cometchat-avatar__text" aria-hidden="true">{{ initials }}</span>
+  }
+</div>

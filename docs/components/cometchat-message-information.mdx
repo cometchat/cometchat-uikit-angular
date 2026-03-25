@@ -1,0 +1,199 @@
+---
+title: "CometChatMessageInformation"
+description: "A panel component for displaying detailed message information including delivery and read receipts"
+---
+The `CometChatMessageInformation` component displays detailed information about a message, including its content preview, sent timestamp, and delivery/read receipts with user avatars, names, and timestamps. It supports both one-on-one and group conversations with pagination for large groups.
+
+## Overview
+
+The Message Information panel provides:
+
+- **Message Preview**: Displays a truncated preview of the message content with media type icons
+- **Sent Timestamp**: Shows when the message was sent using configurable date formats
+- **Delivery Receipts**: Lists users who received the message with timestamps
+- **Read Receipts**: Lists users who read the message with timestamps
+- **Group Support**: Shows user avatars and names for group message receipts
+- **Pagination**: Supports scrolling to load more receipts in large groups
+- **Focus Trap**: Traps keyboard focus within the panel for modal-like behavior
+- **Error Handling**: Displays error state with retry option when receipt fetching fails
+
+
+<Info>
+  **Live Preview** — default message information preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-message-information--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-message-information--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Message Information — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Message Information Panel
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageInformationComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-info-demo',
+  standalone: true,
+  imports: [CometChatMessageInformationComponent],
+  template: `
+    <cometchat-message-information
+      [message]="selectedMessage"
+      (closeClick)="onClose()">
+    </cometchat-message-information>
+  `
+})
+export class MessageInfoDemoComponent {
+  selectedMessage!: CometChat.BaseMessage;
+
+  onClose(): void {
+    console.log('Panel closed');
+  }
+}
+```
+
+### With Custom Date Format
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageInformationComponent } from '@cometchat/chat-uikit-angular';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-info-custom',
+  standalone: true,
+  imports: [CometChatMessageInformationComponent],
+  template: `
+    <cometchat-message-information
+      [message]="selectedMessage"
+      [dateTimeFormat]="customDateFormat"
+      (closeClick)="onClose()">
+    </cometchat-message-information>
+  `
+})
+export class MessageInfoCustomComponent {
+  selectedMessage!: CometChat.BaseMessage;
+
+  customDateFormat: CalendarObject = {
+    today: 'hh:mm A',
+    yesterday: '[Yesterday] hh:mm A',
+    otherDays: 'MMM DD, YYYY hh:mm A',
+  };
+
+  onClose(): void {
+    console.log('Panel closed');
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.BaseMessage` | **required** | The message to display information for |
+| `dateTimeFormat` | `CalendarObject` | `undefined` | Custom date format for receipt timestamps. Falls back to a default format with `hh:mm A` for today, `[Yesterday] hh:mm A` for yesterday, and `DD/MM/YYYY hh:mm A` for other days |
+| `textFormatters` | `CometChatTextFormatter[]` | `[]` | Text formatters for processing message text content in the message bubble preview. Supports GlobalConfig fallback |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeClick` | `void` | Emitted when the panel close button is clicked or Escape key is pressed |
+
+## Customization
+
+### CSS Variables
+
+The Message Information component uses BEM-style CSS classes with extensive CSS variable overrides:
+
+```css expandable
+/* Panel container */
+.cometchat-message-information {
+  background: var(--cometchat-message-information-background, var(--cometchat-background-color-01));
+  border-radius: var(--cometchat-message-information-border-radius, inherit);
+}
+
+/* Header section */
+.cometchat-message-information__header {
+  padding: var(--cometchat-message-information-header-padding, var(--cometchat-spacing-3) var(--cometchat-spacing-4));
+  border-bottom: var(--cometchat-message-information-header-border-bottom, 1px solid var(--cometchat-border-color-light));
+}
+
+/* Title text */
+.cometchat-message-information__title {
+  font: var(--cometchat-message-information-title-font, var(--cometchat-font-heading4-medium));
+  color: var(--cometchat-message-information-title-color, var(--cometchat-text-color-primary));
+}
+
+/* Section titles (Delivered, Read) */
+.cometchat-message-information__section-title {
+  font: var(--cometchat-message-information-section-title-font, var(--cometchat-font-caption1-medium));
+  color: var(--cometchat-message-information-section-title-color, var(--cometchat-text-color-secondary));
+}
+
+/* Receipt user name */
+.cometchat-message-information__receipt-name {
+  font: var(--cometchat-message-information-receipt-name-font, var(--cometchat-font-heading4-medium));
+  color: var(--cometchat-message-information-receipt-name-color, var(--cometchat-text-color-primary));
+}
+
+/* Receipt timestamp */
+.cometchat-message-information__receipt-time {
+  font: var(--cometchat-message-information-receipt-time-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-message-information-receipt-time-color, var(--cometchat-text-color-secondary));
+}
+
+/* Close button */
+.cometchat-message-information__close-button {
+  background: var(--cometchat-message-information-close-button-background, transparent);
+  border-radius: var(--cometchat-message-information-close-button-border-radius, var(--cometchat-radius-max));
+}
+
+/* Retry button (error state) */
+.cometchat-message-information__retry-button {
+  background: var(--cometchat-message-information-retry-button-background, var(--cometchat-primary-color));
+  color: var(--cometchat-message-information-retry-button-color, var(--cometchat-static-white));
+  border-radius: var(--cometchat-message-information-retry-button-border-radius, var(--cometchat-radius-2));
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Escape**: Closes the panel from anywhere within it
+- **Tab**: Navigates between the close button, receipt items, and retry button
+- **Enter / Space**: Activates the close button or retry button
+
+### Focus Management
+
+The component activates a focus trap on initialization, keeping keyboard focus within the panel. Focus is returned to the previously focused element when the panel is destroyed.
+
+### Screen Reader Support
+
+- The panel has a descriptive `aria-label` for the overall component
+- The close button has an `aria-label` describing its action
+- Each receipt item includes an accessible label combining the receipt type (delivered/read), user name, and timestamp
+- Loading and error states are announced to assistive technologies
+
+### High Contrast & Reduced Motion
+
+- Supports `prefers-contrast: high` with stronger borders and outlines
+- Supports `prefers-reduced-motion: reduce` by disabling spinner and button transitions
+
+## Related Components
+
+- [CometChatMessageList](/components/cometchat-message-list) - Parent component that opens the message information panel
+- [CometChatMessageBubble](/components/cometchat-message-bubble) - Used internally to render the message preview
+- [CometChatAvatar](/components/cometchat-avatar) - Used to display user avatars in receipt items
+- [CometChatDate](/components/cometchat-date) - Used to format receipt timestamps

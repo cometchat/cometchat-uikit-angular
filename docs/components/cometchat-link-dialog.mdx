@@ -1,0 +1,174 @@
+---
+title: "CometChatLinkDialog"
+description: "A dialog component for adding and editing hyperlinks in the rich text message composer"
+---
+The `CometChatLinkDialog` component provides a modal dialog for adding or editing hyperlinks within the rich text editor. It includes input fields for link text and URL, with validation, and supports both "add" and "edit" modes.
+
+## Overview
+
+The Link Dialog component provides:
+
+- **Add Mode**: Create a new hyperlink with text and URL fields
+- **Edit Mode**: Modify an existing link's text and URL, with an additional "Remove" action
+- **URL Validation**: Validates URL format before saving and auto-prepends `https://` if no protocol is specified
+- **Pre-filled Values**: Supports initial text from editor selection or existing link data
+- **Focus Trap**: Keeps keyboard focus within the dialog while open
+- **Focus Restoration**: Returns focus to the previously focused element on close
+
+
+<Info>
+  **Live Preview** — default link dialog preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-link-dialog--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-link-dialog--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "400px", border: "1px solid #e0e0e0"}}
+  title="CometChat Link Dialog — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Add Link Mode
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatLinkDialogComponent, LinkData } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-link-dialog-demo',
+  standalone: true,
+  imports: [CometChatLinkDialogComponent],
+  template: `
+    <cometchat-link-dialog
+      [mode]="'add'"
+      [selectedText]="'Click here'"
+      (save)="onSave($event)"
+      (cancel)="onCancel()">
+    </cometchat-link-dialog>
+  `
+})
+export class LinkDialogAddDemoComponent {
+  onSave(linkData: LinkData): void {
+    console.log('Link saved:', linkData.text, linkData.url);
+  }
+
+  onCancel(): void {
+    console.log('Link dialog cancelled');
+  }
+}
+```
+
+### Edit Link Mode
+
+```typescript expandable
+@Component({
+  selector: 'app-link-dialog-edit-demo',
+  standalone: true,
+  imports: [CometChatLinkDialogComponent],
+  template: `
+    <cometchat-link-dialog
+      [mode]="'edit'"
+      [initialText]="'Example'"
+      [initialUrl]="'https://example.com'"
+      (save)="onSave($event)"
+      (remove)="onRemove()"
+      (cancel)="onCancel()">
+    </cometchat-link-dialog>
+  `
+})
+export class LinkDialogEditDemoComponent {
+  onSave(linkData: LinkData): void {
+    console.log('Link updated:', linkData);
+  }
+
+  onRemove(): void {
+    console.log('Link removed');
+  }
+
+  onCancel(): void {
+    console.log('Edit cancelled');
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `mode` | `'add' \| 'edit'` | `'add'` | Dialog mode — `'add'` for creating new links, `'edit'` for modifying existing links |
+| `initialText` | `string` | `''` | Initial text value for the link text field (used in edit mode or pre-filled add mode) |
+| `initialUrl` | `string` | `''` | Initial URL value for the URL field (used in edit mode) |
+| `selectedText` | `string` | `''` | Selected text from the editor, used as the default link text in add mode |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `save` | `LinkData` (`{ text: string; url: string }`) | Emitted when the save button is clicked with valid link data |
+| `cancel` | `void` | Emitted when the cancel button is clicked or Escape is pressed |
+| `remove` | `void` | Emitted when the remove button is clicked (edit mode only) |
+
+## Customization
+
+### CSS Variables
+
+The Link Dialog uses BEM-style CSS classes with CSS variable overrides:
+
+```css expandable
+/* Dialog container */
+.cometchat-link-dialog {
+  background: var(--cometchat-background-color-01);
+  border-radius: var(--cometchat-radius-3);
+}
+
+/* Title */
+.cometchat-link-dialog__title {
+  font: var(--cometchat-font-heading4-bold);
+  color: var(--cometchat-text-color-primary);
+}
+
+/* Input fields */
+.cometchat-link-dialog__input {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  border: 1px solid var(--cometchat-border-color-light);
+  border-radius: var(--cometchat-radius-2);
+}
+
+/* Error message */
+.cometchat-link-dialog__error {
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-error-color);
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Tab / Shift+Tab**: Cycles focus through all interactive elements within the dialog (focus trap)
+- **Escape**: Closes the dialog and restores focus to the previously focused element
+- **Enter**: Saves the link when pressed inside an input field (if valid)
+
+### Focus Management
+
+- Focus is trapped within the dialog while it is open
+- In add mode with no text, initial focus is set to the text input
+- In edit mode (or add mode with pre-filled text), initial focus is set to the URL input with text selected
+- On close, focus is restored to the element that was focused before the dialog opened
+
+### Screen Reader Support
+
+- The dialog uses `role="dialog"` with `aria-modal="true"`
+- `aria-labelledby` references the dialog title
+- Validation error messages are linked via `aria-describedby`
+- Input fields include associated labels
+
+## Related Components
+
+- [CometChatMessageComposer](/components/cometchat-message-composer) - Parent component that opens this dialog for link insertion
+- [CometChatLinkPopover](/components/cometchat-link-popover) - Inline popover for quick link edit/remove actions

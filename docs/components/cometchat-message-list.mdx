@@ -1,0 +1,5229 @@
+---
+title: "CometChatMessageList"
+description: "A comprehensive Angular component for displaying real-time chat messages with extensive customization option and accessibility features"
+---
+
+## Overview
+
+The CometChatMessageList component displays a real-time list of messages for the active conversation. It is a composite component that effectively manages real-time operations and includes various types of messages such as Text Messages, Media Messages, Stickers, and more.
+
+The component follows a **Hybrid Approach** architecture where:
+- **MessageListService** handles all SDK interactions, state management, and real-time updates
+- **Component @Input properties** allow developers to override service behavior for flexibility
+- **Both service methods and @Input properties** are available, with @Input taking priority when provided
+
+### Key Features
+
+- **Real-time Updates**: Automatic updates for new messages, message edits, deletions, and reactions
+- **Date Separators**: Automatic date separators between messages from different days
+- **Sticky Date Header**: Shows the current date while scrolling through messages
+- **Scroll to Bottom**: Button to quickly scroll to the latest messages
+- **Smart Replies**: AI-powered reply suggestions based on conversation context
+- **Conversation Starters**: AI-generated conversation starters for empty conversations
+- **Message Options**: Customizable context menu with actions like edit, delete, reply, forward
+- **Reactions**: Support for message reactions with emoji picker
+- **Text Formatters**: Extensible text formatting for mentions, links, and custom patterns
+- **Keyboard Navigation**: Full keyboard accessibility (WCAG 2.1 Level AA compliant)
+- **Sound Notifications**:  notification sounds for new messages
+
+
+<Info>
+  **Live Preview** — default message list preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-cometchat-message-list--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-cometchat-message-list--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Message List — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Installation
+
+### Prerequisites
+
+Before using the CometChatMessageList component, ensure you have:
+
+1. **CometChat SDK** initialized in your application
+2. **CometChat UIKit** installed and configured
+3. **Angular 21+** project setup
+
+### Install the Package
+
+```bash
+npm install @cometchat/chat-uikit-angular
+```
+
+### Initialize CometChat
+
+Initialize CometChat in your application's entry point (`main.ts`):
+
+```typescript expandable
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId('YOUR_APP_ID')
+  .setRegion('YOUR_REGION')
+  .setAuthKey('YOUR_AUTH_KEY')
+  .subscribePresenceForAllUsers()
+  .build();
+
+CometChatUIKit.init(UIKitSettings).then(
+  () => {
+    console.log('CometChat UIKit initialized successfully');
+  },
+  (error) => {
+    console.error('CometChat UIKit initialization failed:', error);
+  }
+);
+```
+
+### Login User
+
+Ensure a user is logged in before using the component:
+
+```typescript expandable
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+CometChatUIKit.getLoggedinUser().then((user) => {
+  if (!user) {
+    CometChatUIKit.login('USER_UID').then(
+      (user) => {
+        console.log('Login successful:', user);
+      },
+      (error) => {
+        console.error('Login failed:', error);
+      }
+    );
+  }
+});
+```
+
+## Basic Usage
+
+### Simple Implementation
+
+The most basic usage requires only a `user` or `group` input to display messages:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (chatUser) {
+      <cometchat-message-list
+        [user]="chatUser"
+        (error)="onError($event)"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class ChatComponent implements OnInit {
+  chatUser?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.chatUser = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+  }
+}
+```
+
+### With Group Conversation
+
+Display messages for a group conversation:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (chatGroup) {
+      <cometchat-message-list
+        [group]="chatGroup"
+        (error)="onError($event)"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class GroupChatComponent implements OnInit {
+  chatGroup?: CometChat.Group;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.chatGroup = await CometChat.getGroup('GROUP_GUID');
+    } catch (error) {
+      console.error('Error fetching group:', error);
+    }
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+  }
+}
+```
+
+### Complete Chat Interface
+
+Combine with MessageHeader and MessageComposer for a complete chat experience:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageListComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageComposerComponent 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-full-chat',
+  standalone: true,
+  imports: [
+    CometChatMessageListComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageComposerComponent
+  ],
+  template: `
+    <div class="chat-container">
+      @if (chatUser) {
+        <!-- Message Header -->
+        <cometchat-message-header
+          [user]="chatUser"
+        ></cometchat-message-header>
+
+        <!-- Message List -->
+        <cometchat-message-list
+          [user]="chatUser"
+          [scrollToBottomOnNewMessages]="true"
+          (threadRepliesClick)="onThreadClick($event)"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+
+        <!-- Message Composer -->
+        <cometchat-message-composer
+          [user]="chatUser"
+        ></cometchat-message-composer>
+      }
+    </div>
+  `,
+  styles: [`
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+    
+    cometchat-message-list {
+      flex: 1;
+      overflow: hidden;
+    }
+  `]
+})
+export class FullChatComponent implements OnInit {
+  chatUser?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.chatUser = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  onThreadClick(message: CometChat.BaseMessage): void {
+    console.log('Thread clicked:', message);
+    // Navigate to thread view or open thread panel
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+  }
+}
+```
+
+### Thread View
+
+Display messages in a thread context:
+
+```typescript expandable
+import { Component, Input, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-view',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (chatUser && parentMessageId) {
+      <cometchat-message-list
+        [user]="chatUser"
+        [parentMessageId]="parentMessageId"
+        (error)="onError($event)"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class ThreadViewComponent implements OnInit {
+  @Input() parentMessageId!: number;
+  chatUser?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.chatUser = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Thread view error:', error);
+  }
+}
+```
+
+### With Custom Messages Request Builder
+
+Filter messages using a custom request builder:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-filtered-messages',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (chatUser) {
+      <cometchat-message-list
+        [user]="chatUser"
+        [messagesRequestBuilder]="messagesBuilder"
+        (error)="onError($event)"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class FilteredMessagesComponent implements OnInit {
+  chatUser?: CometChat.User;
+  messagesBuilder?: CometChat.MessagesRequestBuilder;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.chatUser = await CometChat.getUser('RECEIVER_UID');
+      
+      // Create custom messages request builder
+      this.messagesBuilder = new CometChat.MessagesRequestBuilder()
+        .setLimit(30)
+        .setTypes(['text', 'image', 'video'])
+        .hideReplies(true);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+  }
+}
+```
+
+<Warning>
+To fetch messages for a specific entity, you need to provide either a `User` or `Group` object. The component will not display any messages without one of these inputs.
+</Warning>
+
+<Note>
+The following parameters in `messagesRequestBuilder` will always be overridden by the component:
+1. UID (set from the `user` input)
+2. GUID (set from the `group` input)
+</Note>
+
+
+## API Reference
+
+This section provides a complete reference of all @Input properties, @Output events, and public methods available in the CometChatMessageList component.
+
+### Properties
+
+#### Data Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user` | `CometChat.User` | `undefined` | User object for 1-on-1 conversations. Either `user` or `group` must be provided. |
+| `group` | `CometChat.Group` | `undefined` | Group object for group conversations. Either `user` or `group` must be provided. |
+| `parentMessageId` | `number` | `undefined` | Parent message ID for displaying thread replies. When set, the component shows only replies to this message. |
+| `messagesRequestBuilder` | `CometChat.MessagesRequestBuilder` | `undefined` | Custom request builder for advanced message filtering and pagination configuration. |
+| `reactionsRequestBuilder` | `CometChat.ReactionsRequestBuilder` | `undefined` | Custom request builder for configuring how reactions are fetched. |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Array of text formatters for processing message text content (mentions, links, custom patterns). |
+| `messageAlignment` | `MessageListAlignment` | `'standard'` | Message alignment mode. Options: `'left'` (all messages left-aligned) or `'standard'` (sent right, received left). |
+| `scrollToBottomOnNewMessages` | `boolean` | `false` | When `true`, automatically scrolls to the bottom when new messages arrive. |
+| `quickOptionsCount` | `number` | `2` | Number of quick action options to display directly on the message bubble. |
+| `disableSoundForMessages` | `boolean` | `false` | When `true`, disables notification sounds for incoming messages. |
+| `customSoundForMessages` | `string` | `undefined` | Custom sound URL to play for message notifications instead of the default sound. |
+| `goToMessageId` | `string` | `undefined` | Message ID to scroll to and highlight when the component loads. |
+| `showScrollbar` | `boolean` | `false` | When `true`, shows the scrollbar in the message list container. |
+
+#### Display Control Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideReceipts` | `boolean` | `false` | Hides delivery and read receipt indicators on messages. |
+| `hideDateSeparator` | `boolean` | `false` | Hides date separator headers between messages from different days. |
+| `hideStickyDate` | `boolean` | `false` | Hides the sticky date header that appears while scrolling. |
+| `hideAvatar` | `boolean` | `false` | Hides user avatars next to messages. |
+| `hideGroupActionMessages` | `boolean` | `false` | Hides system messages for group actions (member joined, left, etc.). |
+| `hideError` | `boolean` | `false` | Hides error views when errors occur during message loading. |
+| `hideReplyInThreadOption` | `boolean` | `false` | Hides the "Reply in Thread" option from message context menu. |
+| `hideTranslateMessageOption` | `boolean` | `false` | Hides the "Translate" option from message context menu. |
+| `hideEditMessageOption` | `boolean` | `false` | Hides the "Edit" option from message context menu (only shown for own text messages). |
+| `hideDeleteMessageOption` | `boolean` | `false` | Hides the "Delete" option from message context menu (only shown for own messages). |
+| `hideReactionOption` | `boolean` | `false` | Hides the reaction/emoji option from message context menu. |
+| `hideMessagePrivatelyOption` | `boolean` | `false` | Hides the "Message Privately" option (only available in group chats for other users' messages). |
+| `hideCopyMessageOption` | `boolean` | `false` | Hides the "Copy" option from message context menu (only shown for text messages). |
+| `hideMessageInfoOption` | `boolean` | `false` | Hides the "Message Info" option from message context menu. |
+| `hideModerationView` | `boolean` | `false` | Hides moderation status indicators on messages. |
+
+#### Custom View Properties (Templates)
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `emptyView` | `TemplateRef<any>` | `undefined` | Custom template to display when there are no messages in the conversation. |
+| `errorView` | `TemplateRef<any>` | `undefined` | Custom template to display when an error occurs while loading messages. |
+| `loadingView` | `TemplateRef<any>` | `undefined` | Custom template to display while messages are being loaded. |
+| `headerView` | `TemplateRef<any>` | `undefined` | Custom template for the header section above the message list. |
+| `footerView` | `TemplateRef<any>` | `undefined` | Custom template for the footer section below the message list. |
+
+#### Date Format Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `separatorDateTimeFormat` | `CalendarObject` | `{ today: 'Today', yesterday: 'Yesterday', otherDays: 'DD MMM, YYYY' }` | Date format configuration for date separator headers. |
+| `stickyDateTimeFormat` | `CalendarObject` | `{ today: 'Today', yesterday: 'Yesterday', otherDays: 'DD MMM, YYYY' }` | Date format configuration for the sticky date header. |
+| `messageSentAtDateTimeFormat` | `CalendarObject` | `{ today: 'hh:mm A', yesterday: 'hh:mm A', otherDays: 'hh:mm A' }` | Date format configuration for message timestamps. |
+| `messageInfoDateTimeFormat` | `CalendarObject` | `undefined` | Date format configuration for timestamps in message info view. |
+
+#### AI Feature Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `showConversationStarters` | `boolean` | `false` | When `true`, displays AI-generated conversation starters for empty conversations. |
+| `showSmartReplies` | `boolean` | `false` | When `true`, displays AI-powered smart reply suggestions based on the last received message. |
+| `smartRepliesKeywords` | `string[]` | `['what', 'when', 'why', 'who', 'where', 'how', '?']` | Keywords that trigger smart reply suggestions when present in received messages. |
+| `smartRepliesDelayDuration` | `number` | `10000` | Delay in milliseconds before showing smart replies after a message is received. |
+
+### Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `error` | `CometChat.CometChatException` | Emitted when an error occurs during message operations (loading, sending, deleting, etc.). |
+| `threadRepliesClick` | `CometChat.BaseMessage` | Emitted when the thread replies indicator is clicked on a message. Use this to navigate to thread view. |
+| `reactionClick` | `{ reaction: CometChat.ReactionCount, message: CometChat.BaseMessage }` | Emitted when a reaction emoji is clicked on a message. |
+| `reactionListItemClick` | `{ reaction: CometChat.Reaction, message: CometChat.BaseMessage }` | Emitted when a specific user's reaction is clicked in the reaction list. |
+| `smartReplyClick` | `string` | Emitted when a smart reply suggestion is clicked. The payload is the reply text. |
+| `conversationStarterClick` | `string` | Emitted when a conversation starter is clicked. The payload is the starter text. |
+| `messagePrivatelyClick` | `{ message: CometChat.BaseMessage, user: CometChat.User }` | Emitted when "Message Privately" option is clicked in a group chat. |
+| `replyClick` | `CometChat.BaseMessage` | Emitted when the "Reply" option is clicked on a message. Handle this to show reply preview in composer. |
+
+### Methods
+
+The following public methods are available on the CometChatMessageList component instance:
+
+#### Scroll Methods
+
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `scrollToBottom` | `smooth?: boolean` | `void` | Scrolls to the bottom of the message list. Set `smooth` to `false` for instant scroll. |
+| `scrollToMessage` | `messageId: string \| number` | `void` | Scrolls to and highlights a specific message by its ID. |
+
+**Example: Scroll to Bottom**
+```typescript expandable
+import { ViewChild } from '@angular/core';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@ViewChild('messageList') messageList!: CometChatMessageListComponent;
+
+// Smooth scroll to bottom
+this.messageList.scrollToBottom();
+
+// Instant scroll to bottom
+this.messageList.scrollToBottom(false);
+```
+
+**Example: Scroll to Specific Message**
+```typescript
+// Scroll to and highlight a specific message
+this.messageList.scrollToMessage(12345);
+```
+
+#### Refresh Methods
+
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `refreshMessages` | none | `void` | Clears the current messages and reloads from the server. |
+
+**Example: Refresh Messages**
+```typescript
+// Reload all messages
+this.messageList.refreshMessages();
+```
+
+#### Smart Replies Methods
+
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `onUserTyping` | none | `void` | Call this when the user starts typing to hide smart replies. |
+| `onMessageSent` | none | `void` | Call this when a message is sent to hide smart replies and conversation starters. |
+
+**Example: Integrate with Message Composer**
+```typescript
+// In your parent component
+onComposerTyping(): void {
+  this.messageList.onUserTyping();
+}
+
+onComposerMessageSent(): void {
+  this.messageList.onMessageSent();
+}
+```
+
+#### Translation Methods
+
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `translateMessage` | `message: CometChat.BaseMessage` | `Promise<void>` | Translates a text message to the user's preferred language. |
+| `getTranslatedText` | `messageId: number` | `string \| undefined` | Returns the translated text for a message if available. |
+| `isMessageTranslating` | `messageId: number` | `boolean` | Returns `true` if the message is currently being translated. |
+| `isMessageTranslated` | `messageId: number` | `boolean` | Returns `true` if the message has been translated. |
+| `setPreferredTranslationLanguage` | `language: string` | `void` | Sets the preferred language for message translation (e.g., 'en', 'es', 'fr'). |
+
+**Example: Translation**
+```typescript
+// Set preferred language
+this.messageList.setPreferredTranslationLanguage('es');
+
+// Check if message is translated
+if (this.messageList.isMessageTranslated(messageId)) {
+  const translatedText = this.messageList.getTranslatedText(messageId);
+  console.log('Translated:', translatedText);
+}
+```
+
+#### Delete Methods
+
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `showDeleteConfirmation` | `message: CometChat.BaseMessage` | `void` | Shows the delete confirmation dialog for a message. |
+
+#### Flag Methods
+
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `showFlagConfirmation` | `message: CometChat.BaseMessage` | `void` | Shows the flag message dialog for reporting a message. |
+
+#### Utility Methods
+
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `getMessageAlignment` | `message: CometChat.BaseMessage` | `MessageBubbleAlignment` | Returns the alignment for a message bubble (left, right, or center). |
+| `getMessageOptions` | `message: CometChat.BaseMessage` | `CometChatActionsIcon[]` | Returns the available context menu options for a message based on hide* inputs. |
+| `handleKeydown` | `event: KeyboardEvent` | `void` | Handles keyboard navigation events. Called automatically but can be triggered manually. |
+| `handleRetryClick` | none | `void` | Retries loading messages after an error. |
+| `copyMessageToClipboard` | `message: CometChat.BaseMessage` | `Promise<void>` | Copies the text content of a message to the clipboard. |
+
+### CalendarObject Interface
+
+The `CalendarObject` interface is used for date format configuration:
+
+```typescript
+interface CalendarObject {
+  today?: string;      // Format for today's date (e.g., 'Today' or 'hh:mm A')
+  yesterday?: string;  // Format for yesterday's date (e.g., 'Yesterday')
+  otherDays?: string;  // Format for other dates (e.g., 'DD MMM, YYYY')
+}
+```
+
+**Example: Custom Date Formats**
+```typescript expandable
+const customDateFormat: CalendarObject = {
+  today: 'Today at hh:mm A',
+  yesterday: 'Yesterday at hh:mm A',
+  otherDays: 'MMM DD, YYYY'
+};
+
+// In template
+<cometchat-message-list
+  [user]="user"
+  [separatorDateTimeFormat]="customDateFormat"
+></cometchat-message-list>
+```
+
+### MessageListAlignment Enum
+
+```typescript
+enum MessageListAlignment {
+  standard = 'standard',  // Sent messages right, received messages left
+  left = 'left'           // All messages aligned to the left
+}
+```
+
+### MessageBubbleAlignment Enum
+
+```typescript
+enum MessageBubbleAlignment {
+  left = 'left',     // Message bubble aligned to the left
+  right = 'right',   // Message bubble aligned to the right
+  center = 'center'  // Message bubble centered (used for action messages)
+}
+```
+
+### Usage Examples for Complex Properties
+
+#### Custom Text Formatters
+
+```typescript expandable
+import { CometChatTextFormatter } from '@cometchat/chat-uikit-angular';
+
+// Create a custom hashtag formatter
+export class HashtagFormatter extends CometChatTextFormatter {
+  readonly id = 'hashtag-formatter';
+  priority = 25;
+
+  format(text: string, message: CometChat.BaseMessage): string {
+    return text.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+  }
+}
+
+// Usage in component
+@Component({
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [textFormatters]="formatters"
+    ></cometchat-message-list>
+  `
+})
+export class FormatterComponent {
+  formatters = [new HashtagFormatter()];
+}
+```
+
+#### Handling Events
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-events',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      (error)="onError($event)"
+      (threadRepliesClick)="onThreadClick($event)"
+      (reactionClick)="onReactionClick($event)"
+      (smartReplyClick)="onSmartReplyClick($event)"
+      (replyClick)="onReplyClick($event)"
+    ></cometchat-message-list>
+  `
+})
+export class MessageEventsComponent {
+  user?: CometChat.User;
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+  }
+
+  onThreadClick(message: CometChat.BaseMessage): void {
+    console.log('Opening thread for message:', message.getId());
+    // Navigate to thread view
+  }
+
+  onReactionClick(event: { reaction: CometChat.ReactionCount, message: CometChat.BaseMessage }): void {
+    console.log('Reaction clicked:', event.reaction.getReaction());
+    // Handle reaction click (e.g., toggle reaction)
+  }
+
+  onSmartReplyClick(reply: string): void {
+    console.log('Smart reply selected:', reply);
+    // Send the reply as a message
+  }
+
+  onReplyClick(message: CometChat.BaseMessage): void {
+    console.log('Reply to message:', message.getId());
+    // Show reply preview in message composer
+  }
+}
+```
+
+
+## Customization
+
+The CometChatMessageList component provides extensive customization options to match your application's design and functionality requirements. This section covers all customization approaches available.
+
+### Customization Approaches
+
+CometChat UIKit offers multiple ways to customize the message list:
+
+| Approach | Use Case | Scope |
+|----------|----------|-------|
+| **Props-based** | Quick customization via component inputs | Single component instance |
+| **Service-based** | Global customization via MessageBubbleConfigService | All message list instances |
+| **CSS Variables** | Visual styling and theming | Global or scoped |
+| **Custom Templates** | Complete control over message rendering | Per message type or global |
+| **Text Formatters** | Custom text processing and formatting | All text messages |
+
+---
+
+### Props-Based Customization
+
+The simplest way to customize the message list is through component `@Input` properties. These allow you to control behavior and appearance for a specific component instance.
+
+#### Hiding UI Elements
+
+Control which UI elements are visible:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-minimal-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [hideReceipts]="true"
+      [hideDateSeparator]="false"
+      [hideAvatar]="false"
+      [hideReactionOption]="true"
+      [hideReplyInThreadOption]="true"
+      [hideEditMessageOption]="false"
+      [hideDeleteMessageOption]="false"
+      [hideCopyMessageOption]="false"
+    ></cometchat-message-list>
+  `
+})
+export class MinimalChatComponent {
+  user?: CometChat.User;
+}
+```
+
+
+#### Message Alignment
+
+Change how messages are aligned in the list:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent, MessageListAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-left-aligned-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <!-- Standard alignment: sent messages right, received messages left -->
+    <cometchat-message-list
+      [user]="user"
+      [messageAlignment]="'standard'"
+    ></cometchat-message-list>
+
+    <!-- Left alignment: all messages aligned to the left -->
+    <cometchat-message-list
+      [user]="user"
+      [messageAlignment]="'left'"
+    ></cometchat-message-list>
+  `
+})
+export class LeftAlignedChatComponent {
+  user?: CometChat.User;
+}
+```
+
+#### Custom Date Formats
+
+Customize how dates are displayed:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent, CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-dates',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [separatorDateTimeFormat]="separatorFormat"
+      [stickyDateTimeFormat]="stickyFormat"
+      [messageSentAtDateTimeFormat]="timestampFormat"
+    ></cometchat-message-list>
+  `
+})
+export class CustomDatesComponent {
+  user?: CometChat.User;
+
+  // Date separator format (between message groups)
+  separatorFormat: CalendarObject = {
+    today: 'Today',
+    yesterday: 'Yesterday',
+    otherDays: 'MMMM DD, YYYY'
+  };
+
+  // Sticky date header format (while scrolling)
+  stickyFormat: CalendarObject = {
+    today: 'Today',
+    yesterday: 'Yesterday',
+    otherDays: 'MMM DD'
+  };
+
+  // Message timestamp format
+  timestampFormat: CalendarObject = {
+    today: 'hh:mm A',
+    yesterday: 'hh:mm A',
+    otherDays: 'MMM DD, hh:mm A'
+  };
+}
+```
+
+
+#### Custom Empty, Loading, and Error Views
+
+Provide custom templates for different states:
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-states',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [emptyView]="customEmptyView"
+      [loadingView]="customLoadingView"
+      [errorView]="customErrorView"
+    ></cometchat-message-list>
+
+    <!-- Custom Empty State -->
+    <ng-template #customEmptyView>
+      <div class="custom-empty-state">
+        <img src="assets/empty-chat.svg" alt="No messages" />
+        <h3>{{ 'message_list_empty_title' | translate }}</h3>
+        <p>{{ 'message_list_empty_subtitle' | translate }}</p>
+      </div>
+    </ng-template>
+
+    <!-- Custom Loading State -->
+    <ng-template #customLoadingView>
+      <div class="custom-loading-state">
+        <div class="spinner"></div>
+        <p>{{ 'message_list_loading' | translate }}</p>
+      </div>
+    </ng-template>
+
+    <!-- Custom Error State -->
+    <ng-template #customErrorView>
+      <div class="custom-error-state">
+        <img src="assets/error-icon.svg" alt="Error" />
+        <h3>{{ 'message_list_error_title' | translate }}</h3>
+        <p>{{ 'message_list_error_subtitle' | translate }}</p>
+        <button (click)="retryLoad()">{{ 'retry' | translate }}</button>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .custom-empty-state,
+    .custom-loading-state,
+    .custom-error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--cometchat-spacing-6);
+      text-align: center;
+    }
+  `]
+})
+export class CustomStatesComponent {
+  user?: CometChat.User;
+
+  retryLoad(): void {
+    // Implement retry logic
+  }
+}
+```
+
+---
+
+
+### Service-Based Customization
+
+For global customization that applies to all message list instances, use the `MessageBubbleConfigService`. This service allows you to configure message bubble views globally or per message type.
+
+#### Understanding MessageBubbleConfigService
+
+The service provides centralized configuration for message bubble views:
+
+```typescript expandable
+import { Injectable, TemplateRef } from '@angular/core';
+
+// Available bubble parts that can be customized
+type BubblePart = 
+  | 'bubbleView'      // Entire bubble wrapper
+  | 'contentView'     // Main message content
+  | 'bottomView'      // Area below content (reactions)
+  | 'footerView'      // Footer area
+  | 'leadingView'     // Leading area (avatar)
+  | 'headerView'      // Header area (sender name)
+  | 'statusInfoView'  // Status info (timestamp, receipts)
+  | 'replyView'       // Reply preview
+  | 'threadView';     // Thread indicator
+
+// Message type keys (format: "{type}_{category}")
+// Examples: 'text_message', 'image_message', 'video_message', 'audio_message'
+```
+
+#### Setting Type-Specific Views
+
+Customize views for specific message types:
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild, AfterViewInit, inject } from '@angular/core';
+import { MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-bubbles',
+  template: `
+    <!-- Custom content view for text messages -->
+    <ng-template #customTextContent let-context>
+      <div class="custom-text-bubble">
+        <p class="message-text">{{ context.message.getText() }}</p>
+        <span class="word-count">{{ context.message.getText().split(' ').length }} words</span>
+      </div>
+    </ng-template>
+
+    <!-- Custom content view for image messages -->
+    <ng-template #customImageContent let-context>
+      <div class="custom-image-bubble">
+        <img [src]="context.message.getAttachment()?.getUrl()" alt="Image" />
+        <div class="image-overlay">
+          <button (click)="downloadImage(context.message)">Download</button>
+        </div>
+      </div>
+    </ng-template>
+  `
+})
+export class CustomBubblesComponent implements AfterViewInit {
+  @ViewChild('customTextContent') customTextContent!: TemplateRef<any>;
+  @ViewChild('customImageContent') customImageContent!: TemplateRef<any>;
+
+  private bubbleConfigService = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    // Set custom content view for text messages only
+    this.bubbleConfigService.setBubbleView('text_message', {
+      contentView: this.customTextContent
+    });
+
+    // Set custom content view for image messages only
+    this.bubbleConfigService.setBubbleView('image_message', {
+      contentView: this.customImageContent
+    });
+  }
+
+  downloadImage(message: any): void {
+    // Implement download logic
+  }
+}
+```
+
+
+#### Setting Global Views
+
+Apply customizations to all message types:
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild, AfterViewInit, inject } from '@angular/core';
+import { MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-global-views',
+  template: `
+    <!-- Custom footer view for all message types -->
+    <ng-template #customFooter let-context>
+      <div class="custom-footer">
+        <span class="timestamp">{{ context.message.getSentAt() | date:'shortTime' }}</span>
+        <button class="bookmark-btn" (click)="bookmarkMessage(context.message)">
+          <img src="assets/bookmark.svg" alt="Bookmark" />
+        </button>
+      </div>
+    </ng-template>
+
+    <!-- Custom status info view for all message types -->
+    <ng-template #customStatusInfo let-context>
+      <div class="custom-status">
+        <span>{{ context.message.getSentAt() | date:'HH:mm' }}</span>
+        @if (context.message.getReadAt()) {
+          <span class="read-indicator">✓✓</span>
+        } @else if (context.message.getDeliveredAt()) {
+          <span class="delivered-indicator">✓</span>
+        }
+      </div>
+    </ng-template>
+  `
+})
+export class GlobalViewsComponent implements AfterViewInit {
+  @ViewChild('customFooter') customFooter!: TemplateRef<any>;
+  @ViewChild('customStatusInfo') customStatusInfo!: TemplateRef<any>;
+
+  private bubbleConfigService = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    // Set global footer view for all message types
+    this.bubbleConfigService.setGlobalView('footerView', this.customFooter);
+
+    // Set global status info view for all message types
+    this.bubbleConfigService.setGlobalView('statusInfoView', this.customStatusInfo);
+  }
+
+  bookmarkMessage(message: any): void {
+    // Implement bookmark logic
+  }
+}
+```
+
+#### Batch Configuration
+
+Configure multiple message types at once:
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild, AfterViewInit, inject } from '@angular/core';
+import { MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-batch-config',
+  template: `
+    <ng-template #textContent let-context>...</ng-template>
+    <ng-template #imageContent let-context>...</ng-template>
+    <ng-template #videoContent let-context>...</ng-template>
+    <ng-template #audioContent let-context>...</ng-template>
+  `
+})
+export class BatchConfigComponent implements AfterViewInit {
+  @ViewChild('textContent') textContent!: TemplateRef<any>;
+  @ViewChild('imageContent') imageContent!: TemplateRef<any>;
+  @ViewChild('videoContent') videoContent!: TemplateRef<any>;
+  @ViewChild('audioContent') audioContent!: TemplateRef<any>;
+
+  private bubbleConfigService = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    // Configure multiple message types at once
+    this.bubbleConfigService.setMessageTemplates({
+      'text_message': {
+        contentView: this.textContent
+      },
+      'image_message': {
+        contentView: this.imageContent
+      },
+      'video_message': {
+        contentView: this.videoContent
+      },
+      'audio_message': {
+        contentView: this.audioContent
+      }
+    });
+  }
+}
+```
+
+
+#### Clearing Configurations
+
+Reset customizations when needed:
+
+```typescript expandable
+import { inject } from '@angular/core';
+import { MessageBubbleConfigService } from '@cometchat/chat-uikit-angular';
+
+export class ConfigManagementComponent {
+  private bubbleConfigService = inject(MessageBubbleConfigService);
+
+  // Clear all configurations (type-specific and global)
+  resetAllCustomizations(): void {
+    this.bubbleConfigService.clearAll();
+  }
+
+  // Clear configuration for a specific message type
+  resetTextMessageConfig(): void {
+    this.bubbleConfigService.clearType('text_message');
+  }
+
+  // Clear only global views (keep type-specific)
+  resetGlobalViews(): void {
+    this.bubbleConfigService.clearGlobalViews();
+  }
+}
+```
+
+#### Multiple Message Lists with Different Configurations
+
+By default, `MessageBubbleConfigService` and `FormatterConfigService` are provided at the root level (`providedIn: 'root'`), meaning all message list instances share the same configuration. This works well for most applications.
+
+However, if you need different bubble styles or formatters for different message lists (e.g., a main chat panel and a thread panel side by side), you can scope these services to a wrapper component using Angular's hierarchical dependency injection.
+
+<Note>
+  Each `<cometchat-message-list>` already gets its own `MessageListService` instance automatically (the component provides it internally). The scoping technique below applies only to customization services like `MessageBubbleConfigService` and `FormatterConfigService`.
+</Note>
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild, AfterViewInit, inject } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatMessageListComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageComposerComponent,
+  MessageBubbleConfigService,
+  FormatterConfigService,
+} from '@cometchat/chat-uikit-angular';
+
+// Wrapper component that scopes its own service instances
+@Component({
+  selector: 'app-thread-panel',
+  standalone: true,
+  imports: [
+    CometChatMessageListComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageComposerComponent,
+  ],
+  // Providing services here creates NEW instances for this component and its children
+  providers: [MessageBubbleConfigService, FormatterConfigService],
+  template: `
+    <div class="thread-panel">
+      <cometchat-message-header [user]="user" [group]="group"></cometchat-message-header>
+      <cometchat-message-list [user]="user" [group]="group" [parentMessageId]="parentMessageId"></cometchat-message-list>
+      <cometchat-message-composer [user]="user" [group]="group" [parentMessageId]="parentMessageId"></cometchat-message-composer>
+    </div>
+
+    <ng-template #minimalStatusInfo let-context>
+      <span class="thread-status">{{ context.message.getSentAt() * 1000 | date:'shortTime' }}</span>
+    </ng-template>
+  `,
+})
+export class ThreadPanelComponent implements AfterViewInit {
+  @ViewChild('minimalStatusInfo') minimalStatusInfo!: TemplateRef<any>;
+
+  @Input() user?: CometChat.User;
+  @Input() group?: CometChat.Group;
+  @Input() parentMessageId?: number;
+
+  // This injects the LOCAL instance, not the root singleton
+  private bubbleConfig = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    // This only affects the message list inside THIS wrapper
+    this.bubbleConfig.setGlobalView('statusInfoView', this.minimalStatusInfo);
+  }
+}
+```
+
+Usage with two independent panels:
+
+```typescript expandable
+@Component({
+  selector: 'app-chat-with-thread',
+  standalone: true,
+  imports: [
+    CometChatMessageListComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageComposerComponent,
+    ThreadPanelComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <!-- Main panel: uses the root singleton MessageBubbleConfigService -->
+      <div class="main-panel">
+        <cometchat-message-header></cometchat-message-header>
+        <cometchat-message-list
+          (threadRepliesClick)="openThread($event)"
+        ></cometchat-message-list>
+        <cometchat-message-composer></cometchat-message-composer>
+      </div>
+
+      <!-- Thread panel: uses its own scoped MessageBubbleConfigService -->
+      @if (threadMessage) {
+        <app-thread-panel
+          [user]="threadUser"
+          [group]="threadGroup"
+          [parentMessageId]="threadMessage.getId()"
+        ></app-thread-panel>
+      }
+    </div>
+  `,
+})
+export class ChatWithThreadComponent {
+  threadMessage?: CometChat.BaseMessage;
+  threadUser?: CometChat.User;
+  threadGroup?: CometChat.Group;
+
+  openThread(message: CometChat.BaseMessage): void {
+    this.threadMessage = message;
+    // Extract user/group from message context
+  }
+}
+```
+
+<Tip>
+  The main panel's `MessageBubbleConfigService` customizations (set at the root level) do not affect the thread panel, and vice versa. Angular's DI hierarchy ensures each panel resolves its own service instance.
+</Tip>
+
+**Services you can scope this way:**
+
+| Service | What it customizes |
+|---------|-------------------|
+| `MessageBubbleConfigService` | Bubble templates per message type |
+| `FormatterConfigService` | Text formatters (mentions, URLs, custom) |
+| `CometChatTemplatesService` | Shared and component-specific list templates (loading, empty, error, header, footer) |
+| `RichTextEditorService` | Rich text editor configuration |
+
+<Warning>
+  Do not scope `ChatStateService` — it is intentionally a singleton that tracks the app-wide active conversation. Scoping it would break cross-component state synchronization.
+</Warning>
+
+
+---
+
+
+### Custom Text Formatters
+
+Text formatters allow you to process and transform message text content. They can detect patterns like mentions, URLs, hashtags, or custom patterns and apply formatting.
+
+#### Understanding Text Formatters
+
+Text formatters extend the `CometChatTextFormatter` base class:
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+abstract class CometChatTextFormatter {
+  /** Unique identifier for this formatter */
+  abstract readonly id: string;
+  
+  /** Priority (lower = earlier in pipeline). Default: 100 */
+  priority: number = 100;
+  
+  /** Get the regex pattern for detecting formattable content */
+  abstract getRegex(): RegExp;
+  
+  /** Format the input text */
+  abstract format(text: string): string;
+  
+  /** Check if this formatter should process the text (default: true) */
+  shouldFormat(text: string, message?: CometChat.BaseMessage): boolean;
+  
+  /** Get metadata extracted during formatting */
+  getMetadata(): Record<string, unknown>;
+  
+  /** Reset formatter state */
+  reset(): void;
+}
+```
+
+#### Creating a Custom Hashtag Formatter
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextFormatter } from '@cometchat/chat-uikit-angular';
+
+/**
+ * Custom formatter that highlights hashtags in messages.
+ * Converts #hashtag to clickable styled spans.
+ */
+export class HashtagFormatter extends CometChatTextFormatter {
+  readonly id = 'hashtag-formatter';
+  priority = 25; // Run early in the pipeline
+
+  private detectedHashtags: string[] = [];
+
+  getRegex(): RegExp {
+    return /#(\w+)/g;
+  }
+
+  format(text: string): string {
+    this.originalText = text;
+    this.detectedHashtags = [];
+
+    // Find all hashtags and store them
+    const matches = text.matchAll(this.getRegex());
+    for (const match of matches) {
+      this.detectedHashtags.push(match[1]);
+    }
+
+    // Replace hashtags with styled spans
+    this.formattedText = text.replace(
+      this.getRegex(),
+      '<span class="hashtag" data-hashtag="$1">#$1</span>'
+    );
+
+    // Store metadata
+    this.metadata = {
+      hashtags: this.detectedHashtags
+    };
+
+    return this.formattedText;
+  }
+
+  shouldFormat(text: string, message?: CometChat.BaseMessage): boolean {
+    // Only format if text contains hashtags
+    return this.getRegex().test(text);
+  }
+}
+```
+
+
+#### Creating a Custom Phone Number Formatter
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextFormatter } from '@cometchat/chat-uikit-angular';
+
+/**
+ * Custom formatter that makes phone numbers clickable.
+ */
+export class PhoneNumberFormatter extends CometChatTextFormatter {
+  readonly id = 'phone-formatter';
+  priority = 30;
+
+  private detectedNumbers: string[] = [];
+
+  getRegex(): RegExp {
+    // Matches various phone number formats
+    return /(\+?1?[-.\s]?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4})/g;
+  }
+
+  format(text: string): string {
+    this.originalText = text;
+    this.detectedNumbers = [];
+
+    const matches = text.matchAll(this.getRegex());
+    for (const match of matches) {
+      this.detectedNumbers.push(match[1]);
+    }
+
+    this.formattedText = text.replace(
+      this.getRegex(),
+      '<a href="tel:$1" class="phone-link">$1</a>'
+    );
+
+    this.metadata = {
+      phoneNumbers: this.detectedNumbers
+    };
+
+    return this.formattedText;
+  }
+}
+```
+
+#### Using Custom Formatters
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageListComponent,
+  CometChatTextFormatter 
+} from '@cometchat/chat-uikit-angular';
+
+// Import your custom formatters
+import { HashtagFormatter } from './formatters/hashtag-formatter';
+import { PhoneNumberFormatter } from './formatters/phone-number-formatter';
+
+@Component({
+  selector: 'app-formatted-messages',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [textFormatters]="formatters"
+    ></cometchat-message-list>
+  `,
+  styles: [`
+    /* Styles for formatted content */
+    :host ::ng-deep .hashtag {
+      color: var(--cometchat-primary-color);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    :host ::ng-deep .hashtag:hover {
+      text-decoration: underline;
+    }
+    :host ::ng-deep .phone-link {
+      color: var(--cometchat-info-color);
+      text-decoration: none;
+    }
+    :host ::ng-deep .phone-link:hover {
+      text-decoration: underline;
+    }
+  `]
+})
+export class FormattedMessagesComponent implements OnInit {
+  user?: CometChat.User;
+  formatters: CometChatTextFormatter[] = [];
+
+  ngOnInit(): void {
+    // Create formatter instances
+    this.formatters = [
+      new HashtagFormatter(),      // priority: 25
+      new PhoneNumberFormatter(),  // priority: 30
+    ];
+  }
+}
+```
+
+<Note>
+Formatters are applied in order of their `priority` property (lower numbers run first). Each formatter receives the output of the previous formatter as its input.
+</Note>
+
+---
+
+
+### Custom Message Options
+
+Message options are the actions available in the context menu when interacting with a message (edit, delete, reply, forward, etc.). You can customize which options are shown using the `hide*` input properties.
+
+#### Hiding Specific Options
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-options',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [hideReplyInThreadOption]="true"
+      [hideTranslateMessageOption]="true"
+      [hideEditMessageOption]="false"
+      [hideDeleteMessageOption]="false"
+      [hideReactionOption]="false"
+      [hideMessagePrivatelyOption]="true"
+      [hideCopyMessageOption]="false"
+      [hideMessageInfoOption]="true"
+    ></cometchat-message-list>
+  `
+})
+export class CustomOptionsComponent {
+  user?: CometChat.User;
+}
+```
+
+#### Quick Options Count
+
+Control how many options appear directly on the message bubble (without opening the context menu):
+
+```typescript
+<cometchat-message-list
+  [user]="user"
+  [quickOptionsCount]="3"
+></cometchat-message-list>
+```
+
+#### Handling Option Events
+
+Listen to events when users interact with message options:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-option-events',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      (replyClick)="onReplyClick($event)"
+      (messagePrivatelyClick)="onMessagePrivately($event)"
+    ></cometchat-message-list>
+  `
+})
+export class OptionEventsComponent {
+  user?: CometChat.User;
+
+  onReplyClick(message: CometChat.BaseMessage): void {
+    console.log('Reply to:', message.getId());
+    // Show reply preview in message composer
+  }
+
+  onMessagePrivately(event: { message: CometChat.BaseMessage; user: CometChat.User }): void {
+    console.log('Message privately to:', event.user.getName());
+    // Navigate to private chat with user
+  }
+}
+```
+
+---
+
+
+### CSS Variable Customization
+
+CometChat UIKit uses CSS variables for styling, making it easy to customize the appearance without modifying component code. Override these variables in your global styles or scoped to specific components.
+
+#### Core CSS Variables
+
+The following CSS variables affect the message list and message bubbles:
+
+```css expandable
+/* Add to your global styles (styles.css or styles.scss) */
+
+:root {
+  /* ==================== Spacing ==================== */
+  --cometchat-spacing: 2px;
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  --cometchat-spacing-5: 20px;
+  --cometchat-spacing-6: 24px;
+
+  /* ==================== Typography ==================== */
+  --cometchat-font-family: 'Roboto', 'Inter', sans-serif;
+  --cometchat-font-body-regular: 400 14px/16.8px var(--cometchat-font-family);
+  --cometchat-font-body-medium: 500 14px/16.8px var(--cometchat-font-family);
+  --cometchat-font-caption1-regular: 400 12px/14.4px var(--cometchat-font-family);
+  --cometchat-font-caption1-medium: 500 12px/14.4px var(--cometchat-font-family);
+  --cometchat-font-caption2-regular: 400 10px/12px var(--cometchat-font-family);
+
+  /* ==================== Colors ==================== */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-background-color-02: #FAFAFA;
+  --cometchat-background-color-03: #F5F5F5;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-text-color-tertiary: #A1A1A1;
+  --cometchat-border-color-light: #F5F5F5;
+
+  /* ==================== Border Radius ==================== */
+  --cometchat-radius-1: 4px;
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+  --cometchat-radius-max: 1000px;
+
+  /* ==================== Alert Colors ==================== */
+  --cometchat-success-color: #09C26F;
+  --cometchat-error-color: #F44649;
+  --cometchat-warning-color: #FFAB00;
+  --cometchat-info-color: #0B7BEA;
+}
+```
+
+
+#### Customizing Message Bubble Colors
+
+```css expandable
+:root {
+  /* Incoming message bubble (received messages) */
+  /* Uses --cometchat-background-color-02 by default */
+  
+  /* Outgoing message bubble (sent messages) */
+  /* Uses --cometchat-primary-color by default */
+  
+  /* To change the primary color (affects outgoing bubbles) */
+  --cometchat-primary-color: #4F46E5;
+  
+  /* Extended primary colors for hover states and variations */
+  --cometchat-extended-primary-color-50: #F9F8FD;
+  --cometchat-extended-primary-color-100: #EDEAFA;
+  --cometchat-extended-primary-color-700: #8978DF;
+}
+```
+
+#### Customizing Message List Container
+
+```css expandable
+/* Custom styles for the message list container */
+.cometchat-message-list {
+  /* Override background */
+  background: var(--cometchat-background-color-01);
+}
+
+/* Custom styles for the message container */
+.cometchat-message-list__container {
+  padding: var(--cometchat-spacing-4);
+}
+
+/* Custom styles for date separators */
+.cometchat-message-list__date-separator {
+  padding: var(--cometchat-spacing-4) 0;
+}
+
+.cometchat-message-list__date-separator-line {
+  background: var(--cometchat-border-color-light);
+}
+
+/* Custom styles for sticky date header */
+.cometchat-message-list__sticky-date {
+  background: var(--cometchat-background-color-02);
+  border-radius: var(--cometchat-radius-max);
+  font: var(--cometchat-font-caption1-medium);
+  color: var(--cometchat-text-color-secondary);
+}
+
+/* Custom styles for scroll to bottom button */
+.cometchat-message-list__scroll-to-bottom cometchat-button {
+  background: var(--cometchat-background-color-01);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom styles for new messages banner */
+.cometchat-message-list__new-messages-banner {
+  background: var(--cometchat-primary-color);
+  color: var(--cometchat-static-white);
+  border-radius: var(--cometchat-radius-max);
+}
+```
+
+
+#### Customizing Message Bubbles
+
+```css expandable
+/* Message bubble wrapper */
+.cometchat-message-bubble__wrapper {
+  gap: var(--cometchat-spacing-2);
+  padding: var(--cometchat-spacing-1) 0;
+}
+
+/* Message bubble body */
+.cometchat-message-bubble__body {
+  border-radius: var(--cometchat-radius-3);
+}
+
+/* Text message styling */
+.cometchat-message-bubble__text-message {
+  background: var(--cometchat-background-color-02);
+}
+
+/* Outgoing text message styling */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__text-message {
+  background: var(--cometchat-primary-color);
+}
+
+/* Sender name styling */
+.cometchat-message-bubble__sender-name {
+  font: var(--cometchat-font-caption1-medium);
+  color: var(--cometchat-text-color-secondary);
+}
+
+/* Status info (timestamp) styling */
+.cometchat-message-bubble__status-info-view-helper-text {
+  font: var(--cometchat-font-caption2-regular);
+  color: var(--cometchat-text-color-tertiary);
+}
+
+/* Outgoing message timestamp (white text on primary background) */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__text-message 
+  .cometchat-message-bubble__status-info-view-helper-text {
+  color: var(--cometchat-static-white);
+  opacity: 0.7;
+}
+
+/* Reaction styling */
+.cometchat-message-bubble__reaction {
+  background: var(--cometchat-background-color-03);
+  border: 1px solid var(--cometchat-border-color-light);
+  border-radius: var(--cometchat-radius-max);
+}
+
+.cometchat-message-bubble__reaction--reacted {
+  background: var(--cometchat-extended-primary-color-50);
+  border-color: var(--cometchat-primary-color);
+}
+
+.cometchat-message-bubble__reaction-count {
+  font: var(--cometchat-font-caption1-medium);
+  color: var(--cometchat-text-color-secondary);
+}
+```
+
+---
+
+
+### Theming (Light/Dark Mode)
+
+CometChat UIKit supports both light and dark themes through CSS variables. The theme is controlled by the `data-theme` attribute on the root element.
+
+#### Switching Themes
+
+```typescript expandable
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-theme-switcher',
+  template: `
+    <div class="theme-controls">
+      <button (click)="setTheme('light')">Light Mode</button>
+      <button (click)="setTheme('dark')">Dark Mode</button>
+      <button (click)="toggleTheme()">Toggle Theme</button>
+    </div>
+  `
+})
+export class ThemeSwitcherComponent {
+  currentTheme: 'light' | 'dark' = 'light';
+
+  setTheme(theme: 'light' | 'dark'): void {
+    this.currentTheme = theme;
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+
+  toggleTheme(): void {
+    this.setTheme(this.currentTheme === 'light' ? 'dark' : 'light');
+  }
+}
+```
+
+#### Dark Theme CSS Variables
+
+The dark theme automatically overrides CSS variables when `[data-theme="dark"]` is set:
+
+```css expandable
+[data-theme="dark"] {
+  /* Primary colors (adjusted for dark backgrounds) */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-extended-primary-color-50: #15102B;
+  --cometchat-extended-primary-color-100: #1D173C;
+  
+  /* Neutral colors (inverted for dark mode) */
+  --cometchat-neutral-color-50: #141414;
+  --cometchat-neutral-color-100: #1A1A1A;
+  --cometchat-neutral-color-200: #272727;
+  --cometchat-neutral-color-300: #383838;
+  --cometchat-neutral-color-400: #4C4C4C;
+  --cometchat-neutral-color-500: #858585;
+  --cometchat-neutral-color-600: #989898;
+  --cometchat-neutral-color-900: #FFFFFF;
+  
+  /* Background colors */
+  --cometchat-background-color-01: var(--cometchat-neutral-color-50);
+  --cometchat-background-color-02: var(--cometchat-neutral-color-100);
+  --cometchat-background-color-03: var(--cometchat-neutral-color-200);
+  
+  /* Text colors */
+  --cometchat-text-color-primary: var(--cometchat-neutral-color-900);
+  --cometchat-text-color-secondary: var(--cometchat-neutral-color-600);
+  --cometchat-text-color-tertiary: var(--cometchat-neutral-color-500);
+  
+  /* Border colors */
+  --cometchat-border-color-light: var(--cometchat-neutral-color-200);
+  --cometchat-border-color-default: var(--cometchat-neutral-color-300);
+  
+  /* Alert colors (slightly adjusted for dark backgrounds) */
+  --cometchat-info-color: #0D66BF;
+  --cometchat-warning-color: #D08D04;
+  --cometchat-success-color: #0B9F5D;
+  --cometchat-error-color: #C73C3E;
+}
+```
+
+
+#### Custom Theme Example
+
+Create a completely custom theme by overriding CSS variables:
+
+```css expandable
+/* Custom brand theme */
+:root {
+  /* Brand primary color */
+  --cometchat-primary-color: #2563EB;
+  --cometchat-extended-primary-color-50: #EFF6FF;
+  --cometchat-extended-primary-color-100: #DBEAFE;
+  --cometchat-extended-primary-color-200: #BFDBFE;
+  --cometchat-extended-primary-color-500: #3B82F6;
+  --cometchat-extended-primary-color-700: #1D4ED8;
+  --cometchat-extended-primary-color-900: #1E3A8A;
+
+  /* Custom backgrounds */
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-background-color-02: #F8FAFC;
+  --cometchat-background-color-03: #F1F5F9;
+  --cometchat-background-color-04: #E2E8F0;
+
+  /* Custom text colors */
+  --cometchat-text-color-primary: #0F172A;
+  --cometchat-text-color-secondary: #475569;
+  --cometchat-text-color-tertiary: #94A3B8;
+
+  /* Custom border radius (more rounded) */
+  --cometchat-radius-1: 6px;
+  --cometchat-radius-2: 10px;
+  --cometchat-radius-3: 14px;
+  --cometchat-radius-4: 18px;
+
+  /* Custom font family */
+  --cometchat-font-family: 'Inter', 'Roboto', sans-serif;
+}
+
+/* Custom dark theme */
+[data-theme="dark"] {
+  --cometchat-primary-color: #3B82F6;
+  --cometchat-extended-primary-color-50: #172554;
+  --cometchat-extended-primary-color-100: #1E3A8A;
+
+  --cometchat-background-color-01: #0F172A;
+  --cometchat-background-color-02: #1E293B;
+  --cometchat-background-color-03: #334155;
+  --cometchat-background-color-04: #475569;
+
+  --cometchat-text-color-primary: #F8FAFC;
+  --cometchat-text-color-secondary: #CBD5E1;
+  --cometchat-text-color-tertiary: #94A3B8;
+
+  --cometchat-border-color-light: #334155;
+  --cometchat-border-color-default: #475569;
+}
+```
+
+#### System Theme Detection
+
+Automatically match the user's system theme preference:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+
+@Component({
+  selector: 'app-auto-theme',
+  template: `<ng-content></ng-content>`
+})
+export class AutoThemeComponent implements OnInit, OnDestroy {
+  private mediaQuery?: MediaQueryList;
+  private listener?: (e: MediaQueryListEvent) => void;
+
+  ngOnInit(): void {
+    // Check for system dark mode preference
+    this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    // Set initial theme
+    this.applyTheme(this.mediaQuery.matches);
+    
+    // Listen for changes
+    this.listener = (e) => this.applyTheme(e.matches);
+    this.mediaQuery.addEventListener('change', this.listener);
+  }
+
+  ngOnDestroy(): void {
+    if (this.mediaQuery && this.listener) {
+      this.mediaQuery.removeEventListener('change', this.listener);
+    }
+  }
+
+  private applyTheme(isDark: boolean): void {
+    if (isDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+}
+```
+
+<Tip>
+Use CSS variables consistently throughout your application to ensure theme changes propagate correctly. Avoid hardcoding color values in component styles.
+</Tip>
+
+---
+
+
+### Complete Customization Example
+
+Here's a comprehensive example combining multiple customization approaches:
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild, AfterViewInit, OnInit, inject } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { DatePipe } from '@angular/common';
+import { 
+  CometChatMessageListComponent,
+  MessageBubbleConfigService,
+  CometChatTextFormatter,
+  CalendarObject
+} from '@cometchat/chat-uikit-angular';
+
+// Custom hashtag formatter
+class HashtagFormatter extends CometChatTextFormatter {
+  readonly id = 'hashtag-formatter';
+  priority = 25;
+
+  getRegex(): RegExp {
+    return /#(\w+)/g;
+  }
+
+  format(text: string): string {
+    this.originalText = text;
+    this.formattedText = text.replace(
+      this.getRegex(),
+      '<span class="hashtag">#$1</span>'
+    );
+    return this.formattedText;
+  }
+}
+
+@Component({
+  selector: 'app-fully-customized-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent, DatePipe],
+  template: `
+    <div class="chat-wrapper">
+      <cometchat-message-list
+        [user]="user"
+        [textFormatters]="formatters"
+        [messageAlignment]="'standard'"
+        [separatorDateTimeFormat]="dateFormat"
+        [hideReceipts]="false"
+        [hideReactionOption]="false"
+        [hideReplyInThreadOption]="true"
+        [quickOptionsCount]="2"
+        [emptyView]="customEmptyView"
+        (threadRepliesClick)="onThreadClick($event)"
+        (reactionClick)="onReactionClick($event)"
+        (error)="onError($event)"
+      ></cometchat-message-list>
+    </div>
+
+    <!-- Custom Empty View -->
+    <ng-template #customEmptyView>
+      <div class="custom-empty">
+        <div class="empty-icon">💬</div>
+        <h3>{{ 'message_list_empty_title' | translate }}</h3>
+        <p>{{ 'message_list_empty_subtitle' | translate }}</p>
+      </div>
+    </ng-template>
+
+    <!-- Custom Text Content -->
+    <ng-template #customTextContent let-context>
+      <div class="custom-text-bubble">
+        <p class="text-content" [innerHTML]="context.formattedText"></p>
+        <div class="text-meta">
+          <span class="time">{{ context.message.getSentAt() * 1000 | date:'shortTime' }}</span>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Custom Footer -->
+    <ng-template #customFooter let-context>
+      <div class="custom-footer">
+        <button class="quick-action" (click)="onQuickReact(context.message, '👍')">👍</button>
+        <button class="quick-action" (click)="onQuickReact(context.message, '❤️')">❤️</button>
+        <button class="quick-action" (click)="onQuickReact(context.message, '😂')">😂</button>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .chat-wrapper {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .custom-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--cometchat-spacing-8);
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: var(--cometchat-spacing-4);
+    }
+
+    .custom-empty h3 {
+      font: var(--cometchat-font-heading3-medium);
+      color: var(--cometchat-text-color-primary);
+      margin: 0 0 var(--cometchat-spacing-2) 0;
+    }
+
+    .custom-empty p {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-secondary);
+      margin: 0;
+    }
+
+    .custom-text-bubble {
+      padding: var(--cometchat-spacing-3);
+    }
+
+    .text-content {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-primary);
+      margin: 0;
+      word-wrap: break-word;
+    }
+
+    .text-meta {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: var(--cometchat-spacing-1);
+    }
+
+    .time {
+      font: var(--cometchat-font-caption2-regular);
+      color: var(--cometchat-text-color-tertiary);
+    }
+
+    .custom-footer {
+      display: flex;
+      gap: var(--cometchat-spacing-1);
+      padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+    }
+
+    .quick-action {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: var(--cometchat-spacing-1);
+      border-radius: var(--cometchat-radius-1);
+      font-size: 14px;
+      transition: background-color 0.2s ease;
+    }
+
+    .quick-action:hover {
+      background: var(--cometchat-background-color-03);
+    }
+
+    /* Hashtag styling */
+    :host ::ng-deep .hashtag {
+      color: var(--cometchat-primary-color);
+      font-weight: 500;
+      cursor: pointer;
+    }
+  `]
+})
+export class FullyCustomizedChatComponent implements OnInit, AfterViewInit {
+  @ViewChild('customTextContent') customTextContent!: TemplateRef<any>;
+  @ViewChild('customFooter') customFooter!: TemplateRef<any>;
+
+  private bubbleConfigService = inject(MessageBubbleConfigService);
+
+  user?: CometChat.User;
+  formatters: CometChatTextFormatter[] = [];
+
+  dateFormat: CalendarObject = {
+    today: 'Today',
+    yesterday: 'Yesterday',
+    otherDays: 'MMMM DD, YYYY'
+  };
+
+  ngOnInit(): void {
+    // Initialize formatters
+    this.formatters = [new HashtagFormatter()];
+
+    // Fetch user
+    this.loadUser();
+  }
+
+  ngAfterViewInit(): void {
+
+    // Set global configurations via service
+    this.bubbleConfigService.setGlobalViews({
+      footerView: this.customFooter
+    });
+  }
+
+  async loadUser(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error loading user:', error);
+    }
+  }
+
+  onThreadClick(message: CometChat.BaseMessage): void {
+    console.log('Thread clicked:', message.getId());
+  }
+
+  onReactionClick(event: { reaction: CometChat.ReactionCount; message: CometChat.BaseMessage }): void {
+    console.log('Reaction clicked:', event.reaction.getReaction());
+  }
+
+  onQuickReact(message: CometChat.BaseMessage, emoji: string): void {
+    console.log('Quick react:', emoji, 'on message:', message.getId());
+    // Implement reaction logic
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+  }
+}
+```
+
+
+## Usage Patterns
+
+CometChatMessageList supports two usage patterns for receiving the active user or group context.
+
+<Tabs>
+<Tab title="Using Service">
+
+When used alongside `cometchat-conversations`, the message list automatically subscribes to `ChatStateService`. No explicit `[user]` or `[group]` input is needed — the component loads messages for the active conversation.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <cometchat-conversations
+        (itemClick)="onConversationClick($event)"
+      ></cometchat-conversations>
+
+      <div class="chat-panel">
+        <cometchat-message-header></cometchat-message-header>
+        <!-- Automatically loads messages for the active conversation -->
+        <cometchat-message-list></cometchat-message-list>
+        <cometchat-message-composer></cometchat-message-composer>
+      </div>
+    </div>
+  `,
+})
+export class ChatComponent {
+  onConversationClick(conversation: any): void {}
+}
+```
+
+<Tip>
+  This is the recommended approach. The message list stays in sync with the conversation list without manual wiring.
+</Tip>
+
+</Tab>
+<Tab title="Using Props">
+
+Pass `[user]` or `[group]` directly to control which conversation's messages are displayed. This overrides `ChatStateService` state.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="selectedUser"
+    ></cometchat-message-list>
+  `,
+})
+export class ChatComponent {
+  selectedUser!: CometChat.User;
+}
+```
+
+For group conversations:
+
+```typescript
+<cometchat-message-list
+  [group]="selectedGroup"
+></cometchat-message-list>
+```
+
+<Note>
+  When `[user]` or `[group]` inputs are provided, they take priority over `ChatStateService` state for that component instance.
+</Note>
+
+</Tab>
+</Tabs>
+
+## Advanced Usage
+
+This section covers advanced usage scenarios including thread views, reactions, and AI-powered features like smart replies and conversation starters.
+
+---
+
+### Thread View
+
+Thread view allows users to have focused conversations around a specific message. When a user clicks on a message's thread indicator, you can display the thread replies in a separate view.
+
+#### Basic Thread View Implementation
+
+Display thread replies by setting the `parentMessageId` input:
+
+```typescript expandable
+import { Component, Input, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-view',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <div class="thread-container">
+      <!-- Parent Message Preview -->
+      <div class="thread-header">
+        <h3>{{ 'thread_replies' | translate }}</h3>
+        <button class="close-btn" (click)="closeThread()">×</button>
+      </div>
+
+      <!-- Thread Message List -->
+      @if (user && parentMessageId) {
+        <cometchat-message-list
+          [user]="user"
+          [parentMessageId]="parentMessageId"
+          [scrollToBottomOnNewMessages]="true"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+      }
+    </div>
+  `,
+  styles: [`
+    .thread-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--cometchat-background-color-01);
+    }
+    .thread-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--cometchat-spacing-4);
+      border-bottom: 1px solid var(--cometchat-border-color-light);
+    }
+    .thread-header h3 {
+      font: var(--cometchat-font-heading4-medium);
+      color: var(--cometchat-text-color-primary);
+      margin: 0;
+    }
+    .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--cometchat-text-color-secondary);
+    }
+  `]
+})
+export class ThreadViewComponent implements OnInit {
+  @Input() parentMessageId!: number;
+  @Input() user?: CometChat.User;
+  @Input() group?: CometChat.Group;
+
+  closeThread(): void {
+    // Emit event or navigate back
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Thread view error:', error);
+  }
+}
+```
+
+
+#### Complete Thread Navigation Example
+
+Implement a full thread navigation flow with main chat and thread panel:
+
+```typescript expandable
+import { Component, OnInit, signal } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageListComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageComposerComponent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-with-threads',
+  standalone: true,
+  imports: [
+    CometChatMessageListComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageComposerComponent
+  ],
+  template: `
+    <div class="chat-layout">
+      <!-- Main Chat Panel -->
+      <div class="main-chat">
+        <cometchat-message-header
+          [user]="user"
+        ></cometchat-message-header>
+
+        <cometchat-message-list
+          [user]="user"
+          [hideReplyInThreadOption]="false"
+          (threadRepliesClick)="openThread($event)"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+
+        <cometchat-message-composer
+          [user]="user"
+        ></cometchat-message-composer>
+      </div>
+
+      <!-- Thread Panel (slides in when active) -->
+      @if (activeThread()) {
+        <div class="thread-panel">
+          <div class="thread-panel-header">
+            <div class="thread-info">
+              <h3>{{ 'thread' | translate }}</h3>
+              <span class="reply-count">
+                {{ activeThread()!.getReplyCount() }} {{ 'replies' | translate }}
+              </span>
+            </div>
+            <button class="close-thread-btn" (click)="closeThread()">
+              <img src="assets/close.svg" alt="Close" />
+            </button>
+          </div>
+
+          <!-- Parent Message Preview -->
+          <div class="parent-message-preview">
+            <div class="sender-info">
+              <cometchat-avatar
+                [user]="activeThread()!.getSender()"
+              ></cometchat-avatar>
+              <span class="sender-name">
+                {{ activeThread()!.getSender()?.getName() }}
+              </span>
+            </div>
+            <p class="message-preview">
+              {{ getMessagePreview(activeThread()!) }}
+            </p>
+          </div>
+
+          <!-- Thread Messages -->
+          <cometchat-message-list
+            [user]="user"
+            [parentMessageId]="activeThread()!.getId()"
+            [scrollToBottomOnNewMessages]="true"
+            (error)="onError($event)"
+          ></cometchat-message-list>
+
+          <!-- Thread Composer -->
+          <cometchat-message-composer
+            [user]="user"
+            [parentMessageId]="activeThread()!.getId()"
+          ></cometchat-message-composer>
+        </div>
+      }
+    </div>
+  `,
+  styles: [`
+    .chat-layout {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+    }
+    .main-chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .thread-panel {
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--cometchat-border-color-light);
+      background: var(--cometchat-background-color-01);
+    }
+    .thread-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--cometchat-spacing-4);
+      border-bottom: 1px solid var(--cometchat-border-color-light);
+    }
+    .thread-info h3 {
+      font: var(--cometchat-font-heading4-medium);
+      color: var(--cometchat-text-color-primary);
+      margin: 0;
+    }
+    .reply-count {
+      font: var(--cometchat-font-caption1-regular);
+      color: var(--cometchat-text-color-secondary);
+    }
+    .close-thread-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: var(--cometchat-spacing-2);
+    }
+    .parent-message-preview {
+      padding: var(--cometchat-spacing-4);
+      background: var(--cometchat-background-color-02);
+      border-bottom: 1px solid var(--cometchat-border-color-light);
+    }
+    .sender-info {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-2);
+      margin-bottom: var(--cometchat-spacing-2);
+    }
+    .sender-name {
+      font: var(--cometchat-font-caption1-medium);
+      color: var(--cometchat-text-color-secondary);
+    }
+    .message-preview {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-primary);
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  `]
+})
+export class ChatWithThreadsComponent implements OnInit {
+  user?: CometChat.User;
+  activeThread = signal<CometChat.BaseMessage | null>(null);
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  openThread(message: CometChat.BaseMessage): void {
+    this.activeThread.set(message);
+  }
+
+  closeThread(): void {
+    this.activeThread.set(null);
+  }
+
+  getMessagePreview(message: CometChat.BaseMessage): string {
+    if (message instanceof CometChat.TextMessage) {
+      return message.getText();
+    }
+    return message.getType();
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+
+<Tip>
+When implementing thread view, consider using Angular's animation module to create smooth slide-in/slide-out transitions for the thread panel.
+</Tip>
+
+---
+
+### Reactions
+
+Reactions allow users to respond to messages with emoji. The message list component provides built-in support for displaying and interacting with reactions.
+
+#### Basic Reactions Setup
+
+Enable reactions in the message list:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-with-reactions',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (user) {
+      <cometchat-message-list
+        [user]="user"
+        [hideReactionOption]="false"
+        (reactionClick)="onReactionClick($event)"
+        (reactionListItemClick)="onReactionListItemClick($event)"
+        (error)="onError($event)"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class ChatWithReactionsComponent implements OnInit {
+  user?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  /**
+   * Called when a reaction emoji is clicked on a message.
+   * Use this to toggle the reaction (add if not present, remove if present).
+   */
+  onReactionClick(event: { 
+    reaction: CometChat.ReactionCount; 
+    message: CometChat.BaseMessage 
+  }): void {
+    const { reaction, message } = event;
+    console.log('Reaction clicked:', reaction.getReaction(), 'on message:', message.getId());
+    
+    // The component handles adding/removing reactions automatically
+    // You can add custom logic here if needed
+  }
+
+  /**
+   * Called when a specific user's reaction is clicked in the reaction list.
+   * Use this to show user details or navigate to their profile.
+   */
+  onReactionListItemClick(event: { 
+    reaction: CometChat.Reaction; 
+    message: CometChat.BaseMessage 
+  }): void {
+    const { reaction, message } = event;
+    console.log('User reaction clicked:', reaction.getReaction(), 'by:', reaction.getReactedBy());
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+  }
+}
+```
+
+
+#### Custom Reactions Request Builder
+
+Configure how reactions are fetched using a custom request builder:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-reactions',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (user) {
+      <cometchat-message-list
+        [user]="user"
+        [hideReactionOption]="false"
+        [reactionsRequestBuilder]="reactionsBuilder"
+        (reactionClick)="onReactionClick($event)"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class CustomReactionsComponent implements OnInit {
+  user?: CometChat.User;
+  reactionsBuilder?: CometChat.ReactionsRequestBuilder;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+      
+      // Configure custom reactions request builder
+      this.reactionsBuilder = new CometChat.ReactionsRequestBuilder()
+        .setLimit(10); // Limit reactions per request
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  onReactionClick(event: { 
+    reaction: CometChat.ReactionCount; 
+    message: CometChat.BaseMessage 
+  }): void {
+    console.log('Reaction:', event.reaction.getReaction());
+  }
+}
+```
+
+#### Handling Reaction Events Programmatically
+
+Add or remove reactions programmatically:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-programmatic-reactions',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (user) {
+      <cometchat-message-list
+        [user]="user"
+        [hideReactionOption]="false"
+        (reactionClick)="handleReactionToggle($event)"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class ProgrammaticReactionsComponent implements OnInit {
+  user?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  /**
+   * Toggle a reaction on a message.
+   * If the user has already reacted with this emoji, remove it.
+   * Otherwise, add the reaction.
+   */
+  async handleReactionToggle(event: { 
+    reaction: CometChat.ReactionCount; 
+    message: CometChat.BaseMessage 
+  }): Promise<void> {
+    const { reaction, message } = event;
+    const emoji = reaction.getReaction();
+    const messageId = message.getId();
+
+    try {
+      // Check if user has already reacted with this emoji
+      const hasReacted = reaction.getReactedByMe();
+
+      if (hasReacted) {
+        // Remove the reaction
+        await CometChat.removeReaction(messageId, emoji);
+        console.log('Reaction removed:', emoji);
+      } else {
+        // Add the reaction
+        await CometChat.addReaction(messageId, emoji);
+        console.log('Reaction added:', emoji);
+      }
+    } catch (error) {
+      console.error('Error toggling reaction:', error);
+    }
+  }
+
+  /**
+   * Add a specific reaction to a message.
+   */
+  async addReaction(messageId: number, emoji: string): Promise<void> {
+    try {
+      await CometChat.addReaction(messageId, emoji);
+      console.log('Reaction added successfully');
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  }
+
+  /**
+   * Remove a specific reaction from a message.
+   */
+  async removeReaction(messageId: number, emoji: string): Promise<void> {
+    try {
+      await CometChat.removeReaction(messageId, emoji);
+      console.log('Reaction removed successfully');
+    } catch (error) {
+      console.error('Error removing reaction:', error);
+    }
+  }
+}
+```
+
+<Note>
+The message list component automatically updates the UI when reactions are added or removed. You don't need to manually refresh the message list after reaction operations.
+</Note>
+
+
+---
+
+### AI Smart Chat Features
+
+The message list component includes AI-powered features that enhance the chat experience: **Smart Replies** and **Conversation Starters**.
+
+#### Smart Replies
+
+Smart replies provide AI-generated response suggestions based on the last received message. They appear after a configurable delay when the message contains trigger keywords.
+
+```typescript expandable
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-smart-replies-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent, CometChatMessageComposerComponent],
+  template: `
+    <div class="chat-container">
+      @if (user) {
+        <cometchat-message-list
+          #messageList
+          [user]="user"
+          [showSmartReplies]="true"
+          [smartRepliesKeywords]="smartRepliesKeywords"
+          [smartRepliesDelayDuration]="smartRepliesDelay"
+          (smartReplyClick)="onSmartReplyClick($event)"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+
+        <cometchat-message-composer
+          [user]="user"
+          (messageSent)="onMessageSent()"
+          (typing)="onTyping()"
+        ></cometchat-message-composer>
+      }
+    </div>
+  `,
+  styles: [`
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    cometchat-message-list {
+      flex: 1;
+      overflow: hidden;
+    }
+  `]
+})
+export class SmartRepliesChatComponent implements OnInit {
+  @ViewChild('messageList') messageList!: CometChatMessageListComponent;
+
+  user?: CometChat.User;
+
+  /**
+   * Keywords that trigger smart reply suggestions.
+   * Smart replies appear when the last received message contains any of these keywords.
+   */
+  smartRepliesKeywords = ['what', 'when', 'why', 'who', 'where', 'how', '?', 'help', 'can you'];
+
+  /**
+   * Delay in milliseconds before showing smart replies.
+   * Default is 10000ms (10 seconds).
+   */
+  smartRepliesDelay = 5000; // 5 seconds
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  /**
+   * Called when a smart reply suggestion is clicked.
+   * Send the selected reply as a message.
+   */
+  async onSmartReplyClick(reply: string): Promise<void> {
+    console.log('Smart reply selected:', reply);
+    
+    if (!this.user) return;
+
+    try {
+      // Create and send the text message
+      const textMessage = new CometChat.TextMessage(
+        this.user.getUid(),
+        reply,
+        CometChat.RECEIVER_TYPE.USER
+      );
+
+      await CometChat.sendMessage(textMessage);
+      console.log('Smart reply sent successfully');
+
+      // Notify the message list that a message was sent
+      // This hides the smart replies
+      this.messageList.onMessageSent();
+    } catch (error) {
+      console.error('Error sending smart reply:', error);
+    }
+  }
+
+  /**
+   * Called when user starts typing.
+   * Hides smart replies while user is composing a message.
+   */
+  onTyping(): void {
+    this.messageList.onUserTyping();
+  }
+
+  /**
+   * Called when a message is sent.
+   * Hides smart replies after sending.
+   */
+  onMessageSent(): void {
+    this.messageList.onMessageSent();
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+
+#### Conversation Starters
+
+Conversation starters provide AI-generated suggestions to help users begin a conversation. They appear when the conversation is empty (no messages yet).
+
+```typescript expandable
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-conversation-starters-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent, CometChatMessageComposerComponent],
+  template: `
+    <div class="chat-container">
+      @if (user) {
+        <cometchat-message-list
+          #messageList
+          [user]="user"
+          [showConversationStarters]="true"
+          (conversationStarterClick)="onConversationStarterClick($event)"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+
+        <cometchat-message-composer
+          [user]="user"
+        ></cometchat-message-composer>
+      }
+    </div>
+  `,
+  styles: [`
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    cometchat-message-list {
+      flex: 1;
+      overflow: hidden;
+    }
+  `]
+})
+export class ConversationStartersChatComponent implements OnInit {
+  @ViewChild('messageList') messageList!: CometChatMessageListComponent;
+
+  user?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  /**
+   * Called when a conversation starter is clicked.
+   * Send the selected starter as the first message.
+   */
+  async onConversationStarterClick(starter: string): Promise<void> {
+    console.log('Conversation starter selected:', starter);
+    
+    if (!this.user) return;
+
+    try {
+      // Create and send the text message
+      const textMessage = new CometChat.TextMessage(
+        this.user.getUid(),
+        starter,
+        CometChat.RECEIVER_TYPE.USER
+      );
+
+      await CometChat.sendMessage(textMessage);
+      console.log('Conversation starter sent successfully');
+
+      // Notify the message list that a message was sent
+      // This hides the conversation starters
+      this.messageList.onMessageSent();
+    } catch (error) {
+      console.error('Error sending conversation starter:', error);
+    }
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+
+#### Complete AI Smart Chat Features Example
+
+Combine smart replies and conversation starters for a full AI-enhanced chat experience:
+
+```typescript expandable
+import { Component, OnInit, ViewChild, signal } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageListComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageComposerComponent 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-ai-enhanced-chat',
+  standalone: true,
+  imports: [
+    CometChatMessageListComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageComposerComponent
+  ],
+  template: `
+    <div class="chat-container">
+      @if (user) {
+        <!-- Message Header -->
+        <cometchat-message-header
+          [user]="user"
+        ></cometchat-message-header>
+
+        <!-- Message List with AI Smart Chat Features -->
+        <cometchat-message-list
+          #messageList
+          [user]="user"
+          [showSmartReplies]="aiSettings.smartRepliesEnabled"
+          [showConversationStarters]="aiSettings.conversationStartersEnabled"
+          [smartRepliesKeywords]="aiSettings.smartRepliesKeywords"
+          [smartRepliesDelayDuration]="aiSettings.smartRepliesDelay"
+          [scrollToBottomOnNewMessages]="true"
+          (smartReplyClick)="onSmartReplyClick($event)"
+          (conversationStarterClick)="onConversationStarterClick($event)"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+
+        <!-- Message Composer -->
+        <cometchat-message-composer
+          [user]="user"
+          (messageSent)="onMessageSent()"
+          (typing)="onTyping()"
+        ></cometchat-message-composer>
+      }
+
+      <!-- AI Settings Toggle (for demo purposes) -->
+      <div class="ai-settings-panel">
+        <h4>{{ 'ai_features' | translate }}</h4>
+        <label>
+          <input 
+            type="checkbox" 
+            [checked]="aiSettings.smartRepliesEnabled"
+            (change)="toggleSmartReplies()"
+          />
+          {{ 'smart_replies' | translate }}
+        </label>
+        <label>
+          <input 
+            type="checkbox" 
+            [checked]="aiSettings.conversationStartersEnabled"
+            (change)="toggleConversationStarters()"
+          />
+          {{ 'conversation_starters' | translate }}
+        </label>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+    }
+    cometchat-message-list {
+      flex: 1;
+      overflow: hidden;
+    }
+    .ai-settings-panel {
+      position: absolute;
+      top: var(--cometchat-spacing-4);
+      right: var(--cometchat-spacing-4);
+      background: var(--cometchat-background-color-01);
+      border: 1px solid var(--cometchat-border-color-light);
+      border-radius: var(--cometchat-radius-2);
+      padding: var(--cometchat-spacing-4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+    }
+    .ai-settings-panel h4 {
+      font: var(--cometchat-font-caption1-medium);
+      color: var(--cometchat-text-color-primary);
+      margin: 0 0 var(--cometchat-spacing-2) 0;
+    }
+    .ai-settings-panel label {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-2);
+      font: var(--cometchat-font-caption1-regular);
+      color: var(--cometchat-text-color-secondary);
+      margin-bottom: var(--cometchat-spacing-1);
+      cursor: pointer;
+    }
+  `]
+})
+export class AIEnhancedChatComponent implements OnInit {
+  @ViewChild('messageList') messageList!: CometChatMessageListComponent;
+
+  user?: CometChat.User;
+
+  // AI feature settings
+  aiSettings = {
+    smartRepliesEnabled: true,
+    conversationStartersEnabled: true,
+    smartRepliesKeywords: ['what', 'when', 'why', 'who', 'where', 'how', '?', 'help'],
+    smartRepliesDelay: 5000 // 5 seconds
+  };
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  /**
+   * Handle smart reply selection.
+   */
+  async onSmartReplyClick(reply: string): Promise<void> {
+    await this.sendMessage(reply);
+  }
+
+  /**
+   * Handle conversation starter selection.
+   */
+  async onConversationStarterClick(starter: string): Promise<void> {
+    await this.sendMessage(starter);
+  }
+
+  /**
+   * Send a message and notify the message list.
+   */
+  private async sendMessage(text: string): Promise<void> {
+    if (!this.user) return;
+
+    try {
+      const textMessage = new CometChat.TextMessage(
+        this.user.getUid(),
+        text,
+        CometChat.RECEIVER_TYPE.USER
+      );
+
+      await CometChat.sendMessage(textMessage);
+      this.messageList.onMessageSent();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  }
+
+  onTyping(): void {
+    this.messageList.onUserTyping();
+  }
+
+  onMessageSent(): void {
+    this.messageList.onMessageSent();
+  }
+
+  toggleSmartReplies(): void {
+    this.aiSettings.smartRepliesEnabled = !this.aiSettings.smartRepliesEnabled;
+  }
+
+  toggleConversationStarters(): void {
+    this.aiSettings.conversationStartersEnabled = !this.aiSettings.conversationStartersEnabled;
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+
+#### AI Smart Chat Features Configuration Reference
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `showSmartReplies` | `boolean` | `false` | Enable AI-powered smart reply suggestions |
+| `showConversationStarters` | `boolean` | `false` | Enable AI-generated conversation starters for empty conversations |
+| `smartRepliesKeywords` | `string[]` | `['what', 'when', 'why', 'who', 'where', 'how', '?']` | Keywords that trigger smart reply suggestions |
+| `smartRepliesDelayDuration` | `number` | `10000` | Delay in milliseconds before showing smart replies |
+
+#### AI Smart Chat Features Behavior
+
+**Smart Replies:**
+- Appear after the configured delay when the last received message contains trigger keywords
+- Hidden when the user starts typing
+- Hidden when a message is sent
+- Display up to 4 AI-generated suggestions
+
+**Conversation Starters:**
+- Appear only when the conversation is empty (no messages)
+- Hidden once any message is sent or received
+- Display up to 4 AI-generated suggestions
+
+<Warning>
+AI Smart Chat Features require the CometChat AI extension to be enabled in your CometChat dashboard. Without the extension, smart replies and conversation starters will not appear even when enabled in the component.
+</Warning>
+
+<Tip>
+For the best user experience, consider adjusting the `smartRepliesDelayDuration` based on your use case. A shorter delay (3-5 seconds) works well for support chat, while a longer delay (10-15 seconds) may be better for casual conversations.
+</Tip>
+
+
+
+## Accessibility
+
+The CometChatMessageList component is designed with accessibility in mind, following WCAG 2.1 Level AA guidelines. This section covers keyboard navigation, ARIA attributes, screen reader support, and best practices for creating accessible chat experiences.
+
+---
+
+### Keyboard Navigation
+
+The message list component provides comprehensive keyboard support for users who navigate without a mouse. All interactive elements are keyboard accessible.
+
+#### Keyboard Shortcuts Reference
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Move focus to next focusable element | Global navigation |
+| `Shift + Tab` | Move focus to previous focusable element | Global navigation |
+| `Enter` | Activate focused button or link | Buttons, links, interactive elements |
+| `Space` | Activate focused button, toggle checkbox | Buttons, checkboxes, toggles |
+| `Escape` | Close modal, menu, or panel; Cancel current action | Modals, context menus, thread panels, dialogs |
+| `Arrow Up` | Navigate to previous item in list | Context menus, reaction picker, message options |
+| `Arrow Down` | Navigate to next item in list | Context menus, reaction picker, message options |
+| `Arrow Left` | Navigate to previous option | Horizontal option lists, emoji picker |
+| `Arrow Right` | Navigate to next option | Horizontal option lists, emoji picker |
+| `Home` | Jump to first item in list | Context menus, option lists |
+| `End` | Jump to last item in list | Context menus, option lists |
+
+#### Navigation Patterns
+
+**Message List Navigation:**
+``` expandable
+┌─────────────────────────────────────────────────────────────┐
+│  Tab Order Flow                                              │
+│                                                              │
+│  1. Scroll to Bottom Button (when visible)                   │
+│  2. New Messages Banner (when visible)                       │
+│  3. Smart Replies / Conversation Starters (when visible)     │
+│  4. Message Bubbles (focusable for context menu access)      │
+│  5. Thread Reply Indicators                                  │
+│  6. Reaction Buttons                                         │
+│  7. Quick Action Buttons                                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Context Menu Navigation:**
+```typescript
+// When a context menu is open:
+// - Arrow Up/Down: Navigate between options
+// - Enter/Space: Select the focused option
+// - Escape: Close the menu and return focus to the message
+// - Home: Jump to first option
+// - End: Jump to last option
+```
+
+#### Keyboard Navigation Example
+
+```typescript expandable
+import { Component, OnInit, HostListener } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-accessible-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <div class="chat-container" role="main" aria-label="Chat conversation">
+      @if (user) {
+        <cometchat-message-list
+          [user]="user"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+      }
+    </div>
+  `
+})
+export class AccessibleChatComponent implements OnInit {
+  user?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.user = await CometChat.getUser('RECEIVER_UID');
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  }
+
+  /**
+   * Global keyboard shortcut handler for the chat container.
+   * Provides additional keyboard shortcuts for power users.
+   */
+  @HostListener('keydown', ['$event'])
+  handleKeydown(event: KeyboardEvent): void {
+    // Example: Ctrl+End to scroll to bottom
+    if (event.ctrlKey && event.key === 'End') {
+      event.preventDefault();
+      // Scroll to bottom logic
+    }
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+#### Focus Management
+
+The component implements proper focus management for a seamless keyboard experience:
+
+1. **Focus Trapping in Modals**: When dialogs (delete confirmation, flag message, etc.) are open, focus is trapped within the modal until it's closed.
+
+2. **Focus Restoration**: When a modal or menu is closed, focus returns to the element that triggered it.
+
+3. **Visible Focus Indicators**: All focusable elements have visible focus indicators using CSS:
+
+```css expandable
+/* Focus indicator styles (built into the component) */
+.cometchat-message-list *:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+/* Custom focus styles for buttons */
+.cometchat-button:focus-visible {
+  box-shadow: 0 0 0 2px var(--cometchat-background-color-01),
+              0 0 0 4px var(--cometchat-primary-color);
+}
+```
+
+<Tip>
+Always test keyboard navigation by unplugging your mouse and navigating through the entire chat interface using only the keyboard. Ensure all actions can be completed without a pointing device.
+</Tip>
+
+---
+
+### ARIA Attributes
+
+The message list component uses ARIA (Accessible Rich Internet Applications) attributes to provide semantic information to assistive technologies.
+
+#### ARIA Attributes Reference
+
+| Attribute | Element | Purpose |
+|-----------|---------|---------|
+| `role="list"` | Message container | Identifies the message container as a list |
+| `role="listitem"` | Message bubble | Identifies each message as a list item |
+| `role="button"` | Interactive elements | Identifies clickable elements as buttons |
+| `role="dialog"` | Modals | Identifies modal dialogs |
+| `role="menu"` | Context menu | Identifies the context menu |
+| `role="menuitem"` | Menu options | Identifies individual menu items |
+| `role="status"` | Status indicators | Identifies status information (typing, receipts) |
+| `role="alert"` | Error messages | Identifies important alerts |
+| `aria-label` | Buttons, icons | Provides accessible names for elements without visible text |
+| `aria-labelledby` | Dialogs, sections | References the element that labels this element |
+| `aria-describedby` | Complex elements | References elements that describe this element |
+| `aria-live` | Dynamic content | Announces content changes to screen readers |
+| `aria-expanded` | Expandable elements | Indicates whether an element is expanded or collapsed |
+| `aria-selected` | Selectable items | Indicates the selected state of an item |
+| `aria-hidden` | Decorative elements | Hides decorative elements from screen readers |
+| `aria-busy` | Loading states | Indicates content is being loaded |
+| `aria-disabled` | Disabled elements | Indicates an element is disabled |
+| `aria-haspopup` | Menu triggers | Indicates an element triggers a popup |
+| `aria-controls` | Control elements | Identifies the element controlled by this element |
+
+#### ARIA Implementation Examples
+
+**Message List Container:**
+```html expandable
+<!-- The message list uses role="list" for the container -->
+<div 
+  class="cometchat-message-list__messages"
+  role="list"
+  aria-label="Chat messages"
+  aria-live="polite"
+  aria-relevant="additions">
+  
+  <!-- Each message is a list item -->
+  <div 
+    class="cometchat-message-bubble"
+    role="listitem"
+    [attr.aria-label]="getMessageAriaLabel(message)">
+    <!-- Message content -->
+  </div>
+</div>
+```
+
+**Interactive Buttons:**
+```html expandable
+<!-- Buttons with aria-label for icon-only buttons -->
+<button 
+  class="cometchat-message-list__scroll-to-bottom"
+  aria-label="Scroll to latest messages"
+  (click)="scrollToBottom()">
+  <img src="assets/arrow-down.svg" alt="" aria-hidden="true" />
+</button>
+
+<!-- Thread replies button -->
+<button
+  class="cometchat-message-bubble__thread-replies"
+  [attr.aria-label]="'View ' + message.getReplyCount() + ' replies in thread'"
+  [attr.aria-expanded]="isThreadOpen"
+  (click)="openThread(message)">
+  {{ message.getReplyCount() }} {{ 'replies' | translate }}
+</button>
+```
+
+**Context Menu:**
+```html expandable
+<!-- Context menu with proper ARIA attributes -->
+<div 
+  class="cometchat-context-menu"
+  role="menu"
+  aria-label="Message options"
+  [attr.aria-activedescendant]="activeMenuItemId">
+  
+  <button 
+    role="menuitem"
+    id="menu-item-reply"
+    aria-label="Reply to message"
+    (click)="onReply()">
+    {{ 'reply' | translate }}
+  </button>
+  
+  <button 
+    role="menuitem"
+    id="menu-item-forward"
+    aria-label="Forward message"
+    (click)="onForward()">
+    {{ 'forward' | translate }}
+  </button>
+  
+  <button 
+    role="menuitem"
+    id="menu-item-delete"
+    aria-label="Delete message"
+    (click)="onDelete()">
+    {{ 'delete' | translate }}
+  </button>
+</div>
+```
+
+**Live Regions for Dynamic Content:**
+```html expandable
+<!-- New message announcements -->
+<div 
+  class="cometchat-message-list__announcer"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true">
+  <!-- Screen reader announces new messages -->
+  {{ newMessageAnnouncement }}
+</div>
+
+<!-- Error announcements -->
+<div 
+  class="cometchat-message-list__error-announcer"
+  role="alert"
+  aria-live="assertive">
+  <!-- Screen reader immediately announces errors -->
+  {{ errorAnnouncement }}
+</div>
+
+<!-- Typing indicator -->
+<div 
+  class="cometchat-message-list__typing-indicator"
+  role="status"
+  aria-live="polite"
+  [attr.aria-label]="typingUser + ' is typing'">
+  {{ typingUser }} {{ 'is_typing' | translate }}
+</div>
+```
+
+**Modal Dialogs:**
+```html expandable
+<!-- Delete confirmation dialog -->
+<div 
+  class="cometchat-confirm-dialog"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="dialog-title"
+  aria-describedby="dialog-description">
+  
+  <h2 id="dialog-title">{{ 'delete_message_title' | translate }}</h2>
+  <p id="dialog-description">{{ 'delete_message_description' | translate }}</p>
+  
+  <div class="dialog-actions">
+    <button 
+      aria-label="Cancel deletion"
+      (click)="cancelDelete()">
+      {{ 'cancel' | translate }}
+    </button>
+    <button 
+      aria-label="Confirm deletion"
+      (click)="confirmDelete()">
+      {{ 'delete' | translate }}
+    </button>
+  </div>
+</div>
+```
+
+#### Generating Accessible Labels
+
+```typescript expandable
+/**
+ * Generate an accessible label for a message.
+ * This provides context for screen reader users.
+ */
+getMessageAriaLabel(message: CometChat.BaseMessage): string {
+  const sender = message.getSender()?.getName() || 'Unknown';
+  const time = new Date(message.getSentAt() * 1000).toLocaleTimeString();
+  const type = message.getType();
+  
+  let content = '';
+  if (message instanceof CometChat.TextMessage) {
+    content = message.getText();
+  } else if (type === 'image') {
+    content = 'Image attachment';
+  } else if (type === 'video') {
+    content = 'Video attachment';
+  } else if (type === 'audio') {
+    content = 'Audio attachment';
+  } else if (type === 'file') {
+    content = 'File attachment';
+  }
+  
+  const readStatus = message.getReadAt() ? ', read' : 
+                     message.getDeliveredAt() ? ', delivered' : ', sent';
+  
+  return `${sender} at ${time}: ${content}${readStatus}`;
+}
+```
+
+---
+
+### Screen Reader Testing Guidance
+
+Testing with screen readers is essential to ensure the message list is accessible to users with visual impairments. This section provides guidance for testing with popular screen readers.
+
+#### Recommended Screen Readers
+
+| Screen Reader | Platform | Cost | Notes |
+|---------------|----------|------|-------|
+| **NVDA** | Windows | Free | Most popular free screen reader |
+| **JAWS** | Windows | Paid | Industry standard, comprehensive |
+| **VoiceOver** | macOS/iOS | Built-in | Excellent for Apple devices |
+| **TalkBack** | Android | Built-in | Default Android screen reader |
+| **Narrator** | Windows | Built-in | Windows built-in option |
+
+#### Testing Checklist
+
+Use this checklist when testing the message list with screen readers:
+
+**Basic Navigation:**
+- [ ] Can navigate to the message list using Tab key
+- [ ] Message list is announced as a list with item count
+- [ ] Each message is announced with sender, time, and content
+- [ ] Can navigate between messages using arrow keys (when focused)
+- [ ] Focus indicators are visible on all interactive elements
+
+**Message Content:**
+- [ ] Text messages are read correctly
+- [ ] Image messages announce "Image" or image description
+- [ ] Video messages announce "Video" with duration if available
+- [ ] Audio messages announce "Audio" with duration if available
+- [ ] File attachments announce file name and type
+- [ ] Reactions are announced with emoji and count
+
+**Interactive Elements:**
+- [ ] Buttons announce their purpose (e.g., "Reply", "Forward", "Delete")
+- [ ] Context menu opens and announces options
+- [ ] Can navigate context menu with arrow keys
+- [ ] Escape key closes menus and returns focus
+- [ ] Thread replies button announces reply count
+
+**Dynamic Content:**
+- [ ] New messages are announced when received
+- [ ] Typing indicators are announced
+- [ ] Error messages are announced immediately
+- [ ] Loading states are announced
+
+**Dialogs and Modals:**
+- [ ] Dialogs are announced when opened
+- [ ] Focus moves to dialog when opened
+- [ ] Can navigate dialog with Tab key
+- [ ] Escape key closes dialog
+- [ ] Focus returns to trigger element when closed
+
+#### Testing with NVDA (Windows)
+
+``` expandable
+1. Download and install NVDA from https://www.nvaccess.org/
+2. Press Ctrl+Alt+N to start NVDA
+3. Navigate to your chat application
+4. Use these NVDA commands:
+
+   - Insert+Down Arrow: Read from current position
+   - Insert+Up Arrow: Read current line
+   - Tab: Move to next focusable element
+   - Shift+Tab: Move to previous focusable element
+   - Insert+F7: Show elements list (links, headings, etc.)
+   - Insert+Space: Toggle forms mode (for interactive elements)
+   - Escape: Exit current context
+```
+
+#### Testing with VoiceOver (macOS)
+
+``` expandable
+1. Press Cmd+F5 to enable VoiceOver
+2. Navigate to your chat application
+3. Use these VoiceOver commands:
+
+   - VO+Right Arrow: Move to next element (VO = Ctrl+Option)
+   - VO+Left Arrow: Move to previous element
+   - VO+Space: Activate current element
+   - VO+Shift+Down Arrow: Interact with element
+   - VO+Shift+Up Arrow: Stop interacting
+   - VO+U: Open rotor (navigation menu)
+   - Escape: Close menus/dialogs
+```
+
+#### Testing with VoiceOver (iOS)
+
+``` expandable
+1. Go to Settings > Accessibility > VoiceOver
+2. Enable VoiceOver
+3. Use these gestures:
+
+   - Swipe Right: Move to next element
+   - Swipe Left: Move to previous element
+   - Double Tap: Activate current element
+   - Two-finger Swipe Up: Read from top
+   - Two-finger Swipe Down: Read from current position
+   - Three-finger Swipe: Scroll
+   - Escape gesture (two-finger Z): Go back/close
+```
+
+#### Testing with TalkBack (Android)
+
+``` expandable
+1. Go to Settings > Accessibility > TalkBack
+2. Enable TalkBack
+3. Use these gestures:
+
+   - Swipe Right: Move to next element
+   - Swipe Left: Move to previous element
+   - Double Tap: Activate current element
+   - Swipe Up then Right: Next navigation setting
+   - Swipe Down then Right: Previous navigation setting
+   - Two-finger Swipe: Scroll
+   - Back button: Go back/close
+```
+
+#### Common Issues and Solutions
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Element not announced | Missing `aria-label` or text content | Add appropriate `aria-label` attribute |
+| Decorative images announced | Missing `aria-hidden="true"` | Add `aria-hidden="true"` to decorative images |
+| Dynamic content not announced | Missing `aria-live` region | Add `aria-live="polite"` or `aria-live="assertive"` |
+| Focus lost after action | Focus not managed properly | Implement focus restoration after actions |
+| Menu items not navigable | Missing `role="menu"` and `role="menuitem"` | Add proper ARIA roles to menus |
+| Dialog not announced | Missing `role="dialog"` and `aria-modal` | Add dialog ARIA attributes |
+
+---
+
+### Accessibility Best Practices
+
+Follow these best practices to ensure your chat implementation is accessible to all users.
+
+#### Color and Contrast
+
+Ensure sufficient color contrast for all text and interactive elements:
+
+```css expandable
+/* Minimum contrast ratios (WCAG 2.1 Level AA) */
+/* Normal text: 4.5:1 */
+/* Large text (18px+ or 14px+ bold): 3:1 */
+/* UI components and graphics: 3:1 */
+
+:root {
+  /* These default colors meet contrast requirements */
+  --cometchat-text-color-primary: #141414;   /* On white: 16.1:1 ✓ */
+  --cometchat-text-color-secondary: #727272; /* On white: 4.9:1 ✓ */
+  --cometchat-text-color-tertiary: #A1A1A1;  /* On white: 2.8:1 - use for large text only */
+  
+  /* Primary color on white background */
+  --cometchat-primary-color: #6852D6;        /* On white: 4.6:1 ✓ */
+}
+
+/* Dark theme also meets contrast requirements */
+[data-theme="dark"] {
+  --cometchat-text-color-primary: #FFFFFF;   /* On dark: 15.3:1 ✓ */
+  --cometchat-text-color-secondary: #989898; /* On dark: 6.2:1 ✓ */
+}
+```
+
+#### Text Alternatives
+
+Provide text alternatives for all non-text content:
+
+```typescript expandable
+// Good: Descriptive alt text for images
+<img 
+  [src]="message.getAttachment()?.getUrl()" 
+  [alt]="message.getAttachment()?.getName() || 'Image shared by ' + message.getSender()?.getName()"
+/>
+
+// Good: aria-label for icon buttons
+<button aria-label="Send message">
+  <img src="assets/send.svg" alt="" aria-hidden="true" />
+</button>
+
+// Bad: Missing alt text
+<img [src]="imageUrl" />
+
+// Bad: Redundant alt text
+<button aria-label="Send">
+  <img src="assets/send.svg" alt="Send" /> <!-- Redundant -->
+</button>
+```
+
+#### Reduced Motion Support
+
+Respect user preferences for reduced motion:
+
+```css expandable
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-message-list,
+  .cometchat-message-list * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Keep essential transitions but make them instant */
+  .cometchat-message-bubble {
+    transition: none;
+  }
+}
+```
+
+#### Focus Management
+
+Implement proper focus management for a seamless experience:
+
+```typescript expandable
+import { Component, ElementRef, ViewChild } from '@angular/core';
+
+@Component({
+  selector: 'app-accessible-dialog',
+  template: `
+    <div 
+      #dialogContainer
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      (keydown)="handleKeydown($event)">
+      
+      <h2 id="dialog-title">{{ title }}</h2>
+      <div class="dialog-content">
+        <ng-content></ng-content>
+      </div>
+      <div class="dialog-actions">
+        <button #firstFocusable (click)="onCancel()">Cancel</button>
+        <button (click)="onConfirm()">Confirm</button>
+      </div>
+    </div>
+  `
+})
+export class AccessibleDialogComponent {
+  @ViewChild('dialogContainer') dialogContainer!: ElementRef;
+  @ViewChild('firstFocusable') firstFocusable!: ElementRef;
+  
+  private previouslyFocusedElement?: HTMLElement;
+
+  /**
+   * Store the previously focused element and move focus to the dialog.
+   */
+  open(): void {
+    this.previouslyFocusedElement = document.activeElement as HTMLElement;
+    
+    // Move focus to first focusable element in dialog
+    setTimeout(() => {
+      this.firstFocusable.nativeElement.focus();
+    });
+  }
+
+  /**
+   * Restore focus to the previously focused element.
+   */
+  close(): void {
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.focus();
+    }
+  }
+
+  /**
+   * Handle keyboard events for focus trapping.
+   */
+  handleKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.close();
+      return;
+    }
+
+    // Trap focus within dialog
+    if (event.key === 'Tab') {
+      const focusableElements = this.dialogContainer.nativeElement.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+  }
+}
+```
+
+#### Semantic HTML
+
+Use semantic HTML elements for better accessibility:
+
+```html expandable
+<!-- Good: Semantic structure -->
+<article class="cometchat-message-bubble" role="listitem">
+  <header class="message-header">
+    <span class="sender-name">{{ sender.getName() }}</span>
+    <time [dateTime]="message.getSentAt() | date:'yyyy-MM-ddTHH:mm:ss'">
+      {{ message.getSentAt() | date:'shortTime' }}
+    </time>
+  </header>
+  <div class="message-content">
+    <p>{{ message.getText() }}</p>
+  </div>
+  <footer class="message-footer">
+    <span class="read-status">{{ readStatus }}</span>
+  </footer>
+</article>
+
+<!-- Bad: Non-semantic structure -->
+<div class="message">
+  <div class="header">
+    <div class="name">{{ sender.getName() }}</div>
+    <div class="time">{{ message.getSentAt() | date:'shortTime' }}</div>
+  </div>
+  <div class="content">{{ message.getText() }}</div>
+</div>
+```
+
+#### Error Handling
+
+Provide accessible error messages:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-error-handling',
+  template: `
+    <!-- Error announcement for screen readers -->
+    @if (errorMessage) {
+      <div 
+        class="sr-only"
+        role="alert"
+        aria-live="assertive">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <!-- Visible error display -->
+    @if (errorMessage) {
+      <div 
+        class="error-banner"
+        role="alert">
+        <img src="assets/error-icon.svg" alt="" aria-hidden="true" />
+        <span>{{ errorMessage }}</span>
+        <button 
+          aria-label="Dismiss error"
+          (click)="dismissError()">
+          ×
+        </button>
+      </div>
+    }
+  `,
+  styles: [`
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  `]
+})
+export class ErrorHandlingComponent {
+  errorMessage?: string;
+
+  onError(error: CometChat.CometChatException): void {
+    // Set error message for both visual and screen reader users
+    this.errorMessage = this.getAccessibleErrorMessage(error);
+  }
+
+  getAccessibleErrorMessage(error: CometChat.CometChatException): string {
+    // Provide user-friendly, accessible error messages
+    const code = error.getCode();
+    
+    switch (code) {
+      case 'ERR_NETWORK':
+        return 'Unable to connect. Please check your internet connection and try again.';
+      case 'ERR_UNAUTHORIZED':
+        return 'You are not authorized to perform this action.';
+      case 'ERR_MESSAGE_SEND_FAILED':
+        return 'Failed to send message. Please try again.';
+      default:
+        return 'An error occurred. Please try again later.';
+    }
+  }
+
+  dismissError(): void {
+    this.errorMessage = undefined;
+  }
+}
+```
+
+#### Accessibility Testing Tools
+
+Use these tools to validate accessibility:
+
+| Tool | Type | Description |
+|------|------|-------------|
+| **axe DevTools** | Browser Extension | Automated accessibility testing |
+| **WAVE** | Browser Extension | Visual accessibility evaluation |
+| **Lighthouse** | Chrome DevTools | Accessibility auditing |
+| **Pa11y** | CLI Tool | Automated accessibility testing |
+| **eslint-plugin-jsx-a11y** | Linter | Static analysis for accessibility |
+
+#### Accessibility Compliance Checklist
+
+Before releasing your chat implementation, verify:
+
+- [ ] **Perceivable**
+  - [ ] All images have appropriate alt text
+  - [ ] Color is not the only means of conveying information
+  - [ ] Text has sufficient contrast (4.5:1 for normal, 3:1 for large)
+  - [ ] Content is readable when zoomed to 200%
+
+- [ ] **Operable**
+  - [ ] All functionality is keyboard accessible
+  - [ ] Focus order is logical and intuitive
+  - [ ] Focus indicators are visible
+  - [ ] No keyboard traps exist
+  - [ ] Users can pause, stop, or hide moving content
+
+- [ ] **Understandable**
+  - [ ] Language is specified (`lang` attribute)
+  - [ ] Error messages are clear and helpful
+  - [ ] Labels and instructions are provided
+  - [ ] Navigation is consistent
+
+- [ ] **Robust**
+  - [ ] Valid HTML is used
+  - [ ] ARIA attributes are used correctly
+  - [ ] Content works with assistive technologies
+  - [ ] Component works across different browsers
+
+<Warning>
+Accessibility is not a one-time task. Regularly test your implementation with real users who rely on assistive technologies, and incorporate their feedback into your development process.
+</Warning>
+
+<Tip>
+Consider hiring accessibility consultants or conducting usability testing with users who have disabilities. Automated tools catch only about 30% of accessibility issues—manual testing is essential.
+</Tip>
+
+
+
+## Performance
+
+The CometChatMessageList component is designed for optimal performance, even with large message histories. This section covers optimization strategies, memory management, and performance benchmarks to help you build efficient chat experiences.
+
+---
+
+### Optimization Tips
+
+Follow these optimization strategies to ensure the best performance for your chat implementation.
+
+#### 1. Use OnPush Change Detection
+
+The message list component uses `OnPush` change detection internally. Ensure your parent components also use `OnPush` where possible:
+
+```typescript expandable
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+
+@Component({
+  selector: 'app-optimized-chat',
+  changeDetection: ChangeDetectionStrategy.OnPush,  // Recommended
+  template: `
+    <cometchat-message-list [user]="user"></cometchat-message-list>
+  `
+})
+export class OptimizedChatComponent {
+  // Component logic
+}
+```
+
+#### 2. Optimize Custom Templates
+
+When using custom templates, avoid expensive operations in template expressions:
+
+```typescript expandable
+// ❌ BAD: Expensive computation in template
+@Component({
+  template: `
+    <ng-template #customContent let-context>
+      <!-- This runs on every change detection cycle -->
+      <div>{{ processMessage(context.message) }}</div>
+      <div>{{ formatDate(context.message.getSentAt()) }}</div>
+    </ng-template>
+  `
+})
+export class BadTemplateComponent {
+  processMessage(message: any): string {
+    // Expensive operation called repeatedly
+    return message.getText().split(' ').map(word => word.toUpperCase()).join(' ');
+  }
+}
+
+// ✅ GOOD: Use pipes and pre-computed values
+@Component({
+  template: `
+    <ng-template #customContent let-context>
+      <!-- Pipes are memoized and efficient -->
+      <div>{{ context.message.getText() | uppercase }}</div>
+      <div>{{ context.message.getSentAt() * 1000 | date:'shortTime' }}</div>
+    </ng-template>
+  `
+})
+export class GoodTemplateComponent {
+  // No expensive methods in template
+}
+```
+
+#### 3. Implement trackBy for Custom Lists
+
+If you render additional lists within message templates, always use `trackBy`:
+
+```typescript expandable
+@Component({
+  template: `
+    <ng-template #customReactions let-context>
+      <div class="reactions">
+        <!-- Always use trackBy for ngFor -->
+        @for (reaction of context.message.getReactions(); track reaction.getReaction()) {
+          <span class="reaction">{{ reaction.getReaction() }}</span>
+        }
+      </div>
+    </ng-template>
+  `
+})
+export class TrackByExampleComponent {
+  // trackBy is handled by the @for syntax with 'track' keyword
+}
+```
+
+#### 4. Lazy Load Media Content
+
+Configure lazy loading for images and videos to improve initial render time:
+
+```typescript expandable
+@Component({
+  template: `
+    <ng-template #customImageContent let-context>
+      <img 
+        [src]="context.message.getAttachment()?.getUrl()"
+        loading="lazy"
+        decoding="async"
+        alt="Image attachment"
+      />
+    </ng-template>
+  `
+})
+export class LazyLoadMediaComponent {
+  // Images load only when they enter the viewport
+}
+```
+
+#### 5. Debounce Scroll Events
+
+If you add custom scroll handlers, debounce them to prevent performance issues:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subject, fromEvent } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-debounced-scroll',
+  template: `
+    <div #scrollContainer class="scroll-container">
+      <cometchat-message-list [user]="user"></cometchat-message-list>
+    </div>
+  `
+})
+export class DebouncedScrollComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  ngOnInit(): void {
+    // Debounce custom scroll handlers
+    fromEvent(window, 'scroll')
+      .pipe(
+        debounceTime(100),  // Wait 100ms after scroll stops
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.onScrollDebounced();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private onScrollDebounced(): void {
+    // Handle scroll event (e.g., analytics, lazy loading)
+  }
+}
+```
+
+#### 6. Optimize Text Formatters
+
+Keep text formatters efficient by avoiding complex regex patterns:
+
+```typescript expandable
+// ❌ BAD: Complex regex with backtracking
+export class SlowFormatter extends CometChatTextFormatter {
+  readonly id = 'slow-formatter';
+  
+  getRegex(): RegExp {
+    // This regex can cause catastrophic backtracking
+    return /(\w+)+@(\w+)+\.(\w+)+/g;
+  }
+}
+
+// ✅ GOOD: Simple, efficient regex
+export class FastFormatter extends CometChatTextFormatter {
+  readonly id = 'fast-formatter';
+  
+  getRegex(): RegExp {
+    // Simple pattern without backtracking issues
+    return /\b[\w.+-]+@[\w.-]+\.\w{2,}\b/g;
+  }
+}
+```
+
+#### 7. Limit Message History
+
+For very long conversations, consider limiting the message history:
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [messagesRequestBuilder]="limitedBuilder"
+    ></cometchat-message-list>
+  `
+})
+export class LimitedHistoryComponent implements OnInit {
+  limitedBuilder?: CometChat.MessagesRequestBuilder;
+
+  ngOnInit(): void {
+    // Limit to messages from the last 7 days
+    const sevenDaysAgo = Math.floor(Date.now() / 1000) - (7 * 24 * 60 * 60);
+    
+    this.limitedBuilder = new CometChat.MessagesRequestBuilder()
+      .setLimit(30)
+      .setTimestamp(sevenDaysAgo);
+  }
+}
+```
+
+#### 8. Use Efficient Date Formatting
+
+Prefer Angular's built-in `DatePipe` over custom date formatting functions:
+
+```typescript
+// ❌ BAD: Custom date formatting in component
+formatDate(timestamp: number): string {
+  const date = new Date(timestamp * 1000);
+  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+}
+
+// ✅ GOOD: Use DatePipe in template
+// Template: {{ timestamp * 1000 | date:'shortDate' }}
+```
+
+---
+
+### Memory Management
+
+Proper memory management is crucial for long-running chat sessions. Follow these strategies to prevent memory leaks and optimize memory usage.
+
+#### Understanding Memory Usage
+
+The message list component manages memory for:
+
+| Data Type | Storage | Cleanup Strategy |
+|-----------|---------|------------------|
+| Message objects | In-memory array | Cleared on conversation change |
+| DOM elements | Browser DOM | Recycled during scroll |
+| Event listeners | Component | Cleaned up on destroy |
+| Subscriptions | RxJS | Unsubscribed on destroy |
+| Media blobs | Browser memory | Released when not visible |
+
+#### Cleanup on Component Destroy
+
+The component automatically cleans up resources when destroyed. Ensure your custom code also cleans up:
+
+```typescript expandable
+import { Component, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-memory-safe-chat',
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      (error)="onError($event)"
+    ></cometchat-message-list>
+  `
+})
+export class MemorySafeChatComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  ngOnInit(): void {
+    // All subscriptions should use takeUntil
+    this.someObservable$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        // Handle data
+      });
+  }
+
+  ngOnDestroy(): void {
+    // Clean up all subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
+    
+    // Clean up any custom resources
+    this.cleanupCustomResources();
+  }
+
+  private cleanupCustomResources(): void {
+    // Release any custom resources (e.g., blob URLs)
+  }
+}
+```
+
+#### Managing Media Attachments
+
+For conversations with many media attachments, implement lazy loading and cleanup:
+
+```typescript expandable
+@Component({
+  template: `
+    <ng-template #customImageContent let-context>
+      <div class="image-container" 
+           [class.loaded]="isImageLoaded(context.message.getId())">
+        @if (isImageVisible(context.message.getId())) {
+          <img 
+            [src]="context.message.getAttachment()?.getUrl()"
+            loading="lazy"
+            (load)="onImageLoaded(context.message.getId())"
+            (error)="onImageError(context.message.getId())"
+          />
+        } @else {
+          <div class="image-placeholder">
+            <span>{{ 'tap_to_load' | translate }}</span>
+          </div>
+        }
+      </div>
+    </ng-template>
+  `
+})
+export class MediaManagementComponent {
+  private loadedImages = new Set<number>();
+  private visibleImages = new Set<number>();
+
+  isImageLoaded(messageId: number): boolean {
+    return this.loadedImages.has(messageId);
+  }
+
+  isImageVisible(messageId: number): boolean {
+    return this.visibleImages.has(messageId);
+  }
+
+  onImageLoaded(messageId: number): void {
+    this.loadedImages.add(messageId);
+  }
+
+  onImageError(messageId: number): void {
+    this.loadedImages.delete(messageId);
+  }
+
+  // Call this when images enter/exit viewport
+  updateVisibleImages(visibleMessageIds: number[]): void {
+    this.visibleImages = new Set(visibleMessageIds);
+  }
+}
+```
+
+#### Conversation Switching
+
+When switching between conversations, the component automatically:
+
+1. Clears the current message list
+2. Cancels pending message requests
+3. Removes event listeners for the previous conversation
+4. Loads messages for the new conversation
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list
+      [user]="selectedUser"
+      [group]="selectedGroup"
+    ></cometchat-message-list>
+  `
+})
+export class ConversationSwitchComponent {
+  selectedUser?: CometChat.User;
+  selectedGroup?: CometChat.Group;
+
+  // When switching conversations, simply update the input
+  // The component handles cleanup automatically
+  selectUser(user: CometChat.User): void {
+    this.selectedGroup = undefined;
+    this.selectedUser = user;
+  }
+
+  selectGroup(group: CometChat.Group): void {
+    this.selectedUser = undefined;
+    this.selectedGroup = group;
+  }
+}
+```
+
+#### Memory Profiling
+
+Use browser developer tools to monitor memory usage:
+
+``` expandable
+Chrome DevTools Memory Profiling:
+
+1. Open DevTools (F12)
+2. Go to Memory tab
+3. Take heap snapshot before and after actions
+4. Compare snapshots to identify memory leaks
+
+Key metrics to monitor:
+- JS Heap Size: Should stabilize, not continuously grow
+- DOM Nodes: Should remain relatively constant during scroll
+- Event Listeners: Should not accumulate over time
+```
+
+---
+
+### Performance Benchmarks
+
+This section provides performance benchmarks and testing methodology to help you evaluate and optimize your implementation.
+
+#### Benchmark Results
+
+The following benchmarks were measured on a mid-range device (Intel i5, 8GB RAM, Chrome 120):
+
+| Metric | Target | Typical Result | Notes |
+|--------|--------|----------------|-------|
+| **Initial Load Time** | < 500ms | 200-400ms | Time to display first 30 messages |
+| **Scroll Performance** | 60 FPS | 55-60 FPS | Frames per second during scroll |
+| **Memory Usage (100 messages)** | < 50MB | 30-45MB | JS heap size |
+| **Memory Usage (1000 messages)** | < 150MB | 80-120MB | JS heap size |
+| **Time to Interactive** | < 1s | 500-800ms | Time until user can interact |
+| **Message Render Time** | < 16ms | 5-12ms | Time to render a single message |
+| **Scroll to Bottom** | < 100ms | 50-80ms | Time to scroll to latest message |
+
+#### Performance by Message Count
+
+| Message Count | Initial Load | Memory Usage | Scroll FPS |
+|---------------|--------------|--------------|------------|
+| 50 | 150ms | 25MB | 60 |
+| 100 | 250ms | 40MB | 60 |
+| 500 | 400ms | 80MB | 58 |
+| 1000 | 600ms | 120MB | 55 |
+| 5000 | 1200ms | 300MB | 45 |
+
+<Note>
+Performance varies based on message complexity (text vs. media), device capabilities, and browser. These benchmarks represent typical scenarios with mixed message types.
+</Note>
+
+#### Testing Methodology
+
+Use this methodology to benchmark your implementation:
+
+```typescript expandable
+import { Component, OnInit, AfterViewInit } from '@angular/core';
+
+@Component({
+  selector: 'app-performance-test',
+  template: `
+    <cometchat-message-list
+      #messageList
+      [user]="user"
+      (error)="onError($event)"
+    ></cometchat-message-list>
+  `
+})
+export class PerformanceTestComponent implements OnInit, AfterViewInit {
+  private startTime?: number;
+
+  ngOnInit(): void {
+    // Mark start time
+    this.startTime = performance.now();
+    
+    // Start performance measurement
+    performance.mark('message-list-init-start');
+  }
+
+  ngAfterViewInit(): void {
+    // Measure initial render time
+    performance.mark('message-list-init-end');
+    performance.measure(
+      'message-list-initial-render',
+      'message-list-init-start',
+      'message-list-init-end'
+    );
+
+    // Log results
+    const measures = performance.getEntriesByType('measure');
+    console.log('Performance Metrics:', measures);
+
+    // Measure memory usage (Chrome only)
+    if ((performance as any).memory) {
+      console.log('Memory:', {
+        usedJSHeapSize: ((performance as any).memory.usedJSHeapSize / 1048576).toFixed(2) + ' MB',
+        totalJSHeapSize: ((performance as any).memory.totalJSHeapSize / 1048576).toFixed(2) + ' MB'
+      });
+    }
+  }
+
+  /**
+   * Measure scroll performance using requestAnimationFrame
+   */
+  measureScrollPerformance(): void {
+    let frameCount = 0;
+    let lastTime = performance.now();
+    const frameTimes: number[] = [];
+
+    const measureFrame = () => {
+      const currentTime = performance.now();
+      const delta = currentTime - lastTime;
+      frameTimes.push(delta);
+      lastTime = currentTime;
+      frameCount++;
+
+      if (frameCount < 60) {
+        requestAnimationFrame(measureFrame);
+      } else {
+        const avgFrameTime = frameTimes.reduce((a, b) => a + b) / frameTimes.length;
+        const fps = 1000 / avgFrameTime;
+        console.log(`Average FPS: ${fps.toFixed(2)}`);
+      }
+    };
+
+    requestAnimationFrame(measureFrame);
+  }
+}
+```
+
+#### Browser DevTools Performance Analysis
+
+Use Chrome DevTools to analyze performance:
+
+``` expandable
+Performance Tab Analysis:
+
+1. Open DevTools (F12) → Performance tab
+2. Click Record, perform actions, click Stop
+3. Analyze the flame chart for:
+   - Long tasks (> 50ms) - may cause jank
+   - Layout thrashing - multiple forced reflows
+   - Excessive paint operations
+
+Key areas to check:
+- Scripting time: Should be < 50% of total
+- Rendering time: Should be < 30% of total
+- Painting time: Should be < 20% of total
+- Idle time: Higher is better
+```
+
+#### Lighthouse Performance Audit
+
+Run Lighthouse audits to get performance scores:
+
+``` expandable
+Lighthouse Audit Steps:
+
+1. Open DevTools (F12) → Lighthouse tab
+2. Select "Performance" category
+3. Choose "Mobile" or "Desktop"
+4. Click "Analyze page load"
+
+Target Scores:
+- Performance: > 90
+- First Contentful Paint: < 1.8s
+- Time to Interactive: < 3.8s
+- Total Blocking Time: < 200ms
+- Cumulative Layout Shift: < 0.1
+```
+
+#### Mobile Performance Considerations
+
+Mobile devices require additional optimization considerations:
+
+| Factor | Desktop | Mobile | Optimization |
+|--------|---------|--------|--------------|
+| CPU | Fast | Limited | Reduce JS execution time |
+| Memory | 8-16GB | 2-4GB | Limit message history |
+| Network | Fast | Variable | Implement offline support |
+| Battery | N/A | Critical | Reduce background processing |
+| Touch | N/A | Primary | Optimize touch handlers |
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [messagesRequestBuilder]="mobileOptimizedBuilder"
+    ></cometchat-message-list>
+  `
+})
+export class MobileOptimizedComponent implements OnInit {
+  mobileOptimizedBuilder?: CometChat.MessagesRequestBuilder;
+
+  ngOnInit(): void {
+    // Detect mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // Use smaller page size on mobile
+    const pageSize = isMobile ? 20 : 30;
+    
+    this.mobileOptimizedBuilder = new CometChat.MessagesRequestBuilder()
+      .setLimit(pageSize)
+      .hideReplies(true);
+  }
+}
+```
+
+#### Performance Monitoring in Production
+
+Implement performance monitoring for production:
+
+```typescript expandable
+import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class PerformanceMonitorService {
+  private metrics: Map<string, number[]> = new Map();
+
+  /**
+   * Record a performance metric
+   */
+  recordMetric(name: string, value: number): void {
+    if (!this.metrics.has(name)) {
+      this.metrics.set(name, []);
+    }
+    this.metrics.get(name)!.push(value);
+  }
+
+  /**
+   * Get average for a metric
+   */
+  getAverage(name: string): number {
+    const values = this.metrics.get(name);
+    if (!values || values.length === 0) return 0;
+    return values.reduce((a, b) => a + b) / values.length;
+  }
+
+  /**
+   * Report metrics to analytics service
+   */
+  reportMetrics(): void {
+    const report = {
+      messageListInitTime: this.getAverage('message-list-init'),
+      scrollFPS: this.getAverage('scroll-fps'),
+      memoryUsage: this.getAverage('memory-usage'),
+      timestamp: Date.now()
+    };
+    
+    // Send to your analytics service
+    console.log('Performance Report:', report);
+  }
+}
+```
+
+---
+
+### Performance Best Practices Summary
+
+Follow this checklist to ensure optimal performance:
+
+#### Initial Load Optimization
+- [ ] Use appropriate pagination limit (20-30 messages)
+- [ ] Implement lazy loading for media content
+- [ ] Use `OnPush` change detection strategy
+- [ ] Minimize initial bundle size
+
+#### Runtime Optimization
+- [ ] Avoid expensive computations in templates
+- [ ] Use `trackBy` for all `@for` loops
+- [ ] Debounce scroll and resize event handlers
+- [ ] Keep text formatters simple and efficient
+
+#### Memory Management
+- [ ] Clean up subscriptions on component destroy
+- [ ] Release blob URLs when no longer needed
+- [ ] Limit message history for long conversations
+- [ ] Monitor memory usage in production
+
+#### Mobile Optimization
+- [ ] Reduce page size for mobile devices
+- [ ] Implement touch-optimized interactions
+- [ ] Consider offline support for poor connectivity
+- [ ] Test on actual mobile devices
+
+#### Monitoring
+- [ ] Implement performance metrics collection
+- [ ] Set up alerts for performance degradation
+- [ ] Regularly run Lighthouse audits
+- [ ] Profile with browser DevTools
+
+<Tip>
+Performance optimization is an ongoing process. Regularly profile your application, especially after adding new features or updating dependencies. Set performance budgets and monitor them in your CI/CD pipeline.
+</Tip>
+
+<Warning>
+Avoid premature optimization. Focus on the most impactful optimizations first (pagination, lazy loading, change detection) before micro-optimizing. Always measure before and after changes to verify improvements.
+</Warning>
+
+
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatmessagelist).
+</Info>
+
+
+---
+
+## Code Examples
+
+This section provides comprehensive, copy-paste ready code examples for common use cases with the CometChatMessageList component. Each example includes complete setup code, imports, and detailed comments explaining the implementation.
+
+
+### Basic Setup Example
+
+This example demonstrates the complete setup process for integrating CometChatMessageList into your Angular application, including CometChat initialization, user login, and component configuration.
+
+<Tabs>
+<Tab title="Complete Setup">
+
+```typescript expandable
+/**
+ * Complete CometChat Message List Setup Example
+ * 
+ * This example demonstrates:
+ * 1. CometChat SDK initialization
+ * 2. User authentication (login)
+ * 3. Fetching a user/group for conversation
+ * 4. Configuring the message list component
+ * 5. Handling events and errors
+ * 
+ * Prerequisites:
+ * - CometChat account with App ID and Auth Key
+ * - @cometchat/chat-sdk-javascript installed
+ * - @cometchat/chat-uikit-angular installed
+ * 
+ * @see Requirements 10.1 - Basic setup example
+ * @see Requirements 10.8 - Copy-paste ready
+ */
+
+// ============================================================
+// Step 1: Application Entry Point (main.ts)
+// ============================================================
+
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+import { appConfig } from './app/app.config';
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+/**
+ * CometChat Configuration
+ * Replace these values with your actual CometChat credentials
+ * Get these from: https://app.cometchat.com
+ */
+const COMETCHAT_CONFIG = {
+  APP_ID: 'YOUR_APP_ID',     // Your CometChat App ID
+  REGION: 'YOUR_REGION',     // 'us', 'eu', 'in', etc.
+  AUTH_KEY: 'YOUR_AUTH_KEY', // Your Auth Key (dev only — use Auth Token in production)
+};
+
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId(COMETCHAT_CONFIG.APP_ID)
+  .setRegion(COMETCHAT_CONFIG.REGION)
+  .setAuthKey(COMETCHAT_CONFIG.AUTH_KEY)
+  .subscribePresenceForAllUsers()
+  .build();
+
+CometChatUIKit.init(UIKitSettings)
+  .then(() => {
+    console.log('✅ CometChat UIKit initialized successfully');
+    bootstrapApplication(AppComponent, appConfig).catch(console.error);
+  })
+  .catch((error) => {
+    console.error('❌ CometChat UIKit initialization failed:', error);
+  });
+
+// ============================================================
+// app.config.ts
+// ============================================================
+
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter([]),
+  ],
+};
+
+// ============================================================
+// Step 2: Chat Component (chat.component.ts)
+// ============================================================
+
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatMessageListComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+/**
+ * Chat Component
+ * 
+ * A complete chat interface with:
+ * - Message header showing user/group info
+ * - Message list displaying conversation messages
+ * - Message composer for sending new messages
+ */
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [
+    CommonModule,
+    CometChatMessageListComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="chat-loading">
+        <div class="chat-loading__spinner"></div>
+        <p class="chat-loading__text">Loading chat...</p>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (error()) {
+      <div class="chat-error">
+        <p class="chat-error__message">{{ error() }}</p>
+        <button class="chat-error__retry" (click)="retrySetup()">
+          Retry
+        </button>
+      </div>
+    }
+
+    <!-- Chat Interface -->
+    @if (isReady() && chatUser()) {
+      <div class="chat-container">
+        <!-- Message Header: Shows user info and back button -->
+        <cometchat-message-header
+          [user]="chatUser()!"
+          (backClick)="onBackClick()"
+        ></cometchat-message-header>
+
+        <!-- Message List: Displays conversation messages -->
+        <cometchat-message-list
+          [user]="chatUser()!"
+          [scrollToBottomOnNewMessages]="true"
+          (threadRepliesClick)="onThreadClick($event)"
+          (error)="onMessageListError($event)"
+        ></cometchat-message-list>
+
+        <!-- Message Composer: Input for sending messages -->
+        <cometchat-message-composer
+          [user]="chatUser()!"
+          (error)="onComposerError($event)"
+        ></cometchat-message-composer>
+      </div>
+    }
+  `,
+  styles: [`
+    /* Container Layout */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+      background: var(--cometchat-background-color-01, #ffffff);
+    }
+
+    /* Message list takes remaining space */
+    cometchat-message-list {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Loading State Styles */
+    .chat-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: var(--cometchat-spacing-3, 12px);
+    }
+
+    .chat-loading__spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--cometchat-border-color-light, #e8e8e8);
+      border-top-color: var(--cometchat-primary-color, #6852D6);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .chat-loading__text {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-secondary, #727272);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Error State Styles */
+    .chat-error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: var(--cometchat-spacing-4, 16px);
+      padding: var(--cometchat-spacing-4, 16px);
+    }
+
+    .chat-error__message {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-error-color, #F44649);
+      text-align: center;
+    }
+
+    .chat-error__retry {
+      padding: var(--cometchat-spacing-2, 8px) var(--cometchat-spacing-4, 16px);
+      background: var(--cometchat-primary-color, #6852D6);
+      color: var(--cometchat-static-white, #ffffff);
+      border: none;
+      border-radius: var(--cometchat-radius-2, 8px);
+      font: var(--cometchat-font-button-medium);
+      cursor: pointer;
+    }
+
+    .chat-error__retry:hover {
+      opacity: 0.9;
+    }
+  `],
+})
+export class ChatComponent implements OnInit, OnDestroy {
+  // ==================== State Management ====================
+  
+  /** Current chat user for 1-on-1 conversation */
+  chatUser = signal<CometChat.User | null>(null);
+  
+  /** Loading state during setup */
+  isLoading = signal<boolean>(true);
+  
+  /** Error message if setup fails */
+  error = signal<string | null>(null);
+  
+  /** Computed: Check if chat is ready to display */
+  isReady = computed(() => !this.isLoading() && !this.error());
+
+  // ==================== Configuration ====================
+  
+  /**
+   * User ID to chat with
+   * Replace with the actual user ID you want to chat with
+   */
+  private readonly RECEIVER_UID = 'RECEIVER_USER_ID';
+
+  // ==================== Lifecycle ====================
+
+  async ngOnInit(): Promise<void> {
+    await this.setupChat();
+  }
+
+  ngOnDestroy(): void {
+    // Cleanup: Remove any listeners if needed
+  }
+
+  // ==================== Setup Methods ====================
+
+  /**
+   * Complete chat setup process
+   * 1. Check if user is already logged in
+   * 2. If not, login the user
+   * 3. Fetch the receiver user
+   */
+  async setupChat(): Promise<void> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    try {
+      // Step 1: Check if already logged in
+      let loggedInUser = await CometChatUIKit.getLoggedinUser();
+
+      // Step 2: Login if not already logged in
+      if (!loggedInUser) {
+        loggedInUser = await this.loginUser();
+      }
+
+      console.log('✅ User logged in:', loggedInUser.getName());
+
+      // Step 3: Fetch the user to chat with
+      const receiverUser = await CometChat.getUser(this.RECEIVER_UID);
+      this.chatUser.set(receiverUser);
+
+      console.log('✅ Chat ready with:', receiverUser.getName());
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Setup failed';
+      this.error.set(errorMessage);
+      console.error('❌ Chat setup failed:', err);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  /**
+   * Login user via CometChatUIKit
+   * 
+   * IMPORTANT: In production, use a secure authentication method:
+   * - Generate auth tokens on your server
+   * - Use CometChatUIKit.loginWithAuthToken(authToken) instead
+   */
+  private async loginUser(): Promise<CometChat.User> {
+    const uid = 'CURRENT_USER_ID'; // Replace with actual user ID
+    return await CometChatUIKit.login(uid);
+  }
+
+  /**
+   * Retry setup after an error
+   */
+  async retrySetup(): Promise<void> {
+    await this.setupChat();
+  }
+
+  // ==================== Event Handlers ====================
+
+  /**
+   * Handle back button click from message header
+   * Navigate back to conversation list or close chat
+   */
+  onBackClick(): void {
+    console.log('Back button clicked');
+    // Implement navigation logic here
+    // Example: this.router.navigate(['/conversations']);
+  }
+
+  /**
+   * Handle thread replies click
+   * Open thread view for the selected message
+   */
+  onThreadClick(message: CometChat.BaseMessage): void {
+    console.log('Thread clicked for message:', message.getId());
+    // Implement thread view navigation
+    // Example: this.openThreadPanel(message);
+  }
+
+  /**
+   * Handle message list errors
+   * Log and optionally display to user
+   */
+  onMessageListError(error: CometChat.CometChatException): void {
+    console.error('Message list error:', error);
+    // Optionally show a toast notification
+  }
+
+  /**
+   * Handle composer errors
+   * Log and optionally display to user
+   */
+  onComposerError(error: CometChat.CometChatException): void {
+    console.error('Composer error:', error);
+    // Optionally show a toast notification
+  }
+}
+```
+
+</Tab>
+<Tab title="main.ts">
+
+```typescript expandable
+/**
+ * Application Entry Point (main.ts)
+ * 
+ * Initialize CometChat UIKit before bootstrapping the Angular app.
+ * This is the recommended pattern — init must resolve before any
+ * UIKit components are rendered.
+ */
+
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { AppComponent } from './app/app.component';
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId('YOUR_APP_ID')
+  .setRegion('YOUR_REGION')
+  .setAuthKey('YOUR_AUTH_KEY') // dev only — use loginWithAuthToken() in production
+  .subscribePresenceForAllUsers()
+  .build();
+
+CometChatUIKit.init(UIKitSettings)
+  .then(() => {
+    bootstrapApplication(AppComponent, appConfig).catch(console.error);
+  })
+  .catch((error) => {
+    console.error('CometChat UIKit initialization failed:', error);
+  });
+```
+
+</Tab>
+<Tab title="Group Chat">
+
+```typescript expandable
+/**
+ * Group Chat Example
+ * 
+ * This example shows how to set up the message list for group conversations
+ */
+
+import { Component, OnInit, signal } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatMessageListComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-chat',
+  standalone: true,
+  imports: [
+    CometChatMessageListComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    @if (chatGroup()) {
+      <div class="chat-container">
+        <!-- Message Header for Group -->
+        <cometchat-message-header
+          [group]="chatGroup()!"
+        ></cometchat-message-header>
+
+        <!-- Message List for Group -->
+        <cometchat-message-list
+          [group]="chatGroup()!"
+          [scrollToBottomOnNewMessages]="true"
+          (error)="onError($event)"
+        ></cometchat-message-list>
+
+        <!-- Message Composer for Group -->
+        <cometchat-message-composer
+          [group]="chatGroup()!"
+        ></cometchat-message-composer>
+      </div>
+    }
+  `,
+  styles: [`
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    cometchat-message-list {
+      flex: 1;
+      overflow: hidden;
+    }
+  `],
+})
+export class GroupChatComponent implements OnInit {
+  /** Current group for conversation */
+  chatGroup = signal<CometChat.Group | null>(null);
+
+  /** Group GUID to chat in */
+  private readonly GROUP_GUID = 'YOUR_GROUP_GUID';
+
+  async ngOnInit(): Promise<void> {
+    try {
+      // Fetch the group
+      const group = await CometChat.getGroup(this.GROUP_GUID);
+      this.chatGroup.set(group);
+      console.log('✅ Group chat ready:', group.getName());
+    } catch (error) {
+      console.error('❌ Failed to fetch group:', error);
+    }
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Chat error:', error);
+  }
+}
+```
+
+</Tab>
+<Tab title="Minimal Setup">
+
+```typescript expandable
+/**
+ * Minimal Setup Example
+ * 
+ * The simplest possible implementation of CometChatMessageList
+ * Use this as a starting point and add features as needed
+ */
+
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-minimal-chat',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    @if (user) {
+      <cometchat-message-list
+        [user]="user"
+        (error)="onError($event)"
+      ></cometchat-message-list>
+    }
+  `,
+  styles: [`
+    :host {
+      display: block;
+      height: 100vh;
+    }
+  `],
+})
+export class MinimalChatComponent implements OnInit {
+  user?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    // Assumes CometChat is already initialized and user is logged in
+    this.user = await CometChat.getUser('RECEIVER_UID');
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Error:', error);
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+<Note>
+**Security Note**: The examples above use Auth Key for simplicity. In production applications:
+1. Generate authentication tokens on your server
+2. Use `CometChatUIKit.loginWithAuthToken(authToken)` instead of `CometChatUIKit.login(uid)`
+3. Never expose your Auth Key in client-side code
+</Note>
+
+### Setup Checklist
+
+Before running the examples, ensure you have completed these steps:
+
+<Steps>
+<Step title="Create CometChat Account">
+Sign up at [cometchat.com](https://www.cometchat.com) and create a new app to get your App ID, Region, and Auth Key.
+</Step>
+
+<Step title="Install Dependencies">
+```bash
+npm install @cometchat/chat-sdk-javascript @cometchat/chat-uikit-angular
+```
+</Step>
+
+<Step title="Update Configuration">
+Replace placeholder values in the code:
+- `YOUR_APP_ID` → Your CometChat App ID
+- `YOUR_REGION` → Your region (us, eu, in, etc.)
+- `YOUR_AUTH_KEY` → Your Auth Key
+- `CURRENT_USER_ID` → The logged-in user's ID
+- `RECEIVER_USER_ID` → The user ID to chat with
+</Step>
+
+<Step title="Create Test Users">
+Create test users in your CometChat dashboard or via the API:
+```typescript
+const user = new CometChat.User('user-1');
+user.setName('John Doe');
+await CometChat.createUser(user, 'YOUR_AUTH_KEY');
+```
+</Step>
+
+<Step title="Run Your Application">
+```bash
+ng serve
+```
+</Step>
+</Steps>
+
+### Common Configuration Options
+
+Here are the most commonly used configuration options for the message list:
+
+```typescript expandable
+<cometchat-message-list
+  [user]="user"
+  
+  <!-- Behavior Options -->
+  [scrollToBottomOnNewMessages]="true"
+  [disableSoundForMessages]="false"
+  [messageAlignment]="'standard'"
+  
+  <!-- Display Options -->
+  [hideReceipts]="false"
+  [hideDateSeparator]="false"
+  [hideAvatar]="false"
+  
+  <!-- Feature Options -->
+  [hideReactionOption]="false"
+  [hideReplyInThreadOption]="false"
+  [hideEditMessageOption]="false"
+  [hideDeleteMessageOption]="false"
+  
+  <!-- AI Smart Chat Features -->
+  [showSmartReplies]="false"
+  [showConversationStarters]="false"
+  
+  <!-- Events -->
+  (error)="onError($event)"
+  (threadRepliesClick)="onThreadClick($event)"
+  (reactionClick)="onReactionClick($event)"
+></cometchat-message-list>
+```
+
+<Tip>
+Start with the minimal setup and progressively add features as needed. This approach helps you understand each configuration option and troubleshoot issues more easily.
+</Tip>

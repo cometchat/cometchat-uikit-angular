@@ -1,0 +1,21 @@
+<div class="cometchat-radio-button">
+  <label class="cometchat-radio-button__label">
+    <input
+      type="radio"
+      class="cometchat-radio-button__input"
+      [id]="id"
+      [name]="name"
+      [value]="id"
+      [checked]="isChecked"
+      [disabled]="disabled"
+      [attr.aria-checked]="ariaCheckedValue"
+      [attr.aria-disabled]="ariaDisabledValue"
+      [attr.aria-label]="accessibleLabel"
+      (change)="onRadioChange($event)"
+    />
+    <span class="cometchat-radio-button__custom"></span>
+    @if (labelText) {
+      <span class="cometchat-radio-button__text">{{ labelText }}</span>
+    }
+  </label>
+</div>

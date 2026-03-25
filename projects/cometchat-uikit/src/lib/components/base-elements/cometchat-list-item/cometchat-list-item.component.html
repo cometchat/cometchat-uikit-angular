@@ -1,0 +1,86 @@
+<div class="cometchat">
+  <div
+    class="cometchat-list-item"
+    [id]="id"
+    role="listitem"
+    [attr.tabindex]="disableTabIndex ? null : 0"
+    [attr.aria-label]="computedAriaLabel"
+    [attr.aria-describedby]="subtitle ? subtitleId : null"
+    (mouseenter)="onMouseEnter()"
+    (mouseleave)="onMouseLeave()"
+    (focus)="onListItemFocus()"
+    (blur)="onListItemBlur()"
+    (click)="handleListItemClick($event)"
+    (keydown)="onKeyDown($event)">
+    
+    <!-- Leading View: Avatar or Custom Template -->
+    <ng-container *ngIf="leadingView; else defaultLeadingView">
+      <ng-container *ngTemplateOutlet="leadingView"></ng-container>
+    </ng-container>
+    
+    <ng-template #defaultLeadingView>
+      <div *ngIf="showAvatar" class="cometchat-list-item__leading-view">
+        <cometchat-avatar
+          [image]="avatarURL"
+          [name]="avatarName">
+        </cometchat-avatar>
+        <div class="cometchat-status-indicator cometchat-list-item__status">
+          <div class="cometchat-list-item__status-icon"></div>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Body: Title, Subtitle, Trailing/Menu Views -->
+    <div class="cometchat-list-item__body">
+      <div class="cometchat-list-item__title-container">
+        <!-- Title View: Custom Template or Default Title -->
+        <ng-container *ngIf="titleView; else defaultTitleView">
+          <ng-container *ngTemplateOutlet="titleView"></ng-container>
+        </ng-container>
+        
+        <ng-template #defaultTitleView>
+          <div class="cometchat-list-item__body-title">
+            {{ title }}
+          </div>
+        </ng-template>
+
+        <!-- Subtitle View -->
+        <div 
+          class="cometchat-list-item__body-subtitle"
+          [id]="subtitleId"
+          *ngIf="subtitleView || subtitle">
+          <ng-container *ngIf="subtitleView">
+            <ng-container *ngTemplateOutlet="subtitleView"></ng-container>
+          </ng-container>
+          <ng-container *ngIf="!subtitleView && subtitle">
+            {{ subtitle }}
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Trailing View: Shown when not hovering/focused or no menu -->
+      <div
+        #trailingViewContainer
+        *ngIf="showTrailingView"
+        class="cometchat-list-item__trailing-view"
+        (click)="onTrailingViewClick($event)">
+        <ng-container *ngIf="trailingView">
+          <ng-container *ngTemplateOutlet="trailingView"></ng-container>
+        </ng-container>
+      </div>
+
+      <!-- Menu View: Shown on hover/focus -->
+      <div
+        #menuViewContainer
+        *ngIf="showMenuView"
+        class="cometchat-list-item__menu-view"
+        role="group"
+        [attr.aria-label]="'Actions for ' + title"
+        (click)="onMenuViewClick($event)">
+        <ng-container *ngIf="isMenuVisible && menuView">
+          <ng-container *ngTemplateOutlet="menuView"></ng-container>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

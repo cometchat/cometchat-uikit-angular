@@ -1,0 +1,338 @@
+<!-- CometChatMessageBubble Template -->
+<!-- Requirements: 1.1, 2.1-2.8, 3.1-3.9, 16.1-16.6, 18.1-18.10 -->
+
+<div class="cometchat">
+  <div 
+    #bubbleWrapper
+    class="cometchat-message-bubble__wrapper"
+    [class.cometchat-message-bubble__wrapper--selected]="isSelected"
+    [class.cometchat-message-bubble__wrapper--outgoing]="alignment === MessageBubbleAlignment.right"
+    [class.cometchat-message-bubble__wrapper--center]="alignment === MessageBubbleAlignment.center"
+    [attr.data-message-id]="messageId"
+    role="article"
+    [attr.aria-label]="getAriaLabel()"
+    [attr.aria-describedby]="'message-content-' + messageId"
+    [attr.aria-selected]="isSelected ? 'true' : null"
+    [attr.aria-posinset]="ariaPosinset"
+    [attr.aria-setsize]="ariaSetsize"
+    tabindex="0"
+    (keydown)="onKeyDown($event)">
+    
+    <!-- Custom Bubble View - Replaces entire bubble when provided -->
+    @if (effectiveBubbleView) {
+      <ng-container *ngTemplateOutlet="effectiveBubbleView; context: { $implicit: message, alignment: alignment, group: group }"></ng-container>
+    } @else {
+      <!-- Leading View (Avatar) -->
+      @if (shouldShowLeadingView) {
+        <div class="cometchat-message-bubble__leading-view">
+          @if (effectiveLeadingView) {
+            <ng-container *ngTemplateOutlet="effectiveLeadingView; context: { $implicit: message }"></ng-container>
+          } @else {
+            <cometchat-avatar
+              [image]="sender?.getAvatar() || ''"
+              [name]="sender?.getName() || ''"
+              (click)="onAvatarClick()"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="'Avatar for ' + (sender?.getName() || 'Unknown')"
+              (keydown.enter)="onAvatarClick()"
+              (keydown.space)="onAvatarClick()">
+            </cometchat-avatar>
+          }
+        </div>
+      }
+      
+      <!-- Message Bubble Container -->
+      <div 
+        class="cometchat-message-bubble"
+        [class]="bubbleClassName"
+        [id]="'message-' + messageId">
+      
+      <!-- Header View (Sender Name) -->
+      @if (shouldShowHeaderView) {
+        <div class="cometchat-message-bubble__header-view">
+          @if (effectiveHeaderView) {
+            <ng-container *ngTemplateOutlet="effectiveHeaderView; context: { $implicit: message }"></ng-container>
+          } @else {
+            <span class="cometchat-message-bubble__sender-name">
+              {{ sender?.getName() }}
+            </span>
+          }
+        </div>
+      }
+      
+      <!-- Body Section -->
+      <div>
+        <div 
+          class="cometchat-message-bubble__body-container"
+          (mouseleave)="onMouseLeave()">
+          
+          <!-- Context Menu Options -->
+          @if (options.length > 0 && !disableInteraction) {
+            <div 
+              class="cometchat-message-bubble__options"
+              [class.cometchat-message-bubble__options--visible]="isHovering"
+              [class]="optionsPositionClass">
+              <cometchat-context-menu
+                [data]="options"
+                [topMenuSize]="effectiveQuickOptionsCount"
+                [placement]="contextMenuPlacement"
+                [disableBackgroundInteraction]="true"
+                [useParentContainer]="true"
+                (optionClick)="onOptionClick($event)">
+              </cometchat-context-menu>
+            </div>
+          }
+          
+          <!-- Body Wrapper -->
+          <div class="cometchat-message-bubble__body-wrapper">
+            <div 
+              class="cometchat-message-bubble__body"
+              [class]="bubbleTypeClassName"
+              [class.cometchat-message-bubble__body--moderated]="shouldShowModerationIndicator"
+              (mouseenter)="!disableInteraction && onMouseEnter()"
+              (click)="!disableInteraction && onBodyClick()">
+              
+              <!-- Reply View -->
+              @if (shouldShowReplyView) {
+                <div 
+                  class="cometchat-message-bubble__body-reply-view"
+                  (click)="onReplyPreviewClick($event)"
+                  (keydown)="onReplyPreviewKeyDown($event)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="'reply_preview_view_original' | translate">
+                  @if (effectiveReplyView) {
+                    <ng-container *ngTemplateOutlet="effectiveReplyView; context: { $implicit: message }"></ng-container>
+                  } @else {
+                    <cometchat-message-preview
+                      [message]="quotedMessage"
+                      [hideCloseButton]="true">
+                    </cometchat-message-preview>
+                  }
+                </div>
+              }
+              
+              <!-- Content View -->
+              <div 
+                #contentViewRef
+                class="cometchat-message-bubble__body-content-view"
+                [id]="'message-content-' + messageId"
+                role="region"
+                [attr.aria-label]="'Message content'">
+                @if (effectiveContentView) {
+                  <ng-container *ngTemplateOutlet="effectiveContentView; context: { $implicit: message }"></ng-container>
+                } @else {
+                  <!-- Default content rendering based on message type -->
+                  @if (isDeleted) {
+                    <!-- Deleted Message -->
+                    <cometchat-delete-bubble [isSentByMe]="isOutgoingStyle"></cometchat-delete-bubble>
+                  } @else {
+                    <!-- Regular Messages - switch based on contentType -->
+                    @switch (contentType) {
+                      @case ('call') {
+                        <!-- Call Message (1v1 audio/video calls) - Requirement 4.3, 4.4, 4.5, 4.6 -->
+                        <!-- Renders as action bubble with call status icon -->
+                        <cometchat-action-bubble 
+                          [messageText]="actionMessageText"
+                          [iconUrl]="callIconUrl"
+                          [iconErrorColor]="callIconErrorColor">
+                        </cometchat-action-bubble>
+                      }
+                      @case ('action') {
+                        <!-- Action Message (group member actions) -->
+                        <cometchat-action-bubble [messageText]="actionMessageText"></cometchat-action-bubble>
+                      }
+                      @case ('text') {
+                        <cometchat-text-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment"
+                          [textFormatters]="effectiveTextFormatters()"
+                          [translatedTextOverride]="translatedText">
+                        </cometchat-text-bubble>
+                      }
+                      @case ('image') {
+                        <cometchat-image-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment"
+                          [disableInteraction]="disableInteraction">
+                        </cometchat-image-bubble>
+                      }
+                      @case ('video') {
+                        <cometchat-video-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment"
+                          [disableInteraction]="disableInteraction">
+                        </cometchat-video-bubble>
+                      }
+                      @case ('audio') {
+                        <cometchat-audio-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment">
+                        </cometchat-audio-bubble>
+                      }
+                      @case ('file') {
+                        <cometchat-file-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment">
+                        </cometchat-file-bubble>
+                      }
+                      @case ('poll') {
+                        <!-- Poll Bubble - Requirement 3.1 -->
+                        <cometchat-poll-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment"
+                          [loggedInUser]="loggedInUser || undefined"
+                          [disableInteraction]="disableInteraction">
+                        </cometchat-poll-bubble>
+                      }
+                      @case ('sticker') {
+                        <!-- Sticker Bubble - Requirement 3.2 -->
+                        <cometchat-sticker-bubble
+                          [message]="$any(message)"
+                          [alignment]="isOutgoingStyle ? MessageBubbleAlignment.right : MessageBubbleAlignment.left">
+                        </cometchat-sticker-bubble>
+                      }
+                      @case ('document') {
+                        <!-- Document Bubble - Requirement 3.3 -->
+                        <cometchat-collaborative-document-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment"
+                          [disableInteraction]="disableInteraction">
+                        </cometchat-collaborative-document-bubble>
+                      }
+                      @case ('whiteboard') {
+                        <!-- Whiteboard Bubble - Requirement 3.4 -->
+                        <cometchat-collaborative-whiteboard-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment"
+                          [disableInteraction]="disableInteraction">
+                        </cometchat-collaborative-whiteboard-bubble>
+                      }
+                      @case ('meeting') {
+                        <cometchat-call-bubble
+                        [buttonText]="'Join Call'"
+                          [message]="$any(message)"
+                          [alignment]="isOutgoingStyle ? 'right' : 'left'"
+                          [disableInteraction]="disableInteraction"
+                          (buttonClick)="onCallBubbleJoinClick($event)">
+                        </cometchat-call-bubble>
+                      }
+                      @default {
+                        <!-- Fallback for unsupported message types - Requirement 3.6 -->
+                        <div class="cometchat-message-bubble__unsupported">
+                          {{ 'message_type_not_supported' | translate }}
+                        </div>
+                      }
+                    }
+                  }
+                }
+              </div>
+              
+          
+              
+              <!-- Status Info View -->
+              @if (shouldShowStatusInfoView) {
+                <div 
+                  class="cometchat-message-bubble__body-status-info-view"
+                  role="status"
+                  aria-live="polite">
+                  @if (effectiveStatusInfoView) {
+                    <ng-container *ngTemplateOutlet="effectiveStatusInfoView; context: { $implicit: message }"></ng-container>
+                  } @else {
+                    <div class="cometchat-message-bubble__status-info-view">
+                      @if (isEdited) {
+                        <span class="cometchat-message-bubble__status-info-view-helper-text">
+                          {{ 'message_list_action_edited' | translate }}
+                        </span>
+                      }
+                      @if (!hideTimestamp) {
+                        <cometchat-date [timestamp]="message.getSentAt()" [calendarObject]="calendarObject"></cometchat-date>
+                      }
+                      @if (showError) {
+                        <!-- Error state indicator - shown when message is in error state -->
+                        <div 
+                          class="cometchat-receipts cometchat-receipts-error"
+                          role="img"
+                          [attr.aria-label]="'message_status_error' | translate">
+                          <div class="cometchat-message-list__receipt"></div>
+                        </div>
+                      } @else if (!effectiveHideReceipts() && isOutgoingStyle && !isDeleted) {
+                        <div 
+                          class="cometchat-receipts" 
+                          [class]="receiptClass"
+                          role="img"
+                          [attr.aria-label]="receiptAriaLabel">
+                          <div class="cometchat-message-list__receipt"></div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+              
+           
+            </div>
+            
+            <!-- Bottom View -->
+            @if (effectiveBottomView) {
+              <div class="cometchat-message-bubble__body-bottom-view">
+                <ng-container *ngTemplateOutlet="effectiveBottomView; context: { $implicit: message }"></ng-container>
+              </div>
+            }
+            
+            <!-- Footer View -->
+            @if (effectiveFooterView) {
+              <div class="cometchat-message-bubble__body-footer-view">
+                <ng-container *ngTemplateOutlet="effectiveFooterView; context: { $implicit: message }"></ng-container>
+              </div>
+            }
+            @else {
+                 <!-- Moderation Status Indicator - Requirement 9.7 -->
+              @if (shouldShowModerationIndicator) {
+                <div 
+                  class="cometchat-message-bubble__moderation-indicator"
+                  [class.cometchat-message-bubble__moderation-indicator--disapproved]="isDisapprovedByModeration"
+                  [style.width]="moderationIndicatorWidth()"
+                  role="status"
+                  [attr.aria-label]="('moderation_block_message' | translate)">
+                  <div class="cometchat-message-bubble__moderation-indicator-icon"></div>
+                  <span class="cometchat-message-bubble__moderation-indicator-text">
+                   {{ 'moderation_block_message' | translate }}
+                  </span>
+                </div>
+              }
+              <!-- Reactions View - Requirement 7.1, 7.2, 7.3, 7.4 -->
+              @else if (shouldShowReactions && !disableInteraction) {
+                <cometchat-reactions
+                  [message]="message"
+                  [alignment]="alignment"
+                  [reactionsRequestBuilder]="reactionsRequestBuilder"
+                  (reactionClick)="onReactionClick($event.reaction)"
+                  (reactionListItemClick)="onReactionListItemClick($event)">
+                </cometchat-reactions>
+              }
+            }
+            
+            <!-- Thread View -->
+            @if (shouldShowThreadView || effectiveThreadView) {
+              <div class="cometchat-message-bubble__body-thread-view">
+                @if (effectiveThreadView) {
+                  <ng-container *ngTemplateOutlet="effectiveThreadView; context: { $implicit: message }"></ng-container>
+                } @else if (shouldShowThreadView) {
+                  <cometchat-thread-view
+                    [replyCount]="replyCount"
+                    [unreadReplyCount]="unreadReplyCount"
+                    [parentMessage]="message"
+                    (threadClick)="onThreadClick()">
+                  </cometchat-thread-view>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,140 @@
+---
+title: "CometChatLinkPopover"
+description: "A small popover component that appears on links in the editor, providing quick Edit and Remove actions"
+---
+The `CometChatLinkPopover` component displays a small floating popover when a user clicks on a link in the rich text editor. It provides "Edit" and "Remove" buttons for quick link management, and automatically positions itself relative to the click coordinates while staying within the viewport.
+
+## Overview
+
+The Link Popover component provides:
+
+- **Edit Action**: Opens the link dialog to modify the link text and URL
+- **Remove Action**: Removes the hyperlink from the selected text
+- **Auto-Positioning**: Calculates position based on click coordinates and adjusts to stay within the viewport
+- **Backdrop Dismiss**: Clicking outside the popover closes it
+- **Keyboard Navigation**: Arrow keys navigate between Edit and Remove buttons; Escape and Tab close the popover
+- **Focus Management**: Auto-focuses the Edit button on open and restores focus on close
+
+
+<Info>
+  **Live Preview** — default link popover preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-link-popover--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-link-popover--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "150px", border: "1px solid #e0e0e0"}}
+  title="CometChat Link Popover — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatLinkPopoverComponent, LinkPopoverData } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-link-popover-demo',
+  standalone: true,
+  imports: [CometChatLinkPopoverComponent],
+  template: `
+    <cometchat-link-popover
+      [url]="'https://example.com'"
+      [text]="'Example Link'"
+      [x]="clickX"
+      [y]="clickY"
+      (editClick)="onEdit($event)"
+      (removeClick)="onRemove()"
+      (closeClick)="onClose()">
+    </cometchat-link-popover>
+  `
+})
+export class LinkPopoverDemoComponent {
+  clickX = 200;
+  clickY = 300;
+
+  onEdit(data: LinkPopoverData): void {
+    console.log('Edit link:', data.url, data.text);
+  }
+
+  onRemove(): void {
+    console.log('Link removed');
+  }
+
+  onClose(): void {
+    console.log('Popover closed');
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `url` | `string` | `''` | The URL of the link to display and pass to the edit action |
+| `text` | `string` | `''` | The display text of the link |
+| `x` | `number` | `0` | X coordinate (in pixels) for positioning the popover |
+| `y` | `number` | `0` | Y coordinate (in pixels) for positioning the popover |
+| `position` | `'top' \| 'bottom' \| 'left' \| 'right'` | `'bottom'` | Preferred position of the popover relative to the anchor point |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `editClick` | `LinkPopoverData` (`{ url: string; text: string }`) | Emitted when the Edit button is clicked, carrying the current link URL and text |
+| `removeClick` | `void` | Emitted when the Remove button is clicked |
+| `closeClick` | `void` | Emitted when the popover should close (backdrop click, Escape, or Tab) |
+
+## Customization
+
+### CSS Variables
+
+The Link Popover uses BEM-style CSS classes with CSS variable overrides:
+
+```css expandable
+/* Popover container */
+.cometchat-link-popover {
+  background: var(--cometchat-background-color-01);
+  border-radius: var(--cometchat-radius-2);
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+}
+
+/* Action buttons */
+.cometchat-link-popover__button {
+  font: var(--cometchat-font-caption1-medium);
+  color: var(--cometchat-text-color-primary);
+}
+
+/* Backdrop overlay */
+.cometchat-link-popover__backdrop {
+  background: transparent;
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **ArrowDown / ArrowRight**: Moves focus to the next button (wraps around)
+- **ArrowUp / ArrowLeft**: Moves focus to the previous button (wraps around)
+- **Escape**: Closes the popover and restores focus
+- **Tab**: Closes the popover and restores focus (no focus trap — simple menu pattern)
+- **Enter / Space**: Activates the focused button
+
+### Focus Management
+
+- The Edit button receives focus automatically when the popover opens
+- On close (destroy), focus is restored to the element that was focused before the popover appeared
+
+### Screen Reader Support
+
+- Buttons include descriptive labels for Edit and Remove actions
+- The popover uses `role="menu"` semantics for the button group
+
+## Related Components
+
+- [CometChatLinkDialog](/components/cometchat-link-dialog) - Full dialog for adding or editing links (opened from the Edit action)
+- [CometChatMessageComposer](/components/cometchat-message-composer) - Parent component that manages link popover visibility

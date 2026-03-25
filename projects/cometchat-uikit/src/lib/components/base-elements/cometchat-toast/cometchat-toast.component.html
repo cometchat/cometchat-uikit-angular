@@ -1,0 +1,30 @@
+@if (isVisible && text) {
+  <div class="cometchat">
+    <div 
+      class="cometchat-toast" 
+      [ngClass]="toastClass" 
+      [attr.role]="ariaRole" 
+      [attr.aria-live]="ariaLive" 
+      [attr.aria-label]="text"
+    >
+      <div class="cometchat-toast__content">
+        <span class="cometchat-toast__icon" [ngClass]="iconClass" aria-hidden="true">
+          <span class="cometchat-toast__icon-mask" [ngClass]="'cometchat-toast__icon-mask--' + type"></span>
+        </span>
+        <span class="cometchat-toast__text">{{ text }}</span>
+      </div>
+      @if (showCloseButton) {
+        <button 
+          class="cometchat-toast__close"
+          (click)="onCloseClick()"
+          (keydown)="onCloseKeyDown($event)"
+          type="button"
+          [attr.aria-label]="'toast_close_aria_label' | translate"
+          tabindex="0"
+        >
+          <span class="cometchat-toast__close-icon" aria-hidden="true"></span>
+        </button>
+      }
+    </div>
+  </div>
+}

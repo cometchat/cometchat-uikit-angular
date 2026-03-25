@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+.angular/
+dist/
+
+# IDE
+.vscode/
+.DS_Store
+
+# Test coverage
+coverage/
+
+# Test results / failure logs
+test-results/
+
+# Storybook
+storybook-static/
+
+# Reference projects (not part of this repo)
+uikit-react/
+
+# Cleanup artifacts
+cleanup-reports/
+docs-audit-report.json
+scripts/storybook-audit-report.json
+storybook-static.zip
+old-kiro-specs/
+.kiro/
+
+docs/node_modules/
+docs/.mintlify/

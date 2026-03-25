@@ -1,0 +1,357 @@
+/**
+ * CometChatGroupMemberItem Component Styles
+ * 
+ * BEM Methodology: Block Element Modifier
+ * - Block: .cometchat-group-member-item
+ * - Element: .cometchat-group-member-item__{element}
+ * - Modifier: .cometchat-group-member-item--{modifier}
+ */
+
+/* ============================================
+   Block: cometchat-group-member-item
+   ============================================ */
+
+.cometchat-group-member-item {
+  display: flex;
+  align-items: center;
+  padding: var(--cometchat-group-member-item-padding, var(--cometchat-padding-3, 12px) var(--cometchat-padding-4, 16px));
+  gap: var(--cometchat-group-member-item-gap, var(--cometchat-spacing-3, 12px));
+  background: var(--cometchat-group-member-item-background, var(--cometchat-background-color-01));
+  cursor: pointer;
+  transition: var(--cometchat-group-member-item-transition, background-color 0.2s ease);
+  outline: var(--cometchat-group-member-item-focus-outline, none);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.cometchat-group-member-item,
+.cometchat-group-member-item * {
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Modifiers: State variations
+   ============================================ */
+
+.cometchat-group-member-item:hover:not(.cometchat-group-member-item--active) {
+  background: var(--cometchat-group-member-item-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-group-member-item--active {
+  background-color: var(--cometchat-group-member-item-background-active, var(--cometchat-background-color-04));
+}
+
+.cometchat-group-member-item--selected {
+  background: var(--cometchat-group-member-item-background-selected, var(--cometchat-background-color-03));
+}
+
+.cometchat-group-member-item--focused {
+  box-shadow: var(--cometchat-group-member-item-focus-box-shadow, inset 0 0 0 2px var(--cometchat-primary-color));
+  z-index: 1;
+}
+
+/* Disable browser focus styling */
+.cometchat-group-member-item:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-group-member-item:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-group-member-item:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Combined States */
+.cometchat-group-member-item--active.cometchat-group-member-item--selected {
+  background: var(--cometchat-background-color-04);
+}
+
+/* Disabled State */
+.cometchat-group-member-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Leading Section
+   ============================================ */
+
+.cometchat-group-member-item__leading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.cometchat-group-member-item__avatar {
+  width: 100%;
+  height: 100%;
+  --cometchat-avatar-size: 48px;
+  --cometchat-avatar-font-size: var(--cometchat-group-member-item-avatar-font-size, 20px);
+  --cometchat-avatar-border-radius: var(--cometchat-group-member-item-avatar-border-radius, 50%);
+  --cometchat-avatar-border: var(--cometchat-group-member-item-avatar-border, none);
+}
+
+.cometchat-group-member-item__status {
+  position: absolute;
+  bottom: 2px;
+  right: 0;
+  transform: translate(25%, 25%);
+  width: var(--cometchat-group-member-item-status-size, 14px);
+  height: var(--cometchat-group-member-item-status-size, 14px);
+  border-radius: var(--cometchat-group-member-item-status-border-radius, var(--cometchat-radius-max));
+  border: var(--cometchat-group-member-item-status-border, var(--cometchat-status-indicator-border, 2px solid var(--cometchat-background-color-01)));
+  z-index: 2;
+}
+
+.cometchat-group-member-item__status--online {
+  background-color: var(--cometchat-group-member-item-status-online-color, var(--cometchat-status-indicator-online-color, var(--cometchat-success-color)));
+}
+
+.cometchat-group-member-item__status--offline {
+  background-color: var(--cometchat-group-member-item-status-offline-color, var(--cometchat-status-indicator-offline-color, var(--cometchat-neutral-color-400)));
+  display: none; /* Hide offline indicator by default */
+}
+
+/* ============================================
+   Element: Body Section
+   ============================================ */
+
+.cometchat-group-member-item__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: var(--cometchat-group-member-item-body-gap, var(--cometchat-spacing-1, 4px));
+}
+
+.cometchat-group-member-item__title {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.cometchat-group-member-item__title-text {
+  font: var(--cometchat-group-member-item-title-font, var(--cometchat-font-heading4-medium));
+  color: var(--cometchat-group-member-item-title-color, var(--cometchat-text-color-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Element: Trailing Section
+   ============================================ */
+
+.cometchat-group-member-item__trailing {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  margin-left: auto;
+  gap: var(--cometchat-group-member-item-trailing-gap, var(--cometchat-spacing-2, 8px));
+  position: relative;
+  min-width: var(--cometchat-group-member-item-trailing-min-width, 40px);
+}
+
+/* Role Badge */
+.cometchat-group-member-item__role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--cometchat-group-member-item-role-badge-padding, var(--cometchat-padding-1, 4px) var(--cometchat-padding-2, 8px));
+  border-radius: var(--cometchat-group-member-item-role-badge-border-radius, var(--cometchat-radius-max));
+  font: var(--cometchat-group-member-item-role-badge-font, var(--cometchat-font-caption2-medium));
+  white-space: nowrap;
+}
+
+.cometchat-group-member-item__role-badge--owner {
+  background: var(--cometchat-group-member-item-role-badge-owner-background, var(--cometchat-primary-color));
+  color: var(--cometchat-group-member-item-role-badge-owner-color, var(--cometchat-static-white));
+}
+
+.cometchat-group-member-item__role-badge--admin {
+  background: var(--cometchat-group-member-item-role-badge-admin-background, transparent);
+  color: var(--cometchat-group-member-item-role-badge-admin-color, var(--cometchat-text-color-highlight));
+  border: var(--cometchat-group-member-item-role-badge-admin-border, 1px solid var(--cometchat-border-color-highlight));
+}
+
+.cometchat-group-member-item__role-badge--moderator {
+  background: var(--cometchat-group-member-item-role-badge-moderator-background, var(--cometchat-background-color-03));
+  color: var(--cometchat-group-member-item-role-badge-moderator-color, var(--cometchat-text-color-secondary));
+}
+
+/* Context Menu */
+.cometchat-group-member-item__context-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--cometchat-group-member-item-context-menu-transition, opacity 0.2s ease);
+  background: var(--cometchat-group-member-item-context-menu-background, var(--cometchat-background-color-01));
+  z-index: 10;
+  pointer-events: none;
+}
+
+.cometchat-group-member-item__menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  --cometchat-context-menu-divider-background: transparent;
+  --cometchat-context-menu-divider-box-shadow: none;
+}
+
+/* Override context menu more button icon to use dropdown arrow */
+:host .cometchat-group-member-item__menu ::ng-deep .cometchat-menu-list__sub-menu-icon {
+  -webkit-mask: url('../../assets/dropdown-arrow.svg') center center no-repeat;
+  mask: url('../../assets/dropdown-arrow.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Remove background and box-shadow from the more button */
+:host .cometchat-group-member-item__menu ::ng-deep .cometchat-menu-list__sub-menu {
+  background: transparent;
+  box-shadow: none;
+}
+
+:host .cometchat-group-member-item__menu ::ng-deep .cometchat-menu-list__sub-menu:hover {
+  background: transparent;
+}
+
+/* Show context menu on hover or keyboard focus */
+.cometchat-group-member-item:hover .cometchat-group-member-item__context-menu,
+.cometchat-group-member-item--focused .cometchat-group-member-item__context-menu {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+/* Screen Reader Only Class */
+.cometchat-group-member-item__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .cometchat-group-member-item--focused {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-group-member-item {
+    transition: none;
+  }
+  
+  .cometchat-group-member-item__context-menu {
+    transition: none;
+  }
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+  .cometchat-group-member-item {
+    padding: var(--cometchat-group-member-item-padding-tablet, var(--cometchat-padding-3, 12px));
+    gap: var(--cometchat-group-member-item-gap-tablet, var(--cometchat-spacing-3, 12px));
+  }
+
+  .cometchat-group-member-item__leading {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cometchat-group-member-item__avatar {
+    --cometchat-avatar-size: 40px;
+    --cometchat-avatar-font-size: var(--cometchat-group-member-item-avatar-font-size-tablet, 18px);
+  }
+
+  .cometchat-group-member-item__status {
+    width: var(--cometchat-group-member-item-status-size-tablet, 12px);
+    height: var(--cometchat-group-member-item-status-size-tablet, 12px);
+  }
+
+  .cometchat-group-member-item__title-text {
+    font: var(--cometchat-group-member-item-title-font-tablet, var(--cometchat-font-body-medium));
+  }
+
+  /* Show context menu on mobile via tap */
+  .cometchat-group-member-item__context-menu {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .cometchat-group-member-item {
+    padding: var(--cometchat-group-member-item-padding-mobile, var(--cometchat-padding-3, 12px) var(--cometchat-padding-3, 12px));
+    gap: var(--cometchat-group-member-item-gap-mobile, var(--cometchat-spacing-3, 12px));
+  }
+
+  .cometchat-group-member-item__leading {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cometchat-group-member-item__avatar {
+    --cometchat-avatar-size: 40px;
+    --cometchat-avatar-font-size: var(--cometchat-group-member-item-avatar-font-size-mobile, 16px);
+  }
+
+  .cometchat-group-member-item__status {
+    width: var(--cometchat-group-member-item-status-size-mobile, 12px);
+    height: var(--cometchat-group-member-item-status-size-mobile, 12px);
+  }
+
+  .cometchat-group-member-item__title-text {
+    font: var(--cometchat-group-member-item-title-font-mobile, var(--cometchat-font-body-medium));
+  }
+}
+
+/* Large screens (1200px and above) */
+@media (min-width: 1200px) {
+  .cometchat-group-member-item {
+    padding: var(--cometchat-group-member-item-padding-large, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  }
+
+  .cometchat-group-member-item__leading {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cometchat-group-member-item__avatar {
+    --cometchat-avatar-size: 40px;
+    --cometchat-avatar-font-size: var(--cometchat-group-member-item-avatar-font-size-large, 22px);
+  }
+}

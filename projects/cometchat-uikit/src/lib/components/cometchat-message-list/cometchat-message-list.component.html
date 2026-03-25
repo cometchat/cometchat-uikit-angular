@@ -1,0 +1,337 @@
+<!-- CometChatMessageList Component Template -->
+<div
+  class="cometchat-message-list"
+  [class.cometchat-message-list--show-scrollbar]="effectiveShowScrollbar()"
+  [class.cometchat-message-list--thread]="!!parentMessageId"
+  (keydown)="handleKeydown($event)"
+  role="log"
+  aria-label="{{ 'message_list_aria_label' | translate }}"
+  aria-live="polite"
+  [attr.aria-busy]="isFetchingPrevious() || isFetchingNext() || listState() === States.loading"
+>
+  <!-- Header View -->
+  @if (effectiveHeaderView) {
+    <div class="cometchat-message-list__header">
+      <ng-container *ngTemplateOutlet="effectiveHeaderView"></ng-container>
+    </div>
+  }
+
+  <!-- Sticky Date Header -->
+  @if (!hideStickyDate && showStickyDateHeader() && !isFetchingPrevious() && !isFetchingNext()) {
+    <div class="cometchat-message-list__sticky-date">
+      <cometchat-date
+        [timestamp]="stickyDateTimestamp()"
+        [calendarObject]="getEffectiveStickyDateFormat()">
+      </cometchat-date>
+    </div>
+  }
+
+  <!-- Main Content Container -->
+  <div
+    #listContainer
+    class="cometchat-message-list__container"
+    [class.cometchat-message-list__container--scrollable]="true"
+    [class.cometchat-message-list__container--loading]="listState() === States.loading"
+  >
+    <!-- Loading State -->
+    @if (listState() === States.loading) {
+      <div class="cometchat-message-list__loading">
+        @if (effectiveLoadingView) {
+          <ng-container *ngTemplateOutlet="effectiveLoadingView"></ng-container>
+        } @else {
+          <!-- Default Loading Shimmer -->
+          <div class="cometchat-message-list__shimmer">
+            <!-- Date Separator Shimmer -->
+            <div class="cometchat-message-list__shimmer-date">
+              <div class="cometchat-message-list__shimmer-date-item"></div>
+            </div>
+
+            <!-- Message Shimmers -->
+            @if (messageAlignment === MessageListAlignment.left) {
+              <!-- Left alignment: All messages on left with avatar and header -->
+              @for (i of shimmerList; track i) {
+                <div class="cometchat-message-list__shimmer-wrapper cometchat-message-list__shimmer-wrapper--left">
+                  <div class="cometchat-message-list__shimmer-avatar"></div>
+                  <div class="cometchat-message-list__shimmer-body">
+                    <div class="cometchat-message-list__shimmer-header"></div>
+                    <div class="cometchat-message-list__shimmer-bubble"></div>
+                  </div>
+                </div>
+              }
+            } @else {
+              <!-- Standard alignment: Alternating left (incoming) and right (outgoing) -->
+              @for (i of shimmerList; track i) {
+                @if (i % 2 === 0) {
+                  <!-- Left-aligned (incoming) message with avatar and header -->
+                  <div class="cometchat-message-list__shimmer-wrapper cometchat-message-list__shimmer-wrapper--left">
+                    <div class="cometchat-message-list__shimmer-avatar"></div>
+                    <div class="cometchat-message-list__shimmer-body">
+                      <div class="cometchat-message-list__shimmer-header"></div>
+                      <div class="cometchat-message-list__shimmer-bubble"></div>
+                    </div>
+                  </div>
+                } @else {
+                  <!-- Right-aligned (outgoing) message without avatar -->
+                  <div class="cometchat-message-list__shimmer-wrapper cometchat-message-list__shimmer-wrapper--right">
+                    <div class="cometchat-message-list__shimmer-body">
+                      <div class="cometchat-message-list__shimmer-bubble"></div>
+                    </div>
+                  </div>
+                }
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (listState() === States.empty && effectiveEmptyView) {
+      <div class="cometchat-message-list__empty">
+        <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (listState() === States.error && !effectiveHideError()) {
+      <div class="cometchat-message-list__error">
+        @if (effectiveErrorView) {
+          <ng-container *ngTemplateOutlet="effectiveErrorView"></ng-container>
+        } @else {
+          <!-- Default Error State -->
+          <div class="cometchat-message-list__error-content">
+            <div class="cometchat-message-list__error-icon">
+              <span class="cometchat-message-list__error-icon-mask" aria-hidden="true"></span>
+            </div>
+            <p class="cometchat-message-list__error-text">
+              {{ 'component_error_retry' | translate }}
+            </p>
+            <cometchat-button
+              [text]="'retry' | translate"
+              (click)="handleRetryClick()">
+            </cometchat-button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Loaded State - Message List -->
+    @if (listState() === States.loaded) {
+      <!-- Scroll Top Anchor for IntersectionObserver -->
+      <div #scrollTopAnchor class="cometchat-message-list__scroll-anchor"></div>
+
+      <!-- Loading indicator for previous messages -->
+      @if (isFetchingPrevious()) {
+        <div class="cometchat-message-list__loading-more">
+          <div class="cometchat-message-list__spinner"></div>
+        </div>
+      }
+
+      <!-- Messages with Date Separators -->
+      <div class="cometchat-message-list__messages">
+        @for (item of messagesWithSeparators(); track item.key; let i = $index) {
+          @if (item.type === 'date-separator' && !hideDateSeparator) {
+            <!-- Date Separator -->
+            <div class="cometchat-message-list__date-separator">
+              <div class="cometchat-message-list__date-separator-line"></div>
+              <cometchat-date
+                [timestamp]="item.date!"
+                [calendarObject]="getEffectiveSeparatorDateFormat()">
+              </cometchat-date>
+              <div class="cometchat-message-list__date-separator-line"></div>
+            </div>
+          } @else if (item.message) {
+            <!-- Message Bubble -->
+            <div
+              class="cometchat-message-list__message"
+              [class.cometchat-message-list__message--focused]="focusedMessageIndex() === i"
+              [attr.data-message-id]="item.message.getId() || item.message.getMuid()"
+              [attr.data-index]="i"
+              [attr.tabindex]="getMessageTabIndex(i)"
+              role="article"
+              [attr.aria-label]="'message_aria_label' | translate"
+              [attr.aria-posinset]="i + 1"
+              [attr.aria-setsize]="messagesWithSeparators().length"
+            >
+              <cometchat-error-boundary
+                [componentName]="'MessageBubble:' + item.message.getType()"
+                [fallbackView]="bubbleFallback"
+                (error)="onBubbleError($event)">
+                <cometchat-message-bubble
+                  [message]="item.message"
+                  [alignment]="getMessageAlignment(item.message)"
+                  [hideReceipts]="effectiveHideReceipts()"
+                  [hideAvatar]="effectiveHideAvatar()"
+                  [hideModerationView]="effectiveHideModerationView()"
+                  [textFormatters]="activeFormatters"
+                  [dateFormat]="getEffectiveMessageDateFormat()"
+                  [options]="getMessageOptions(item.message)"
+                  [quickOptionsCount]="quickOptionsCount"
+                  [group]="group || null"
+                  [translatedText]="getTranslatedText(item.message.getId())"
+                  [reactionsRequestBuilder]="reactionsRequestBuilder"
+                  [disableInteraction]="disableInteraction"
+                  (optionClick)="handleOptionClick($event, item.message)"
+                  (reactionClick)="onBubbleReactionClick($event)"
+                  (reactionListItemClick)="onBubbleReactionListItemClick($event)"
+                  (threadRepliesClick)="threadRepliesClick.emit($event)">
+                </cometchat-message-bubble>
+              </cometchat-error-boundary>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Loading indicator for next messages -->
+      @if (isFetchingNext()) {
+        <div class="cometchat-message-list__loading-more">
+          <div class="cometchat-message-list__spinner"></div>
+        </div>
+      }
+
+      <!-- Scroll Bottom Anchor for IntersectionObserver -->
+      <div #scrollBottomAnchor class="cometchat-message-list__scroll-anchor"></div>
+    }
+  </div>
+
+  <!-- Footer Panel (Conversation Summary) -->
+  @if (showFooterPanel() && footerPanelConfig() && !parentMessageId) {
+    <div class="cometchat-message-list__footer-panel">
+      <cometchat-conversation-summary
+        [getConversationSummary]="$any(footerPanelConfig()!.configuration?.['getConversationSummary'])"
+        [closeCallback]="$any(footerPanelConfig()!.configuration?.['closeCallback'])">
+      </cometchat-conversation-summary>
+    </div>
+  }
+
+  <!-- Smart Replies -->
+  @if (shouldShowSmartReplies()) {
+    <div class="cometchat-message-list__smart-replies">
+      <cometchat-smart-replies
+        [message]="lastReceivedMessage()"
+        [user]="user"
+        [group]="group"
+        [keywords]="smartRepliesKeywords"
+        [delayDuration]="smartRepliesDelayDuration"
+        (replyClick)="onSmartReplyClick($event)"
+        (closeClick)="onSmartRepliesClose()">
+      </cometchat-smart-replies>
+    </div>
+  }
+          @if (shouldShowConversationStarters()) {
+          <div class="cometchat-message-list__conversation-starters">
+            <cometchat-conversation-starter
+              [user]="user"
+              [group]="group"
+              (starterClick)="onConversationStarterClick($event)">
+            </cometchat-conversation-starter>
+          </div>
+        }
+
+  <!-- Scroll to Bottom Button with Unread Badge -->
+  @if (showScrollToBottom()) {
+    <div class="cometchat-message-list__scroll-to-bottom">
+      <!-- Unread Count Badge - positioned above arrow inside button -->
+      @if (newMessagesCount() > 0 || unreadCount() > 0) {
+        <div class="cometchat-message-list__unread-badge"
+             role="status"
+             aria-live="polite"
+             [attr.aria-label]="(newMessagesCount() || unreadCount()) + ' unread messages'">
+          {{ newMessagesCount() || unreadCount() }}
+        </div>
+      }
+      <cometchat-button
+        [iconURL]="'assets/dropdown-arrow.svg'"
+        [iconOnly]="true"
+        (click)="scrollToBottom()"
+        [ariaLabel]="'scroll_to_bottom' | translate"
+        [tabindex]="0">
+      </cometchat-button>
+    </div>
+  }
+
+  <!-- Footer View -->
+  @if (effectiveFooterView) {
+    <div class="cometchat-message-list__footer">
+      <ng-container *ngTemplateOutlet="effectiveFooterView"></ng-container>
+    </div>
+  }
+
+  <!-- Inline Toast Notification -->
+  @if (inlineToastText()) {
+    <div class="cometchat-message-list__toast">
+      <cometchat-toast
+        [text]="inlineToastText()!"
+        [type]="inlineToastType()"
+        [inline]="true"
+        [duration]="0"
+        [showCloseButton]="false"
+        (toastClosed)="onInlineToastClosed()">
+      </cometchat-toast>
+    </div>
+  }
+
+  <!-- Delete Confirmation Dialog -->
+  @if (showDeleteConfirmDialog()) {
+    <div class="cometchat-message-list__dialog-overlay">
+      <cometchat-confirm-dialog
+        [title]="getDeleteDialogTitle()"
+        [messageText]="getDeleteDialogSubtitle()"
+        [confirmButtonText]="getDeleteDialogConfirmText()"
+        [cancelButtonText]="getDeleteDialogCancelText()"
+        (confirmClick)="handleDeleteConfirm()"
+        (cancelClick)="handleDeleteCancel()">
+      </cometchat-confirm-dialog>
+    </div>
+  }
+
+  <!-- Flag Message Dialog -->
+  @if (showFlagMessageDialog()) {
+    <div class="cometchat-message-list__dialog-overlay">
+      <cometchat-flag-message-dialog
+        [message]="messageToFlag()!"
+        [hideRemarkField]="hideFlagRemarkField"
+        (confirm)="handleFlagConfirm($event)"
+        (cancel)="handleFlagCancel()">
+      </cometchat-flag-message-dialog>
+    </div>
+  }
+
+  <!-- Message Information Panel -->
+  @if (showMessageInfo()) {
+    <div class="cometchat-message-list__info-panel">
+      <cometchat-message-information
+        [message]="messageForInfo()!"
+        [dateTimeFormat]="messageInfoDateTimeFormat"
+        [textFormatters]="activeFormatters"
+        [showScrollbar]="false"
+        (closeClick)="closeMessageInfo()">
+      </cometchat-message-information>
+    </div>
+  }
+
+  <!-- Emoji Keyboard for Reactions -->
+  @if (emojiKeyboardMessage() && emojiKeyboardPosition()) {
+    <div
+      class="cometchat-message-list__emoji-keyboard-backdrop"
+      (click)="onEmojiKeyboardClose()">
+    </div>
+    <div
+      class="cometchat-message-list__emoji-keyboard-wrapper"
+      [style.top.px]="emojiKeyboardPosition()!.top"
+      [style.left.px]="emojiKeyboardPosition()!.left"
+      (click)="$event.stopPropagation()">
+      <cometchat-emoji-keyboard
+        (emojiClick)="onEmojiSelected($event)"
+        (closeKeyboard)="onEmojiKeyboardClose()">
+      </cometchat-emoji-keyboard>
+    </div>
+  }
+</div>
+
+<!-- Bubble Error Fallback Template -->
+<ng-template #bubbleFallback let-ctx>
+  <div class="cometchat-message-list__bubble-error">
+    <span class="cometchat-message-list__bubble-error-text">{{ 'message_bubble_render_error' | translate }}</span>
+  </div>
+</ng-template>

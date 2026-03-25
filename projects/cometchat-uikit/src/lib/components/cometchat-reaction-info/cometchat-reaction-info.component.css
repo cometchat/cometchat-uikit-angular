@@ -1,0 +1,86 @@
+/* Block: cometchat-reaction-info */
+.cometchat-reaction-info {
+  display: var(--cometchat-reaction-info-display, inline-flex);
+  justify-content: var(--cometchat-reaction-info-justify-content, center);
+  align-items: var(--cometchat-reaction-info-align-items, flex-start);
+  border-radius: var(--cometchat-reaction-info-border-radius, var(--cometchat-radius-2, 8px));
+}
+
+/* Element: content */
+.cometchat-reaction-info__content {
+  display: var(--cometchat-reaction-info-content-display, flex);
+  padding: var(--cometchat-reaction-info-content-padding, var(--cometchat-padding-2, 8px));
+  flex-direction: var(--cometchat-reaction-info-content-flex-direction, column);
+  align-items: var(--cometchat-reaction-info-content-align-items, center);
+  border-radius: var(--cometchat-reaction-info-content-border-radius, var(--cometchat-radius-1, 4px));
+  background: var(--cometchat-reaction-info-content-background, var(--cometchat-static-black, #141414));
+  box-shadow: var(--cometchat-reaction-info-content-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+  margin: var(--cometchat-reaction-info-content-margin, -1px);
+  min-height: var(--cometchat-reaction-info-content-min-height, 77px);
+  min-width: var(--cometchat-reaction-info-content-min-width, 77px);
+  justify-content: var(--cometchat-reaction-info-content-justify-content, center);
+}
+
+/* Element: emoji-text */
+.cometchat-reaction-info__emoji-text {
+  display: var(--cometchat-reaction-info-emoji-text-display, flex);
+  flex-direction: var(--cometchat-reaction-info-emoji-text-flex-direction, column);
+  align-items: var(--cometchat-reaction-info-emoji-text-align-items, center);
+  gap: var(--cometchat-reaction-info-emoji-text-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Element: emoji */
+.cometchat-reaction-info__emoji {
+  color: var(--cometchat-reaction-info-emoji-color, var(--cometchat-static-white, #FFFFFF));
+  text-align: var(--cometchat-reaction-info-emoji-text-align, center);
+  font: var(--cometchat-reaction-info-emoji-font, var(--cometchat-font-heading1-regular, 400 24px/28.8px Roboto));
+}
+
+/* Element: title */
+.cometchat-reaction-info__title {
+  color: var(--cometchat-reaction-info-title-color, var(--cometchat-static-white, #FFFFFF));
+  text-align: var(--cometchat-reaction-info-title-text-align, center);
+  font: var(--cometchat-reaction-info-title-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px Roboto));
+}
+
+/* Element: description */
+.cometchat-reaction-info__description {
+  color: var(--cometchat-reaction-info-description-color, var(--cometchat-text-color-tertiary, #A1A1A1));
+  text-align: var(--cometchat-reaction-info-description-text-align, center);
+  font: var(--cometchat-reaction-info-description-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px Roboto));
+}
+
+/* Element: error */
+.cometchat-reaction-info__error {
+  color: var(--cometchat-reaction-info-error-color, var(--cometchat-error-color, #F44649));
+  text-align: var(--cometchat-reaction-info-error-text-align, center);
+  font: var(--cometchat-reaction-info-error-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px Roboto));
+}
+
+/* Element: loading */
+.cometchat-reaction-info__loading {
+  height: var(--cometchat-reaction-info-loading-height, 24px);
+  width: var(--cometchat-reaction-info-loading-width, 24px);
+  border: var(--cometchat-reaction-info-loading-border, 4px solid var(--cometchat-background-color-04, #E8E8E8));
+  border-radius: var(--cometchat-reaction-info-loading-border-radius, 50%);
+  border-top: var(--cometchat-reaction-info-loading-border-top, 4px solid transparent);
+  animation: var(--cometchat-reaction-info-loading-animation, cometchat-reaction-info-spin 2s linear infinite);
+}
+
+@keyframes cometchat-reaction-info-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==================== Accessibility ==================== */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-reaction-info__loading {
+    animation: none;
+  }
+}

@@ -1,0 +1,63 @@
+<div class="cometchat-change-scope" role="dialog" aria-modal="true" [attr.aria-labelledby]="'change-scope-title'">
+  <!-- Icon -->
+  <div class="cometchat-change-scope__icon-container">
+    <div class="cometchat-change-scope__icon"></div>
+  </div>
+
+  <!-- Text -->
+  <div class="cometchat-change-scope__text">
+    <div class="cometchat-change-scope__title" id="change-scope-title">
+      {{ title }}
+    </div>
+    <div class="cometchat-change-scope__description">
+      {{ 'change_scope_subtitle' | translate }}
+    </div>
+  </div>
+
+  <!-- Scope Options List -->
+  <div class="cometchat-change-scope__list" role="radiogroup" [attr.aria-label]="title">
+    @for (option of options; track option) {
+      <div class="cometchat-change-scope__list-item">
+        <div class="cometchat-change-scope__list-item-label">
+          {{ 'member_scope_' + option.toLowerCase() | translate }}
+        </div>
+        <cometchat-radio-button
+          [id]="option"
+          [name]="'scope'"
+          [value]="option"
+          [checked]="selectedValue === option"
+          [disabled]="isLoading"
+          (radioChanged)="onSelectionChanged($event)">
+        </cometchat-radio-button>
+      </div>
+    }
+  </div>
+
+  <!-- Error Message -->
+  @if (isError) {
+    <div class="cometchat-change-scope__error-view" role="alert">
+      {{ 'change_scope_error' | translate }}
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="cometchat-change-scope__button-container">
+    <div class="cometchat-change-scope__cancel-button">
+      <cometchat-button
+        [text]="'change_scope_confirm_no' | translate"
+        [ariaLabel]="'change_scope_confirm_no' | translate"
+        [disabled]="isLoading"
+        (buttonClick)="onCancelClick()">
+      </cometchat-button>
+    </div>
+    <div class="cometchat-change-scope__submit-button" [class.cometchat-change-scope__submit-button-disabled]="isSubmitDisabled">
+      <cometchat-button
+        [text]="buttonText"
+        [ariaLabel]="buttonText"
+        [disabled]="isSubmitDisabled"
+        [isLoading]="isLoading"
+        (buttonClick)="onScopeChangeClick()">
+      </cometchat-button>
+    </div>
+  </div>
+</div>

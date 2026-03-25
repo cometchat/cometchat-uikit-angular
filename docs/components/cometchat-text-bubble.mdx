@@ -1,0 +1,880 @@
+---
+title: "CometChatTextBubble"
+description: "A comprehensive Angular component for rendering text messages with rich formatting, link previews, translations, mentions, and intelligent content truncation"
+---
+The `CometChatTextBubble` component is a sophisticated message display component that renders text messages with rich formatting capabilities. It serves as the primary content renderer for text-based messages in the CometChat Angular UIKit, handling everything from simple text display to complex features like link previews, translations, mentions, and rich text formatting.
+
+## Overview
+
+The Text Bubble component intelligently handles various message types and metadata while maintaining visual consistency with the design system and ensuring full accessibility:
+
+- **Message Object Processing**: Extracts text, metadata, and sender information from CometChat.TextMessage objects
+- **Rich Text Formatting**: Renders rich text HTML with bold, italic, lists, code blocks, and headings
+- **Link Previews**: Displays rich preview cards for URLs with images, titles, descriptions, and favicons
+- **Message Translation**: Shows original and translated text side-by-side
+- **Mentions Formatting**: Highlights @user and @channel mentions with interactive behavior
+- **URL Detection**: Converts URLs to clickable links
+- **Content Truncation**: Implements read more/less for long messages
+- **Single Emoji Detection**: Displays emoji-only messages at larger size
+- **Dual Styling**: Supports sender (outgoing) and receiver (incoming) visual variants
+- **Security**: Sanitizes HTML to prevent XSS attacks
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+
+<Info>
+  **Live Preview** — Default text bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--text)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--text&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "200px", border: "1px solid #e0e0e0"}}
+  title="CometChat Text Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Text Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="textMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-text-bubble>
+  `
+})
+export class ChatMessageComponent {
+  textMessage!: CometChat.TextMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-text-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-text-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-text-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.RIGHT"
+    ></cometchat-text-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingMessage!: CometChat.TextMessage;
+  outgoingMessage!: CometChat.TextMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### With Event Handlers
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-interactive-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="textMessage"
+      (linkClick)="onLinkClick($event)"
+      (mentionClick)="onMentionClick($event)"
+    ></cometchat-text-bubble>
+  `
+})
+export class InteractiveMessageComponent {
+  textMessage!: CometChat.TextMessage;
+
+  onLinkClick(url: string): void {
+    console.log('Link clicked:', url);
+    // Open URL in new tab or handle custom navigation
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  onMentionClick(user: CometChat.User): void {
+    console.log('User mentioned:', user.getName());
+    // Navigate to user profile or show user details
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.TextMessage` | **required** | The CometChat.TextMessage object to render. Contains text content, metadata, and sender information |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.LEFT` | The alignment of the message bubble. `LEFT` for incoming/receiver messages, `RIGHT` for outgoing/sender messages |
+| `textFormatters` | `CometChatTextFormatter[]` | `[]` | Array of text formatters to apply to the message text. If empty, default formatters (mentions, URLs) will be used |
+| `translatedTextOverride` | `string` | `undefined` | Override for the translated text display. When provided, this text is shown as the translation instead of the message's built-in translated text |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `linkClick` | `string` | Emitted when a link preview card or URL link is clicked. Contains the URL string |
+| `mentionClick` | `CometChat.User` | Emitted when a formatted mention is clicked. Contains the CometChat.User object of the mentioned user |
+
+
+## Advanced Usage
+
+### Messages with Link Previews
+
+The component automatically displays rich link preview cards when message metadata contains link preview data:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-link-preview-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="messageWithLinkPreview"
+      (linkClick)="onLinkClick($event)"
+    ></cometchat-text-bubble>
+  `
+})
+export class LinkPreviewMessageComponent implements OnInit {
+  messageWithLinkPreview!: CometChat.TextMessage;
+
+  ngOnInit(): void {
+    // Message with link preview metadata structure:
+    // metadata: {
+    //   "@injected": {
+    //     "extensions": {
+    //       "link-preview": {
+    //         "links": [
+    //           {
+    //             "url": "https://example.com",
+    //             "title": "Example Website",
+    //             "description": "This is an example website",
+    //             "image": "https://example.com/image.jpg",
+    //             "favicon": "https://example.com/favicon.ico"
+    //           }
+    //         ]
+    //       }
+    //     }
+    //   }
+    // }
+  }
+
+  onLinkClick(url: string): void {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+}
+```
+
+**Link Preview Features:**
+- Displays preview image (if available)
+- Shows title and description
+- Extracts and displays domain name
+- Shows favicon (if available)
+- Supports multiple link previews in a single message
+- Clickable cards that emit `linkClick` event
+
+### Messages with Translation
+
+Display original and translated text side-by-side:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-translated-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="translatedMessage"
+    ></cometchat-text-bubble>
+  `
+})
+export class TranslatedMessageComponent {
+  translatedMessage!: CometChat.TextMessage;
+
+  // Message with translation metadata structure:
+  // metadata: {
+  //   "translated_message": "This is the translated text"
+  // }
+}
+```
+
+**Translation Display:**
+- Shows original text first
+- Visual separator line between original and translated text
+- Localized label "Translated message"
+- Both texts have formatters applied (mentions, URLs, rich text)
+
+
+### Messages with Mentions
+
+The component automatically formats @mentions with interactive behavior:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-mentions-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="messageWithMentions"
+      (mentionClick)="onMentionClick($event)"
+    ></cometchat-text-bubble>
+  `
+})
+export class MentionsMessageComponent {
+  messageWithMentions!: CometChat.TextMessage;
+
+  onMentionClick(user: CometChat.User): void {
+    console.log('Mentioned user:', user.getName(), user.getUid());
+    // Navigate to user profile or show user card
+    this.showUserProfile(user);
+  }
+
+  private showUserProfile(user: CometChat.User): void {
+    // Implementation for showing user profile
+  }
+}
+```
+
+**Mentions Features:**
+- Automatically detects and formats @mentions
+- Different styling for self-mentions vs other users
+- Special styling for @all channel mentions
+- Clickable mentions that emit `mentionClick` event
+- Accessible with ARIA labels
+
+### Messages with Rich Text Formatting
+
+The component renders rich text HTML with bold, italic, lists, code blocks, and more:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-rich-text-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="richTextMessage"
+    ></cometchat-text-bubble>
+  `
+})
+export class RichTextMessageComponent {
+  richTextMessage!: CometChat.TextMessage;
+
+  // Message text contains rich text HTML:
+  // "<p>This is <strong>bold</strong> and <em>italic</em> text</p>"
+  // "<ul><li>Item 1</li><li>Item 2</li></ul>"
+  // "<pre><code>const x = 1;</code></pre>"
+}
+```
+
+**Supported Rich Text Elements:**
+- **Bold** (`<strong>`)
+- **Italic** (`<em>`)
+- **Underline** (`<u>`)
+- **Strikethrough** (`<s>`)
+- **Ordered Lists** (`<ol>`, `<li>`)
+- **Unordered Lists** (`<ul>`, `<li>`)
+- **Code Blocks** (`<pre>`, `<code>`)
+- **Headings** (`<h1>` - `<h6>`)
+- **Links** (`<a>`)
+
+**Security:** All HTML is sanitized to prevent XSS attacks while preserving safe formatting tags.
+
+
+### Long Messages with Read More/Less
+
+The component automatically truncates long messages and provides read more/less controls:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-long-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="longMessage"
+    ></cometchat-text-bubble>
+  `
+})
+export class LongMessageComponent {
+  longMessage!: CometChat.TextMessage;
+  // Message with text exceeding 80px height (approximately 4 lines)
+}
+```
+
+**Truncation Behavior:**
+- Content exceeding 80px height (≈4 lines) is automatically truncated
+- "Read more" button appears for truncated content
+- Clicking "Read more" expands to show full content
+- "Show less" button appears when expanded
+- Clicking "Show less" collapses back to truncated state
+- Buttons use localized text
+- Fully keyboard accessible
+
+### Single Emoji Messages
+
+The component detects single emoji messages and displays them at a larger size:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-emoji-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <!-- Single emoji - displays large -->
+    <cometchat-text-bubble
+      [message]="singleEmojiMessage"
+    ></cometchat-text-bubble>
+
+    <!-- Emoji with text - displays normal size -->
+    <cometchat-text-bubble
+      [message]="emojiWithTextMessage"
+    ></cometchat-text-bubble>
+  `
+})
+export class EmojiMessageComponent {
+  singleEmojiMessage!: CometChat.TextMessage; // text: "😀"
+  emojiWithTextMessage!: CometChat.TextMessage; // text: "😀 Hello"
+}
+```
+
+**Single Emoji Detection:**
+- Detects messages containing exactly one emoji and no other text
+- Handles complex emoji sequences (skin tones, ZWJ sequences, flags)
+- Displays at larger font size for better visibility
+- Whitespace is ignored in detection
+
+
+### Custom Text Formatters
+
+Provide custom text formatters to transform message text:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatTextBubbleComponent, 
+  CometChatTextFormatter,
+  CometChatMentionsFormatter,
+  CometChatUrlFormatter 
+} from '@cometchat/chat-uikit-angular';
+
+// Custom formatter to highlight hashtags
+class HashtagFormatter implements CometChatTextFormatter {
+  format(text: string): string {
+    // Replace #hashtag with styled span
+    return text.replace(
+      /#(\w+)/g,
+      '<span class="hashtag">#$1</span>'
+    );
+  }
+
+  getKeyboardKey(): string {
+    return '#';
+  }
+
+  getCharacterLimit(): number {
+    return 0; // No limit
+  }
+}
+
+@Component({
+  selector: 'app-custom-formatters',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="textMessage"
+      [textFormatters]="customFormatters"
+    ></cometchat-text-bubble>
+  `,
+  styles: [`
+    ::ng-deep .hashtag {
+      color: #1DA1F2;
+      font-weight: 500;
+      cursor: pointer;
+    }
+  `]
+})
+export class CustomFormattersComponent {
+  textMessage!: CometChat.TextMessage;
+  
+  customFormatters: CometChatTextFormatter[] = [
+    new CometChatMentionsFormatter(),
+    new CometChatUrlFormatter(),
+    new HashtagFormatter()
+  ];
+}
+```
+
+**Formatter Order:**
+Formatters are applied sequentially. Each formatter's output becomes the input for the next formatter.
+
+### Combined Features Example
+
+A message with multiple features working together:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTextBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-complex-message',
+  standalone: true,
+  imports: [CometChatTextBubbleComponent],
+  template: `
+    <cometchat-text-bubble
+      [message]="complexMessage"
+      (linkClick)="onLinkClick($event)"
+      (mentionClick)="onMentionClick($event)"
+    ></cometchat-text-bubble>
+  `
+})
+export class ComplexMessageComponent {
+  complexMessage!: CometChat.TextMessage;
+
+  // Message with:
+  // - Rich text formatting (bold, italic)
+  // - @mentions
+  // - URLs
+  // - Link preview metadata
+  // - Translation metadata
+  // - Long text requiring truncation
+
+  onLinkClick(url: string): void {
+    console.log('Link clicked:', url);
+  }
+
+  onMentionClick(user: CometChat.User): void {
+    console.log('Mention clicked:', user.getName());
+  }
+}
+```
+
+
+## Customization
+
+### Styling with CSS Variables
+
+The Text Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom text bubble styling */
+cometchat-text-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Typography */
+  --cometchat-font-body-regular: 400 14px 'Inter';
+  --cometchat-font-body-medium: 500 14px 'Inter';
+  --cometchat-font-caption1-regular: 400 12px 'Inter';
+  --cometchat-font-title-regular: 400 32px 'Inter';
+
+  /* Colors - Incoming messages */
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #666666;
+
+  /* Colors - Outgoing messages */
+  --cometchat-primary-button-background: #6852D6;
+  --cometchat-primary-button-text: #FFFFFF;
+
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+
+  /* Border colors */
+  --cometchat-border-color-light: #E0E0E0;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` to `--cometchat-spacing-8` | Padding, margin, gap | `4px` to `32px` |
+| `--cometchat-font-body-regular` | Main text font | `400 14px Roboto` |
+| `--cometchat-font-body-medium` | Medium weight text | `500 14px Roboto` |
+| `--cometchat-font-caption1-regular` | Small text (labels) | `400 12px Roboto` |
+| `--cometchat-font-title-regular` | Single emoji font | `400 32px Roboto` |
+| `--cometchat-background-color-02` | Incoming bubble background | `#F5F5F5` |
+| `--cometchat-text-color-primary` | Primary text color | `#141414` |
+| `--cometchat-text-color-secondary` | Secondary text color | `#666666` |
+| `--cometchat-primary-button-background` | Outgoing bubble background | `#6852D6` |
+| `--cometchat-primary-button-text` | Outgoing text color | `#FFFFFF` |
+| `--cometchat-radius-2` | Border radius | `8px` |
+| `--cometchat-border-color-light` | Border color | `#E0E0E0` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for incoming messages */
+.theme-blue cometchat-text-bubble {
+  --cometchat-background-color-02: #E3F2FD;
+  --cometchat-text-color-primary: #0D47A1;
+}
+
+/* Green theme for outgoing messages */
+.theme-green cometchat-text-bubble {
+  --cometchat-primary-button-background: #4CAF50;
+  --cometchat-primary-button-text: #FFFFFF;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-text-bubble {
+  --cometchat-background-color-02: #2C2C2C;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-text-color-secondary: #B0B0B0;
+  --cometchat-border-color-light: #404040;
+}
+```
+
+
+### Custom Mention Styling
+
+```css expandable
+/* Custom mention colors */
+cometchat-text-bubble {
+  /* Self-mention (when you are mentioned) */
+  --cometchat-mention-self-background: #FFF3CD;
+  --cometchat-mention-self-color: #856404;
+
+  /* Other user mention */
+  --cometchat-mention-other-background: #E3F2FD;
+  --cometchat-mention-other-color: #1976D2;
+
+  /* Channel mention (@all) */
+  --cometchat-mention-channel-background: #FFEBEE;
+  --cometchat-mention-channel-color: #C62828;
+}
+
+/* Override mention styles directly */
+::ng-deep .cometchat-text-bubble__mention--self {
+  background-color: #FFF3CD;
+  color: #856404;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+::ng-deep .cometchat-text-bubble__mention--other {
+  background-color: #E3F2FD;
+  color: #1976D2;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+::ng-deep .cometchat-text-bubble__mention--channel {
+  background-color: #FFEBEE;
+  color: #C62828;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+```
+
+### Custom Link Preview Styling
+
+```css expandable
+/* Custom link preview card styling */
+::ng-deep .cometchat-text-bubble__link-preview {
+  border: 2px solid #E0E0E0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+::ng-deep .cometchat-text-bubble__link-preview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+::ng-deep .cometchat-text-bubble__link-preview-image {
+  max-height: 200px;
+  object-fit: cover;
+}
+
+::ng-deep .cometchat-text-bubble__link-preview-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #141414;
+  margin-bottom: 4px;
+}
+
+::ng-deep .cometchat-text-bubble__link-preview-description {
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.4;
+}
+
+::ng-deep .cometchat-text-bubble__link-preview-domain {
+  font-size: 12px;
+  color: #999999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+```
+
+### Custom Read More/Less Button Styling
+
+```css expandable
+/* Custom read more/less button */
+::ng-deep .cometchat-text-bubble__read-more-button {
+  background: none;
+  border: none;
+  color: #6852D6;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+::ng-deep .cometchat-text-bubble__read-more-button:hover {
+  color: #5641B8;
+}
+
+::ng-deep .cometchat-text-bubble__read-more-button:focus {
+  outline: 2px solid #6852D6;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+```
+
+
+## Accessibility
+
+The Text Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: All images have text alternatives
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with ARIA roles
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators provided
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### Keyboard Support
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate to read more/less button | When button is present |
+| `Shift + Tab` | Navigate backwards | When button is focused |
+| `Enter` | Toggle read more/less | When button is focused |
+| `Space` | Toggle read more/less | When button is focused |
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Link preview card | `"article"` | Identifies the preview as an article |
+| `aria-label` | Link preview card | `"Link preview for {domain}"` | Provides accessible name |
+| `aria-label` | Read more button | `"Read more"` | Describes button action |
+| `aria-label` | Show less button | `"Show less"` | Describes button action |
+| `aria-label` | Mention element | `"Mention {username}"` | Identifies mentioned user |
+| `aria-label` | URL link | `"Link opens in new tab"` | Warns about new tab |
+| `target` | URL link | `"_blank"` | Opens in new tab |
+| `rel` | URL link | `"noopener noreferrer"` | Security attributes |
+
+### Screen Reader Behavior
+
+Screen readers announce the text bubble with:
+1. **Message text**: Read naturally with proper pauses
+2. **Mentions**: "Mention John Doe" when encountering @mentions
+3. **Links**: "Link, opens in new tab" for URLs
+4. **Link previews**: "Article, Link preview for example.com"
+5. **Translation**: "Translated message" label before translated text
+6. **Read more**: "Button, Read more" when truncated
+
+### Accessibility Best Practices
+
+<Tip>
+  The component automatically handles all accessibility requirements. No additional ARIA attributes or keyboard handling is needed.
+</Tip>
+
+<Warning>
+  When handling `linkClick` events, ensure your navigation maintains accessibility by managing focus appropriately.
+</Warning>
+
+<Info>
+  All interactive elements (read more/less buttons, mentions, links) are keyboard accessible and have visible focus indicators.
+</Info>
+
+
+## Best Practices
+
+<Tip>
+  Always provide the complete CometChat.TextMessage object to ensure all features (link previews, translations, mentions) work correctly.
+</Tip>
+
+<Warning>
+  The component sanitizes HTML to prevent XSS attacks. Don't bypass this sanitization or inject unsanitized HTML into the message text.
+</Warning>
+
+<Info>
+  Use the `alignment` property to distinguish between incoming and outgoing messages for proper visual styling.
+</Info>
+
+<Tip>
+  Handle `linkClick` and `mentionClick` events to provide interactive behavior like opening URLs or navigating to user profiles.
+</Tip>
+
+<Warning>
+  When providing custom text formatters, ensure they return safe HTML. The component will sanitize the output, but formatters should not introduce XSS vulnerabilities.
+</Warning>
+
+<Info>
+  The component automatically detects single emoji messages and displays them larger. No special handling is required.
+</Info>
+
+## Related Components
+
+- **CometChatMessageBubble**: Uses Text Bubble as the content view for text messages
+- **CometChatMessageList**: Displays lists of messages including text bubbles
+- **CometChatConversations**: Shows conversation previews with text message snippets
+- **CometChatMessagePreview**: Displays message previews in conversation lists
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: 
+  - Angular CommonModule
+  - DOMPurify for HTML sanitization
+  - CometChat SDK for message types
+  - TranslatePipe for localization
+- **Bundle Size**: Minimal footprint (~8KB including sanitization)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+
+## Security
+
+### XSS Prevention
+
+The component implements comprehensive XSS prevention through HTML sanitization:
+
+**Sanitization Process:**
+1. All HTML content is processed through DOMPurify
+2. Only safe rich text formatting tags are allowed
+3. Script tags, event handlers, and dangerous attributes are stripped
+4. JavaScript URLs (`javascript:`) and data URIs (`data:`) are removed
+5. Iframes, objects, and embeds are forbidden
+
+**Allowed HTML Tags:**
+- Basic formatting: `<p>`, `<br>`, `<strong>`, `<em>`, `<u>`, `<s>`
+- Lists: `<ul>`, `<ol>`, `<li>`
+- Code: `<code>`, `<pre>`
+- Headings: `<h1>` through `<h6>`
+- Links: `<a>` (with sanitized href)
+
+**Forbidden Elements:**
+- `<script>` tags
+- Event handlers (`onclick`, `onerror`, `onload`, etc.)
+- `<iframe>`, `<object>`, `<embed>` tags
+- `<form>`, `<input>` elements
+- `<style>` tags
+- Data attributes
+
+<Warning>
+  Never bypass the component's HTML sanitization. All user-generated content is automatically sanitized to prevent XSS attacks.
+</Warning>
+
+## Performance Considerations
+
+### Optimization Strategies
+
+**Change Detection:**
+- Uses OnPush strategy to minimize unnecessary re-renders
+- Only updates when inputs change or events are emitted
+
+**Content Truncation:**
+- Measures content height only once after view initialization
+- Avoids repeated DOM measurements during scrolling
+
+**Text Formatting:**
+- Formatters are applied sequentially in a single pass
+- Sanitization occurs once after all formatters complete
+
+**Link Preview Rendering:**
+- Images are lazy-loaded by the browser
+- Failed image loads are handled gracefully without blocking
+
+### Best Practices for Performance
+
+<Tip>
+  Provide text formatters via input to avoid recreating default formatters on every message.
+</Tip>
+
+<Info>
+  The component uses OnPush change detection. Ensure message objects are immutable for optimal performance.
+</Info>
+
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchattextbubble).
+</Info>
+
+

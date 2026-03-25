@@ -1,0 +1,122 @@
+<!-- 
+  CometChatPollBubbleComponent Template
+  
+  Renders poll messages with voting functionality.
+  
+  @see Requirements 2.1, 3.1, 4.1, 5.1, 11.1-11.7
+-->
+
+<div 
+  class="cometchat-poll-bubble"
+  [class.cometchat-poll-bubble--sender]="isOutgoing"
+  [class.cometchat-poll-bubble--receiver]="!isOutgoing"
+  role="group"
+  [attr.aria-label]="pollAriaLabel">
+  
+  <!-- Poll Question -->
+  <!-- @see Requirements 2.1, 2.3, 2.4 -->
+  <div class="cometchat-poll-bubble__question">
+    {{ pollData?.question }}
+  </div>
+  
+  <!-- Poll Options List -->
+  <!-- @see Requirements 3.1, 3.2, 3.3, 3.4, 8.1, 11.1-11.7 -->
+  <ul 
+    class="cometchat-poll-bubble__options"
+    role="radiogroup"
+    [attr.aria-label]="'poll_bubble_options_label' | translate">
+    
+    @for (option of pollOptions; track option.id) {
+      <li 
+        class="cometchat-poll-bubble__option-item"
+        [class.cometchat-poll-bubble__option-item--selected]="option.selectedByLoggedInUser"
+        [class.cometchat-poll-bubble__option-item--disabled]="isVoting"
+        (click)="onOptionClick(option)"
+        (keydown)="onOptionKeyDown($event, option)"
+        [class.cometchat-poll-bubble__option-item--disabled-interaction]="disableInteraction"
+        [tabindex]="disableInteraction ? -1 : 0"
+        [attr.role]="optionRole"
+        [attr.aria-checked]="getOptionAriaChecked(option)"
+        [attr.aria-disabled]="disableInteraction ? 'true' : optionsAriaDisabled"
+        [attr.aria-label]="getOptionAriaLabel(option)">
+        
+        <!-- Leading View: Radio Button -->
+        <!-- @see Requirements 3.2, 3.7 -->
+        <div class="cometchat-poll-bubble__option-leading" aria-hidden="true">
+          <cometchat-radio-button
+            [name]="'poll-' + pollData?.id + '-msg-' + message.getId()"
+            [id]="'option-' + pollData?.id + '-msg-' + message.getId() + '-' + option.id"
+            [checked]="option.selectedByLoggedInUser"
+            [disabled]="isVoting">
+          </cometchat-radio-button>
+        </div>
+        
+        <!-- Body: Option Content -->
+        <div class="cometchat-poll-bubble__option-body">
+          <div class="cometchat-poll-bubble__option-content">
+            <!-- Option Text -->
+            <!-- @see Requirements 3.3 -->
+            <div class="cometchat-poll-bubble__option-text">
+              {{ option.text }}
+            </div>
+            
+            <!-- Tail: Voter Avatars + Vote Count -->
+            <!-- @see Requirements 3.4, 5.1, 5.4, 5.6 -->
+            <div class="cometchat-poll-bubble__option-tail" aria-hidden="true">
+              <!-- Voter Avatars -->
+              @if (option.voters.length > 0) {
+                <div class="cometchat-poll-bubble__voter-avatars">
+                  @for (voter of option.voters; track $index; let isLast = $last) {
+                    <div 
+                      class="cometchat-poll-bubble__voter-avatar"
+                      [class.cometchat-poll-bubble__voter-avatar--last]="isLast"
+                      [style.z-index]="$index">
+                      <cometchat-avatar
+                        [name]="voter.name"
+                        [image]="voter.avatar || ''">
+                      </cometchat-avatar>
+                    </div>
+                  }
+                </div>
+              }
+              
+              <!-- Vote Count -->
+              <div class="cometchat-poll-bubble__vote-count">
+                {{ option.count }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <!-- @see Requirements 4.1, 4.2, 8.8 -->
+          <div 
+            class="cometchat-poll-bubble__progress"
+            role="progressbar"
+            [attr.aria-valuenow]="option.count"
+            [attr.aria-valuemax]="pollData?.results?.total || 0"
+            [attr.aria-label]="option.text + ' ' + option.percent">
+            <div 
+              class="cometchat-poll-bubble__progress-fill"
+              [style.width]="option.percent">
+            </div>
+          </div>
+        </div>
+      </li>
+    }
+  </ul>
+  
+  <!-- Empty State -->
+  <!-- @see Requirements 13.1, 13.2 -->
+  @if (!pollData) {
+    <!-- Display when poll data is missing from the message -->
+    <div class="cometchat-poll-bubble__empty" role="status">
+      {{ 'poll_bubble_no_data' | translate }}
+    </div>
+  } @else if (pollOptions.length === 0) {
+    <!-- Display when poll options are empty -->
+    <div class="cometchat-poll-bubble__empty" role="status">
+      {{ 'poll_bubble_no_options' | translate }}
+    </div>
+  }
+  
+</div>

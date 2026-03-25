@@ -1,0 +1,111 @@
+<div class="cometchat-create-group" role="dialog" aria-modal="true" [attr.aria-label]="'create_group_title' | translate">
+  <!-- Backdrop -->
+  <div
+    class="cometchat-create-group__backdrop"
+    (click)="onClose()"
+    (keydown.escape)="onClose()"
+    tabindex="-1"
+    role="presentation"
+  ></div>
+
+  <!-- Dialog card -->
+  <div class="cometchat-create-group__card">
+    <!-- Header -->
+    <div class="cometchat-create-group__header">
+      <span class="cometchat-create-group__title">{{ 'create_group_title' | translate }}</span>
+      <button
+        class="cometchat-create-group__close-button"
+        (click)="onClose()"
+        [attr.aria-label]="'close' | translate"
+        type="button"
+      >
+        <div class="cometchat-create-group__close-icon" aria-hidden="true"></div>
+      </button>
+    </div>
+
+    <!-- Form -->
+    <form class="cometchat-create-group__form" (ngSubmit)="onSubmit()">
+      <!-- Group type (first field) -->
+      <div class="cometchat-create-group__field">
+        <span class="cometchat-create-group__label" id="create-group-type-label">
+          {{ 'create_group_type_label' | translate }}
+        </span>
+        <div class="cometchat-create-group__type-options" role="radiogroup" aria-labelledby="create-group-type-label">
+          @for (option of groupTypes; track option.value) {
+            <button
+              type="button"
+              class="cometchat-create-group__type-button"
+              [class.cometchat-create-group__type-button--active]="groupType() === option.value"
+              (click)="onTypeChange(option.value)"
+              role="radio"
+              [attr.aria-checked]="groupType() === option.value"
+            >
+              {{ option.labelKey | translate }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Group name -->
+      <div class="cometchat-create-group__field">
+        <label class="cometchat-create-group__label" for="create-group-name">
+          {{ 'create_group_name_label' | translate }}
+        </label>
+        <input
+          id="create-group-name"
+          class="cometchat-create-group__input"
+          type="text"
+          [placeholder]="'create_group_name_placeholder' | translate"
+          [ngModel]="groupName()"
+          (ngModelChange)="onNameChange($event)"
+          name="groupName"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Password (conditional) -->
+      @if (showPasswordField) {
+        <div class="cometchat-create-group__field">
+          <label class="cometchat-create-group__label" for="create-group-password">
+            {{ 'create_group_password_label' | translate }}
+          </label>
+          <div class="cometchat-create-group__input-wrapper">
+            <input
+              id="create-group-password"
+              class="cometchat-create-group__input"
+              [type]="showPassword() ? 'text' : 'password'"
+              [placeholder]="'create_group_password_placeholder' | translate"
+              [ngModel]="password()"
+              (ngModelChange)="onPasswordChange($event)"
+              name="password"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="cometchat-create-group__toggle-password"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              <div
+                class="cometchat-create-group__eye-icon"
+                [class.cometchat-create-group__eye-icon--visible]="showPassword()"
+                aria-hidden="true"
+              ></div>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Submit button (full width) -->
+      <div class="cometchat-create-group__actions">
+        <button
+          class="cometchat-create-group__submit-button"
+          type="submit"
+          [disabled]="!canSubmit"
+        >
+          {{ 'create_group_submit' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,65 @@
+---
+title: "Guides"
+sidebarTitle: "Overview"
+description: "Index of task-oriented feature guides for the CometChat Angular UIKit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Purpose | Index of task-oriented feature guides for the Angular UIKit |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Components | [Components Overview](/components/overview) |
+| Guides | [Threaded Messages](/guides/threaded-messages) · [Group Chat](/guides/group-chat) · [New Chat](/guides/new-chat) · [Search Messages](/guides/search-messages) · [Block/Unblock](/guides/block-unblock-user) · [Message Privately](/guides/message-privately) · [Call Log Details](/guides/call-log-details) · [Custom Message Types](/guides/custom-message-types) |
+
+</Accordion>
+
+> This page indexes focused, task-oriented feature guides for the Angular UIKit. Each guide shows how to implement a specific capability end-to-end using UI components.
+
+## When to Use These Guides
+
+Use these guides after completing the base [Integration Guide](/integration). They help you layer additional UX without rewriting core chat flows.
+
+## Guide Directory
+
+| Guide | Description |
+|:------|:------------|
+| [Threaded Messages](/guides/threaded-messages) | Implement threaded message replies with parent context, reply list, and focused thread composer. |
+| [Group Chat](/guides/group-chat) | Create and join groups, view members, manage roles and scopes, transfer ownership. |
+| [New Chat](/guides/new-chat) | Start new one-to-one or group conversations with user and group discovery. |
+| [Search Messages](/guides/search-messages) | Add full-text message search across conversations with result routing. |
+| [Block / Unblock User](/guides/block-unblock-user) | Block or unblock users in one-to-one chats; hide composer and show unblock prompt. |
+| [Message Privately](/guides/message-privately) | Launch a direct one-to-one chat from a user profile or group member list. |
+| [Call Log Details](/guides/call-log-details) | Display detailed call insights: metadata, participants, join/leave history, recordings. |
+| [Custom Message Types](/guides/custom-message-types) | Register custom message types with bubble templates, conversation subtitle overrides, and fetch inclusion. |
+| [Custom Text Formatter](/guides/custom-text-formatter) | Extend the base formatter to implement custom inline patterns with regex and callbacks. |
+| [Mentions Formatter](/guides/mentions-formatter) | Add @mentions with styled tokens, suggestion list, and click handling. |
+| [URL Formatter](/guides/url-formatter) | Detect and style plain URLs as clickable links with optional tracking logic. |
+| [Shortcut Formatter](/guides/shortcut-formatter) | Provide shortcut-style text expansions invoking extension APIs or dialogs. |
+| [Hashtag Formatter](/guides/hashtag-formatter) | Highlight #hashtags in the composer, message bubbles, conversation last message, and edit view. |
+| [Rich Text Formatting](/guides/rich-text-formatting) | Configure and customize the rich text editor in the message composer. |
+
+<Note>
+Need another guide? Open a request via our [Support Portal](https://help.cometchat.com/hc/en-us/requests/new).
+</Note>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/integration">
+    Set up the Angular UIKit from scratch
+  </Card>
+  <Card title="Components Overview" icon="puzzle-piece" href="/components/overview">
+    Explore all UI components
+  </Card>
+  <Card title="Customization" icon="palette" href="/customization/theming">
+    Theme and style the UIKit to match your brand
+  </Card>
+  <Card title="Events" icon="bolt" href="/events">
+    Subscribe to UIKit events for custom workflows
+  </Card>
+</CardGroup>

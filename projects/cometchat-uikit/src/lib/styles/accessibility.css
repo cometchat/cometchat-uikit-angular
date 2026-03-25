@@ -1,0 +1,148 @@
+/**
+ * CometChat Accessibility Styles
+ * 
+ * This file contains utility classes for WCAG 2.1 Level AA keyboard accessibility.
+ * These classes provide consistent focus indicators and screen reader support
+ * across all CometChat UIKit components.
+ * 
+ * @see Requirements 13.1-13.5 (Focus Indicator Visibility Standards)
+ */
+
+/* ============================================
+   Screen Reader Only Utility
+   ============================================
+   Visually hides content while keeping it accessible to screen readers.
+   Use for providing additional context that sighted users don't need.
+   
+   Example usage:
+   <span class="cometchat-sr-only">Avatar for John Doe</span>
+*/
+.cometchat-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Allow the element to be focusable when navigated to via keyboard */
+.cometchat-sr-only-focusable:focus,
+.cometchat-sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ============================================
+   Focus Visible Utility Classes
+   ============================================
+   Apply focus indicators only on keyboard navigation (not mouse clicks).
+   Uses :focus-visible pseudo-class for modern browser support.
+   
+   Example usage:
+   <button class="cometchat-focus-visible">Click me</button>
+*/
+
+/* Standard focus ring using outline - works well for most elements */
+.cometchat-focus-visible:focus-visible {
+  outline: var(--cometchat-focus-ring-width) var(--cometchat-focus-ring-style) var(--cometchat-focus-ring-color);
+  outline-offset: var(--cometchat-focus-ring-offset);
+}
+
+/* Focus ring using box-shadow - for elements where outline doesn't work well
+   (e.g., elements with border-radius, or when outline-offset causes issues) */
+.cometchat-focus-shadow:focus-visible {
+  outline: none;
+  box-shadow: var(--cometchat-focus-shadow);
+}
+
+/* Inset focus ring using box-shadow - for filled/solid buttons
+   where the focus indicator should appear inside the element */
+.cometchat-focus-inset:focus-visible {
+  outline: none;
+  box-shadow: var(--cometchat-focus-shadow-inset);
+}
+
+/* Inverse focus ring - for elements on dark/colored backgrounds
+   where the standard focus color may not have sufficient contrast */
+.cometchat-focus-inverse:focus-visible {
+  outline: var(--cometchat-focus-ring-width) var(--cometchat-focus-ring-style) var(--cometchat-focus-ring-color-inverse);
+  outline-offset: var(--cometchat-focus-ring-offset);
+}
+
+/* ============================================
+   Combined Focus Classes
+   ============================================
+   Utility classes that combine focus styles with other behaviors.
+*/
+
+/* Focus visible with rounded corners - applies border-radius to focus ring */
+.cometchat-focus-rounded:focus-visible {
+  outline: var(--cometchat-focus-ring-width) var(--cometchat-focus-ring-style) var(--cometchat-focus-ring-color);
+  outline-offset: var(--cometchat-focus-ring-offset);
+  border-radius: var(--cometchat-radius-2);
+}
+
+/* ============================================
+   Skip Link Utility
+   ============================================
+   For "Skip to main content" links that appear on focus.
+   Combines sr-only with focus-visible behavior.
+*/
+.cometchat-skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cometchat-skip-link:focus {
+  position: fixed;
+  top: var(--cometchat-spacing-2);
+  left: var(--cometchat-spacing-2);
+  z-index: 9999;
+  width: auto;
+  height: auto;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-4);
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: var(--cometchat-background-color-01);
+  color: var(--cometchat-text-color-primary);
+  font: var(--cometchat-font-body-medium);
+  border-radius: var(--cometchat-radius-2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  outline: var(--cometchat-focus-ring-width) var(--cometchat-focus-ring-style) var(--cometchat-focus-ring-color);
+  outline-offset: var(--cometchat-focus-ring-offset);
+}
+
+/* ============================================
+   Reduced Motion Support
+   ============================================
+   Respects user's preference for reduced motion.
+   Removes animations and transitions for users who prefer reduced motion.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-focus-visible:focus-visible,
+  .cometchat-focus-shadow:focus-visible,
+  .cometchat-focus-inset:focus-visible,
+  .cometchat-focus-inverse:focus-visible,
+  .cometchat-focus-rounded:focus-visible {
+    transition: none;
+  }
+}

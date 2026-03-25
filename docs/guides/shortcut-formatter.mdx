@@ -1,0 +1,231 @@
+---
+title: "ShortCut Formatter"
+description: "Implement !shortcut style text expansions with extension APIs or dialogs in CometChat Angular UI Kit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key class | `ShortcutFormatter` (extends `CometChatTextFormatter`) |
+| Required setup | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Track character | `!` — triggers shortcut expansion in the message composer |
+| Related | [Custom Text Formatter](/guides/custom-text-formatter) \| [All Guides](/guides/overview) |
+
+</Accordion>
+
+`ShortCutFormatter` extends [CometChatTextFormatter](/guides/custom-text-formatter) to expand shortcodes (like `!hb`) into full text via the Message Shortcuts extension. When a user types a shortcut, a dialog appears with the expansion — clicking it inserts the text.
+
+---
+
+## Steps
+
+### 1. Import the base class
+
+```typescript
+import { CometChatTextFormatter } from "@cometchat/chat-uikit-angular";
+```
+
+### 2. Extend it
+
+```typescript
+class ShortCutFormatter extends CometChatTextFormatter {
+  // ...
+}
+```
+
+### 3. Set the track character
+
+```typescript
+this.setTrackingCharacter("!");
+```
+
+### 4. Handle key events
+
+Detect shortcuts on `keyUp` and trigger expansion logic.
+
+```typescript
+onKeyUp(event: KeyboardEvent) {
+  // Check text before caret for shortcut match
+}
+```
+
+### 5. Add dialog and formatting methods
+
+```typescript
+openDialog(buttonText: string, shortcut: string) { /* ... */ }
+closeDialog() { /* ... */ }
+handleButtonClick(buttonText: string) { /* ... */ }
+getFormattedText(text: string): string { return text; }
+```
+
+---
+
+## Example
+
+<Tabs>
+<Tab title="ShortCutFormatter.ts">
+
+Fetches shortcuts from the Message Shortcuts extension on init. On `keyUp`, checks if the text before the caret matches a shortcut and opens a dialog with the expansion.
+
+```typescript expandable
+import { CometChatTextFormatter, CometChatUIEvents, PanelAlignment } from "@cometchat/chat-uikit-angular";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+
+export class ShortcutFormatter extends CometChatTextFormatter {
+  private shortcuts: { [key: string]: string } = {};
+  private dialogIsOpen = false;
+  private currentShortcut: string | null = null;
+
+  constructor() {
+    super();
+    this.setTrackingCharacter("!");
+    CometChat.callExtension("message-shortcuts", "GET", "v1/fetch", undefined)
+      .then((data: any) => {
+        if (data?.shortcuts) {
+          this.shortcuts = data.shortcuts;
+        }
+      })
+      .catch((error) => console.error("Error fetching shortcuts", error));
+  }
+
+  onKeyUp(event: KeyboardEvent) {
+    const caretPosition =
+      this.currentCaretPosition instanceof Selection
+        ? this.currentCaretPosition.anchorOffset
+        : 0;
+    const textBeforeCaret = this.getTextBeforeCaret(caretPosition);
+
+    const match = textBeforeCaret.match(/!([a-zA-Z]+)$/);
+    if (match) {
+      const shortcut = match[0];
+      const replacement = this.shortcuts[shortcut];
+      if (replacement) {
+        if (this.dialogIsOpen && this.currentShortcut !== shortcut) {
+          this.closeDialog();
+        }
+        this.openDialog(replacement, shortcut);
+      }
+    } else if (!textBeforeCaret) {
+      this.closeDialog();
+    }
+  }
+
+  openDialog(buttonText: string, shortcut: string) {
+    CometChatUIEvents.ccShowPanel.next({
+      child: this.createDialogElement(buttonText),
+      position: PanelAlignment.messageListFooter,
+    });
+    this.dialogIsOpen = true;
+    this.currentShortcut = shortcut;
+  }
+
+  closeDialog() {
+    CometChatUIEvents.ccHidePanel.next(PanelAlignment.messageListFooter);
+    this.dialogIsOpen = false;
+    this.currentShortcut = null;
+  }
+
+  private createDialogElement(buttonText: string): HTMLElement {
+    const container = document.createElement("div");
+    container.style.width = "100%";
+    container.style.padding = "8px";
+
+    const button = document.createElement("button");
+    button.textContent = buttonText;
+    button.style.cssText =
+      "width: 100%; padding: 8px 16px; cursor: pointer; background: #f2e6ff; border: 2px solid #9b42f5; border-radius: 12px; text-align: left; font: 600 15px sans-serif;";
+    button.addEventListener("click", () => this.handleButtonClick(buttonText));
+
+    container.appendChild(button);
+    return container;
+  }
+
+  handleButtonClick(buttonText: string) {
+    if (this.currentCaretPosition && this.currentRange) {
+      const shortcut = Object.keys(this.shortcuts).find(
+        (key) => this.shortcuts[key] === buttonText
+      );
+      if (shortcut) {
+        const replacement = this.shortcuts[shortcut];
+        this.addAtCaretPosition(
+          replacement,
+          this.currentCaretPosition,
+          this.currentRange
+        );
+      }
+    }
+    if (this.dialogIsOpen) {
+      this.closeDialog();
+    }
+  }
+
+  getFormattedText(text: string): string {
+    return text;
+  }
+
+  private getTextBeforeCaret(caretPosition: number): string {
+    if (
+      this.currentRange?.startContainer &&
+      typeof this.currentRange.startContainer.textContent === "string"
+    ) {
+      const textContent = this.currentRange.startContainer.textContent;
+      if (textContent.length >= caretPosition) {
+        return textContent.substring(0, caretPosition);
+      }
+    }
+    return "";
+  }
+}
+```
+</Tab>
+
+<Tab title="Component Usage">
+
+Pass the formatter via the `textFormatters` input on the composer.
+
+```typescript expandable
+import { Component } from "@angular/core";
+import { CometChatMessageComposerComponent } from "@cometchat/chat-uikit-angular";
+import { ShortcutFormatter } from "./ShortCutFormatter";
+
+@Component({
+  selector: "app-shortcut-demo",
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [textFormatters]="textFormatters">
+    </cometchat-message-composer>
+  `,
+})
+export class ShortcutDemoComponent {
+  textFormatters = [new ShortcutFormatter()];
+}
+```
+</Tab>
+</Tabs>
+
+<Note>
+The Message Shortcuts extension must be enabled in your CometChat Dashboard for this formatter to work. Configure your shortcuts in the Dashboard under Extensions → Message Shortcuts.
+</Note>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Text Formatter" href="/guides/custom-text-formatter">
+    Build custom inline text patterns.
+  </Card>
+  <Card title="Message Composer" href="/components/cometchat-message-composer">
+    Customize the message input component.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Mentions Formatter" href="/guides/mentions-formatter">
+    Add @mentions with styled tokens.
+  </Card>
+</CardGroup>

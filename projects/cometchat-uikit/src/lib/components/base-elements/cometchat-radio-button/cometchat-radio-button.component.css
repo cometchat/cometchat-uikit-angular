@@ -1,0 +1,112 @@
+/* CometChatRadioButton Component Styles */
+
+.cometchat-radio-button {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+.cometchat-radio-button__label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  gap: var(--cometchat-radio-button-label-gap, var(--cometchat-spacing-2, 8px));
+}
+
+.cometchat-radio-button__input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.cometchat-radio-button__custom {
+  position: relative;
+  display: inline-block;
+  width: var(--cometchat-radio-button-size, 20px);
+  height: var(--cometchat-radio-button-size, 20px);
+  border: var(--cometchat-radio-button-border, 2px solid var(--cometchat-border-color-default));
+  border-radius: var(--cometchat-radio-button-border-radius, var(--cometchat-radius-max, 1000px));
+  background-color: var(--cometchat-radio-button-background, var(--cometchat-background-color-01));
+  transition: all var(--cometchat-radio-button-transition-duration, 0.2s) ease;
+  flex-shrink: 0;
+}
+
+/* Inner circle for checked state */
+.cometchat-radio-button__custom::after {
+  content: '';
+  position: absolute;
+  display: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--cometchat-radio-button-inner-circle-size, 10px);
+  height: var(--cometchat-radio-button-inner-circle-size, 10px);
+  border-radius: var(--cometchat-radio-button-inner-circle-border-radius, var(--cometchat-radius-max, 1000px));
+  background-color: var(--cometchat-radio-button-inner-circle-background, var(--cometchat-primary-color, #6852D6));
+}
+
+/* Checked state */
+.cometchat-radio-button__input:checked + .cometchat-radio-button__custom {
+  border-color: var(--cometchat-radio-button-border-color-checked, var(--cometchat-primary-color, #6852D6));
+}
+
+.cometchat-radio-button__input:checked + .cometchat-radio-button__custom::after {
+  display: block;
+}
+
+/* Hover state */
+.cometchat-radio-button__label:hover .cometchat-radio-button__custom {
+  border-color: var(--cometchat-radio-button-border-color-hover, var(--cometchat-primary-color, #6852D6));
+}
+
+/* Disable hover when disabled */
+.cometchat-radio-button__input:disabled ~ .cometchat-radio-button__label:hover .cometchat-radio-button__custom {
+  border-color: var(--cometchat-radio-button-border-color-disabled);
+}
+
+/* Focus state */
+.cometchat-radio-button__input:focus + .cometchat-radio-button__custom {
+  outline: var(--cometchat-radio-button-focus-outline);
+  outline-offset: var(--cometchat-radio-button-focus-outline-offset);
+}
+
+.cometchat-radio-button__input:focus:not(:focus-visible) + .cometchat-radio-button__custom {
+  outline: none;
+}
+
+.cometchat-radio-button__input:focus-visible + .cometchat-radio-button__custom {
+  outline: var(--cometchat-radio-button-focus-outline);
+  outline-offset: var(--cometchat-radio-button-focus-outline-offset);
+}
+
+/* Disabled state */
+.cometchat-radio-button__input:disabled + .cometchat-radio-button__custom {
+  opacity: var(--cometchat-radio-button-opacity-disabled);
+  cursor: not-allowed;
+  border-color: var(--cometchat-radio-button-border-color-disabled);
+}
+
+.cometchat-radio-button__input:disabled ~ .cometchat-radio-button__text {
+  opacity: var(--cometchat-radio-button-text-opacity-disabled);
+  cursor: not-allowed;
+}
+
+.cometchat-radio-button__input:disabled ~ .cometchat-radio-button__label {
+  cursor: not-allowed;
+}
+
+/* Label text */
+.cometchat-radio-button__text {
+  font: var(--cometchat-radio-button-text-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-radio-button-text-color, var(--cometchat-text-color-primary));
+  line-height: var(--cometchat-radio-button-text-line-height, 1.5);
+}
+
+/* Disabled text */
+.cometchat-radio-button__input:disabled ~ .cometchat-radio-button__text {
+  color: var(--cometchat-radio-button-text-color-disabled);
+}

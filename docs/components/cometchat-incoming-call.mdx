@@ -1,0 +1,155 @@
+---
+title: "CometChatIncomingCall"
+description: "A standalone Angular component that displays an incoming call notification with accept and decline actions"
+---
+
+## Overview
+
+The CometChatIncomingCall component renders an incoming call notification card when a user receives a voice or video call. It displays the caller's name, avatar, and call type icon using a `CometChatListItem`, along with Accept and Decline buttons. After accepting, it automatically renders the ongoing call screen.
+
+### Key Features
+
+- **Caller Information**: Displays caller name, avatar, and call type (audio/video) icon
+- **Accept & Decline**: Built-in buttons for accepting or declining the call
+- **Ringtone Support**: Plays an incoming call ringtone with custom sound support
+- **Ongoing Call Transition**: Automatically shows the ongoing call screen after accepting
+- **Custom Handlers**: Override default accept/decline behavior with custom callbacks
+- **Template Overrides**: Replace any visual section with custom templates
+- **Focus Management**: Dialog focus trap with Escape key to decline
+- **Global Config Priority**: Supports a three-tier priority system (Input > GlobalConfig > Default)
+
+
+<Info>
+  **Live Preview** — default incoming call preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-calls-cometchat-incoming-call--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-calls-cometchat-incoming-call--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="CometChat Incoming Call — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatIncomingCallComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-incoming-call-demo',
+  standalone: true,
+  imports: [CometChatIncomingCallComponent],
+  template: `
+    <cometchat-incoming-call
+      [call]="incomingCall"
+      (callAccepted)="onCallAccepted($event)"
+      (callDeclined)="onCallDeclined($event)"
+    ></cometchat-incoming-call>
+  `
+})
+export class IncomingCallDemoComponent {
+  incomingCall!: CometChat.Call;
+
+  onCallAccepted(call: CometChat.Call): void {
+    console.log('Call accepted:', call.getSessionId());
+  }
+
+  onCallDeclined(call: CometChat.Call): void {
+    console.log('Call declined:', call.getSessionId());
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `call` | `CometChat.Call \| null` | `null` | The incoming call object. Overrides service state when provided. |
+| `disableSoundForCalls` | `boolean` | `false` | Disables the incoming call ringtone when `true`. Supports global config override. |
+| `customSoundForCalls` | `string` | `''` | Custom sound URL for the incoming call ringtone. Supports global config override. |
+| `onAccept` | `((call: CometChat.Call) => void) \| null` | `null` | Custom accept handler. Overrides default SDK `CometChat.acceptCall()`. |
+| `onDecline` | `((call: CometChat.Call) => void) \| null` | `null` | Custom decline handler. Overrides default SDK `CometChat.rejectCall()`. |
+| `onError` | `((error: CometChat.CometChatException) => void) \| null` | `null` | Error callback invoked for any error during sound, accept, or decline. |
+| `itemView` | `TemplateRef<{ $implicit: IncomingCallTemplateContext }> \| null` | `null` | Replaces the entire ListItem with a custom template. |
+| `titleView` | `TemplateRef<{ $implicit: IncomingCallTemplateContext }> \| null` | `null` | Replaces the default caller name title in the ListItem. |
+| `subtitleView` | `TemplateRef<{ $implicit: IncomingCallTemplateContext }> \| null` | `null` | Replaces the default call type icon and "Incoming Call" subtitle. |
+| `leadingView` | `TemplateRef<{ $implicit: IncomingCallTemplateContext }> \| null` | `null` | Custom template for the leading position of the ListItem. |
+| `trailingView` | `TemplateRef<{ $implicit: IncomingCallTemplateContext }> \| null` | `null` | Replaces the default caller avatar in the trailing position. |
+| `acceptButtonView` | `TemplateRef<{ $implicit: IncomingCallTemplateContext }> \| null` | `null` | Replaces the default Accept button. |
+| `declineButtonView` | `TemplateRef<{ $implicit: IncomingCallTemplateContext }> \| null` | `null` | Replaces the default Decline button. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `callAccepted` | `CometChat.Call` | Emitted when the user accepts the incoming call. |
+| `callDeclined` | `CometChat.Call` | Emitted when the user declines the incoming call. |
+| `error` | `CometChat.CometChatException` | Emitted on any error during sound playback, accept, or decline. |
+
+## Customization
+
+### CSS Variable Overrides
+
+```css
+cometchat-incoming-call {
+  --cometchat-primary-color: #6852D6;
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-success-color: #09C26F;
+  --cometchat-error-color: #F44336;
+}
+```
+
+### Custom Templates
+
+```html expandable
+<cometchat-incoming-call
+  [call]="incomingCall"
+  [subtitleView]="customSubtitle"
+  [acceptButtonView]="customAccept"
+>
+  <ng-template #customSubtitle let-ctx>
+    <span>{{ ctx.callType === 'video' ? '📹 Video Call' : '📞 Audio Call' }}</span>
+  </ng-template>
+
+  <ng-template #customAccept let-ctx>
+    <button class="my-accept-btn" (click)="acceptCall()">
+      Accept {{ ctx.callerName }}'s call
+    </button>
+  </ng-template>
+</cometchat-incoming-call>
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Activate the focused button (Accept or Decline) |
+| `Space` | Activate the focused button (Accept or Decline) |
+| `Tab` | Move focus between Accept and Decline buttons |
+| `Escape` | Decline the incoming call |
+
+### ARIA Attributes
+
+- `role="alertdialog"` on the notification container
+- `aria-labelledby` references the caller name heading
+- Focus is trapped within the dialog while visible
+- Initial focus is set to the Accept button
+
+### Screen Reader Support
+
+- Incoming call is announced via a live region with caller name and call type
+- Call ended is announced when the call terminates
+
+## Related Components
+
+- [CometChatOngoingCall](./cometchat-ongoing-call.mdx) — Rendered automatically after accepting a call
+- [CometChatCallButtons](./cometchat-call-buttons.mdx) — Initiates outgoing calls
+- [CometChatListItem](./cometchat-list-item.mdx) — Used internally to render the caller information

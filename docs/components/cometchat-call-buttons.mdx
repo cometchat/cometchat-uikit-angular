@@ -1,0 +1,172 @@
+---
+title: "CometChatCallButtons"
+description: "A standalone Angular component that provides voice and video call initiation buttons for user-to-user and group calls"
+---
+
+## Overview
+
+The CometChatCallButtons component renders voice and video call buttons for initiating calls to a user or group. It delegates call state management and initiation logic to an internal service, and displays the outgoing call overlay and ongoing call screen automatically when a call is in progress.
+
+### Key Features
+
+- **Voice & Video Calls**: Separate buttons for initiating audio and video calls
+- **User & Group Support**: Works with both user-to-user and group calls
+- **Outgoing Call Overlay**: Automatically shows the outgoing call screen when a call is initiated
+- **Ongoing Call Screen**: Renders the ongoing call UI after a call is accepted
+- **Custom Handlers**: Override default call initiation with custom click handlers
+- **Template Overrides**: Replace default buttons with custom templates
+- **Global Config Priority**: Supports a three-tier priority system (Input > GlobalConfig > Default)
+- **Screen Reader Announcements**: Announces call initiation for assistive technologies
+
+
+<Info>
+  **Live Preview** — default call buttons preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-calls-cometchat-call-buttons--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-calls-cometchat-call-buttons--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="CometChat Call Buttons — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallButtonsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-call-buttons-demo',
+  standalone: true,
+  imports: [CometChatCallButtonsComponent],
+  template: `
+    <cometchat-call-buttons
+      [user]="activeUser"
+      (error)="onError($event)"
+    ></cometchat-call-buttons>
+  `
+})
+export class CallButtonsDemoComponent {
+  activeUser!: CometChat.User;
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Call error:', error);
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user` | `CometChat.User \| null` | `null` | The user to call. Mutually exclusive with `group`. |
+| `group` | `CometChat.Group \| null` | `null` | The group to call. Mutually exclusive with `user`. |
+| `hideVoiceCallButton` | `boolean` | `true` | Hides the voice call button when `true`. Defaults to `true` (hidden). When calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`, the resolved default becomes `false` (visible). Supports global config override. |
+| `hideVideoCallButton` | `boolean` | `true` | Hides the video call button when `true`. Defaults to `true` (hidden). When calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`, the resolved default becomes `false` (visible). Supports global config override. |
+| `onVoiceCallClick` | `(() => void) \| null` | `null` | Custom voice call click handler. Overrides default call initiation. |
+| `onVideoCallClick` | `(() => void) \| null` | `null` | Custom video call click handler. Overrides default call initiation. |
+| `onError` | `((error: CometChat.CometChatException) => void) \| null` | `null` | Error callback invoked for any error during call operations. |
+| `outgoingCallDisableSoundForCalls` | `boolean` | `false` | Disables sound for the outgoing call overlay. Supports global config override. |
+| `outgoingCallCustomSoundForCalls` | `string` | `''` | Custom sound URL for the outgoing call overlay. Supports global config override. |
+| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` to override the default call settings used in the ongoing call screen. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
+| `voiceCallButtonView` | `TemplateRef<any> \| null` | `null` | Replaces the default voice call button with a custom template. |
+| `videoCallButtonView` | `TemplateRef<any> \| null` | `null` | Replaces the default video call button with a custom template. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `error` | `CometChat.CometChatException` | Emitted on any error during call operations. |
+
+## Customization
+
+### CSS Variable Overrides
+
+```css
+cometchat-call-buttons {
+  --cometchat-primary-color: #6852D6;
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-spacing-2: 8px;
+}
+```
+
+### Custom Button Templates
+
+```html expandable
+<cometchat-call-buttons
+  [user]="user"
+  [voiceCallButtonView]="customVoiceBtn"
+  [videoCallButtonView]="customVideoBtn"
+>
+  <ng-template #customVoiceBtn>
+    <button class="my-voice-btn">📞 Voice</button>
+  </ng-template>
+
+  <ng-template #customVideoBtn>
+    <button class="my-video-btn">📹 Video</button>
+  </ng-template>
+</cometchat-call-buttons>
+```
+
+### Custom Call Settings
+
+Override the default `CallSettingsBuilder` to customize the call UI:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
+import { CometChatCallButtonsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-call-settings',
+  standalone: true,
+  imports: [CometChatCallButtonsComponent],
+  template: `
+    <cometchat-call-buttons
+      [user]="activeUser"
+      [callSettingsBuilder]="customCallSettings">
+    </cometchat-call-buttons>
+  `
+})
+export class CustomCallSettingsComponent implements OnInit {
+  activeUser!: CometChat.User;
+  customCallSettings: any;
+
+  ngOnInit(): void {
+    this.customCallSettings = new CometChatCalls.CallSettingsBuilder()
+      .enableDefaultLayout(true)
+      .setIsAudioOnlyCall(false);
+  }
+}
+```
+
+<Tip>
+  You can also set `callSettingsBuilder` globally via [GlobalConfig](/customization/global-config) so all call components use the same settings without passing the input to each one.
+</Tip>
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Activate the focused call button |
+| `Space` | Activate the focused call button |
+| `Tab` | Move focus between voice and video call buttons |
+
+### Screen Reader Support
+
+- Call initiation is announced via a live region for screen readers
+- Buttons include descriptive `aria-label` attributes for voice and video call actions
+
+## Related Components
+
+- [CometChatOutgoingCall](./cometchat-outgoing-call.mdx) — Displayed automatically when a call is initiated
+- [CometChatOngoingCall](./cometchat-ongoing-call.mdx) — Displayed automatically when a call is accepted
+- [CometChatMessageHeader](./cometchat-message-header.mdx) — Typically hosts the call buttons

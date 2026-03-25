@@ -1,0 +1,535 @@
+/**
+ * CometChatGroups Component Styles
+ *
+ * BEM naming convention:
+ * - Block: .cometchat-groups
+ * - Element: .cometchat-groups__{element}
+ * - Modifier: .cometchat-groups--{modifier} or .cometchat-groups__{element}--{modifier}
+ *
+ * All values use CSS variables from css-variables.css
+ *
+ * @see Requirements 25.1, 25.2, 25.3, 25.4, 25.5, 25.6
+ */
+
+/* ==================== Block Reset ==================== */
+
+.cometchat-groups,
+.cometchat-groups * {
+  box-sizing: border-box;
+}
+
+@supports selector(:where(*)) {
+  :where(.cometchat-groups *) {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* ==================== Block ==================== */
+
+.cometchat-groups {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--cometchat-background-color-01);
+  overflow: hidden;
+  position: relative;
+  color: var(--cometchat-text-color-primary);
+  --cometchat-paginated-list-loading-padding:0px var(--cometchat-padding-4)
+}
+
+/* paginated-list fills remaining height — handled by :host { flex: 1 } in paginated-list CSS */
+
+/* ==================== Header Elements ==================== */
+
+.cometchat-groups__header {
+  display: flex;
+  flex-direction: column;
+  /* padding: var(--cometchat-groups-header-padding, var(--cometchat-spacing-3) var(--cometchat-spacing-4));
+  gap: var(--cometchat-groups-header-gap, var(--cometchat-spacing-3)); */
+  flex-shrink: 0;
+  background: var(--cometchat-groups-header-background, var(--cometchat-background-color-01));
+}
+
+.cometchat-groups__header-default {
+  display: flex;
+  /* flex-direction: column; */
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--cometchat-groups-header-padding, var(--cometchat-padding-3, 12px));
+  border-bottom: var(--cometchat-groups-header-border-bottom, 1px solid var(--cometchat-border-color-light));
+  min-height: var(--cometchat-groups-header-min-height, 64px);
+}
+
+.cometchat-groups__header-title {
+  font: var(--cometchat-font-heading1-bold);
+  color: var(--cometchat-text-color-primary);
+  margin: 0;
+}
+
+.cometchat-groups__search-bar {
+  width: 100%;
+  padding: var(--cometchat-groups-search-bar-padding, var(--cometchat-padding-3, 12px));
+  border: none;
+}
+
+/* ==================== List Elements ==================== */
+
+.cometchat-groups__list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Scrollbar Styling */
+.cometchat-groups__list::-webkit-scrollbar {
+  width: var(--cometchat-groups-scrollbar-width, 8px);
+}
+
+.cometchat-groups__list::-webkit-scrollbar-track {
+  background: var(--cometchat-groups-scrollbar-track-background, var(--cometchat-background-color-02));
+}
+
+.cometchat-groups__list::-webkit-scrollbar-thumb {
+  background: var(--cometchat-groups-scrollbar-thumb-background, var(--cometchat-neutral-color-400));
+  border-radius: var(--cometchat-groups-scrollbar-thumb-border-radius, var(--cometchat-radius-1));
+}
+
+.cometchat-groups__list::-webkit-scrollbar-thumb:hover {
+  background: var(--cometchat-groups-scrollbar-thumb-background-hover, var(--cometchat-neutral-color-500));
+}
+
+/* ==================== List Item Wrapper ==================== */
+
+.cometchat-groups__list-item-wrapper {
+  cursor: pointer;
+  transition: var(--cometchat-groups-list-item-wrapper-transition, background-color 0.2s ease);
+  position: relative;
+  outline: none;
+}
+
+/* Hover State - only apply when NOT active */
+.cometchat-groups__list-item-wrapper:hover:not(.cometchat-groups__list-item--active) {
+  background: var(--cometchat-groups-list-item-wrapper-background-hover, var(--cometchat-background-color-02));
+}
+
+/* ==================== List Item Modifiers ==================== */
+
+/* Active State (Currently Selected Group) */
+.cometchat-groups__list-item--active {
+  background-color: var(--cometchat-groups-list-item-background-active, var(--cometchat-background-color-04));
+}
+
+.cometchat-groups__list-item--selected {
+  background: var(--cometchat-groups-list-item-background-selected, var(--cometchat-background-color-03));
+}
+
+/* Hover on selected - only when not active */
+.cometchat-groups__list-item--selected:hover:not(.cometchat-groups__list-item--active) {
+  background: var(--cometchat-groups-list-item-background-selected, var(--cometchat-background-color-03));
+}
+
+
+
+/* Combined states */
+.cometchat-groups__list-item--active.cometchat-groups__list-item--selected {
+  background: var(--cometchat-groups-list-item-background-active, var(--cometchat-background-color-04));
+}
+
+/* Remove all focus styling from wrapper - child component handles all focus visualization */
+.cometchat-groups__list-item-wrapper:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-groups__list-item-wrapper:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-groups__list-item-wrapper:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ==================== List Item Leading View ==================== */
+
+.cometchat-groups__list-item-leading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cometchat-groups__list-item-type-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: var(--cometchat-groups-list-item-type-icon-size, 16px);
+  height: var(--cometchat-groups-list-item-type-icon-size, 16px);
+  border-radius: var(--cometchat-groups-list-item-type-icon-border-radius, var(--cometchat-radius-max));
+  background: var(--cometchat-groups-list-item-type-icon-background, var(--cometchat-background-color-01));
+  border: var(--cometchat-groups-list-item-type-icon-border, 1px solid var(--cometchat-border-color-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cometchat-groups-list-item-type-icon-color, var(--cometchat-icon-color-secondary));
+  z-index: 1;
+}
+
+.cometchat-groups__list-item-type-icon--private {
+  color: var(--cometchat-groups-list-item-type-icon-private-color, var(--cometchat-warning-color));
+}
+
+.cometchat-groups__list-item-type-icon--password {
+  color: var(--cometchat-groups-list-item-type-icon-password-color, var(--cometchat-warning-color));
+}
+
+.cometchat-groups__list-item-type-icon svg {
+  width: var(--cometchat-groups-list-item-type-icon-svg-size, 10px);
+  height: var(--cometchat-groups-list-item-type-icon-svg-size, 10px);
+}
+
+/* ==================== List Item Title ==================== */
+
+.cometchat-groups__list-item-title {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==================== Subtitle ==================== */
+
+.cometchat-groups__subtitle {
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==================== Shimmer Loading State ==================== */
+
+.cometchat-groups__shimmer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.cometchat-groups__shimmer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-groups-shimmer-item-gap, var(--cometchat-spacing-3, 12px));
+  padding: var(--cometchat-groups-shimmer-item-padding, var(--cometchat-padding-3, 12px) 0px);
+}
+
+.cometchat-groups__shimmer-item-avatar {
+  width: var(--cometchat-groups-shimmer-avatar-size, 48px);
+  height: var(--cometchat-groups-shimmer-avatar-size, 48px);
+  border-radius: var(--cometchat-groups-shimmer-avatar-border-radius, var(--cometchat-radius-max));
+  background: linear-gradient(
+    90deg,
+    var(--cometchat-background-color-03) 25%,
+    var(--cometchat-background-color-02) 50%,
+    var(--cometchat-background-color-03) 75%
+  );
+  background-size: 200% 100%;
+  animation: cometchat-groups-shimmer var(--cometchat-groups-shimmer-duration, 1.5s) infinite;
+  flex-shrink: 0;
+}
+
+.cometchat-groups__shimmer-item-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-groups-shimmer-item-body-gap, var(--cometchat-spacing-1, 4px));
+  min-width: 0;
+}
+
+.cometchat-groups__shimmer-item-body-title {
+  width: var(--cometchat-groups-shimmer-title-width, 60%);
+  height: var(--cometchat-groups-shimmer-title-height, 16px);
+  border-radius: var(--cometchat-groups-shimmer-title-border-radius, var(--cometchat-radius-1));
+  background: linear-gradient(
+    90deg,
+    var(--cometchat-background-color-03) 25%,
+    var(--cometchat-background-color-02) 50%,
+    var(--cometchat-background-color-03) 75%
+  );
+  background-size: 200% 100%;
+  animation: cometchat-groups-shimmer var(--cometchat-groups-shimmer-duration, 1.5s) infinite;
+}
+
+.cometchat-groups__shimmer-item-body-subtitle {
+  width: var(--cometchat-groups-shimmer-subtitle-width, 40%);
+  height: var(--cometchat-groups-shimmer-subtitle-height, 12px);
+  border-radius: var(--cometchat-groups-shimmer-subtitle-border-radius, var(--cometchat-radius-1));
+  background: linear-gradient(
+    90deg,
+    var(--cometchat-background-color-03) 25%,
+    var(--cometchat-background-color-02) 50%,
+    var(--cometchat-background-color-03) 75%
+  );
+  background-size: 200% 100%;
+  animation: cometchat-groups-shimmer var(--cometchat-groups-shimmer-duration, 1.5s) infinite;
+}
+
+@keyframes cometchat-groups-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ==================== Empty State ==================== */
+
+.cometchat-groups__empty-state-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-groups-empty-state-padding, var(--cometchat-padding-8, 32px));
+  gap: var(--cometchat-groups-empty-state-gap, var(--cometchat-spacing-2, 8px));
+  height: 100%;
+  min-height: var(--cometchat-groups-empty-state-min-height, 200px);
+}
+
+.cometchat-groups__empty-state-view-icon {
+  width: var(--cometchat-groups-empty-state-icon-size, 64px);
+  height: var(--cometchat-groups-empty-state-icon-size, 64px);
+  color: var(--cometchat-groups-empty-state-icon-color, var(--cometchat-icon-color-secondary));
+  opacity: var(--cometchat-groups-empty-state-icon-opacity, 0.6);
+}
+
+.cometchat-groups__empty-state-view-icon-mask {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  -webkit-mask: url('../../assets/groups_empty_state.svg') center center no-repeat;
+  mask: url('../../assets/groups_empty_state.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-groups__empty-state-view-title {
+  font: var(--cometchat-font-heading4-bold);
+  color: var(--cometchat-text-color-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.cometchat-groups__empty-state-view-subtitle {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+  text-align: center;
+  max-width: 300px;
+  margin: 0;
+}
+
+/* ==================== Error State ==================== */
+
+.cometchat-groups__error-state-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-groups-error-state-padding, var(--cometchat-padding-8, 32px));
+  gap: var(--cometchat-groups-error-state-gap, var(--cometchat-spacing-2, 8px));
+  height: 100%;
+  min-height: var(--cometchat-groups-error-state-min-height, 200px);
+}
+
+.cometchat-groups__error-state-view-icon {
+  width: var(--cometchat-groups-error-state-icon-size, 64px);
+  height: var(--cometchat-groups-error-state-icon-size, 64px);
+  color: var(--cometchat-groups-error-state-icon-color, var(--cometchat-error-color));
+  opacity: var(--cometchat-groups-error-state-icon-opacity, 0.8);
+}
+
+.cometchat-groups__error-state-view-icon-mask {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  -webkit-mask: url('../../assets/list_error_state_icon.svg') center center no-repeat;
+  mask: url('../../assets/list_error_state_icon.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-groups__error-state-view-title {
+  font: var(--cometchat-font-heading4-bold);
+  color: var(--cometchat-text-color-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.cometchat-groups__error-state-view-subtitle {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+  text-align: center;
+  max-width: 300px;
+  margin: 0;
+}
+
+/* ==================== Selection Control ==================== */
+
+/* Selection control container - positioned in tail view */
+.cometchat-groups__selection-control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: var(--cometchat-groups-selection-control-padding-left, var(--cometchat-padding-2, 8px));
+}
+
+/* ==================== Scrollbar Modifier ==================== */
+
+.cometchat-groups-hide-scrollbar .cometchat-groups__list {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.cometchat-groups-hide-scrollbar .cometchat-groups__list::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* ==================== Accessibility ==================== */
+
+/* Screen Reader Only Class */
+.cometchat-groups__sr-only {
+  position: absolute;
+  width: var(--cometchat-groups-sr-only-width, 1px);
+  height: var(--cometchat-groups-sr-only-height, 1px);
+  padding: var(--cometchat-groups-sr-only-padding, 0);
+  margin: var(--cometchat-groups-sr-only-margin, -1px);
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: var(--cometchat-groups-sr-only-border-width, 0);
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .cometchat-groups__list-item-wrapper:focus,
+  .cometchat-groups__list-item--focused {
+    outline: var(--cometchat-groups-high-contrast-outline-width, 2px) solid currentColor;
+    outline-offset: var(--cometchat-groups-high-contrast-outline-offset, 2px);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-groups__list-item-wrapper {
+    transition: none;
+  }
+
+  .cometchat-groups__shimmer-item-avatar,
+  .cometchat-groups__shimmer-item-body-title,
+  .cometchat-groups__shimmer-item-body-subtitle {
+    animation: none;
+    background: var(--cometchat-background-color-03);
+  }
+}
+
+/* ==================== Responsive Design ==================== */
+
+/* Tablet and below (768px) */
+@media (max-width: 768px) {
+  .cometchat-groups__header-default {
+    min-height: var(--cometchat-groups-header-min-height-tablet, 50px);
+  }
+
+  .cometchat-groups__shimmer-item {
+    padding: var(--cometchat-groups-shimmer-item-padding-tablet, var(--cometchat-padding-3, 12px));
+  }
+
+  .cometchat-groups__empty-state-view,
+  .cometchat-groups__error-state-view {
+    padding: var(--cometchat-groups-empty-state-padding-tablet, var(--cometchat-padding-6, 24px) var(--cometchat-padding-3, 12px));
+    min-height: var(--cometchat-groups-empty-state-min-height-tablet, 180px);
+  }
+
+  .cometchat-groups__empty-state-view-icon,
+  .cometchat-groups__error-state-view-icon {
+    width: var(--cometchat-groups-empty-state-icon-size-tablet, 56px);
+    height: var(--cometchat-groups-empty-state-icon-size-tablet, 56px);
+  }
+}
+
+/* Mobile (480px) */
+@media (max-width: 480px) {
+  .cometchat-groups__shimmer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-groups-shimmer-item-gap, var(--cometchat-spacing-3, 12px));
+  padding: var(--cometchat-groups-shimmer-item-padding, var(--cometchat-padding-3, 12px) 0px);
+}
+  .cometchat-groups{
+    --cometchat-group-item-padding-mobile:var(--cometchat-padding-2) var(--cometchat-padding-3);
+  }
+  .cometchat-groups__header-title {
+    font: var(--cometchat-groups-header-title-font-mobile, var(--cometchat-font-heading4-bold));
+  }
+
+  .cometchat-groups__empty-state-view-icon,
+  .cometchat-groups__error-state-view-icon {
+    width: var(--cometchat-groups-empty-state-icon-size-mobile, 48px);
+    height: var(--cometchat-groups-empty-state-icon-size-mobile, 48px);
+  }
+
+  .cometchat-groups__empty-state-view-title,
+  .cometchat-groups__error-state-view-title {
+    font: var(--cometchat-groups-empty-state-title-font-mobile, var(--cometchat-font-body-bold));
+  }
+
+  .cometchat-groups__empty-state-view-subtitle,
+  .cometchat-groups__error-state-view-subtitle {
+    font: var(--cometchat-groups-empty-state-subtitle-font-mobile, var(--cometchat-font-caption1-regular));
+  }
+}
+
+
+/* ==================== Error State Retry Button ==================== */
+
+.cometchat-groups__error-state-view-retry-button {
+  padding: var(--cometchat-groups-error-button-padding, var(--cometchat-spacing-2) var(--cometchat-spacing-6));
+  font: var(--cometchat-groups-error-button-font, var(--cometchat-font-button-medium));
+  color: var(--cometchat-groups-error-button-color, var(--cometchat-primary-button-text));
+  background-color: var(--cometchat-groups-error-button-background, var(--cometchat-primary-button-background));
+  border: none;
+  border-radius: var(--cometchat-groups-error-button-border-radius, var(--cometchat-radius-3));
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  outline: none;
+}
+
+.cometchat-groups__error-state-view-retry-button:hover {
+  opacity: var(--cometchat-groups-error-button-opacity-hover, 0.9);
+}
+
+.cometchat-groups__error-state-view-retry-button:active {
+  transform: scale(var(--cometchat-groups-error-button-scale-active, 0.98));
+}
+
+.cometchat-groups__error-state-view-retry-button:focus-visible {
+  box-shadow: var(--cometchat-groups-error-button-focus-box-shadow, var(--cometchat-focus-shadow));
+}
+
+/* Reduced Motion Support for Retry Button */
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-groups__error-state-view-retry-button {
+    transition: none;
+  }
+  
+  .cometchat-groups__error-state-view-retry-button:active {
+    transform: none;
+  }
+}

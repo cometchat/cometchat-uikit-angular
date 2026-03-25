@@ -1,0 +1,503 @@
+/**
+ * CometChat Video Bubble Component Styles
+ * 
+ * BEM Methodology with CSS Variables
+ * All values use CSS variables from css-variables.css
+ * 
+ * @see Requirements 13.7, 14.2, 14.3, 14.4, 14.6, 2.1, 2.2
+ */
+
+/* ============================================
+   Block: cometchat-video-bubble
+   ============================================ */
+
+.cometchat-video-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-video-bubble-gap, var(--cometchat-spacing-2));
+  position: relative;
+  /* Overflow containment - Requirements 2.4, 2.5, 2.6, 2.7, 2.8 */
+  overflow: hidden;
+  box-sizing: border-box;
+  max-height: var(--cometchat-video-bubble-max-height, 350px);
+  max-width: var(--cometchat-video-bubble-max-width, 250px);
+}
+
+/* ============================================
+   Background Inheritance: Message Bubble Context
+   @see Requirements 2.1, 2.2
+   
+   NOTE: Parent override is handled via CSS custom property
+   --cometchat-video-bubble-background which can be set by parent
+   components. The bubble uses this variable with a fallback to
+   the default theme background color.
+   ============================================ */
+
+/* ============================================
+   Modifiers: Alignment Variants
+   ============================================ */
+
+/**
+ * Incoming message styling (left alignment)
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 13.4, 13.6
+ */
+.cometchat-video-bubble--incoming {
+  /* Incoming messages use default styling with neutral colors */
+  align-items: flex-start;
+}
+
+.cometchat-video-bubble--incoming .cometchat-video-bubble__container {
+  /* background: var(--cometchat-video-bubble-background, var(--cometchat-background-color-02));
+  border: 1px solid var(--cometchat-border-color-light); */
+}
+
+/**
+ * Outgoing message styling (right alignment)
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 13.3, 13.5
+ */
+.cometchat-video-bubble--outgoing {
+  /* Outgoing messages use primary button colors */
+  align-items: flex-end;
+}
+
+.cometchat-video-bubble--outgoing .cometchat-video-bubble__container {
+  /* background: var(--cometchat-video-bubble-background, var(--cometchat-extended-primary-color-50));
+  border: 1px solid var(--cometchat-extended-primary-color-200); */
+}
+
+/* ============================================
+   Modifiers: Layout Variants
+   ============================================ */
+
+/**
+ * Single video layout
+ * @see Requirements 6.1, 6.2
+ */
+.cometchat-video-bubble--single .cometchat-video-bubble__container {
+  max-width: var(--cometchat-video-bubble-single-max-width, 400px);
+}
+
+.cometchat-video-bubble--single .cometchat-video-bubble__video-wrapper {
+  aspect-ratio: 16 / 9;
+  min-width: var(--cometchat-video-bubble-single-min-width, 200px);
+  min-height: var(--cometchat-video-bubble-single-min-height, 112px);
+  max-height: var(--cometchat-video-bubble-single-max-height, 400px);
+}
+
+/**
+ * Grid layout for 2-3 videos
+ * @see Requirements 7.1, 7.3
+ */
+.cometchat-video-bubble--grid .cometchat-video-bubble__container {
+  max-width: var(--cometchat-video-bubble-grid-max-width, 400px);
+}
+
+/**
+ * 2×2 grid layout for 4 videos
+ * @see Requirements 7.2, 7.3
+ */
+.cometchat-video-bubble--grid-2x2 .cometchat-video-bubble__container {
+  max-width: var(--cometchat-video-bubble-grid-2x2-max-width, 400px);
+}
+
+/**
+ * Overflow layout for >4 videos
+ * @see Requirements 8.1, 8.2
+ */
+.cometchat-video-bubble--overflow .cometchat-video-bubble__container {
+  max-width: var(--cometchat-video-bubble-overflow-max-width, 400px);
+}
+
+/* ============================================
+   Element: Container
+   ============================================ */
+
+.cometchat-video-bubble__container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--cometchat-video-bubble-container-max-width, 400px);
+  /* padding: var(--cometchat-spacing-2); */
+  border-radius: var(--cometchat-video-bubble-container-border-radius, var(--cometchat-radius-2));
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ============================================
+   Element: Grid
+   ============================================ */
+
+.cometchat-video-bubble__grid {
+  display: grid;
+  gap: var(--cometchat-spacing-1);
+  width: 100%;
+}
+
+/**
+ * Two-column grid for 2 videos
+ * @see Requirements 7.1, 7.3
+ */
+.cometchat-video-bubble__grid--two-col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/**
+ * Three-column grid for 3 videos
+ * @see Requirements 7.1, 7.3
+ */
+.cometchat-video-bubble__grid--three-col {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/**
+ * 2×2 grid for 4 videos
+ * @see Requirements 7.2, 7.3
+ */
+.cometchat-video-bubble__grid--2x2 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+/**
+ * Overflow grid for >4 videos (3 videos + overflow tile)
+ * @see Requirements 8.1, 8.3
+ */
+.cometchat-video-bubble__grid--overflow {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+/* ============================================
+   Element: Video Wrapper
+   ============================================ */
+
+.cometchat-video-bubble__video-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--cometchat-radius-2);
+  cursor: pointer;
+  background: var(--cometchat-background-color-02);
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-video-bubble__video-wrapper:hover {
+  opacity: 0.95;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-video-bubble__video-wrapper:focus {
+  outline: none;
+}
+
+.cometchat-video-bubble__video-wrapper:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+/* Alternative focus style for media content - uses box-shadow for better visibility against media */
+.cometchat-video-bubble__video-wrapper:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-color-inverse, var(--cometchat-static-white));
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Thumbnail
+   ============================================ */
+
+.cometchat-video-bubble__thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/**
+ * Placeholder shown when thumbnail fails to load
+ */
+.cometchat-video-bubble__thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-background-color-03);
+}
+
+/**
+ * Video icon inside the placeholder
+ * Uses a CSS triangle (play icon shape) as a simple fallback indicator
+ */
+.cometchat-video-bubble__placeholder-icon {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 0 10px 18px;
+  border-color: transparent transparent transparent var(--cometchat-icon-color-secondary);
+}
+
+/**
+ * Loading state for thumbnails
+ * @see Requirements 12.4
+ */
+.cometchat-video-bubble__thumbnail--loading {
+  background: var(--cometchat-background-color-02);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ============================================
+   Element: Play Overlay
+   ============================================ */
+
+/**
+ * Play button overlay centered on video thumbnail
+ * @see Requirements 6.3, 12.4
+ */
+.cometchat-video-bubble__play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-video-bubble-play-overlay-size, 64px);
+  height: var(--cometchat-video-bubble-play-overlay-size, 64px);
+  background: var(--cometchat-video-bubble-play-overlay-background, var(--cometchat-overlay-background-light));
+  border-radius: var(--cometchat-video-bubble-play-overlay-border-radius, var(--cometchat-radius-max));
+  backdrop-filter: blur(4px);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.cometchat-video-bubble__video-wrapper:hover .cometchat-video-bubble__play-overlay {
+  background: var(--cometchat-video-bubble-play-overlay-background-hover, var(--cometchat-overlay-background-heavy));
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* ============================================
+   Element: Play Icon
+   ============================================ */
+
+/**
+ * Play icon (triangle) inside play overlay
+ * @see Requirements 6.3, 12.4
+ */
+.cometchat-video-bubble__play-icon {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: var(--cometchat-video-bubble-play-icon-size, 12px) 0 var(--cometchat-video-bubble-play-icon-size, 12px) var(--cometchat-video-bubble-play-icon-width, 20px);
+  border-color: transparent transparent transparent var(--cometchat-static-white);
+  margin-left: var(--cometchat-video-bubble-play-icon-offset, 4px); /* Optical centering */
+}
+
+/* ============================================
+   Element: Duration Badge
+   ============================================ */
+
+/**
+ * Duration badge positioned in bottom-right corner
+ * @see Requirements 6.4, 12.4
+ */
+.cometchat-video-bubble__duration-badge {
+  position: absolute;
+  bottom: var(--cometchat-spacing-2);
+  right: var(--cometchat-spacing-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-video-bubble-duration-padding, var(--cometchat-padding) var(--cometchat-padding-2));
+  background: var(--cometchat-overlay-background-heavy);
+  border-radius: var(--cometchat-radius-1);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Duration Text
+   ============================================ */
+
+/**
+ * Duration text inside badge
+ * @see Requirements 6.4, 12.4
+ */
+.cometchat-video-bubble__duration-text {
+  font: var(--cometchat-font-caption1-bold);
+  color: var(--cometchat-static-white);
+  text-shadow: var(--cometchat-text-shadow-default);
+  white-space: nowrap;
+}
+
+/* ============================================
+   Element: Overflow Tile
+   ============================================ */
+
+/**
+ * Overflow tile showing 4th video with overlay
+ * @see Requirements 8.3, 8.4
+ */
+.cometchat-video-bubble__overflow-tile {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--cometchat-radius-2);
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-video-bubble__overflow-tile:hover {
+  opacity: 0.95;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-video-bubble__overflow-tile:focus {
+  outline: none;
+}
+
+.cometchat-video-bubble__overflow-tile:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+/* Alternative focus style for media content - uses box-shadow for better visibility against media */
+.cometchat-video-bubble__overflow-tile:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-color-inverse, var(--cometchat-static-white));
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Overflow Overlay
+   ============================================ */
+
+/**
+ * Semi-transparent overlay on overflow tile
+ * @see Requirements 8.3, 8.4
+ */
+.cometchat-video-bubble__overflow-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-video-bubble-overflow-overlay-background, var(--cometchat-overlay-background-light));
+  backdrop-filter: blur(2px);
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-video-bubble__overflow-tile:hover .cometchat-video-bubble__overflow-overlay {
+  background: var(--cometchat-video-bubble-overflow-overlay-background-hover, var(--cometchat-overlay-background-light));
+}
+
+/* ============================================
+   Element: Overflow Text
+   ============================================ */
+
+/**
+ * "+N" text displayed on overflow tile
+ * @see Requirements 8.4, 15.2
+ */
+.cometchat-video-bubble__overflow-text {
+  font: var(--cometchat-font-heading1-bold);
+  color: var(--cometchat-static-white);
+  text-shadow: var(--cometchat-text-shadow-strong);
+}
+
+/* ============================================
+   Element: Caption
+   ============================================ */
+
+/**
+ * Caption container using TextMessageBubbleComponent
+ * @see Requirements 10.2, 10.4
+ */
+.cometchat-video-bubble__caption {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/**
+ * Mobile and tablet adjustments
+ */
+@media (max-width: 768px) {
+  .cometchat-video-bubble__container {
+    max-width: 100%;
+  }
+
+  .cometchat-video-bubble__play-overlay {
+    width: var(--cometchat-video-bubble-play-overlay-size-medium, 48px);
+    height: var(--cometchat-video-bubble-play-overlay-size-medium, 48px);
+  }
+
+  .cometchat-video-bubble__play-icon {
+    border-width: var(--cometchat-video-bubble-play-icon-size-medium, 9px) 0 var(--cometchat-video-bubble-play-icon-size-medium, 9px) var(--cometchat-video-bubble-play-icon-width-medium, 15px);
+    margin-left: var(--cometchat-video-bubble-play-icon-offset-medium, 3px);
+  }
+
+  .cometchat-video-bubble__overflow-text {
+    font: var(--cometchat-font-heading2-bold);
+  }
+}
+
+@media (max-width: 480px) {
+  .cometchat-video-bubble__grid {
+    gap: var(--cometchat-video-bubble-grid-gap-mobile, var(--cometchat-spacing, 2px));
+  }
+
+  .cometchat-video-bubble__play-overlay {
+    width: var(--cometchat-video-bubble-play-overlay-size-small, 40px);
+    height: var(--cometchat-video-bubble-play-overlay-size-small, 40px);
+  }
+
+  .cometchat-video-bubble__play-icon {
+    border-width: var(--cometchat-video-bubble-play-icon-size-small, 7px) 0 var(--cometchat-video-bubble-play-icon-size-small, 7px) var(--cometchat-video-bubble-play-icon-width-small, 12px);
+    margin-left: var(--cometchat-video-bubble-play-icon-offset-mobile, 2px);
+  }
+
+  .cometchat-video-bubble__duration-badge {
+    bottom: var(--cometchat-spacing-1);
+    right: var(--cometchat-spacing-1);
+    padding: var(--cometchat-video-bubble-duration-badge-padding-mobile, var(--cometchat-padding, 2px) var(--cometchat-padding-1, 4px));
+  }
+
+  .cometchat-video-bubble__duration-text {
+    font: var(--cometchat-font-caption2-bold);
+  }
+
+  .cometchat-video-bubble__overflow-text {
+    font: var(--cometchat-font-heading3-bold);
+  }
+}

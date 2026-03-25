@@ -1,0 +1,310 @@
+/* ============================================
+   Rich Text Editor Styles (Composer)
+   ============================================ */
+
+/* Inline code styling for composer */
+.cometchat-rich-text__code,
+code.cometchat-rich-text__code {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  background: var(--cometchat-extended-primary-color-100);
+  color: var(--cometchat-primary-color);
+  padding: var(--cometchat-spacing) var(--cometchat-spacing-1);
+  border-radius: var(--cometchat-radius-1);
+}
+.cometchat-conversation-item__subtitle-text ol , .cometchat-conversation-item__subtitle-text ul{
+  margin: 0;
+  padding: 0;
+  padding-left: var(--cometchat-padding-4);
+}
+/* ============================================
+   Content Editable Area
+   ============================================ */
+
+.cometchat-rich-text-editor__content {
+  padding: 0;
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.cometchat-rich-text-editor__content::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+.cometchat-message-composer__input-section--multiline .cometchat-rich-text-editor__content{
+  padding: 0;
+}
+
+.cometchat-rich-text__code-block{
+    background: var(--cometchat-neutral-color-100);
+    margin: 0;
+    padding: 0;
+}
+.cometchat-rich-text-editor__content:focus-visible{
+    outline: none;
+}
+.cometchat-rich-text-editor__content ol,.cometchat-rich-text-editor__content ul{
+    padding-left: var(--cometchat-padding-8);
+    margin: 0;
+}
+.cometchat-rich-text__blockquote{
+    margin: var(--cometchat-rich-text-blockquote-margin, 0 var(--cometchat-spacing-2));
+    padding: var(--cometchat-rich-text-blockquote-padding, 0 var(--cometchat-spacing-3));
+    border-left: var(--cometchat-rich-text-blockquote-border-left, 4px solid var(--cometchat-neutral-color-400));
+    color: var(--cometchat-rich-text-blockquote-color, var(--cometchat-text-color-secondary));
+}
+
+/* ============================================
+   Text Bubble Rich Text Formatting Styles
+   Styles for dynamically generated HTML from markdown formatter
+   ============================================ */
+
+/**
+ * Inline code
+ */
+.cometchat-text-bubble__content code {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 0.9em;
+  padding: var(--cometchat-spacing) var(--cometchat-spacing-1);
+  border-radius: var(--cometchat-radius-1);
+}
+
+
+
+/**
+ * Code blocks
+ */
+.cometchat-text-bubble__content pre {
+  padding: var(--cometchat-spacing-3);
+  border-radius: var(--cometchat-radius-2);
+  overflow-x: auto;
+  max-width: 100%;
+  margin: var(--cometchat-spacing-2) 0;
+  white-space: pre;
+  margin: 0;
+  padding: 0;
+}
+
+/* Code blocks in incoming messages */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content pre,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content pre {
+  background: var(--cometchat-background-color-02);
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* Code blocks in outgoing messages */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content pre,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content pre {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble__content pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  display: inline-block;
+  height: fit-content;
+  width: fit-content;
+}
+
+/**
+ * Blockquote
+ */
+.cometchat-text-bubble__content blockquote {
+  margin: var(--cometchat-spacing-2) 0;
+  padding-left: var(--cometchat-spacing-3);
+  border-left: 3px solid;
+  font-style: italic;
+}
+
+/* Blockquote in incoming messages */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content blockquote,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content blockquote {
+  border-left-color: var(--cometchat-neutral-color-600);
+  color: var(--cometchat-neutral-color-700);
+}
+
+/* Blockquote in outgoing messages */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content blockquote,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content blockquote {
+  border-left-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/**
+ * Unordered lists
+ */
+.cometchat-text-bubble__content ul {
+  margin: var(--cometchat-spacing-2) 0;
+  padding-left: var(--cometchat-spacing-5);
+  list-style-type: disc;
+  white-space: normal; /* Override pre-wrap for lists */
+}
+
+/**
+ * Ordered lists
+ */
+.cometchat-text-bubble__content ol {
+  margin: var(--cometchat-spacing-2) 0;
+  padding-left: var(--cometchat-spacing-5);
+  list-style-type: decimal;
+  white-space: normal; /* Override pre-wrap for lists */
+}
+
+/**
+ * Nested lists inside list items — remove extra margin
+ */
+.cometchat-text-bubble__content li ul,
+.cometchat-text-bubble__content li ol {
+  margin: 0;
+}
+
+/**
+ * List items
+ */
+.cometchat-text-bubble__content li {
+  margin: var(--cometchat-spacing-1) 0;
+  line-height: 1.5;
+  white-space: normal; /* Override pre-wrap for list items */
+}
+
+.cometchat-text-bubble__content li:first-child {
+  margin-top: 0;
+}
+
+.cometchat-text-bubble__content li:last-child {
+  margin-bottom: 0;
+}
+
+/**
+ * Bold text
+ */
+.cometchat-text-bubble__content strong {
+  font-weight: 700;
+}
+
+/**
+ * Italic text
+ */
+.cometchat-text-bubble__content em {
+  font-style: italic;
+}
+
+/**
+ * Underline text
+ */
+.cometchat-text-bubble__content u {
+  text-decoration: underline;
+}
+
+/**
+ * Strikethrough text
+ */
+.cometchat-text-bubble__content s {
+  text-decoration: line-through;
+}
+
+/**
+ * Links
+ */
+.cometchat-text-bubble__content a {
+  text-decoration: underline;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+/* Links in incoming messages */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content a,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content a {
+  color: var(--cometchat-info-color);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:hover,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:hover {
+  opacity: 0.8;
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:focus,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:focus {
+  outline: 2px solid var(--cometchat-info-color);
+  outline-offset: 2px;
+}
+
+/* Links in outgoing messages */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a {
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:hover,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:hover {
+  opacity: 0.8;
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:focus,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:focus {
+  outline: 2px solid var(--cometchat-static-white);
+  outline-offset: 2px;
+}
+
+/**
+ * Headings
+ */
+.cometchat-text-bubble__content h1 {
+  font: var(--cometchat-font-heading1-bold);
+  margin: var(--cometchat-spacing-3) 0 var(--cometchat-spacing-2);
+}
+
+.cometchat-text-bubble__content h2 {
+  font: var(--cometchat-font-heading2-bold);
+  margin: var(--cometchat-spacing-3) 0 var(--cometchat-spacing-2);
+}
+
+.cometchat-text-bubble__content h3 {
+  font: var(--cometchat-font-heading3-bold);
+  margin: var(--cometchat-spacing-2) 0 var(--cometchat-spacing-1);
+}
+
+.cometchat-text-bubble__content h4 {
+  font: var(--cometchat-font-heading4-bold);
+  margin: var(--cometchat-spacing-2) 0 var(--cometchat-spacing-1);
+}
+
+.cometchat-text-bubble__content h5,
+.cometchat-text-bubble__content h6 {
+  font: var(--cometchat-font-body-bold);
+  margin: var(--cometchat-spacing-2) 0 var(--cometchat-spacing-1);
+}
+
+/**
+ * Paragraphs
+ */
+.cometchat-text-bubble__content p {
+  margin: 0;
+}
+
+.cometchat-text-bubble__content p + p {
+  margin-top: var(--cometchat-spacing-2);
+}
+.cometchat-rich-text-editor__content {
+  position: relative;
+}
+.cometchat-rich-text-editor__content:empty::before {
+  content: attr(data-placeholder);
+  color: var(--cometchat-text-color-tertiary);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 479px) {
+  .cometchat-message-composer__input-section--multiline .cometchat-rich-text-editor__content{
+padding: var(--cometchat-padding-1);
+}
+}
+.cometchat-rich-text__link{
+  text-decoration: none;
+  color: var(--cometchat-primary-color);
+  cursor: pointer;
+}

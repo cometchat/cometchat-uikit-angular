@@ -1,0 +1,436 @@
+---
+title: "CometChatReactionList"
+description: "A component for displaying all users who reacted to a message, with emoji filtering and pagination support"
+---
+The `CometChatReactionList` component displays all users who have reacted to a message. It groups reactions by emoji type and allows filtering by specific emoji, providing a comprehensive view of message reactions with pagination support.
+
+## Overview
+
+The Reaction List component provides a detailed view of message reactions:
+
+- **Emoji Tabs**: Filter reactions by specific emoji or view all reactions
+- **User Display**: Shows avatar, name, and reaction emoji for each user
+- **Current User Highlighting**: Highlights the logged-in user's reactions with removal hint
+- **Pagination**: Automatically loads more reactions when scrolling
+- **Keyboard Navigation**: Full keyboard accessibility for tabs and items
+- **Click Handling**: Emits events when reaction items are clicked (useful for removing own reactions)
+- **Loading & Error States**: Displays appropriate states during data fetching
+
+
+<Info>
+  **Live Preview** — default reaction list preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-reaction-list--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-reaction-list--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "400px", border: "1px solid #e0e0e0"}}
+  title="CometChat Reaction List — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Reaction List Structure
+
+The Reaction List component has a tabbed interface with a scrollable list:
+
+``` expandable
++-----------------------------------------------------------------------------+
+|                        Reaction List Structure                              |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|  +-----------------------------------------------------------------------+ |
+|  |                          Emoji Tabs                                   | |
+|  |  +---------+  +---------+  +---------+  +---------+  +---------+     | |
+|  |  | All (8) |  | 👍 (3)  |  | ❤️ (2)  |  | 😂 (2)  |  | 🎉 (1)  |     | |
+|  |  +---------+  +---------+  +---------+  +---------+  +---------+     | |
+|  +-----------------------------------------------------------------------+ |
+|                                                                             |
+|  +-----------------------------------------------------------------------+ |
+|  |                       Reaction Items List                             | |
+|  |  +-------------------------------------------------------------------+ | |
+|  |  |  +--------+  +-----------------------------+  +--------------+   | | |
+|  |  |  | Avatar |  | User Name                   |  |    Emoji     |   | | |
+|  |  |  |        |  | (Click to remove - if you)  |  |      👍      |   | | |
+|  |  |  +--------+  +-----------------------------+  +--------------+   | | |
+|  |  +-------------------------------------------------------------------+ | |
+|  |  +-------------------------------------------------------------------+ | |
+|  |  |  +--------+  +-----------------------------+  +--------------+   | | |
+|  |  |  | Avatar |  | Another User                |  |    Emoji     |   | | |
+|  |  |  |        |  |                             |  |      ❤️      |   | | |
+|  |  |  +--------+  +-----------------------------+  +--------------+   | | |
+|  |  +-------------------------------------------------------------------+ | |
+|  |                             ...                                       | |
+|  +-----------------------------------------------------------------------+ |
+|                                                                             |
++-----------------------------------------------------------------------------+
+```
+
+## Basic Usage
+
+### Simple Reaction List
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatReactionListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reaction-list-demo',
+  standalone: true,
+  imports: [CometChatReactionListComponent],
+  template: `
+    <cometchat-reaction-list
+      [message]="selectedMessage"
+      (itemClick)="onReactionItemClick($event)">
+    </cometchat-reaction-list>
+  `
+})
+export class ReactionListDemoComponent {
+  selectedMessage!: CometChat.BaseMessage;
+
+  onReactionItemClick(event: { reaction: CometChat.Reaction; message: CometChat.BaseMessage }): void {
+    console.log('Reaction clicked:', event.reaction.getReaction());
+    console.log('By user:', event.reaction.getReactedBy().getName());
+    
+    // If it's the current user's reaction, you might want to remove it
+    // this.removeReaction(event.message, event.reaction);
+  }
+}
+```
+
+### With Custom Reactions Request Builder
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatReactionListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-reaction-list',
+  standalone: true,
+  imports: [CometChatReactionListComponent],
+  template: `
+    <cometchat-reaction-list
+      [message]="message"
+      [reactionsRequestBuilder]="customRequestBuilder"
+      (itemClick)="onItemClick($event)">
+    </cometchat-reaction-list>
+  `
+})
+export class CustomReactionListComponent {
+  message!: CometChat.BaseMessage;
+  customRequestBuilder!: CometChat.ReactionsRequestBuilder;
+
+  ngOnInit(): void {
+    // Create a custom request builder with specific limit
+    this.customRequestBuilder = new CometChat.ReactionsRequestBuilder()
+      .setMessageId(this.message.getId())
+      .setLimit(20);
+  }
+
+  onItemClick(event: { reaction: CometChat.Reaction; message: CometChat.BaseMessage }): void {
+    console.log('Reaction item clicked:', event);
+  }
+}
+```
+
+## API Reference
+
+### Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.BaseMessage` | **required** | The message to show reactions for |
+| `reactionsRequestBuilder` | `CometChat.ReactionsRequestBuilder` | `undefined` | Custom reactions request builder for fetching reactions |
+
+### Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `{ reaction: CometChat.Reaction; message: CometChat.BaseMessage }` | Emitted when a reaction item (user) is clicked. Use this to handle reaction removal for the current user. |
+| `empty` | `void` | Emitted when the reaction list becomes empty (all reactions removed) |
+
+## Customization
+
+### CSS Variables
+
+The Reaction List component uses CSS variables for styling. You can customize its appearance by overriding these variables:
+
+```css expandable
+/* Custom reaction list styling */
+.cometchat-reaction-list {
+  /* Override max dimensions */
+  max-width: 400px;
+  max-height: 500px;
+}
+
+/* Custom tab styling */
+.cometchat-reaction-list__tabs-tab {
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-4);
+}
+
+.cometchat-reaction-list__tabs-tab-active {
+  border-bottom: 2px solid var(--cometchat-primary-color);
+}
+
+.cometchat-reaction-list__tabs-tab-emoji-active,
+.cometchat-reaction-list__tabs-tab-count-active {
+  color: var(--cometchat-text-color-highlight);
+}
+
+/* Custom item styling */
+.cometchat-reaction-list__list-item {
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+}
+
+.cometchat-reaction-list__list-item:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+/* Current user item highlight */
+.cometchat-reaction-list__list-item--current-user {
+  background: var(--cometchat-extended-primary-color-50);
+}
+
+/* Custom avatar size */
+.cometchat-reaction-list__item-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+/* Custom name styling */
+.cometchat-reaction-list__item-name {
+  font: var(--cometchat-font-body-bold);
+  color: var(--cometchat-text-color-primary);
+}
+
+/* Custom emoji size */
+.cometchat-reaction-list__item-emoji {
+  font-size: 24px;
+}
+```
+
+### Theming
+
+The component automatically adapts to light and dark themes through CSS variables:
+
+```css expandable
+/* Light theme (default) */
+:root {
+  --cometchat-primary-color: #6852D6;
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-background-color-02: #FAFAFA;
+  --cometchat-extended-primary-color-50: #F5F3FD;
+  --cometchat-extended-primary-color-100: #EBE8FA;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --cometchat-primary-color: #8B7BE8;
+  --cometchat-background-color-01: #1A1A1A;
+  --cometchat-background-color-02: #2A2A2A;
+  --cometchat-extended-primary-color-50: #2D2840;
+  --cometchat-extended-primary-color-100: #3D3560;
+}
+```
+
+### Custom Reaction List Container
+
+If you need complete control over the reaction list presentation, you can wrap it in a custom container:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatReactionListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-reaction-container',
+  standalone: true,
+  imports: [CometChatReactionListComponent],
+  template: `
+    <div class="custom-reaction-container">
+      <!-- Custom Header -->
+      <div class="custom-reaction-container__header">
+        <span class="custom-reaction-container__icon">💬</span>
+        <h3 class="custom-reaction-container__title">
+          {{ 'message_bubble_reactions' | translate }}
+        </h3>
+        <span class="custom-reaction-container__count">
+          {{ getTotalReactionCount() }}
+        </span>
+      </div>
+
+      <!-- Reaction List -->
+      <div class="custom-reaction-container__content">
+        <cometchat-reaction-list
+          [message]="message"
+          (itemClick)="onItemClick($event)">
+        </cometchat-reaction-list>
+      </div>
+
+      <!-- Custom Footer -->
+      <div class="custom-reaction-container__footer">
+        <button 
+          class="custom-reaction-container__add-btn"
+          (click)="onAddReaction()">
+          {{ 'reaction_list_add' | translate }}
+        </button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .custom-reaction-container {
+      display: flex;
+      flex-direction: column;
+      background: var(--cometchat-background-color-01);
+      border-radius: var(--cometchat-radius-4);
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .custom-reaction-container__header {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-2);
+      padding: var(--cometchat-spacing-4);
+      background: var(--cometchat-extended-primary-color-50);
+      border-bottom: 1px solid var(--cometchat-border-color-light);
+    }
+
+    .custom-reaction-container__icon {
+      font-size: 20px;
+    }
+
+    .custom-reaction-container__title {
+      font: var(--cometchat-font-heading4-bold);
+      color: var(--cometchat-text-color-primary);
+      margin: 0;
+      flex: 1;
+    }
+
+    .custom-reaction-container__count {
+      font: var(--cometchat-font-body-medium);
+      color: var(--cometchat-primary-color);
+      background: var(--cometchat-background-color-01);
+      padding: var(--cometchat-spacing-1) var(--cometchat-spacing-3);
+      border-radius: var(--cometchat-radius-max);
+    }
+
+    .custom-reaction-container__content {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .custom-reaction-container__footer {
+      padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+      border-top: 1px solid var(--cometchat-border-color-light);
+    }
+
+    .custom-reaction-container__add-btn {
+      width: 100%;
+      padding: var(--cometchat-spacing-3);
+      background: var(--cometchat-primary-color);
+      color: var(--cometchat-static-white);
+      border: none;
+      border-radius: var(--cometchat-radius-2);
+      font: var(--cometchat-font-button-medium);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .custom-reaction-container__add-btn:hover {
+      background: var(--cometchat-extended-primary-color-700);
+    }
+
+    .custom-reaction-container__add-btn:focus {
+      outline: 2px solid var(--cometchat-primary-color);
+      outline-offset: 2px;
+    }
+  `]
+})
+export class CustomReactionContainerComponent {
+  message!: CometChat.BaseMessage;
+
+  getTotalReactionCount(): number {
+    const reactions = this.message.getReactions() || [];
+    return reactions.reduce((total, r) => total + r.getCount(), 0);
+  }
+
+  onItemClick(event: { reaction: CometChat.Reaction; message: CometChat.BaseMessage }): void {
+    console.log('Reaction clicked:', event);
+  }
+
+  onAddReaction(): void {
+    console.log('Add reaction clicked');
+    // Open emoji picker
+  }
+}
+```
+
+## Accessibility
+
+The Reaction List component is built with accessibility in mind:
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Move focus between tabs and reaction items |
+| `ArrowLeft` | Move to previous tab |
+| `ArrowRight` | Move to next tab |
+| `Home` | Move to first tab |
+| `End` | Move to last tab |
+| `Enter` / `Space` | Select tab or activate reaction item |
+
+### ARIA Attributes
+
+| Element | Attribute | Value | Description |
+|---------|-----------|-------|-------------|
+| Container | `role` | `"dialog"` | Indicates the component is a dialog |
+| Container | `aria-label` | Localized "Reactions" | Describes the dialog purpose |
+| Tab list | `role` | `"tablist"` | Indicates a tab navigation |
+| Tab | `role` | `"tab"` | Indicates a tab button |
+| Tab | `aria-selected` | `"true"` / `"false"` | Indicates selection state |
+| Tab | `tabindex` | `"0"` / `"-1"` | Controls focus order |
+| Item list | `role` | `"list"` | Indicates a list of items |
+| Item | `role` | `"listitem"` | Indicates a list item |
+| Item | `aria-label` | Dynamic | Describes user and reaction |
+
+### Screen Reader Support
+
+The component provides descriptive labels for screen readers:
+- Tab labels include emoji and count (e.g., "👍 3 reactions")
+- Reaction items announce user name and emoji
+- Current user items include removal hint
+- Loading and error states are announced via `aria-live`
+
+## Best Practices
+
+### Performance Considerations
+
+1. **Pagination**: The component automatically paginates reactions. The default limit is 10 reactions per page.
+2. **Lazy Loading**: Reactions are loaded on scroll, reducing initial load time.
+3. **Change Detection**: Uses `OnPush` change detection strategy for optimal performance.
+
+### UX Recommendations
+
+1. **Clear Removal Action**: When displaying the current user's reactions, clearly indicate they can click to remove.
+2. **Loading Feedback**: Show loading indicators when fetching reactions.
+3. **Error Handling**: Provide retry functionality when errors occur.
+4. **Mobile Optimization**: Use bottom sheet presentation on mobile devices.
+
+### Integration Tips
+
+1. **Popover Positioning**: Position the reaction list near the message for context.
+2. **Dismiss on Outside Click**: Close the reaction list when clicking outside.
+3. **Keyboard Escape**: Allow closing with the Escape key.
+4. **Real-time Updates**: Listen for reaction events to update the list in real-time.
+
+## Related Components
+
+- [CometChatMessageList](/components/cometchat-message-list) - Parent component that displays messages with reactions
+- [CometChatMessageBubble](/components/cometchat-message-bubble) - Message container with reaction display
+- [CometChatEmojiKeyboard](/components/emoji-keyboard) - Emoji picker for adding reactions
+- [CometChatPopover](/components/cometchat-popover) - Popover component for displaying reaction list

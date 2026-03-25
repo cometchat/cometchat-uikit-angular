@@ -1,0 +1,200 @@
+.cometchat-menu-list {
+  display: var(--cometchat-context-menu-display, flex);
+  flex-direction: var(--cometchat-context-menu-flex-direction, column);
+  align-items: var(--cometchat-context-menu-align-items, flex-start);
+  gap: var(--cometchat-context-menu-gap, var(--cometchat-spacing-2, 8px));
+  background: var(--cometchat-context-menu-background, transparent);
+}
+
+.cometchat-menu-list__main-menu {
+  display: var(--cometchat-context-menu-main-menu-display, flex);
+  align-items: var(--cometchat-context-menu-main-menu-align-items, center);
+  gap: var(--cometchat-context-menu-main-menu-gap, var(--cometchat-spacing-3, 12px));
+  width: var(--cometchat-context-menu-main-menu-width, 100%);
+}
+
+.cometchat-menu-list__sub-menu-list {
+  display: var(--cometchat-context-menu-menu-display, flex);
+  position: var(--cometchat-context-menu-menu-position, fixed);
+  overflow: var(--cometchat-context-menu-menu-overflow, hidden);
+  z-index: var(--cometchat-context-menu-menu-z-index, 1001); /* Higher than context menu section (100) and dialog (1000) */
+  width: var(--cometchat-context-menu-menu-width, 160px);
+  padding: var(--cometchat-context-menu-menu-padding, 0px);
+  flex-direction: var(--cometchat-context-menu-menu-flex-direction, column);
+  align-items: var(--cometchat-context-menu-menu-align-items, flex-start);
+  border-radius: var(--cometchat-context-menu-menu-border-radius, var(--cometchat-radius-2, 8px));
+  border: var(--cometchat-context-menu-menu-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+  background: var(--cometchat-context-menu-menu-background, var(--cometchat-background-color-01, #fff));
+  box-shadow: var(--cometchat-context-menu-menu-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+  will-change: transform, opacity; /* Optimize rendering performance */
+  contain: layout style paint; /* Contain layout, style, and paint to prevent shifts */
+}
+
+.cometchat-menu-list__main-menu-item {
+  display: var(--cometchat-context-menu-main-menu-item-display, flex);
+  width: var(--cometchat-context-menu-main-menu-item-width, 24px);
+  height: var(--cometchat-context-menu-main-menu-item-height, 24px);
+  padding: var(--cometchat-context-menu-main-menu-item-padding, 0);
+  justify-content: var(--cometchat-context-menu-main-menu-item-justify-content, center);
+  align-items: var(--cometchat-context-menu-main-menu-item-align-items, center);
+  border-radius: var(--cometchat-context-menu-main-menu-item-border-radius, var(--cometchat-radius-max, 1000px));
+  background: var(--cometchat-context-menu-main-menu-item-background, var(--cometchat-background-color-01, #fff));
+  box-shadow: var(--cometchat-context-menu-main-menu-item-box-shadow, 0px 1px 2px 0px rgba(16, 24, 40, 0.05));
+  cursor: var(--cometchat-context-menu-main-menu-item-cursor, pointer);
+}
+
+.cometchat-menu-list__main-menu-item:hover {
+  background: var(--cometchat-context-menu-main-menu-item-background-hover, var(--cometchat-white-hover));
+}
+
+/* Destructive modifier for delete/danger top menu items */
+.cometchat-menu-list__main-menu-item--destructive {
+  background: transparent;
+}
+
+.cometchat-menu-list__main-menu-item--destructive .cometchat-menu-list__main-menu-item-icon {
+  background: var(--cometchat-error-color, #F44336);
+}
+
+.cometchat-menu-list__main-menu-item:focus-visible {
+  outline: var(--cometchat-context-menu-main-menu-item-outline-focus, 2px solid var(--cometchat-primary-color, #3399FF));
+  outline-offset: var(--cometchat-context-menu-main-menu-item-outline-offset-focus, 2px);
+}
+
+@media (prefers-contrast: high) {
+  .cometchat-menu-list__main-menu-item:focus-visible {
+    outline: var(--cometchat-context-menu-main-menu-item-outline-focus-high-contrast, 3px solid currentColor);
+  }
+}
+
+.cometchat-menu-list__sub-menu-list-item {
+  display: var(--cometchat-context-menu-menu-item-display, flex);
+  align-items: var(--cometchat-context-menu-menu-item-align-items, center);
+  gap: var(--cometchat-context-menu-menu-item-gap, var(--cometchat-spacing-2, 8px));
+  padding: var(--cometchat-context-menu-menu-item-padding, var(--cometchat-padding-3, 12px));
+  flex: var(--cometchat-context-menu-menu-item-flex, 1 0 0);
+  width: var(--cometchat-context-menu-menu-item-width, 100%);
+  cursor: var(--cometchat-context-menu-menu-item-cursor, pointer);
+  background: var(--cometchat-context-menu-menu-item-background, var(--cometchat-background-color-01, #fff));
+  box-sizing: var(--cometchat-context-menu-menu-item-box-sizing, border-box);
+}
+
+.cometchat-menu-list__sub-menu-list-item:hover {
+  background: var(--cometchat-context-menu-menu-item-background-hover, var(--cometchat-white-hover));
+}
+
+
+
+.cometchat-menu-list__sub-menu-list-item:focus-visible {
+  outline: var(--cometchat-context-menu-menu-item-outline-focus, 2px solid var(--cometchat-primary-color, #3399FF));
+  outline-offset: var(--cometchat-context-menu-menu-item-outline-offset-focus, -2px);
+  background: var(--cometchat-context-menu-menu-item-background-focus, var(--cometchat-white-hover));
+}
+
+@media (prefers-contrast: high) {
+  .cometchat-menu-list__sub-menu-list-item:focus-visible {
+    outline: var(--cometchat-context-menu-menu-item-outline-focus-high-contrast, 3px solid currentColor);
+  }
+}
+
+.cometchat-menu-list__menu {
+  display: var(--cometchat-context-menu-wrapper-display, flex);
+  height: var(--cometchat-context-menu-wrapper-height, 48px);
+  width: var(--cometchat-context-menu-wrapper-width, 100%);
+  align-items: var(--cometchat-context-menu-wrapper-align-items, center);
+  gap: var(--cometchat-context-menu-wrapper-gap, var(--cometchat-spacing-2, 12px));
+  align-self: var(--cometchat-context-menu-wrapper-align-self, stretch);
+  background: var(--cometchat-context-menu-wrapper-background, var(--cometchat-background-color-01, #fff));
+}
+
+.cometchat-menu-list__main-menu-item-icon {
+  display: var(--cometchat-context-menu-main-menu-item-icon-display, flex);
+  width: var(--cometchat-context-menu-main-menu-item-icon-width, 16px);
+  height: var(--cometchat-context-menu-main-menu-item-icon-height, 16px);
+  justify-content: var(--cometchat-context-menu-main-menu-item-icon-justify-content, center);
+  align-items: var(--cometchat-context-menu-main-menu-item-icon-align-items, center);
+  flex-shrink: var(--cometchat-context-menu-main-menu-item-icon-flex-shrink, 0);
+  background: var(--cometchat-context-menu-main-menu-item-icon-background, var(--cometchat-icon-color-secondary, #a1a1a1));
+  -webkit-mask-size: contain;
+}
+
+.cometchat-menu-list__sub-menu-list-item-icon {
+  display: var(--cometchat-context-menu-menu-item-icon-display, flex);
+  width: var(--cometchat-context-menu-menu-item-icon-width, 24px);
+  height: var(--cometchat-context-menu-menu-item-icon-height, 24px);
+  justify-content: var(--cometchat-context-menu-menu-item-icon-justify-content, center);
+  align-items: var(--cometchat-context-menu-menu-item-icon-align-items, center);
+  background: var(--cometchat-context-menu-menu-item-icon-background, var(--cometchat-icon-color-secondary, #a1a1a1));
+  -webkit-mask-size: contain;
+}
+
+.cometchat-menu-list__sub-menu-item-title {
+  display: var(--cometchat-context-menu-menu-item-title-display, -webkit-box);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--cometchat-context-menu-menu-item-title-line-clamp, 1);
+  overflow: var(--cometchat-context-menu-menu-item-title-overflow, hidden);
+  color: var(--cometchat-context-menu-menu-item-title-color, var(--cometchat-text-color-primary, #141414));
+  text-overflow: var(--cometchat-context-menu-menu-item-title-text-overflow, ellipsis);
+  text-align: var(--cometchat-context-menu-menu-item-title-text-align, left);
+  font: var(--cometchat-context-menu-menu-item-title-font, var(--cometchat-font-body-regular, 400 14px Roboto));
+  line-height: var(--cometchat-context-menu-menu-item-title-line-height, 120%);
+  cursor: var(--cometchat-context-menu-menu-item-title-cursor, pointer);
+}
+
+.cometchat-menu-list__sub-menu {
+  display: var(--cometchat-context-menu-divider-display, flex);
+  width: var(--cometchat-context-menu-divider-width, 24px);
+  height: var(--cometchat-context-menu-divider-height, 24px);
+  justify-content: var(--cometchat-context-menu-divider-justify-content, center);
+  align-items: var(--cometchat-context-menu-divider-align-items, center);
+  border-radius: var(--cometchat-context-menu-divider-border-radius, var(--cometchat-radius-max, 1000px));
+  background: var(--cometchat-context-menu-divider-background, var(--cometchat-background-color-01, #fff));
+  box-shadow: var(--cometchat-context-menu-divider-box-shadow, 0px 1px 2px 0px rgba(16, 24, 40, 0.05));
+  cursor: var(--cometchat-context-menu-divider-cursor, pointer);
+}
+
+.cometchat-menu-list__sub-menu:hover {
+  background: var(--cometchat-context-menu-divider-background-hover, var(--cometchat-white-hover));
+}
+
+.cometchat-menu-list__sub-menu:focus-visible {
+  outline: var(--cometchat-context-menu-divider-outline-focus, 2px solid var(--cometchat-primary-color, #3399FF));
+  outline-offset: var(--cometchat-context-menu-divider-outline-offset-focus, 2px);
+}
+
+@media (prefers-contrast: high) {
+  .cometchat-menu-list__sub-menu:focus-visible {
+    outline: var(--cometchat-context-menu-divider-outline-focus-high-contrast, 3px solid currentColor);
+  }
+}
+
+.cometchat-menu-list__sub-menu-icon {
+  width: var(--cometchat-context-menu-divider-icon-width, 16px);
+  height: var(--cometchat-context-menu-divider-icon-height, 16px);
+  flex-shrink: var(--cometchat-context-menu-divider-icon-flex-shrink, 0);
+  background: var(--cometchat-context-menu-divider-icon-background, var(--cometchat-icon-color-secondary, #a1a1a1));
+  -webkit-mask: url('../../../assets/more_vert.svg') center center no-repeat;
+  mask: url('../../../assets/more_vert.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  cursor: var(--cometchat-context-menu-divider-icon-cursor, pointer);
+}
+
+.cometchat-menu-list__menu-wrapper {
+  display: var(--cometchat-context-menu-menu-wrapper-display, flex);
+  align-items: var(--cometchat-context-menu-menu-wrapper-align-items, center);
+  gap: var(--cometchat-context-menu-menu-wrapper-gap, var(--cometchat-spacing-2, 8px));
+  align-self: var(--cometchat-context-menu-menu-wrapper-align-self, stretch);
+}
+
+/* Overlay for disabling background interaction */
+.cometchat-popover__overlay {
+  position: var(--cometchat-context-menu-overlay-position, fixed);
+  top: var(--cometchat-context-menu-overlay-top, 0);
+  left: var(--cometchat-context-menu-overlay-left, 0);
+  width: var(--cometchat-context-menu-overlay-width, 100vw);
+  height: var(--cometchat-context-menu-overlay-height, 100vh);
+  z-index: var(--cometchat-context-menu-overlay-z-index, 999);
+  background-color: var(--cometchat-context-menu-overlay-background, transparent);
+  pointer-events: var(--cometchat-context-menu-overlay-pointer-events, auto);
+}

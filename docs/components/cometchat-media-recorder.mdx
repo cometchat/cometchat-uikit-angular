@@ -1,0 +1,433 @@
+---
+title: "CometChatMediaRecorder"
+description: "An Angular component for audio recording with permission handling, recording controls, timer display, and audio preview"
+---
+
+## Overview
+
+The `CometChatMediaRecorder` component provides audio recording functionality with permission handling, recording controls, and audio preview. It supports start, pause, resume, and stop operations with a built-in timer display.
+
+## Basic Usage
+
+### Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatMediaRecorderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CometChatMediaRecorderComponent],
+  template: `
+    <cometchat-media-recorder
+      (submitRecording)="onSubmitRecording($event)"
+      (closeRecording)="onCloseRecording()"
+      (recordingError)="onRecordingError($event)"
+    ></cometchat-media-recorder>
+  `
+})
+export class AppComponent {
+  onSubmitRecording(blob: Blob): void {
+    console.log('Recording submitted:', blob);
+    // Handle the recorded audio blob
+  }
+
+  onCloseRecording(): void {
+    console.log('Recording closed');
+  }
+
+  onRecordingError(error: Error): void {
+    console.error('Recording error:', error);
+  }
+}
+```
+
+### Auto-Recording
+
+```typescript
+<cometchat-media-recorder
+  [autoRecording]="true"
+  (submitRecording)="onSubmitRecording($event)"
+></cometchat-media-recorder>
+```
+
+<Info>
+  **Live Preview** — interact with the default media recorder.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-media-recorder--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-media-recorder--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="Media Recorder — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `autoRecording` | `boolean` | `false` | Automatically start recording when component mounts |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeRecording` | `void` | Emitted when the close button is clicked |
+| `submitRecording` | `Blob` | Emitted when recording is submitted with the recorded audio blob |
+| `recordingError` | `Error` | Emitted when a recording error occurs (e.g., permission denied) |
+
+## Features
+
+### Recording Controls
+
+The component provides intuitive controls for managing audio recording:
+
+- **Start/Resume Button**: Begins recording or resumes from paused state
+- **Pause Button**: Temporarily pauses the recording
+- **Stop Button**: Stops recording and shows preview
+- **Close Button**: Cancels recording and closes the recorder
+
+### Timer Display
+
+A real-time timer displays the recording duration in MM:SS format, helping users track their recording length.
+
+### Permission Handling
+
+The component automatically handles microphone permissions:
+
+- Requests permission when recording starts
+- Displays error message if permission is denied
+- Monitors permission changes during recording
+- Provides clear feedback to users about permission status
+
+### Audio Preview
+
+After stopping a recording, users can preview the audio using the native HTML audio player before submitting.
+
+## Customization
+
+### Styling
+
+The component uses CSS variables for easy customization:
+
+```css expandable
+:root {
+  /* Button colors */
+  --cometchat-success-color: #27ae60;  /* Start button */
+  --cometchat-warning-color: #f39c12;  /* Pause button */
+  --cometchat-error-color: #e74c3c;    /* Stop button */
+  --cometchat-neutral-color-500: #95a5a6;  /* Close button */
+  
+  /* Timer */
+  --cometchat-font-family-mono: 'Courier New', monospace;
+  --cometchat-font-size-h3: 24px;
+  
+  /* Spacing */
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  
+  /* Border radius */
+  --cometchat-radius-1: 4px;
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-round: 50%;
+}
+```
+
+### Custom Button Styles
+
+```css
+.cometchat-media-recorder__button--start {
+  background-color: #2ecc71;
+}
+
+.cometchat-media-recorder__button--stop {
+  background-color: #c0392b;
+}
+```
+
+<Info>
+  **Live Preview** — media recorder displayed in a modal.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-media-recorder--recording)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-media-recorder--recording&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "400px", border: "1px solid #e0e0e0"}}
+  title="Media Recorder — In Modal"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The component is fully accessible and follows WCAG 2.1 Level AA guidelines:
+
+### Keyboard Navigation
+
+All recording controls are fully keyboard accessible:
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate between buttons | Move focus through all interactive elements |
+| `Shift + Tab` | Navigate backwards | Move focus in reverse order |
+| `Enter` | Activate button | Start/pause/stop/close recording or submit |
+| `Space` | Activate button | Start/pause/stop/close recording or submit |
+| `Escape` | Cancel recording | Close recorder and reset state (works from anywhere in component) |
+
+**Keyboard Navigation Flow:**
+1. Tab to Start button → Press Enter/Space to begin recording
+2. Tab to Pause button → Press Enter/Space to pause
+3. Tab to Stop button → Press Enter/Space to stop and preview
+4. Tab to Submit button → Press Enter/Space to submit recording
+5. Press Escape at any time to cancel and close
+
+### Screen Reader Support
+
+The component provides comprehensive screen reader support:
+
+- **Live Regions**: Recording state changes are announced automatically
+  - "Recording" when recording starts
+  - "Paused" when recording is paused
+  - "Ready to record" when in idle state
+- **Button Labels**: All buttons have descriptive `aria-label` attributes
+  - "Start recording" / "Resume recording"
+  - "Pause recording"
+  - "Stop recording"
+  - "Close recorder"
+  - "Submit recording"
+- **Timer**: Recording duration is labeled as "Recording duration"
+- **Audio Preview**: Preview player is labeled as "Audio preview"
+- **Error Messages**: Permission errors use `role="alert"` for immediate announcement
+
+### ARIA Attributes
+
+The component uses proper ARIA attributes for accessibility:
+
+```html expandable
+<!-- Main container -->
+<div role="region" aria-label="Audio recorder">
+  
+  <!-- Live region for state announcements -->
+  <div role="status" aria-live="polite" aria-atomic="true">
+    Recording
+  </div>
+  
+  <!-- Error alert -->
+  <div role="alert">
+    Microphone permission denied...
+  </div>
+  
+  <!-- Timer -->
+  <div role="timer" aria-label="Recording duration" aria-live="off">
+    00:30
+  </div>
+  
+  <!-- Control buttons group -->
+  <div role="group" aria-label="Recording controls">
+    <button aria-label="Start recording">▶</button>
+    <button aria-label="Pause recording">⏸</button>
+    <button aria-label="Stop recording">⏹</button>
+    <button aria-label="Close recorder">✕</button>
+  </div>
+  
+  <!-- Audio preview -->
+  <audio aria-label="Audio preview" controls></audio>
+</div>
+```
+
+### Focus Indicators
+
+All interactive elements have visible focus indicators that meet WCAG contrast requirements:
+
+- **Focus Outline**: 2px solid outline in primary color
+- **Focus Offset**: 2px offset for clear visibility
+- **Hover Effects**: Scale transform and shadow on hover
+- **Active State**: Scale down on click for tactile feedback
+
+### High Contrast Mode
+
+The component supports high contrast mode with enhanced focus indicators:
+
+```css
+@media (prefers-contrast: high) {
+  .cometchat-media-recorder__button:focus-visible {
+    outline: 3px solid currentColor;
+  }
+}
+```
+
+## Advanced Usage
+
+### Handling Recording Submission
+
+```typescript expandable
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-chat',
+  template: `
+    <cometchat-media-recorder
+      (submitRecording)="handleRecording($event)"
+    ></cometchat-media-recorder>
+  `
+})
+export class ChatComponent {
+  async handleRecording(blob: Blob): Promise<void> {
+    // Convert blob to File
+    const file = new File([blob], 'recording.webm', { type: blob.type });
+    
+    // Upload to server
+    const formData = new FormData();
+    formData.append('audio', file);
+    
+    try {
+      await fetch('/api/upload-audio', {
+        method: 'POST',
+        body: formData
+      });
+      console.log('Recording uploaded successfully');
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
+  }
+}
+```
+
+### Error Handling
+
+```typescript expandable
+@Component({
+  selector: 'app-chat',
+  template: `
+    <cometchat-media-recorder
+      (recordingError)="handleError($event)"
+    ></cometchat-media-recorder>
+    
+    @if (errorMessage) {
+      <div class="error">
+        {{ errorMessage }}
+      </div>
+    }
+  `
+})
+export class ChatComponent {
+  errorMessage = '';
+
+  handleError(error: Error): void {
+    if (error.name === 'NotAllowedError') {
+      this.errorMessage = 'Microphone access denied. Please enable it in browser settings.';
+    } else if (error.name === 'NotFoundError') {
+      this.errorMessage = 'No microphone found. Please connect a microphone.';
+    } else {
+      this.errorMessage = 'Recording error occurred. Please try again.';
+    }
+  }
+}
+```
+
+## Browser Compatibility
+
+The component uses the MediaRecorder API, which is supported in:
+
+- Chrome 47+
+- Firefox 25+
+- Safari 14.1+
+- Edge 79+
+
+**Note**: Microphone access requires HTTPS in production environments.
+
+## Permission Requirements
+
+The component requires microphone permission to function. Users will see a browser permission prompt when recording starts for the first time. If permission is denied, the component displays a helpful error message with instructions to enable microphone access.
+
+## Best Practices
+
+1. **Always handle the `recordingError` event** to provide user feedback
+2. **Test microphone permissions** before showing the recorder
+3. **Provide clear instructions** to users about recording controls
+4. **Handle blob data appropriately** - convert to File or upload immediately
+5. **Consider file size limits** for long recordings
+6. **Provide visual feedback** during recording (the timer helps with this)
+
+## Examples
+
+### With Custom Styling
+
+```typescript expandable
+@Component({
+  selector: 'app-custom-recorder',
+  template: `
+    <div class="custom-recorder-container">
+      <h3>Record Your Message</h3>
+      <cometchat-media-recorder
+        (submitRecording)="onSubmit($event)"
+        (closeRecording)="onClose()"
+      ></cometchat-media-recorder>
+    </div>
+  `,
+  styles: [`
+    .custom-recorder-container {
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    
+    .custom-recorder-container h3 {
+      margin-bottom: 16px;
+      color: #333;
+    }
+  `]
+})
+export class CustomRecorderComponent {
+  onSubmit(blob: Blob): void {
+    console.log('Recording submitted:', blob);
+  }
+
+  onClose(): void {
+    console.log('Recorder closed');
+  }
+}
+```
+
+### In a Modal Dialog
+
+```typescript expandable
+@Component({
+  selector: 'app-recording-modal',
+  template: `
+    @if (isOpen) {
+      <div class="modal">
+      <div class="modal-content">
+        <h2>Record Audio Message</h2>
+        <cometchat-media-recorder
+          [autoRecording]="true"
+          (submitRecording)="handleSubmit($event)"
+          (closeRecording)="closeModal()"
+        ></cometchat-media-recorder>
+      </div>
+    </div>
+  `
+})
+export class RecordingModalComponent {
+  isOpen = false;
+
+  openModal(): void {
+    this.isOpen = true;
+  }
+
+  closeModal(): void {
+    this.isOpen = false;
+  }
+
+  handleSubmit(blob: Blob): void {
+    // Process recording
+    this.closeModal();
+  }
+}
+```

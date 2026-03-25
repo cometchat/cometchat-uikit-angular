@@ -1,0 +1,88 @@
+<div class="cometchat" style="width: fit-content; height: fit-content;">
+  @if (isError()) {
+    <div class="cometchat-dialog-error-view cometchat-flag-message-dialog-error-view" role="alert">
+      {{ errorMessage }}
+    </div>
+  }
+  <div 
+    class="cometchat-flag-message-dialog" 
+    #dialogContainer
+    role="alertdialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="titleId"
+    [attr.aria-describedby]="descriptionId"
+  >
+    <div class="cometchat-flag-message-dialog__icon-wrapper">
+      <div class="cometchat-flag-message-dialog__icon-wrapper-icon" aria-hidden="true"></div>
+    </div>
+    <div class="cometchat-flag-message-dialog__content">
+      <div 
+        class="cometchat-flag-message-dialog__content-title"
+        [id]="titleId"
+      >
+        {{ dialogTitle }}
+      </div>
+      <div 
+        class="cometchat-flag-message-dialog__content-description"
+        [id]="descriptionId"
+      >
+        {{ dialogSubtitle }}
+      </div>
+    </div>
+
+    @if (!hideRemarkField) {
+      <div class="cometchat-flag-message-dialog__remark">
+        <div class="cometchat-flag-message-dialog__remark-header">
+          <label 
+            class="cometchat-flag-message-dialog__remark-label"
+            for="flag-message-remark"
+          >
+            {{ remarkLabel }}
+          </label>
+          <span class="cometchat-flag-message-dialog__remark-optional">
+            ({{ remarkOptional }})
+          </span>
+        </div>
+        <textarea
+          id="flag-message-remark"
+          class="cometchat-flag-message-dialog__remark-input"
+          [placeholder]="remarkPlaceholder"
+          [value]="remarkText()"
+          (input)="onRemarkInput($event)"
+          [maxLength]="MAX_REMARK_LENGTH"
+          rows="3"
+          aria-describedby="remark-character-count"
+        ></textarea>
+        <div 
+          id="remark-character-count"
+          class="cometchat-flag-message-dialog__remark-counter"
+          [class.cometchat-flag-message-dialog__remark-counter--limit]="isCharacterLimitReached"
+        >
+          @if (isCharacterLimitReached) {
+            {{ characterLimitMessage }}
+          } @else {
+            {{ remainingCharacters }} / {{ MAX_REMARK_LENGTH }}
+          }
+        </div>
+      </div>
+    }
+
+    <div class="cometchat-flag-message-dialog__button-group">
+      <div class="cometchat-flag-message-dialog__button-group-cancel">
+        <cometchat-button
+          [text]="cancelButtonText"
+          [ariaLabel]="cancelButtonText"
+          (buttonClick)="handleCancelClick()"
+        ></cometchat-button>
+      </div>
+      <div class="cometchat-flag-message-dialog__button-group-submit">
+        <cometchat-button
+          [text]="confirmButtonText"
+          [ariaLabel]="confirmButtonText"
+          [isLoading]="isLoading()"
+          (buttonClick)="handleSubmitClick()"
+        ></cometchat-button>
+      </div>
+    </div>
+  </div>
+</div>

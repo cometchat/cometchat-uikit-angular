@@ -1,0 +1,74 @@
+<div class="cometchat-banned-members">
+  <!-- Header with back button and title (hidden when hideHeader is true) -->
+  @if (!hideHeader) {
+    <div class="cometchat-banned-members__header">
+      <button
+        class="cometchat-banned-members__back-button"
+        (click)="onClose()"
+        [attr.aria-label]="'thread_close_hover' | translate"
+        type="button"
+      >
+        <span class="cometchat-banned-members__back-icon" aria-hidden="true"></span>
+      </button>
+      <span class="cometchat-banned-members__title">{{ 'details_banned_members' | translate }}</span>
+    </div>
+  }
+
+  <!-- Content: banned members list -->
+  <div class="cometchat-banned-members__content" #listContainer>
+    @if (loading() && bannedMembers().length === 0) {
+      <div class="cometchat-banned-members__shimmer" aria-hidden="true">
+        @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
+          <div class="cometchat-banned-members__shimmer-item">
+            <div class="cometchat-banned-members__shimmer-item-avatar"></div>
+            <div class="cometchat-banned-members__shimmer-item-body">
+              <div class="cometchat-banned-members__shimmer-item-body-title"></div>
+              <div class="cometchat-banned-members__shimmer-item-body-subtitle"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (bannedMembers().length === 0 && !loading() && !error()) {
+      <div class="cometchat-banned-members__empty">
+        <span class="cometchat-banned-members__empty-text">{{ 'group_empty_title' | translate }}</span>
+      </div>
+    }
+
+    @for (member of bannedMembers(); track member.getUid()) {
+      <div
+        class="cometchat-banned-members__item"
+        role="listitem"
+        [attr.aria-label]="member.getName()"
+      >
+        <div class="cometchat-banned-members__item-info">
+          <cometchat-avatar
+            class="cometchat-banned-members__avatar"
+            [image]="member.getAvatar() || ''"
+            [name]="member.getName()">
+          </cometchat-avatar>
+          <span class="cometchat-banned-members__item-name">{{ member.getName() }}</span>
+        </div>
+        <button
+          class="cometchat-banned-members__unban-button"
+          (click)="onUnban(member)"
+          [disabled]="isUnbanning(member)"
+          type="button"
+          [attr.aria-label]="'conversation_subtitle_unbanned' | translate"
+        >
+          ✕
+        </button>
+      </div>
+    }
+
+    @if (loading() && bannedMembers().length > 0) {
+      <div class="cometchat-banned-members__loading">
+        <span class="cometchat-banned-members__loading-text">{{ 'loading' | translate }}</span>
+      </div>
+    }
+
+    <!-- Scroll anchor for IntersectionObserver -->
+    <div #scrollBottomAnchor class="cometchat-banned-members__scroll-anchor"></div>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+<div 
+  class="cometchat-emoji-keyboard"
+  role="dialog"
+  [attr.aria-label]="getAriaLabel()"
+  aria-modal="true"
+>
+  <!-- Search bar -->
+  <div class="cometchat-emoji-keyboard__search">
+    <cometchat-search-bar
+      [placeholderText]="getLocalizedCategoryName('emoji_search_placeholder')"
+      (searchChanged)="filterEmojis($event)"
+      [searchText]="searchString"
+    ></cometchat-search-bar>
+  </div>
+  
+  <!-- Category tabs with horizontal scroll -->
+  <div 
+    class="cometchat-emoji-keyboard__tabs"
+    #scrollRef
+    (wheel)="onWheel($event)"
+    role="tablist"
+    [attr.aria-label]="getLocalizedCategoryName('accessibility_emoji_categories')"
+  >
+    <div
+      *ngFor="let emoji of emojiDataState; let i = index; trackBy: trackByCategoryId"
+      (click)="onCategoryClick(emoji.id)"
+      (keydown)="onTabKeydown($event, emoji.id, i)"
+      [title]="getLocalizedCategoryName(emoji.name)"
+      [class.cometchat-emoji-keyboard__tab-active]="activeCategory === emoji.id"
+      class="cometchat-emoji-keyboard__tab"
+      role="tab"
+      [attr.aria-selected]="activeCategory === emoji.id"
+      [attr.aria-label]="getLocalizedCategoryName(emoji.name)"
+      [attr.aria-controls]="'emoji-panel-' + emoji.id"
+      [attr.tabindex]="getTabTabIndex(i)"
+    >
+      <div [title]="getLocalizedCategoryName(emoji.name)">
+        <div
+          *ngIf="emoji.symbolURL; else emojiTextIcon"
+          [style.-webkit-mask]="'url(' + emoji.symbolURL + ') center center no-repeat'"
+          [style.mask]="'url(' + emoji.symbolURL + ') center center no-repeat'"
+          class="cometchat-emoji-keyboard__tab-icon"
+        ></div>
+        <ng-template #emojiTextIcon>
+          <span class="cometchat-emoji-keyboard__tab-emoji">{{ getFirstEmoji(emoji) }}</span>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Emoji list -->
+  <div class="cometchat-emoji-keyboard__list" role="tabpanel" #emojiListRef>
+    <!-- Search results -->
+    <ng-container *ngIf="getEmojiEntries(searchEmojiData).length > 0">
+      <div 
+        class="cometchat-emoji-keyboard__emoji-list" 
+        role="grid" 
+        [attr.aria-label]="getLocalizedCategoryName('accessibility_emoji_grid')"
+        [attr.aria-rowcount]="getRowCount()"
+        [attr.aria-colcount]="gridColumns"
+      >
+        <div
+          *ngFor="let entry of getEmojiEntries(searchEmojiData); let i = index; trackBy: trackByEmojiName"
+          class="cometchat-emoji-keyboard__list-item"
+          [title]="entry[0]"
+          (click)="handleEmojiClick(entry[1])"
+          (keydown)="onEmojiKeydown($event, entry[1])"
+          (focus)="onEmojiFocus(i)"
+          role="gridcell"
+          [attr.tabindex]="getEmojiTabIndex(i)"
+          [attr.aria-label]="entry[0]"
+          [attr.aria-rowindex]="getEmojiPosition(i).row + 1"
+          [attr.aria-colindex]="getEmojiPosition(i).col + 1"
+        >
+          {{ getEmojiData(entry[1]) }}
+        </div>
+      </div>
+    </ng-container>
+    
+    <!-- All categories -->
+    <ng-container *ngIf="getEmojiEntries(searchEmojiData).length === 0">
+      <div 
+        *ngFor="let emoji of emojiDataState; trackBy: trackByCategoryId"
+        class="cometchat-emoji-keyboard__list-content"
+        [id]="'emoji-panel-' + emoji.id"
+      >
+        <div class="cometchat-emoji-keyboard__list-title" [id]="emoji.id">
+          <div [title]="getLocalizedCategoryName(emoji.name)">
+            {{ getLocalizedCategoryName(emoji.name) }}
+          </div>
+        </div>
+        <div 
+          class="cometchat-emoji-keyboard__emoji-list" 
+          role="grid" 
+          [attr.aria-label]="getLocalizedCategoryName(emoji.name)"
+          [attr.aria-colcount]="gridColumns"
+        >
+          <div
+            *ngFor="let entry of getEmojiEntries(emoji.emojies); let i = index; trackBy: trackByEmojiName"
+            class="cometchat-emoji-keyboard__list-item"
+            [title]="entry[0]"
+            (click)="handleEmojiClick(entry[1])"
+            (keydown)="onEmojiKeydown($event, entry[1])"
+            (focus)="onEmojiFocus(i)"
+            role="gridcell"
+            [attr.tabindex]="getEmojiTabIndex(i)"
+            [attr.aria-label]="entry[0]"
+            [attr.aria-colindex]="(i % gridColumns) + 1"
+          >
+            {{ getEmojiData(entry[1]) }}
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

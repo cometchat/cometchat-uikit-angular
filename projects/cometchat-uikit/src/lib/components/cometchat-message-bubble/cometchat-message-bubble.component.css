@@ -1,0 +1,728 @@
+/**
+ * CometChatMessageBubble Styles
+ * 
+ * BEM CSS structure for the message bubble component.
+ * Uses CSS variables from css-variables.css for theming.
+ * 
+ * @see Requirements 1.9, 1.10, 1.11, 4.1-4.7
+ */
+
+/* Root wrapper */
+/* Requirement 5.1, 5.2, 5.3, 5.4: Consistent message bubble spacing */
+.cometchat-message-bubble__wrapper {
+  display: flex;
+  position: relative;
+  max-width: var(--cometchat-message-bubble-wrapper-max-width, 100%);
+  width: var(--cometchat-message-bubble-wrapper-width, 100%);
+  box-sizing: border-box;
+  padding: var(--cometchat-message-bubble-wrapper-padding, 0px var(--cometchat-padding-3));
+  align-items: var(--cometchat-message-bubble-wrapper-align-items, flex-start);
+  gap: var(--cometchat-message-bubble-wrapper-gap, var(--cometchat-spacing-2, 8px));
+  flex: 1 0 0;
+}
+
+/* Outgoing wrapper: reverse flex so leading view appears on the right of the bubble */
+.cometchat-message-bubble__wrapper--outgoing {
+  flex-direction: row-reverse;
+}
+
+/* Leading view (avatar) */
+.cometchat-message-bubble__leading-view {
+  flex-shrink: 0;
+  align-self: flex-start;
+  --cometchat-avatar-width:40px;
+  --cometchat-avatar-height:40px;
+}
+
+.cometchat-message-bubble__leading-view cometchat-avatar {
+  cursor: pointer;
+}
+
+.cometchat-message-bubble__leading-view cometchat-avatar:focus {
+  outline: var(--cometchat-message-bubble-leading-view-focus-outline, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-message-bubble-leading-view-focus-outline-offset, 2px);
+  border-radius: var(--cometchat-message-bubble-leading-view-focus-border-radius, var(--cometchat-radius-max));
+}
+
+/* Main bubble container */
+/* Requirement 11.1, 11.2: Prevent horizontal overflow and apply max-width constraints */
+.cometchat-message-bubble {
+  display: flex;
+  flex-direction: column;
+  max-width: var(--cometchat-message-bubble-max-width, 65%);
+  min-width: var(--cometchat-message-bubble-min-width, fit-content); /* Never shrink below content width (e.g. date line) */
+  /* --cometchat-delete-bubble-padding:var(--cometchat-padding-2) var(--cometchat-padding-2) 0 var(--cometchat-padding-2) */
+}
+
+/* Alignment modifiers */
+.cometchat-message-bubble-incoming {
+  align-items: flex-start;
+}
+
+.cometchat-message-bubble-outgoing {
+  align-items: flex-end;
+  margin-left: auto;
+}
+
+.cometchat-message-bubble-action {
+  align-items: center;
+  margin: 0 auto;
+  max-width: 100%;
+} 
+
+/* Header view */
+.cometchat-message-bubble__header-view {
+  padding: var(--cometchat-message-bubble-header-padding, 0px 0px var(--cometchat-padding-1) 0px);
+}
+
+.cometchat-message-bubble__sender-name {
+  font: var(--cometchat-message-bubble-sender-name-font, var(--cometchat-font-caption1-medium));
+  color: var(--cometchat-message-bubble-sender-name-color, var(--cometchat-text-color-highlight));
+}
+
+/* Body container */
+.cometchat-message-bubble__body-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  position: relative;
+}
+
+/* Options menu positioning for incoming messages - options on RIGHT side of bubble */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__body-container {
+  flex-direction: row;
+}
+
+/* Options menu positioning for outgoing messages - options on LEFT side of bubble */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__body-container {
+  flex-direction: row;
+}
+
+/* Options for incoming message bubble - RIGHT side (order: 3, after body wrapper) */
+/* Requirement 2.1: Options appear on RIGHT side for receiver messages */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__options {
+  order: 3;
+}
+
+/* Options for outgoing message bubble - LEFT side (order: 1, before body wrapper) */
+/* Requirement 2.2: Options appear on LEFT side for sender messages */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__options {
+  order: 1;
+}
+
+/* Options menu */
+.cometchat-message-bubble__options {
+  opacity: var(--cometchat-message-bubble-options-opacity, 0);
+  pointer-events: none;
+  transition: var(--cometchat-message-bubble-options-transition, opacity 0.2s ease-in-out);
+  display: flex;
+  align-items: flex-start;
+  padding: var(--cometchat-message-bubble-options-padding, var(--cometchat-padding-1, 4px));
+}
+
+.cometchat-message-bubble__options--visible {
+  opacity: var(--cometchat-message-bubble-options-visible-opacity, 1);
+  pointer-events: auto;
+}
+
+/* Options positioning modifiers - explicit classes for alignment-based positioning */
+/* Requirement 4.10: Options position correctly based on bubble alignment */
+.cometchat-message-bubble__options--left {
+  /* Options on left side of bubble (for outgoing messages) */
+  order: -1;
+}
+
+.cometchat-message-bubble__options--right {
+  /* Options on right side of bubble (for incoming messages) */
+  order: 1;
+}
+
+/* Body wrapper - always in middle (order: 2) */
+/* Requirement 2.4: Body wrapper positioned between options based on alignment */
+.cometchat-message-bubble__body-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  order: 2;
+  --cometchat-action-bubble-height:fit-content;
+}
+
+/* Body */
+/* Requirement 5.3: Appropriate internal spacing for bubble sections */
+/* Requirement 11.1, 11.5: Prevent content overflow with overflow: hidden */
+.cometchat-message-bubble__body {
+  display: flex;
+  padding: var(--cometchat-message-bubble-body-padding, var(--cometchat-padding-1) var(--cometchat-padding-1) 0 var(--cometchat-padding-1));
+  flex-direction: column;
+  align-items: stretch; /* Allow content to stretch full width for left-aligned text */
+  border-radius: var(--cometchat-message-bubble-body-border-radius, var(--cometchat-radius-3));
+  overflow: hidden; /* Prevent content overflow */
+  max-width: var(--cometchat-message-bubble-body-max-width, 100%);
+}
+
+/* Remove bottom border-radius when moderation indicator is shown */
+.cometchat-message-bubble__body--moderated {
+  border-radius: var(--cometchat-radius-3) var(--cometchat-radius-3) 0 0;
+}
+
+/* Message type specific styles */
+
+.cometchat-message-bubble__text-message .cometchat-message-bubble__body-content-view,
+.cometchat-message-bubble__audio-message  .cometchat-message-bubble__body-content-view,
+.cometchat-message-bubble__poll-message  .cometchat-message-bubble__body-content-view,
+.cometchat-message-bubble__whiteboard-message .cometchat-message-bubble__body-content-view,
+.cometchat-message-bubble__document-message .cometchat-message-bubble__body-content-view
+{
+  margin-bottom: calc(var(--cometchat-margin-2) * -1);
+}
+/* Incoming (receiver) text message - use neutral background */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__text-message {
+  background: var(--cometchat-message-bubble-incoming-text-background, var(--cometchat-neutral-color-300));
+  /* Set CSS variable to transparent for child text bubble component */
+  --cometchat-text-bubble-background: transparent;
+}
+/* Incoming (receiver) video message - use neutral background */
+.cometchat-message-bubble-incoming .cometchat-message-video-message {
+  background: var(--cometchat-message-bubble-incoming-video-background, var(--cometchat-neutral-color-300));
+  /* Set CSS variable to transparent for child video bubble component */
+  --cometchat-video-bubble-background: transparent;
+}
+/* Incoming (receiver) image message - use neutral background */
+.cometchat-message-bubble-incoming .cometchat-message-image-message {
+  background: var(--cometchat-message-bubble-incoming-image-background, var(--cometchat-neutral-color-300));
+  /* Set CSS variable to transparent for child image bubble component */
+  --cometchat-image-bubble-background: transparent;
+}
+
+/* Outgoing (sender) text message - use primary color background */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__text-message {
+  background: var(--cometchat-message-bubble-outgoing-text-background, var(--cometchat-primary-color));
+  /* Set CSS variable to transparent for child text bubble component */
+  --cometchat-text-bubble-background: transparent;
+}
+
+.cometchat-message-bubble__image-message,
+.cometchat-message-bubble__video-message {
+  background: var(--cometchat-message-bubble-image-video-background, var(--cometchat-neutral-color-300));
+  /* Set CSS variables to transparent for child bubble components */
+  --cometchat-image-bubble-background: transparent;
+  --cometchat-video-bubble-background: transparent;
+}
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__image-message,
+ .cometchat-message-bubble-outgoing .cometchat-message-bubble__video-message {
+  background: var(--cometchat-message-bubble-outgoing-image-video-background, var(--cometchat-primary-color));
+  /* Set CSS variables to transparent for child bubble components */
+  --cometchat-image-bubble-background: transparent;
+  --cometchat-video-bubble-background: transparent;
+}
+
+
+/* Incoming (receiver) audio/file message - use neutral background */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__audio-message,
+.cometchat-message-bubble-incoming .cometchat-message-bubble__file-message {
+  background: var(--cometchat-message-bubble-incoming-audio-file-background, var(--cometchat-neutral-color-300));
+  /* Set CSS variables to transparent for child bubble components */
+  --cometchat-audio-bubble-background: transparent;
+  --cometchat-file-bubble-background: transparent;
+}
+
+/* Outgoing (sender) audio/file message - use primary color background */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__audio-message,
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__file-message {
+  background: var(--cometchat-message-bubble-outgoing-audio-file-background, var(--cometchat-primary-color));
+  /* Set CSS variables to transparent for child bubble components */
+  --cometchat-audio-bubble-background: transparent;
+  --cometchat-file-bubble-background: transparent;
+}
+
+/* Deleted message styles - incoming uses neutral, outgoing uses primary */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__delete-message {
+  background: var(--cometchat-message-bubble-incoming-delete-background, var(--cometchat-neutral-color-300));
+}
+
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__delete-message {
+  background: var(--cometchat-message-bubble-outgoing-delete-background, var(--cometchat-primary-color));
+}
+
+.cometchat-message-bubble__group-message {
+  background: var(--cometchat-message-bubble-group-background, transparent);
+}
+
+/* Document, whiteboard, poll, sticker message styles */
+/* Incoming (receiver) - use neutral background */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__document-message,
+.cometchat-message-bubble-incoming .cometchat-message-bubble__whiteboard-message {
+  background: var(--cometchat-message-bubble-incoming-document-whiteboard-background, var(--cometchat-neutral-color-300));
+  padding: var(--cometchat-message-bubble-document-whiteboard-padding, 0);
+}
+
+/* Outgoing (sender) - use primary color background */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__document-message,
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__whiteboard-message {
+  background: var(--cometchat-message-bubble-outgoing-document-whiteboard-background, var(--cometchat-primary-color));
+  padding: var(--cometchat-message-bubble-document-whiteboard-padding, 0);
+}
+
+/* Incoming (receiver) poll - use neutral background */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__poll-message {
+  background: var(--cometchat-message-bubble-incoming-poll-background, var(--cometchat-neutral-color-300));
+  padding: var(--cometchat-message-bubble-poll-padding, 0);
+}
+
+/* Outgoing (sender) poll - use primary color background */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__poll-message {
+  background: var(--cometchat-message-bubble-outgoing-poll-background, var(--cometchat-primary-color));
+  padding: var(--cometchat-message-bubble-poll-padding, 0);
+}
+
+/* Incoming (receiver) sticker message - use neutral background */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__sticker-message {
+  background: var(--cometchat-message-bubble-incoming-sticker-background, var(--cometchat-neutral-color-300));
+}
+
+/* Outgoing (sender) sticker message - use primary color background */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__sticker-message {
+  background: var(--cometchat-message-bubble-outgoing-sticker-background, var(--cometchat-primary-color));
+}
+
+/* Call message styles */
+.cometchat-message-bubble__audio-call,
+.cometchat-message-bubble__video-call {
+  background: var(--cometchat-message-bubble-call-background, var(--cometchat-background-color-02));
+  /* Set CSS variable to transparent for child call bubble component */
+  --cometchat-call-bubble-background: transparent;
+}
+.cometchat-message-bubble__meeting-message{
+    background: var(--cometchat-message-bubble-call-background, var(--cometchat-neutral-color-300));
+
+}
+.cometchat-message-bubble__body.cometchat-message-bubble__meeting-message{
+  padding: var(--cometchat-message-bubble-body-padding, var(--cometchat-padding-1));
+}
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__audio-call,
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__video-call,
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__meeting-message {
+  background: var(--cometchat-message-bubble-outgoing-call-background, var(--cometchat-primary-color));
+  /* Set CSS variable to transparent for child call bubble component */
+  --cometchat-call-bubble-background: transparent;
+}
+
+/* Reply view */
+.cometchat-message-bubble__body-reply-view {
+  /* padding: var(--cometchat-spacing-2); */
+  /* border-bottom: 1px solid var(--cometchat-border-color-light); */
+  cursor: pointer;
+} 
+
+.cometchat-message-bubble__body-reply-view:hover {
+  background: var(--cometchat-message-bubble-reply-view-background-hover, var(--cometchat-background-color-03));
+}
+.cometchat-message-bubble-outgoing{
+--cometchat-message-preview-background:var(--cometchat-extended-primary-color-700);
+  --cometchat-message-preview-title-textfont:var(--cometchat-font-caption1-regular);
+  --cometchat-message-preview-title-textcolor:var(--cometchat-static-white);
+    --cometchat-message-preview-subtitle-textfont:var(--cometchat-font-caption1-regular);
+  --cometchat-message-preview-subtitle-text-color:var(--cometchat-static-white);
+}
+.cometchat-message-bubble-incoming{
+--cometchat-message-preview-background:var(--cometchat-neutral-color-400);
+  --cometchat-message-preview-title-textfont:var(--cometchat-font-caption1-regular);
+  --cometchat-message-preview-title-textcolor:var(--cometchat-primary-color);
+    --cometchat-message-preview-subtitle-textfont:var(--cometchat-font-caption1-regular);
+  --cometchat-message-preview-subtitle-textcolor:var(--cometchat-text-color-secondary);
+}
+
+/* Content view */
+/* Requirement 11.1, 11.2: Prevent content overflow and apply max-width constraints */
+.cometchat-message-bubble__body-content-view {
+  display: flex;
+  flex-direction: column;
+  max-width: var(--cometchat-message-bubble-content-max-width, 100%);
+  overflow: hidden;
+}
+
+/* Status info view */
+.cometchat-message-bubble__body-status-info-view {
+  padding: var(--cometchat-message-bubble-status-info-padding, var(--cometchat-padding-1, 4px) var(--cometchat-padding-2, 8px));
+}
+
+.cometchat-message-bubble__status-info-view {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-message-bubble-status-info-gap, var(--cometchat-spacing-1));
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.cometchat-message-bubble__status-info-view-helper-text {
+  font: var(--cometchat-message-bubble-status-info-helper-font, var(--cometchat-font-caption2-regular));
+  color: var(--cometchat-message-bubble-status-info-helper-color, var(--cometchat-static-white));
+  margin-bottom: -4px;
+}
+
+/* ============================================================================
+ * Status Info View Styling - All Message Types
+ * Requirements 2.1, 2.3, 2.4: White timestamp for ALL sender bubble types
+ * Different colors for sender (outgoing) and receiver (incoming) bubbles
+ * ============================================================================ */
+
+/* Outgoing (sender) message status info - white color for ALL message types */
+/* Requirement 2.1: Timestamp in sender bubbles uses white color */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__body-status-info-view {
+  color: var(--cometchat-message-bubble-outgoing-status-info-color, var(--cometchat-static-white));
+}
+
+/* Requirement 2.3, 2.4: Helper text in sender bubbles uses white color with 0.7 opacity */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__status-info-view {
+  --cometchat-text-color-secondary: var(--cometchat-message-bubble-outgoing-status-info-secondary-color, white);
+  /* opacity: 0.7; */
+}
+
+/* Requirement 2.1, 2.4: Date component in sender bubbles uses white color with 0.7 opacity */
+.cometchat-message-bubble-outgoing {
+  --cometchat-date-color: var(--cometchat-message-bubble-outgoing-date-color, var(--cometchat-static-white));
+}
+
+/* Receipt icons in sender bubbles use white color */
+.cometchat-message-bubble-outgoing .cometchat-message-list__receipt {
+  background: var(--cometchat-message-bubble-outgoing-receipt-color, var(--cometchat-static-white));
+}
+
+/* Incoming (receiver) message status info - secondary text color */
+/* Requirement 2.5: Timestamp in receiver bubbles uses secondary text color */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__body-status-info-view {
+  color: var(--cometchat-message-bubble-incoming-status-info-color, var(--cometchat-text-color-secondary));
+}
+
+.cometchat-message-bubble-incoming .cometchat-message-bubble__status-info-view-helper-text {
+  color: var(--cometchat-message-bubble-incoming-status-info-helper-color, var(--cometchat-text-color-secondary));
+}
+
+.cometchat-message-bubble-incoming {
+  color: var(--cometchat-message-bubble-incoming-date-color, var(--cometchat-text-color-secondary));
+}
+
+/* Incoming receipts use default icon color (no filter needed) */
+.cometchat-message-bubble-incoming .cometchat-message-list__receipt {
+  filter: none;
+  opacity: var(--cometchat-message-bubble-incoming-receipt-opacity, 1);
+}
+
+/* Bottom, footer, thread views */
+.cometchat-message-bubble__body-bottom-view,
+.cometchat-message-bubble__body-footer-view,
+.cometchat-message-bubble__body-thread-view {
+  margin-top: var(--cometchat-message-bubble-footer-margin-top, var(--cometchat-margin-1, 4px));
+}
+
+/* Receipt indicators */
+.cometchat-receipts {
+  display: flex;
+  align-items: center;
+}
+
+.cometchat-message-list__receipt {
+  width: var(--cometchat-message-bubble-receipt-width, 16px);
+  height: var(--cometchat-message-bubble-receipt-height, 16px);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-receipts-wait .cometchat-message-list__receipt {
+  -webkit-mask: url('../../assets/status_sending.svg') center center no-repeat;
+  mask: url('../../assets/status_sending.svg') center center no-repeat;
+  background: var(--cometchat-message-bubble-receipt-wait-color, var(--cometchat-static-white));
+}
+
+.cometchat-receipts-sent .cometchat-message-list__receipt {
+  -webkit-mask: url('../../assets/status_sent.svg') center center no-repeat;
+  mask: url('../../assets/status_sent.svg') center center no-repeat;
+  background: var(--cometchat-message-bubble-receipt-sent-color, var(--cometchat-static-white));
+}
+
+.cometchat-receipts-delivered .cometchat-message-list__receipt {
+  -webkit-mask: url('../../assets/status_delivered.svg') center center no-repeat;
+  mask: url('../../assets/status_delivered.svg') center center no-repeat;
+  background: var(--cometchat-message-bubble-receipt-delivered-color, var(--cometchat-static-white));
+}
+
+.cometchat-receipts-read .cometchat-message-list__receipt {
+  -webkit-mask: url('../../assets/status_read.svg') center center no-repeat;
+  mask: url('../../assets/status_read.svg') center center no-repeat;
+  background: var(--cometchat-message-bubble-receipt-read-color, var(--cometchat-message-seen-color, #56E8A7));
+}
+
+.cometchat-receipts-error .cometchat-message-list__receipt {
+  -webkit-mask: url('../../assets/status_error.svg') center center no-repeat;
+  mask: url('../../assets/status_error.svg') center center no-repeat;
+  background: var(--cometchat-error-color);
+}
+
+/* Unsupported message type fallback */
+.cometchat-message-bubble__unsupported {
+  padding: var(--cometchat-message-bubble-unsupported-padding, var(--cometchat-padding-3, 12px));
+  font: var(--cometchat-message-bubble-unsupported-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-message-bubble-unsupported-color, var(--cometchat-text-color-tertiary));
+  font-style: italic;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .cometchat-message-bubble {
+    max-width: var(--cometchat-message-bubble-max-width-mobile, 88%);
+  }
+  
+  /* On mobile, options are shown on tap - no additional styles needed */
+  .cometchat-message-bubble__options {
+    padding: var(--cometchat-message-bubble-options-padding-mobile, var(--cometchat-padding-1, 4px));
+  }
+}
+
+/* Focus indicators for accessibility */
+/* @see Requirements 21.1-21.6 */
+.cometchat-message-bubble__wrapper:focus {
+  outline: none;
+}
+
+.cometchat-message-bubble__wrapper:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+  border-radius: var(--cometchat-message-bubble-wrapper-focus-border-radius, var(--cometchat-radius-2));
+}
+
+.cometchat-message-bubble__body:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+.cometchat-message-bubble__body-reply-view:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: -2px;
+}
+
+/* Action message centering */
+.cometchat-message-bubble-action .cometchat-message-bubble__body-wrapper {
+  align-items: center;
+}
+
+.cometchat-message-bubble-action .cometchat-message-bubble__body {
+  background: var(--cometchat-message-bubble-action-body-background, transparent);
+}
+
+/* Requirement 2.3: Hide options for action messages (center alignment) */
+.cometchat-message-bubble-action .cometchat-message-bubble__options {
+  display: none;
+}
+
+/* ============================================================================
+ * Moderation Status Indicator Styles
+ * Requirement 9.7 - Display moderation status indicators
+ * ============================================================================ */
+
+/* Moderation indicator container */
+.cometchat-message-bubble__moderation-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-message-bubble-moderation-indicator-gap, var(--cometchat-spacing-1, 4px));
+  padding: var(--cometchat-message-bubble-moderation-indicator-padding, var(--cometchat-padding-1, 4px) var(--cometchat-padding-2, 8px));
+  border-radius: 0 0 var(--cometchat-radius-3) var(--cometchat-radius-3);
+  font: var(--cometchat-font-body-regular);
+  overflow: hidden;
+  box-sizing: border-box;
+  align-items: flex-start;
+}
+
+/* Pending moderation state - warning color */
+.cometchat-message-bubble__moderation-indicator--pending {
+  background: linear-gradient(0deg, rgba(255, 171, 0, 0.10) 0%, rgba(255, 171, 0, 0.10) 100%), var(--cometchat-background-color-01);
+  color: var(--cometchat-warning-color);
+}
+
+/* Disapproved moderation state - error color */
+.cometchat-message-bubble__moderation-indicator--disapproved {
+  background: linear-gradient(0deg, rgba(244, 70, 73, 0.10) 0%, rgba(244, 70, 73, 0.10) 100%), var(--cometchat-background-color-01);
+  color: var(--cometchat-error-color);
+}
+
+/* Moderation indicator icon */
+.cometchat-message-bubble__moderation-indicator-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Pending icon - warning style */
+.cometchat-message-bubble__moderation-indicator--pending .cometchat-message-bubble__moderation-indicator-icon {
+  mask: url("../../assets/warning_neutral.svg") center center no-repeat;
+  -webkit-mask: url("../../assets/warning_neutral.svg") center center no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  background: var(--cometchat-warning-color);
+}
+
+/* Disapproved icon - error style */
+.cometchat-message-bubble__moderation-indicator--disapproved .cometchat-message-bubble__moderation-indicator-icon {
+  mask: url("../../assets/message_blocked.svg") center center no-repeat;
+  -webkit-mask: url("../../assets/message_blocked.svg") center center no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  background: var(--cometchat-error-color);
+}
+
+/* Moderation indicator text */
+.cometchat-message-bubble__moderation-indicator-text {
+  font: var(--cometchat-font-body-regular);
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* ============================================================================
+ * Custom Message Type Bubble Styles
+ * Requirements 3.1, 3.2, 3.3, 3.4 - Custom message bubble visibility
+ * ============================================================================ */
+
+/* Document Bubble - Requirement 3.3 */
+.cometchat-message-bubble__document {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-message-bubble-document-gap, var(--cometchat-spacing-2));
+  padding: var(--cometchat-message-bubble-document-padding, var(--cometchat-padding-3, 12px));
+  min-width: var(--cometchat-message-bubble-document-min-width, 200px);
+}
+
+.cometchat-message-bubble__document-icon {
+  width: var(--cometchat-message-bubble-document-icon-width, 40px);
+  height: var(--cometchat-message-bubble-document-icon-height, 40px);
+  mask: url("../../assets/collabrative_document.svg") center center no-repeat;
+  -webkit-mask: url("../../assets/collabrative_document.svg") center center no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  background: var(--cometchat-message-bubble-document-icon-background, var(--cometchat-icon-color-primary));
+}
+
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__document-icon {
+  background: var(--cometchat-message-bubble-document-icon-background-outgoing, var(--cometchat-primary-color));
+}
+
+.cometchat-message-bubble__document-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-message-bubble-document-content-gap, var(--cometchat-spacing-1));
+}
+
+.cometchat-message-bubble__document-title {
+  font: var(--cometchat-message-bubble-document-title-font, var(--cometchat-font-body-medium));
+  color: var(--cometchat-message-bubble-document-title-color, var(--cometchat-text-color-primary));
+}
+
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__document-title {
+  color: var(--cometchat-message-bubble-document-title-color-outgoing, var(--cometchat-text-color-primary));
+}
+
+.cometchat-message-bubble__document-subtitle {
+  font: var(--cometchat-message-bubble-document-subtitle-font, var(--cometchat-font-caption1-regular));
+  color: var(--cometchat-message-bubble-document-subtitle-color, var(--cometchat-text-color-secondary));
+}
+
+.cometchat-message-bubble__document-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-message-bubble-document-link-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  background: var(--cometchat-message-bubble-document-link-background, var(--cometchat-primary-color));
+  color: var(--cometchat-message-bubble-document-link-color, var(--cometchat-static-white));
+  font: var(--cometchat-message-bubble-document-link-font, var(--cometchat-font-button-medium));
+  border-radius: var(--cometchat-message-bubble-document-link-border-radius, var(--cometchat-radius-2));
+  text-decoration: none;
+  transition: var(--cometchat-message-bubble-document-link-transition, background-color 0.2s ease);
+}
+
+.cometchat-message-bubble__document-link:hover {
+  background: var(--cometchat-message-bubble-document-link-background-hover, var(--cometchat-extended-primary-color-700));
+}
+
+.cometchat-message-bubble__document-link:focus-visible {
+  outline: var(--cometchat-message-bubble-document-link-focus-outline, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-message-bubble-document-link-focus-outline-offset, 2px);
+}
+
+/* Whiteboard Bubble - Requirement 3.4 */
+.cometchat-message-bubble__whiteboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-message-bubble-whiteboard-gap, var(--cometchat-spacing-2));
+  padding: var(--cometchat-message-bubble-whiteboard-padding, var(--cometchat-padding-3, 12px));
+  min-width: var(--cometchat-message-bubble-whiteboard-min-width, 200px);
+}
+
+.cometchat-message-bubble__whiteboard-icon {
+  width: var(--cometchat-message-bubble-whiteboard-icon-width, 40px);
+  height: var(--cometchat-message-bubble-whiteboard-icon-height, 40px);
+  mask: url("../../assets/collaborative_whiteboard.svg") center center no-repeat;
+  -webkit-mask: url("../../assets/collaborative_whiteboard.svg") center center no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  background: var(--cometchat-message-bubble-whiteboard-icon-background, var(--cometchat-icon-color-primary));
+}
+
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__whiteboard-icon {
+  background: var(--cometchat-message-bubble-whiteboard-icon-background-outgoing, var(--cometchat-primary-color));
+}
+
+.cometchat-message-bubble__whiteboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-message-bubble-whiteboard-content-gap, var(--cometchat-spacing-1));
+}
+
+.cometchat-message-bubble__whiteboard-title {
+  font: var(--cometchat-message-bubble-whiteboard-title-font, var(--cometchat-font-body-medium));
+  color: var(--cometchat-message-bubble-whiteboard-title-color, var(--cometchat-text-color-primary));
+}
+
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__whiteboard-title {
+  color: var(--cometchat-message-bubble-whiteboard-title-color-outgoing, var(--cometchat-text-color-primary));
+}
+
+.cometchat-message-bubble__whiteboard-subtitle {
+  font: var(--cometchat-message-bubble-whiteboard-subtitle-font, var(--cometchat-font-caption1-regular));
+  color: var(--cometchat-message-bubble-whiteboard-subtitle-color, var(--cometchat-text-color-secondary));
+}
+
+.cometchat-message-bubble__whiteboard-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cometchat-message-bubble-whiteboard-link-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  background: var(--cometchat-message-bubble-whiteboard-link-background, var(--cometchat-primary-color));
+  color: var(--cometchat-message-bubble-whiteboard-link-color, var(--cometchat-static-white));
+  font: var(--cometchat-message-bubble-whiteboard-link-font, var(--cometchat-font-button-medium));
+  border-radius: var(--cometchat-message-bubble-whiteboard-link-border-radius, var(--cometchat-radius-2));
+  text-decoration: none;
+  transition: var(--cometchat-message-bubble-whiteboard-link-transition, background-color 0.2s ease);
+}
+
+.cometchat-message-bubble__whiteboard-link:hover {
+  background: var(--cometchat-message-bubble-whiteboard-link-background-hover, var(--cometchat-extended-primary-color-700));
+}
+
+.cometchat-message-bubble__whiteboard-link:focus-visible {
+  outline: var(--cometchat-message-bubble-whiteboard-link-focus-outline, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-message-bubble-whiteboard-link-focus-outline-offset, 2px);
+}
+
+/* ============================================================================
+ * Call Status Bubble Styles (1v1 Audio/Video Calls)
+ * Requirements 4.3, 4.4, 4.5, 4.6 - Call messages display with status icons
+ * Note: Icons are now passed via iconUrl input to action bubble component
+ * ============================================================================ */
+
+/* Base styles for call status wrapper - transparent background */
+.cometchat-message-bubble__video-call,
+.cometchat-message-bubble__audio-call {
+  background: transparent;
+  padding: 0;
+}

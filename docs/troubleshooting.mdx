@@ -1,0 +1,2948 @@
+---
+title: "Troubleshooting"
+description: "Common failure modes and fixes for the CometChat Angular UIKit."
+---
+
+<Accordion title="AI Agent Component Spec">
+
+| Field | Value |
+| --- | --- |
+| Page type | Troubleshooting reference |
+| Scope | All CometChat Angular UIKit issues — initialization, rendering, theming, calling, extensions, AI Smart Chat Features, localization, sound, events |
+| When to reference | When a component fails to render, data is missing, styling doesn't apply, or a feature doesn't appear |
+
+</Accordion>
+
+## Initialization and Login
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `CometChatUIKit.init()` fails silently | Invalid App ID, Region, or Auth Key | Double-check credentials from the CometChat Dashboard |
+| Component doesn't render | `init()` not called or not awaited before rendering | Ensure `init()` completes before mounting components. See [Methods](/methods) |
+| Component renders but shows no data | User not logged in | Call `CometChatUIKit.login()` after init |
+| Login fails with "UID not found" | UID doesn't exist in your CometChat app | Create the user via Dashboard, SDK, or API first |
+| Blank screen after login | Component mounted before init/login completes | Use state to conditionally render after login resolves |
+| `getLoggedinUser()` returns null | User not logged in or session expired | Call `login()` or `loginWithAuthToken()` first |
+| `sendTextMessage()` fails | User not logged in or invalid receiver | Ensure login completes before sending messages |
+| Auth Key exposed in production | Using Auth Key instead of Auth Token | Switch to [Auth Token](/methods#login-using-auth-token) for production |
+
+---
+
+## Theming and CSS
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| CSS/theme not applied | Missing CSS import | Add `@import url("@cometchat/chat-uikit-angular/styles/css-variables.css");` in your global styles |
+| Overrides not applying | Missing `.cometchat` scope in selector | Scope overrides under `.cometchat` |
+| Component-level override not working | Missing `.cometchat` parent in selector | Use `.cometchat .cometchat-conversations` not just `.cometchat-conversations` |
+| Dark mode unchanged | `data-theme` missing or mismatch | Set `data-theme="dark"` on the wrapper |
+| Font not changing | `--cometchat-font-family` set on wrong element | Set on `.cometchat` |
+| Token change has no visible effect | Token doesn't control the expected property | Check the theming documentation |
+
+---
+
+## Components
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Callback not firing | Wrong output name or signature | Check the Actions section on the component page for exact output name |
+| Custom view not appearing | Returning null from ng-template | Ensure ng-template returns valid content |
+| Messages not loading | Invalid user/group object passed | Ensure you fetch the user/group via SDK before passing to components |
+
+---
+
+## Calling
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Call buttons not appearing in Message Header | `@cometchat/calls-sdk-javascript` not installed | Run `npm install @cometchat/calls-sdk-javascript@5.0.0-beta.1` — UIKit auto-detects it |
+| Incoming call screen not showing | `cometchat-incoming-call` not in the component tree | Render the component at the app root level so it can listen for incoming calls |
+
+---
+
+## Extensions
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Extension feature not appearing | Extension not activated in CometChat Dashboard | Enable the specific extension from your Dashboard |
+| Stickers not showing in composer | Sticker extension not enabled | Activate Sticker Extension in Dashboard |
+| Polls option missing from action sheet | Polls extension not enabled | Activate Polls Extension in Dashboard |
+| Link preview not rendering in messages | Link Preview extension not enabled | Activate Link Preview Extension in Dashboard |
+
+---
+
+## AI Smart Chat Features
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| AI Smart Chat Features not appearing | Feature not activated in CometChat Dashboard | Enable the specific AI feature from your Dashboard |
+| Conversation Starter not showing | Feature not enabled or no conversation context | Ensure Conversation Starter is activated in Dashboard |
+| Smart Replies not appearing in composer | Feature not enabled in Dashboard | Ensure Smart Replies is activated in Dashboard |
+
+---
+
+## Localization
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| UI text not translated | Language code not matching supported codes | Check the supported languages table in [Localization](/customization/localization) |
+| Custom translations not appearing | `addTranslation` called before `init` | Call init first, then add translations |
+| Date/time format unchanged | Localization config not applied | Check the localization documentation for date format configuration |
+
+---
+
+## Sound
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| No sound plays | Browser autoplay policy blocks audio before user interaction | `hasInteracted()` must return `true` — the user must interact with the page first |
+| Custom sound not playing | Invalid file path or unsupported format | Ensure the path is correct and the file is a valid audio format (WAV/MP3) |
+| Sound keeps playing | `pause()` not called | Call `CometChatSoundManager.pause()` to stop playback |
+
+---
+
+## Events
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Event listener not firing | Subscribed to wrong event name | Check the [Events](/events) page for exact event names |
+| Duplicate event triggers | Multiple subscriptions without cleanup | Unsubscribe in `ngOnDestroy` |
+| Event fires but UI doesn't update | State not updated in event handler | Ensure you update component state in the handler |
+
+---
+
+## Component-Specific Troubleshooting
+
+### Base Elements
+
+#### CometChatActionSheet
+
+##### Actions Not Displaying
+
+Ensure each action has the required properties:
+```typescript expandable
+// ✅ Correct
+new CometChatMessageComposerAction({
+  id: 'action1',
+  title: 'Action Title',
+  iconURL: 'path/to/icon.svg'
+})
+
+// ❌ Missing required properties
+new CometChatMessageComposerAction({
+  id: 'action1'
+  // Missing title and iconURL
+})
+```
+
+##### Icons Not Showing
+
+Icons use CSS mask, so ensure:
+1. Icon URLs are accessible
+2. Icons are SVG or PNG format
+3. Icon color is controlled by `--cometchat-icon-color-highlight` CSS variable
+
+##### Keyboard Navigation Not Working
+
+Ensure:
+1. The ActionSheet component has focus
+2. No other elements are capturing keyboard events
+3. The component is properly mounted in the DOM
+
+#### CometChatConfirmDialog
+
+##### Dialog Not Closing After Success
+
+Ensure you're calling `setSuccess()` and then hiding the dialog:
+
+```typescript expandable
+// ✅ Correct
+async handleConfirm(): Promise<void> {
+  await this.performAction();
+  this.dialog.setSuccess();
+  this.showDialog = false; // Hide the dialog
+}
+
+// ❌ Incorrect - dialog stays visible
+async handleConfirm(): Promise<void> {
+  await this.performAction();
+  this.dialog.setSuccess();
+  // Missing: this.showDialog = false;
+}
+```
+
+##### Loading State Persists
+
+Always call either `setSuccess()` or `setError()`:
+
+```typescript expandable
+// ✅ Correct
+async handleConfirm(): Promise<void> {
+  try {
+    await this.performAction();
+    this.dialog.setSuccess();
+  } catch (error) {
+    this.dialog.setError(); // Clears loading state
+  }
+}
+
+// ❌ Incorrect - loading persists on error
+async handleConfirm(): Promise<void> {
+  try {
+    await this.performAction();
+    this.dialog.setSuccess();
+  } catch (error) {
+    // Missing: this.dialog.setError();
+  }
+}
+```
+
+##### ViewChild Undefined
+
+Ensure the dialog is rendered before accessing it:
+
+```typescript expandable
+// ✅ Correct
+@ViewChild(CometChatConfirmDialogComponent) 
+dialog!: CometChatConfirmDialogComponent;
+
+async handleConfirm(): Promise<void> {
+  if (!this.dialog) {
+    console.error('Dialog not initialized');
+    return;
+  }
+  // ... rest of logic
+}
+
+// Or use optional chaining
+this.dialog?.setSuccess();
+```
+
+#### CometChatContextMenu
+
+##### Menu Not Positioning Correctly
+
+Ensure positioning configuration matches your use case:
+
+```typescript expandable
+// For viewport-based positioning (default)
+<cometchat-context-menu [data]="items" />
+
+// For parent container positioning
+<cometchat-context-menu 
+  [data]="items"
+  [useParentContainer]="true" />
+
+// For static positioning without adjustments
+<cometchat-context-menu 
+  [data]="items"
+  [forceStaticPlacement]="true" />
+```
+
+##### Submenu Not Showing
+
+Check that:
+1. You have more items than `topMenuSize - 1`
+2. Items have required properties (`id`, `title`, `iconURL`)
+3. The component is properly mounted in the DOM
+
+```typescript expandable
+// ✅ Correct - will show submenu
+<cometchat-context-menu 
+  [data]="fiveItems"
+  [topMenuSize]="3" />
+// Shows 2 items + more button, submenu has 3 items
+
+// ❌ Won't show submenu
+<cometchat-context-menu 
+  [data]="twoItems"
+  [topMenuSize]="3" />
+// Only 2 items, no need for submenu
+```
+
+##### Icons Not Displaying
+
+Icons use CSS mask, so ensure:
+1. Icon URLs are accessible
+2. Icons are SVG or PNG format
+3. Icon color is controlled by `--cometchat-icon-color-secondary` CSS variable
+
+##### Keyboard Navigation Not Working
+
+Ensure:
+1. The submenu is open
+2. Focus is within the component
+3. No other elements are capturing keyboard events
+
+#### CometChatDate
+
+##### Date Not Displaying
+
+If the date is not showing:
+- Verify `timestamp` is in seconds, not milliseconds
+- Ensure `calendarObject` is provided with at least one format property
+- Check that the timestamp is a valid number
+
+##### Wrong Date Format
+
+If the date format is incorrect:
+- Verify format tokens are correct (case-sensitive)
+- Check for typos in format strings
+- Ensure literal text is wrapped in square brackets `[text]`
+
+##### Timezone Issues
+
+The component uses the timezone configured in CometChatLocalize:
+
+```typescript
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+// Set timezone
+CometChatLocalize.setLocalizationSettings({
+  timezone: 'America/New_York'
+});
+```
+
+#### CometChatFullscreenViewer
+
+##### Viewer Not Opening
+
+**Problem:** The viewer doesn't open when `isOpen` is set to `true`.
+
+**Solution:** Verify:
+1. `isOpen` property is properly bound with square brackets: `[isOpen]="isViewerOpen"`
+2. No JavaScript errors in console
+3. Component is properly imported in your module/component
+4. CSS for the viewer is loaded
+
+```typescript
+// Correct binding
+<cometchat-fullscreen-viewer [isOpen]="isViewerOpen"></cometchat-fullscreen-viewer>
+
+// Incorrect (missing brackets)
+<cometchat-fullscreen-viewer isOpen="isViewerOpen"></cometchat-fullscreen-viewer>
+```
+
+##### Images/Videos Not Displaying
+
+**Problem:** Media items are not showing in the viewer.
+
+**Solution:** Ensure your attachments have valid structure:
+
+```typescript expandable
+// Check attachment structure
+console.log('Attachments:', attachments);
+
+// Each attachment must have:
+// - url: string (required)
+// - type: 'image' | 'video' (required)
+// - name: string (optional)
+
+// Correct structure
+const attachments: MediaAttachment[] = [
+  { url: 'https://example.com/image.jpg', type: 'image' },
+  { url: 'https://example.com/video.mp4', type: 'video' }
+];
+```
+
+Verify that:
+1. URLs are accessible and not blocked by CORS
+2. `type` property is either `'image'` or `'video'`
+3. URLs point to actual media files, not HTML pages
+
+##### Navigation Buttons Not Working
+
+**Problem:** Previous/Next buttons don't navigate through the gallery.
+
+**Solution:** Check that:
+1. You're using gallery mode with `attachments` array (not single mode with `url`)
+2. Attachments array has more than one item
+3. No JavaScript errors in console
+4. Buttons are not disabled (check at boundaries)
+
+```typescript expandable
+// Gallery mode (navigation works)
+<cometchat-fullscreen-viewer
+  [attachments]="multipleAttachments"
+></cometchat-fullscreen-viewer>
+
+// Single mode (no navigation)
+<cometchat-fullscreen-viewer
+  [url]="singleUrl"
+  [mediaType]="'image'"
+></cometchat-fullscreen-viewer>
+```
+
+##### Keyboard Navigation Not Working
+
+**Problem:** Arrow keys don't navigate through the gallery.
+
+**Solution:** Verify:
+1. Viewer is actually open (`isOpen` is `true`)
+2. You're in gallery mode with multiple attachments
+3. No other keyboard event listeners are preventing default behavior
+4. Browser window has focus
+
+##### Video Not Playing
+
+**Problem:** Video displays but doesn't play or shows error.
+
+**Solution:** Check:
+1. Video URL is valid and accessible
+2. Video format is supported by HTML5 video element (MP4, WebM, Ogg)
+3. No CORS issues blocking video playback
+4. Browser supports the video codec
+
+```typescript
+// Supported video formats:
+// - MP4 (H.264 codec) - Best compatibility
+// - WebM (VP8/VP9 codec)
+// - Ogg (Theora codec)
+
+// Check video URL
+console.log('Video URL:', attachment.url);
+// Try opening URL directly in browser to test
+```
+
+##### Body Scroll Not Restored
+
+**Problem:** Page remains unscrollable after closing the viewer.
+
+**Solution:** Ensure:
+1. You're calling the `closeClick` event handler
+2. Setting `isOpen` to `false` in the handler
+3. Component is not being destroyed while open
+
+```typescript expandable
+// Correct implementation
+closeViewer(): void {
+  this.isViewerOpen = false; // This triggers body scroll restoration
+}
+
+// In template
+<cometchat-fullscreen-viewer
+  [isOpen]="isViewerOpen"
+  (closeClick)="closeViewer()"
+></cometchat-fullscreen-viewer>
+```
+
+##### Focus Not Returning After Close
+
+**Problem:** Focus doesn't return to the triggering element after closing.
+
+**Solution:** The component automatically handles focus restoration. If it's not working:
+1. Ensure the triggering element still exists in the DOM
+2. Check that no other code is managing focus
+3. Verify the triggering element is focusable (has `tabindex` or is naturally focusable)
+
+##### Sender Information Not Showing
+
+**Problem:** Sender name and avatar are not displayed in the header.
+
+**Solution:** Provide sender information via one of these methods:
+
+```typescript expandable
+// Method 1: Explicit properties
+<cometchat-fullscreen-viewer
+  [senderName]="'John Doe'"
+  [senderAvatarUrl]="'https://example.com/avatar.jpg'"
+></cometchat-fullscreen-viewer>
+
+// Method 2: Via message object
+<cometchat-fullscreen-viewer
+  [message]="cometChatMessage"
+></cometchat-fullscreen-viewer>
+
+// Method 3: Both (explicit properties take precedence)
+<cometchat-fullscreen-viewer
+  [message]="cometChatMessage"
+  [senderName]="'Custom Name'"
+></cometchat-fullscreen-viewer>
+```
+
+##### Index Display Not Showing
+
+**Problem:** The "X of Y" counter is not visible.
+
+**Solution:** Verify:
+1. You're using gallery mode with `attachments` array
+2. Attachments array has more than one item
+3. CSS for index display is not being overridden
+4. Localization key `fullscreen_viewer_index` exists
+
+```typescript
+// Index display only shows in gallery mode with multiple items
+const attachments: MediaAttachment[] = [
+  { url: 'url1', type: 'image' },
+  { url: 'url2', type: 'image' }  // Need at least 2 items
+];
+```
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component's appearance.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the correct selector
+2. Variable names match exactly (including `--cometchat-` prefix)
+3. CSS specificity is sufficient
+
+```css
+/* Correct approach */
+cometchat-fullscreen-viewer {
+  --cometchat-spacing-4: 20px;
+}
+
+/* For deep styling */
+::ng-deep .cometchat-fullscreen-viewer__header {
+  background: rgba(0, 0, 0, 0.8);
+}
+```
+
+### Conversations
+
+#### CometChatConversations
+
+##### Conversations Not Loading
+
+**Problem**: Conversations list is empty or not loading.
+
+**Solutions**:
+1. Verify CometChat SDK is initialized and user is logged in
+2. Check network connectivity
+3. Verify API credentials are correct
+4. Check browser console for error messages
+5. Ensure `conversationsRequestBuilder` is properly configured
+
+```typescript
+// Verify SDK initialization
+CometChatUIKit.getLoggedinUser().then(
+  user => console.log('User logged in:', user),
+  error => console.error('User not logged in:', error)
+);
+```
+
+##### Real-Time Updates Not Working
+
+**Problem**: New messages don't appear automatically.
+
+**Solutions**:
+1. Verify WebSocket connection is established
+2. Check that listeners are properly set up
+3. Ensure component is not destroyed prematurely
+4. Check browser console for listener errors
+
+```typescript
+// Check WebSocket connection
+CometChat.getConnectionStatus().then(
+  status => console.log('Connection status:', status)
+);
+```
+
+##### Typing Indicators Not Showing
+
+**Problem**: Typing indicators don't appear.
+
+**Solutions**:
+1. Verify typing indicators are enabled in CometChat dashboard
+2. Check that `hideUserStatus` is not set to `true`
+3. Ensure typing events are being sent from other users
+4. Check listener setup in ConversationsService
+
+##### Performance Issues with Large Lists
+
+**Problem**: Slow scrolling or rendering with many conversations.
+
+**Solutions**:
+1. Reduce `limit` in `conversationsRequestBuilder` (default: 30)
+2. Enable virtual scrolling (future enhancement)
+3. Use `trackBy` function in custom templates
+4. Optimize custom template complexity
+
+```typescript
+// Reduce limit for better performance
+const builder = new CometChat.ConversationsRequestBuilder()
+  .setLimit(20); // Reduced from default 30
+```
+
+##### Custom Templates Not Rendering
+
+**Problem**: Custom templates don't appear.
+
+**Solutions**:
+1. Verify template reference variable name matches `[templateView]` binding
+2. Check that template is defined in the same component
+3. Ensure template context is properly typed
+4. Check browser console for template errors
+
+```typescript
+// Correct template reference
+<cometchat-conversations [subtitleView]="customSubtitle">
+  <ng-template #customSubtitle let-conversation>
+    <!-- Template content -->
+  </ng-template>
+</cometchat-conversations>
+```
+
+##### Context Menu Not Working
+
+**Problem**: Context menu doesn't appear or actions don't work.
+
+**Solutions**:
+1. Verify `options` function returns valid `CometChatOption[]`
+2. Check that `onClick` handlers are properly bound
+3. Ensure `hideDeleteConversation` is not hiding all options
+4. Check browser console for click handler errors
+
+```typescript expandable
+// Correct options function
+getCustomOptions = (conversation: CometChat.Conversation): CometChatOption[] => {
+  return [
+    {
+      id: 'delete',
+      title: 'Delete',
+      iconURL: 'assets/delete.svg',
+      onClick: () => this.deleteConversation(conversation) // Properly bound
+    }
+  ];
+};
+```
+
+##### Selection Mode Issues
+
+**Problem**: Selection doesn't work or behaves unexpectedly.
+
+**Solutions**:
+1. Verify `selectionMode` is set to `'single'` or `'multiple'` (not `'none'`)
+2. Check that `onSelect` event handler is properly implemented
+3. Ensure selection state is managed correctly in parent component
+4. Check that selection controls are visible
+
+```typescript
+// Correct selection mode usage
+selectionMode = SelectionMode.multiple; // Import SelectionMode enum
+
+onConversationSelect(event: { conversation: any; selected: boolean }): void {
+  // Properly handle selection state
+  console.log('Selection changed:', event);
+}
+```
+
+### Users & Groups
+
+#### CometChatUsers
+
+##### Users Not Loading
+
+**Problem**: Users list is empty or not loading.
+
+**Solutions**:
+1. Verify CometChat SDK is initialized and user is logged in
+2. Check network connectivity
+3. Verify API credentials are correct
+4. Check browser console for error messages
+5. Ensure `usersRequestBuilder` is properly configured
+
+```typescript
+// Verify SDK initialization
+CometChatUIKit.getLoggedinUser().then(
+  user => console.log('User logged in:', user),
+  error => console.error('User not logged in:', error)
+);
+```
+
+##### Real-Time Updates Not Working
+
+**Problem**: User status changes don't appear automatically.
+
+**Solutions**:
+1. Verify WebSocket connection is established
+2. Check that listeners are properly set up
+3. Ensure component is not destroyed prematurely
+4. Check browser console for listener errors
+
+##### Search Not Working
+
+**Problem**: Search doesn't filter users.
+
+**Solutions**:
+1. Verify `hideSearch` is not set to `true`
+2. Check that `searchRequestBuilder` is properly configured
+3. Ensure search keyword meets minimum length requirements
+4. Check browser console for search errors
+
+##### Selection Not Working
+
+**Problem**: Selection doesn't work or behaves unexpectedly.
+
+**Solutions**:
+1. Verify `selectionMode` is set to `'single'` or `'multiple'`
+2. Check that `(select)` event handler is properly implemented
+3. Ensure selection state is managed correctly in parent component
+
+#### CometChatGroups
+
+##### Groups Not Loading
+
+**Problem**: Groups list is empty or not loading.
+
+**Solutions**:
+1. Verify CometChat SDK is initialized and user is logged in
+2. Check network connectivity
+3. Verify API credentials are correct
+4. Check browser console for error messages
+5. Ensure `groupsRequestBuilder` is properly configured
+
+##### Real-Time Updates Not Working
+
+**Problem**: Group member changes don't appear automatically.
+
+**Solutions**:
+1. Verify WebSocket connection is established
+2. Check that listeners are properly set up
+3. Ensure component is not destroyed prematurely
+4. Check browser console for listener errors
+
+##### Search Not Working
+
+**Problem**: Search doesn't filter groups.
+
+**Solutions**:
+1. Verify `hideSearch` is not set to `true`
+2. Check that `searchRequestBuilder` is properly configured
+3. Ensure search keyword meets minimum length requirements
+
+#### CometChatGroupMembers
+
+##### Members Not Loading
+
+**Problem**: Members list is empty or not loading.
+
+**Solutions**:
+1. Verify CometChat SDK is initialized and user is logged in
+2. Ensure a valid `group` input is provided — the component requires a `CometChat.Group` object
+3. Check network connectivity
+4. Verify API credentials are correct
+5. Check browser console for error messages
+6. Ensure `groupMemberRequestBuilder` is properly configured with the correct group GUID
+
+##### Real-Time Updates Not Working
+
+**Problem**: Member changes (join, leave, kick, ban) don't appear automatically.
+
+**Solutions**:
+1. Verify WebSocket connection is established
+2. Check that group listeners are properly set up
+3. Ensure component is not destroyed prematurely
+4. Check browser console for listener errors
+
+##### Search Not Working
+
+**Problem**: Search doesn't filter members.
+
+**Solutions**:
+1. Verify `hideSearch` is not set to `true`
+2. Check that `searchRequestBuilder` is properly configured
+3. Ensure search keyword meets minimum length requirements
+
+##### Scope Change Not Working
+
+**Problem**: Cannot change member scope.
+
+**Solutions**:
+1. Verify the logged-in user is the group owner or an admin
+2. Ensure `hideScopeChangeOption` is not set to `true`
+3. Check that the target member has a lower scope than the logged-in user
+4. Owners cannot have their scope changed
+
+### Messages
+
+#### CometChatMessageHeader
+
+##### Common Issues
+
+**1. User/Group not displaying**
+
+Ensure you're passing a valid `CometChat.User` or `CometChat.Group` object:
+
+```typescript
+// ✅ Correct - fetch user from SDK
+CometChat.getUser('user-id').then(user => {
+  this.selectedUser = user;
+});
+
+// ❌ Incorrect - plain object won't work
+this.selectedUser = { uid: 'user-id', name: 'John' };
+```
+
+**2. Status not updating in real-time**
+
+Make sure the CometChat UIKit is properly initialized and the user is logged in:
+
+```typescript expandable
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId('YOUR_APP_ID')
+  .setRegion('YOUR_REGION')
+  .setAuthKey('YOUR_AUTH_KEY')
+  .subscribePresenceForAllUsers()
+  .build();
+
+CometChatUIKit.init(UIKitSettings).then(() => {
+  CometChatUIKit.login('UID').then(user => {
+    // Now real-time updates will work
+  });
+});
+```
+
+**3. Back button not showing**
+
+Check the `showBackButton` property:
+
+```typescript
+// Back button visible
+[showBackButton]="true"
+
+// Back button hidden (default)
+[showBackButton]="false"
+```
+
+**4. Call buttons not appearing**
+
+Ensure the hide properties are set to `false`:
+
+```typescript
+[hideVoiceCallButton]="false"
+[hideVideoCallButton]="false"
+```
+
+**5. Overflow menu not showing**
+
+Both `showSearchOption` and `showConversationSummaryButton` must be `true` for the overflow menu:
+
+```typescript
+[showSearchOption]="true"
+[showConversationSummaryButton]="true"
+```
+
+##### Performance Tips
+
+1. **Use OnPush Change Detection**: The component uses `ChangeDetectionStrategy.OnPush` for optimal performance
+2. **Avoid Frequent Input Changes**: Minimize unnecessary changes to `user` or `group` inputs
+3. **Clean Up on Destroy**: The component automatically cleans up listeners on destroy
+
+#### CometChatMessageList
+
+This section provides solutions to common issues, explains error messages, offers debugging tips, and lists support resources to help you resolve problems quickly when working with the CometChatMessageList component.
+
+---
+
+##### Common Issues and Solutions
+
+Below are the most frequently encountered issues and their solutions.
+
+###### Messages Not Loading
+
+**Symptoms:**
+- Message list shows empty state or loading spinner indefinitely
+- No messages appear even though the conversation has messages
+- Console shows network errors or SDK errors
+
+**Possible Causes and Solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| CometChat not initialized | Ensure `CometChatUIKit.init()` is called before using the component |
+| User not logged in | Verify `CometChatUIKit.login()` completed successfully |
+| Invalid user/group | Check that the `user` or `group` input is a valid CometChat object |
+| Network connectivity | Check internet connection and CometChat service status |
+| Incorrect App ID/Region | Verify your App ID and region in CometChat dashboard |
+
+
+```typescript expandable
+// Verify CometChat initialization
+import { Component, OnInit } from '@angular/core';
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-debug-init',
+  template: `<cometchat-message-list [user]="user"></cometchat-message-list>`
+})
+export class DebugInitComponent implements OnInit {
+  user?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    try {
+      // Step 1: Check if CometChat is initialized
+      const isInitialized = CometChat.isInitialized();
+      console.log('CometChat initialized:', isInitialized);
+      
+      if (!isInitialized) {
+        console.error('CometChat not initialized. Call CometChatUIKit.init() first.');
+        return;
+      }
+
+      // Step 2: Check if user is logged in
+      const loggedInUser = await CometChatUIKit.getLoggedinUser();
+      console.log('Logged in user:', loggedInUser);
+      
+      if (!loggedInUser) {
+        console.error('No user logged in. Call CometChatUIKit.login() first.');
+        return;
+      }
+
+      // Step 3: Fetch the conversation user/group
+      this.user = await CometChat.getUser('RECEIVER_UID');
+      console.log('Fetched user:', this.user);
+      
+    } catch (error) {
+      console.error('Initialization error:', error);
+    }
+  }
+}
+```
+
+
+###### Real-time Updates Not Working
+
+**Symptoms:**
+- New messages don't appear automatically
+- Message edits/deletions don't reflect in real-time
+- Typing indicators don't show
+- Read receipts don't update
+
+**Possible Causes and Solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| WebSocket not connected | Ensure `autoEstablishSocketConnection(true)` in app settings |
+| Presence subscription disabled | Add `subscribePresenceForAllUsers()` to app settings |
+| Component destroyed | Verify component is still mounted when expecting updates |
+| Wrong conversation context | Ensure `user` or `group` input matches the conversation |
+
+```typescript expandable
+// Verify WebSocket connection and app settings
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId('YOUR_APP_ID')
+  .setRegion('YOUR_REGION')
+  .setAuthKey('YOUR_AUTH_KEY')
+  .subscribePresenceForAllUsers()
+  .build();
+
+await CometChatUIKit.init(UIKitSettings);
+
+// Check WebSocket connection status
+const connectionStatus = CometChat.getConnectionStatus();
+console.log('WebSocket status:', connectionStatus);
+// Should be 'connected' for real-time updates to work
+```
+
+
+###### Scroll Issues
+
+**Symptoms:**
+- Messages jump when scrolling
+- Scroll position resets unexpectedly
+- Cannot scroll to bottom
+- Infinite scroll not loading older messages
+
+**Possible Causes and Solutions:**
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Scroll jumping | Images loading without dimensions | Use fixed dimensions or aspect-ratio CSS |
+| Position reset | Component re-rendering | Check for unnecessary state changes |
+| Can't scroll to bottom | Button not visible | Ensure container has proper height |
+| Infinite scroll broken | Scroll container misconfigured | Verify parent container has `overflow: auto` |
+
+```typescript expandable
+// Fix scroll jumping with image dimensions
+@Component({
+  template: `
+    <ng-template #customImageContent let-context>
+      <!-- Always specify dimensions to prevent layout shift -->
+      <img 
+        [src]="context.message.getAttachment()?.getUrl()"
+        [style.width.px]="getImageWidth(context.message)"
+        [style.height.px]="getImageHeight(context.message)"
+        loading="lazy"
+      />
+    </ng-template>
+  `,
+  styles: [`
+    /* Or use aspect-ratio for responsive images */
+    .message-image {
+      width: 100%;
+      max-width: 300px;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
+  `]
+})
+export class FixScrollJumpComponent {
+  getImageWidth(message: any): number {
+    return message.getAttachment()?.getExtension()?.width || 200;
+  }
+  
+  getImageHeight(message: any): number {
+    return message.getAttachment()?.getExtension()?.height || 150;
+  }
+}
+```
+
+###### Styling Not Applying
+
+**Symptoms:**
+- CSS changes don't affect the component
+- Custom styles are overridden
+- Theme changes don't apply
+
+**Possible Causes and Solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| View encapsulation | Use `::ng-deep` or set `ViewEncapsulation.None` |
+| CSS specificity | Increase specificity or use `!important` sparingly |
+| CSS variables not set | Ensure variables are defined in `:root` or parent |
+| Dark theme not applied | Set `data-theme="dark"` on document element |
+
+```css expandable
+/* Method 1: Use ::ng-deep (deprecated but works) */
+:host ::ng-deep .cometchat-message-bubble {
+  background: var(--cometchat-background-color-02);
+}
+
+/* Method 2: Global styles in styles.css */
+.cometchat-message-list {
+  --cometchat-primary-color: #6366f1;
+}
+
+/* Method 3: Override CSS variables at root level */
+:root {
+  --cometchat-primary-color: #6366f1;
+  --cometchat-background-color-01: #ffffff;
+}
+
+/* For dark theme */
+[data-theme="dark"] {
+  --cometchat-primary-color: #818cf8;
+  --cometchat-background-color-01: #1f2937;
+}
+```
+
+```typescript
+// Apply dark theme programmatically
+document.documentElement.setAttribute('data-theme', 'dark');
+
+// Remove dark theme
+document.documentElement.removeAttribute('data-theme');
+```
+
+
+###### Thread View Not Opening
+
+**Symptoms:**
+- Clicking thread replies does nothing
+- Thread panel doesn't appear
+- `threadRepliesClick` event not firing
+
+**Possible Causes and Solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| Event not bound | Add `(threadRepliesClick)="onThreadClick($event)"` to template |
+| Thread option hidden | Ensure `hideReplyInThreadOption` is `false` |
+| No thread handler | Implement the thread navigation logic |
+| Message has no replies | Thread indicator only shows for messages with replies |
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [hideReplyInThreadOption]="false"
+      (threadRepliesClick)="onThreadClick($event)"
+    ></cometchat-message-list>
+    
+    <!-- Thread panel -->
+    @if (activeThreadMessage) {
+      <div class="thread-panel">
+        <cometchat-message-list
+          [user]="user"
+          [parentMessageId]="activeThreadMessage.getId()"
+        ></cometchat-message-list>
+      </div>
+    }
+  `
+})
+export class ThreadDebugComponent {
+  activeThreadMessage?: CometChat.BaseMessage;
+
+  onThreadClick(message: CometChat.BaseMessage): void {
+    console.log('Thread clicked for message:', message.getId());
+    console.log('Reply count:', message.getReplyCount());
+    this.activeThreadMessage = message;
+  }
+}
+```
+
+
+###### Reactions Not Working
+
+**Symptoms:**
+- Reaction button doesn't appear
+- Cannot add/remove reactions
+- Reactions don't update in real-time
+
+**Possible Causes and Solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| Reactions hidden | Set `hideReactionOption` to `false` |
+| Reactions extension disabled | Enable Reactions extension in CometChat dashboard |
+| Event not handled | Bind `(reactionClick)` event handler |
+| SDK version mismatch | Update to latest CometChat SDK version |
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [hideReactionOption]="false"
+      (reactionClick)="onReactionClick($event)"
+    ></cometchat-message-list>
+  `
+})
+export class ReactionDebugComponent {
+  async onReactionClick(event: { 
+    reaction: CometChat.ReactionCount; 
+    message: CometChat.BaseMessage 
+  }): Promise<void> {
+    const { reaction, message } = event;
+    console.log('Reaction clicked:', reaction.getReaction());
+    console.log('On message:', message.getId());
+    console.log('Already reacted:', reaction.getReactedByMe());
+    
+    // The component handles toggle automatically
+    // Add custom logic here if needed
+  }
+}
+```
+
+
+###### Performance Issues
+
+**Symptoms:**
+- Slow scrolling or janky animations
+- High memory usage
+- Long initial load times
+- UI freezes when loading messages
+
+**Possible Causes and Solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| Too many messages loaded | Reduce `setLimit()` in messages request builder |
+| Heavy custom templates | Optimize templates, avoid expensive computations |
+| Memory leaks | Clean up subscriptions in `ngOnDestroy` |
+| Large media files | Implement lazy loading for images/videos |
+| Change detection | Use `OnPush` change detection strategy |
+
+```typescript expandable
+import { Component, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-optimized-chat',
+  changeDetection: ChangeDetectionStrategy.OnPush,  // Optimize change detection
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [messagesRequestBuilder]="optimizedBuilder"
+    ></cometchat-message-list>
+  `
+})
+export class OptimizedChatComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+  
+  // Reduce messages per page for better performance
+  optimizedBuilder = new CometChat.MessagesRequestBuilder()
+    .setLimit(20)  // Smaller page size
+    .hideReplies(true);
+
+  ngOnDestroy(): void {
+    // Clean up to prevent memory leaks
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+
+---
+
+##### Error Messages
+
+This section explains common error messages you may encounter and provides resolution steps for each.
+
+###### Authentication Errors
+
+| Error Code | Message | Cause | Resolution |
+|------------|---------|-------|------------|
+| `ERR_UID_NOT_FOUND` | User with UID not found | Invalid user ID provided | Verify the UID exists in your CometChat dashboard |
+| `ERR_AUTH_TOKEN_NOT_FOUND` | Auth token not found | User not logged in or token expired | Call `CometChatUIKit.login()` before using components |
+| `ERR_INVALID_AUTH_KEY` | Invalid auth key | Wrong authentication key | Check auth key in CometChat dashboard |
+| `ERR_APP_NOT_FOUND` | App not found | Invalid App ID | Verify App ID matches your CometChat app |
+
+```typescript expandable
+// Handle authentication errors
+async function handleAuthError(error: CometChat.CometChatException): Promise<void> {
+  const code = error.getCode();
+  
+  switch (code) {
+    case 'ERR_UID_NOT_FOUND':
+      console.error('User not found. Check if the UID is correct.');
+      // Redirect to user selection or show error UI
+      break;
+      
+    case 'ERR_AUTH_TOKEN_NOT_FOUND':
+      console.error('Session expired. Please log in again.');
+      // Redirect to login page
+      await CometChat.logout();
+      break;
+      
+    case 'ERR_INVALID_AUTH_KEY':
+      console.error('Invalid credentials. Contact administrator.');
+      break;
+      
+    default:
+      console.error('Authentication error:', error.getMessage());
+  }
+}
+```
+
+
+###### Network Errors
+
+| Error Code | Message | Cause | Resolution |
+|------------|---------|-------|------------|
+| `ERR_NETWORK` | Network error | No internet connection | Check connectivity and retry |
+| `ERR_TIMEOUT` | Request timeout | Server took too long to respond | Retry with exponential backoff |
+| `ERR_CONNECTION_REFUSED` | Connection refused | Server unreachable | Check CometChat service status |
+| `ERR_WEBSOCKET_DISCONNECTED` | WebSocket disconnected | Real-time connection lost | Component auto-reconnects; check network |
+
+```typescript expandable
+// Handle network errors with retry logic
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-network-error-handler',
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      [errorView]="networkErrorView"
+      (error)="onError($event)"
+    ></cometchat-message-list>
+
+    <ng-template #networkErrorView>
+      <div class="network-error">
+        <img src="assets/no-connection.svg" alt="" aria-hidden="true" />
+        <h3>Connection Lost</h3>
+        <p>Please check your internet connection</p>
+        <button (click)="retryConnection()">Retry</button>
+      </div>
+    </ng-template>
+  `
+})
+export class NetworkErrorHandlerComponent {
+  user?: CometChat.User;
+  private retryCount = 0;
+  private maxRetries = 3;
+
+  onError(error: CometChat.CometChatException): void {
+    if (error.getCode() === 'ERR_NETWORK') {
+      this.handleNetworkError();
+    }
+  }
+
+  async retryConnection(): Promise<void> {
+    if (this.retryCount < this.maxRetries) {
+      this.retryCount++;
+      const delay = Math.pow(2, this.retryCount) * 1000; // Exponential backoff
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Attempt to reconnect
+      try {
+        await CometChat.connect();
+        this.retryCount = 0;
+      } catch (error) {
+        console.error('Retry failed:', error);
+      }
+    }
+  }
+
+  private handleNetworkError(): void {
+    console.error('Network error detected. Will retry automatically.');
+  }
+}
+```
+
+
+###### Permission Errors
+
+| Error Code | Message | Cause | Resolution |
+|------------|---------|-------|------------|
+| `ERR_NOT_A_MEMBER` | User is not a member | User not in the group | Add user to group or check group membership |
+| `ERR_BLOCKED` | User is blocked | Blocked by the other user | Cannot send messages to blocked users |
+| `ERR_GROUP_NOT_JOINED` | Group not joined | User hasn't joined the group | Join the group before sending messages |
+| `ERR_PERMISSION_DENIED` | Permission denied | Insufficient permissions | Check user role and permissions |
+
+```typescript expandable
+// Handle permission errors
+onError(error: CometChat.CometChatException): void {
+  const code = error.getCode();
+  
+  switch (code) {
+    case 'ERR_NOT_A_MEMBER':
+      this.showNotification('You are not a member of this group.');
+      break;
+      
+    case 'ERR_BLOCKED':
+      this.showNotification('You cannot message this user.');
+      break;
+      
+    case 'ERR_GROUP_NOT_JOINED':
+      this.promptJoinGroup();
+      break;
+      
+    case 'ERR_PERMISSION_DENIED':
+      this.showNotification('You do not have permission to perform this action.');
+      break;
+  }
+}
+
+async promptJoinGroup(): Promise<void> {
+  // Show join group dialog
+  const confirmed = await this.showConfirmDialog('Join this group to send messages?');
+  if (confirmed && this.group) {
+    await CometChat.joinGroup(this.group.getGuid(), CometChat.GROUP_TYPE.PUBLIC, '');
+  }
+}
+```
+
+
+###### SDK Initialization Errors
+
+| Error Code | Message | Cause | Resolution |
+|------------|---------|-------|------------|
+| `ERR_NOT_INITIALIZED` | CometChat not initialized | `CometChatUIKit.init()` not called | Initialize CometChat before using components |
+| `ERR_ALREADY_INITIALIZED` | Already initialized | `CometChatUIKit.init()` called multiple times | Call init only once at app startup |
+| `ERR_INVALID_REGION` | Invalid region | Wrong region code | Use correct region: 'us', 'eu', 'in', etc. |
+| `ERR_APP_SETTINGS_NOT_FOUND` | App settings not found | Missing app settings | Provide valid AppSettingsBuilder |
+
+```typescript expandable
+// Proper initialization pattern
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+// In main.ts or app initialization
+async function initializeCometChat(): Promise<boolean> {
+  try {
+    // Check if already initialized
+    if (CometChat.isInitialized()) {
+      console.log('CometChat already initialized');
+      return true;
+    }
+
+    const UIKitSettings = new UIKitSettingsBuilder()
+      .setAppId('YOUR_APP_ID')
+      .setRegion('us') // Valid: 'us', 'eu', 'in', 'ap-south', 'ap-southeast'
+      .setAuthKey('YOUR_AUTH_KEY')
+      .subscribePresenceForAllUsers()
+      .build();
+
+    await CometChatUIKit.init(UIKitSettings);
+    console.log('CometChat initialized successfully');
+    return true;
+
+  } catch (error: any) {
+    console.error('CometChat initialization failed:', error);
+    
+    if (error.code === 'ERR_INVALID_REGION') {
+      console.error('Check your region setting. Valid regions: us, eu, in, ap-south, ap-southeast');
+    }
+    
+    return false;
+  }
+}
+```
+
+
+###### Invalid Parameter Errors
+
+| Error Code | Message | Cause | Resolution |
+|------------|---------|-------|------------|
+| `ERR_INVALID_UID` | Invalid UID | Empty or malformed user ID | Provide valid non-empty UID |
+| `ERR_INVALID_GUID` | Invalid GUID | Empty or malformed group ID | Provide valid non-empty GUID |
+| `ERR_INVALID_MESSAGE_ID` | Invalid message ID | Message ID doesn't exist | Verify message ID is correct |
+| `ERR_EMPTY_MESSAGE` | Message cannot be empty | Trying to send empty message | Validate message content before sending |
+
+```typescript expandable
+// Validate parameters before API calls
+function validateUser(uid: string): boolean {
+  if (!uid || uid.trim() === '') {
+    console.error('Invalid UID: UID cannot be empty');
+    return false;
+  }
+  
+  // UID should be alphanumeric with underscores/hyphens
+  const uidPattern = /^[a-zA-Z0-9_-]+$/;
+  if (!uidPattern.test(uid)) {
+    console.error('Invalid UID: UID contains invalid characters');
+    return false;
+  }
+  
+  return true;
+}
+
+function validateGroup(guid: string): boolean {
+  if (!guid || guid.trim() === '') {
+    console.error('Invalid GUID: GUID cannot be empty');
+    return false;
+  }
+  return true;
+}
+
+// Usage
+async function fetchUser(uid: string): Promise<CometChat.User | null> {
+  if (!validateUser(uid)) {
+    return null;
+  }
+  
+  try {
+    return await CometChat.getUser(uid);
+  } catch (error: any) {
+    console.error('Error fetching user:', error.getMessage());
+    return null;
+  }
+}
+```
+
+
+###### Comprehensive Error Handler
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-error-handler',
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      (error)="handleError($event)"
+    ></cometchat-message-list>
+  `
+})
+export class ErrorHandlerComponent {
+  user?: CometChat.User;
+
+  handleError(error: CometChat.CometChatException): void {
+    const code = error.getCode();
+    const message = error.getMessage();
+    const details = error.getDetails();
+
+    console.error(`CometChat Error [${code}]: ${message}`, details);
+
+    // Categorize and handle errors
+    if (this.isAuthError(code)) {
+      this.handleAuthError(code);
+    } else if (this.isNetworkError(code)) {
+      this.handleNetworkError(code);
+    } else if (this.isPermissionError(code)) {
+      this.handlePermissionError(code);
+    } else {
+      this.handleGenericError(code, message);
+    }
+  }
+
+  private isAuthError(code: string): boolean {
+    return ['ERR_UID_NOT_FOUND', 'ERR_AUTH_TOKEN_NOT_FOUND', 
+            'ERR_INVALID_AUTH_KEY', 'ERR_APP_NOT_FOUND'].includes(code);
+  }
+
+  private isNetworkError(code: string): boolean {
+    return ['ERR_NETWORK', 'ERR_TIMEOUT', 
+            'ERR_CONNECTION_REFUSED', 'ERR_WEBSOCKET_DISCONNECTED'].includes(code);
+  }
+
+  private isPermissionError(code: string): boolean {
+    return ['ERR_NOT_A_MEMBER', 'ERR_BLOCKED', 
+            'ERR_GROUP_NOT_JOINED', 'ERR_PERMISSION_DENIED'].includes(code);
+  }
+
+  private handleAuthError(code: string): void {
+    // Redirect to login or show auth error UI
+    console.log('Authentication required');
+  }
+
+  private handleNetworkError(code: string): void {
+    // Show offline indicator and retry option
+    console.log('Network issue detected');
+  }
+
+  private handlePermissionError(code: string): void {
+    // Show permission denied message
+    console.log('Permission denied');
+  }
+
+  private handleGenericError(code: string, message: string): void {
+    // Show generic error message
+    console.log('An error occurred:', message);
+  }
+}
+```
+
+
+---
+
+##### Debugging Tips
+
+This section provides practical debugging techniques to help you identify and resolve issues quickly.
+
+###### Using Browser DevTools
+
+**Console Tab:**
+```typescript expandable
+// Enable verbose logging for debugging
+// Add this before CometChatUIKit.init()
+CometChat.setSource('ui-kit', 'web', 'angular');
+
+// Log component state
+@Component({
+  template: `<cometchat-message-list [user]="user"></cometchat-message-list>`
+})
+export class DebugComponent implements OnInit {
+  user?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    // Log initialization state
+    console.group('CometChat Debug Info');
+    console.log('Initialized:', CometChat.isInitialized());
+    console.log('Logged in user:', await CometChatUIKit.getLoggedinUser());
+    console.log('Connection status:', CometChat.getConnectionStatus());
+    console.groupEnd();
+  }
+}
+```
+
+**Network Tab:**
+- Filter by `cometchat` to see API calls
+- Check request/response payloads
+- Verify WebSocket connection (WS filter)
+- Look for failed requests (red entries)
+
+
+###### Checking Network Requests
+
+``` expandable
+Network Tab Analysis:
+
+1. Open DevTools (F12) → Network tab
+2. Filter by "cometchat" or "api"
+3. Look for:
+   - Status codes (200 = success, 4xx = client error, 5xx = server error)
+   - Response times (slow responses may indicate issues)
+   - WebSocket frames (for real-time updates)
+
+Common Network Issues:
+┌─────────────────┬─────────────────────────────────────────────────┐
+│ Status Code     │ Meaning                                         │
+├─────────────────┼─────────────────────────────────────────────────┤
+│ 401             │ Unauthorized - check auth token                 │
+│ 403             │ Forbidden - check permissions                   │
+│ 404             │ Not found - check user/group ID                 │
+│ 429             │ Rate limited - reduce request frequency         │
+│ 500             │ Server error - contact CometChat support        │
+│ 503             │ Service unavailable - check status page         │
+└─────────────────┴─────────────────────────────────────────────────┘
+```
+
+###### Inspecting Component State
+
+```typescript expandable
+import { Component, ViewChild, AfterViewInit } from '@angular/core';
+import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  template: `
+    <cometchat-message-list
+      #messageList
+      [user]="user"
+    ></cometchat-message-list>
+    
+    <button (click)="debugState()">Debug State</button>
+  `
+})
+export class InspectStateComponent implements AfterViewInit {
+  @ViewChild('messageList') messageList!: CometChatMessageListComponent;
+
+  debugState(): void {
+    // Access component for debugging (development only)
+    console.group('Message List State');
+    console.log('Component instance:', this.messageList);
+    console.log('User input:', this.messageList.user);
+    console.log('Group input:', this.messageList.group);
+    console.groupEnd();
+  }
+}
+```
+
+
+###### Logging and Debugging Utilities
+
+```typescript expandable
+// Create a debug service for development
+import { Injectable, isDevMode } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class CometChatDebugService {
+  
+  /**
+   * Log message list events for debugging
+   */
+  logEvent(eventName: string, data: any): void {
+    if (isDevMode()) {
+      console.log(`[CometChat Event] ${eventName}:`, data);
+    }
+  }
+
+  /**
+   * Log error with full details
+   */
+  logError(context: string, error: any): void {
+    if (isDevMode()) {
+      console.group(`[CometChat Error] ${context}`);
+      console.error('Code:', error.code || error.getCode?.());
+      console.error('Message:', error.message || error.getMessage?.());
+      console.error('Details:', error.details || error.getDetails?.());
+      console.error('Stack:', error.stack);
+      console.groupEnd();
+    }
+  }
+
+  /**
+   * Check CometChat connection health
+   */
+  async checkHealth(): Promise<void> {
+    console.group('[CometChat Health Check]');
+    
+    try {
+      // Check initialization
+      const isInit = CometChat.isInitialized();
+      console.log('✓ Initialized:', isInit);
+      
+      // Check logged in user
+      const user = await CometChatUIKit.getLoggedinUser();
+      console.log('✓ Logged in user:', user?.getUid() || 'None');
+      
+      // Check connection
+      const status = CometChat.getConnectionStatus();
+      console.log('✓ Connection status:', status);
+      
+      // Check WebSocket
+      console.log('✓ WebSocket:', status === 'connected' ? 'Connected' : 'Disconnected');
+      
+    } catch (error) {
+      console.error('✗ Health check failed:', error);
+    }
+    
+    console.groupEnd();
+  }
+}
+```
+
+
+###### Common Debugging Scenarios
+
+**Scenario 1: Messages not appearing**
+```typescript expandable
+// Debug checklist for messages not loading
+async function debugMessagesNotLoading(): Promise<void> {
+  console.group('Debug: Messages Not Loading');
+  
+  // 1. Check initialization
+  if (!CometChat.isInitialized()) {
+    console.error('❌ CometChat not initialized');
+    console.groupEnd();
+    return;
+  }
+  console.log('✓ CometChat initialized');
+  
+  // 2. Check login
+  const loggedInUser = await CometChatUIKit.getLoggedinUser();
+  if (!loggedInUser) {
+    console.error('❌ No user logged in');
+    console.groupEnd();
+    return;
+  }
+  console.log('✓ User logged in:', loggedInUser.getUid());
+  
+  // 3. Check conversation exists
+  const uid = 'TARGET_USER_UID';
+  try {
+    const user = await CometChat.getUser(uid);
+    console.log('✓ Target user exists:', user.getName());
+  } catch (error) {
+    console.error('❌ Target user not found:', uid);
+  }
+  
+  // 4. Try fetching messages directly
+  try {
+    const messagesRequest = new CometChat.MessagesRequestBuilder()
+      .setUID(uid)
+      .setLimit(10)
+      .build();
+    
+    const messages = await messagesRequest.fetchPrevious();
+    console.log('✓ Messages fetched:', messages.length);
+    console.log('Messages:', messages);
+  } catch (error) {
+    console.error('❌ Failed to fetch messages:', error);
+  }
+  
+  console.groupEnd();
+}
+```
+
+
+**Scenario 2: Real-time updates not working**
+```typescript expandable
+// Debug real-time connection
+async function debugRealTimeUpdates(): Promise<void> {
+  console.group('Debug: Real-time Updates');
+  
+  // Check WebSocket status
+  const status = CometChat.getConnectionStatus();
+  console.log('Connection status:', status);
+  
+  if (status !== 'connected') {
+    console.error('❌ WebSocket not connected');
+    console.log('Attempting to reconnect...');
+    
+    try {
+      await CometChat.connect();
+      console.log('✓ Reconnected successfully');
+    } catch (error) {
+      console.error('❌ Reconnection failed:', error);
+    }
+  } else {
+    console.log('✓ WebSocket connected');
+  }
+  
+  // Add a test message listener
+  const listenerID = 'debug-listener-' + Date.now();
+  CometChat.addMessageListener(
+    listenerID,
+    new CometChat.MessageListener({
+      onTextMessageReceived: (message) => {
+        console.log('✓ Real-time message received:', message);
+      }
+    })
+  );
+  
+  console.log('Test listener added. Send a message to verify real-time updates.');
+  console.log('Remove listener with: CometChat.removeMessageListener("' + listenerID + '")');
+  
+  console.groupEnd();
+}
+```
+
+
+---
+
+##### Support Resources
+
+If you need additional help, the following resources are available.
+
+###### Official Documentation
+
+| Resource | URL | Description |
+|----------|-----|-------------|
+| **CometChat Docs** | [cometchat.com/docs](https://www.cometchat.com/docs) | Official documentation hub |
+| **Angular UIKit Guide** | [cometchat.com/docs/angular-uikit](https://www.cometchat.com/docs/angular-uikit) | Angular-specific documentation |
+| **API Reference** | [cometchat.com/docs/javascript-chat-sdk](https://www.cometchat.com/docs/javascript-chat-sdk) | JavaScript SDK reference |
+| **Release Notes** | [cometchat.com/docs/changelog](https://www.cometchat.com/docs/changelog) | Latest updates and changes |
+
+###### GitHub Resources
+
+| Resource | URL | Description |
+|----------|-----|-------------|
+| **Angular UIKit Repo** | [github.com/cometchat/cometchat-uikit-angular](https://github.com/cometchat/cometchat-uikit-angular) | Source code and issues |
+| **Sample Apps** | [github.com/cometchat/cometchat-sample-app-angular](https://github.com/cometchat/cometchat-sample-app-angular) | Example implementations |
+| **Report Issues** | [GitHub Issues](https://github.com/cometchat/cometchat-uikit-angular/issues) | Bug reports and feature requests |
+
+###### Community and Support
+
+| Channel | Access | Best For |
+|---------|--------|----------|
+| **CometChat Dashboard** | [app.cometchat.com](https://app.cometchat.com) | App management, API keys, analytics |
+| **Support Portal** | [help.cometchat.com](https://help.cometchat.com) | Ticket-based support |
+| **Discord Community** | [CometChat Discord](https://discord.cometchat.com) | Community discussions |
+| **Stack Overflow** | [Tag: cometchat](https://stackoverflow.com/questions/tagged/cometchat) | Q&A with community |
+
+
+###### When to Contact Support
+
+Contact CometChat support when you encounter:
+
+- **Server-side errors** (5xx status codes)
+- **Account or billing issues**
+- **Feature requests** for the SDK or UIKit
+- **Security concerns** or vulnerabilities
+- **Performance issues** on CometChat infrastructure
+- **Issues not resolved** by documentation or community
+
+**Before contacting support, prepare:**
+1. Your App ID and region
+2. SDK and UIKit version numbers
+3. Steps to reproduce the issue
+4. Error messages and stack traces
+5. Browser/device information
+6. Code snippets (sanitized of sensitive data)
+
+```typescript expandable
+// Get version information for support tickets
+function getVersionInfo(): void {
+  console.log('CometChat Debug Info for Support:');
+  console.log('================================');
+  console.log('SDK Version:', CometChat.getVersion?.() || 'Check package.json');
+  console.log('UIKit Version:', 'Check @cometchat/chat-uikit-angular in package.json');
+  console.log('Angular Version:', VERSION.full);  // Import from @angular/core
+  console.log('Browser:', navigator.userAgent);
+  console.log('Initialized:', CometChat.isInitialized());
+  console.log('Connection:', CometChat.getConnectionStatus());
+}
+```
+
+
+---
+
+##### Frequently Asked Questions (FAQ)
+
+###### General Questions
+
+<Accordion title="How do I display messages for a specific user?">
+Pass a `CometChat.User` object to the `user` input:
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list [user]="chatUser"></cometchat-message-list>
+  `
+})
+export class ChatComponent implements OnInit {
+  chatUser?: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    this.chatUser = await CometChat.getUser('USER_UID');
+  }
+}
+```
+</Accordion>
+
+<Accordion title="How do I display messages for a group?">
+Pass a `CometChat.Group` object to the `group` input:
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list [group]="chatGroup"></cometchat-message-list>
+  `
+})
+export class GroupChatComponent implements OnInit {
+  chatGroup?: CometChat.Group;
+
+  async ngOnInit(): Promise<void> {
+    this.chatGroup = await CometChat.getGroup('GROUP_GUID');
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Can I use both user and group inputs at the same time?">
+No, you should provide either `user` OR `group`, not both. If both are provided, `user` takes precedence. The component is designed for one conversation at a time.
+</Accordion>
+
+<Accordion title="How do I refresh the message list?">
+Use the `refreshMessages()` method on the component instance:
+
+```typescript
+@ViewChild('messageList') messageList!: CometChatMessageListComponent;
+
+refreshChat(): void {
+  this.messageList.refreshMessages();
+}
+```
+</Accordion>
+
+
+###### Customization Questions
+
+<Accordion title="How do I customize the appearance of message bubbles?">
+You have several options:
+
+1. **CSS Variables**: Override CSS variables in your global styles
+2. **Custom Templates**: Use the `templates` input for complete control
+3. **MessageBubbleConfigService**: Set global customizations via the service
+
+```typescript expandable
+// Option 1: CSS Variables (in styles.css)
+:root {
+  --cometchat-primary-color: #6366f1;
+}
+
+// Option 2: Custom Templates
+@Component({
+  template: `
+    <cometchat-message-list [templates]="customTemplates"></cometchat-message-list>
+    
+    <ng-template #customContent let-context>
+      <div class="my-custom-bubble">{{ context.message.getText() }}</div>
+    </ng-template>
+  `
+})
+export class CustomBubbleComponent implements AfterViewInit {
+  @ViewChild('customContent') customContent!: TemplateRef<any>;
+  customTemplates: any[] = [];
+
+  ngAfterViewInit(): void {
+    this.customTemplates = [{
+      type: 'text',
+      category: 'message',
+      contentView: () => this.customContent
+    }];
+  }
+}
+```
+</Accordion>
+
+<Accordion title="How do I hide specific message options (edit, delete, etc.)?">
+Use the `hide*` input properties:
+
+```html
+<cometchat-message-list
+  [user]="user"
+  [hideEditMessageOption]="true"
+  [hideDeleteMessageOption]="true"
+  [hideReplyInThreadOption]="true"
+  [hideReactionOption]="true"
+></cometchat-message-list>
+```
+</Accordion>
+
+<Accordion title="How do I implement dark mode?">
+Set the `data-theme` attribute on the document element:
+
+```typescript expandable
+// Enable dark mode
+document.documentElement.setAttribute('data-theme', 'dark');
+
+// Disable dark mode (light mode)
+document.documentElement.removeAttribute('data-theme');
+
+// Toggle based on system preference
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+if (prefersDark) {
+  document.documentElement.setAttribute('data-theme', 'dark');
+}
+```
+</Accordion>
+
+<Accordion title="How do I add custom text formatting (hashtags, mentions)?">
+Create a custom text formatter and pass it to the `textFormatters` input:
+
+```typescript expandable
+class HashtagFormatter extends CometChatTextFormatter {
+  readonly id = 'hashtag';
+  priority = 25;
+
+  getRegex(): RegExp {
+    return /#(\w+)/g;
+  }
+
+  format(text: string): string {
+    return text.replace(this.getRegex(), '<span class="hashtag">#$1</span>');
+  }
+}
+
+// Usage
+<cometchat-message-list [textFormatters]="[new HashtagFormatter()]"></cometchat-message-list>
+```
+</Accordion>
+
+
+###### Feature Questions
+
+<Accordion title="How do I implement thread view?">
+Listen to the `threadRepliesClick` event and display a separate message list with `parentMessageId`:
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-message-list
+      [user]="user"
+      (threadRepliesClick)="openThread($event)"
+    ></cometchat-message-list>
+    
+    @if (threadMessage) {
+      <cometchat-message-list
+        [user]="user"
+        [parentMessageId]="threadMessage.getId()"
+      ></cometchat-message-list>
+    }
+  `
+})
+export class ThreadComponent {
+  threadMessage?: CometChat.BaseMessage;
+
+  openThread(message: CometChat.BaseMessage): void {
+    this.threadMessage = message;
+  }
+}
+```
+</Accordion>
+
+<Accordion title="How do I enable smart replies and conversation starters?">
+Set the `showSmartReplies` and `showConversationStarters` inputs to `true`:
+
+```html
+<cometchat-message-list
+  [user]="user"
+  [showSmartReplies]="true"
+  [showConversationStarters]="true"
+  [smartRepliesKeywords]="['what', 'when', 'how', '?']"
+  [smartRepliesDelayDuration]="5000"
+  (smartReplyClick)="onSmartReply($event)"
+  (conversationStarterClick)="onStarter($event)"
+></cometchat-message-list>
+```
+
+Note: AI Smart Chat Features require the CometChat AI extension to be enabled in your dashboard.
+</Accordion>
+
+<Accordion title="How do I scroll to a specific message?">
+Use the `goToMessageId` input or the `scrollToMessage()` method:
+
+```typescript
+// Option 1: Input property
+<cometchat-message-list [goToMessageId]="'12345'"></cometchat-message-list>
+
+// Option 2: Method call
+@ViewChild('messageList') messageList!: CometChatMessageListComponent;
+
+goToMessage(messageId: number): void {
+  this.messageList.scrollToMessage(messageId);
+}
+```
+</Accordion>
+
+<Accordion title="How do I handle message translation?">
+The component has built-in translation support. Use the `hideTranslateMessageOption` input to show/hide the option, and the component handles the rest:
+
+```html
+<cometchat-message-list
+  [user]="user"
+  [hideTranslateMessageOption]="false"
+></cometchat-message-list>
+```
+
+To set the preferred translation language programmatically:
+```typescript
+this.messageList.setPreferredTranslationLanguage('es'); // Spanish
+```
+</Accordion>
+
+
+###### Troubleshooting Questions
+
+<Accordion title="Why are messages not loading?">
+Check the following:
+
+1. **CometChat initialized**: Call `CometChatUIKit.init()` before using components
+2. **User logged in**: Call `CometChatUIKit.login()` after initialization
+3. **Valid user/group**: Ensure the `user` or `group` input is a valid CometChat object
+4. **Network connectivity**: Check internet connection
+5. **Console errors**: Look for error messages in browser console
+
+```typescript
+// Debug checklist
+console.log('Initialized:', CometChat.isInitialized());
+console.log('Logged in:', await CometChatUIKit.getLoggedinUser());
+console.log('User input:', this.user);
+```
+</Accordion>
+
+<Accordion title="Why are real-time updates not working?">
+Ensure WebSocket connection is established:
+
+1. Set `autoEstablishSocketConnection(true)` in app settings
+2. Check connection status: `CometChat.getConnectionStatus()` should return `'connected'`
+3. Verify the component is still mounted when expecting updates
+
+```typescript
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId('YOUR_APP_ID')
+  .setRegion('YOUR_REGION')
+  .setAuthKey('YOUR_AUTH_KEY')
+  .subscribePresenceForAllUsers()
+  .build();
+
+await CometChatUIKit.init(UIKitSettings); // Required for real-time
+```
+</Accordion>
+
+<Accordion title="How do I fix scroll jumping issues?">
+Scroll jumping usually occurs when images load without predefined dimensions:
+
+1. Set fixed dimensions on images
+2. Use `aspect-ratio` CSS property
+3. Implement placeholder loading states
+
+```css
+.message-image {
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+```
+</Accordion>
+
+<Accordion title="How do I improve performance with large message histories?">
+1. Reduce page size: `setLimit(20)` instead of default 30
+2. Use `OnPush` change detection strategy
+3. Implement lazy loading for media
+4. Clean up subscriptions in `ngOnDestroy`
+5. Avoid expensive computations in templates
+
+```typescript
+const optimizedBuilder = new CometChat.MessagesRequestBuilder()
+  .setLimit(20)
+  .hideReplies(true);
+```
+</Accordion>
+
+<Tip>
+If your question isn't answered here, check the [CometChat documentation](https://www.cometchat.com/docs) or reach out through the [support channels](#support-resources) listed above.
+</Tip>
+
+
+#### CometChatMessageComposer
+
+##### Common Issues
+
+**1. Messages not sending**
+
+Ensure you have a valid user or group set:
+
+```typescript
+// ✅ Correct - fetch user from SDK
+CometChat.getUser('user-id').then(user => {
+  this.selectedUser = user;
+});
+
+// ❌ Incorrect - plain object won't work
+this.selectedUser = { uid: 'user-id', name: 'John' };
+```
+
+**2. Typing indicators not working**
+
+Make sure the CometChat SDK is properly initialized and typing events are not disabled:
+
+```typescript
+// Check that disableTypingEvents is false (default)
+[disableTypingEvents]="false"
+```
+
+**3. Attachments not uploading**
+
+Verify file validation settings:
+
+```typescript
+// Check file size limit (in bytes)
+[maxFileSize]="10485760"  // 10MB
+
+// Check allowed file types
+[allowedFileTypes]="['image/*', 'application/pdf']"
+```
+
+**4. Rich text toolbar not showing**
+
+Ensure rich text is enabled and toolbar is not hidden:
+
+```typescript
+[enableRichText]="true"
+[hideRichTextToolbar]="false"
+```
+
+
+**5. Mentions not appearing**
+
+Check that mentions are enabled and you're in a group conversation for @all:
+
+```typescript
+[disableMentions]="false"
+[disableMentionAll]="false"  // Only works in group conversations
+```
+
+**6. Enter key not sending message**
+
+Verify the `enterKeyBehavior` setting:
+
+```typescript
+// Send on Enter (default)
+[enterKeyBehavior]="EnterKeyBehavior.SendMessage"
+
+// New line on Enter
+[enterKeyBehavior]="EnterKeyBehavior.NewLine"
+```
+
+##### Performance Tips
+
+1. **Use OnPush Change Detection**: The component uses `ChangeDetectionStrategy.OnPush` for optimal performance
+2. **Avoid Frequent Input Changes**: Minimize unnecessary changes to `user` or `group` inputs
+3. **Clean Up on Destroy**: The component automatically cleans up listeners and timeouts on destroy
+4. **Lazy Load Rich Text**: Only enable `enableRichText` when needed
+
+
+### Message Bubbles
+
+#### CometChatTextBubble
+
+##### Link Previews Not Showing
+
+**Problem:** Link preview cards are not displayed even though URLs are in the message.
+
+**Solution:** Link previews require metadata in a specific format. Ensure your message metadata follows this structure:
+
+```typescript expandable
+{
+  "@injected": {
+    "extensions": {
+      "link-preview": {
+        "links": [
+          {
+            "url": "https://example.com",
+            "title": "Example Title",
+            "description": "Example description",
+            "image": "https://example.com/image.jpg",
+            "favicon": "https://example.com/favicon.ico"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+Link preview metadata is typically added by server-side extensions or CometChat's link preview extension.
+
+##### Translation Not Displaying
+
+**Problem:** Translated text is not showing even though translation metadata exists.
+
+**Solution:** Ensure the translation metadata is at the correct path:
+
+```typescript
+{
+  "translated_message": "Your translated text here"
+}
+```
+
+The key must be exactly `"translated_message"` at the root level of the metadata object.
+
+##### Mentions Not Formatting
+
+**Problem:** @mentions appear as plain text without styling or interactivity.
+
+**Solution:** Ensure:
+1. The message has mentioned users: `message.getMentionedUsers()` returns an array
+2. The mentioned users array contains valid CometChat.User objects
+3. The text contains the mention syntax (e.g., `@username`)
+
+The CometChatMentionsFormatter requires both the text pattern and the mentioned users list to format mentions correctly.
+
+##### Read More Button Not Appearing
+
+**Problem:** Long messages don't show the read more button.
+
+**Solution:** The read more button only appears when content height exceeds 80 pixels (approximately 4 lines). Check:
+1. The message text is actually long enough
+2. The component has finished rendering (ngAfterViewInit has been called)
+3. CSS is not overriding the height measurement
+
+##### Custom Formatters Not Working
+
+**Problem:** Custom text formatters are not being applied.
+
+**Solution:** Ensure your custom formatter:
+1. Implements the `CometChatTextFormatter` interface
+2. Returns a string from the `format()` method
+3. Is included in the `textFormatters` array input
+4. Doesn't throw exceptions (check console for errors)
+
+Example:
+```typescript expandable
+class MyFormatter implements CometChatTextFormatter {
+  format(text: string): string {
+    return text.replace(/pattern/g, 'replacement');
+  }
+  
+  getKeyboardKey(): string {
+    return '';
+  }
+  
+  getCharacterLimit(): number {
+    return 0;
+  }
+}
+```
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component's appearance.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the `cometchat-text-bubble` selector or a parent element
+2. Variable names match exactly (including the `--cometchat-` prefix)
+3. ViewEncapsulation is not preventing style inheritance
+4. CSS specificity is sufficient (use `::ng-deep` for deep styling if needed)
+
+#### CometChatImageBubble
+
+##### Images Not Displaying
+
+**Problem:** Images are not showing even though the message has attachments.
+
+**Solution:** Ensure your message attachments have valid URLs:
+
+```typescript
+// Check attachment structure
+const attachments = message.getAttachments();
+console.log('Attachments:', attachments);
+
+// Each attachment should have:
+// - url: string (required)
+// - thumbnail: string (optional)
+// - metadata: { width, height, size, mimeType } (optional)
+```
+
+Verify that:
+1. `message.getAttachments()` returns an array
+2. Each attachment has a `url` property
+3. URLs are accessible and not blocked by CORS
+
+##### Gallery Viewer Not Opening
+
+**Problem:** Clicking images doesn't open the fullscreen gallery viewer.
+
+**Solution:** Check that:
+1. The `imageClick` event is being emitted
+2. No JavaScript errors in console
+3. The gallery viewer component is properly imported
+4. CSS for the gallery viewer is loaded
+
+##### Overflow Indicator Not Showing
+
+**Problem:** Messages with >4 images don't show the "+N more" indicator.
+
+**Solution:** Verify:
+1. The message actually has more than 4 attachments
+2. Localization key `image_bubble_overflow_more` exists in language files
+3. CSS for overflow overlay is not being overridden
+
+##### Caption Not Rendering
+
+**Problem:** Caption text is not displayed below images.
+
+**Solution:** Ensure caption text exists in the message:
+
+```typescript
+// Caption can be in two places:
+const captionFromText = message.getText();
+const captionFromData = message.getData()?.text;
+
+console.log('Caption from getText():', captionFromText);
+console.log('Caption from getData():', captionFromData);
+```
+
+The component checks both locations. If neither has text, no caption is rendered.
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component's appearance.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the `cometchat-image-bubble` selector or a parent element
+2. Variable names match exactly (including the `--cometchat-` prefix)
+3. CSS specificity is sufficient (use `::ng-deep` for deep styling if needed)
+
+```css
+/* Correct approach */
+cometchat-image-bubble {
+  --cometchat-spacing-1: 8px;
+}
+
+/* For deep styling */
+::ng-deep .cometchat-image-bubble__image {
+  border: 2px solid red;
+}
+```
+
+#### CometChatVideoBubble
+
+##### Video Thumbnails Not Displaying
+
+**Problem:** Video thumbnails are not showing even though the message has video attachments.
+
+**Solution:** Ensure your message attachments have valid thumbnail URLs:
+
+```typescript
+// Check attachment structure
+const attachments = message.getAttachments();
+console.log('Attachments:', attachments);
+
+// Each video attachment should have:
+// - url: string (required - video URL)
+// - thumbnail: string (optional but recommended - thumbnail image URL)
+// - metadata: { width, height, duration, size, mimeType } (optional)
+```
+
+Verify that:
+1. `message.getAttachments()` returns an array
+2. Each attachment has a `url` property for the video
+3. Each attachment has a `thumbnail` property for the preview image
+4. URLs are accessible and not blocked by CORS
+
+##### Video Player Not Opening
+
+**Problem:** Clicking video thumbnails doesn't open the fullscreen video player.
+
+**Solution:** Check that:
+1. The `videoClick` event is being emitted
+2. No JavaScript errors in console
+3. The video player component is properly imported
+4. CSS for the video player is loaded
+5. Video URL is valid and accessible
+
+##### Duration Badge Not Showing
+
+**Problem:** Duration badge is not displayed on video thumbnails.
+
+**Solution:** Verify:
+1. The attachment has a `duration` property in metadata
+2. Duration is a valid number (in seconds)
+3. CSS for duration badge is not being overridden
+
+```typescript
+// Check duration in attachment
+const attachment = message.getAttachments()[0];
+console.log('Duration:', attachment.metadata?.duration);
+```
+
+##### Play Button Not Visible
+
+**Problem:** Play button overlay is not visible on video thumbnails.
+
+**Solution:** Ensure:
+1. CSS for play button overlay is loaded
+2. Play button icon asset is accessible
+3. CSS variables for play button colors are defined
+4. No CSS conflicts overriding the play button styles
+
+##### Video Not Playing in Player
+
+**Problem:** Video player opens but video doesn't play.
+
+**Solution:** Check:
+1. Video URL is valid and accessible
+2. Video format is supported by HTML5 video element
+3. No CORS issues blocking video playback
+4. Browser supports the video codec
+
+```typescript
+// Supported video formats:
+// - MP4 (H.264 codec)
+// - WebM (VP8/VP9 codec)
+// - Ogg (Theora codec)
+```
+
+##### Caption Not Rendering
+
+**Problem:** Caption text is not displayed below videos.
+
+**Solution:** Ensure caption text exists in the message:
+
+```typescript
+// Caption can be in two places:
+const captionFromText = message.getText();
+const captionFromData = message.getData()?.text;
+
+console.log('Caption from getText():', captionFromText);
+console.log('Caption from getData():', captionFromData);
+```
+
+The component checks both locations. If neither has text, no caption is rendered.
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component's appearance.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the `cometchat-video-bubble` selector or a parent element
+2. Variable names match exactly (including the `--cometchat-` prefix)
+3. CSS specificity is sufficient (use `::ng-deep` for deep styling if needed)
+
+```css expandable
+/* Correct approach */
+cometchat-video-bubble {
+  --cometchat-spacing-1: 8px;
+  --cometchat-primary-color: #4CAF50;
+}
+
+/* For deep styling */
+::ng-deep .cometchat-video-bubble__play-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+```
+
+#### CometChatAudioBubble
+
+##### Audio Not Playing
+
+**Problem:** Clicking the play button doesn't start audio playback.
+
+**Solution:** Check that:
+1. The audio URL is valid and accessible
+2. No CORS issues blocking audio loading
+3. WaveSurfer has finished loading (check loading state)
+4. No JavaScript errors in console
+
+```typescript
+// Debug audio loading
+const attachments = message.getAttachments();
+console.log('Audio URL:', attachments[0]?.url);
+```
+
+##### Waveform Not Displaying
+
+**Problem:** The waveform visualization is not showing.
+
+**Solution:** Verify:
+1. The audio file is accessible and not blocked by CORS
+2. The audio format is supported (MP3, WAV, OGG, etc.)
+3. WaveSurfer container element exists in the DOM
+4. No CSS hiding the waveform container
+
+##### Download Not Working
+
+**Problem:** Clicking the download button doesn't download the file.
+
+**Solution:** Check that:
+1. Audio URL is valid and accessible
+2. No CORS issues blocking the fetch request
+3. Browser allows downloads from the domain
+4. Sufficient disk space for the download
+
+```typescript
+// Test URL accessibility
+const url = message.getAttachments()[0].url;
+console.log('Audio URL:', url);
+// Try opening URL in new tab to test accessibility
+```
+
+##### Expand Indicator Not Showing
+
+**Problem:** The +N indicator is not displayed for multiple audios.
+
+**Solution:** Verify:
+1. The message actually has more than 1 attachment
+2. Attachments array length is greater than 1
+3. CSS for expand indicator is loaded
+4. No JavaScript errors in console
+
+```typescript
+// Debug attachment count
+console.log('Attachment count:', message.getAttachments()?.length);
+```
+
+##### Caption Not Rendering
+
+**Problem:** Caption text is not displayed below audios.
+
+**Solution:** Ensure caption text exists in the message:
+
+```typescript
+// Caption should be in message text
+const caption = message.getText();
+console.log('Caption:', caption);
+
+// If getText() returns empty or null, no caption is rendered
+```
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component's appearance.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the `cometchat-audio-bubble` selector or a parent element
+2. Variable names match exactly (including the `--cometchat-` prefix)
+3. CSS specificity is sufficient (use `::ng-deep` for deep styling if needed)
+
+```css
+/* Correct approach */
+cometchat-audio-bubble {
+  --cometchat-spacing-3: 16px;
+}
+
+/* For deep styling */
+::ng-deep .cometchat-audio-bubble__waveform {
+  border: 2px solid red;
+}
+```
+
+##### Single Audio Player Not Working
+
+**Problem:** Multiple audios play simultaneously instead of one at a time.
+
+**Solution:** This is handled automatically by the component. If multiple audios play:
+1. Check that all audio bubbles are using the same component version
+2. Verify no custom play logic is bypassing the single player policy
+3. Check for JavaScript errors in console
+
+#### CometChatFileBubble
+
+##### Files Not Displaying
+
+**Problem:** Files are not showing even though the message has attachments.
+
+**Solution:** Ensure your message attachments have valid data:
+
+```typescript expandable
+// Check attachment structure
+const attachments = message.getAttachments();
+console.log('Attachments:', attachments);
+
+// Each attachment should have:
+// - name: string (required)
+// - url: string (required)
+// - mimeType: string (optional)
+// - extension: string (optional)
+// - size: number (optional)
+```
+
+Verify that:
+1. `message.getAttachments()` returns an array
+2. Each attachment has a `name` property
+3. Each attachment has a `url` property
+4. URLs are accessible and not blocked by CORS
+
+##### File Icons Not Showing
+
+**Problem:** File type icons are not displaying.
+
+**Solution:** Check that:
+1. Icon assets exist in the `assets/` directory
+2. Icon paths in `FILE_TYPE_ICONS` mapping are correct
+3. No 404 errors in browser console for icon files
+4. CSS for icon display is not being overridden
+
+##### Expand Indicator Not Showing
+
+**Problem:** The +N indicator is not displayed for multiple files.
+
+**Solution:** Verify:
+1. The message actually has more than 1 attachment
+2. Attachments array length is greater than 1
+3. CSS for expand indicator is loaded
+4. No JavaScript errors in console
+
+```typescript
+// Debug attachment count
+console.log('Attachment count:', message.getAttachments()?.length);
+```
+
+##### Expand/Collapse Not Working
+
+**Problem:** Clicking the expand indicator or collapse button doesn't work.
+
+**Solution:** Check that:
+1. No JavaScript errors in console
+2. Click event handlers are properly bound
+3. Component change detection is working (OnPush strategy)
+4. No CSS preventing clicks (z-index, pointer-events)
+
+##### File Size Showing "Size unknown"
+
+**Problem:** File size displays as "Size unknown" instead of actual size.
+
+**Solution:** Ensure attachment has size property:
+
+```typescript
+// Check size in attachment
+const attachment = message.getAttachments()[0];
+console.log('File size:', attachment.size);
+
+// Size should be a number in bytes
+// If missing, the component will display "Size unknown"
+```
+
+##### Caption Not Rendering
+
+**Problem:** Caption text is not displayed below files.
+
+**Solution:** Ensure caption text exists in the message:
+
+```typescript
+// Caption should be in message text
+const caption = message.getText();
+console.log('Caption:', caption);
+
+// If getText() returns empty or null, no caption is rendered
+```
+
+##### Download Links Not Working
+
+**Problem:** Clicking download links doesn't download the file.
+
+**Solution:** Verify:
+1. Attachment URL is valid and accessible
+2. No CORS issues blocking downloads
+3. Browser allows downloads from the domain
+4. URL points to actual file, not a redirect
+
+```typescript
+// Test URL accessibility
+const url = message.getAttachments()[0].url;
+console.log('File URL:', url);
+// Try opening URL in new tab to test accessibility
+```
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component's appearance.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the `cometchat-file-bubble` selector or a parent element
+2. Variable names match exactly (including the `--cometchat-` prefix)
+3. CSS specificity is sufficient (use `::ng-deep` for deep styling if needed)
+
+```css
+/* Correct approach */
+cometchat-file-bubble {
+  --cometchat-spacing-3: 16px;
+}
+
+/* For deep styling */
+::ng-deep .cometchat-file-bubble__file-item {
+  border: 2px solid red;
+}
+```
+
+##### Focus Not Preserved on Expand
+
+**Problem:** Focus is lost when expanding the file list.
+
+**Solution:** This is handled automatically by the component. If focus is not preserved:
+1. Check that the collapse button element exists in the DOM
+2. Verify no JavaScript errors in console
+3. Ensure ViewChild reference is working correctly
+
+#### CometChatCollaborativeDocumentBubble
+
+##### Document URL Not Extracted
+
+**Problem:** The action button is disabled even though the message has document data.
+
+**Solution:** Verify the metadata structure:
+
+```typescript expandable
+// Check metadata structure
+const metadata = message.getMetadata();
+console.log('Metadata:', metadata);
+
+// Expected structure:
+// {
+//   "@injected": {
+//     "extensions": {
+//       "document": {
+//         "document_url": "https://..."
+//       }
+//     }
+//   }
+// }
+```
+
+##### Banner Image Not Displaying
+
+**Problem:** The banner image is not showing.
+
+**Solution:** Check that:
+1. Banner image assets exist in the `assets/` directory
+2. Asset paths are correct (`Collaborative_Document_Light.png`, `Collaborative_Document_Dark.png`)
+3. No 404 errors in browser console
+
+##### Button Not Responding
+
+**Problem:** Clicking the button doesn't open the document.
+
+**Solution:** Verify:
+1. Document URL is valid and accessible
+2. No popup blocker preventing window.open
+3. No JavaScript errors in console
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the component selector or parent element
+2. Variable names match exactly (including `--cometchat-` prefix)
+3. Use `::ng-deep` for deep styling if needed
+
+#### CometChatCollaborativeWhiteboardBubble
+
+##### Whiteboard URL Not Extracted
+
+**Problem:** The action button is disabled even though the message has whiteboard data.
+
+**Solution:** Verify the metadata structure:
+
+```typescript expandable
+// Check metadata structure
+const metadata = message.getMetadata();
+console.log('Metadata:', metadata);
+
+// Expected structure:
+// {
+//   "@injected": {
+//     "extensions": {
+//       "whiteboard": {
+//         "board_url": "https://..."
+//       }
+//     }
+//   }
+// }
+```
+
+##### Banner Image Not Displaying
+
+**Problem:** The banner image is not showing.
+
+**Solution:** Check that:
+1. Banner image assets exist in the `assets/` directory
+2. Asset paths are correct (`Collaborative_Whiteboard_Light.png`, `Collaborative_Whiteboard_Dark.png`)
+3. No 404 errors in browser console
+
+##### Button Not Responding
+
+**Problem:** Clicking the button doesn't open the whiteboard.
+
+**Solution:** Verify:
+1. Whiteboard URL is valid and accessible
+2. No popup blocker preventing window.open
+3. No JavaScript errors in console
+
+##### Styling Not Applying
+
+**Problem:** Custom CSS variables are not affecting the component.
+
+**Solution:** Ensure:
+1. CSS variables are defined on the component selector or parent element
+2. Variable names match exactly (including `--cometchat-` prefix)
+3. Use `::ng-deep` for deep styling if needed
+
+
+### Calls
+
+#### CometChatCallLogs
+
+##### Call Logs Not Loading
+
+**Problem**: The call logs list is empty or stuck in loading state.
+
+**Solutions**:
+1. Verify CometChat SDK is initialized and the user is logged in
+2. Verify `CometChatUIKitCalls` is initialized — call logs require the Calls SDK, not just the core Chat SDK
+3. Check network connectivity
+4. Verify API credentials are correct
+5. Check browser console for error messages
+
+```typescript
+// Verify SDK initialization
+CometChatUIKit.getLoggedinUser().then(
+  user => console.log('User logged in:', user),
+  error => console.error('User not logged in:', error)
+);
+
+// Verify Calls SDK is available
+console.log('CometChatUIKitCalls available:', !!CometChatUIKitCalls);
+```
+
+##### Call Initiation Failing
+
+**Problem**: Clicking the call button does not start a call or throws an error.
+
+**Solutions**:
+1. Ensure `CometChatUIKitCalls` is properly initialized before using the component
+2. Verify the logged-in user has permission to initiate calls
+3. Check that the other party's UID is valid
+4. If using `callButtonClicked` handler, ensure your custom logic handles errors
+
+```typescript
+// Verify CometChatUIKitCalls initialization
+try {
+  const builder = new CometChatUIKitCalls.CallLogRequestBuilder();
+  console.log('Calls SDK initialized successfully');
+} catch (error) {
+  console.error('Calls SDK not initialized:', error);
+}
+```
+
+##### CometChatUIKitCalls Not Initialized
+
+**Problem**: Error message indicating `CometChatUIKitCalls` is not available.
+
+**Solutions**:
+1. Ensure the `@cometchat/calls-sdk-javascript` package is installed
+2. Initialize the Calls SDK before rendering the component:
+
+```typescript expandable
+import { CometChatUIKitCalls } from '@cometchat/chat-uikit-angular';
+
+// Initialize in your app bootstrap or auth flow
+const callAppSetting = new CometChatUIKitCalls.CallAppSettingBuilder()
+  .setAppId(APP_ID)
+  .setRegion(REGION)
+  .build();
+
+CometChatUIKitCalls.init(callAppSetting).then(
+  () => console.log('CometChatUIKitCalls initialized'),
+  (error) => console.error('CometChatUIKitCalls init failed:', error)
+);
+```
+
+##### Outgoing Call Overlay Not Showing
+
+**Problem**: After clicking the call button, no outgoing call screen appears.
+
+**Solutions**:
+1. If you have bound `(callButtonClicked)`, the component emits the event instead of auto-initiating. Remove the binding to use auto-initiation, or implement call initiation in your handler
+2. Check that the component's container has sufficient height — the overlay is absolutely positioned within the component
+3. Verify no CSS `overflow: hidden` on parent elements is clipping the overlay

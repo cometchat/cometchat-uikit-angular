@@ -1,0 +1,276 @@
+import { Meta } from 'storybook/blocks';
+
+<Meta title="Documentation/Localization" />
+
+# Localization (i18n)
+
+CometChat Angular UIKit ships with built-in support for 19 languages. All text rendered by UIKit
+components is driven by `CometChatLocalize` — a zero-dependency static service that handles
+translation lookup, runtime language switching, and date/time formatting.
+
+## Supported Locales
+
+| BCP-47 Code | Language |
+|-------------|----------|
+| `en-US` | English (United States) |
+| `en-GB` | English (United Kingdom) |
+| `de` | Deutsch (German) |
+| `es` | Español (Spanish) |
+| `fr` | Français (French) |
+| `hi` | हिन्दी (Hindi) |
+| `hu` | Magyar (Hungarian) |
+| `it` | Italiano (Italian) |
+| `ja` | 日本語 (Japanese) |
+| `ko` | 한국어 (Korean) |
+| `lt` | Lietuvių (Lithuanian) |
+| `ms` | Bahasa Melayu (Malay) |
+| `nl` | Nederlands (Dutch) |
+| `pt` | Português (Portuguese) |
+| `ru` | Русский (Russian) |
+| `sv` | Svenska (Swedish) |
+| `tr` | Türkçe (Turkish) |
+| `zh` | 中文 (Chinese Simplified) |
+| `zh-TW` | 繁體中文 (Chinese Traditional) |
+
+## Using the Locale Toolbar in Storybook
+
+The Storybook toolbar includes a globe icon for switching locales:
+
+1. Click the **globe icon** in the top toolbar
+2. Select any of the 19 supported locales
+3. All UIKit component text updates immediately
+
+The selected locale persists across page reloads via Storybook globals.
+
+## CometChatLocalize API
+
+### Setting the Active Language
+
+```typescript
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+// Switch to French
+CometChatLocalize.setCurrentLanguage('fr');
+
+// Switch to Japanese
+CometChatLocalize.setCurrentLanguage('ja');
+
+// Switch to Chinese Traditional
+CometChatLocalize.setCurrentLanguage('zh-TW');
+```
+
+### Getting the Current Language
+
+```typescript
+const lang = CometChatLocalize.getCurrentLanguage();
+// Returns: 'en-US' (default)
+```
+
+### Getting a Translated String
+
+```typescript
+const title = CometChatLocalize.getLocalizedString('conversation_chat_title');
+// Returns: "Conversations" in English, "Conversations" in French, etc.
+```
+
+### Listing Available Languages
+
+```typescript
+const langs = CometChatLocalize.getAvailableLanguages();
+// Returns: ['en-US', 'en-GB', 'de', 'es', 'fr', 'hi', 'hu', 'it',
+//           'ja', 'ko', 'lt', 'ms', 'nl', 'pt', 'ru', 'sv', 'tr', 'zh', 'zh-TW']
+```
+
+### Checking Language Availability
+
+```typescript
+const supported = CometChatLocalize.isLanguageAvailable('fr');
+// Returns: true
+
+const unsupported = CometChatLocalize.isLanguageAvailable('ar');
+// Returns: false
+```
+
+## Using the Translate Pipe
+
+The `translate` pipe is the recommended way to localize text in templates. It is `pure: false`
+so it re-evaluates automatically after every `setCurrentLanguage` call.
+
+```html
+<!-- Simple translation -->
+<h2>{{ 'conversation_chat_title' | translate }}</h2>
+
+<!-- Button text -->
+<button>{{ 'conversation_delete' | translate }}</button>
+
+<!-- Placeholder attribute -->
+<input [placeholder]="'conversation_search_placeholder' | translate" />
+```
+
+### Programmatic Translation (TypeScript only)
+
+Use `getLocalizedString` only when you need the value in TypeScript logic, not in templates:
+
+```typescript
+const msg = CometChatLocalize.getLocalizedString('conversation_subtitle_typing');
+```
+
+## Dynamic Language Switching
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-language-selector',
+  template: `
+    <select (change)="changeLanguage($event)">
+      <option value="en-US">English (US)</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+      <option value="ja">日本語</option>
+      <option value="zh-TW">繁體中文</option>
+    </select>
+  `
+})
+export class LanguageSelectorComponent {
+  changeLanguage(event: Event) {
+    const locale = (event.target as HTMLSelectElement).value;
+    CometChatLocalize.setCurrentLanguage(locale);
+    localStorage.setItem('cometchat-locale', locale);
+  }
+}
+```
+
+### Restoring Saved Locale on App Start
+
+```typescript
+// app.component.ts
+export class AppComponent implements OnInit {
+  ngOnInit() {
+    const saved = localStorage.getItem('cometchat-locale');
+    if (saved && CometChatLocalize.isLanguageAvailable(saved)) {
+      CometChatLocalize.setCurrentLanguage(saved);
+    }
+  }
+}
+```
+
+## Adding Custom Translation Keys
+
+### Step 1: Add keys to all language resource files
+
+Language files live in `projects/cometchat-uikit/src/lib/resources/CometChatLocalize/resources/`.
+Add your key to every language file following the `component_section_action` naming pattern:
+
+```typescript
+// en-US.ts
+'my_feature_title': 'My Feature',
+'my_feature_empty_state': 'Nothing here yet',
+
+// de.ts
+'my_feature_title': 'Meine Funktion',
+'my_feature_empty_state': 'Noch nichts vorhanden',
+```
+
+### Step 2: Use in templates
+
+```html
+<h2>{{ 'my_feature_title' | translate }}</h2>
+<p>{{ 'my_feature_empty_state' | translate }}</p>
+```
+
+## Common Translation Keys
+
+### Conversations
+
+```
+conversation_chat_title          → "Conversations"
+conversation_empty_title         → "No Conversations"
+conversation_empty_subtitle      → "Start a new conversation"
+conversation_search_placeholder  → "Search conversations"
+conversation_delete              → "Delete"
+conversation_subtitle_typing     → "typing..."
+```
+
+### Messages
+
+```
+message_send        → "Send"
+message_reply       → "Reply"
+message_delete      → "Delete"
+message_edit        → "Edit"
+message_copy        → "Copy"
+message_delivered   → "Delivered"
+message_read        → "Read"
+```
+
+### Users & Groups
+
+```
+users_title                  → "Users"
+users_search_placeholder     → "Search users"
+groups_title                 → "Groups"
+groups_search_placeholder    → "Search groups"
+group_members                → "Members"
+```
+
+### Actions
+
+```
+action_cancel   → "Cancel"
+action_confirm  → "Confirm"
+action_save     → "Save"
+action_close    → "Close"
+action_retry    → "Retry"
+```
+
+## Date and Time Formatting
+
+The `CometChatDate` component handles locale-aware date formatting automatically:
+
+```html
+<cometchat-date [timestamp]="message.sentAt"></cometchat-date>
+```
+
+For custom formats, pass a `CalendarObject`:
+
+```typescript
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+dateFormat: CalendarObject = {
+  sameDay: 'h:mm A',
+  lastDay: '[Yesterday]',
+  lastWeek: 'dddd',
+  sameElse: 'DD/MM/YYYY'
+};
+```
+
+```html
+<cometchat-date [timestamp]="timestamp" [calendarObject]="dateFormat"></cometchat-date>
+```
+
+## Best Practices
+
+**Always use the translate pipe in templates** — never hardcode strings:
+
+```html
+<!-- ❌ Don't -->
+<h2>Conversations</h2>
+
+<!-- ✅ Do -->
+<h2>{{ 'conversation_chat_title' | translate }}</h2>
+```
+
+**Add keys to ALL language files** when introducing new translation keys — missing keys fall back
+to the key name itself, which is visible to users.
+
+**Use `setCurrentLanguage` not `setLocale`** — `setLocale` does not exist on `CometChatLocalize`.
+The correct method is `setCurrentLanguage(language: string)`.
+
+---
+
+<div style={{ padding: '16px', background: '#e8f5e9', borderRadius: '8px', marginTop: '32px' }}>
+  <strong>✅ Tip:</strong> Use the globe icon in the Storybook toolbar to preview your components
+  in any of the 19 supported locales without writing any code.
+</div>

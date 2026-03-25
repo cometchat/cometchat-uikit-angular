@@ -1,0 +1,119 @@
+.cometchat-popover {
+  position: relative;
+  display: inline-block;
+}
+
+.cometchat-popover__button {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.cometchat-popover__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--cometchat-popover-overlay-z-index, 999);
+  background-color: var(--cometchat-popover-overlay-background, transparent);
+  pointer-events: auto;
+}
+
+.cometchat-popover__content {
+  position: fixed;
+  z-index: var(--cometchat-popover-content-z-index, 1000);
+  background-color: var(--cometchat-popover-content-background, var(--cometchat-background-color-01));
+  border: none;
+  border-radius: var(--cometchat-popover-content-border-radius, var(--cometchat-radius-2, 8px));
+  padding: var(--cometchat-popover-content-padding, 0);
+  max-width: var(--cometchat-popover-content-max-width, 300px);
+  word-wrap: break-word;
+  /* Start hidden until position is calculated */
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Higher z-index for nested popovers (like reaction list inside reactions) */
+.cometchat-popover__content .cometchat-popover__content {
+  z-index: var(--cometchat-popover-content-nested-z-index, 1001);
+}
+
+.cometchat-popover__content--positioned {
+  opacity: 1;
+  pointer-events: auto;
+  animation: popoverFadeIn var(--cometchat-popover-animation-duration, 0.15s) ease-out;
+}
+
+.cometchat-popover__content--top {
+  /* Additional styles for top placement if needed */
+}
+
+.cometchat-popover__content--bottom {
+  /* Additional styles for bottom placement if needed */
+}
+
+.cometchat-popover__content--left {
+  /* Additional styles for left placement if needed */
+}
+
+.cometchat-popover__content--right {
+  /* Additional styles for right placement if needed */
+}
+
+.cometchat-popover__content-tooltip-top,
+.cometchat-popover__content-tooltip-bottom {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.cometchat-popover__content-tooltip-top {
+  bottom: var(--cometchat-popover-arrow-offset, -8px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: var(--cometchat-popover-arrow-size, 8px) var(--cometchat-popover-arrow-size, 8px) 0 var(--cometchat-popover-arrow-size, 8px);
+  border-color: var(--cometchat-popover-arrow-color, var(--cometchat-background-color-01)) transparent transparent transparent;
+}
+
+.cometchat-popover__content-tooltip-bottom {
+  top: var(--cometchat-popover-arrow-offset, -8px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 var(--cometchat-popover-arrow-size, 8px) var(--cometchat-popover-arrow-size, 8px) var(--cometchat-popover-arrow-size, 8px);
+  border-color: transparent transparent var(--cometchat-popover-arrow-color, var(--cometchat-background-color-01)) transparent;
+}
+
+/* Focus styles for accessibility */
+.cometchat-popover__button:focus-visible {
+  outline: var(--cometchat-popover-button-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-popover-button-focus-outline-offset, 2px);
+  border-radius: var(--cometchat-popover-button-focus-border-radius, var(--cometchat-radius-1, 4px));
+}
+
+.cometchat-popover__content:focus-visible {
+  outline: var(--cometchat-popover-content-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-popover-content-focus-outline-offset, -2px);
+}
+
+/* Ensure focus indicators are visible */
+.cometchat-popover__button:focus {
+  outline: none;
+}
+
+.cometchat-popover__button:focus-visible {
+  outline: var(--cometchat-popover-button-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-popover-button-focus-outline-offset, 2px);
+}
+
+/* Animation for popover appearance */
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(var(--cometchat-popover-animation-scale-from, 0.95));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

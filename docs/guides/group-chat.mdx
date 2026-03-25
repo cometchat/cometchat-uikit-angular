@@ -1,0 +1,303 @@
+---
+title: "Group Chat"
+sidebarTitle: "Group Chat"
+description: "Implement group management including create, join, members, roles, and ownership transfer in CometChat Angular UIKit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key components | `cometchat-groups`, `cometchat-group-members` |
+| Init | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Features | Create public/private/password-protected groups, manage members, roles, ownership transfer |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Related | [All Guides](/guides/overview) |
+
+</Accordion>
+
+This guide covers the full group lifecycle: creating groups, joining them, managing members, changing roles, and transferring ownership.
+
+Before starting, complete the [Integration Guide](/integration).
+
+---
+
+## Components
+
+| Component / Selector | Role |
+|:---|:---|
+| `cometchat-groups` | Displays and manages group lists |
+| `cometchat-group-members` | Displays and manages group member lists |
+
+<Info>
+The components below (`cometchat-create-group`, `cometchat-add-members`, `cometchat-banned-members`, `cometchat-transfer-ownership`) are provided in the sample app, not in the `@cometchat/chat-uikit-angular` package. Use them as reference implementations or build your own using the CometChat SDK methods shown in this guide.
+</Info>
+
+| Sample App Component | Role |
+|:---|:---|
+| `cometchat-create-group` | Creates new groups with different types and settings |
+| `cometchat-add-members` | Adds new members to existing groups |
+| `cometchat-banned-members` | Manages banned members and unban operations |
+| `cometchat-transfer-ownership` | Transfers group ownership to other members |
+
+---
+
+## Implementation Steps
+
+### 1. Create Group
+
+Build a component that collects a group name, type, and optional password. On submit, generate a unique GUID, call `CometChat.createGroup()`, and emit the event so the rest of the UI updates.
+
+```typescript expandable
+import { Component, Output, EventEmitter } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatGroupEvents } from '@cometchat/chat-uikit-angular';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-create-group',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <form (ngSubmit)="handleSubmit()">
+      <input [(ngModel)]="groupName" name="name" placeholder="Group name" />
+      <select [(ngModel)]="groupType" name="type">
+        <option value="public">Public</option>
+        <option value="private">Private</option>
+        <option value="password">Password Protected</option>
+      </select>
+      @if (groupType === 'password') {
+        <input [(ngModel)]="groupPassword" name="password" type="password" placeholder="Password" />
+      }
+      <button type="submit">Create</button>
+    </form>
+  `
+})
+export class CreateGroupComponent {
+  @Output() groupCreated = new EventEmitter<CometChat.Group>();
+
+  groupName = '';
+  groupType = 'public';
+  groupPassword = '';
+
+  async handleSubmit(): Promise<void> {
+    const guid = `group_${Date.now()}`;
+    const group = new CometChat.Group(guid, this.groupName, this.groupType, this.groupPassword);
+
+    try {
+      const created = await CometChat.createGroup(group);
+      CometChatGroupEvents.ccGroupCreated.next(created);
+      this.groupCreated.emit(created);
+    } catch (error) {
+      console.error('Group creation failed:', error);
+    }
+  }
+}
+```
+
+---
+
+### 2. Join Group
+
+Handle joining for both public and password-protected groups. On success, emit `ccGroupMemberJoined` to update the member list across the app.
+
+```typescript expandable
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatGroupEvents,
+  CometChatUIKitLoginListener
+} from '@cometchat/chat-uikit-angular';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-join-group',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    @if (group.getType() === 'password') {
+      <input [(ngModel)]="password" placeholder="Enter password" type="password" />
+    }
+    <button (click)="joinGroup()">Join Group</button>
+    @if (error) {
+      <p class="error">Failed to join group. Check the password.</p>
+    }
+  `
+})
+export class JoinGroupComponent {
+  @Input() group!: CometChat.Group;
+  @Output() groupJoined = new EventEmitter<CometChat.Group>();
+
+  password = '';
+  error = false;
+
+  joinGroup(): void {
+    CometChat.joinGroup(this.group.getGuid(), this.group.getType(), this.password)
+      .then((joinedGroup) => {
+        const loggedInUser = CometChatUIKitLoginListener.getLoggedInUser();
+        CometChatGroupEvents.ccGroupMemberJoined.next({
+          joinedGroup,
+          joinedUser: loggedInUser
+        });
+        this.groupJoined.emit(joinedGroup);
+      })
+      .catch(() => {
+        this.error = true;
+      });
+  }
+}
+```
+
+---
+
+### 3. View Group Members
+
+Render the member list for a group using `cometchat-group-members`. Pass `(itemClick)` to handle member selection.
+
+```html
+<cometchat-group-members
+  [group]="selectedGroup"
+  (itemClick)="onMemberClick($event)">
+</cometchat-group-members>
+```
+
+```typescript
+onMemberClick(member: CometChat.GroupMember): void {
+  console.log('Selected member:', member.getName());
+}
+```
+
+---
+
+### 4. Add Members
+
+<Info>
+`cometchat-add-members` is a sample-app component. Use `CometChat.addMembersToGroup()` to build your own add-members UI.
+</Info>
+
+Let admins select users and add them to the group.
+
+```html
+<cometchat-add-members
+  [group]="selectedGroup"
+  (addMembersClick)="onMembersAdded($event)">
+</cometchat-add-members>
+```
+
+```typescript
+onMembersAdded(members: CometChat.User[]): void {
+  console.log('Added members:', members.length);
+}
+```
+
+---
+
+### 5. Ban Members
+
+<Info>
+`cometchat-banned-members` is a sample-app component. Use `CometChat.banGroupMember()` and `CometChat.unbanGroupMember()` to build your own banned-members UI.
+</Info>
+
+Display banned members and provide unban functionality for group admins.
+
+```html
+<cometchat-banned-members
+  [group]="selectedGroup">
+</cometchat-banned-members>
+```
+
+---
+
+### 6. Change Member Scope
+
+Promote or demote a member by calling `CometChat.updateGroupMemberScope()`. Emit `ccGroupMemberScopeChanged` so the UI reflects the role change.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatGroupEvents,
+  CometChatUIKitLoginListener
+} from '@cometchat/chat-uikit-angular';
+
+async changeMemberScope(
+  member: CometChat.GroupMember,
+  newScope: string,
+  group: CometChat.Group
+): Promise<void> {
+  try {
+    await CometChat.updateGroupMemberScope(
+      member.getUid(),
+      newScope,
+      group.getGuid()
+    );
+
+    CometChatGroupEvents.ccGroupMemberScopeChanged.next({
+      changedBy: CometChatUIKitLoginListener.getLoggedInUser()!,
+      changedUser: member,
+      changedIn: group,
+      newScope,
+      oldScope: member.getScope()
+    });
+  } catch (error) {
+    console.error('Failed to update member scope:', error);
+  }
+}
+```
+
+---
+
+### 7. Transfer Ownership
+
+<Info>
+`cometchat-transfer-ownership` is a sample-app component. Use `CometChat.transferGroupOwnership()` to build your own transfer-ownership UI.
+</Info>
+
+Let the current owner select a member and transfer ownership.
+
+```html
+<cometchat-transfer-ownership
+  [group]="selectedGroup"
+  (transferOwnershipClick)="onOwnershipTransferred($event)">
+</cometchat-transfer-ownership>
+```
+
+```typescript
+onOwnershipTransferred(newOwner: CometChat.GroupMember): void {
+  console.log('Ownership transferred to:', newOwner.getName());
+}
+```
+
+---
+
+## Feature Matrix
+
+| Feature | Component / Method | Description |
+|:---|:---|:---|
+| Create group | `CometChat.createGroup()` | SDK method for creating public/private/password groups |
+| Join group | `CometChat.joinGroup()` | Joins public or password-protected groups |
+| View members | `cometchat-group-members` | Displays member list with role indicators |
+| Add members | `CometChat.addMembersToGroup()` | SDK method for batch adding members |
+| Ban members | `CometChat.banGroupMember()` | SDK method for banning group members |
+| Change scope | `CometChat.updateGroupMemberScope()` | Promote/demote member roles |
+| Transfer ownership | `CometChat.transferGroupOwnership()` | Transfer owner role to another member |
+| Group events | `CometChatGroupEvents` | RxJS subjects for group lifecycle events |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Groups" href="/components/cometchat-groups">
+    Display and manage group lists.
+  </Card>
+  <Card title="Group Members" href="/components/cometchat-group-members">
+    Display and manage group member lists.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Sample App" href="https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app">
+    Full working sample application on GitHub.
+  </Card>
+</CardGroup>

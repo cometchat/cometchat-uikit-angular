@@ -1,0 +1,162 @@
+---
+title: "CometChatReactionInfo"
+description: "A tooltip component that displays who reacted with a specific emoji on a message"
+---
+The `CometChatReactionInfo` component displays a tooltip showing the names of users who reacted with a specific emoji on a message. It fetches reaction details from the CometChat SDK and formats the display with "You" for the logged-in user and an "and X others" suffix when there are more reactors than the fetch limit.
+
+## Overview
+
+The Reaction Info component provides a concise reactor summary:
+
+- **User Names**: Fetches and displays names of users who reacted with the specified emoji
+- **Current User Highlighting**: Replaces the logged-in user's name with localized "You" text, placed first
+- **Overflow Text**: Shows "and X others" when total reactions exceed the fetched count
+- **Loading States**: Manages loading, loaded, and error states during data fetching
+- **Auto-Refresh**: Re-fetches reaction info when the message or reaction input changes
+
+
+<Info>
+  **Live Preview** — default reaction info preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-reaction-info--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-reaction-info--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="CometChat Reaction Info — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Reaction Info Tooltip
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatReactionInfoComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reaction-info-demo',
+  standalone: true,
+  imports: [CometChatReactionInfoComponent],
+  template: `
+    <cometchat-reaction-info
+      [message]="message"
+      [reaction]="'👍'">
+    </cometchat-reaction-info>
+  `
+})
+export class ReactionInfoDemoComponent {
+  message!: CometChat.BaseMessage;
+}
+```
+
+### Used with Reactions Component
+
+The Reaction Info component is typically rendered inside a popover that appears when hovering over a reaction pill:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatReactionsComponent,
+  CometChatReactionInfoComponent,
+  CometChatPopoverComponent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reaction-with-info',
+  standalone: true,
+  imports: [
+    CometChatReactionsComponent,
+    CometChatReactionInfoComponent,
+    CometChatPopoverComponent
+  ],
+  template: `
+    <cometchat-reactions
+      [message]="message"
+      (reactionClick)="onReactionClick($event)">
+    </cometchat-reactions>
+  `
+})
+export class ReactionWithInfoComponent {
+  message!: CometChat.BaseMessage;
+
+  onReactionClick(event: { reaction: CometChat.ReactionCount; message: CometChat.BaseMessage }): void {
+    console.log('Reaction toggled:', event.reaction.getReaction());
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.BaseMessage` | **required** | The message to show reaction info for |
+| `reaction` | `string` | **required** | The emoji character to show info for |
+
+## Events
+
+This component does not emit any events.
+
+## Customization
+
+### CSS Variables
+
+The Reaction Info component uses BEM-style CSS classes:
+
+```css expandable
+/* Reaction info container */
+.cometchat-reaction-info {
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+  background: var(--cometchat-background-color-04);
+  border-radius: var(--cometchat-radius-2);
+}
+
+/* Reactor names text */
+.cometchat-reaction-info__names {
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-static-white);
+}
+
+/* Loading state */
+.cometchat-reaction-info--loading {
+  opacity: 0.6;
+}
+```
+
+### Theming
+
+The component adapts to light and dark themes through CSS variables:
+
+```css
+:root {
+  --cometchat-background-color-04: #333333;
+  --cometchat-static-white: #FFFFFF;
+}
+
+[data-theme="dark"] {
+  --cometchat-background-color-04: #2A2A2A;
+  --cometchat-static-white: #FFFFFF;
+}
+```
+
+## Accessibility
+
+### Screen Reader Support
+
+- The tooltip content is accessible to screen readers via the parent popover's ARIA attributes
+- User names are presented in a readable format with "You" for the current user
+
+### Keyboard Navigation
+
+The Reaction Info component is a passive tooltip — keyboard interaction is handled by the parent reaction pill or popover that triggers it.
+
+## Related Components
+
+- [CometChatReactions](/components/cometchat-reactions) - Parent component that hosts reaction pills with hover tooltips
+- [CometChatReactionList](/components/cometchat-reaction-list) - Full list view of all users who reacted
+- [CometChatPopover](/components/cometchat-popover) - Popover used to display the reaction info tooltip

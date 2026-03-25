@@ -1,0 +1,61 @@
+<!--
+  Thread View Component
+  
+  Supports two modes:
+  1. Indicator Mode: Shows reply count on messages (role="button")
+  2. Panel Mode: Accessible container for thread content (role="complementary")
+  
+  @see Requirement 2.9 - Only displays indicator when replyCount > 0
+  @see Requirement 13.3 - Panel mode: role="complementary", aria-label="Thread replies"
+-->
+
+<!-- ==================== Indicator Mode ==================== -->
+<!-- Only displays when there are replies (replyCount > 0) -->
+@if (isIndicatorMode && shouldDisplay) {
+  <div
+    class="cometchat-thread-view"
+    [class.cometchat-thread-view--unread]="hasUnreadReplies"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="ariaLabel"
+    (click)="onThreadViewClick()"
+  >
+    <!-- Thread Icon -->
+    <!-- @see Requirement 2.3 -->
+    <img
+      class="cometchat-thread-view__icon"
+      [src]="threadIconUrl"
+      alt=""
+      aria-hidden="true"
+    />
+
+    <!-- Reply Count Text -->
+    <!-- @see Requirement 2.2, 2.7 -->
+    <span class="cometchat-thread-view__count">
+      {{ replyCountText }}
+    </span>
+
+    <!-- Unread Indicator -->
+    <!-- @see Requirement 2.5 -->
+    @if (hasUnreadReplies) {
+      <span
+        class="cometchat-thread-view__unread-indicator"
+        aria-hidden="true"
+      ></span>
+    }
+  </div>
+}
+
+<!-- ==================== Panel Mode ==================== -->
+<!-- Accessible container for thread content -->
+<!-- @see Requirement 13.1, 13.2, 13.3 -->
+@if (isPanelMode) {
+  <aside
+    class="cometchat-thread-view cometchat-thread-view--panel"
+    role="complementary"
+    [attr.aria-label]="panelAriaLabel"
+  >
+    <!-- Content projection for thread header, message list, and composer -->
+    <ng-content></ng-content>
+  </aside>
+}

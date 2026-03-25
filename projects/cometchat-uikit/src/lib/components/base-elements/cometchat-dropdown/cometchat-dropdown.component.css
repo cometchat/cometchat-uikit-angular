@@ -1,0 +1,159 @@
+/*
+ * CometChat Dropdown Component CSS Custom Properties
+ *
+ * --cometchat-dropdown-width
+ * --cometchat-dropdown-button-width
+ * --cometchat-dropdown-button-padding
+ * --cometchat-dropdown-button-background
+ * --cometchat-dropdown-button-border
+ * --cometchat-dropdown-button-border-radius
+ * --cometchat-dropdown-button-font
+ * --cometchat-dropdown-button-color
+ * --cometchat-dropdown-button-transition
+ * --cometchat-dropdown-button-border-color-hover
+ * --cometchat-dropdown-button-outline-focus
+ * --cometchat-dropdown-button-outline-offset-focus
+ * --cometchat-dropdown-button-outline-focus-visible
+ * --cometchat-dropdown-button-outline-offset-focus-visible
+ * --cometchat-dropdown-button-border-color-open
+ * --cometchat-dropdown-button-icon-margin-left
+ * --cometchat-dropdown-button-icon-font
+ * --cometchat-dropdown-button-icon-transition
+ * --cometchat-dropdown-button-icon-transform-open
+ * --cometchat-dropdown-menu-top
+ * --cometchat-dropdown-menu-left
+ * --cometchat-dropdown-menu-right
+ * --cometchat-dropdown-menu-z-index
+ * --cometchat-dropdown-menu-margin
+ * --cometchat-dropdown-menu-padding
+ * --cometchat-dropdown-menu-background
+ * --cometchat-dropdown-menu-border
+ * --cometchat-dropdown-menu-border-radius
+ * --cometchat-dropdown-menu-max-height
+ * --cometchat-dropdown-option-padding
+ * --cometchat-dropdown-option-font
+ * --cometchat-dropdown-option-color
+ * --cometchat-dropdown-option-transition
+ * --cometchat-dropdown-option-background-hover
+ * --cometchat-dropdown-option-background-focused
+ * --cometchat-dropdown-option-background-selected
+ * --cometchat-dropdown-option-color-selected
+ * --cometchat-dropdown-option-font-selected
+ * --cometchat-dropdown-option-outline-focus
+ * --cometchat-dropdown-option-outline-offset-focus
+ * --cometchat-dropdown-option-outline-focus-visible
+ * --cometchat-dropdown-option-outline-offset-focus-visible
+ */
+
+.cometchat-dropdown {
+  position: relative;
+  display: inline-block;
+  width: var(--cometchat-dropdown-width, 100%);
+}
+
+.cometchat-dropdown__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: var(--cometchat-dropdown-button-width, 100%);
+  padding: var(--cometchat-dropdown-button-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  background-color: var(--cometchat-dropdown-button-background, var(--cometchat-background-color-01));
+  border: var(--cometchat-dropdown-button-border, 1px solid var(--cometchat-border-color-default));
+  border-radius: var(--cometchat-dropdown-button-border-radius, var(--cometchat-radius-1, 4px));
+  font: var(--cometchat-dropdown-button-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-dropdown-button-color, var(--cometchat-text-color-primary));
+  cursor: pointer;
+  transition: var(--cometchat-dropdown-button-transition, all 0.2s ease);
+}
+
+.cometchat-dropdown__button:hover {
+  border-color: var(--cometchat-dropdown-button-border-color-hover, var(--cometchat-primary-color));
+}
+
+.cometchat-dropdown__button:focus {
+  outline: var(--cometchat-dropdown-button-outline-focus, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-dropdown-button-outline-offset-focus, 2px);
+}
+
+.cometchat-dropdown__button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cometchat-dropdown__button:focus-visible {
+  outline: var(--cometchat-dropdown-button-outline-focus-visible, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-dropdown-button-outline-offset-focus-visible, 2px);
+}
+
+.cometchat-dropdown__button--open {
+  border-color: var(--cometchat-dropdown-button-border-color-open, var(--cometchat-primary-color));
+}
+
+.cometchat-dropdown__button-text {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cometchat-dropdown__button-icon {
+  margin-left: var(--cometchat-dropdown-button-icon-margin-left, var(--cometchat-margin-2, 8px));
+  font: var(--cometchat-dropdown-button-icon-font, var(--cometchat-font-caption1-regular));
+  transition: var(--cometchat-dropdown-button-icon-transition, transform 0.2s ease);
+}
+
+.cometchat-dropdown__button-icon--open {
+  transform: var(--cometchat-dropdown-button-icon-transform-open, rotate(180deg));
+}
+
+.cometchat-dropdown__menu {
+  position: absolute;
+  top: var(--cometchat-dropdown-menu-top, calc(100% + 4px));
+  left: var(--cometchat-dropdown-menu-left, 0);
+  right: var(--cometchat-dropdown-menu-right, 0);
+  z-index: var(--cometchat-dropdown-menu-z-index, 1000);
+  margin: var(--cometchat-dropdown-menu-margin, 0);
+  padding: var(--cometchat-dropdown-menu-padding, var(--cometchat-padding-1, 4px) 0);
+  background-color: var(--cometchat-dropdown-menu-background, var(--cometchat-background-color-01));
+  border: var(--cometchat-dropdown-menu-border, 1px solid var(--cometchat-border-color-default));
+  border-radius: var(--cometchat-dropdown-menu-border-radius, var(--cometchat-radius-1, 4px));
+  list-style: none;
+  max-height: var(--cometchat-dropdown-menu-max-height, 200px);
+  overflow-y: auto;
+}
+
+.cometchat-dropdown__option {
+  padding: var(--cometchat-dropdown-option-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  font: var(--cometchat-dropdown-option-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-dropdown-option-color, var(--cometchat-text-color-primary));
+  cursor: pointer;
+  transition: var(--cometchat-dropdown-option-transition, background-color 0.2s ease);
+}
+
+.cometchat-dropdown__option:hover {
+  background-color: var(--cometchat-dropdown-option-background-hover, var(--cometchat-background-color-02));
+}
+
+.cometchat-dropdown__option--focused {
+  background-color: var(--cometchat-dropdown-option-background-focused, var(--cometchat-background-color-02));
+}
+
+.cometchat-dropdown__option--selected {
+  background-color: var(--cometchat-dropdown-option-background-selected, var(--cometchat-extended-primary-color-100));
+  color: var(--cometchat-dropdown-option-color-selected, var(--cometchat-primary-color));
+  font: var(--cometchat-dropdown-option-font-selected, var(--cometchat-font-body-medium));
+}
+
+.cometchat-dropdown__option:focus {
+  outline: var(--cometchat-dropdown-option-outline-focus, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-dropdown-option-outline-offset-focus, -2px);
+}
+
+.cometchat-dropdown__option:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cometchat-dropdown__option:focus-visible {
+  outline: var(--cometchat-dropdown-option-outline-focus-visible, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-dropdown-option-outline-offset-focus-visible, -2px);
+}

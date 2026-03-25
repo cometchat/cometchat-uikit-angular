@@ -1,0 +1,592 @@
+---
+title: "Integration"
+sidebarTitle: "Integration"
+description: "Add CometChat to an Angular app in 6 steps: create project, install, init, login, add CSS, render."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Peer deps | `@cometchat/chat-sdk-javascript`, `rxjs` ^7.8.1 |
+| Init | `CometChatUIKit.init(UIKitSettings)` — must resolve before `login()` |
+| Login | `CometChatUIKit.login("UID")` — must resolve before rendering components |
+| Order | `init()` → `login()` → render. Breaking this order = blank screen |
+| Auth Key | Dev/testing only. Use Auth Token in production |
+| CSS | Add `css-variables.css` to `angular.json` styles array or import in global `styles.css` via `@cometchat/chat-uikit-angular/styles/css-variables.css` |
+| Calling | Optional. Install `@cometchat/calls-sdk-javascript` and call `.setCallingEnabled(true)` on the builder to enable |
+
+</Accordion>
+
+This guide walks you through adding CometChat to an Angular app. By the end you'll have a working chat UI.
+
+---
+
+## Prerequisites
+
+You need three things from the [CometChat Dashboard](https://app.cometchat.com/):
+
+| Credential | Where to find it |
+| --- | --- |
+| App ID | Dashboard → Your App → Credentials |
+| Auth Key | Dashboard → Your App → Credentials |
+| Region | Dashboard → Your App → Credentials (e.g. `us`, `eu`, `in`) |
+
+You also need:
+- Node.js (v18+) and npm installed
+- Angular CLI (`npm install -g @angular/cli`)
+
+<Warning>
+Auth Key is for development only. In production, generate Auth Tokens server-side via the [REST API](https://api-explorer.cometchat.com/) and use `loginWithAuthToken()`. Never ship Auth Keys in client code.
+</Warning>
+
+---
+
+## Step 1 — Create an Angular Project
+
+```bash
+ng new my-app --style css --ssr false
+cd my-app
+```
+
+This creates a new Angular project with CSS styling and no server-side rendering. CometChat UIKit components require a browser environment.
+
+---
+
+## Step 2 — Install the UI Kit
+
+<Tabs>
+<Warning>
+This is a beta release. Install the exact beta version as shown below.
+</Warning>
+
+<Tab title="npm">
+```bash
+npm install @cometchat/chat-uikit-angular@5.0.0-beta.1 @cometchat/chat-sdk-javascript
+```
+</Tab>
+<Tab title="yarn">
+```bash
+yarn add @cometchat/chat-uikit-angular@5.0.0-beta.1 @cometchat/chat-sdk-javascript
+```
+</Tab>
+</Tabs>
+
+If you want voice/video calling, also install:
+
+```bash
+npm install @cometchat/calls-sdk-javascript@5.0.0-beta.1
+```
+
+---
+
+## Step 3 — Initialize CometChat
+
+Initialize the UI Kit in `main.ts` before bootstrapping the Angular app. This uses the static `CometChatUIKit.init()` method — the dual-API pattern lets you call it outside Angular's dependency injection context.
+
+```ts title="src/environments/environment.ts"
+export const environment = {
+  production: false,
+  cometchat: {
+    appId: "APP_ID",       // Replace with your App ID
+    region: "REGION",      // Replace with your Region
+    authKey: "AUTH_KEY",   // Replace with your Auth Key (dev only)
+  },
+};
+```
+
+```ts title="src/main.ts" expandable
+import { bootstrapApplication } from "@angular/platform-browser";
+import { AppComponent } from "./app/app.component";
+import { appConfig } from "./app/app.config";
+import { CometChatUIKit, UIKitSettingsBuilder } from "@cometchat/chat-uikit-angular";
+import { environment } from "./environments/environment";
+
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId(environment.cometchat.appId)
+  .setRegion(environment.cometchat.region)
+  .setAuthKey(environment.cometchat.authKey)
+  .subscribePresenceForAllUsers()
+  // .setCallingEnabled(true) // uncomment to enable voice/video calling
+  .build();
+
+CometChatUIKit.init(UIKitSettings)
+  .then(() => {
+    console.log("CometChat UI Kit initialized successfully.");
+    bootstrapApplication(AppComponent, appConfig).catch((err) =>
+      console.error(err)
+    );
+  })
+  .catch((error) => {
+    console.error("CometChat UI Kit initialization failed:", error);
+  });
+```
+
+<Warning>
+`init()` must resolve before you call `login()`. If you call `login()` before init completes, it will fail silently.
+</Warning>
+
+---
+
+## Step 4 — Login
+
+After init resolves, log the user in. For development, use one of the pre-created test UIDs:
+
+`cometchat-uid-1` · `cometchat-uid-2` · `cometchat-uid-3` · `cometchat-uid-4` · `cometchat-uid-5`
+
+
+Add the login logic to your root component. Use `CometChatUIKit.getLoggedinUser()` to check for an existing session before calling `login()`.
+
+```ts title="src/app/app.component.ts" expandable
+import { Component, OnInit } from "@angular/core";
+import { CometChatUIKit } from "@cometchat/chat-uikit-angular";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+
+@Component({
+  selector: "app-root",
+  standalone: true,
+  imports: [],
+  template: `
+    @if (isLoggedIn) {
+      <div class="chat-container">
+        <!-- Chat components go here (Step 6) -->
+      </div>
+    } @else {
+      <p>Loading...</p>
+    }
+  `,
+})
+export class AppComponent implements OnInit {
+  isLoggedIn = false;
+
+  ngOnInit(): void {
+    const UID = "cometchat-uid-1"; // Replace with your actual UID
+
+    CometChatUIKit.getLoggedinUser().then((user: CometChat.User | null) => {
+      if (!user) {
+        CometChatUIKit.login(UID)
+          .then((user: CometChat.User) => {
+            console.log("Login Successful:", { user });
+            this.isLoggedIn = true;
+          })
+          .catch(console.log);
+      } else {
+        // Already logged in
+        this.isLoggedIn = true;
+      }
+    });
+  }
+}
+```
+
+Key points:
+- `getLoggedinUser()` checks for an existing session so you don't re-login unnecessarily.
+- `login(uid)` skips the API call if a session already exists and returns the cached user.
+- Components must not render until login resolves — use a boolean flag to gate rendering with `@if`.
+
+<Note>
+For production, use `loginWithAuthToken()` instead of Auth Key. Generate tokens server-side via the REST API.
+</Note>
+
+---
+
+## Step 5 — Add the CSS Import
+
+CometChat components rely on CSS custom properties for theming. Add the stylesheet using one of these methods:
+
+<Tabs>
+<Tab title="angular.json (recommended)">
+Add the CSS file to the `styles` array in your `angular.json`:
+
+```json title="angular.json" expandable
+{
+  "projects": {
+    "my-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "styles": [
+              "src/styles.css",
+              "node_modules/@cometchat/chat-uikit-angular/styles/css-variables.css"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab title="Global styles.css">
+Import at the top of your global `styles.css`:
+
+```css title="src/styles.css"
+@import '@cometchat/chat-uikit-angular/styles/css-variables.css';
+```
+</Tab>
+</Tabs>
+
+Without this import, components will render with broken or missing styles.
+
+---
+
+## Step 6 — Choose a Chat Experience
+
+Pick a layout that fits your app's UX. Each option below shows a standalone Angular component you can drop into your project.
+
+### Conversation List + Message View
+
+Two-panel layout — conversation list on the left, messages on the right. Think WhatsApp Web or Slack.
+
+- Two-panel layout with conversation list and active chat window
+- Switch between one-to-one and group conversations
+- Tap-to-view on mobile — tapping a conversation opens the message view
+- Real-time updates and message sync across sessions
+
+```ts title="src/app/app.component.ts" expandable
+import { Component, OnInit } from "@angular/core";
+import {
+  CometChatUIKit,
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from "@cometchat/chat-uikit-angular";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+
+@Component({
+  selector: "app-root",
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    @if (isLoggedIn) {
+      <div class="chat-layout">
+        <div class="sidebar">
+          <cometchat-conversations
+            (itemClick)="onConversationClick($event)"
+          ></cometchat-conversations>
+        </div>
+        @if (selectedUser || selectedGroup) {
+          <div class="chat-window">
+            <cometchat-message-header
+              [user]="selectedUser"
+              [group]="selectedGroup"
+            ></cometchat-message-header>
+            <cometchat-message-list
+              [user]="selectedUser"
+              [group]="selectedGroup"
+            ></cometchat-message-list>
+            <cometchat-message-composer
+              [user]="selectedUser"
+              [group]="selectedGroup"
+            ></cometchat-message-composer>
+          </div>
+        }
+      </div>
+    } @else {
+      <p>Loading...</p>
+    }
+  `,
+  styles: `
+    :host {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+    .chat-layout {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+    .sidebar {
+      width: 360px;
+      border-right: 1px solid #e0e0e0;
+    }
+    .chat-window {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+  `,
+})
+export class AppComponent implements OnInit {
+  isLoggedIn = false;
+  selectedUser: CometChat.User | undefined;
+  selectedGroup: CometChat.Group | undefined;
+
+  ngOnInit(): void {
+    CometChatUIKit.getLoggedinUser().then((user: CometChat.User | null) => {
+      if (!user) {
+        CometChatUIKit.login("cometchat-uid-1")
+          .then(() => (this.isLoggedIn = true))
+          .catch(console.log);
+      } else {
+        this.isLoggedIn = true;
+      }
+    });
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    const conversationWith = conversation.getConversationWith();
+    if (conversationWith instanceof CometChat.User) {
+      this.selectedUser = conversationWith;
+      this.selectedGroup = undefined;
+    } else if (conversationWith instanceof CometChat.Group) {
+      this.selectedGroup = conversationWith;
+      this.selectedUser = undefined;
+    }
+  }
+}
+```
+
+<Tip>
+  For production apps, consider using `ChatStateService` to wire components together instead of manually
+  tracking `selectedUser` and `selectedGroup`. The service handles mutual exclusivity (setting a user
+  clears the group) and keeps all components in sync automatically.
+  See the [State Management guide](/guides/state-management) for details.
+</Tip>
+
+---
+
+### One-to-One / Group Chat
+
+Single chat window — no sidebar. Good for support chat, embedded widgets, or focused messaging.
+
+- Dedicated chat window for one-on-one or group messaging
+- No conversation list — users go directly into the chat
+- Full-screen experience optimized for mobile
+- Ideal for support chat or community messaging
+
+```ts title="src/app/app.component.ts" expandable
+import { Component, OnInit } from "@angular/core";
+import {
+  CometChatUIKit,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from "@cometchat/chat-uikit-angular";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+
+@Component({
+  selector: "app-root",
+  standalone: true,
+  imports: [
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    @if (selectedUser) {
+      <div class="chat-window">
+        <cometchat-message-header
+          [user]="selectedUser"
+        ></cometchat-message-header>
+        <cometchat-message-list
+          [user]="selectedUser"
+        ></cometchat-message-list>
+        <cometchat-message-composer
+          [user]="selectedUser"
+        ></cometchat-message-composer>
+      </div>
+    } @else {
+      <p>Loading...</p>
+    }
+  `,
+  styles: `
+    .chat-window {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+  `,
+})
+export class AppComponent implements OnInit {
+  selectedUser: CometChat.User | undefined;
+
+  ngOnInit(): void {
+    CometChatUIKit.getLoggedinUser().then((user: CometChat.User | null) => {
+      if (!user) {
+        CometChatUIKit.login("cometchat-uid-1")
+          .then(() => this.loadUser())
+          .catch(console.log);
+      } else {
+        this.loadUser();
+      }
+    });
+  }
+
+  private loadUser(): void {
+    CometChat.getUser("cometchat-uid-2").then(
+      (user: CometChat.User) => {
+        this.selectedUser = user;
+      },
+      (error: CometChat.CometChatException) => {
+        console.error("User fetch failed:", error);
+      }
+    );
+  }
+}
+```
+
+---
+
+### Tab-Based Chat
+
+Tabbed navigation — Chat, Call Logs, Users, Settings in separate tabs. Good for full-featured apps.
+
+- Tab navigation between Chat, Call Logs, Users, and Settings
+- Full-screen messaging within each tab
+- Unified experience for conversations, call history, and settings
+- Scales well for adding future features like notifications or contacts
+
+```ts title="src/app/app.component.ts" expandable
+import { Component, OnInit } from "@angular/core";
+import {
+  CometChatUIKit,
+  CometChatConversationsComponent,
+  CometChatUsersComponent,
+  CometChatCallLogsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from "@cometchat/chat-uikit-angular";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+
+@Component({
+  selector: "app-root",
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatUsersComponent,
+    CometChatCallLogsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    @if (isLoggedIn) {
+      <div class="tab-container">
+        <nav class="tab-bar">
+          <button
+            [class.active]="activeTab === 'chats'"
+            (click)="activeTab = 'chats'"
+          >
+            Chats
+          </button>
+          <button
+            [class.active]="activeTab === 'calls'"
+            (click)="activeTab = 'calls'"
+          >
+            Call Logs
+          </button>
+          <button
+            [class.active]="activeTab === 'users'"
+            (click)="activeTab = 'users'"
+          >
+            Users
+          </button>
+        </nav>
+        <div class="tab-content">
+          @switch (activeTab) {
+            @case ('chats') {
+              <cometchat-conversations
+                (itemClick)="onConversationClick($event)"
+              ></cometchat-conversations>
+            }
+            @case ('calls') {
+              <cometchat-call-logs></cometchat-call-logs>
+            }
+            @case ('users') {
+              <cometchat-users
+                (itemClick)="onUserClick($event)"
+              ></cometchat-users>
+            }
+          }
+        </div>
+      </div>
+    } @else {
+      <p>Loading...</p>
+    }
+  `,
+  styles: `
+    .tab-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .tab-bar button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .tab-bar button.active {
+      border-bottom: 2px solid #3399ff;
+      font-weight: 600;
+    }
+    .tab-content {
+      flex: 1;
+      overflow: hidden;
+    }
+  `,
+})
+export class AppComponent implements OnInit {
+  isLoggedIn = false;
+  activeTab: "chats" | "calls" | "users" = "chats";
+
+  ngOnInit(): void {
+    CometChatUIKit.getLoggedinUser().then((user: CometChat.User | null) => {
+      if (!user) {
+        CometChatUIKit.login("cometchat-uid-1")
+          .then(() => (this.isLoggedIn = true))
+          .catch(console.log);
+      } else {
+        this.isLoggedIn = true;
+      }
+    });
+  }
+}
+```
+
+---
+
+## Build Your Own Chat Experience
+
+Need full control over the UI? Use individual components, customize themes, and wire up your own layouts.
+
+- [Components](/components/overview) — All prebuilt UI elements with inputs and customization options
+- [Core Features](/core-features) — Messaging, real-time updates, and other capabilities
+- [Theming](/customization/theming) — Colors, fonts, dark mode, and custom styling
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Components Overview" icon="grid-2" href="/components/overview">
+    Browse all prebuilt UI components
+  </Card>
+  <Card title="Theming" icon="paintbrush" href="/customization/theming">
+    Customize colors, fonts, and styles
+  </Card>
+  <Card title="Core Features" icon="comments" href="/core-features">
+    Chat features included out of the box
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/troubleshooting">
+    Common issues and fixes
+  </Card>
+</CardGroup>

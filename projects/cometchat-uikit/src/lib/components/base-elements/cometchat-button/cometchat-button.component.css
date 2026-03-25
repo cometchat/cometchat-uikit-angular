@@ -1,0 +1,130 @@
+/* ============================================================
+   CometChat Button Component Styles
+   BEM: .cometchat-button
+
+   CSS Custom Property Tokens (overridable):
+   --cometchat-button-height
+   --cometchat-button-width
+   --cometchat-button-padding
+   --cometchat-button-border-radius
+   --cometchat-button-border
+   --cometchat-button-background
+   --cometchat-button-background-hover
+   --cometchat-button-background-active
+   --cometchat-button-text-color
+   --cometchat-button-text-font
+   --cometchat-button-icon-width
+   --cometchat-button-icon-height
+   --cometchat-button-icon-padding
+   --cometchat-button-icon-default-height
+   --cometchat-button-icon-default-width
+   --cometchat-button-icon-background
+   --cometchat-button-icon-background-hover
+   --cometchat-button-loading-width
+   --cometchat-button-loading-height
+   ============================================================ */
+
+.cometchat-button {
+  display: flex;
+  height: var(--cometchat-button-height, 40px);
+  width: var(--cometchat-button-width, 160px);
+  padding: var(--cometchat-button-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-5, 20px));
+  justify-content: center;
+  align-items: center;
+  align-self: stretch;
+  border-radius: var(--cometchat-button-border-radius, var(--cometchat-radius-2, 8px));
+  border: var(--cometchat-button-border, none);
+  background: var(--cometchat-button-background, var(--cometchat-primary-button-background, #6852D6));
+  cursor: pointer;
+}
+
+/* Icon-only mode - compact button without default width */
+.cometchat-button--icon-only {
+  width: var(--cometchat-button-icon-width, auto);
+  height: var(--cometchat-button-icon-height, auto);
+  min-width: auto;
+  padding: var(--cometchat-button-icon-padding, var(--cometchat-padding-2, 8px));
+}
+
+.cometchat-button__text {
+  color: var(--cometchat-button-text-color, var(--cometchat-static-white, #FFFFFF));
+  font: var(--cometchat-button-text-font, var(--cometchat-font-button-medium, 500 14px Roboto));
+  line-height: 120%;
+  cursor: pointer;
+}
+
+.cometchat-button__icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.cometchat-button__icon-default {
+  height: var(--cometchat-button-icon-default-height, 24px);
+  width: var(--cometchat-button-icon-default-width, 24px);
+  background-color: var(--cometchat-button-icon-background, var(--cometchat-static-white, #FFFFFF));
+  mask-size: contain;
+  -webkit-mask-size: contain;
+}
+
+.cometchat-button:hover {
+  padding: var(--cometchat-button-hover-padding, var(--cometchat-button-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-5, 20px)));
+  border-radius: var(--cometchat-button-hover-border-radius, var(--cometchat-button-border-radius, var(--cometchat-radius-2, 8px)));
+  background: var(--cometchat-button-background-hover, var(--cometchat-extended-primary-color-800, #7A6BD6));
+}
+
+.cometchat-button:hover .cometchat-button__icon-default {
+  background-color: var(--cometchat-button-icon-background-hover, var(--cometchat-button-icon-background, var(--cometchat-static-white, #FFFFFF)));
+}
+
+.cometchat-button:active {
+  background: var(--cometchat-button-background-active, var(--cometchat-extended-primary-color-900, #5D49BE));
+  outline: none;
+}
+
+.cometchat-button:focus {
+  outline: 2px solid var(--cometchat-primary-color, #6852D6);
+  outline-offset: 2px;
+}
+
+.cometchat-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cometchat-button:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color, #6852D6);
+  outline-offset: 2px;
+}
+
+.cometchat-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cometchat-button__loading-view {
+  width: var(--cometchat-button-loading-width, 24px);
+  height: var(--cometchat-button-loading-height, 24px);
+  animation: spin 0.8s linear infinite;
+}
+
+.cometchat-button__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

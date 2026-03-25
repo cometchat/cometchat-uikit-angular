@@ -1,0 +1,239 @@
+---
+title: "New Chat"
+sidebarTitle: "New Chat"
+description: "Build a unified new chat entry point for starting 1:1 or group conversations in CometChat Angular UIKit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key components | `cometchat-users`, `cometchat-groups`, `cometchat-conversations` |
+| Init | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Purpose | Unified new chat entry point for starting 1:1 or group conversations |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Related | [All Guides](/guides/overview) |
+
+</Accordion>
+
+The New Chat feature lets users start conversations with other users or join group conversations from a single interface.
+
+Before starting, complete the [Integration Guide](/integration).
+
+---
+
+## Components
+
+| Component / Selector | Role |
+|:---|:---|
+| `cometchat-users` | Displays list of available users for 1:1 chat creation |
+| `cometchat-groups` | Shows available groups for joining |
+| `cometchat-conversations` | Navigation component showing existing conversations |
+
+---
+
+## Implementation Steps
+
+### 1. New Chat State Management
+
+Track whether the new chat view is visible and which tab (Users or Groups) is active.
+
+```typescript expandable
+import { Component, Output, EventEmitter } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatUsersComponent,
+  CometChatGroupsComponent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-new-chat',
+  standalone: true,
+  imports: [CometChatUsersComponent, CometChatGroupsComponent],
+  template: `<!-- see steps below -->`
+})
+export class NewChatComponent {
+  @Output() userSelected = new EventEmitter<CometChat.User>();
+  @Output() groupSelected = new EventEmitter<CometChat.Group>();
+  @Output() closed = new EventEmitter<void>();
+
+  selectedTab: 'user' | 'group' = 'user';
+
+  selectTab(tab: 'user' | 'group'): void {
+    this.selectedTab = tab;
+  }
+
+  onUserClick(user: CometChat.User): void {
+    this.userSelected.emit(user);
+    this.closed.emit();
+  }
+
+  onGroupClick(group: CometChat.Group): void {
+    this.groupSelected.emit(group);
+    this.closed.emit();
+  }
+}
+```
+
+---
+
+### 2. New Chat View Template
+
+Render a header with a back button and tabbed navigation between Users and Groups. Selecting a tab switches the list below.
+
+```html expandable
+<div class="cometchat-new-chat-view">
+  <div class="cometchat-new-chat-view__header">
+    <button (click)="closed.emit()">← Back</button>
+    <span class="cometchat-new-chat-view__header-title">New Chat</span>
+  </div>
+
+  <div class="cometchat-new-chat-view__tabs">
+    <div
+      [class.cometchat-new-chat-view__tabs-tab-active]="selectedTab === 'user'"
+      (click)="selectTab('user')">
+      Users
+    </div>
+    <div
+      [class.cometchat-new-chat-view__tabs-tab-active]="selectedTab === 'group'"
+      (click)="selectTab('group')">
+      Groups
+    </div>
+  </div>
+
+  @switch (selectedTab) {
+    @case ('user') {
+      <cometchat-users
+        (itemClick)="onUserClick($event)">
+      </cometchat-users>
+    }
+    @case ('group') {
+      <cometchat-groups
+        (itemClick)="onGroupClick($event)">
+      </cometchat-groups>
+    }
+  }
+</div>
+```
+
+---
+
+### 3. Integrating New Chat into the Home View
+
+Toggle between the new chat view, the messages view, or an empty state depending on the current app state.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { ChatStateService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-home',
+  standalone: true,
+  imports: [/* NewChatComponent, message components */],
+  template: `
+    @if (showNewChat) {
+      <app-new-chat
+        (userSelected)="onUserSelected($event)"
+        (groupSelected)="onGroupSelected($event)"
+        (closed)="showNewChat = false">
+      </app-new-chat>
+    } @else if (selectedUser || selectedGroup) {
+      <!-- Message view components -->
+    } @else {
+      <div class="cometchat-empty-state">
+        <p>Select a conversation or start a new chat</p>
+      </div>
+    }
+  `
+})
+export class ChatHomeComponent {
+  showNewChat = false;
+  selectedUser: CometChat.User | undefined;
+  selectedGroup: CometChat.Group | undefined;
+
+  constructor(private chatState: ChatStateService) {}
+
+  openNewChat(): void {
+    this.showNewChat = true;
+  }
+
+  onUserSelected(user: CometChat.User): void {
+    this.selectedUser = user;
+    this.selectedGroup = undefined;
+    this.chatState.setActiveUser(user);
+    this.showNewChat = false;
+  }
+
+  onGroupSelected(group: CometChat.Group): void {
+    this.selectedGroup = group;
+    this.selectedUser = undefined;
+    this.chatState.setActiveGroup(group);
+    this.showNewChat = false;
+  }
+}
+```
+
+---
+
+### 4. Group Joining Logic
+
+Handle the join flow based on group type. Public groups are joined directly. Password-protected groups show a password prompt first.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKitConstants } from '@cometchat/chat-uikit-angular';
+
+joinGroup(group: CometChat.Group): void {
+  if (!group.getHasJoined()) {
+    if (group.getType() === CometChatUIKitConstants.GroupTypes.public) {
+      CometChat.joinGroup(group.getGuid(), group.getType(), '')
+        .then((joinedGroup) => {
+          this.onGroupSelected(joinedGroup);
+        })
+        .catch((error) => {
+          console.error('Join failed:', error);
+        });
+    } else {
+      // Show password prompt for protected groups
+      this.showJoinGroupDialog = true;
+      this.pendingGroup = group;
+    }
+  } else {
+    this.onGroupSelected(group);
+  }
+}
+```
+
+---
+
+## Feature Matrix
+
+| Feature | Component / Method | Description |
+|:---|:---|:---|
+| Open new chat view | `showNewChat` flag | Toggles the new chat interface |
+| User selection | `cometchat-users` with `(itemClick)` | Lists users for 1:1 chat creation |
+| Group selection | `cometchat-groups` with `(itemClick)` | Lists groups for joining |
+| Group joining | `CometChat.joinGroup()` | Handles public and password-protected groups |
+| State management | `ChatStateService` | Updates active user/group across components |
+| Tab navigation | `selectedTab` property | Switches between Users and Groups lists |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Conversations" href="/components/cometchat-conversations">
+    Display and manage conversation lists.
+  </Card>
+  <Card title="Groups" href="/components/cometchat-groups">
+    Display and manage group lists.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Sample App" href="https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app">
+    Full working sample application on GitHub.
+  </Card>
+</CardGroup>

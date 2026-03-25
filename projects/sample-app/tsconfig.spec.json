@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/spec",
+    "module": "es2022",
+    "types": []
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.spec.ts"
+  ]
+}

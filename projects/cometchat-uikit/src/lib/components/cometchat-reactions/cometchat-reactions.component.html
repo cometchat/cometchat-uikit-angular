@@ -1,0 +1,75 @@
+<div
+  class="cometchat-reactions"
+  role="group"
+  [attr.aria-label]="'accessibility_message_reactions' | translate">
+
+  @for (reaction of visibleReactions(); track trackByReaction($index, reaction)) {
+    <div class="cometchat-reactions-info-wrapper">
+      <cometchat-popover
+        [useParentContainer]="true"
+        [showOnHover]="true"
+        [debounceOnHover]="hoverDebounceTime"
+        [placement]="Placement.top"
+        [content]="reactionInfoContent"
+        [showTooltip]="true"
+        [contentStyle]="reactionInfoPopoverStyle">
+
+        <button
+          class="cometchat-reactions__reaction"
+          [class.cometchat-reactions__reaction-you]="reaction.getReactedByMe()"
+          type="button"
+          [attr.aria-label]="getReactionAriaLabel(reaction)"
+          [attr.aria-pressed]="reaction.getReactedByMe()"
+          (click)="onPillClick(reaction)"
+          (keydown)="onReactionKeyDown($event, reaction)">
+          <span class="cometchat-reactions__reaction-emoji" aria-hidden="true">{{ reaction.getReaction() }}</span>
+          <span class="cometchat-reactions__reaction-count" aria-hidden="true">{{ reaction.getCount() }}</span>
+        </button>
+      </cometchat-popover>
+
+      <ng-template #reactionInfoContent>
+        <div>
+          <cometchat-reaction-info
+            [message]="message"
+            [reaction]="reaction.getReaction()">
+          </cometchat-reaction-info>
+        </div>
+      </ng-template>
+    </div>
+  }
+
+  @if (showReactionListPopover()) {
+    <cometchat-popover
+      #moreListPopover
+      [disableBackgroundInteraction]="true"
+      [useParentContainer]="true"
+      [placement]="moreListPlacement()"
+      [content]="moreListContent"
+      [contentStyle]="reactionListPopoverStyle"
+      (popoverOpened)="onMoreListPopoverOpened()"
+      (popoverClosed)="onMoreListPopoverClosed()">
+
+      <button
+        class="cometchat-reactions__more-reaction"
+        type="button"
+        aria-haspopup="dialog"
+        [attr.aria-label]="'+' + moreCount() + ' ' + ('accessibility_more_reactions' | translate)"
+        [attr.aria-expanded]="forceShowReactionList()"
+        (click)="updateMoreListPlacement()"
+        (keydown)="onMoreReactionsKeyDown($event)">
+        <span class="cometchat-reactions__more-reaction-count" aria-hidden="true">+{{ moreCount() }}</span>
+      </button>
+    </cometchat-popover>
+
+    <ng-template #moreListContent>
+      <div>
+        <cometchat-reaction-list
+          [message]="message"
+          [reactionsRequestBuilder]="reactionsRequestBuilder"
+          (itemClick)="onListItemClick($event)"
+          (empty)="onReactionListEmpty()">
+        </cometchat-reaction-list>
+      </div>
+    </ng-template>
+  }
+</div>

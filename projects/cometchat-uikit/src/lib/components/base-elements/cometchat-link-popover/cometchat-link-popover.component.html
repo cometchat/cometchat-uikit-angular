@@ -1,0 +1,56 @@
+<!-- Popover - positioned fixed to float above link text -->
+<div 
+  #popoverElement
+  class="cometchat-link-popover"
+  [style.top.px]="popoverTop"
+  [style.left.px]="popoverLeft"
+  [style.visibility]="isPositioned ? 'visible' : 'hidden'"
+  (click)="handlePopoverClick($event)"
+  role="menu"
+  [attr.aria-label]="'link_popover_aria_label' | translate"
+>
+  <!-- Close Button -->
+  <button
+    class="cometchat-link-popover__close"
+    (click)="handleCloseClick()"
+    type="button"
+    [attr.aria-label]="'close' | translate"
+  >
+    &times;
+  </button>
+
+  <!-- Link Title -->
+  <div class="cometchat-link-popover__title" aria-hidden="true">
+    {{ text }}
+  </div>
+
+  <!-- Link URL Display -->
+  <a class="cometchat-link-popover__url" [href]="url" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()">
+    {{ url }}
+  </a>
+
+  <!-- Action Buttons -->
+  <div class="cometchat-link-popover__actions">
+    <button
+      #editButton
+      class="cometchat-link-popover__button cometchat-link-popover__button--edit"
+      (click)="handleEditClick()"
+      type="button"
+      role="menuitem"
+      [attr.aria-label]="('message_composer_edit' | translate) + ' ' + ('message_composer_link' | translate)"
+    >
+      {{ 'message_composer_edit' | translate }}
+    </button>
+
+    <button
+      #removeButton
+      class="cometchat-link-popover__button cometchat-link-popover__button--remove"
+      (click)="handleRemoveClick()"
+      type="button"
+      role="menuitem"
+      [attr.aria-label]="('message_composer_remove' | translate) + ' ' + ('message_composer_link' | translate)"
+    >
+      {{ 'message_composer_remove' | translate }}
+    </button>
+  </div>
+</div>

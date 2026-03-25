@@ -1,0 +1,305 @@
+---
+title: "Call Log Details"
+sidebarTitle: "Call Log Details"
+description: "Build a detailed call insights screen with metadata, participants, and recordings in CometChat Angular UIKit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Packages | `@cometchat/chat-uikit-angular` + `@cometchat/calls-sdk-javascript` |
+| Key components | `cometchat-call-logs`, `cometchat-call-log-details`, `cometchat-call-log-participants`, `cometchat-call-log-recordings` |
+| Init | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` + Calls SDK installed |
+| Purpose | Detailed call insights screen with metadata, participants, and recordings |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Related | [All Guides](/guides/overview) |
+
+</Accordion>
+
+Call Log Details shows call metadata, participants, duration, recordings, and history when a user selects a call from the Calls tab.
+
+Before starting, complete the [Integration Guide](/integration) and install `@cometchat/calls-sdk-javascript`.
+
+---
+
+## Components
+
+| Component / Selector | Role |
+|:---|:---|
+| `cometchat-call-logs` | Calls list component in the calls tab |
+| `cometchat-call-log-details` | Main container for call details display |
+| `cometchat-call-log-participants` | Displays call participants |
+| `cometchat-call-log-recordings` | Shows call recordings if available |
+| `cometchat-call-log-history` | Displays call history |
+
+---
+
+## Implementation Steps
+
+### 1. Calls Tab Integration
+
+Render `cometchat-call-logs` when the "Calls" tab is active. When a call is clicked, store it so the details panel can display it.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-calls-tab',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    @if (activeTab === 'calls') {
+      <cometchat-call-logs
+        [activeCall]="selectedCall"
+        (itemClick)="onCallClick($event)">
+      </cometchat-call-logs>
+    }
+  `
+})
+export class CallsTabComponent {
+  activeTab = 'calls';
+  selectedCall: CometChat.Call | undefined;
+
+  onCallClick(call: CometChat.Call): void {
+    this.selectedCall = call;
+  }
+}
+```
+
+---
+
+### 2. Call Details Component
+
+Guard-check that the selected item is a call, then render the details view. The `(backClick)` output clears the selection and returns to the call list.
+
+```typescript expandable
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-call-details-view',
+  standalone: true,
+  imports: [],
+  template: `
+    @if (selectedCall) {
+      <app-call-log-details
+        [call]="selectedCall"
+        (backClick)="onBack()">
+      </app-call-log-details>
+    }
+  `
+})
+export class CallDetailsViewComponent {
+  @Input() selectedCall: CometChat.Call | undefined;
+  @Output() cleared = new EventEmitter<void>();
+
+  onBack(): void {
+    this.selectedCall = undefined;
+    this.cleared.emit();
+  }
+}
+```
+
+---
+
+### 3. Call Details Implementation
+
+The main details screen shows the caller's avatar and name at the top, call info below, and three tabs: Participants, Recording, and History.
+
+```typescript expandable
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-call-log-details',
+  standalone: true,
+  imports: [],
+  template: `
+    <div class="cometchat-call-log-details">
+      <div class="cometchat-call-log-details__header">
+        <button (click)="backClick.emit()">← Back</button>
+        <span>{{ 'call_details' | translate }}</span>
+      </div>
+
+      <div class="cometchat-call-log-details__tabs">
+        @for (tab of tabs; track tab) {
+          <div
+            [class.cometchat-call-log-details__tabs-tab-item-active]="activeTab === tab"
+            (click)="activeTab = tab">
+            {{ tab }}
+          </div>
+        }
+      </div>
+
+      @switch (activeTab) {
+        @case ('Participants') {
+          <cometchat-call-log-participants [call]="call">
+          </cometchat-call-log-participants>
+        }
+        @case ('Recording') {
+          <cometchat-call-log-recordings [call]="call">
+          </cometchat-call-log-recordings>
+        }
+        @case ('History') {
+          <cometchat-call-log-history [call]="call">
+          </cometchat-call-log-history>
+        }
+      }
+    </div>
+  `
+})
+export class CallLogDetailsComponent implements OnInit, OnDestroy {
+  @Input() call!: CometChat.Call;
+  @Output() backClick = new EventEmitter<void>();
+
+  tabs = ['Participants', 'Recording', 'History'];
+  activeTab = 'Participants';
+  user: CometChat.User | undefined;
+
+  private subscriptions: Subscription[] = [];
+
+  ngOnInit(): void {
+    this.loadCallUser();
+  }
+
+  private loadCallUser(): void {
+    const initiator = (this.call as any).getInitiator?.();
+    if (initiator) {
+      this.user = initiator;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+}
+```
+
+---
+
+### 4. Call Information Display
+
+Determine call direction (incoming/outgoing) by comparing the initiator's UID against the logged-in user, then map the SDK call status to a localized label.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatUIKitConstants,
+  CometChatUIKitLoginListener,
+  CometChatLocalize
+} from '@cometchat/chat-uikit-angular';
+
+getCallStatus(call: CometChat.Call): string {
+  const loggedInUser = CometChatUIKitLoginListener.getLoggedInUser();
+  const initiator = (call as any).getInitiator?.();
+  const isSentByMe = initiator?.getUid() === loggedInUser?.getUid();
+  const callStatus = call.getStatus();
+
+  switch (callStatus) {
+    case CometChatUIKitConstants.calls.initiated:
+    case CometChatUIKitConstants.calls.ended:
+      return isSentByMe
+        ? CometChatLocalize.getLocalizedString('calls_outgoing_call')
+        : CometChatLocalize.getLocalizedString('calls_incoming_call');
+    default:
+      return callStatus;
+  }
+}
+```
+
+---
+
+### 5. Full Integration Example
+
+A complete component wiring the calls tab, call selection, and details panel together.
+
+```typescript expandable
+import { Component, OnDestroy } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatCallLogsComponent
+} from '@cometchat/chat-uikit-angular';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-calls-with-details',
+  standalone: true,
+  imports: [CometChatCallLogsComponent],
+  template: `
+    <div class="cometchat-calls-layout">
+      <!-- Call list -->
+      <cometchat-call-logs
+        [activeCall]="selectedCall"
+        (itemClick)="onCallClick($event)">
+      </cometchat-call-logs>
+
+      <!-- Call details panel -->
+      @if (selectedCall) {
+        <app-call-log-details
+          [call]="selectedCall"
+          (backClick)="clearSelection()">
+        </app-call-log-details>
+      } @else {
+        <div class="cometchat-empty-state">
+          <p>Select a call to view details</p>
+        </div>
+      }
+    </div>
+  `
+})
+export class CallsWithDetailsComponent implements OnDestroy {
+  selectedCall: CometChat.Call | undefined;
+  private subscriptions: Subscription[] = [];
+
+  onCallClick(call: CometChat.Call): void {
+    this.selectedCall = call;
+  }
+
+  clearSelection(): void {
+    this.selectedCall = undefined;
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+}
+```
+
+---
+
+## Feature Matrix
+
+| Feature | Component / Method | Description |
+|:---|:---|:---|
+| Calls tab integration | `cometchat-call-logs` with `(itemClick)` | Lists calls and triggers detail view |
+| Call details display | `cometchat-call-log-details` | Main details container with tabs |
+| Call information | `getCallStatus()` | Determines incoming/outgoing direction |
+| Call participants | `cometchat-call-log-participants` | Displays participant list |
+| Call recordings | `cometchat-call-log-recordings` | Shows available recordings |
+| Call history | `cometchat-call-log-history` | Displays call history entries |
+| Tab navigation | `activeTab` property | Switches between Participants, Recording, History |
+| Cleanup | `ngOnDestroy` | Unsubscribes from event listeners |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Call Logs" href="/components/cometchat-call-logs">
+    The call logs component reference.
+  </Card>
+  <Card title="Call Features" href="/call-features">
+    Overview of calling capabilities.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Sample App" href="https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app">
+    Full working sample application on GitHub.
+  </Card>
+</CardGroup>

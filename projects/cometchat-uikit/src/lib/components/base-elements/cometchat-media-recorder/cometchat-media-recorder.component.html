@@ -1,0 +1,139 @@
+<div class="cometchat-media-recorder--inline" role="group" [attr.aria-label]="'media_recorder_aria_label' | translate">
+  <!-- Screen reader announcements -->
+  <div class="cometchat-media-recorder__sr-only" role="status" aria-live="polite" aria-atomic="true">
+    {{ recordingStateText }}
+  </div>
+
+  @if (hasError) {
+    <!-- Error State -->
+    <div class="cometchat-media-recorder__inline-error" role="alert">
+      <div class="cometchat-media-recorder__inline-error-icon"></div>
+      <span class="cometchat-media-recorder__inline-error-text">{{ 'media_recorder_error_title' | translate }}</span>
+      <div
+        class="cometchat-media-recorder__inline-close"
+        (click)="handleCloseRecording()"
+        (keydown)="handleKeydown($event, 'close')"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'media_recorder_delete' | translate">
+        <div class="cometchat-media-recorder__inline-close-icon"></div>
+      </div>
+    </div>
+  } @else {
+    <!-- Delete Button (always visible) -->
+    <div
+      class="cometchat-media-recorder__inline-delete"
+      (click)="handleCloseRecording()"
+      (keydown)="handleKeydown($event, 'close')"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="'media_recorder_delete' | translate">
+      <div class="cometchat-media-recorder__inline-delete-icon"></div>
+    </div>
+
+    @if (!isPaused) {
+      <!-- RECORDING STATE: dot + real-time waveform + timer + pause -->
+      <div class="cometchat-media-recorder__recording-dot" aria-hidden="true"></div>
+
+      <!-- Real-time Waveform Visualization -->
+      <div class="cometchat-media-recorder__waveform" aria-hidden="true">
+        @for (height of waveformHeights; track $index) {
+          <div
+            class="cometchat-media-recorder__waveform-bar cometchat-media-recorder__waveform-bar--active"
+            [style.height.px]="height">
+          </div>
+        }
+      </div>
+
+      <!-- Timer Display -->
+      <div
+        class="cometchat-media-recorder__timer"
+        role="timer"
+        aria-live="off"
+        [attr.aria-label]="durationAriaLabel">
+        {{ formattedCounter }}
+      </div>
+
+      <!-- Pause Button -->
+      <div
+        class="cometchat-media-recorder__inline-pause"
+        (click)="handlePauseRecording()"
+        (keydown)="handleKeydown($event, 'pause')"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'media_recorder_pause' | translate">
+        <div class="cometchat-media-recorder__inline-pause-icon"></div>
+      </div>
+    } @else if (isPaused) {
+      <!-- PAUSED STATE: play-preview + wavesurfer waveform + timer + resume -->
+
+      <!-- Play Preview Button -->
+      <div
+        class="cometchat-media-recorder__inline-play"
+        (click)="togglePreviewPlayback()"
+        (keydown)="handleKeydown($event, 'preview')"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="isPreviewPlaying ? ('media_recorder_pause' | translate) : ('media_recorder_play_preview' | translate)">
+        <div
+          class="cometchat-media-recorder__inline-play-icon"
+          [class.cometchat-media-recorder__inline-play-icon--playing]="isPreviewPlaying">
+        </div>
+      </div>
+
+      <!-- WaveSurfer Waveform Container for preview playback -->
+      <div class="cometchat-media-recorder__waveform-preview" #waveformContainer></div>
+
+      <!-- Timer Display -->
+      <div
+        class="cometchat-media-recorder__timer"
+        role="timer"
+        aria-live="off"
+        [attr.aria-label]="durationAriaLabel">
+        {{ previewTimeDisplay }}
+      </div>
+
+      <!-- Resume Recording Button -->
+      <div
+        class="cometchat-media-recorder__inline-resume"
+        (click)="handleStartRecording()"
+        (keydown)="handleKeydown($event, 'start')"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'media_recorder_resume' | translate">
+        <div class="cometchat-media-recorder__inline-resume-icon"></div>
+      </div>
+    } @else {
+      <!-- IDLE STATE (not recording, not paused - initial or after stop with no preview) -->
+      <div
+        class="cometchat-media-recorder__inline-record"
+        (click)="handleStartRecording()"
+        (keydown)="handleKeydown($event, 'start')"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="recordButtonAriaLabel"
+        [attr.aria-pressed]="recordButtonAriaPressed">
+        <div class="cometchat-media-recorder__inline-record-icon"></div>
+      </div>
+
+      <!-- Idle Waveform -->
+      <div class="cometchat-media-recorder__waveform" aria-hidden="true">
+        @for (height of waveformHeights; track $index) {
+          <div
+            class="cometchat-media-recorder__waveform-bar"
+            [style.height.px]="height">
+          </div>
+        }
+      </div>
+
+      <!-- Timer Display -->
+      <div
+        class="cometchat-media-recorder__timer"
+        role="timer"
+        aria-live="off"
+        [attr.aria-label]="durationAriaLabel">
+        {{ formattedCounter }}
+      </div>
+    }
+  }
+</div>

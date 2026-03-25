@@ -1,0 +1,81 @@
+/**
+ * CometChatActionBubble Styles
+ *
+ * BEM CSS methodology with CSS variables for theming.
+ * All values use CSS variables from css-variables.css.
+ *
+ * @see Requirements 2.2-2.7, 3.1-3.3, 4.2, 5.1-5.10
+ */
+
+/* ============================================
+   Block: cometchat-action-bubble
+   ============================================ */
+
+/**
+ * Main container for action/system messages.
+ * Displays as a centered, pill-shaped bubble.
+ *
+ * @see Requirements 2.2, 2.3, 2.4, 2.5, 2.6
+ */
+.cometchat-action-bubble {
+  display: flex;
+  padding: var(--cometchat-action-bubble-padding, var(--cometchat-padding-1, 4px) var(--cometchat-padding-3, 12px));
+  justify-content: center;
+  align-items: center;
+  gap: var(--cometchat-action-bubble-gap, var(--cometchat-spacing-1, 4px));
+  border-radius: var(--cometchat-action-bubble-border-radius, var(--cometchat-radius-max, 1000px));
+  border: var(--cometchat-action-bubble-border, 1px solid var(--cometchat-border-color-default, rgba(20, 20, 20, 0.08)));
+  background: var(--cometchat-action-bubble-background, var(--cometchat-background-color-02, #F5F5F5));
+  height: var(--cometchat-action-bubble-height, 32px);
+}
+
+/* ============================================
+   Element: Text
+   ============================================ */
+
+/**
+ * Action message text styling.
+ * Uses caption1-regular font with secondary text color.
+ *
+ * @see Requirements 3.1, 3.2, 3.3
+ */
+.cometchat-action-bubble__text {
+  color: var(--cometchat-action-bubble-text-color, var(--cometchat-text-color-secondary, rgba(20, 20, 20, 0.58)));
+  text-align: center;
+  font: var(--cometchat-action-bubble-text-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px Roboto));
+}
+
+/* ============================================
+   Element: Icon
+   ============================================ */
+
+/**
+ * Icon element for call status messages.
+ * Uses CSS mask to display the icon with appropriate color.
+ *
+ * @see Requirements 4.5, 4.6 - Call messages display with appropriate icons
+ */
+.cometchat-action-bubble__icon {
+  width: var(--cometchat-action-bubble-icon-width, 20px);
+  height: var(--cometchat-action-bubble-icon-height, 20px);
+  flex-shrink: 0;
+  background: var(--cometchat-action-bubble-icon-background, var(--cometchat-icon-color-secondary));
+}
+
+/**
+ * Error color modifier for missed call icons.
+ *
+ * @see Requirements 4.5, 4.6 - Missed calls show error color
+ */
+.cometchat-action-bubble__icon--error {
+  background: var(--cometchat-action-bubble-icon-error-background, var(--cometchat-error-color));
+}
+
+/**
+ * Error color modifier for call status text (missed, ended, cancelled).
+ *
+ * @see Requirements 4.5, 4.6
+ */
+.cometchat-action-bubble__text--error {
+  color: var(--cometchat-action-bubble-text-error-color, var(--cometchat-error-color));
+}

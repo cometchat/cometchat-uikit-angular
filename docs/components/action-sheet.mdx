@@ -1,0 +1,693 @@
+---
+title: Action Sheet
+description: "Display a list of actions in a bottom sheet or popover menu"
+---
+The `CometChatActionSheet` component displays a list of action items in a sheet-style menu. It provides a clean, accessible interface for presenting multiple options to users, commonly used for message actions, attachment options, and contextual menus.
+
+## Overview
+
+The ActionSheet component provides a flexible way to display action menus:
+
+- **Flexible Actions**: Supports various action types with icons and titles
+- **Keyboard Accessible**: Full keyboard navigation with arrow keys, Enter, and Escape
+- **ARIA Compliant**: Proper roles and attributes for screen readers
+- **Focus Management**: Automatic focus trapping and restoration
+- **Customizable**: CSS variable-based styling for easy theming
+
+## Basic Usage
+
+### Simple Action Sheet
+
+```html
+<cometchat-action-sheet 
+  [actions]="actionItems"
+  (actionItemClick)="onActionClick($event)">
+</cometchat-action-sheet>
+```
+
+### Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatActionSheetComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatMessageComposerAction } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-actions',
+  standalone: true,
+  imports: [CometChatActionSheetComponent],
+  template: `
+    <cometchat-action-sheet 
+      [actions]="messageActions"
+      (actionItemClick)="handleAction($event)"
+      (closeSheet)="onClose()">
+    </cometchat-action-sheet>
+  `
+})
+export class MessageActionsComponent {
+  messageActions: CometChatMessageComposerAction[] = [
+    new CometChatMessageComposerAction({
+      id: 'reply',
+      title: 'Reply',
+      iconURL: 'assets/icons/reply.svg',
+      onClick: () => this.replyToMessage()
+    }),
+    new CometChatMessageComposerAction({
+      id: 'forward',
+      title: 'Forward',
+      iconURL: 'assets/icons/forward.svg',
+      onClick: () => this.forwardMessage()
+    }),
+    new CometChatMessageComposerAction({
+      id: 'delete',
+      title: 'Delete',
+      iconURL: 'assets/icons/delete.svg',
+      onClick: () => this.deleteMessage()
+    })
+  ];
+
+  handleAction(action: CometChatMessageComposerAction): void {
+    console.log('Action selected:', action.title);
+    if (action.onClick) {
+      action.onClick();
+    }
+  }
+
+  onClose(): void {
+    console.log('Action sheet closed');
+  }
+
+  replyToMessage(): void {
+    console.log('Replying to message');
+  }
+
+  forwardMessage(): void {
+    console.log('Forwarding message');
+  }
+
+  deleteMessage(): void {
+    console.log('Deleting message');
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default action sheet.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-action-sheet--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-action-sheet--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "250px", border: "1px solid #e0e0e0"}}
+  title="Action Sheet — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `actions` | `(CometChatMessageComposerAction \| CometChatActionsView)[]` | `[]` | Array of action items to display in the sheet. Each action must have an `id`, `title`, and `iconURL` |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `actionItemClick` | `EventEmitter<CometChatMessageComposerAction \| CometChatActionsView>` | Emitted when an action item is clicked. Provides the clicked action object |
+| `closeSheet` | `EventEmitter<void>` | Emitted when the sheet should be closed (e.g., Escape key pressed) |
+
+## Action Types
+
+### CometChatMessageComposerAction
+
+The primary action type used in the ActionSheet:
+
+```typescript
+class CometChatMessageComposerAction {
+  id: string;              // Unique identifier
+  title: string;           // Display text
+  iconURL: string;         // Icon image URL
+  onClick?: () => void;    // Optional click handler
+}
+```
+
+### Creating Actions
+
+```typescript expandable
+import { CometChatMessageComposerAction } from '@cometchat/chat-uikit-angular';
+
+const editAction = new CometChatMessageComposerAction({
+  id: 'edit',
+  title: 'Edit Message',
+  iconURL: 'assets/icons/edit.svg',
+  onClick: () => {
+    console.log('Edit clicked');
+  }
+});
+```
+
+## Behavior
+
+### Action Selection
+
+When a user clicks or selects an action:
+1. The `actionItemClick` event is emitted with the action object
+2. If the action has an `onClick` handler, it can be invoked
+3. The parent component typically closes the sheet after handling the action
+
+### Keyboard Navigation
+
+The ActionSheet provides comprehensive keyboard support:
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Navigate between actions (focus trapped within sheet) |
+| `Arrow Down` | Move focus to next action |
+| `Arrow Up` | Move focus to previous action |
+| `Enter` / `Space` | Select the focused action |
+| `Escape` | Close the action sheet |
+
+Focus automatically moves to the first action when the sheet opens.
+
+## Customization
+
+### Styling with CSS Variables
+
+The ActionSheet component uses CSS variables for easy customization:
+
+```css expandable
+/* Custom action sheet styling */
+cometchat-action-sheet {
+  --cometchat-radius-4: 12px;
+  --cometchat-border-color-light: #E0E0E0;
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-white-hover: #F5F5F5;
+  --cometchat-primary-color: #4A90E2;
+  --cometchat-icon-color-highlight: #4A90E2;
+  --cometchat-text-color-primary: #000000;
+  --cometchat-font-heading4-regular: 400 16px 'Inter';
+  --cometchat-padding-2: 8px;
+  --cometchat-padding-4: 16px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-radius-4` | Border radius of sheet | `16px` |
+| `--cometchat-border-color-light` | Border color | `#F5F5F5` |
+| `--cometchat-background-color-01` | Sheet background | `#FFF` |
+| `--cometchat-white-hover` | Hover/focus background | `rgba(0,0,0,0.04)` |
+| `--cometchat-primary-color` | Focus outline color | `#6852D6` |
+| `--cometchat-icon-color-highlight` | Icon color | `#6852D6` |
+| `--cometchat-text-color-primary` | Text color | `#141414` |
+| `--cometchat-font-heading4-regular` | Action text font | `400 16px Roboto` |
+| `--cometchat-padding-2` | Icon-text gap | `8px` |
+| `--cometchat-padding-4` | Action item padding | `16px` |
+
+### Custom Dimensions
+
+```css expandable
+/* Wider action sheet */
+.wide-sheet cometchat-action-sheet .cometchat-action-sheet {
+  width: 400px;
+}
+
+/* Taller action sheet */
+.tall-sheet cometchat-action-sheet .cometchat-action-sheet {
+  height: 500px;
+}
+
+/* Compact action sheet */
+.compact-sheet cometchat-action-sheet .cometchat-action-sheet__item {
+  padding: 12px;
+}
+```
+
+### Custom Colors
+
+```css expandable
+/* Dark theme action sheet */
+.dark-theme cometchat-action-sheet {
+  --cometchat-background-color-01: #1E1E1E;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-border-color-light: #333333;
+  --cometchat-white-hover: rgba(255, 255, 255, 0.1);
+  --cometchat-icon-color-highlight: #BB86FC;
+  --cometchat-primary-color: #BB86FC;
+}
+
+/* Custom brand colors */
+.branded-sheet cometchat-action-sheet {
+  --cometchat-icon-color-highlight: #FF6B35;
+  --cometchat-primary-color: #FF6B35;
+}
+```
+
+<Info>
+  **Live Preview** — interactive action sheet with live controls.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-action-sheet--default-actions-list)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-action-sheet--default-actions-list&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="Action Sheet — Interactive"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The ActionSheet component includes comprehensive accessibility features:
+
+### ARIA Attributes
+
+- **Dialog Role**: `role="dialog"` and `aria-modal="true"` indicate modal behavior
+- **Menu Semantics**: `role="menu"` for the action list, `role="menuitem"` for each action
+- **Labels**: `aria-label` on the dialog and each action for screen reader context
+- **Focus Management**: Automatic focus on first item, focus trapping within sheet
+
+### Screen Reader Support
+
+Screen readers will announce:
+- "Action sheet, dialog" when the sheet opens
+- Each action's title as users navigate
+- "Selected" when an action is activated
+
+### Focus Management
+
+- **Initial Focus**: Automatically set to the first action item
+- **Focus Trapping**: Tab key cycles through actions without leaving the sheet
+- **Focus Restoration**: When closed, focus returns to the triggering element (handled by parent)
+
+### Visual Focus Indicators
+
+Clear focus indicators for keyboard navigation:
+- 2px solid outline in primary color
+- Inset outline (-2px offset) to stay within bounds
+- Background highlight on focus
+
+## Examples
+
+### Message Context Menu
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatActionSheetComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatMessageComposerAction } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-context-menu',
+  standalone: true,
+  imports: [CometChatActionSheetComponent],
+  template: `
+    @if (showActions) {
+      <cometchat-action-sheet 
+        [actions]="contextActions"
+        (actionItemClick)="handleContextAction($event)"
+        (closeSheet)="showActions = false">
+      </cometchat-action-sheet>
+    }
+  `
+})
+export class MessageContextMenuComponent {
+  showActions = false;
+  
+  contextActions: CometChatMessageComposerAction[] = [
+    new CometChatMessageComposerAction({
+      id: 'reply',
+      title: 'Reply',
+      iconURL: 'assets/icons/reply.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'forward',
+      title: 'Forward',
+      iconURL: 'assets/icons/forward.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'copy',
+      title: 'Copy Text',
+      iconURL: 'assets/icons/copy.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'edit',
+      title: 'Edit',
+      iconURL: 'assets/icons/edit.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'delete',
+      title: 'Delete',
+      iconURL: 'assets/icons/delete.svg'
+    })
+  ];
+
+  handleContextAction(action: CometChatMessageComposerAction): void {
+    console.log('Context action:', action.id);
+    this.showActions = false;
+    
+    switch (action.id) {
+      case 'reply':
+        this.replyToMessage();
+        break;
+      case 'forward':
+        this.forwardMessage();
+        break;
+      case 'copy':
+        this.copyMessageText();
+        break;
+      case 'edit':
+        this.editMessage();
+        break;
+      case 'delete':
+        this.deleteMessage();
+        break;
+    }
+  }
+
+  replyToMessage(): void {
+    // Implementation
+  }
+
+  forwardMessage(): void {
+    // Implementation
+  }
+
+  copyMessageText(): void {
+    // Implementation
+  }
+
+  editMessage(): void {
+    // Implementation
+  }
+
+  deleteMessage(): void {
+    // Implementation
+  }
+}
+```
+
+### Attachment Options
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatActionSheetComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatMessageComposerAction } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-attachment-menu',
+  standalone: true,
+  imports: [CometChatActionSheetComponent],
+  template: `
+    @if (showAttachments) {
+      <cometchat-action-sheet 
+        [actions]="attachmentOptions"
+        (actionItemClick)="handleAttachment($event)"
+        (closeSheet)="showAttachments = false">
+      </cometchat-action-sheet>
+    }
+    
+    <button (click)="showAttachments = true">
+      Attach File
+    </button>
+  `
+})
+export class AttachmentMenuComponent {
+  showAttachments = false;
+  
+  attachmentOptions: CometChatMessageComposerAction[] = [
+    new CometChatMessageComposerAction({
+      id: 'photo',
+      title: 'Photo & Video',
+      iconURL: 'assets/icons/photo.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'document',
+      title: 'Document',
+      iconURL: 'assets/icons/document.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'audio',
+      title: 'Audio',
+      iconURL: 'assets/icons/audio.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'location',
+      title: 'Location',
+      iconURL: 'assets/icons/location.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'poll',
+      title: 'Poll',
+      iconURL: 'assets/icons/poll.svg'
+    })
+  ];
+
+  handleAttachment(action: CometChatMessageComposerAction): void {
+    this.showAttachments = false;
+    
+    switch (action.id) {
+      case 'photo':
+        this.openPhotoVideoPicker();
+        break;
+      case 'document':
+        this.openDocumentPicker();
+        break;
+      case 'audio':
+        this.openAudioPicker();
+        break;
+      case 'location':
+        this.openLocationPicker();
+        break;
+      case 'poll':
+        this.openPollCreator();
+        break;
+    }
+  }
+
+  openPhotoVideoPicker(): void {
+    // Implementation
+  }
+
+  openDocumentPicker(): void {
+    // Implementation
+  }
+
+  openAudioPicker(): void {
+    // Implementation
+  }
+
+  openLocationPicker(): void {
+    // Implementation
+  }
+
+  openPollCreator(): void {
+    // Implementation
+  }
+}
+```
+
+### Dynamic Actions Based on Permissions
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatActionSheetComponent } from '@cometchat/chat-uikit-angular';
+import { CometChatMessageComposerAction } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-permission-based-actions',
+  standalone: true,
+  imports: [CommonModule, CometChatActionSheetComponent],
+  template: `
+    @if (showActions) {
+      <cometchat-action-sheet 
+        [actions]="availableActions"
+        (actionItemClick)="handleAction($event)"
+        (closeSheet)="showActions = false">
+      </cometchat-action-sheet>
+    }
+  `
+})
+export class PermissionBasedActionsComponent implements OnInit {
+  showActions = false;
+  availableActions: CometChatMessageComposerAction[] = [];
+  
+  private allActions: CometChatMessageComposerAction[] = [
+    new CometChatMessageComposerAction({
+      id: 'view',
+      title: 'View Details',
+      iconURL: 'assets/icons/view.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'edit',
+      title: 'Edit',
+      iconURL: 'assets/icons/edit.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'delete',
+      title: 'Delete',
+      iconURL: 'assets/icons/delete.svg'
+    }),
+    new CometChatMessageComposerAction({
+      id: 'share',
+      title: 'Share',
+      iconURL: 'assets/icons/share.svg'
+    })
+  ];
+
+  ngOnInit(): void {
+    this.updateAvailableActions();
+  }
+
+  updateAvailableActions(): void {
+    const userPermissions = this.getUserPermissions();
+    
+    this.availableActions = this.allActions.filter(action => {
+      switch (action.id) {
+        case 'view':
+          return true; // Everyone can view
+        case 'edit':
+          return userPermissions.canEdit;
+        case 'delete':
+          return userPermissions.canDelete;
+        case 'share':
+          return userPermissions.canShare;
+        default:
+          return false;
+      }
+    });
+  }
+
+  getUserPermissions() {
+    // Mock permissions - replace with actual permission check
+    return {
+      canEdit: true,
+      canDelete: false,
+      canShare: true
+    };
+  }
+
+  handleAction(action: CometChatMessageComposerAction): void {
+    console.log('Action:', action.id);
+    this.showActions = false;
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  Always provide unique `id` values for each action to ensure proper tracking and event handling.
+</Tip>
+
+<Warning>
+  The ActionSheet doesn't automatically close after an action is selected. Handle the `actionItemClick` event and close the sheet manually by removing it from the DOM or hiding it.
+</Warning>
+
+<Info>
+  Icons are displayed using CSS mask, which allows them to inherit the icon color from CSS variables. Use SVG icons for best results.
+</Info>
+
+<Tip>
+  Listen to the `closeSheet` event to handle Escape key presses and provide a consistent close behavior.
+</Tip>
+
+<Warning>
+  Ensure the parent component manages focus restoration when the ActionSheet closes, especially for accessibility.
+</Warning>
+
+## Integration Patterns
+
+### With Popover/Overlay
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatActionSheetComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-action-popover',
+  standalone: true,
+  imports: [CometChatActionSheetComponent],
+  template: `
+    <div class="popover-container">
+      @if (isOpen) {
+        <div class="popover-backdrop" (click)="close()"></div>
+        <div class="popover-content">
+          <cometchat-action-sheet 
+            [actions]="actions"
+            (actionItemClick)="handleAction($event)"
+            (closeSheet)="close()">
+          </cometchat-action-sheet>
+        </div>
+      }
+    </div>
+  `,
+  styles: [`
+    .popover-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 999;
+    }
+    .popover-content {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+  `]
+})
+export class ActionPopoverComponent {
+  isOpen = false;
+  actions = [/* ... */];
+
+  handleAction(action: any): void {
+    // Handle action
+    this.close();
+  }
+
+  close(): void {
+    this.isOpen = false;
+  }
+}
+```
+
+## Related Components
+
+- **CometChatButton**: Often used to trigger the ActionSheet
+- **CometChatContextMenu**: Alternative menu component with different positioning
+- **CometChatMessageComposer**: Uses ActionSheet for attachment options
+- **CometChatConfirmDialog**: Similar modal pattern for confirmations
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule
+- **Bundle Size**: Minimal footprint (~4KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatactionsheet).
+</Info>
+
+

@@ -1,0 +1,28 @@
+<div class="cometchat">
+  <div 
+    class="cometchat-action-sheet"
+    role="menu"
+    [attr.aria-label]="'action_sheet_aria_label' | translate"
+  >
+    @for (action of actions; track trackByAction($index, action)) {
+      <div
+        #actionItem
+        class="cometchat-action-sheet__item"
+        role="menuitem"
+        tabindex="0"
+        [attr.aria-label]="action.title"
+        (click)="onActionClick(action)"
+        (focus)="onActionFocus($index)"
+      >
+        <div
+          class="cometchat-action-sheet__item-icon"
+          [style.webkitMask]="action.iconURL ? 'url(' + action.iconURL + ') center center no-repeat' : null"
+          [style.mask]="action.iconURL ? 'url(' + action.iconURL + ') center center no-repeat' : null"
+        ></div>
+        <div class="cometchat-action-sheet__item-body">
+          {{ action.title }}
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,83 @@
+<div class="cometchat-join-group" role="dialog" aria-modal="true" [attr.aria-label]="'join_group_title' | translate">
+  <!-- Backdrop -->
+  <div
+    class="cometchat-join-group__backdrop"
+    (click)="onClose()"
+    (keydown.escape)="onClose()"
+    tabindex="-1"
+    role="presentation"
+  ></div>
+
+  <!-- Dialog card -->
+  <div class="cometchat-join-group__card">
+    <!-- Header -->
+    <div class="cometchat-join-group__header">
+      <span class="cometchat-join-group__title">{{ 'join_group_password_placeholder' | translate }}</span>
+      <button
+        class="cometchat-join-group__close-button"
+        (click)="onClose()"
+        [attr.aria-label]="'close' | translate"
+        type="button"
+      >
+        <div class="cometchat-join-group__close-icon" aria-hidden="true"></div>
+      </button>
+    </div>
+
+    <!-- Form -->
+    <form class="cometchat-join-group__form" (ngSubmit)="onSubmit()">
+      <!-- Group info (avatar + name + members) -->
+      @if (pendingGroup(); as group) {
+        <div class="cometchat-join-group__group-info">
+          <cometchat-avatar
+            [name]="group.getName()"
+            [image]="group.getIcon()"
+          ></cometchat-avatar>
+          <span class="cometchat-join-group__group-name">{{ group.getName() }}</span>
+          <span class="cometchat-join-group__group-members">{{ group.getMembersCount() }} {{ 'members' | translate }}</span>
+        </div>
+      }
+
+      <!-- Password -->
+      <div class="cometchat-join-group__field">
+        <label class="cometchat-join-group__label" for="join-group-password">
+          {{ 'join_group_password_placeholder' | translate }}
+        </label>
+        <div class="cometchat-join-group__input-wrapper">
+          <input
+            id="join-group-password"
+            class="cometchat-join-group__input"
+            [type]="showPassword() ? 'text' : 'password'"
+            [placeholder]="'join_group_enter_password' | translate"
+            [ngModel]="password()"
+            (ngModelChange)="onPasswordChange($event)"
+            name="password"
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            class="cometchat-join-group__toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          >
+            <div
+              class="cometchat-join-group__eye-icon"
+              [class.cometchat-join-group__eye-icon--visible]="showPassword()"
+              aria-hidden="true"
+            ></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="cometchat-join-group__actions">
+        <button
+          class="cometchat-join-group__submit-button"
+          type="submit"
+          [disabled]="!canSubmit"
+        >
+          {{ 'join_group_continue' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

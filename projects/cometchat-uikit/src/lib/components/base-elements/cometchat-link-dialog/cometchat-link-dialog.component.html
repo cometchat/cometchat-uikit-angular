@@ -1,0 +1,102 @@
+<div class="cometchat" style="width: 100%; height: fit-content;">
+  <div 
+    class="cometchat-link-dialog" 
+    #dialogContainer
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="titleId"
+    [attr.aria-describedby]="errorMessage() ? errorId : null"
+  >
+    <!-- Dialog Title -->
+    <div 
+      class="cometchat-link-dialog__title"
+      [id]="titleId"
+    >
+      {{ mode === 'add' ? ('message_composer_add_link' | translate) : ('message_composer_edit_link' | translate) }}
+    </div>
+
+    <!-- Input Fields -->
+    <div class="cometchat-link-dialog__inputs">
+      <!-- Text Input -->
+      <div class="cometchat-link-dialog__input-group">
+        <label 
+          class="cometchat-link-dialog__label"
+          for="link-text-input"
+        >
+          {{ 'message_composer_link_text' | translate }}
+        </label>
+        <input
+          #textInput
+          id="link-text-input"
+          type="text"
+          class="cometchat-link-dialog__input"
+          autocomplete="off"
+          [value]="linkText()"
+          (input)="onTextChange($any($event.target).value)"
+          [placeholder]="'message_composer_link_text_placeholder' | translate"
+          [attr.aria-label]="'message_composer_link_text' | translate"
+          [attr.aria-required]="mode === 'add' ? 'true' : 'false'"
+          [attr.aria-invalid]="errorMessage() ? 'true' : 'false'"
+          [attr.aria-describedby]="errorMessage() ? errorId : null"
+        />
+      </div>
+
+      <!-- URL Input -->
+      <div class="cometchat-link-dialog__input-group">
+        <label 
+          class="cometchat-link-dialog__label"
+          for="link-url-input"
+        >
+          {{ 'message_composer_link_url' | translate }}
+        </label>
+        <input
+          #urlInput
+          id="link-url-input"
+          type="text"
+          class="cometchat-link-dialog__input"
+          autocomplete="off"
+          [value]="linkUrl()"
+          (input)="onUrlChange($any($event.target).value)"
+          [placeholder]="'message_composer_link_url_placeholder' | translate"
+          [attr.aria-label]="'message_composer_link_url' | translate"
+          aria-required="true"
+          [attr.aria-invalid]="errorMessage() ? 'true' : 'false'"
+          [attr.aria-describedby]="errorMessage() ? errorId : null"
+        />
+      </div>
+
+      <!-- Error Message -->
+      @if (errorMessage()) {
+        <div 
+          [id]="errorId"
+          class="cometchat-link-dialog__error"
+          role="alert"
+          aria-live="polite"
+        >
+          {{ errorMessage() | translate }}
+        </div>
+      }
+    </div>
+
+    <!-- Button Group -->
+    <div class="cometchat-link-dialog__button-group">
+      <!-- Cancel Button -->
+      <div class="cometchat-link-dialog__button-group-cancel">
+        <cometchat-button
+          [text]="'message_composer_cancel' | translate"
+          [ariaLabel]="'message_composer_cancel' | translate"
+          (buttonClick)="handleCancelClick()"
+        ></cometchat-button>
+      </div>
+
+      <!-- Save Button -->
+      <div class="cometchat-link-dialog__button-group-save">
+        <cometchat-button
+          [text]="'message_composer_save' | translate"
+          [ariaLabel]="'message_composer_save' | translate"
+          (buttonClick)="handleSaveClick()"
+        ></cometchat-button>
+      </div>
+    </div>
+  </div>
+</div>

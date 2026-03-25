@@ -1,0 +1,167 @@
+import { Meta } from 'storybook/blocks';
+
+<Meta title="Documentation/Introduction" />
+
+# CometChat Angular UIKit
+
+<div style={{ padding: '20px', background: 'linear-gradient(135deg, #6852D6 0%, #3B1FA3 100%)', borderRadius: '8px', color: 'white', marginBottom: '24px' }}>
+  <h2 style={{ margin: 0, color: 'white' }}>Build powerful chat experiences in minutes</h2>
+  <p style={{ margin: '8px 0 0 0', opacity: 0.9 }}>
+    A production-ready Angular component library for modern chat applications — Angular 17+, standalone components, signals, full accessibility.
+  </p>
+</div>
+
+## What is CometChat Angular UIKit?
+
+CometChat Angular UIKit is a comprehensive component library built on Angular 17+ that provides everything you need to add real-time chat to your application. It follows Angular-native patterns — services with DI, signals for reactive state, `ng-template` projections for customization — with no DataSource or Decorator patterns from React.
+
+Key highlights:
+
+- **50+ pre-built components** from simple avatars to full conversation panels
+- **CSS variable theming** — switch between light and dark with a single `data-theme` attribute
+- **19 built-in locales** with runtime language switching
+- **Full keyboard accessibility** — Tab, Enter, Space, Escape, Arrow keys throughout
+- **ARIA support** — screen-reader-friendly markup on every component
+- **Angular signals** — reactive state without RxJS boilerplate where appropriate
+
+## Quick Start
+
+```bash
+npm install @cometchat/chat-uikit-angular
+```
+
+```typescript
+// main.ts — initialize before bootstrapping
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+await CometChatUIKit.init({ appId: 'YOUR_APP_ID', region: 'us', authKey: 'YOUR_AUTH_KEY' });
+await CometChatUIKit.login({ uid: 'USER_UID' });
+
+bootstrapApplication(AppComponent, appConfig);
+```
+
+```html
+<!-- app.component.html -->
+<cometchat-conversations (itemClick)="onConversationClick($event)"></cometchat-conversations>
+```
+
+## Component Library
+
+### Base Elements
+
+Foundational UI building blocks used throughout the UIKit.
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Avatar | [View →](?path=/docs/components-ui-avatar--docs) | User profile pictures with initials fallback |
+| Button | [View →](?path=/docs/components-ui-button--docs) | Primary, secondary, and icon button variants |
+| List Item | [View →](?path=/docs/components-ui-list-item--docs) | Flexible list row with leading, title, subtitle, trailing slots |
+| Date | [View →](?path=/docs/components-ui-date--docs) | Locale-aware date/time with relative formatting |
+| Message Preview | [View →](?path=/docs/components-ui-message-preview--docs) | Compact message preview for reply/edit mode |
+| Search Bar | [View →](?path=/docs/components-ui-search-bar--docs) | Debounced search input with clear button |
+| Checkbox | [View →](?path=/docs/components-ui-checkbox--docs) | Accessible checkbox with indeterminate state |
+| Radio Button | [View →](?path=/docs/components-ui-radio-button--docs) | Accessible radio button group |
+| Dropdown | [View →](?path=/docs/components-ui-dropdown--docs) | Accessible dropdown with keyboard navigation |
+| Toast | [View →](?path=/docs/components-ui-toast--docs) | Transient notification messages |
+| Action Sheet | [View →](?path=/docs/components-ui-action-sheet--docs) | Bottom-sheet style action menu |
+| Emoji Keyboard | [View →](?path=/docs/components-ui-emoji-keyboard--docs) | Full emoji picker with search and categories |
+| Popover | [View →](?path=/docs/components-ui-popover--docs) | Positioned overlay container |
+| Change Scope | [View →](?path=/docs/components-ui-change-scope--docs) | Group member role selector |
+| Media Recorder | [View →](?path=/docs/components-ui-media-recorder--docs) | Audio recording with waveform visualization |
+| Confirm Dialog | [View →](?path=/docs/components-ui-confirm-dialog--docs) | Modal confirmation with focus trap |
+| Fullscreen Viewer | [View →](?path=/docs/components-ui-fullscreen-viewer--docs) | Lightbox for images and media |
+| Error Boundary | [View →](?path=/docs/components-ui-error-boundary--docs) | Graceful error state display |
+
+### Conversations
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Conversations | [View →](?path=/docs/components-conversations-cometchat-conversations--docs) | Real-time conversation list with search, selection, typing indicators |
+| Conversation Item | [View →](?path=/docs/components-conversations-cometchat-conversation-item--docs) | Single conversation row with avatar, name, last message, unread badge |
+
+### Users & Groups
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Users | [View →](?path=/docs/components-users-cometchat-users--docs) | Searchable user list with alphabetical sections and selection modes |
+| User Item | [View →](?path=/docs/components-users-cometchat-user-item--docs) | Single user row with avatar, name, status |
+| Groups | [View →](?path=/docs/components-groups-cometchat-groups--docs) | Searchable group list with type indicators |
+| Group Item | [View →](?path=/docs/components-groups-cometchat-group-item--docs) | Single group row with icon, name, member count |
+| Group Members | [View →](?path=/docs/components-groups-cometchat-group-members--docs) | Paginated member list with role badges and context menus |
+| Group Member Item | [View →](?path=/docs/components-groups-cometchat-group-member-item--docs) | Single member row with scope badge |
+
+### Message Bubbles
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Message Bubble | [View →](?path=/docs/components-messages-cometchat-message-bubble--docs) | Unified bubble wrapper for all message types |
+| Text Bubble | [View →](?path=/docs/components-messages-cometchat-text-bubble--docs) | Plain and rich text messages |
+| Image Bubble | [View →](?path=/docs/components-messages-cometchat-image-bubble--docs) | Single and multi-image grid |
+| Audio Bubble | [View →](?path=/docs/components-messages-cometchat-audio-bubble--docs) | Audio player with waveform |
+| Video Bubble | [View →](?path=/docs/components-messages-cometchat-video-bubble--docs) | Video player with thumbnail |
+| File Bubble | [View →](?path=/docs/components-messages-cometchat-file-bubble--docs) | File attachment with metadata |
+| Call Bubble | [View →](?path=/docs/components-messages-cometchat-call-bubble--docs) | Missed/ended call summary |
+| Delete Bubble | [View →](?path=/docs/components-messages-cometchat-delete-bubble--docs) | Deleted message placeholder |
+| Action Bubble | [View →](?path=/docs/components-action-bubble--docs) | System/action message pill |
+| Sticker Bubble | [View →](?path=/docs/components-messages-cometchat-sticker-bubble--docs) | Sticker image display |
+| Poll Bubble | [View →](?path=/docs/components-messages-cometchat-poll-bubble--docs) | Interactive poll with vote bars |
+| Collaborative Document Bubble | [View →](?path=/docs/components-messages-cometchat-collaborative-document-bubble--docs) | Collaborative document link |
+| Collaborative Whiteboard Bubble | [View →](?path=/docs/components-messages-cometchat-collaborative-whiteboard-bubble--docs) | Collaborative whiteboard link |
+
+### Messaging
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Message List | [View →](?path=/docs/components-messages-cometchat-message-list--docs) | Scrollable message history with pagination |
+| Message Composer | [View →](?path=/docs/components-messages-cometchat-message-composer--docs) | Rich text input with attachments, emoji, voice |
+| Message Header | [View →](?path=/docs/components-messages-cometchat-message-header--docs) | Conversation header with back, info, call buttons |
+| Message Information | [View →](?path=/docs/components-messages-cometchat-message-information--docs) | Delivery/read receipt details |
+| Thread Header | [View →](?path=/docs/components-messages-cometchat-thread-header--docs) | Thread reply panel header |
+| Typing Indicator | [View →](?path=/docs/components-messages-cometchat-typing-indicator--docs) | Animated typing status |
+
+### Reactions
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Reactions | [View →](?path=/docs/components-reactions-cometchat-reactions--docs) | Emoji reaction bar on messages |
+| Reaction List | [View →](?path=/docs/components-reactions-reaction-list--docs) | Full list of reactors grouped by emoji |
+| Reaction Info | [View →](?path=/docs/components-reactions-reaction-info--docs) | Tooltip showing who reacted |
+
+### Calling
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Call Buttons | [View →](?path=/docs/components-calling-cometchat-call-buttons--docs) | Audio and video call initiation buttons |
+| Incoming Call | [View →](?path=/docs/components-calling-cometchat-incoming-call--docs) | Incoming call screen with accept/decline |
+| Outgoing Call | [View →](?path=/docs/components-calling-cometchat-outgoing-call--docs) | Outgoing call screen with cancel |
+| Ongoing Call | [View →](?path=/docs/components-calling-cometchat-ongoing-call--docs) | Active call UI |
+| Call Logs | [View →](?path=/docs/components-calling-cometchat-call-logs--docs) | Call history list |
+
+### AI Features
+
+| Component | Story | Description |
+|-----------|-------|-------------|
+| Smart Replies | [View →](?path=/docs/components-ai-cometchat-smart-replies--docs) | AI-generated reply suggestions |
+| Conversation Starter | [View →](?path=/docs/components-ai-cometchat-conversation-starter--docs) | AI-generated conversation openers |
+| Conversation Summary | [View →](?path=/docs/components-ai-cometchat-conversation-summary--docs) | AI-generated conversation summary |
+
+## Using This Storybook
+
+- **Browse** — explore components in the sidebar, organized by category
+- **Controls** — modify component inputs in real-time via the Controls panel
+- **Theme** — switch between light and dark using the toolbar circle icon
+- **Locale** — switch between 19 languages using the toolbar globe icon
+- **Accessibility** — run automated a11y checks in the Accessibility panel
+- **Docs** — every component has a Docs tab with API reference and examples
+
+## Resources
+
+- **Docs**: [docs.cometchat.com](https://docs.cometchat.com)
+- **GitHub**: [github.com/cometchat/cometchat-uikit-angular](https://github.com/cometchat/cometchat-uikit-angular)
+- **Support**: support@cometchat.com
+
+---
+
+<div style={{ padding: '16px', background: '#f0f0f0', borderRadius: '8px', marginTop: '32px' }}>
+  Press <code>/</code> to open the Storybook search and quickly jump to any component.
+</div>

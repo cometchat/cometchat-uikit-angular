@@ -1,0 +1,208 @@
+---
+title: "Search Messages"
+sidebarTitle: "Search Messages"
+description: "Add full-text message search across conversations with result routing in CometChat Angular UIKit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key components | `cometchat-search-bar`, `cometchat-message-list`, `cometchat-message-composer`, `cometchat-message-header` |
+| Init | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Purpose | Full-text message search across conversations with result routing and navigation |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Related | [All Guides](/guides/overview) |
+
+</Accordion>
+
+Search Messages lets users locate specific messages across conversations and groups using keyword search, then navigate directly to the result.
+
+Before starting, complete the [Integration Guide](/integration).
+
+---
+
+## Components
+
+| Component / Selector | Role |
+|:---|:---|
+| `cometchat-search-bar` | Search input component for entering keywords |
+| `cometchat-message-list` | Displays filtered messages based on search results |
+| `cometchat-message-composer` | Supports navigation after selecting a search result |
+| `cometchat-message-header` | Displays search context and navigation controls |
+
+---
+
+## Implementation Steps
+
+### 1. Search State Management
+
+Track the current search keyword and the message ID to scroll to. When a new search is triggered, reset `goToMessageId` so the list doesn't jump to a stale result.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+@Component({
+  selector: 'app-search-messages',
+  standalone: true,
+  imports: [],
+  template: `<!-- see steps below -->`
+})
+export class SearchMessagesComponent {
+  searchKeyword = '';
+  goToMessageId: number | undefined;
+  selectedUser: CometChat.User | undefined;
+  selectedGroup: CometChat.Group | undefined;
+
+  onSearch(keyword: string): void {
+    this.searchKeyword = keyword;
+    this.goToMessageId = undefined;
+  }
+
+  onResultClick(messageId: number): void {
+    this.goToMessageId = messageId;
+  }
+}
+```
+
+---
+
+### 2. Search Input
+
+Render the search bar component and wire its output to update the keyword state.
+
+```html
+<cometchat-search-bar
+  [placeholderText]="'Search messages...'"
+  (searchChanged)="onSearch($event)">
+</cometchat-search-bar>
+```
+
+---
+
+### 3. Search Result Integration
+
+Pass `searchKeyword` and `goToMessageId` to `cometchat-message-list`. The list filters messages matching the keyword and highlights them. When `goToMessageId` is set, the list scrolls to that message.
+
+```html
+<cometchat-message-list
+  [searchKeyword]="searchKeyword"
+  [goToMessageId]="goToMessageId"
+  [user]="selectedUser"
+  [group]="selectedGroup">
+</cometchat-message-list>
+```
+
+---
+
+### 4. Navigate to Search Result
+
+When a user taps a search result, set `goToMessageId` to that message's ID. The message list scrolls to and highlights the target message.
+
+```typescript
+onResultClick(messageId: number): void {
+  this.goToMessageId = messageId;
+}
+```
+
+---
+
+### 5. Complete Search Integration
+
+A full component wiring search input, result display, and navigation together.
+
+```typescript expandable
+import { Component, Input } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatSearchBarComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+  CometChatMessageHeaderComponent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-with-search',
+  standalone: true,
+  imports: [
+    CometChatSearchBarComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+    CometChatMessageHeaderComponent
+  ],
+  template: `
+    <div class="cometchat-chat-with-search">
+      <cometchat-search-bar
+        [placeholder]="'Search messages...'"
+        (searchTextChanged)="onSearch($event)">
+      </cometchat-search-bar>
+
+      <cometchat-message-header
+        [user]="user"
+        [group]="group">
+      </cometchat-message-header>
+
+      <cometchat-message-list
+        [user]="user"
+        [group]="group"
+        [searchKeyword]="searchKeyword"
+        [goToMessageId]="goToMessageId">
+      </cometchat-message-list>
+
+      <cometchat-message-composer
+        [user]="user"
+        [group]="group">
+      </cometchat-message-composer>
+    </div>
+  `
+})
+export class ChatWithSearchComponent {
+  @Input() user: CometChat.User | undefined;
+  @Input() group: CometChat.Group | undefined;
+
+  searchKeyword = '';
+  goToMessageId: number | undefined;
+
+  onSearch(keyword: string): void {
+    this.searchKeyword = keyword;
+    this.goToMessageId = undefined;
+  }
+
+  onResultClick(messageId: number): void {
+    this.goToMessageId = messageId;
+  }
+}
+```
+
+---
+
+## Feature Matrix
+
+| Feature | Component / Binding | Description |
+|:---|:---|:---|
+| Search input | `cometchat-search-bar` with `(searchChanged)` | Captures keyword input |
+| Display results | `cometchat-message-list` with `[searchKeyword]` | Filters and highlights matching messages |
+| Keyword highlighting | `[searchKeyword]` input | Highlights matched text in messages |
+| Navigate to result | `[goToMessageId]` input | Scrolls to and highlights target message |
+| State management | Component properties | Tracks keyword and target message ID |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Search Bar" href="/components/cometchat-search-bar">
+    The search bar component reference.
+  </Card>
+  <Card title="Message List" href="/components/cometchat-message-list">
+    Render real-time message threads.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Sample App" href="https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app">
+    Full working sample application on GitHub.
+  </Card>
+</CardGroup>

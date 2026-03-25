@@ -1,0 +1,642 @@
+# Rich Text Formatting Guide
+
+This guide explains how to use rich text formatting in the CometChat Angular V5 UIKit, including text formatting, mentions, links, and more.
+
+## Overview
+
+The UIKit provides a custom rich text editor built on native browser APIs, offering:
+- Lightweight implementation (no external dependencies)
+- Full formatting support (bold, italic, underline, etc.)
+- Mentions integration
+- Undo/redo history
+- Keyboard shortcuts
+- Full accessibility
+
+## Basic Usage
+
+### In MessageComposer
+
+The `CometChatMessageComposer` component includes rich text formatting by default:
+
+```html
+<cometchat-message-composer
+  [user]="user"
+  [placeholder]="'Type your message...'"
+  (sendMessage)="onSendMessage($event)">
+</cometchat-message-composer>
+```
+
+### Custom Implementation
+
+To use the rich text editor in your own components:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { RichTextEditorService, RichTextEditor } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-editor',
+  template: `
+    <div class="editor-container">
+      <div #editorElement class="editor"></div>
+      <div class="toolbar">
+        <button (click)="toggleBold()">Bold</button>
+        <button (click)="toggleItalic()">Italic</button>
+        <button (click)="toggleUnderline()">Underline</button>
+      </div>
+    </div>
+  `
+})
+export class CustomEditorComponent implements OnInit, OnDestroy {
+  private editorService = inject(RichTextEditorService);
+  private editor!: RichTextEditor;
+  
+  @ViewChild('editorElement') editorElement!: ElementRef;
+  
+  ngOnInit() {
+    this.editor = this.editorService.createEditor({
+      placeholder: 'Type something...',
+      autofocus: true,
+      onUpdate: (html, text) => {
+        console.log('Content:', html, text);
+      }
+    }, this.editorElement.nativeElement);
+  }
+  
+  ngOnDestroy() {
+    this.editorService.destroyEditor(this.editor);
+  }
+  
+  toggleBold() {
+    this.editorService.toggleBold(this.editor);
+  }
+  
+  toggleItalic() {
+    this.editorService.toggleItalic(this.editor);
+  }
+  
+  toggleUnderline() {
+    this.editorService.toggleUnderline(this.editor);
+  }
+}
+```
+
+## Text Formatting
+
+### Inline Formatting
+
+Apply formatting to selected text or at cursor position:
+
+```typescript expandable
+// Bold
+this.editorService.toggleBold(this.editor);
+
+// Italic
+this.editorService.toggleItalic(this.editor);
+
+// Underline
+this.editorService.toggleUnderline(this.editor);
+
+// Strikethrough
+this.editorService.toggleStrikethrough(this.editor);
+
+// Inline code
+this.editorService.toggleCode(this.editor);
+```
+
+### Keyboard Shortcuts
+
+Users can apply formatting using keyboard shortcuts:
+
+| Format | Windows/Linux | Mac |
+|--------|--------------|-----|
+| Bold | `Ctrl+B` | `Cmd+B` |
+| Italic | `Ctrl+I` | `Cmd+I` |
+| Underline | `Ctrl+U` | `Cmd+U` |
+| Undo | `Ctrl+Z` | `Cmd+Z` |
+| Redo | `Ctrl+Y` or `Ctrl+Shift+Z` | `Cmd+Shift+Z` |
+
+### Block Formatting
+
+Apply formatting to entire blocks:
+
+```typescript
+// Code block
+this.editorService.toggleCodeBlock(this.editor);
+
+// Blockquote
+this.editorService.toggleBlockquote(this.editor);
+```
+
+## Lists
+
+### Creating Lists
+
+```typescript
+// Ordered (numbered) list
+this.editorService.toggleOrderedList(this.editor);
+
+// Unordered (bullet) list
+this.editorService.toggleBulletList(this.editor);
+```
+
+### List Behavior
+
+- **Enter**: Creates a new list item
+- **Enter** (twice): Exits the list
+- **Tab**: Indents the list item
+- **Shift+Tab**: Outdents the list item
+
+### Example
+
+```typescript
+// Create a numbered list
+this.editorService.toggleOrderedList(this.editor);
+
+// User types:
+// 1. First item [Enter]
+// 2. Second item [Enter]
+// 3. Third item [Enter][Enter]
+// (exits list)
+```
+
+## Links
+
+### Adding Links
+
+```typescript
+addLink() {
+  const url = prompt('Enter URL:');
+  if (url) {
+    this.editorService.setLink(this.editor, url);
+  }
+}
+```
+
+### Removing Links
+
+```typescript
+removeLink() {
+  this.editorService.setLink(this.editor, null);
+}
+```
+
+### URL Validation
+
+The editor automatically validates URLs:
+- Invalid URLs display an error
+- URLs without protocol are prefixed with `https://`
+- Pasted URLs are automatically converted to clickable links
+
+### Example
+
+```typescript
+// Valid URLs
+this.editorService.setLink(this.editor, 'https://example.com');
+this.editorService.setLink(this.editor, 'example.com'); // Auto-prefixed
+
+// Invalid URL
+this.editorService.setLink(this.editor, 'not a url'); // Shows error
+```
+
+## Mentions
+
+### Basic Mention Integration
+
+The editor integrates with `CometChatMentionsFormatter` for @mention functionality:
+
+```typescript expandable
+ngOnInit() {
+  this.editor = this.editorService.createEditor({
+    placeholder: 'Type @ to mention someone...',
+    onMentionStart: (query) => {
+      this.showMentionPopup(query);
+    },
+    onMentionEnd: () => {
+      this.hideMentionPopup();
+    },
+    getMentionSuggestions: async (query) => {
+      return await this.searchUsers(query);
+    },
+    onMentionSelect: (item) => {
+      this.insertMention(item);
+    }
+  });
+}
+```
+
+### Inserting Mentions
+
+```typescript expandable
+insertMention(user: CometChat.User) {
+  const isSelf = user.getUid() === this.loggedInUser.getUid();
+  
+  this.editorService.insertMention(
+    this.editor,
+    user.getUid(),
+    user.getName(),
+    this.queryLength + 1, // +1 for @ symbol
+    isSelf
+  );
+}
+```
+
+### Mention Styling
+
+Mentions are styled differently based on whether they're for the current user:
+
+```css expandable
+/* Self mention (logged-in user) */
+.cometchat-mention--self {
+  background-color: var(--cometchat-primary-color);
+  color: var(--cometchat-static-white);
+}
+
+/* Other user mention */
+.cometchat-mention--other {
+  background-color: var(--cometchat-background-color-03);
+  color: var(--cometchat-text-color-primary);
+}
+```
+
+### Mention Limits
+
+- Maximum of **10 unique mentions** per message
+- Attempting to add more displays an error
+
+### Getting Mention Data
+
+```typescript
+// Get text with CometChat mention format
+const formattedText = this.editorService.getTextWithMentionFormat(this.editor);
+// Output: "Hello <@uid:user123>, how are you?"
+
+// Get unique mention UIDs
+const mentionUids = this.editorService.getUniqueMentionUids(this.editor);
+console.log('Mentioned users:', Array.from(mentionUids));
+```
+
+### Loading Messages with Mentions
+
+When loading a message that contains mentions:
+
+```typescript
+loadMessage(message: CometChat.TextMessage) {
+  this.editorService.setContentWithMentions(
+    this.editor,
+    message.getText(),
+    message.getMentionedUsers()
+  );
+}
+```
+
+## Undo/Redo
+
+### Using History
+
+```typescript
+// Undo
+if (this.editorService.canUndo(this.editor)) {
+  this.editorService.undo(this.editor);
+}
+
+// Redo
+if (this.editorService.canRedo(this.editor)) {
+  this.editorService.redo(this.editor);
+}
+```
+
+### History Grouping
+
+Rapid typing is automatically grouped into single undo steps:
+- Typing delay: 500ms
+- Each formatting operation creates a new undo step
+- History stack size: 100 entries
+
+### Example
+
+```typescript
+// User types "Hello world" quickly
+// This creates ONE undo step
+
+// User applies bold
+// This creates a SECOND undo step
+
+// Pressing Ctrl+Z undoes the bold
+// Pressing Ctrl+Z again removes "Hello world"
+```
+
+## Content Management
+
+### Getting Content
+
+```typescript
+// Get HTML with formatting
+const html = this.editorService.getHTML(this.editor);
+
+// Get plain text without formatting
+const text = this.editorService.getText(this.editor);
+
+// Get metadata
+const metadata = this.editorService.getRichTextMetadata(this.editor);
+console.log('Has formatting:', metadata.hasFormatting);
+```
+
+### Setting Content
+
+```typescript
+// Set HTML content
+this.editorService.setContent(this.editor, '<p><strong>Bold text</strong></p>');
+
+// Clear content
+this.editorService.clearContent(this.editor);
+
+// Insert text at cursor
+this.editorService.insertText(this.editor, 'Hello');
+```
+
+### Checking Content State
+
+```typescript
+// Check if empty
+if (this.editorService.isEmpty(this.editor)) {
+  console.log('Editor is empty');
+}
+
+// Check if has formatting
+if (this.editorService.hasFormatting(this.editor)) {
+  console.log('Content has rich text formatting');
+}
+```
+
+## Format State
+
+### Tracking Format State
+
+Use the reactive signal to track which formats are active:
+
+```typescript
+formatState = this.editorService.formatState;
+
+// In template
+<button [class.active]="formatState().bold">Bold</button>
+<button [class.active]="formatState().italic">Italic</button>
+<button [class.active]="formatState().link">Link</button>
+```
+
+### Manual Format State Check
+
+```typescript
+const formatState = this.editorService.getFormatState(this.editor);
+
+if (formatState.bold) {
+  console.log('Bold is active');
+}
+
+if (formatState.orderedList) {
+  console.log('In ordered list');
+}
+```
+
+## Copy, Paste, and Drag
+
+### Paste Handling
+
+The editor automatically handles pasted content:
+
+```typescript expandable
+// Formatted text paste
+// - Preserves compatible formatting (bold, italic, etc.)
+// - Strips unsupported formatting
+// - Sanitizes for XSS protection
+
+// Plain text paste
+// - Inserts without formatting
+
+// URL paste
+// - Automatically converts to clickable link
+```
+
+### Drag and Drop
+
+Users can drag and drop text within the editor:
+- Formatting is preserved
+- Cursor position is updated
+
+### Copy
+
+When users copy formatted text:
+- Formatting is preserved in clipboard
+- Both HTML and plain text formats are available
+
+## Accessibility
+
+### Keyboard Navigation
+
+All features are accessible via keyboard:
+- **Tab**: Focus editor
+- **Arrow keys**: Navigate content
+- **Escape**: Close mention popup
+- **Enter**: New line or list item
+- **Formatting shortcuts**: See table above
+
+### Screen Reader Support
+
+The editor announces:
+- Formatting changes ("Bold applied")
+- Mention insertions ("Mentioned John Doe")
+- Undo/redo operations ("Undone", "Redone")
+
+### ARIA Attributes
+
+The editor includes proper ARIA attributes:
+- `role="textbox"`
+- `aria-label="Message editor"`
+- `aria-multiline="true"`
+- `aria-placeholder="Type your message..."`
+
+## Styling
+
+### Using CSS Variables
+
+Customize the editor appearance using CSS variables:
+
+```css expandable
+:root {
+  /* Editor background */
+  --cometchat-background-color-01: #ffffff;
+  
+  /* Text color */
+  --cometchat-text-color-primary: #141414;
+  
+  /* Placeholder color */
+  --cometchat-text-color-secondary: #666666;
+  
+  /* Focus border */
+  --cometchat-primary-color: #6852D6;
+  
+  /* Mention colors */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-background-color-03: #f0f0f0;
+}
+```
+
+### Custom Styles
+
+Apply custom styles to the editor:
+
+```css expandable
+.cometchat-rich-text-editor {
+  min-height: 100px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: var(--cometchat-spacing-3);
+  border: 1px solid var(--cometchat-border-color-light);
+  border-radius: var(--cometchat-radius-2);
+}
+
+.cometchat-rich-text-editor:focus {
+  outline: none;
+  border-color: var(--cometchat-primary-color);
+}
+```
+
+## Performance
+
+### Optimization Tips
+
+1. **Debounce updates**: Use debouncing for expensive operations
+2. **Lazy load mentions**: Load mention suggestions on demand
+3. **Limit history**: History is automatically limited to 100 entries
+4. **Clean up**: Always destroy editors when done
+
+### Performance Metrics
+
+The editor is optimized for:
+- **Typing latency**: < 50ms per keystroke (10,000 characters)
+- **Formatting operations**: < 100ms
+- **Initialization**: < 50ms
+- **Paste operations**: < 200ms
+
+## Security
+
+### XSS Protection
+
+All HTML is sanitized to prevent XSS attacks:
+- Script tags removed
+- Event handlers removed
+- Dangerous attributes removed
+- Only safe HTML tags allowed
+
+### Content Validation
+
+- URLs are validated before insertion
+- Mention data is sanitized
+- Pasted content is sanitized
+
+## Best Practices
+
+### 1. Always Clean Up
+
+```typescript
+ngOnDestroy() {
+  if (this.editor) {
+    this.editorService.destroyEditor(this.editor);
+  }
+}
+```
+
+### 2. Use Reactive Signals
+
+```typescript
+// Good: Use reactive signal
+formatState = this.editorService.formatState;
+
+// Avoid: Polling format state
+setInterval(() => {
+  this.formatState = this.editorService.getFormatState(this.editor);
+}, 100);
+```
+
+### 3. Handle Empty State
+
+```typescript
+sendMessage() {
+  if (this.editorService.isEmpty(this.editor)) {
+    // Show error: "Message cannot be empty"
+    return;
+  }
+  
+  const text = this.editorService.getTextWithMentionFormat(this.editor);
+  // Send message...
+}
+```
+
+### 4. Validate Before Sending
+
+```typescript expandable
+sendMessage() {
+  const text = this.editorService.getText(this.editor);
+  
+  if (text.trim().length === 0) {
+    return; // Empty message
+  }
+  
+  if (text.length > 10000) {
+    // Show error: "Message too long"
+    return;
+  }
+  
+  // Send message...
+}
+```
+
+## Troubleshooting
+
+### Editor Not Focusing
+
+```typescript
+// Ensure element is mounted before creating editor
+ngAfterViewInit() {
+  this.editor = this.editorService.createEditor(
+    { autofocus: true },
+    this.editorElement.nativeElement
+  );
+}
+```
+
+### Formatting Not Working
+
+```typescript expandable
+// Check if editor is destroyed
+if (this.editor.isDestroyed()) {
+  console.error('Editor is destroyed');
+  return;
+}
+
+// Check if editor is editable
+if (!this.editor.isEditable()) {
+  console.error('Editor is not editable');
+  return;
+}
+```
+
+### Mentions Not Showing
+
+```typescript expandable
+// Ensure mention callbacks are configured
+this.editor = this.editorService.createEditor({
+  onMentionStart: (query) => {
+    console.log('Mention started:', query);
+    this.showMentionPopup(query);
+  },
+  getMentionSuggestions: async (query) => {
+    return await this.searchUsers(query);
+  }
+});
+```
+
+## See Also
+
+- [RichTextEditorService API Reference](../api-reference/rich-text-editor-service.mdx)
+- [MessageComposer Component](../components/message-composer.mdx)

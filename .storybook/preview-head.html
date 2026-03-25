@@ -1,0 +1,48 @@
+<link rel="stylesheet" href="/styles/css-variables.css" id="cometchat-css-variables">
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+/* #storybook-root{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+} */
+  #storybook-root, .sb-show-main {
+    background-color: #dbdbdb !important;
+    /* min-height: 100vh; */
+  }
+
+  [data-theme="dark"] #storybook-root,
+  [data-theme="dark"].sb-show-main {
+    background-color: #1a1a1a !important;
+  }
+
+  /* ── Docs page: story preview blocks only ── */
+  .docs-story {
+    background-color: #dbdbdb !important;
+  }
+  [data-theme="dark"] .docs-story,
+  .docs-story[data-theme="dark"] {
+    background-color: #1a1a1a !important;
+  }
+
+  /* ── Story container: make Angular host elements fill their wrapper ── */
+  /* Angular custom elements default to display:inline, which breaks height-based scroll */
+  cometchat-conversations,
+  cometchat-users,
+  cometchat-groups,
+  cometchat-call-logs,
+  cometchat-message-list,
+  cometchat-users-story-wrapper,
+  cometchat-conversations-story-wrapper,
+  cometchat-groups-story-wrapper,
+  cometchat-call-logs-story-wrapper,
+  cometchat-message-list-story-wrapper,
+  cometchat-fullscreen-viewer {
+    display: block;
+    height: 100%;
+  }
+</style>

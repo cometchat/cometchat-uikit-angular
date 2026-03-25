@@ -1,0 +1,49 @@
+<div class="cometchat" style="width: 100%; height: fit-content;">
+  @if (isError) {
+    <div class="cometchat-dialog-error-view cometchat-confirm-dialog-error-view">
+      {{ errorMessage }}
+    </div>
+  }
+  <div 
+    class="cometchat-confirm-dialog" 
+    #dialogContainer
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="titleId"
+    tabindex="-1"
+  >
+    <div class="cometchat-confirm-dialog__icon-wrapper">
+      <div 
+        class="cometchat-confirm-dialog__icon-wrapper-icon"
+        [style.-webkit-mask-image]="iconURL ? 'url(' + iconURL + ')' : null"
+        [style.mask-image]="iconURL ? 'url(' + iconURL + ')' : null"
+      ></div>
+    </div>
+    <div class="cometchat-confirm-dialog__content">
+      <div 
+        class="cometchat-confirm-dialog__content-title"
+        [id]="titleId"
+      >
+        {{ title }}
+      </div>
+      <div class="cometchat-confirm-dialog__content-description">
+        {{ messageText }}
+      </div>
+    </div>
+    <div class="cometchat-confirm-dialog__button-group">
+      <div class="cometchat-confirm-dialog__button-group-cancel">
+        <cometchat-button
+          [text]="cancelButtonText"
+          (buttonClick)="handleCancelClick()"
+        ></cometchat-button>
+      </div>
+      <div class="cometchat-confirm-dialog__button-group-submit">
+        <cometchat-button
+          [text]="confirmButtonText"
+          [isLoading]="isLoading"
+          (buttonClick)="handleSubmitClick()"
+        ></cometchat-button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,168 @@
+---
+title: "Events"
+description: "Reference for CometChat Angular UIKit events including conversation, user, group, message, call, and UI events."
+---
+
+Events provide decoupled communication between UIKit components using a publish/subscribe event bus pattern. Components emit events in response to user interactions or state changes, allowing other parts of your application to react without direct component references. In Angular, you subscribe to these events using RxJS observables and manage subscriptions through component lifecycle hooks.
+
+## CometChatConversationEvents
+
+`CometChatConversationEvents` emits events when the logged-in user acts on a conversation object.
+
+| Event Name                | Description                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| **ccConversationDeleted** | Triggered when the user successfully deletes a conversation.                                     |
+| **ccUpdateConversation**  | Triggered to update a conversation in the conversation list. Takes a Conversation object to update. |
+
+## CometChatUserEvents
+
+`CometChatUserEvents` emits events when the logged-in user acts on another user object.
+
+| Event Name          | Description                                                               |
+| ------------------- | ------------------------------------------------------------------------- |
+| **ccUserBlocked**   | Triggered when the user successfully blocks another user.                 |
+| **ccUserUnblocked** | Triggered when the user successfully unblocks another user.               |
+
+## CometChatGroupEvents
+
+`CometChatGroupEvents` emits events when the logged-in user acts on a group object.
+
+| Event Name                      | Description                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| **ccGroupCreated**              | Triggered when the user creates a group successfully.                                |
+| **ccGroupDeleted**              | Triggered when the group member deletes the group successfully.                      |
+| **ccGroupLeft**                 | Triggered when the group member leaves the group successfully.                       |
+| **ccGroupMemberScopeChanged**   | Triggered when the group member's scope is updated successfully.                     |
+| **ccGroupMemberKicked**         | Triggered when a group member is kicked.                                             |
+| **ccGroupMemberBanned**         | Triggered when a group member is banned.                                             |
+| **ccGroupMemberUnbanned**       | Triggered when a group member is un-banned.                                          |
+| **ccGroupMemberJoined**         | Triggered when a user joins the group.                                               |
+| **ccGroupMemberAdded**          | Triggered when a user is added to the group.                                         |
+| **ccOwnershipChanged**          | Triggered when the group ownership is assigned to another group member.              |
+
+## CometChatMessageEvents
+
+`CometChatMessageEvents` emits events when the logged-in user acts on a message object. This category includes both UIKit-level events and CometChat SDK listener events.
+
+### UIKit Events
+
+| Event Name            | Description                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| **ccMessageSent**     | Triggered when the sent message is in transit and also when it is received by the receiver.                |
+| **ccMessageEdited**   | Triggered when the user successfully edits a message.                                                     |
+| **ccReplyToMessage**  | Triggered when the user successfully replies to a message.                                                |
+| **ccMessageDeleted**  | Triggered when the user successfully deletes a message.                                                   |
+| **ccMessageRead**     | Triggered when the sent message is read by the receiver.                                                  |
+| **ccLiveReaction**    | Triggered when the user sends a live reaction.                                                            |
+
+### SDK Listener Events
+
+| Event Name                       | Description                                                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| **onTextMessageReceived**        | Emitted when the CometChat SDK listener receives a text message.                         |
+| **onMediaMessageReceived**       | Emitted when the CometChat SDK listener receives a media message.                        |
+| **onCustomMessageReceived**      | Emitted when the CometChat SDK listener receives a custom message.                       |
+| **onTypingStarted**              | Emitted when the CometChat SDK listener indicates that a user has started typing.        |
+| **onTypingEnded**                | Emitted when the CometChat SDK listener indicates that a user has stopped typing.        |
+| **onMessagesDelivered**          | Emitted when the CometChat SDK listener indicates that messages have been delivered.     |
+| **onMessagesRead**               | Emitted when the CometChat SDK listener indicates that messages have been read.          |
+| **onMessageEdited**              | Emitted when the CometChat SDK listener indicates that a message has been edited.        |
+| **onMessageDeleted**             | Emitted when the CometChat SDK listener indicates that a message has been deleted.       |
+| **onTransientMessageReceived**   | Emitted when the CometChat SDK listener receives a transient message.                    |
+
+## CometChatCallEvents
+
+`CometChatCallEvents` emits events when the logged-in user acts on a call object.
+
+| Event Name         | Description                                                                  |
+| ------------------ | ---------------------------------------------------------------------------- |
+| **ccOutgoingCall**  | Triggered when the user initiates a voice/video call.                        |
+| **ccCallAccepted** | Triggered when the initiated call is accepted by the receiver.               |
+| **ccCallRejected** | Triggered when the initiated call is rejected by the receiver.               |
+| **ccCallEnded**    | Triggered when the initiated call successfully ends.                         |
+
+## UI Events
+
+UI events are triggered when a user interacts with UIKit elements such as buttons, menus, or input fields.
+
+| Event Name              | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| **ccActiveChatChanged** | Triggered when the user navigates to a particular chat window.               |
+
+## Usage
+
+Subscribe to events in `ngOnInit` and unsubscribe in `ngOnDestroy` to prevent memory leaks.
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CometChatMessageEvents } from '@cometchat/chat-uikit-angular';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  template: `<!-- your template -->`
+})
+export class ChatComponent implements OnInit, OnDestroy {
+  private messageSubscription?: Subscription;
+
+  ngOnInit(): void {
+    this.messageSubscription = CometChatMessageEvents.ccMessageSent.subscribe(
+      (message) => {
+        console.log('Message sent:', message);
+      }
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.messageSubscription?.unsubscribe();
+  }
+}
+```
+
+<Note>
+When subscribing to multiple events, consider using a `Subscription` container to manage all subscriptions together.
+</Note>
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  CometChatMessageEvents,
+  CometChatConversationEvents,
+  CometChatGroupEvents
+} from '@cometchat/chat-uikit-angular';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-chat-listener',
+  standalone: true,
+  template: `<!-- your template -->`
+})
+export class ChatListenerComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+
+  ngOnInit(): void {
+    this.subscriptions.add(
+      CometChatMessageEvents.ccMessageSent.subscribe((message) => {
+        console.log('Message sent:', message);
+      })
+    );
+
+    this.subscriptions.add(
+      CometChatConversationEvents.ccConversationDeleted.subscribe((conversation) => {
+        console.log('Conversation deleted:', conversation);
+      })
+    );
+
+    this.subscriptions.add(
+      CometChatGroupEvents.ccGroupMemberAdded.subscribe((data) => {
+        console.log('Member added:', data);
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+}
+```

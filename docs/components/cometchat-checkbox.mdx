@@ -1,0 +1,697 @@
+---
+title: Checkbox
+description: "A reusable checkbox component with indeterminate state support, full keyboard accessibility, and Angular forms integration"
+---
+The `CometChatCheckbox` component provides a consistent, accessible checkbox implementation across the UIKit. It supports checked, disabled, and indeterminate states with full keyboard accessibility and Angular forms integration via ControlValueAccessor.
+
+## Overview
+
+The Checkbox component is designed for uniform selection patterns throughout your chat application:
+
+- **Flexible States**: Supports checked, unchecked, disabled, and indeterminate states
+- **Forms Integration**: Implements ControlValueAccessor for seamless Angular forms support
+- **Accessibility**: Full keyboard support with Space key activation
+- **Customizable**: CSS variable-based styling for easy theming
+- **Responsive**: Hover and focus states with visual feedback
+
+## Basic Usage
+
+### Simple Checkbox
+
+```html
+<cometchat-checkbox 
+  [labelText]="'Accept terms and conditions'" 
+  (checkboxChanged)="onCheckboxChange($event)">
+</cometchat-checkbox>
+```
+
+### Checked Checkbox
+
+```html
+<cometchat-checkbox 
+  [checked]="true"
+  [labelText]="'Remember me'" 
+  (checkboxChanged)="onCheckboxChange($event)">
+</cometchat-checkbox>
+```
+
+### Disabled Checkbox
+
+```html
+<cometchat-checkbox 
+  [labelText]="'Unavailable option'" 
+  [disabled]="true">
+</cometchat-checkbox>
+```
+
+### Indeterminate Checkbox
+
+```html
+<cometchat-checkbox 
+  [indeterminate]="true"
+  [labelText]="'Select all (partial)'" 
+  (checkboxChanged)="onCheckboxChange($event)">
+</cometchat-checkbox>
+```
+
+<Info>
+  **Live Preview** — interact with the default checkbox.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-checkbox--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-checkbox--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "80px", border: "1px solid #e0e0e0"}}
+  title="Checkbox — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatCheckboxComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-settings-form',
+  standalone: true,
+  imports: [CometChatCheckboxComponent],
+  template: `
+    <div class="settings-form">
+      <h3>Notification Settings</h3>
+      
+      <cometchat-checkbox 
+        [checked]="settings.emailNotifications"
+        [labelText]="'Email notifications'" 
+        (checkboxChanged)="onEmailNotificationsChange($event)">
+      </cometchat-checkbox>
+      
+      <cometchat-checkbox 
+        [checked]="settings.pushNotifications"
+        [labelText]="'Push notifications'" 
+        (checkboxChanged)="onPushNotificationsChange($event)">
+      </cometchat-checkbox>
+      
+      <cometchat-checkbox 
+        [checked]="settings.soundEnabled"
+        [labelText]="'Sound effects'"
+        [disabled]="!settings.pushNotifications"
+        (checkboxChanged)="onSoundChange($event)">
+      </cometchat-checkbox>
+    </div>
+  `,
+  styles: [`
+    .settings-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px;
+    }
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+  `]
+})
+export class SettingsFormComponent {
+  settings = {
+    emailNotifications: true,
+    pushNotifications: false,
+    soundEnabled: false
+  };
+
+  onEmailNotificationsChange(event: { checked: boolean; labelText: string }): void {
+    this.settings.emailNotifications = event.checked;
+    console.log('Email notifications:', event.checked);
+  }
+
+  onPushNotificationsChange(event: { checked: boolean; labelText: string }): void {
+    this.settings.pushNotifications = event.checked;
+    if (!event.checked) {
+      this.settings.soundEnabled = false;
+    }
+    console.log('Push notifications:', event.checked);
+  }
+
+  onSoundChange(event: { checked: boolean; labelText: string }): void {
+    this.settings.soundEnabled = event.checked;
+    console.log('Sound enabled:', event.checked);
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `checked` | `boolean` | `false` | Checked state of the checkbox |
+| `labelText` | `string` | `''` | Label text displayed next to the checkbox |
+| `disabled` | `boolean` | `false` | Disables the checkbox, preventing interaction |
+| `indeterminate` | `boolean` | `false` | Shows indeterminate state (partial selection, typically used for "select all" scenarios) |
+| `ariaLabel` | `string` | `undefined` | Custom aria-label for accessibility (overrides `labelText` for screen readers) |
+
+<Info>
+  **Live Preview** — all checkbox states (unchecked, checked, disabled, indeterminate).
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-checkbox--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-checkbox--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Checkbox — All States"
+  allow="clipboard-write"
+></iframe>
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `checkboxChanged` | `EventEmitter<{ checked: boolean; labelText: string }>` | Emitted when checkbox state changes. Provides both the new checked state and the label text |
+
+## Behavior
+
+### Checked State
+
+The checkbox can be controlled or uncontrolled:
+
+```typescript expandable
+// Controlled checkbox
+@Component({
+  template: `
+    <cometchat-checkbox 
+      [checked]="isChecked"
+      [labelText]="'Controlled checkbox'" 
+      (checkboxChanged)="onCheckboxChange($event)">
+    </cometchat-checkbox>
+  `
+})
+export class ControlledCheckboxComponent {
+  isChecked = false;
+
+  onCheckboxChange(event: { checked: boolean; labelText: string }): void {
+    this.isChecked = event.checked;
+  }
+}
+```
+
+### Indeterminate State
+
+The indeterminate state is useful for "select all" scenarios where some but not all items are selected:
+
+```typescript expandable
+@Component({
+  template: `
+    <div>
+      <cometchat-checkbox 
+        [checked]="allSelected"
+        [indeterminate]="someSelected"
+        [labelText]="'Select all'" 
+        (checkboxChanged)="onSelectAllChange($event)">
+      </cometchat-checkbox>
+      
+      <div class="items">
+        @for (item of items; track item.id) {
+          <cometchat-checkbox 
+            [checked]="item.selected"
+            [labelText]="item.name" 
+            (checkboxChanged)="onItemChange(item, $event)">
+          </cometchat-checkbox>
+        }
+      </div>
+    </div>
+  `
+})
+export class SelectAllComponent {
+  items = [
+    { id: 1, name: 'Item 1', selected: false },
+    { id: 2, name: 'Item 2', selected: true },
+    { id: 3, name: 'Item 3', selected: false }
+  ];
+
+  get allSelected(): boolean {
+    return this.items.every(item => item.selected);
+  }
+
+  get someSelected(): boolean {
+    const selectedCount = this.items.filter(item => item.selected).length;
+    return selectedCount > 0 && selectedCount < this.items.length;
+  }
+
+  onSelectAllChange(event: { checked: boolean }): void {
+    this.items.forEach(item => item.selected = event.checked);
+  }
+
+  onItemChange(item: any, event: { checked: boolean }): void {
+    item.selected = event.checked;
+  }
+}
+```
+
+### Disabled State
+
+When `disabled` is `true`:
+- Checkbox shows reduced opacity (0.5)
+- Cursor changes to `not-allowed`
+- Click events are blocked
+- ARIA attribute `aria-disabled="true"` is set
+
+## Angular Forms Integration
+
+The checkbox implements `ControlValueAccessor`, allowing seamless integration with Angular forms:
+
+### Reactive Forms
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { CometChatCheckboxComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reactive-form',
+  standalone: true,
+  imports: [ReactiveFormsModule, CometChatCheckboxComponent],
+  template: `
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <cometchat-checkbox 
+        formControlName="agreeToTerms"
+        [labelText]="'I agree to the terms and conditions'">
+      </cometchat-checkbox>
+      
+      <cometchat-checkbox 
+        formControlName="subscribeNewsletter"
+        [labelText]="'Subscribe to newsletter'">
+      </cometchat-checkbox>
+      
+      <button type="submit" [disabled]="!form.valid">Submit</button>
+    </form>
+  `
+})
+export class ReactiveFormComponent {
+  form: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.form = this.fb.group({
+      agreeToTerms: [false],
+      subscribeNewsletter: [true]
+    });
+  }
+
+  onSubmit(): void {
+    console.log('Form values:', this.form.value);
+  }
+}
+```
+
+### Template-Driven Forms
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CometChatCheckboxComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-template-form',
+  standalone: true,
+  imports: [FormsModule, CometChatCheckboxComponent],
+  template: `
+    <form #form="ngForm" (ngSubmit)="onSubmit()">
+      <cometchat-checkbox 
+        [(ngModel)]="model.agreeToTerms"
+        name="agreeToTerms"
+        [labelText]="'I agree to the terms and conditions'">
+      </cometchat-checkbox>
+      
+      <cometchat-checkbox 
+        [(ngModel)]="model.subscribeNewsletter"
+        name="subscribeNewsletter"
+        [labelText]="'Subscribe to newsletter'">
+      </cometchat-checkbox>
+      
+      <button type="submit">Submit</button>
+    </form>
+  `
+})
+export class TemplateFormComponent {
+  model = {
+    agreeToTerms: false,
+    subscribeNewsletter: true
+  };
+
+  onSubmit(): void {
+    console.log('Form values:', this.model);
+  }
+}
+```
+
+## Customization
+
+### Styling with CSS Variables
+
+The Checkbox component uses CSS variables for comprehensive theming:
+
+```css expandable
+/* Custom checkbox styling */
+cometchat-checkbox {
+  --cometchat-primary-color: #4A90E2;
+  --cometchat-border-color-default: #E0E0E0;
+  --cometchat-border-color-dark: #BDBDBD;
+  --cometchat-static-white: #FFFFFF;
+  --cometchat-text-color-secondary: #424242;
+  --cometchat-font-body-regular: 400 14px 'Inter';
+  --cometchat-radius-1: 4px;
+  --cometchat-radius-2: 8px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-primary-color` | Checked state background and border color | `#6852D6` |
+| `--cometchat-border-color-default` | Unchecked border color | `#E8E8E8` |
+| `--cometchat-border-color-dark` | Hover border color | `#DCDCDC` |
+| `--cometchat-static-white` | Checkmark color | `#FFFFFF` |
+| `--cometchat-text-color-secondary` | Label text color | `#424242` |
+| `--cometchat-font-body-regular` | Label font | `400 14px Roboto` |
+| `--cometchat-radius-1` | Checkbox border radius | `4px` |
+| `--cometchat-radius-2` | Label gap spacing | `8px` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Success checkbox */
+.checkbox-success cometchat-checkbox {
+  --cometchat-primary-color: #4CAF50;
+}
+
+/* Warning checkbox */
+.checkbox-warning cometchat-checkbox {
+  --cometchat-primary-color: #FF9800;
+}
+
+/* Error checkbox */
+.checkbox-error cometchat-checkbox {
+  --cometchat-primary-color: #F44336;
+}
+```
+
+### Custom Sizes
+
+```css expandable
+/* Large checkbox */
+.checkbox-large .cometchat-checkbox__checkmark {
+  width: 32px;
+  height: 32px;
+}
+
+.checkbox-large .cometchat-checkbox__checkmark::after {
+  width: 20px;
+  height: 20px;
+}
+
+/* Small checkbox */
+.checkbox-small .cometchat-checkbox__checkmark {
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-small .cometchat-checkbox__checkmark::after {
+  width: 12px;
+  height: 12px;
+}
+```
+
+## Accessibility
+
+The Checkbox component includes comprehensive accessibility features:
+
+### Keyboard Support
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Moves focus to/from the checkbox |
+| `Space` | Toggles the checkbox state |
+
+### ARIA Attributes
+
+- `role="checkbox"`: Explicitly identifies the element as a checkbox
+- `aria-checked`: Set to `"true"`, `"false"`, or `"mixed"` (for indeterminate state)
+- `aria-disabled`: Set to `"true"` when checkbox is disabled
+- `aria-label`: Provides accessible label from `labelText` property
+
+### Focus Indicators
+
+The checkbox provides clear visual focus indicators:
+- 2px solid outline in primary color
+- 2px offset from checkbox edge
+- Visible during keyboard navigation
+
+```css
+/* Focus styling is built-in */
+.cometchat-checkbox__input:focus + .cometchat-checkbox__checkmark {
+  outline: 2px solid var(--cometchat-primary-color, #6852D6);
+  outline-offset: 2px;
+}
+```
+
+## Examples
+
+### Checkbox List
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatCheckboxComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-checkbox-list',
+  standalone: true,
+  imports: [CommonModule, CometChatCheckboxComponent],
+  template: `
+    <div class="checkbox-list">
+      <h3>Select your interests</h3>
+      @for (interest of interests; track interest.id) {
+        <cometchat-checkbox 
+          [checked]="interest.selected"
+          [labelText]="interest.name" 
+          (checkboxChanged)="onInterestChange(interest, $event)">
+        </cometchat-checkbox>
+      }
+    </div>
+  `,
+  styles: [`
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px;
+    }
+    h3 {
+      margin: 0 0 8px 0;
+    }
+  `]
+})
+export class CheckboxListComponent {
+  interests = [
+    { id: 1, name: 'Technology', selected: false },
+    { id: 2, name: 'Sports', selected: true },
+    { id: 3, name: 'Music', selected: false },
+    { id: 4, name: 'Travel', selected: true }
+  ];
+
+  onInterestChange(interest: any, event: { checked: boolean }): void {
+    interest.selected = event.checked;
+    console.log('Selected interests:', this.getSelectedInterests());
+  }
+
+  getSelectedInterests(): string[] {
+    return this.interests
+      .filter(i => i.selected)
+      .map(i => i.name);
+  }
+}
+```
+
+### Nested Checkboxes with Select All
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatCheckboxComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-nested-checkboxes',
+  standalone: true,
+  imports: [CommonModule, CometChatCheckboxComponent],
+  template: `
+    <div class="nested-checkboxes">
+      <cometchat-checkbox 
+        [checked]="allPermissionsSelected"
+        [indeterminate]="somePermissionsSelected"
+        [labelText]="'All Permissions'" 
+        (checkboxChanged)="onSelectAllChange($event)">
+      </cometchat-checkbox>
+      
+      <div class="permission-group">
+        @for (permission of permissions; track permission.id) {
+          <cometchat-checkbox 
+            [checked]="permission.selected"
+            [labelText]="permission.name" 
+            (checkboxChanged)="onPermissionChange(permission, $event)">
+          </cometchat-checkbox>
+        }
+      </div>
+    </div>
+  `,
+  styles: [`
+    .nested-checkboxes {
+      padding: 20px;
+    }
+    .permission-group {
+      margin-left: 32px;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  `]
+})
+export class NestedCheckboxesComponent {
+  permissions = [
+    { id: 1, name: 'Read messages', selected: true },
+    { id: 2, name: 'Send messages', selected: false },
+    { id: 3, name: 'Delete messages', selected: false },
+    { id: 4, name: 'Manage users', selected: false }
+  ];
+
+  get allPermissionsSelected(): boolean {
+    return this.permissions.every(p => p.selected);
+  }
+
+  get somePermissionsSelected(): boolean {
+    const selectedCount = this.permissions.filter(p => p.selected).length;
+    return selectedCount > 0 && selectedCount < this.permissions.length;
+  }
+
+  onSelectAllChange(event: { checked: boolean }): void {
+    this.permissions.forEach(p => p.selected = event.checked);
+  }
+
+  onPermissionChange(permission: any, event: { checked: boolean }): void {
+    permission.selected = event.checked;
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  Always provide meaningful `labelText` to improve accessibility and user experience.
+</Tip>
+
+<Warning>
+  The indeterminate state is cleared automatically when the user clicks the checkbox. You'll need to manage it programmatically for "select all" scenarios.
+</Warning>
+
+<Info>
+  The checkbox emits both the checked state and label text, making it easy to identify which checkbox changed in lists.
+</Info>
+
+<Tip>
+  Use the disabled state to prevent interaction with unavailable options, but consider hiding them entirely if they're not relevant to the current context.
+</Tip>
+
+## Angular Version Compatibility
+
+This component is compatible with Angular versions 14 through 21.
+
+### Compatibility Matrix
+
+| Angular Version | Status | Notes |
+|----------------|--------|-------|
+| 14.x | ✅ Supported | Standalone components, inject() available |
+| 15.x - 21.x | ✅ Supported | All features work |
+
+### API Stability
+
+The component uses only stable Angular APIs:
+- `@Component`, `@Input`, `@Output` (Angular 2+)
+- `@HostListener` (Angular 2+)
+- `EventEmitter`, `ElementRef`, `Renderer2` (Angular 2+)
+- `ControlValueAccessor` (Angular 2+)
+- Standalone components (Angular 14+)
+
+### Upgrade Path
+
+No changes required when upgrading from Angular 14 to 21. The component uses stable APIs and follows Angular best practices.
+
+## Integration and Isolation
+
+### Event Listener Scoping
+
+This component uses component-scoped event listeners that don't interfere with your application:
+
+```typescript
+@HostListener('keydown', ['$event'])
+handleKeydown(event: KeyboardEvent): void {
+  // Only handles events within this component
+  // Space key toggles checkbox
+}
+```
+
+### Focus Management
+
+Focus management is isolated to this component:
+- Native checkbox element handles focus automatically
+- Focus indicators only appear during keyboard navigation (`:focus-visible`)
+- No global focus manipulation
+
+### Non-Interference
+
+The component is designed to not interfere with your application:
+- ✅ No global event listeners
+- ✅ No document-level DOM manipulation
+- ✅ Component-scoped styles with ViewEncapsulation
+- ✅ Proper cleanup in `ngOnDestroy()`
+
+### Multiple Instances
+
+Multiple instances of this component work independently without interference:
+
+```typescript
+// These work independently
+<cometchat-checkbox [labelText]="'Option 1'"></cometchat-checkbox>
+<cometchat-checkbox [labelText]="'Option 2'"></cometchat-checkbox>
+<cometchat-checkbox [labelText]="'Option 3'"></cometchat-checkbox>
+```
+
+### Cleanup
+
+The component properly cleans up all resources when destroyed:
+- Event listeners are removed automatically
+- No subscriptions to clean up
+- No memory leaks
+
+## Related Components
+
+- **CometChatRadioButton**: For mutually exclusive selections
+- **CometChatButton**: For action triggers
+- **CometChatConfirmDialog**: Uses checkboxes for confirmation options
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule and FormsModule
+- **Bundle Size**: Minimal footprint (~2KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **Forms Support**: Implements ControlValueAccessor for full Angular forms integration
+- **Angular Compatibility**: Works with Angular 14-21
+
+

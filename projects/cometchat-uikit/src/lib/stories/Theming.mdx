@@ -1,0 +1,179 @@
+import { Meta } from 'storybook/blocks';
+
+<Meta title="Documentation/Theming" />
+
+# Theming
+
+CometChat Angular UIKit uses a CSS variable system for theming. All components read from a shared set of design tokens — change the tokens and every component updates automatically.
+
+## How Themes Work
+
+Themes are applied via the `data-theme` attribute on a container element. The UIKit ships with `light` (default) and `dark` presets defined in `css-variables.css`.
+
+```html
+<!-- Light theme (default) -->
+<div data-theme="light">
+  <cometchat-conversations></cometchat-conversations>
+</div>
+
+<!-- Dark theme -->
+<div data-theme="dark">
+  <cometchat-conversations></cometchat-conversations>
+</div>
+```
+
+You can apply `data-theme` at any level — `document.documentElement`, `document.body`, or a specific container. The Storybook toolbar applies it to `document.documentElement` so all stories update simultaneously.
+
+## Switching Themes at Runtime
+
+```typescript
+// theme.service.ts
+@Injectable({ providedIn: 'root' })
+export class ThemeService {
+  setTheme(theme: 'light' | 'dark'): void {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('cometchat-theme', theme);
+  }
+
+  getTheme(): 'light' | 'dark' {
+    return (localStorage.getItem('cometchat-theme') as 'light' | 'dark') || 'light';
+  }
+
+  initTheme(): void {
+    const saved = this.getTheme();
+    const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    this.setTheme(saved || system);
+  }
+}
+```
+
+```typescript
+// app.component.ts
+export class AppComponent implements OnInit {
+  constructor(private themeService: ThemeService) {}
+
+  ngOnInit(): void {
+    this.themeService.initTheme();
+  }
+}
+```
+
+## CSS Variables Reference
+
+All variables live in `projects/cometchat-uikit/src/lib/styles/css-variables.css`. Never hardcode values — always use these tokens.
+
+### Colors
+
+```css
+/* Primary */
+--cometchat-primary-color: #6852D6;
+--cometchat-primary-color-hover: #5842B8;
+--cometchat-primary-color-active: #4A3699;
+
+/* Text */
+--cometchat-text-color-primary: #141414;
+--cometchat-text-color-secondary: #666666;
+--cometchat-text-color-tertiary: #999999;
+--cometchat-text-color-disabled: #CCCCCC;
+--cometchat-text-color-inverse: #FFFFFF;
+
+/* Background */
+--cometchat-background-color-01: #FFFFFF;
+--cometchat-background-color-02: #F8F8F8;
+--cometchat-background-color-03: #F0F0F0;
+--cometchat-background-color-04: #E8E8E8;
+
+/* Border */
+--cometchat-border-color-light: #E8E8E8;
+--cometchat-border-color-default: #CCCCCC;
+--cometchat-border-color-dark: #999999;
+
+/* Status */
+--cometchat-success-color: #4CAF50;
+--cometchat-error-color: #F44336;
+--cometchat-warning-color: #FF9800;
+--cometchat-info-color: #2196F3;
+```
+
+### Typography
+
+```css
+--cometchat-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+/* Composite font shorthand (font-weight size/line-height family) */
+--cometchat-font-heading1-bold: 700 30px/36px var(--cometchat-font-family);
+--cometchat-font-heading2-bold: 700 24px/30px var(--cometchat-font-family);
+--cometchat-font-heading3-bold: 700 20px/26px var(--cometchat-font-family);
+--cometchat-font-body-regular:  400 16px/24px var(--cometchat-font-family);
+--cometchat-font-body-medium:   500 16px/24px var(--cometchat-font-family);
+--cometchat-font-caption-regular: 400 14px/20px var(--cometchat-font-family);
+--cometchat-font-caption-medium:  500 14px/20px var(--cometchat-font-family);
+```
+
+### Spacing
+
+```css
+--cometchat-spacing-1: 4px;
+--cometchat-spacing-2: 8px;
+--cometchat-spacing-3: 12px;
+--cometchat-spacing-4: 16px;
+--cometchat-spacing-5: 20px;
+--cometchat-spacing-6: 24px;
+--cometchat-spacing-7: 32px;
+--cometchat-spacing-8: 40px;
+```
+
+### Border Radius
+
+```css
+--cometchat-radius-1: 4px;
+--cometchat-radius-2: 8px;
+--cometchat-radius-3: 12px;
+--cometchat-radius-4: 16px;
+--cometchat-radius-max: 9999px;
+```
+
+## Creating a Custom Theme
+
+Override variables in your global stylesheet — no need to touch component files.
+
+```css
+/* styles.css — applied globally */
+[data-theme="brand"] {
+  --cometchat-primary-color: #E91E63;
+  --cometchat-primary-color-hover: #C2185B;
+  --cometchat-font-family: 'Poppins', sans-serif;
+  --cometchat-radius-2: 12px;
+  --cometchat-radius-3: 20px;
+}
+```
+
+```typescript
+// Activate your custom theme
+document.documentElement.setAttribute('data-theme', 'brand');
+```
+
+## Dark Theme Example
+
+```css
+[data-theme="dark"] {
+  --cometchat-background-color-01: #1A1A1A;
+  --cometchat-background-color-02: #2A2A2A;
+  --cometchat-background-color-03: #333333;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-text-color-secondary: #CCCCCC;
+  --cometchat-border-color-light: #3A3A3A;
+  --cometchat-border-color-default: #555555;
+}
+```
+
+## Storybook Theme Toolbar
+
+The Storybook toolbar includes a theme switcher (circle icon). Selecting **light** or **dark** sets `data-theme` on `document.documentElement`, `document.body`, `#storybook-root`, `.sb-show-main`, `.sbdocs-wrapper`, and all `.docs-story` elements — so both the canvas and the Docs tab update together.
+
+## Best Practices
+
+- Always use `var(--cometchat-*)` tokens — never hardcode hex values or pixel sizes
+- Apply `data-theme` at the highest possible ancestor so all components inherit it
+- Test both light and dark themes before shipping any customization
+- Use the Accessibility panel in Storybook to verify contrast ratios after overriding colors

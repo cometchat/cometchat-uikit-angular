@@ -1,0 +1,241 @@
+---
+title: "CometChatThreadHeader"
+description: "A header component for threaded message views displaying the parent message preview, reply count, and close button"
+---
+The `CometChatThreadHeader` component displays a header bar for threaded message views. It shows a truncated preview of the parent message, the reply count, and a close button to return to the main chat. Media parent messages display an appropriate icon (image, video, audio, file).
+
+## Overview
+
+The Thread Header component provides:
+
+- **Parent Message Preview**: Truncated text preview of the parent message (max 50 characters)
+- **Media Icons**: Displays type-specific icons for image, video, audio, and file messages
+- **Reply Count**: Shows the number of replies with singular/plural localization
+- **Close Button**: Returns the user to the main chat view
+- **Keyboard Navigation**: Supports Tab, Enter, Space, and Escape key interactions
+- **Full ARIA Support**: Includes `role="banner"`, descriptive labels, and accessible close button
+
+
+<Info>
+  **Live Preview** — default thread header preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-thread-header--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-thread-header--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "250px", border: "1px solid #e0e0e0"}}
+  title="CometChat Thread Header — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Thread Header
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatThreadHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-header-demo',
+  standalone: true,
+  imports: [CometChatThreadHeaderComponent],
+  template: `
+    <cometchat-thread-header
+      [parentMessage]="parentMessage"
+      (closeClick)="onClose()">
+    </cometchat-thread-header>
+  `
+})
+export class ThreadHeaderDemoComponent {
+  parentMessage!: CometChat.BaseMessage;
+
+  onClose(): void {
+    console.log('Thread closed');
+  }
+}
+```
+
+## Usage Patterns
+
+CometChatThreadHeader supports two usage patterns. The default service-based approach uses
+`ChatStateService` to automatically receive the parent message context. Alternatively, you can
+pass data explicitly via `@Input()` bindings.
+
+<Tabs>
+<Tab title="Using Service">
+
+When a thread is opened via the message list, `ChatStateService` stores the active thread's parent message. `cometchat-thread-header` automatically subscribes to this state — no explicit `[parentMessage]` binding required.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatMessageListComponent,
+  CometChatThreadHeaderComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-header-service',
+  standalone: true,
+  imports: [CometChatMessageListComponent, CometChatThreadHeaderComponent],
+  template: `
+    <div class="chat-layout">
+      <cometchat-message-list
+        (threadRepliesClick)="onThreadOpen($event)"
+      ></cometchat-message-list>
+
+      <!-- Automatically receives parentMessage from ChatStateService -->
+      <cometchat-thread-header
+        (closeClick)="onClose()"
+      ></cometchat-thread-header>
+    </div>
+  `,
+})
+export class ThreadHeaderServiceComponent {
+  onThreadOpen(message: any): void {
+    // ChatStateService is updated automatically —
+    // cometchat-thread-header reacts to the active thread change
+  }
+
+  onClose(): void {
+    console.log('Thread closed');
+  }
+}
+```
+
+See the [ChatStateService API reference](/api-reference/chat-state-service) for the full list of signals, observables, and setter methods.
+
+<Tip>
+  This is the recommended approach for most applications. It reduces boilerplate
+  and keeps components in sync automatically.
+</Tip>
+
+</Tab>
+<Tab title="Using Props">
+
+Pass `[parentMessage]` directly to override `ChatStateService` state for this component instance. This is useful when you manage thread navigation yourself or render multiple thread panels.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatThreadHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-header-props',
+  standalone: true,
+  imports: [CometChatThreadHeaderComponent],
+  template: `
+    @if (parentMessage) {
+      <cometchat-thread-header
+        [parentMessage]="parentMessage"
+        (closeClick)="onClose()"
+      ></cometchat-thread-header>
+    }
+  `,
+})
+export class ThreadHeaderPropsComponent {
+  parentMessage!: CometChat.BaseMessage;
+
+  onClose(): void {
+    console.log('Thread closed');
+  }
+}
+```
+
+<Note>
+  When the `[parentMessage]` `@Input()` binding is provided, it takes priority over
+  `ChatStateService` state for that component instance.
+</Note>
+
+</Tab>
+</Tabs>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `parentMessage` | `CometChat.BaseMessage` | **required** | The parent message of the thread. Used to display the message preview and media icon |
+| `replyCount` | `number` | `0` | The number of replies in the thread. Displayed with localized singular/plural text. When not provided, the count is automatically read from `parentMessage.getReplyCount()` |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeClick` | `void` | Emitted when the close button is clicked, Enter/Space is pressed on the close button, or Escape is pressed while the header is focused |
+| `backClick` | `void` | **Deprecated.** Use `closeClick` instead. Emitted alongside `closeClick` for backward compatibility |
+
+## Customization
+
+### CSS Variables
+
+The Thread Header component uses BEM-style CSS classes with CSS variable overrides:
+
+```css expandable
+/* Header container */
+.cometchat-thread-header {
+  padding: var(--cometchat-thread-header-padding, var(--cometchat-spacing-3) var(--cometchat-spacing-4));
+  background: var(--cometchat-thread-header-background, var(--cometchat-background-color-01));
+  border-bottom: var(--cometchat-thread-header-border-bottom, 1px solid var(--cometchat-border-color-light));
+  gap: var(--cometchat-thread-header-gap, var(--cometchat-spacing-3));
+}
+
+/* Title text */
+.cometchat-thread-header__title {
+  font: var(--cometchat-thread-header-title-font, var(--cometchat-font-heading4-medium));
+  color: var(--cometchat-thread-header-title-color, var(--cometchat-text-color-primary));
+}
+
+/* Message preview text */
+.cometchat-thread-header__preview-text {
+  font: var(--cometchat-thread-header-preview-text-font, var(--cometchat-font-caption1-regular));
+  color: var(--cometchat-thread-header-preview-text-color, var(--cometchat-text-color-secondary));
+}
+
+/* Reply count */
+.cometchat-thread-header__reply-count {
+  font: var(--cometchat-thread-header-reply-count-font, var(--cometchat-font-caption1-medium));
+  color: var(--cometchat-thread-header-reply-count-color, var(--cometchat-primary-color));
+}
+
+/* Close/back button */
+.cometchat-thread-header__back-button {
+  background: var(--cometchat-thread-header-back-button-background, transparent);
+  border-radius: var(--cometchat-thread-header-back-button-border-radius, var(--cometchat-radius-max));
+}
+
+/* Media icon for media parent messages */
+.cometchat-thread-header__media-icon {
+  background-color: var(--cometchat-thread-header-media-icon-color, var(--cometchat-icon-color-secondary));
+}
+```
+
+### Responsive Behavior
+
+The component adapts across breakpoints with dedicated CSS variables for tablet (`max-width: 991px`), mobile (`max-width: 767px`), and small mobile (`max-width: 575px`) — reducing padding, font sizes, and icon dimensions at smaller widths.
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Tab**: Moves focus to the close button
+- **Enter / Space**: Activates the close button when focused
+- **Escape**: Closes the thread from anywhere within the header (via `@HostListener`)
+
+### Screen Reader Support
+
+- The header uses `role="banner"` for landmark navigation
+- An `aria-label` combines the parent message preview and reply count for context
+- The close button has a dedicated `aria-label` (e.g., "Close thread")
+
+### High Contrast & Reduced Motion
+
+- Supports `prefers-contrast: high` with stronger borders and focus outlines
+- Supports `prefers-reduced-motion: reduce` by disabling button transitions
+
+## Related Components
+
+- [CometChatMessageList](/components/cometchat-message-list) - Displays messages within the thread
+- [CometChatMessageBubble](/components/cometchat-message-bubble) - Renders individual messages in the thread

@@ -1,0 +1,203 @@
+<!--
+  CometChatMessageInformation Component Template
+  
+  Displays detailed message information including:
+  - Message content preview
+  - Sent timestamp
+  - For group messages: User list with avatars, names, and read/delivered timestamps
+  - For 1v1 messages: Read and Delivered sections with timestamps
+  
+  Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8
+  Accessibility Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7
+-->
+
+<div 
+  class="cometchat cometchat-message-information"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="'cometchat-message-info-title'"
+  (keydown)="onPanelKeyDown($event)">
+
+  <!-- ==================== Header Section ==================== -->
+  <div class="cometchat-message-information__header">
+    <h2 
+      id="cometchat-message-info-title"
+      class="cometchat-message-information__title">
+      {{ 'message_information_title' | translate }}
+    </h2>
+    <button
+      type="button"
+      class="cometchat-message-information__close-button"
+      [attr.aria-label]="'accessibility_close_message_info' | translate"
+      [attr.title]="closeButtonAriaLabel"
+      tabindex="0"
+      (click)="onCloseClick()"
+      (keydown)="onCloseKeydown($event)">
+      <span 
+        class="cometchat-message-information__close-icon"
+        aria-hidden="true">
+      </span>
+    </button>
+  </div>
+
+  <!-- ==================== Message Bubble Section ==================== -->
+  <div class="cometchat-message-information__message-section">
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="1"
+      [hideReceipts]="true"
+      [hideAvatar]="true"
+      [hideTimestamp]="false"
+      [textFormatters]="effectiveTextFormatters()"
+      [dateFormat]="messageBubbleDateFormat">
+    </cometchat-message-bubble>
+  </div>
+
+  <!-- ==================== Content Section ==================== -->
+  <div 
+    class="cometchat-message-information__content"
+    [class.cometchat-message-information__content--hide-scrollbar]="!showScrollbar"
+    (scroll)="onScroll($event)">
+
+    <!-- Loading State (Initial) -->
+    @if (isLoading() && userReceipts().length === 0 && !oneOnOneReadAt() && !oneOnOneDeliveredAt()) {
+      <div 
+        class="cometchat-message-information__loading"
+        role="status"
+        aria-live="polite">
+        <div class="cometchat-message-information__spinner"></div>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError() && userReceipts().length === 0 && !oneOnOneReadAt() && !oneOnOneDeliveredAt()) {
+      <div 
+        class="cometchat-message-information__error"
+        role="alert">
+        <span class="cometchat-message-information__error-text">
+          {{ 'message_information_error' | translate }}
+        </span>
+        <button 
+          class="cometchat-message-information__retry-button"
+          (click)="retry()"
+          (keydown.enter)="retry()"
+          (keydown.space)="retry()">
+          {{ 'retry' | translate }}
+        </button>
+      </div>
+    }
+
+    <!-- ==================== Group Message Receipts ==================== -->
+    @if (isGroupMessage && !isLoading()) {
+      @if (userReceipts().length > 0) {
+        <!-- User receipt list with avatars, names, and both read/delivered timestamps -->
+        <ul 
+          class="cometchat-message-information__user-list"
+          role="list"
+          [attr.aria-label]="'message_information_title' | translate">
+          @for (receipt of userReceipts(); track trackByUserReceipt($index, receipt)) {
+            <li 
+              class="cometchat-message-information__user-item"
+              role="listitem">
+              <div 
+                class="cometchat-message-information__user-avatar"
+                aria-hidden="true">
+                <cometchat-avatar
+                  [image]="receipt.user.getAvatar()"
+                  [name]="receipt.user.getName()">
+                </cometchat-avatar>
+              </div>
+              <div class="cometchat-message-information__user-content">
+                <span class="cometchat-message-information__user-name">
+                  {{ receipt.user.getName() }}
+                </span>
+                <!-- Read row -->
+                @if (receipt.readAt) {
+                  <div class="cometchat-message-information__user-receipt-row">
+                    <span class="cometchat-message-information__user-receipt-label">
+                      {{ 'message_information_read' | translate }}
+                    </span>
+                    <span class="cometchat-message-information__user-receipt-time">
+                      <cometchat-date
+                        [timestamp]="receipt.readAt"
+                        [calendarObject]="effectiveDateFormat">
+                      </cometchat-date>
+                    </span>
+                  </div>
+                }
+                <!-- Delivered row -->
+                @if (receipt.deliveredAt) {
+                  <div class="cometchat-message-information__user-receipt-row">
+                    <span class="cometchat-message-information__user-receipt-label">
+                      {{ 'message_information_delivered' | translate }}
+                    </span>
+                    <span class="cometchat-message-information__user-receipt-time">
+                      <cometchat-date
+                        [timestamp]="receipt.deliveredAt"
+                        [calendarObject]="effectiveDateFormat">
+                      </cometchat-date>
+                    </span>
+                  </div>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      } @else if (!hasError()) {
+        <!-- Group: no receipts yet -->
+        <div class="cometchat-message-information__empty">
+          <span class="cometchat-message-information__empty-text">
+            {{ 'message_information_group_message_receipt_empty' | translate }}
+          </span>
+        </div>
+      }
+    }
+
+    <!-- ==================== 1v1 Message Receipts ==================== -->
+    @if (!isGroupMessage && !isLoading()) {
+      <!-- Read Section -->
+      <div class="cometchat-message-information__section">
+        <h3 class="cometchat-message-information__section-title">
+          {{ 'message_information_read' | translate }}
+        </h3>
+        @if (oneOnOneReadAt()) {
+          <div class="cometchat-message-information__receipt-inline">
+            <cometchat-date
+              [timestamp]="oneOnOneReadAt()"
+              [calendarObject]="effectiveDateFormat">
+            </cometchat-date>
+          </div>
+        } @else {
+          <span class="cometchat-message-information__receipt-empty-dash" aria-label="Not yet read">—</span>
+        }
+      </div>
+
+      <!-- Delivered Section -->
+      <div class="cometchat-message-information__section">
+        <h3 class="cometchat-message-information__section-title">
+          {{ 'message_information_delivered' | translate }}
+        </h3>
+        @if (oneOnOneDeliveredAt()) {
+          <div class="cometchat-message-information__receipt-inline">
+            <cometchat-date
+              [timestamp]="oneOnOneDeliveredAt()"
+              [calendarObject]="effectiveDateFormat">
+            </cometchat-date>
+          </div>
+        } @else {
+          <span class="cometchat-message-information__receipt-empty-dash" aria-label="Not yet delivered">—</span>
+        }
+      </div>
+    }
+
+    <!-- Loading More Indicator -->
+    @if (isLoading() && userReceipts().length > 0) {
+      <div 
+        class="cometchat-message-information__loading-more"
+        role="status"
+        aria-live="polite">
+        <div class="cometchat-message-information__spinner cometchat-message-information__spinner--small"></div>
+      </div>
+    }
+  </div>
+</div>

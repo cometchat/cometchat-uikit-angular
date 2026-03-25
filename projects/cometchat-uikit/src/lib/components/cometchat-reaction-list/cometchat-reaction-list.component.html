@@ -1,0 +1,172 @@
+<div class="cometchat">
+  <div 
+    class="cometchat-reaction-list"
+    role="dialog"
+    aria-label="{{ 'message_bubble_reactions' | translate }}">
+    
+    <!-- Emoji Tabs (shown during loaded and loading states) -->
+    @if (!hasError() || filteredReactions().length > 0) {
+      <div 
+        class="cometchat-reaction-list__tabs"
+        role="tablist"
+        aria-label="{{ 'message_bubble_reactions' | translate }}">
+        
+        <!-- All Tab -->
+        <button
+          class="cometchat-reaction-list__tabs-tab"
+          [class.cometchat-reaction-list__tabs-tab-active]="selectedEmoji() === null"
+          role="tab"
+          [attr.aria-selected]="selectedEmoji() === null"
+          [attr.tabindex]="selectedEmoji() === null ? 0 : -1"
+          (click)="selectEmoji(null)"
+          (keydown)="onTabKeyDown($event, null, 0)">
+          <span 
+            class="cometchat-reaction-list__tabs-tab-emoji"
+            [class.cometchat-reaction-list__tabs-tab-emoji-active]="selectedEmoji() === null">
+            {{ 'reaction_list_all' | translate }}
+          </span>
+          <span 
+            class="cometchat-reaction-list__tabs-tab-count"
+            [class.cometchat-reaction-list__tabs-tab-count-active]="selectedEmoji() === null">
+            {{ totalReactionCount() }}
+          </span>
+        </button>
+
+        <!-- Emoji Tabs -->
+        @for (emoji of emojiTabs(); track emoji; let i = $index) {
+          <button
+            class="cometchat-reaction-list__tabs-tab"
+            [class.cometchat-reaction-list__tabs-tab-active]="selectedEmoji() === emoji"
+            role="tab"
+            [attr.aria-selected]="selectedEmoji() === emoji"
+            [attr.tabindex]="selectedEmoji() === emoji ? 0 : -1"
+            (click)="selectEmoji(emoji)"
+            (keydown)="onTabKeyDown($event, emoji, i + 1)">
+            <span 
+              class="cometchat-reaction-list__tabs-tab-emoji"
+              [class.cometchat-reaction-list__tabs-tab-emoji-active]="selectedEmoji() === emoji">
+              {{ emoji }}
+            </span>
+            <span 
+              class="cometchat-reaction-list__tabs-tab-count"
+              [class.cometchat-reaction-list__tabs-tab-count-active]="selectedEmoji() === emoji">
+              {{ getEmojiCount(emoji) }}
+            </span>
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Shimmer Loading State (initial load) -->
+    @if (isLoading() && filteredReactions().length === 0) {
+      <div 
+        class="cometchat-reaction-list__shimmer"
+        role="status"
+        aria-live="polite"
+        aria-label="{{ 'message_bubble_reactions' | translate }}">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <div class="cometchat-reaction-list__shimmer-item">
+            <div class="cometchat-reaction-list__shimmer-item-icon"></div>
+            <div class="cometchat-reaction-list__shimmer-item-content"></div>
+            <div class="cometchat-reaction-list__shimmer-item-tailview"></div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError() && filteredReactions().length === 0) {
+      <div 
+        class="cometchat-reaction-list__error"
+        role="alert">
+        <span>
+          {{ 'reaction_list_error' | translate }}
+        </span>
+        <button 
+          class="cometchat-reaction-list__retry-button"
+          (click)="retry()"
+          (keydown.enter)="retry()"
+          (keydown.space)="retry()">
+          {{ 'retry' | translate }}
+        </button>
+      </div>
+    }
+
+    <!-- Reaction List Content -->
+    @if (!isLoading() || filteredReactions().length > 0) {
+      @if (!hasError() || filteredReactions().length > 0) {
+        @if (filteredReactions().length > 0) {
+          <div 
+            class="cometchat-reaction-list__list"
+            role="list"
+            aria-label="{{ 'message_bubble_reactions' | translate }}"
+            (scroll)="onScroll($event)">
+            
+            @for (reaction of filteredReactions(); track trackByReaction($index, reaction)) {
+              <div
+                class="cometchat-reaction-list__list-item"
+                [class.cometchat-reaction-list__list-item--current-user]="isCurrentUser(reaction)"
+                [class.cometchat-reaction-list__list-item--readonly]="!isCurrentUser(reaction)"
+                role="listitem"
+                [attr.tabindex]="isCurrentUser(reaction) ? 0 : -1"
+                [attr.aria-label]="isCurrentUser(reaction) 
+                  ? ('reaction_list_you' | translate) + ' - ' + reaction.getReaction() + ' - ' + ('reaction_list_click_to_remove' | translate)
+                  : reaction.getReactedBy().getName() + ' - ' + reaction.getReaction()"
+                (click)="onItemClick($event, reaction)"
+                (keydown)="onItemKeyDown($event, reaction)">
+                
+                <!-- User Avatar -->
+                <div class="cometchat-reaction-list__item-avatar">
+                  <cometchat-avatar
+                    [image]="reaction.getReactedBy().getAvatar()"
+                    [name]="reaction.getReactedBy().getName()">
+                  </cometchat-avatar>
+                </div>
+
+                <!-- User Info -->
+                <div class="cometchat-reaction-list__item-info">
+                  <span class="cometchat-reaction-list__item-name">
+                    @if (isCurrentUser(reaction)) {
+                      {{ 'reaction_list_you' | translate }}
+                    } @else {
+                      {{ reaction.getReactedBy().getName() }}
+                    }
+                  </span>
+                  @if (isCurrentUser(reaction)) {
+                    <span class="cometchat-reaction-list__item-hint">
+                      {{ 'reaction_list_click_to_remove' | translate }}
+                    </span>
+                  }
+                </div>
+
+                <!-- Reaction Emoji -->
+                <div class="cometchat-reaction-list__item-emoji">
+                  {{ reaction.getReaction() }}
+                </div>
+              </div>
+            }
+
+            <!-- Loading More Indicator -->
+            @if (isLoading() && filteredReactions().length > 0) {
+              <div 
+                class="cometchat-reaction-list__loading-more"
+                role="status"
+                aria-live="polite">
+                <div class="cometchat-reaction-list__spinner"></div>
+              </div>
+            }
+          </div>
+        } @else if (!isLoading() && !hasError()) {
+          <!-- Empty State -->
+          <div 
+            class="cometchat-reaction-list__empty"
+            role="status">
+            <span class="cometchat-reaction-list__empty-text">
+              {{ 'reaction_list_empty' | translate }}
+            </span>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

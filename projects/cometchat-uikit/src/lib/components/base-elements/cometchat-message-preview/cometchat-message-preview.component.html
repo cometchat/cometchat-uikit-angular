@@ -1,0 +1,73 @@
+<div
+  #elementRef
+  class="cometchat-message-preview__wrapper"
+  [ngClass]="containerClass"
+  [ngStyle]="containerStyle"
+  role="status"
+  aria-live="polite"
+  [attr.aria-label]="ariaLabel || defaultAriaLabel">
+  <div class="cometchat-message-preview">
+    <!-- Title: Custom template or default sender name -->
+    <!-- @see Requirement 7.2: Display sender name of quoted message -->
+    <div class="cometchat-message-preview__title">
+      <ng-container *ngIf="previewTitle; else defaultTitle">
+        <ng-container *ngTemplateOutlet="previewTitle"></ng-container>
+      </ng-container>
+      <ng-template #defaultTitle>
+        <span *ngIf="shouldShowDefaultTitle" class="cometchat-message-preview__title-text">
+          {{ senderName }}
+        </span>
+      </ng-template>
+    </div>
+
+    <!-- Content: Either subtitle + close button OR deleted message UI -->
+    <!-- @see Requirement 7.8: Display "Message deleted" for deleted quoted messages -->
+    <ng-container *ngIf="!isDeleted; else deletedMessage">
+      <!-- Subtitle: Custom template or default message content -->
+      <!-- @see Requirements 7.1, 7.3, 7.4: Display message content with truncation and media icons -->
+      <div class="cometchat-message-preview__subtitle">
+        <ng-container *ngIf="previewSubtitle; else defaultSubtitle">
+          <ng-container *ngTemplateOutlet="previewSubtitle"></ng-container>
+        </ng-container>
+        <ng-template #defaultSubtitle>
+          <ng-container *ngIf="shouldShowDefaultSubtitle">
+            <!-- Media icon for image, video, audio, file messages -->
+            <!-- @see Requirement 7.4: Display appropriate icons for media messages -->
+            <div 
+              *ngIf="shouldShowMediaIcon"
+              class="cometchat-message-preview__subtitle-icon"
+              [ngClass]="mediaIconClass"
+              aria-hidden="true">
+            </div>
+            <!-- Message content text with ellipsis truncation -->
+            <!-- @see Requirements 7.1, 7.3: Display and truncate message content -->
+            <span class="cometchat-message-preview__subtitle-text">
+              {{ messageContentPreview }}
+            </span>
+          </ng-container>
+        </ng-template>
+      </div>
+      <!-- Close button -->
+      <div
+        *ngIf="!hideCloseButton"
+        class="cometchat-message-preview__close"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="closeButtonLabel"
+        (click)="handleClose()"
+        (keydown)="onCloseKeyDown($event)">
+      </div>
+    </ng-container>
+
+    <!-- Deleted message template -->
+    <!-- @see Requirement 7.8: Display "Message deleted" for deleted quoted messages -->
+    <ng-template #deletedMessage>
+      <div class="cometchat-message-preview-deleted__message">
+        <div class="cometchat-message-preview-deleted__message__icon" aria-hidden="true"></div>
+        <div class="cometchat-message-preview-deleted__message__text">
+          {{ deletedMessageText }}
+        </div>
+      </div>
+    </ng-template>
+  </div>
+</div>

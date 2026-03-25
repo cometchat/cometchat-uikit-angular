@@ -1,0 +1,239 @@
+---
+title: "CometChatStickerBubble"
+description: "A standalone Angular component for rendering sticker messages with automatic URL extraction and alignment support"
+---
+The `CometChatStickerBubble` component is a presentational Angular component that renders sticker messages as images within the chat interface. It extracts the sticker image URL from the message's metadata or custom data using a priority-based fallback chain and displays it with proper sizing, alignment, and accessibility support.
+
+## Overview
+
+The Sticker Bubble component handles sticker message rendering while maintaining visual consistency with the design system:
+
+- **Automatic URL Extraction**: Extracts the sticker image URL from multiple metadata locations using a priority chain
+- **Alignment Variants**: Supports incoming (left) and outgoing (right) message styling
+- **Constrained Sizing**: Sticker images are capped at 150×150px with `object-fit: contain`
+- **Graceful Fallbacks**: Handles missing URLs, null messages, and metadata errors without crashing
+- **Localized Alt Text**: Uses the `conversation_subtitle_sticker` localization key for accessibility
+- **BEM CSS**: Follows Block Element Modifier naming convention with CSS variable theming
+- **OnPush Change Detection**: Optimal performance with minimal re-renders
+
+
+<Info>
+  **Live Preview** — Default sticker bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--sticker)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--sticker&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "450px", border: "1px solid #e0e0e0"}}
+  title="CometChat Sticker Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Sticker Bubble (Incoming)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatStickerBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatStickerBubbleComponent],
+  template: `
+    <cometchat-sticker-bubble
+      [message]="stickerMessage">
+    </cometchat-sticker-bubble>
+  `
+})
+export class ChatMessageComponent {
+  stickerMessage!: CometChat.CustomMessage;
+}
+```
+
+### Outgoing Sticker Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatStickerBubbleComponent,
+  MessageBubbleAlignment
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatStickerBubbleComponent],
+  template: `
+    <cometchat-sticker-bubble
+      [message]="stickerMessage"
+      [alignment]="MessageBubbleAlignment.right">
+    </cometchat-sticker-bubble>
+  `
+})
+export class ChatMessageComponent {
+  stickerMessage!: CometChat.CustomMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatStickerBubbleComponent,
+  MessageBubbleAlignment
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatStickerBubbleComponent],
+  template: `
+    <!-- Incoming sticker (left-aligned) -->
+    <cometchat-sticker-bubble
+      [message]="incomingSticker"
+      [alignment]="MessageBubbleAlignment.left">
+    </cometchat-sticker-bubble>
+
+    <!-- Outgoing sticker (right-aligned) -->
+    <cometchat-sticker-bubble
+      [message]="outgoingSticker"
+      [alignment]="MessageBubbleAlignment.right">
+    </cometchat-sticker-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingSticker!: CometChat.CustomMessage;
+  outgoingSticker!: CometChat.CustomMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.CustomMessage \| null` | `null` | The sticker custom message object. The component extracts the sticker image URL from the message's metadata or custom data |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | Bubble alignment. `left` for incoming/receiver messages, `right` for outgoing/sender messages |
+
+## Sticker URL Extraction
+
+The component extracts the sticker image URL from the message using a priority-based fallback chain. The first location that contains a value wins:
+
+1. **`metadata.data.sticker_url`** — Highest priority. Checked first via `message.getMetadata().data.sticker_url`
+2. **`metadata.sticker_url`** — Second priority. Checked via `message.getMetadata().sticker_url`
+3. **`customData.sticker_url`** — Final fallback. Checked via `message.getCustomData().sticker_url`
+
+If no URL is found in any location, or if the `message` input is `null`/`undefined`, the component renders an empty container gracefully without errors.
+
+The extraction is wrapped in a try/catch to handle cases where `getMetadata()` or `getCustomData()` might throw.
+
+## Customization
+
+### Styling with CSS Variables
+
+The Sticker Bubble component uses CSS variables for easy customization:
+
+```css
+/* Custom sticker bubble styling */
+cometchat-sticker-bubble {
+  /* Container padding */
+  --cometchat-spacing-2: 8px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-2` | Container padding | `8px` |
+
+### BEM CSS Classes
+
+The component exposes the following BEM classes for targeted styling:
+
+| Class | Element | Description |
+|-------|---------|-------------|
+| `.cometchat-sticker-bubble` | Block | Root container |
+| `.cometchat-sticker-bubble--incoming` | Modifier | Applied when `alignment` is `left` (incoming message) |
+| `.cometchat-sticker-bubble--outgoing` | Modifier | Applied when `alignment` is `right` (outgoing message) |
+| `.cometchat-sticker-bubble__image` | Element | The sticker `<img>` element (max 150×150px, `object-fit: contain`) |
+
+### Custom Sizing
+
+```css expandable
+/* Larger stickers */
+::ng-deep .cometchat-sticker-bubble__image {
+  max-width: 200px;
+  max-height: 200px;
+}
+
+/* Smaller stickers */
+::ng-deep .cometchat-sticker-bubble__image {
+  max-width: 100px;
+  max-height: 100px;
+}
+```
+
+### Dark Theme
+
+The component inherits theme changes automatically through CSS variables. No additional configuration is needed for dark theme support:
+
+```typescript
+// Switch to dark theme
+document.documentElement.setAttribute('data-theme', 'dark');
+```
+
+## Accessibility
+
+The Sticker Bubble component follows WCAG 2.1 Level AA guidelines.
+
+### ARIA Attributes
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Container | `"img"` | Identifies the container as an image region |
+| `aria-label` | Container | Localized `conversation_subtitle_sticker` text | Provides accessible name for screen readers |
+| `alt` | Image | Localized `conversation_subtitle_sticker` text | Text alternative for the sticker image |
+
+### Screen Reader Behavior
+
+Screen readers announce the sticker bubble using the localized `conversation_subtitle_sticker` text (e.g., "Sticker"). When the sticker image fails to load, the alt text is retained so screen readers can still convey the content.
+
+## Best Practices
+
+<Tip>
+  The component automatically handles sticker URL extraction from multiple metadata locations. Just pass the CometChat.CustomMessage object directly.
+</Tip>
+
+<Warning>
+  The component expects a `CometChat.CustomMessage` with category `custom` and type containing `sticker`. Passing other message types will result in no sticker URL being found.
+</Warning>
+
+<Info>
+  The sticker image is constrained to 150×150px with `object-fit: contain`, preserving the original aspect ratio without cropping.
+</Info>
+
+## Related Components
+
+- **CometChatMessageBubble**: Parent component that delegates sticker rendering to this component
+- **CometChatImageBubble**: Displays image messages (similar pattern, different message type)
+- **CometChatDeleteBubble**: Displays deleted message placeholders (similar simple bubble pattern)
+- **CometChatMessageList**: Displays lists of messages including sticker bubbles
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: Angular CommonModule, CometChat SDK, TranslatePipe for localization
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Max Dimensions**: 150×150px with `object-fit: contain`
+- **URL Extraction**: Priority-based fallback chain across three metadata locations

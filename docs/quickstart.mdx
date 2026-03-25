@@ -1,0 +1,138 @@
+---
+title: Quickstart
+description: "Get started with CometChat UIKit for Angular in minutes"
+---
+Follow these steps to integrate CometChat UIKit into your Angular application.
+
+## Prerequisites
+
+- Node.js 18 or higher
+- Angular 19, 20, or 21
+- A CometChat account with App ID and Auth Key
+
+## Step 1: Install the Package
+
+```bash
+npm install @cometchat/chat-uikit-angular
+```
+
+## Step 2: Import Styles
+
+Add the CSS variables to your `angular.json`:
+
+```json expandable
+{
+  "projects": {
+    "your-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "styles": [
+              "src/styles.css",
+              "node_modules/@cometchat/chat-uikit-angular/styles/css-variables.css"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Or import in your global `styles.css`:
+
+```css
+@import '@cometchat/chat-uikit-angular/styles/css-variables.css';
+```
+
+## Step 3: Register UIKit Assets
+
+The UIKit ships icons, images, and audio files that Angular's build system won't serve automatically. Add the assets path to your `angular.json` so they are copied to the output:
+
+```json expandable
+{
+  "projects": {
+    "your-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "node_modules/@cometchat/chat-uikit-angular/src/lib/assets",
+                "output": "assets"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+<Warning>
+  Skipping this step will cause all UIKit icons, empty-state images, and notification sounds to fail with 404 errors.
+</Warning>
+
+## Step 4: Initialize CometChat
+
+Initialize CometChat in `main.ts` before bootstrapping the Angular app, using `UIKitSettingsBuilder`:
+
+```typescript expandable
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const uiKitSettings = new UIKitSettingsBuilder()
+  .setAppId('YOUR_APP_ID')
+  .setRegion('YOUR_REGION')
+  .setAuthKey('YOUR_AUTH_KEY')
+  .subscribePresenceForAllUsers()
+  .build();
+
+CometChatUIKit.init(uiKitSettings)
+  .then(() => {
+    console.log('CometChat UIKit initialized successfully');
+  })
+  .catch((error) => {
+    console.error('CometChat UIKit initialization failed:', error);
+  });
+```
+
+<Info>
+  To enable voice and video calling, install `@cometchat/calls-sdk-javascript` and add `.setCallingEnabled(true)` to the builder. Without this, call buttons are hidden across all components. See [Call Features](/call-features) for details.
+</Info>
+
+## Step 5: Login a User
+
+```typescript
+CometChatUIKit.login('USER_ID')
+  .then((user) => {
+    console.log('User logged in:', user);
+  })
+  .catch((error) => {
+    console.error('Login failed:', error);
+  });
+```
+
+## Step 6: Add a Component
+
+Add the conversations component to your template:
+
+```html
+<cometchat-conversations></cometchat-conversations>
+```
+
+<Note>
+  Make sure to replace `YOUR_APP_ID`, `YOUR_AUTH_KEY`, and `YOUR_REGION` with your actual CometChat credentials.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed installation guide
+  </Card>
+  <Card title="Components" icon="layer-group" href="/components/overview">
+    Explore all available components
+  </Card>
+</CardGroup>

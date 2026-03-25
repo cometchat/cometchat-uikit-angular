@@ -1,0 +1,385 @@
+import { Meta } from 'storybook/blocks';
+
+<Meta title="Documentation/Getting Started" />
+
+# Getting Started with Storybook
+
+This guide will help you set up and run Storybook for the CometChat Angular UIKit project.
+
+## What is Storybook?
+
+Storybook is a development environment and component explorer for UI components. It allows you to:
+
+- **Develop components in isolation** - Build and test components without running the full application
+- **Document components** - Create interactive documentation with live examples
+- **Test different states** - Easily visualize all component variations and edge cases
+- **Ensure accessibility** - Run automated accessibility checks during development
+- **Share with team** - Deploy static Storybook as documentation for your team
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- **Node.js** 20.x or later
+- **npm** 10.x or later
+- **Angular CLI** 21.x or later
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/cometchat/cometchat-uikit-angular.git
+cd cometchat-uikit-angular
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+This will install all required dependencies including:
+- `@storybook/angular` - Storybook framework for Angular
+- `@storybook/addon-essentials` - Essential Storybook addons
+- `@storybook/addon-a11y` - Accessibility testing addon
+- `@storybook/addon-interactions` - Interaction testing addon
+
+### 3. Verify Installation
+
+Check that Storybook is properly installed:
+
+```bash
+npm run storybook --version
+```
+
+## Running Storybook
+
+### Development Mode
+
+Start Storybook in development mode with hot reloading:
+
+```bash
+npm run storybook
+```
+
+This will:
+1. Start the Storybook dev server on `http://localhost:6006`
+2. Open your browser automatically
+3. Watch for file changes and reload automatically
+
+You should see the Storybook interface with all components listed in the sidebar.
+
+### Build for Production
+
+Build a static version of Storybook for deployment:
+
+```bash
+npm run build-storybook
+```
+
+This generates a static site in the `storybook-static/` directory that can be deployed to any static hosting service.
+
+## Project Structure
+
+Understanding the Storybook setup:
+
+```
+.storybook/
+├── main.ts                    # Storybook configuration
+├── preview.ts                 # Global decorators and parameters
+├── decorators/
+│   ├── theme.decorator.ts     # Theme switching functionality
+│   ├── locale.decorator.ts    # Localization support
+│   └── mock.decorator.ts      # Mock service providers
+└── utils/
+    ├── mock-data.ts           # Mock data factories
+    └── mock-services.ts       # Mock CometChat services
+
+projects/cometchat-uikit/src/lib/
+├── components/
+│   └── cometchat-avatar/
+│       ├── cometchat-avatar.component.ts
+│       └── cometchat-avatar.stories.ts    # ← Story file
+└── stories/
+    ├── Introduction.mdx           # This documentation
+    ├── GettingStarted.mdx        # Setup guide
+    ├── Theming.mdx               # Theme documentation
+    ├── Localization.mdx          # i18n documentation
+    └── Accessibility.mdx         # A11y guidelines
+```
+
+## Writing Your First Story
+
+Stories are written in TypeScript files with a `.stories.ts` extension.
+
+### Basic Story Structure
+
+```typescript
+// cometchat-avatar.stories.ts
+import type { Meta, StoryObj } from '@storybook/angular';
+import { CometChatAvatarComponent } from './cometchat-avatar.component';
+
+const meta: Meta<CometChatAvatarComponent> = {
+  title: 'Base Elements/Avatar',
+  component: CometChatAvatarComponent,
+  tags: ['autodocs'],
+  argTypes: {
+    avatarUrl: {
+      control: 'text',
+      description: 'URL of the avatar image',
+    },
+    size: {
+      control: 'select',
+      options: ['small', 'medium', 'large'],
+      description: 'Size of the avatar',
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<CometChatAvatarComponent>;
+
+// Default story
+export const Default: Story = {
+  args: {
+    avatarUrl: 'https://via.placeholder.com/150',
+    name: 'John Doe',
+    size: 'medium',
+  },
+};
+
+// Small variant
+export const Small: Story = {
+  args: {
+    ...Default.args,
+    size: 'small',
+  },
+};
+```
+
+### Story Naming Conventions
+
+- **File name**: `{component-name}.stories.ts`
+- **Title**: `{Category}/{Component Name}`
+- **Story names**: PascalCase (e.g., `Default`, `Small`, `WithIcon`)
+
+## Using Storybook Features
+
+### Controls Panel
+
+The Controls panel allows you to dynamically change component props:
+
+1. Select a story from the sidebar
+2. Open the "Controls" tab at the bottom
+3. Modify any prop value
+4. See the component update in real-time
+
+### Actions Panel
+
+The Actions panel logs component events:
+
+1. Open the "Actions" tab
+2. Interact with the component (click, hover, etc.)
+3. See event logs with payload data
+
+### Accessibility Panel
+
+The Accessibility panel runs automated a11y checks:
+
+1. Open the "Accessibility" tab
+2. View any violations found
+3. Click on violations for remediation guidance
+4. Fix issues and re-run checks
+
+### Viewport Toolbar
+
+Test responsive behavior:
+
+1. Click the viewport icon in the toolbar
+2. Select a preset (Mobile, Tablet, Desktop)
+3. Or enter custom dimensions
+
+### Theme Toolbar
+
+Switch between themes:
+
+1. Click the theme icon in the toolbar
+2. Select "light" or "dark"
+3. All components update automatically
+
+### Locale Toolbar
+
+Test different languages:
+
+1. Click the locale icon in the toolbar
+2. Select any of the 19 supported BCP-47 locales (e.g. `en-US`, `de`, `ja`, `zh-TW`)
+3. All localized text updates immediately
+
+## Component Usage Examples
+
+### Using Avatar Component
+
+```typescript
+import { CometChatAvatarComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-profile',
+  template: `
+    <cometchat-avatar
+      [avatarUrl]="user.avatar"
+      [name]="user.name"
+      [size]="'large'"
+      [status]="user.status">
+    </cometchat-avatar>
+  `
+})
+export class UserProfileComponent {
+  user = {
+    avatar: 'https://example.com/avatar.jpg',
+    name: 'John Doe',
+    status: 'online'
+  };
+}
+```
+
+### Using Conversations Component
+
+```typescript
+import { CometChatConversationsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  template: `
+    <cometchat-conversations
+      [user]="loggedInUser"
+      [conversationsRequestBuilder]="conversationsRequest"
+      (itemClick)="handleConversationClick($event)"
+      (error)="handleError($event)">
+    </cometchat-conversations>
+  `
+})
+export class ChatComponent {
+  loggedInUser: CometChat.User;
+  conversationsRequest: CometChat.ConversationsRequestBuilder;
+
+  handleConversationClick(conversation: CometChat.Conversation) {
+    console.log('Conversation clicked:', conversation);
+  }
+
+  handleError(error: CometChat.CometChatException) {
+    console.error('Error:', error);
+  }
+}
+```
+
+### Using Button Component
+
+```typescript
+import { CometChatButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-actions',
+  template: `
+    <cometchat-button
+      [text]="'Send Message'"
+      [buttonStyle]="'primary'"
+      [disabled]="isLoading"
+      (buttonClick)="sendMessage()">
+    </cometchat-button>
+  `
+})
+export class ActionsComponent {
+  isLoading = false;
+
+  sendMessage() {
+    this.isLoading = true;
+    // Send message logic
+  }
+}
+```
+
+## Mock Data Utilities
+
+Storybook provides mock data factories for testing:
+
+```typescript
+import { 
+  createMockUser, 
+  createMockConversation,
+  createMockMessage 
+} from '../../../.storybook/utils/mock-data';
+
+// Create a single mock user
+const user = createMockUser({ name: 'Alice' });
+
+// Create multiple mock users
+const users = createMockUsers(10);
+
+// Create a mock conversation
+const conversation = createMockConversation('user');
+
+// Create a mock message
+const message = createMockMessage('text', { text: 'Hello!' });
+```
+
+## Troubleshooting
+
+### Storybook won't start
+
+**Problem**: Port 6006 is already in use
+
+**Solution**: 
+```bash
+# Use a different port
+npm run storybook -- --port 6007
+```
+
+### Components not rendering
+
+**Problem**: Missing dependencies or imports
+
+**Solution**:
+1. Check that all component dependencies are imported
+2. Verify Angular modules are properly configured
+3. Check browser console for errors
+
+### Styles not applying
+
+**Problem**: CSS variables not loaded
+
+**Solution**:
+1. Ensure `css-variables.css` is imported in `preview.ts`
+2. Check that theme decorator is applied
+3. Verify component CSS uses CSS variables
+
+### Mock services not working
+
+**Problem**: Components trying to use real CometChat SDK
+
+**Solution**:
+1. Ensure mock decorator is applied in `preview.ts`
+2. Check that mock services are properly configured
+3. Verify component uses dependency injection
+
+## Next Steps
+
+Now that you have Storybook running:
+
+1. **Explore Components** - Browse the component library in the sidebar
+2. **Read Documentation** - Check out the Theming, Localization, and Accessibility guides
+3. **Write Stories** - Create stories for new components you develop
+4. **Run Tests** - Use the Accessibility addon to ensure WCAG compliance
+5. **Share** - Deploy your Storybook for team collaboration
+
+## Additional Resources
+
+- **Storybook Documentation**: [storybook.js.org](https://storybook.js.org)
+- **Angular Documentation**: [angular.dev](https://angular.dev)
+- **CometChat Docs**: [docs.cometchat.com](https://docs.cometchat.com)
+
+---
+
+<div style={{ padding: '16px', background: '#e3f2fd', borderRadius: '8px', marginTop: '32px' }}>
+  <strong>💡 Quick Tip:</strong> Press <code>Ctrl/Cmd + K</code> to open the command palette and quickly navigate between stories.
+</div>

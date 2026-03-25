@@ -1,0 +1,484 @@
+---
+title: "CometChatCollaborativeWhiteboardBubble"
+description: "An Angular component for rendering collaborative whiteboard messages with banner images, localized text, and action buttons"
+---
+The `CometChatCollaborativeWhiteboardBubble` component renders collaborative whiteboard messages within chat. It displays a banner image, title, subtitle, and an action button that opens the whiteboard in a new fullscreen window.
+
+## Overview
+
+The Collaborative Whiteboard Bubble component processes `CometChat.CustomMessage` objects of type `extension_whiteboard` to display collaborative whiteboard content:
+
+- **Message Object Processing**: Extracts whiteboard URL from message metadata
+- **Theme-aware Banner Images**: Automatically selects light/dark banner images based on current theme
+- **Localized Text**: Displays title, subtitle, and button text using localization keys
+- **Sender/Receiver Styling**: Supports outgoing (right-aligned) and incoming (left-aligned) visual variants
+- **Action Button**: Opens the whiteboard URL in a new fullscreen window
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+
+<Info>
+  **Live Preview** — Default collaborative whiteboard bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--collaborative-whiteboard)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--collaborative-whiteboard&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "600px", border: "1px solid #e0e0e0"}}
+  title="CometChat Collaborative Whiteboard Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Whiteboard Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatCollaborativeWhiteboardBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-whiteboard-message',
+  standalone: true,
+  imports: [CometChatCollaborativeWhiteboardBubbleComponent],
+  template: `
+    <cometchat-collaborative-whiteboard-bubble
+      [message]="whiteboardMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-collaborative-whiteboard-bubble>
+  `
+})
+export class WhiteboardMessageComponent {
+  whiteboardMessage!: CometChat.CustomMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatCollaborativeWhiteboardBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatCollaborativeWhiteboardBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-collaborative-whiteboard-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-collaborative-whiteboard-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-collaborative-whiteboard-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.RIGHT"
+    ></cometchat-collaborative-whiteboard-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingMessage!: CometChat.CustomMessage;
+  outgoingMessage!: CometChat.CustomMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### With Event Handler
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCollaborativeWhiteboardBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-interactive-whiteboard',
+  standalone: true,
+  imports: [CometChatCollaborativeWhiteboardBubbleComponent],
+  template: `
+    <cometchat-collaborative-whiteboard-bubble
+      [message]="whiteboardMessage"
+      (buttonClick)="onWhiteboardOpen($event)"
+    ></cometchat-collaborative-whiteboard-bubble>
+  `
+})
+export class InteractiveWhiteboardComponent {
+  whiteboardMessage!: CometChat.CustomMessage;
+
+  onWhiteboardOpen(url: string): void {
+    console.log('Whiteboard opened:', url);
+    // Custom handling - the component already opens the URL in a new window
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.CustomMessage` | **required** | The CometChat.CustomMessage object containing collaborative whiteboard metadata |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.LEFT` | The alignment of the message bubble. `LEFT` for incoming/receiver messages, `RIGHT` for outgoing/sender messages |
+| `disableInteraction` | `boolean` | `false` | When true, disables the action button and other interactive elements within the bubble |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `buttonClick` | `string` | Emitted when the action button is clicked. Contains the whiteboard URL string |
+
+## Message Metadata Structure
+
+The component extracts the whiteboard URL from the following metadata path:
+
+```json
+{
+  "@injected": {
+    "extensions": {
+      "whiteboard": {
+        "board_url": "https://example.com/whiteboard/456"
+      }
+    }
+  }
+}
+```
+
+## Advanced Usage
+
+### Complete Chat Message Component
+
+```typescript expandable
+import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatCollaborativeWhiteboardBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-whiteboard-chat-message',
+  standalone: true,
+  imports: [CommonModule, CometChatCollaborativeWhiteboardBubbleComponent],
+  template: `
+    <div class="message-container" [class.outgoing]="isOutgoing">
+      <div class="message-bubble">
+        <cometchat-collaborative-whiteboard-bubble
+          [message]="message"
+          [alignment]="alignment"
+          (buttonClick)="handleWhiteboardOpen($event)"
+        ></cometchat-collaborative-whiteboard-bubble>
+      </div>
+      <div class="message-metadata">
+        <span class="timestamp">{{ message.getSentAt() * 1000 | date:'short' }}</span>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .message-container {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+      max-width: 70%;
+    }
+
+    .message-container.outgoing {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .message-bubble {
+      display: inline-block;
+    }
+
+    .message-metadata {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #999;
+    }
+  `]
+})
+export class WhiteboardChatMessageComponent {
+  @Input() message!: CometChat.CustomMessage;
+  @Input() loggedInUserId!: string;
+
+  get isOutgoing(): boolean {
+    return this.message.getSender().getUid() === this.loggedInUserId;
+  }
+
+  get alignment(): MessageBubbleAlignment {
+    return this.isOutgoing ? MessageBubbleAlignment.RIGHT : MessageBubbleAlignment.LEFT;
+  }
+
+  handleWhiteboardOpen(url: string): void {
+    console.log('Whiteboard URL:', url);
+    // Additional tracking or custom handling
+  }
+}
+```
+
+### Message List with Whiteboard Bubbles
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatCollaborativeWhiteboardBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-whiteboard-message-list',
+  standalone: true,
+  imports: [CommonModule, CometChatCollaborativeWhiteboardBubbleComponent],
+  template: `
+    <div class="message-list">
+      @for (message of messages; track message.getId()) {
+        <div class="message-wrapper" [class.outgoing]="isOutgoing(message)">
+          <cometchat-collaborative-whiteboard-bubble
+            [message]="message"
+            [alignment]="getAlignment(message)"
+            (buttonClick)="onWhiteboardOpen($event)"
+          ></cometchat-collaborative-whiteboard-bubble>
+        </div>
+      }
+    </div>
+  `,
+  styles: [`
+    .message-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px;
+    }
+
+    .message-wrapper {
+      display: flex;
+      max-width: 70%;
+    }
+
+    .message-wrapper.outgoing {
+      align-self: flex-end;
+    }
+  `]
+})
+export class WhiteboardMessageListComponent implements OnInit {
+  messages: CometChat.CustomMessage[] = [];
+  loggedInUser!: CometChat.User;
+
+  async ngOnInit(): Promise<void> {
+    this.loggedInUser = await CometChat.getLoggedinUser();
+  }
+
+  isOutgoing(message: CometChat.CustomMessage): boolean {
+    return message.getSender().getUid() === this.loggedInUser?.getUid();
+  }
+
+  getAlignment(message: CometChat.CustomMessage): MessageBubbleAlignment {
+    return this.isOutgoing(message) 
+      ? MessageBubbleAlignment.RIGHT 
+      : MessageBubbleAlignment.LEFT;
+  }
+
+  onWhiteboardOpen(url: string): void {
+    console.log('Opening whiteboard:', url);
+  }
+}
+```
+
+## Customization
+
+### Styling with CSS Variables
+
+The Collaborative Whiteboard Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom whiteboard bubble styling */
+cometchat-collaborative-whiteboard-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Typography */
+  --cometchat-font-heading4-medium: 500 16px 'Inter';
+  --cometchat-font-body-regular: 400 14px 'Inter';
+  --cometchat-font-button-medium: 500 14px 'Inter';
+
+  /* Colors - Incoming messages */
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #666666;
+
+  /* Colors - Outgoing messages */
+  --cometchat-primary-button-background: #6852D6;
+  --cometchat-primary-button-text: #FFFFFF;
+
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+
+  /* Border colors */
+  --cometchat-border-color-light: #E0E0E0;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` to `--cometchat-spacing-4` | Padding, margin, gap | `4px` to `16px` |
+| `--cometchat-font-heading4-medium` | Title font | `500 16px Roboto` |
+| `--cometchat-font-body-regular` | Subtitle font | `400 14px Roboto` |
+| `--cometchat-font-button-medium` | Button text font | `500 14px Roboto` |
+| `--cometchat-background-color-01` | Bubble background | `#FFFFFF` |
+| `--cometchat-background-color-02` | Body section background | `#F5F5F5` |
+| `--cometchat-text-color-primary` | Title color | `#141414` |
+| `--cometchat-text-color-secondary` | Subtitle color | `#666666` |
+| `--cometchat-primary-button-background` | Button background | `#6852D6` |
+| `--cometchat-primary-button-text` | Button text color | `#FFFFFF` |
+| `--cometchat-radius-2` | Border radius | `8px` |
+| `--cometchat-border-color-light` | Border color | `#E0E0E0` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme */
+.theme-blue cometchat-collaborative-whiteboard-bubble {
+  --cometchat-primary-button-background: #1976D2;
+  --cometchat-primary-color: #1976D2;
+}
+
+/* Green theme */
+.theme-green cometchat-collaborative-whiteboard-bubble {
+  --cometchat-primary-button-background: #4CAF50;
+  --cometchat-primary-color: #4CAF50;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-collaborative-whiteboard-bubble {
+  --cometchat-background-color-01: #1E1E1E;
+  --cometchat-background-color-02: #2C2C2C;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-text-color-secondary: #B0B0B0;
+  --cometchat-border-color-light: #404040;
+}
+```
+
+### Custom Button Styling
+
+```css expandable
+/* Custom button styling */
+::ng-deep .cometchat-collaborative-whiteboard-bubble__button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+::ng-deep .cometchat-collaborative-whiteboard-bubble__button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+```
+
+## Accessibility
+
+The Collaborative Whiteboard Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+- ✅ **1.1.1 Non-text Content (Level A)**: Banner image has empty alt attribute (decorative)
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with button element
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators on action button
+- ✅ **4.1.2 Name, Role, Value (Level A)**: Action button has accessible name via aria-label
+
+### Keyboard Support
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate to action button | When component is in focus order |
+| `Shift + Tab` | Navigate backwards | When button is focused |
+| `Enter` | Activate button | When button is focused |
+| `Space` | Activate button | When button is focused |
+
+### ARIA Attributes
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `aria-label` | Action button | Localized button text | Provides accessible name |
+| `alt` | Banner image | Empty string | Marks image as decorative |
+
+### Screen Reader Behavior
+
+Screen readers announce the component with:
+1. **Banner image**: Skipped (decorative)
+2. **Title**: "Collaborative Whiteboard" (or localized equivalent)
+3. **Subtitle**: "Open whiteboard to draw together" (or localized equivalent)
+4. **Button**: "Open Whiteboard, button" (or localized equivalent)
+
+## Best Practices
+
+<Tip>
+  Always provide the complete CometChat.CustomMessage object to ensure the whiteboard URL is correctly extracted from metadata.
+</Tip>
+
+<Warning>
+  The component expects the whiteboard URL at `metadata["@injected"]["extensions"]["whiteboard"]["board_url"]`. Ensure your message objects have this structure.
+</Warning>
+
+<Info>
+  Use the `alignment` property to distinguish between incoming and outgoing messages for proper visual styling.
+</Info>
+
+<Tip>
+  Handle the `buttonClick` event if you need custom behavior beyond opening the URL in a new window.
+</Tip>
+
+<Warning>
+  The action button is automatically disabled when the whiteboard URL is missing or empty.
+</Warning>
+
+<Info>
+  The component automatically selects the appropriate banner image based on the current theme (light/dark).
+</Info>
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatcollaborativewhiteboardbubble).
+</Info>
+
+## Related Components
+
+- **CometChatCollaborativeDocumentBubble**: Displays collaborative document messages
+- **CometChatFileBubble**: Displays file attachment messages
+- **CometChatMessageBubble**: Parent component for message bubbles
+- **CometChatMessageList**: Displays lists of messages
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: 
+  - Angular CommonModule
+  - CometChat SDK for message types
+  - TranslatePipe for localization
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant

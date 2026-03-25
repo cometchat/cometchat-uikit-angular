@@ -1,0 +1,156 @@
+/* Container for the confirmation dialog */
+.cometchat-confirm-dialog {
+  margin: var(--cometchat-confirm-dialog-margin, 0 auto);
+  box-sizing: var(--cometchat-confirm-dialog-box-sizing, border-box);
+  display: var(--cometchat-confirm-dialog-display, flex);
+  width: var(--cometchat-confirm-dialog-width, 100%);
+  max-width: var(--cometchat-confirm-dialog-max-width, 400px);
+  padding: var(--cometchat-confirm-dialog-padding, var(--cometchat-padding-5, 20px));
+  flex-direction: var(--cometchat-confirm-dialog-flex-direction, column);
+  align-items: var(--cometchat-confirm-dialog-align-items, center);
+  gap: var(--cometchat-confirm-dialog-gap, var(--cometchat-spacing-2, 8px));
+  border-radius: var(--cometchat-confirm-dialog-border-radius, var(--cometchat-radius-4, 16px));
+  border: var(--cometchat-confirm-dialog-border, 1px solid var(--cometchat-border-color-light, #F5F5F5));
+  background: var(--cometchat-confirm-dialog-background, var(--cometchat-background-color-01, #FFF));
+  box-shadow: var(--cometchat-confirm-dialog-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+  overflow: var(--cometchat-confirm-dialog-overflow, hidden);
+}
+
+/* Focus indicator for dialog container - no visible outline since it's a non-interactive container */
+.cometchat-confirm-dialog:focus,
+.cometchat-confirm-dialog:focus-visible {
+  outline: none;
+}
+
+/* Title inside the confirmation dialog */
+.cometchat-confirm-dialog__content-title {
+  color: var(--cometchat-confirm-dialog-title-color, var(--cometchat-text-color-primary, #141414));
+  text-align: var(--cometchat-confirm-dialog-title-text-align, center);
+  font: var(--cometchat-confirm-dialog-title-font, var(--cometchat-font-heading3-medium, 500 18px Roboto));
+  font-style: var(--cometchat-confirm-dialog-title-font-style, normal);
+  word-break: var(--cometchat-confirm-dialog-title-word-break, break-word);
+  overflow-wrap: var(--cometchat-confirm-dialog-title-overflow-wrap, break-word);
+}
+
+/* Content inside the dialog, typically descriptions and details */
+.cometchat-confirm-dialog__content {
+  display: var(--cometchat-confirm-dialog-content-display, flex);
+  flex-direction: var(--cometchat-confirm-dialog-content-flex-direction, column);
+  gap: var(--cometchat-confirm-dialog-content-gap, var(--cometchat-spacing, 4px));
+}
+
+/* Description inside the dialog */
+.cometchat-confirm-dialog__content-description {
+  width: var(--cometchat-confirm-dialog-description-width, 100%);
+  color: var(--cometchat-confirm-dialog-description-color, var(--cometchat-text-color-secondary, #8A8A8A));
+  text-align: var(--cometchat-confirm-dialog-description-text-align, center);
+  font: var(--cometchat-confirm-dialog-description-font, var(--cometchat-font-caption1-regular, 400 12px Roboto));
+  font-style: var(--cometchat-confirm-dialog-description-font-style, normal);
+  word-break: var(--cometchat-confirm-dialog-description-word-break, break-word);
+  overflow-wrap: var(--cometchat-confirm-dialog-description-overflow-wrap, break-word);
+}
+
+/* Button group for the dialog */
+.cometchat-confirm-dialog__button-group {
+  display: var(--cometchat-confirm-dialog-button-group-display, flex);
+  padding: var(--cometchat-confirm-dialog-button-group-padding, var(--cometchat-padding-2, 8px) 0px);
+  align-items: var(--cometchat-confirm-dialog-button-group-align-items, center);
+  gap: var(--cometchat-confirm-dialog-button-group-gap, var(--cometchat-spacing-2, 8px));
+  align-self: var(--cometchat-confirm-dialog-button-group-align-self, stretch);
+  width: var(--cometchat-confirm-dialog-button-group-width, 100%);
+}
+
+/* Icon wrapper for confirmation dialog */
+.cometchat-confirm-dialog__icon-wrapper {
+  display: var(--cometchat-confirm-dialog-icon-wrapper-display, flex);
+  width: var(--cometchat-confirm-dialog-icon-wrapper-width, 64px);
+  height: var(--cometchat-confirm-dialog-icon-wrapper-height, 64px);
+  padding: var(--cometchat-confirm-dialog-icon-wrapper-padding, var(--cometchat-padding-3, 12px));
+  justify-content: var(--cometchat-confirm-dialog-icon-wrapper-justify-content, center);
+  align-items: var(--cometchat-confirm-dialog-icon-wrapper-align-items, center);
+  border-radius: var(--cometchat-confirm-dialog-icon-wrapper-border-radius, var(--cometchat-radius-max, 1000px));
+  background: var(--cometchat-confirm-dialog-icon-wrapper-background, var(--cometchat-background-color-02, #F5F5F5));
+  flex-shrink: var(--cometchat-confirm-dialog-icon-wrapper-flex-shrink, 0);
+}
+
+/* Styling for the confirmation icon */
+.cometchat-confirm-dialog__icon-wrapper-icon {
+  mask: var(--cometchat-confirm-dialog-icon-mask, url("../../../assets/delete.svg") center center no-repeat);
+  -webkit-mask: var(--cometchat-confirm-dialog-icon-mask, url("../../../assets/delete.svg") center center no-repeat);
+  height: var(--cometchat-confirm-dialog-icon-height, 36px);
+  width: var(--cometchat-confirm-dialog-icon-width, 36px);
+  display: var(--cometchat-confirm-dialog-icon-display, flex);
+  align-items: var(--cometchat-confirm-dialog-icon-align-items, center);
+  justify-content: var(--cometchat-confirm-dialog-icon-justify-content, center);
+  background: var(--cometchat-confirm-dialog-icon-background, var(--cometchat-error-color, #F44649));
+  -webkit-mask-size: var(--cometchat-confirm-dialog-icon-mask-size, contain);
+  mask-size: var(--cometchat-confirm-dialog-icon-mask-size, contain);
+}
+cometchat-button{
+  width: var(--cometchat-confirm-dialog-cometchat-button-width, 100%);
+}
+/* Submit button inside the confirmation dialog */
+.cometchat-confirm-dialog__button-group-submit {
+  --cometchat-button-background: var(--cometchat-confirm-dialog-submit-button-background, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-hover: var(--cometchat-confirm-dialog-submit-button-background-hover, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-active: var(--cometchat-confirm-dialog-submit-button-background-active, var(--cometchat-error-color, #F44649));
+  --cometchat-button-border: var(--cometchat-confirm-dialog-submit-button-border, 1px solid var(--cometchat-border-color-light, #F5F5F5));
+  --cometchat-button-text-color: var(--cometchat-confirm-dialog-submit-button-text-color, var(--cometchat-static-white, #FFFFFF));
+}
+
+.cometchat-confirm-dialog__button-group .cometchat-button {
+  height: var(--cometchat-confirm-dialog-button-height, 100%);
+  width: var(--cometchat-confirm-dialog-button-width, 100%);
+}
+
+/* Styling for buttons inside the dialog */
+.cometchat-confirm-dialog__button-group .cometchat-confirm-dialog__button-group-submit,
+.cometchat-confirm-dialog__button-group .cometchat-confirm-dialog__button-group-cancel {
+  --cometchat-button-width: var(--cometchat-confirm-dialog-button-width-override, 100%);
+  flex: var(--cometchat-confirm-dialog-button-flex, 1);
+  min-width: var(--cometchat-confirm-dialog-button-min-width, 0);
+  display: var(--cometchat-confirm-dialog-button-display, flex);
+  height: var(--cometchat-confirm-dialog-button-height-override, 36px);
+  justify-content: var(--cometchat-confirm-dialog-button-justify-content, center);
+  align-items: var(--cometchat-confirm-dialog-button-align-items, center);
+  gap: var(--cometchat-confirm-dialog-button-gap, var(--cometchat-spacing-2, 8px));
+  align-self: var(--cometchat-confirm-dialog-button-align-self, stretch);
+  border-radius: var(--cometchat-confirm-dialog-button-border-radius, var(--cometchat-radius-2, 8px));
+  font: var(--cometchat-confirm-dialog-button-font, var(--cometchat-font-button-medium, 500 14px Roboto));
+  font-style: var(--cometchat-confirm-dialog-button-font-style, normal);
+  cursor: var(--cometchat-confirm-dialog-button-cursor, pointer);
+  --cometchat-button-hover-border-radius:var(--cometchat-confirm-dialog-button-border-radius, var(--cometchat-radius-2, 8px))
+}
+
+.cometchat-confirm-dialog__button-group-submit > .cometchat-button__wrapper,
+.cometchat-confirm-dialog__button-group-cancel > .cometchat-button__wrapper {
+  height: var(--cometchat-confirm-dialog-button-inner-height, 100%);
+  width: var(--cometchat-confirm-dialog-button-inner-width, 100%);
+}
+
+/* Cancel button inside the confirmation dialog */
+.cometchat-confirm-dialog__button-group-cancel {
+  --cometchat-button-background: var(--cometchat-confirm-dialog-cancel-button-background, var(--cometchat-background-color-01, #FFF));
+  --cometchat-button-background-hover: var(--cometchat-confirm-dialog-cancel-button-background-hover, var(--cometchat-background-color-02, #F5F5F5));
+  --cometchat-button-background-active: var(--cometchat-confirm-dialog-cancel-button-background-active, var(--cometchat-background-color-03, #E8E8E8));
+  --cometchat-button-border: var(--cometchat-confirm-dialog-cancel-button-border, 1px solid var(--cometchat-border-color-dark, #D1D1D1));
+  --cometchat-button-text-color: var(--cometchat-confirm-dialog-cancel-button-text-color, var(--cometchat-text-color-primary, #141414));
+}
+
+/* Error view styling */
+.cometchat-confirm-dialog-error-view {
+  border-radius: var(--cometchat-confirm-dialog-error-view-border-radius, var(--cometchat-radius-4, 12px) var(--cometchat-radius-4, 12px) 0px 0px);
+  background: var(--cometchat-confirm-dialog-error-view-background, linear-gradient(0deg, rgba(244, 70, 73, 0.10) 0%, rgba(244, 70, 73, 0.10) 100%), var(--cometchat-background-color-01, #FFF));
+  overflow: var(--cometchat-confirm-dialog-error-view-overflow, hidden);
+  color: var(--cometchat-confirm-dialog-error-view-color, var(--cometchat-error-color, #F44649));
+  text-overflow: var(--cometchat-confirm-dialog-error-view-text-overflow, ellipsis);
+  font: var(--cometchat-confirm-dialog-error-view-font, var(--cometchat-font-body-regular, 400 14px Roboto));
+  font-style: var(--cometchat-confirm-dialog-error-view-font-style, normal);
+  display: var(--cometchat-confirm-dialog-error-view-display, flex);
+  width: var(--cometchat-confirm-dialog-error-view-width, 100%);
+  padding: var(--cometchat-confirm-dialog-error-view-padding, var(--cometchat-padding-2, 8px));
+  align-items: var(--cometchat-confirm-dialog-error-view-align-items, flex-start);
+  height: var(--cometchat-confirm-dialog-error-view-height, 48px);
+  margin-bottom: var(--cometchat-confirm-dialog-error-view-margin-bottom, -16px);
+  justify-content: var(--cometchat-confirm-dialog-error-view-justify-content, center);
+}

@@ -1,0 +1,681 @@
+---
+title: Button
+description: "A reusable button component with consistent styling, loading states, and accessibility support"
+---
+The `CometChatButton` component provides a consistent, accessible button implementation across the UIKit. It supports text labels, icons, loading states, disabled states, and full keyboard accessibility.
+
+## Overview
+
+The Button component is designed for uniform interaction patterns throughout your chat application:
+
+- **Flexible Content**: Supports text, icons, or both
+- **Loading State**: Built-in loading animation with automatic disabling
+- **Accessibility**: Full keyboard support with Enter/Space activation
+- **Customizable**: CSS variable-based styling for easy theming
+- **Responsive**: Hover and focus states with visual feedback
+
+## Basic Usage
+
+### Simple Text Button
+
+```html
+<cometchat-button 
+  [text]="'Send Message'" 
+  (buttonClick)="onSendMessage($event)">
+</cometchat-button>
+```
+
+### Button with Icon
+
+```html
+<cometchat-button 
+  [text]="'Attach'" 
+  [iconURL]="'assets/icons/attach.svg'" 
+  (buttonClick)="onAttach($event)">
+</cometchat-button>
+```
+
+### Icon-Only Button
+
+```html
+<cometchat-button 
+  [iconURL]="'assets/icons/send.svg'" 
+  [hoverText]="'Send'" 
+  (buttonClick)="onSend($event)">
+</cometchat-button>
+```
+
+### Disabled Button
+
+```html
+<cometchat-button 
+  [text]="'Submit'" 
+  [disabled]="true" 
+  (buttonClick)="onSubmit($event)">
+</cometchat-button>
+```
+
+### Loading Button
+
+```html
+<cometchat-button 
+  [text]="'Saving...'" 
+  [isLoading]="true" 
+  (buttonClick)="onSave($event)">
+</cometchat-button>
+```
+
+<Info>
+  **Live Preview** — interact with the default button.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-button--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-button--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="Button — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-actions',
+  standalone: true,
+  imports: [CometChatButtonComponent],
+  template: `
+    <div class="message-actions">
+      <cometchat-button 
+        [text]="'Send'" 
+        [iconURL]="'assets/icons/send.svg'"
+        [disabled]="!canSend"
+        [isLoading]="isSending"
+        (buttonClick)="handleSend($event)">
+      </cometchat-button>
+      
+      <cometchat-button 
+        [iconURL]="'assets/icons/attach.svg'"
+        [hoverText]="'Attach file'"
+        (buttonClick)="handleAttach($event)">
+      </cometchat-button>
+    </div>
+  `,
+  styles: [`
+    .message-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+  `]
+})
+export class MessageActionsComponent {
+  canSend = true;
+  isSending = false;
+
+  handleSend(event: MouseEvent): void {
+    this.isSending = true;
+    // Simulate async operation
+    setTimeout(() => {
+      console.log('Message sent!');
+      this.isSending = false;
+    }, 2000);
+  }
+
+  handleAttach(event: MouseEvent): void {
+    console.log('Attach file clicked');
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `text` | `string` | `undefined` | Button text label. If omitted, button displays icon only |
+| `hoverText` | `string` | `undefined` | Tooltip text shown on hover (uses native `title` attribute) |
+| `iconURL` | `string` | `undefined` | URL or path to icon image. Icon is displayed using CSS mask for color control |
+| `disabled` | `boolean` | `false` | Disables the button, preventing clicks and showing disabled styling |
+| `isLoading` | `boolean` | `false` | Shows loading animation and disables button interaction |
+| `ariaLabel` | `string` | `undefined` | Custom ARIA label for accessibility. Useful for icon-only buttons. Falls back to `text` or `hoverText` if not provided |
+| `iconOnly` | `boolean` | `false` | Icon-only mode — removes default width and padding for compact icon buttons |
+
+<Info>
+  **Live Preview** — all button states (default, hover, disabled, loading).
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-button--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-button--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Button — All States"
+  allow="clipboard-write"
+></iframe>
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `buttonClick` | `EventEmitter<MouseEvent>` | Emitted when button is clicked (only when not disabled or loading). Provides the native MouseEvent for additional context |
+
+## Behavior
+
+### Loading State
+
+When `isLoading` is `true`:
+- Button displays an animated spinning icon
+- Button is automatically disabled
+- Text and icon are hidden
+- Click events are blocked
+
+```typescript expandable
+@Component({
+  template: `
+    <cometchat-button 
+      [text]="'Save Changes'" 
+      [isLoading]="isSaving"
+      (buttonClick)="saveChanges()">
+    </cometchat-button>
+  `
+})
+export class SaveButtonComponent {
+  isSaving = false;
+
+  async saveChanges(): Promise<void> {
+    this.isSaving = true;
+    try {
+      await this.apiService.save();
+      console.log('Saved successfully');
+    } finally {
+      this.isSaving = false;
+    }
+  }
+}
+```
+
+### Disabled State
+
+When `disabled` is `true`:
+- Button shows reduced opacity (0.6)
+- Cursor changes to `not-allowed`
+- Click events are blocked
+- ARIA attribute `aria-disabled="true"` is set
+
+### Icon Display
+
+Icons are rendered using CSS mask, allowing them to inherit the button's color scheme:
+- Icon color automatically matches text color
+- Supports SVG and PNG formats
+- Maintains aspect ratio at 24x24px
+
+## Customization
+
+### Styling with CSS Variables
+
+The Button component uses CSS variables for comprehensive theming:
+
+```css expandable
+/* Custom button styling */
+cometchat-button {
+  --cometchat-primary-button-background: #4A90E2;
+  --cometchat-extended-primary-color-800: #357ABD;
+  --cometchat-extended-primary-color-900: #2868A8;
+  --cometchat-static-white: #FFFFFF;
+  --cometchat-primary-color: #4A90E2;
+  --cometchat-font-button-medium: 500 14px 'Inter';
+  --cometchat-padding-2: 8px;
+  --cometchat-padding-5: 20px;
+  --cometchat-radius-2: 8px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-primary-button-background` | Button background color | `#6852D6` |
+| `--cometchat-extended-primary-color-800` | Hover background color | `#7A6BD6` |
+| `--cometchat-extended-primary-color-900` | Active/pressed background color | `#5D49BE` |
+| `--cometchat-static-white` | Text and icon color | `#FFFFFF` |
+| `--cometchat-primary-color` | Focus outline color | `#6852D6` |
+| `--cometchat-font-button-medium` | Button text font | `500 14px Roboto` |
+| `--cometchat-padding-2` | Vertical padding | `8px` |
+| `--cometchat-padding-5` | Horizontal padding | `20px` |
+| `--cometchat-radius-2` | Border radius | `8px` |
+
+### Custom Button Sizes
+
+```css expandable
+/* Small button */
+.small-button cometchat-button {
+  --cometchat-padding-2: 4px;
+  --cometchat-padding-5: 12px;
+  --cometchat-font-button-medium: 500 12px Roboto;
+}
+
+.small-button .cometchat-button {
+  height: 32px;
+  width: 120px;
+}
+
+/* Large button */
+.large-button cometchat-button {
+  --cometchat-padding-2: 12px;
+  --cometchat-padding-5: 28px;
+  --cometchat-font-button-medium: 500 16px Roboto;
+}
+
+.large-button .cometchat-button {
+  height: 48px;
+  width: 200px;
+}
+```
+
+### Custom Color Schemes
+
+```css expandable
+/* Success button */
+.button-success cometchat-button {
+  --cometchat-primary-button-background: #4CAF50;
+  --cometchat-extended-primary-color-800: #45A049;
+  --cometchat-extended-primary-color-900: #3D8B40;
+  --cometchat-primary-color: #4CAF50;
+}
+
+/* Danger button */
+.button-danger cometchat-button {
+  --cometchat-primary-button-background: #F44336;
+  --cometchat-extended-primary-color-800: #E53935;
+  --cometchat-extended-primary-color-900: #D32F2F;
+  --cometchat-primary-color: #F44336;
+}
+
+/* Secondary button */
+.button-secondary cometchat-button {
+  --cometchat-primary-button-background: #757575;
+  --cometchat-extended-primary-color-800: #616161;
+  --cometchat-extended-primary-color-900: #424242;
+  --cometchat-primary-color: #757575;
+}
+```
+
+### Icon-Only Button Styling
+
+```css
+/* Circular icon button */
+.icon-button .cometchat-button {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border-radius: 50%;
+}
+```
+
+## Accessibility
+
+The Button component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.1.2 No Keyboard Trap (Level A)**: Focus can move away from button
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators provided
+- ✅ **4.1.2 Name, Role, Value (Level A)**: Proper semantic button element with ARIA attributes
+
+### Keyboard Support
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Moves focus to/from the button |
+| `Shift + Tab` | Moves focus backward |
+| `Enter` | Activates the button |
+| `Space` | Activates the button |
+
+Both Enter and Space keys trigger the same `buttonClick` event, ensuring consistent behavior across different keyboard navigation patterns.
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Value | Purpose |
+|-----------|-------|---------|
+| `type` | `"button"` | Identifies button type (prevents form submission) |
+| `aria-disabled` | `"true"` when disabled/loading | Announces disabled state to screen readers |
+| `aria-busy` | `"true"` when loading | Announces loading state to screen readers |
+| `aria-label` | Custom or derived from text | Provides accessible name for icon-only buttons |
+| `title` | Value of `hoverText` | Provides tooltip for additional context |
+
+### Custom ARIA Labels
+
+For icon-only buttons, you can provide a custom `aria-label`:
+
+```html
+<cometchat-button 
+  [iconURL]="'assets/icons/send.svg'"
+  [ariaLabel]="'Send message'"
+  (buttonClick)="onSend()">
+</cometchat-button>
+```
+
+If no `ariaLabel` is provided, the component uses this priority:
+1. Custom `ariaLabel` input
+2. `text` property
+3. `hoverText` property
+4. Native button content
+
+### Focus Indicators
+
+The button provides clear visual focus indicators that meet WCAG contrast requirements:
+
+- **Focus ring**: 2px solid outline in primary color
+- **Offset**: 2px from button edge for clear separation
+- **Visibility**: Only shown during keyboard navigation (`:focus-visible`)
+- **Mouse clicks**: Focus ring hidden for mouse interactions
+
+```css
+/* Built-in focus styling */
+.cometchat-button:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color, #6852D6);
+  outline-offset: 2px;
+}
+```
+
+### Loading State Announcements
+
+When the button enters loading state:
+- Visual loading animation is displayed
+- `aria-busy="true"` announces loading to screen readers
+- Screen reader-only text "Loading..." is added
+- Button is automatically disabled to prevent interaction
+
+### Screen Reader Behavior
+
+Screen readers announce the button with:
+1. **Button role**: "Button"
+2. **Label**: Text, aria-label, or hoverText
+3. **State**: "disabled" when disabled, "busy" when loading
+4. **Action hint**: "Press Enter or Space to activate"
+
+Example announcements:
+- Text button: "Send message, button"
+- Icon button: "Attach file, button"
+- Disabled: "Submit, button, disabled"
+- Loading: "Saving, button, busy, Loading"
+
+### Accessibility Best Practices
+
+<Tip>
+  Always provide meaningful labels for icon-only buttons using either `hoverText` or `ariaLabel` to ensure screen reader users understand the button's purpose.
+</Tip>
+
+<Warning>
+  Don't rely solely on color to convey button state. The component uses opacity, cursor changes, and ARIA attributes to communicate disabled/loading states accessibly.
+</Warning>
+
+<Info>
+  The component uses a native `<button>` element with `type="button"` to prevent accidental form submissions and ensure proper semantic meaning.
+</Info>
+
+<Tip>
+  Test your buttons with keyboard-only navigation (Tab, Enter, Space) to ensure all functionality is accessible without a mouse.
+</Tip>
+
+### High Contrast Mode Support
+
+The button works well in high contrast mode:
+- Focus indicators remain visible
+- Disabled state is communicated through opacity and cursor
+- Loading animation is visible
+
+### Example: Accessible Icon Button
+
+```html expandable
+<!-- Good: Provides accessible label -->
+<cometchat-button 
+  [iconURL]="'assets/icons/delete.svg'"
+  [ariaLabel]="'Delete message'"
+  [hoverText]="'Delete'"
+  (buttonClick)="onDelete()">
+</cometchat-button>
+
+<!-- Also good: Uses hoverText as fallback -->
+<cometchat-button 
+  [iconURL]="'assets/icons/edit.svg'"
+  [hoverText]="'Edit message'"
+  (buttonClick)="onEdit()">
+</cometchat-button>
+
+<!-- Bad: No accessible label for icon-only button -->
+<cometchat-button 
+  [iconURL]="'assets/icons/send.svg'"
+  (buttonClick)="onSend()">
+</cometchat-button>
+```
+
+## Examples
+
+### Form Submit Button
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { CometChatButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-form',
+  standalone: true,
+  imports: [CommonModule, FormsModule, CometChatButtonComponent],
+  template: `
+    <form (ngSubmit)="onSubmit()">
+      <textarea 
+        [(ngModel)]="message" 
+        name="message"
+        placeholder="Type a message...">
+      </textarea>
+      
+      <cometchat-button 
+        [text]="'Send'" 
+        [disabled]="!message.trim()"
+        [isLoading]="isSending"
+        (buttonClick)="onSubmit()">
+      </cometchat-button>
+    </form>
+  `,
+  styles: [`
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    textarea {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      min-height: 80px;
+    }
+  `]
+})
+export class MessageFormComponent {
+  message = '';
+  isSending = false;
+
+  async onSubmit(): Promise<void> {
+    if (!this.message.trim()) return;
+    
+    this.isSending = true;
+    try {
+      // Send message logic
+      await this.sendMessage(this.message);
+      this.message = '';
+    } finally {
+      this.isSending = false;
+    }
+  }
+
+  private async sendMessage(text: string): Promise<void> {
+    // Implementation
+  }
+}
+```
+
+### Action Button Group
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-dialog-actions',
+  standalone: true,
+  imports: [CometChatButtonComponent],
+  template: `
+    <div class="dialog-actions">
+      <cometchat-button 
+        [text]="'Cancel'" 
+        class="button-secondary"
+        (buttonClick)="onCancel()">
+      </cometchat-button>
+      
+      <cometchat-button 
+        [text]="'Delete'" 
+        class="button-danger"
+        [isLoading]="isDeleting"
+        (buttonClick)="onDelete()">
+      </cometchat-button>
+    </div>
+  `,
+  styles: [`
+    .dialog-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      padding: 16px;
+    }
+  `]
+})
+export class DialogActionsComponent {
+  isDeleting = false;
+
+  onCancel(): void {
+    console.log('Cancelled');
+  }
+
+  async onDelete(): Promise<void> {
+    this.isDeleting = true;
+    try {
+      // Delete logic
+      await this.performDelete();
+    } finally {
+      this.isDeleting = false;
+    }
+  }
+
+  private async performDelete(): Promise<void> {
+    // Implementation
+  }
+}
+```
+
+### Toolbar with Icon Buttons
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatButtonComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-toolbar',
+  standalone: true,
+  imports: [CometChatButtonComponent],
+  template: `
+    <div class="toolbar">
+      <cometchat-button 
+        [iconURL]="'assets/icons/emoji.svg'"
+        [hoverText]="'Add emoji'"
+        class="icon-button"
+        (buttonClick)="onEmojiClick()">
+      </cometchat-button>
+      
+      <cometchat-button 
+        [iconURL]="'assets/icons/attach.svg'"
+        [hoverText]="'Attach file'"
+        class="icon-button"
+        (buttonClick)="onAttachClick()">
+      </cometchat-button>
+      
+      <cometchat-button 
+        [iconURL]="'assets/icons/gif.svg'"
+        [hoverText]="'Send GIF'"
+        class="icon-button"
+        (buttonClick)="onGifClick()">
+      </cometchat-button>
+    </div>
+  `,
+  styles: [`
+    .toolbar {
+      display: flex;
+      gap: 4px;
+      padding: 8px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+  `]
+})
+export class MessageToolbarComponent {
+  onEmojiClick(): void {
+    console.log('Emoji picker opened');
+  }
+
+  onAttachClick(): void {
+    console.log('File picker opened');
+  }
+
+  onGifClick(): void {
+    console.log('GIF picker opened');
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  Always provide `hoverText` for icon-only buttons to improve accessibility and user experience.
+</Tip>
+
+<Warning>
+  Don't manually disable the button when `isLoading` is true - the component handles this automatically.
+</Warning>
+
+<Info>
+  The button emits the native MouseEvent, allowing you to access properties like `ctrlKey`, `shiftKey`, or call `stopPropagation()` if needed.
+</Info>
+
+<Tip>
+  Use the loading state for async operations to provide visual feedback and prevent duplicate submissions.
+</Tip>
+
+## Related Components
+
+- **CometChatConfirmDialog**: Uses Button component for confirm/cancel actions
+- **CometChatActionSheet**: Uses Button component for action items
+- **CometChatMessageComposer**: Uses Button component for send action
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule
+- **Bundle Size**: Minimal footprint (~3KB including loading animation)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+
+

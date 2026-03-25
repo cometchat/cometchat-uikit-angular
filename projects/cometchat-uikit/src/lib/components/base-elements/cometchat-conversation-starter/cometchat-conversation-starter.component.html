@@ -1,0 +1,59 @@
+@if (isVisible) {
+  <div
+    class="cometchat-conversation-starter"
+    role="region"
+    [attr.aria-label]="ariaLabel"
+    aria-live="polite"
+  >
+    <!-- Loading state - shimmer bars -->
+    @if (isLoading()) {
+      <div class="cometchat-conversation-starter__loading" role="status">
+        <div class="cometchat-conversation-starter__shimmer-bar" aria-hidden="true"></div>
+        <div class="cometchat-conversation-starter__shimmer-bar" aria-hidden="true"></div>
+        <div class="cometchat-conversation-starter__shimmer-bar" aria-hidden="true"></div>
+      </div>
+    }
+
+    <!-- Error state -->
+    @if (hasError() && !isLoading()) {
+      <div class="cometchat-conversation-starter__error" role="alert">
+        <span class="cometchat-conversation-starter__error-text">
+          {{ 'ai_conversation_starter_error' | translate }}
+        </span>
+      </div>
+    }
+
+    <!-- Starters list -->
+    @if (hasStarters && !isLoading() && !hasError()) {
+      <div
+        class="cometchat-conversation-starter__list"
+        role="group"
+        [attr.aria-label]="'accessibility_conversation_starters' | translate"
+      >
+        @for (starter of starters(); track starter; let i = $index) {
+          <button
+            #starterButton
+            class="cometchat-conversation-starter__item"
+            type="button"
+            [attr.aria-label]="starter"
+            [attr.tabindex]="getStarterTabIndex(i)"
+            (click)="onStarterClick(starter)"
+            (keydown)="onStarterKeydown($event, starter, i)"
+            (focus)="onStarterFocus(i)"
+          >
+            <span class="cometchat-conversation-starter__item-text">{{ starter }}</span>
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Empty state (no starters available after loading) -->
+    @if (!hasStarters && !isLoading() && !hasError()) {
+      <div class="cometchat-conversation-starter__empty">
+        <span class="cometchat-conversation-starter__empty-text">
+          {{ 'ai_smart_replies_empty' | translate }}
+        </span>
+      </div>
+    }
+  </div>
+}

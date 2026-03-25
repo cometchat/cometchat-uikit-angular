@@ -1,0 +1,224 @@
+<!-- CometChatCallLogs Component Template
+     Displays a paginated list of call history records.
+     Uses CometChatPaginatedList for infinite scroll and CometChatListItem for items.
+     Supports 8 template override inputs for full customization.
+     
+     Accessibility Features:
+     - aria-label="Call history list" on container
+     - Full keyboard navigation with ArrowUp/ArrowDown, Home/End
+     - Enter key to view call details, Space key to initiate call
+     - Roving tabindex pattern for efficient keyboard navigation
+     - ARIA labels on each item with name, type, status, timestamp
+     
+     @see Requirements 1.2, 1.4, 1.5, 1.6, 2.1–2.4, 5.1–5.8, 6.1, 8.1–8.3, 11.1–11.6
+-->
+<div 
+  #listContainer
+  class="cometchat cometchat-call-logs"
+  (keydown)="onCallLogsKeyDown($event)"
+  (focus)="handleListFocus()">
+
+  <!-- ==================== Outgoing Call Overlay ==================== -->
+  @if (showOutgoingCallScreen()) {
+    <div class="cometchat-call-logs__outgoing-call">
+      <cometchat-outgoing-call
+        [call]="activeCallObject()"
+        (callCanceled)="onOutgoingCallCanceled()">
+      </cometchat-outgoing-call>
+    </div>
+  }
+
+  <!-- ==================== Ongoing Call Overlay ==================== -->
+  @if (showOngoingCall()) {
+    <div class="cometchat-call-logs__ongoing-call">
+      <cometchat-ongoing-call
+        [sessionID]="sessionId()!"
+        [callWorkflow]="CallWorkflow.defaultCalling"
+        [callSettingsBuilder]="getCallBuilder()">
+      </cometchat-ongoing-call>
+    </div>
+  }
+
+  <!-- ==================== Header Section ==================== -->
+  <div class="cometchat-call-logs__header">
+    <h2 class="cometchat-call-logs__header-title">
+      {{ 'call_logs_title' | translate }}
+    </h2>
+    @if (menuView) {
+      <ng-container *ngTemplateOutlet="menuView"></ng-container>
+    }
+  </div>
+
+  <!-- ==================== List Body ==================== -->
+  <!-- States enum: loading=0, empty=1, error=2, loaded=3 -->
+  <cometchat-paginated-list
+    [items]="callLogs()"
+    [trackByFn]="trackByCallLog.bind(this)"
+    [isLoading]="state() === 0"
+    [hasMore]="hasMore()"
+    [error]="state() === 2 ? errorObject : null"
+    [showScrollbar]="effectiveShowScrollbar()"
+    [ariaLabel]="'accessibility_call_history_list' | translate"
+    [loadingTemplate]="loadingTemplateRef"
+    [emptyTemplate]="emptyTemplateRef"
+    [errorTemplate]="errorTemplateRef"
+    [itemTemplate]="itemTemplateRef"
+    (loadMore)="handleLoadMore()">
+  </cometchat-paginated-list>
+
+  <!-- ==================== Loading Template ==================== -->
+  <ng-template #loadingTemplateRef>
+    @if (effectiveLoadingView) {
+      <ng-container *ngTemplateOutlet="effectiveLoadingView"></ng-container>
+    } @else {
+      <div class="cometchat-call-logs__shimmer">
+        @for (item of shimmerList; track item) {
+          <div class="cometchat-call-logs__shimmer-item">
+            <div class="cometchat-call-logs__shimmer-item-avatar"></div>
+            <div class="cometchat-call-logs__shimmer-item-body">
+              <div class="cometchat-call-logs__shimmer-item-body-title-wrapper">
+                <div class="cometchat-call-logs__shimmer-item-body-title"></div>
+                <div class="cometchat-call-logs__shimmer-item-body-subtitle"></div>
+              </div>
+              <div class="cometchat-call-logs__shimmer-item-body-tail"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </ng-template>
+
+  <!-- ==================== Empty Template ==================== -->
+  <ng-template #emptyTemplateRef>
+    @if (effectiveEmptyView) {
+      <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
+    } @else {
+      <div class="cometchat-call-logs__empty-state-view">
+        <div class="cometchat-call-logs__empty-state-view-icon"></div>
+        <div class="cometchat-call-logs__empty-state-view-body">
+          <div class="cometchat-call-logs__empty-state-view-body-title">
+            {{ 'call_logs_empty_title' | translate }}
+          </div>
+          <div class="cometchat-call-logs__empty-state-view-body-description">
+            {{ 'call_logs_empty_subtitle' | translate }}
+          </div>
+        </div>
+      </div>
+    }
+  </ng-template>
+
+  <!-- ==================== Error Template ==================== -->
+  <ng-template #errorTemplateRef>
+    @if (effectiveErrorView) {
+      <ng-container *ngTemplateOutlet="effectiveErrorView"></ng-container>
+    } @else {
+      <div class="cometchat-call-logs__error-state-view">
+        <div class="cometchat-call-logs__error-state-view-icon"></div>
+        <div class="cometchat-call-logs__error-state-view-body">
+          <div class="cometchat-call-logs__error-state-view-body-title">
+            {{ 'call_logs_error_title' | translate }}
+          </div>
+          <div class="cometchat-call-logs__error-state-view-body-description">
+            {{ 'call_logs_error_subtitle' | translate }}
+          </div>
+          <button
+            class="cometchat-call-logs__error-state-view-retry-button"
+            (click)="handleRetryClick()"
+            type="button">
+            {{ 'error_boundary_retry' | translate }}
+          </button>
+        </div>
+      </div>
+    }
+  </ng-template>
+
+  <!-- ==================== Item Template ==================== -->
+  <ng-template #itemTemplateRef let-call let-i="index">
+    <!-- Custom itemView override (Req 5.1) -->
+    @if (effectiveItemView) {
+      <ng-container *ngTemplateOutlet="effectiveItemView; context: { $implicit: call }"></ng-container>
+    } @else {
+      <div class="cometchat-call-logs__list-item"
+           [class.cometchat-call-logs__list-item--active]="isActiveCall(call)"
+           [attr.data-index]="i"
+           [attr.tabindex]="getItemTabIndex(i)"
+           [attr.aria-label]="getCallLogAriaLabel(call)"
+           role="option"
+           (focus)="handleItemFocus(i)"
+           (keydown.enter)="handleWrapperEnter($event, call)"
+           (keydown.space)="handleWrapperSpace($event, call)"
+           (click)="handleItemClick(call)"
+           >
+        <cometchat-list-item
+          [id]="call.getSessionID()"
+          [avatarURL]="getCallUser(call)?.avatar || getCallUser(call)?.icon || ''"
+          [avatarName]="getCallUser(call)?.getName() || ''"
+          [title]="getCallUser(call)?.getName() || ''"
+          [disableTabIndex]="true"
+          [leadingView]="effectiveLeadingView ? customLeadingRef : null"
+          [titleView]="effectiveTitleView ? customTitleRef : null"
+          [subtitleView]="effectiveSubtitleView ? customSubtitleRef : defaultSubtitleRef"
+          [trailingView]="effectiveTrailingView ? customTrailingRef : defaultTrailingRef"
+          >
+        </cometchat-list-item>
+
+        <!-- Custom leadingView override (Req 5.2) -->
+        <ng-template #customLeadingRef>
+          <ng-container *ngTemplateOutlet="effectiveLeadingView; context: { $implicit: call }"></ng-container>
+        </ng-template>
+
+        <!-- Custom titleView override (Req 5.3) -->
+        <ng-template #customTitleRef>
+          <ng-container *ngTemplateOutlet="effectiveTitleView; context: { $implicit: call }"></ng-container>
+        </ng-template>
+
+        <!-- Custom subtitleView override (Req 5.4) -->
+        <ng-template #customSubtitleRef>
+          <ng-container *ngTemplateOutlet="effectiveSubtitleView; context: { $implicit: call }"></ng-container>
+        </ng-template>
+
+        <!-- Default subtitle: direction icon + date (Req 2.2, 2.3) -->
+        <ng-template #defaultSubtitleRef>
+          <div class="cometchat-call-logs__list-item-subtitle">
+            <!-- Direction icon (aria-hidden since status is in item's aria-label) -->
+            <div class="cometchat-call-logs__list-item-subtitle-icon"
+                 [class.cometchat-call-logs__list-item-subtitle-icon-outgoing-call]="isCallSentByMe(call)"
+                 [class.cometchat-call-logs__list-item-subtitle-icon-missed-call]="!isCallSentByMe(call) && isCallMissed(call)"
+                 [class.cometchat-call-logs__list-item-subtitle-icon-incoming-call]="!isCallSentByMe(call) && !isCallMissed(call)"
+                 aria-hidden="true">
+            </div>
+            <div class="cometchat-call-logs__list-item-subtitle-text" aria-hidden="true">
+              <cometchat-date
+                [timestamp]="call.initiatedAt"
+                [calendarObject]="getDateFormat()">
+              </cometchat-date>
+            </div>
+          </div>
+        </ng-template>
+
+        <!-- Custom trailingView override (Req 5.5) -->
+        <ng-template #customTrailingRef>
+          <ng-container *ngTemplateOutlet="effectiveTrailingView; context: { $implicit: call }"></ng-container>
+        </ng-template>
+
+        <!-- Default trailing: audio/video call button (Req 2.4, 3.1, 8.3) -->
+        <ng-template #defaultTrailingRef>
+          @if (callingEnabled) {
+            <div
+              class="cometchat-call-logs__list-item-trailing-view"
+              [class.cometchat-call-logs__list-item-trailing-view-video]="call.type === 'video'"
+              [class.cometchat-call-logs__list-item-trailing-view-audio]="call.type !== 'video'"
+              role="button"
+              tabindex="-1"
+              [attr.aria-label]="(call.type === 'video' ? ('accessibility_video_call' | translate) : ('accessibility_voice_call' | translate)) + ' ' + (getCallUser(call)?.getName() || '')"
+              (click)="$event.stopPropagation(); handleInfoClick(call)"
+              (keydown.enter)="$event.stopPropagation(); handleInfoClick(call)"
+              (keydown.space)="$event.preventDefault(); $event.stopPropagation(); handleInfoClick(call)">
+            </div>
+          }
+        </ng-template>
+      </div>
+    }
+  </ng-template>
+
+</div>

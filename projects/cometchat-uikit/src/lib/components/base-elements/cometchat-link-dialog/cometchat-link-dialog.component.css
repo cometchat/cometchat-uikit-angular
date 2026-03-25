@@ -1,0 +1,221 @@
+/**
+ * CometChatLinkDialog Component Styles
+ *
+ * BEM Naming Convention:
+ * - Block: .cometchat-link-dialog
+ * - Elements: __title, __inputs, __input-group, __label, __input, __error,
+ *             __button-group, __button-group-cancel, __button-group-remove,
+ *             __button-group-save
+ * - Modifiers: (none currently)
+ *
+ * CSS Custom Properties (three-tier: component → global → hardcoded):
+ * --cometchat-link-dialog-margin
+ * --cometchat-link-dialog-max-width
+ * --cometchat-link-dialog-padding
+ * --cometchat-link-dialog-gap
+ * --cometchat-link-dialog-border-radius
+ * --cometchat-link-dialog-border
+ * --cometchat-link-dialog-background
+ * --cometchat-link-dialog-box-shadow
+ * --cometchat-link-dialog-outline-focus
+ * --cometchat-link-dialog-outline-offset-focus
+ * --cometchat-link-dialog-title-color
+ * --cometchat-link-dialog-title-font
+ * --cometchat-link-dialog-inputs-gap
+ * --cometchat-link-dialog-input-group-gap
+ * --cometchat-link-dialog-label-color
+ * --cometchat-link-dialog-label-font
+ * --cometchat-link-dialog-input-padding
+ * --cometchat-link-dialog-input-border-radius
+ * --cometchat-link-dialog-input-border
+ * --cometchat-link-dialog-input-background
+ * --cometchat-link-dialog-input-color
+ * --cometchat-link-dialog-input-font
+ * --cometchat-link-dialog-input-placeholder-color
+ * --cometchat-link-dialog-input-border-color-focus
+ * --cometchat-link-dialog-input-outline-focus
+ * --cometchat-link-dialog-input-outline-offset-focus
+ * --cometchat-link-dialog-input-border-color-error
+ * --cometchat-link-dialog-input-outline-color-error
+ * --cometchat-link-dialog-error-color
+ * --cometchat-link-dialog-error-font
+ * --cometchat-link-dialog-error-padding
+ * --cometchat-link-dialog-button-group-gap
+ * --cometchat-link-dialog-button-height-override
+ * --cometchat-link-dialog-cancel-button-background
+ * --cometchat-link-dialog-cancel-button-background-hover
+ * --cometchat-link-dialog-cancel-button-background-active
+ * --cometchat-link-dialog-cancel-button-border
+ * --cometchat-link-dialog-cancel-button-text-color
+ * --cometchat-link-dialog-remove-button-background
+ * --cometchat-link-dialog-remove-button-background-hover
+ * --cometchat-link-dialog-remove-button-background-active
+ * --cometchat-link-dialog-remove-button-border
+ * --cometchat-link-dialog-remove-button-text-color
+ * --cometchat-link-dialog-save-button-background
+ * --cometchat-link-dialog-save-button-background-hover
+ * --cometchat-link-dialog-save-button-background-active
+ * --cometchat-link-dialog-save-button-border
+ * --cometchat-link-dialog-save-button-text-color
+ */
+
+/* Container for the link dialog */
+.cometchat-link-dialog {
+  margin: var(--cometchat-link-dialog-margin, 0 auto);
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  max-width: var(--cometchat-link-dialog-max-width, 400px);
+  padding: var(--cometchat-link-dialog-padding, var(--cometchat-padding-5, 20px));
+  flex-direction: column;
+  gap: var(--cometchat-link-dialog-gap, var(--cometchat-spacing-4, 16px));
+  border-radius: var(--cometchat-link-dialog-border-radius, var(--cometchat-radius-3, 12px));
+  border: var(--cometchat-link-dialog-border, 1px solid var(--cometchat-border-color-light, #F5F5F5));
+  background: var(--cometchat-link-dialog-background, var(--cometchat-background-color-01, #FFF));
+  box-shadow: var(--cometchat-link-dialog-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+  overflow: hidden;
+}
+
+
+/* Focus indicator for dialog container - visible only for keyboard navigation */
+.cometchat-link-dialog:focus-visible {
+  outline: var(--cometchat-link-dialog-outline-focus, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-link-dialog-outline-offset-focus, 2px);
+}
+
+/* Dialog title */
+.cometchat-link-dialog__title {
+  color: var(--cometchat-link-dialog-title-color, var(--cometchat-text-color-primary, #141414));
+  font: var(--cometchat-link-dialog-title-font, var(--cometchat-font-heading3-medium, 500 18px Roboto));
+  font-style: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Input fields container */
+.cometchat-link-dialog__inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-link-dialog-inputs-gap, var(--cometchat-spacing-3, 12px));
+}
+
+/* Input group (label + input) */
+.cometchat-link-dialog__input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-link-dialog-input-group-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Input label */
+.cometchat-link-dialog__label {
+  color: var(--cometchat-link-dialog-label-color, var(--cometchat-text-color-secondary, #8A8A8A));
+  font: var(--cometchat-link-dialog-label-font, var(--cometchat-font-caption1-medium, 500 12px Roboto));
+  font-style: normal;
+}
+
+/* Input field */
+.cometchat-link-dialog__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--cometchat-link-dialog-input-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  border-radius: var(--cometchat-link-dialog-input-border-radius, var(--cometchat-radius-2, 8px));
+  border: var(--cometchat-link-dialog-input-border, 1px solid var(--cometchat-border-color-default, #D1D1D1));
+  background: var(--cometchat-link-dialog-input-background, var(--cometchat-background-color-01, #FFF));
+  color: var(--cometchat-link-dialog-input-color, var(--cometchat-text-color-primary, #141414));
+  font: var(--cometchat-link-dialog-input-font, var(--cometchat-font-body-regular, 400 14px Roboto));
+  font-style: normal;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+/* Input placeholder */
+.cometchat-link-dialog__input::placeholder {
+  color: var(--cometchat-link-dialog-input-placeholder-color, var(--cometchat-text-color-tertiary, #B8B8B8));
+}
+
+/* Input focus state */
+.cometchat-link-dialog__input:focus {
+  border-color: var(--cometchat-link-dialog-input-border-color-focus, var(--cometchat-primary-color, #6852D6));
+  outline: var(--cometchat-link-dialog-input-outline-focus, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-link-dialog-input-outline-offset-focus, -1px);
+}
+
+/* Input error state */
+.cometchat-link-dialog__input[aria-invalid="true"] {
+  border-color: var(--cometchat-link-dialog-input-border-color-error, var(--cometchat-error-color, #F44649));
+}
+
+.cometchat-link-dialog__input[aria-invalid="true"]:focus {
+  outline-color: var(--cometchat-link-dialog-input-outline-color-error, var(--cometchat-error-color, #F44649));
+}
+
+/* Error message */
+.cometchat-link-dialog__error {
+  color: var(--cometchat-link-dialog-error-color, var(--cometchat-error-color, #F44649));
+  font: var(--cometchat-link-dialog-error-font, var(--cometchat-font-caption1-regular, 400 12px Roboto));
+  font-style: normal;
+  padding: var(--cometchat-link-dialog-error-padding, var(--cometchat-padding-1, 4px) 0);
+}
+
+/* Button group */
+.cometchat-link-dialog__button-group {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-link-dialog-button-group-gap, var(--cometchat-spacing-2, 8px));
+  width: 100%;
+}
+
+/* Button wrapper styling */
+cometchat-button {
+  width: 100%;
+}
+
+.cometchat-link-dialog__button-group .cometchat-button {
+  height: 100%;
+  width: 100%;
+}
+
+/* Individual button containers */
+.cometchat-link-dialog__button-group-cancel,
+.cometchat-link-dialog__button-group-remove,
+.cometchat-link-dialog__button-group-save {
+  --cometchat-button-hover-border-radius: var(--cometchat-radius-2);
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  height: var(--cometchat-link-dialog-button-height-override, 36px);
+}
+
+.cometchat-link-dialog__button-group-cancel > .cometchat-button__wrapper,
+.cometchat-link-dialog__button-group-remove > .cometchat-button__wrapper,
+.cometchat-link-dialog__button-group-save > .cometchat-button__wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+/* Cancel button styling */
+.cometchat-link-dialog__button-group-cancel {
+  --cometchat-button-background: var(--cometchat-link-dialog-cancel-button-background, var(--cometchat-background-color-01, #FFF));
+  --cometchat-button-background-hover: var(--cometchat-link-dialog-cancel-button-background-hover, var(--cometchat-background-color-02, #F5F5F5));
+  --cometchat-button-background-active: var(--cometchat-link-dialog-cancel-button-background-active, var(--cometchat-background-color-03, #E8E8E8));
+  --cometchat-button-border: var(--cometchat-link-dialog-cancel-button-border, 1px solid var(--cometchat-border-color-dark, #D1D1D1));
+  --cometchat-button-text-color: var(--cometchat-link-dialog-cancel-button-text-color, var(--cometchat-text-color-primary, #141414));
+}
+
+/* Remove button styling (error color) */
+.cometchat-link-dialog__button-group-remove {
+  --cometchat-button-background: var(--cometchat-link-dialog-remove-button-background, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-hover: var(--cometchat-link-dialog-remove-button-background-hover, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-active: var(--cometchat-link-dialog-remove-button-background-active, var(--cometchat-error-color, #F44649));
+  --cometchat-button-border: var(--cometchat-link-dialog-remove-button-border, 1px solid var(--cometchat-error-color, #F44649));
+  --cometchat-button-text-color: var(--cometchat-link-dialog-remove-button-text-color, var(--cometchat-static-white, #FFFFFF));
+}
+
+/* Save button styling (primary color) */
+.cometchat-link-dialog__button-group-save {
+  --cometchat-button-background: var(--cometchat-link-dialog-save-button-background, var(--cometchat-primary-color, #6852D6));
+  --cometchat-button-background-hover: var(--cometchat-link-dialog-save-button-background-hover, var(--cometchat-primary-color, #6852D6));
+  --cometchat-button-background-active: var(--cometchat-link-dialog-save-button-background-active, var(--cometchat-primary-color, #6852D6));
+  --cometchat-button-border: var(--cometchat-link-dialog-save-button-border, 1px solid var(--cometchat-primary-color, #6852D6));
+  --cometchat-button-text-color: var(--cometchat-link-dialog-save-button-text-color, var(--cometchat-static-white, #FFFFFF));
+}

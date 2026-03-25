@@ -1,0 +1,256 @@
+/**
+ * CometChatCollaborativeDocumentBubble Styles
+ *
+ * BEM CSS methodology with CSS variables for theming.
+ * All values use CSS variables from css-variables.css.
+ *
+ * @see Requirements 7.1, 7.2, 7.3, 7.4, 7.5, 7.6
+ */
+
+/* ============================================
+   Block: cometchat-collaborative-document-bubble
+   ============================================ */
+
+.cometchat-collaborative-document-bubble {
+  display: flex;
+  flex-direction: column;
+  width: var(--cometchat-collaborative-document-bubble-width, 240px);
+  max-width: 100%;
+  border-radius: var(--cometchat-collaborative-document-bubble-border-radius, var(--cometchat-radius-3, 12px));
+  overflow: hidden;
+  position: relative;
+  padding: var(--cometchat-collaborative-document-bubble-padding, var(--cometchat-padding-2) var(--cometchat-padding-2) 0px var(--cometchat-padding-2));
+}
+
+/* ============================================
+   Modifiers: Alignment Variants
+   ============================================ */
+
+/**
+ * Outgoing message styling (right alignment)
+ * Primary color background with white text
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 6.1, 6.3
+ */
+.cometchat-collaborative-document-bubble--outgoing {
+background: var(--cometchat-collaborative-document-bubble-background, var(--cometchat-primary-color));
+  /* border: 1px solid var(--cometchat-primary-color); */
+}
+
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__body-content-name label {
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__body-content-description label {
+  color: var(--cometchat-static-white);
+  opacity: 0.8;
+}
+
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__button {
+  background: transparent;
+  color: var(--cometchat-static-white);
+  border: none;
+}
+
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__button:hover:not(:disabled) {
+  /* background: var(--cometchat-neutral-color-100); */
+}
+
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__button:focus {
+  /* box-shadow: 0 0 0 2px var(--cometchat-static-white); */
+}
+
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__body-icon {
+  background-color: var(--cometchat-static-white);
+}
+
+/**
+ * Incoming message styling (left alignment)
+ * Neutral background with primary text
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 6.2, 6.4
+ */
+.cometchat-collaborative-document-bubble--incoming {
+background: var(--cometchat-collaborative-document-bubble-background, var(--cometchat-neutral-color-300));  /* border: 1px solid var(--cometchat-border-color-light); */
+}
+
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__body-content-name label {
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__body-content-description label {
+  color: var(--cometchat-text-color-secondary);
+}
+
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__button {
+  background: transparent;
+  color: var(--cometchat-primary-button-background);
+  border: none;
+}
+
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__button:hover:not(:disabled) {
+  /* background: var(--cometchat-extended-primary-color-700); */
+}
+
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__button:focus {
+  /* box-shadow: 0 0 0 2px var(--cometchat-primary-color); */
+}
+
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__body-icon {
+  background-color: var(--cometchat-primary-color);
+}
+
+/* ============================================
+   Element: Banner Image
+   ============================================ */
+
+.cometchat-collaborative-document-bubble__banner-image {
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.cometchat-collaborative-document-bubble__banner-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* ============================================
+   Element: Body
+   ============================================ */
+
+.cometchat-collaborative-document-bubble__body {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-collaborative-document-bubble-body-gap, var(--cometchat-spacing-2));
+  padding: var(--cometchat-collaborative-document-bubble-body-padding, var(--cometchat-padding-3, 12px) 0);
+}
+
+/* ============================================
+   Element: Body Icon
+   ============================================ */
+
+.cometchat-collaborative-document-bubble__body-icon {
+  width: var(--cometchat-collaborative-document-bubble-icon-width, 32px);
+  height: var(--cometchat-collaborative-document-bubble-icon-height, 32px);
+  flex-shrink: 0;
+  -webkit-mask-image: url('../../assets/collabrative_document.svg');
+  mask-image: url('../../assets/collabrative_document.svg');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* ============================================
+   Element: Body Content
+   ============================================ */
+
+.cometchat-collaborative-document-bubble__body-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-collaborative-document-bubble-content-gap, var(--cometchat-spacing-1, 4px));
+  flex: 1;
+  min-width: 0;
+}
+
+/* ============================================
+   Element: Body Content Name (Title)
+   ============================================ */
+
+.cometchat-collaborative-document-bubble__body-content-name {
+  display: flex;
+}
+
+.cometchat-collaborative-document-bubble__body-content-name label {
+  font: var(--cometchat-font-body-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* ============================================
+   Element: Body Content Description (Subtitle)
+   ============================================ */
+
+.cometchat-collaborative-document-bubble__body-content-description {
+  display: flex;
+}
+
+.cometchat-collaborative-document-bubble__body-content-description label {
+  font: var(--cometchat-font-caption2-regular);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* ============================================
+   Element: Action Button
+   ============================================ */
+
+.cometchat-collaborative-document-bubble__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--cometchat-collaborative-document-bubble-button-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-4, 16px));
+  font: var(--cometchat-collaborative-document-bubble-button-font, var(--cometchat-font-button-medium, 500 14px Roboto));
+  cursor: pointer;
+  border-radius: var(--cometchat-collaborative-document-bubble-button-border-radius, 0 0 var(--cometchat-radius-3, 12px) var(--cometchat-radius-3, 12px));
+  transition: var(--cometchat-collaborative-document-bubble-button-transition, background-color 0.2s ease, transform 0.1s ease);
+}
+
+.cometchat-collaborative-document-bubble__button:hover:not(:disabled) {
+  transform: var(--cometchat-collaborative-document-bubble-button-transform-hover, scale(1.01));
+}
+
+.cometchat-collaborative-document-bubble__button:focus {
+  outline: none;
+}
+
+.cometchat-collaborative-document-bubble__button:active:not(:disabled) {
+  transform: var(--cometchat-collaborative-document-bubble-button-transform-active, scale(0.99));
+}
+
+/**
+ * Disabled button state
+ * @see Requirements 5.4, 8.2
+ */
+.cometchat-collaborative-document-bubble__button:disabled {
+  cursor: not-allowed;
+  opacity: var(--cometchat-collaborative-document-bubble-button-opacity-disabled, 0.5);
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 480px) {
+  .cometchat-collaborative-document-bubble {
+    width: var(--cometchat-collaborative-document-bubble-width-mobile, 200px);
+  }
+
+  .cometchat-collaborative-document-bubble__body {
+    padding: var(--cometchat-collaborative-document-bubble-body-padding-mobile, var(--cometchat-padding-2, 8px));
+    gap: var(--cometchat-collaborative-document-bubble-body-gap-mobile, var(--cometchat-spacing-2, 8px));
+  }
+
+  .cometchat-collaborative-document-bubble__body-icon {
+    width: var(--cometchat-collaborative-document-bubble-icon-width-mobile, 24px);
+    height: var(--cometchat-collaborative-document-bubble-icon-height-mobile, 24px);
+  }
+
+  .cometchat-collaborative-document-bubble__body-content-name label {
+    font: var(--cometchat-collaborative-document-bubble-name-font-mobile, var(--cometchat-font-caption1-medium, 500 12px Roboto));
+  }
+
+  .cometchat-collaborative-document-bubble__body-content-description label {
+    font: var(--cometchat-collaborative-document-bubble-description-font-mobile, var(--cometchat-font-caption2-regular, 400 10px Roboto));
+  }
+}

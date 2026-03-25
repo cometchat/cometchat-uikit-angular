@@ -1,0 +1,157 @@
+---
+title: "CometChatSmartReplies"
+description: "An AI-powered component that displays smart reply suggestions based on the last received message"
+---
+The `CometChatSmartReplies` component displays AI-generated reply suggestions as clickable chips. It integrates with the CometChat AI extension to analyze the last received message and generate up to 3 contextual reply options.
+
+## Overview
+
+The Smart Replies component provides intelligent reply suggestions:
+
+- **AI-Generated Replies**: Fetches up to 3 reply suggestions from the CometChat AI extension based on the last received message
+- **Trigger Keywords**: Only shows suggestions when the message contains configurable trigger keywords (default: what, when, why, who, where, how, ?)
+- **Configurable Delay**: Waits a configurable duration (default: 10 seconds) before showing suggestions, giving users time to type their own response
+- **Loading State**: Displays a loading indicator while fetching suggestions from the AI service
+- **Keyboard Accessible**: Full keyboard navigation with Tab, Enter/Space to select, and ArrowLeft/ArrowRight between replies
+
+
+<Info>
+  **Live Preview** — default smart replies preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-ai-smart-replies--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-ai-smart-replies--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "220px", border: "1px solid #e0e0e0"}}
+  title="CometChat Smart Replies — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Smart Replies
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatSmartRepliesComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-smart-replies-demo',
+  standalone: true,
+  imports: [CometChatSmartRepliesComponent],
+  template: `
+    <cometchat-smart-replies
+      [message]="lastReceivedMessage"
+      [user]="activeUser"
+      (replyClick)="onReplyClick($event)">
+    </cometchat-smart-replies>
+  `
+})
+export class SmartRepliesDemoComponent {
+  lastReceivedMessage!: CometChat.BaseMessage;
+  activeUser!: CometChat.User;
+
+  onReplyClick(reply: string): void {
+    console.log('Smart reply selected:', reply);
+  }
+}
+```
+
+### With Custom Keywords and Delay
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatSmartRepliesComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-smart-replies',
+  standalone: true,
+  imports: [CometChatSmartRepliesComponent],
+  template: `
+    <cometchat-smart-replies
+      [message]="lastReceivedMessage"
+      [user]="activeUser"
+      [keywords]="['help', 'question', '?']"
+      [delayDuration]="5000"
+      (replyClick)="onReplyClick($event)">
+    </cometchat-smart-replies>
+  `
+})
+export class CustomSmartRepliesComponent {
+  lastReceivedMessage!: CometChat.BaseMessage;
+  activeUser!: CometChat.User;
+
+  onReplyClick(reply: string): void {
+    console.log('Reply selected:', reply);
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.BaseMessage` | `undefined` | The message to generate smart replies for. Replies are based on this message's content. |
+| `user` | `CometChat.User` | `undefined` | The user context for generating smart replies. Required for 1-on-1 conversations. |
+| `group` | `CometChat.Group` | `undefined` | The group context for generating smart replies. Required for group conversations. |
+| `keywords` | `string[]` | `['what', 'when', 'why', 'who', 'where', 'how', '?']` | Keywords that trigger smart replies. If the message contains any of these keywords, smart replies will be shown. An empty array shows replies for all messages. |
+| `delayDuration` | `number` | `10000` | Delay in milliseconds before showing smart replies. Gives users time to start typing their own response. Set to `0` to fetch instantly. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `replyClick` | `string` | Emitted when a smart reply chip is clicked. The payload is the reply text that was selected. |
+| `closeClick` | `void` | Emitted when the close button is clicked to dismiss the smart replies panel. |
+
+## Customization
+
+### CSS Variables
+
+The Smart Replies component uses BEM-style CSS classes that can be customized with CSS variables:
+
+```css expandable
+/* Smart replies container */
+.cometchat-smart-replies {
+  padding: var(--cometchat-spacing-2);
+  gap: var(--cometchat-spacing-2);
+}
+
+/* Individual reply chip */
+.cometchat-smart-replies__reply {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  background: var(--cometchat-background-color-03);
+  border-radius: var(--cometchat-radius-max);
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-3);
+}
+
+/* Reply chip hover state */
+.cometchat-smart-replies__reply:hover {
+  background: var(--cometchat-background-color-04);
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Tab**: Focus moves into the smart replies container and to the first reply chip
+- **ArrowRight / ArrowLeft**: Navigate between reply chips with wrap-around
+- **Enter / Space**: Select the focused reply chip, emitting the `replyClick` event
+- Focus is managed using a roving tabindex pattern
+
+### Screen Reader Support
+
+- The container has `role="group"` with `aria-label="Smart replies"`
+- Each reply chip has an `aria-label` with the reply text
+- Screen readers announce "Smart replies available" when the component appears
+
+## Related Components
+
+- [CometChatConversationStarter](/components/cometchat-conversation-starter) - AI-generated conversation starters for empty conversations
+- [CometChatMessageList](/components/cometchat-message-list) - Message list that hosts the smart replies component

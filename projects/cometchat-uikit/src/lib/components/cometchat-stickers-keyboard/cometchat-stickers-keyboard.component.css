@@ -1,0 +1,291 @@
+/* CometChatStickersKeyboard - BEM CSS */
+
+.cometchat-stickers-keyboard {
+  display: flex;
+  flex-direction: column;
+  height: var(--cometchat-stickers-keyboard-height, 100%);
+  width: var(--cometchat-stickers-keyboard-width, 300px);
+  min-height: var(--cometchat-stickers-keyboard-min-height, 280px);
+  max-height: var(--cometchat-stickers-keyboard-max-height, 320px);
+  background-color: var(--cometchat-stickers-keyboard-background, var(--cometchat-neutral-color-50, #FFFFFF));
+  border-radius: var(--cometchat-stickers-keyboard-border-radius, var(--cometchat-radius-2, 8px));
+  overflow: hidden;
+}
+
+/* Category tabs */
+.cometchat-stickers-keyboard__tabs {
+  display: flex;
+  gap: var(--cometchat-stickers-keyboard-tabs-gap, var(--cometchat-spacing-2, 8px));
+  padding: var(--cometchat-stickers-keyboard-tabs-padding, var(--cometchat-padding-3, 12px));
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  border-bottom: var(--cometchat-stickers-keyboard-tabs-border-bottom, 1px solid var(--cometchat-border-color-light, rgba(20, 20, 20, 0.08)));
+  flex-shrink: 0;
+}
+
+.cometchat-stickers-keyboard__tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.cometchat-stickers-keyboard__tab {
+  flex-shrink: 0;
+  width: var(--cometchat-stickers-keyboard-tab-width, 50px);
+  height: var(--cometchat-stickers-keyboard-tab-height, 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: var(--cometchat-stickers-keyboard-tab-border-radius, var(--cometchat-radius-2, 8px));
+  transition: background-color 0.2s ease;
+  background-color: var(--cometchat-stickers-keyboard-tab-background, transparent);
+  
+  border: var(--cometchat-stickers-keyboard-tab-border, none);
+  padding: var(--cometchat-stickers-keyboard-tab-padding, var(--cometchat-padding-1, 4px));
+}
+
+.cometchat-stickers-keyboard__tab:hover {
+  background-color: var(--cometchat-stickers-keyboard-tab-background-hover, var(--cometchat-neutral-color-200, #F5F5F5));
+}
+
+.cometchat-stickers-keyboard__tab--active {
+  background-color: var(--cometchat-stickers-keyboard-tab-background-active, var(--cometchat-extended-primary-color-100, #E8E3F8));
+}
+
+.cometchat-stickers-keyboard__tab-icon {
+  width: var(--cometchat-stickers-keyboard-tab-icon-width, 32px);
+  height: var(--cometchat-stickers-keyboard-tab-icon-height, 32px);
+  object-fit: contain;
+  border-radius: var(--cometchat-stickers-keyboard-tab-icon-border-radius, var(--cometchat-radius-1, 4px));
+}
+
+/* Sticker grid */
+.cometchat-stickers-keyboard__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--cometchat-stickers-keyboard-grid-columns, repeat(4, 1fr));
+  gap: var(--cometchat-stickers-keyboard-grid-gap, var(--cometchat-spacing-2, 8px));
+  padding: var(--cometchat-stickers-keyboard-grid-padding, var(--cometchat-padding-3, 12px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cometchat-stickers-keyboard__grid::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.cometchat-stickers-keyboard__sticker-item {
+  aspect-ratio: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  max-height: 70px;
+  max-width: 80px;
+  min-height: 70px;
+  min-width: 80px;
+  border-radius: var(--cometchat-stickers-keyboard-sticker-item-border-radius, var(--cometchat-radius-2, 8px));
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  padding: var(--cometchat-stickers-keyboard-sticker-item-padding, var(--cometchat-padding-1, 4px));
+  background-color: var(--cometchat-stickers-keyboard-sticker-item-background, transparent);
+  border: var(--cometchat-stickers-keyboard-sticker-item-border, none);
+}
+
+.cometchat-stickers-keyboard__sticker-item:hover {
+  background-color: var(--cometchat-stickers-keyboard-sticker-item-background-hover, var(--cometchat-neutral-color-200, #F5F5F5));
+  transform: var(--cometchat-stickers-keyboard-sticker-item-transform-hover, scale(1.05));
+}
+
+.cometchat-stickers-keyboard__sticker-item:active {
+  background-color: var(--cometchat-stickers-keyboard-sticker-item-background-active, var(--cometchat-neutral-color-300, #E0E0E0));
+  transform: var(--cometchat-stickers-keyboard-sticker-item-transform-active, scale(0.98));
+}
+
+.cometchat-stickers-keyboard__sticker-image {
+  width: var(--cometchat-stickers-keyboard-sticker-image-width, 100%);
+  height: var(--cometchat-stickers-keyboard-sticker-image-height, 100%);
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-stickers-keyboard__sticker-image--loaded {
+  opacity: 1;
+}
+
+/* Per-sticker shimmer shown while image is loading */
+.cometchat-stickers-keyboard__sticker-shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(--cometchat-shimmer-gradient-color, linear-gradient(90deg, #E0E0E0 0%, #EEE 100%));
+  background-size: 200% 100%;
+  animation: cometchat-stickers-shimmer 1.5s infinite;
+}
+
+/* Shimmer loading state */
+.cometchat-stickers-keyboard__shimmer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cometchat-stickers-keyboard__shimmer-tabs {
+  display: flex;
+  padding: var(--cometchat-stickers-keyboard-shimmer-tabs-padding, var(--cometchat-padding-2, 8px));
+  align-items: center;
+  gap: var(--cometchat-stickers-keyboard-shimmer-tabs-gap, var(--cometchat-spacing-2, 8px));
+  border-bottom: var(--cometchat-stickers-keyboard-shimmer-tabs-border-bottom, 1px solid var(--cometchat-border-color-default, #E8E8E8));
+  flex-shrink: 0;
+}
+
+.cometchat-stickers-keyboard__shimmer-tab {
+  display: flex;
+  width: 50px;
+  height: 40px;
+  flex-shrink: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(--cometchat-shimmer-gradient-color, linear-gradient(90deg, #E0E0E0 0%, #EEE 100%));
+  background-size: 200% 100%;
+  animation: cometchat-stickers-shimmer 1.5s infinite;
+}
+
+.cometchat-stickers-keyboard__shimmer-grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cometchat-stickers-keyboard-shimmer-grid-gap, var(--cometchat-spacing-3, 12px));
+  padding: var(--cometchat-stickers-keyboard-shimmer-grid-padding, var(--cometchat-padding-3, 12px) var(--cometchat-padding-3, 12px) 0 var(--cometchat-padding-3, 12px));
+  overflow: hidden;
+  justify-content: center;
+}
+
+.cometchat-stickers-keyboard__shimmer-sticker {
+  width: 80px;
+  height: 70px;
+  min-width: 80px;
+  min-height: 70px;
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(--cometchat-shimmer-gradient-color, linear-gradient(90deg, #E0E0E0 0%, #EEE 100%));
+  background-size: 200% 100%;
+  animation: cometchat-stickers-shimmer 1.5s infinite;
+}
+
+@keyframes cometchat-stickers-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error state */
+.cometchat-stickers-keyboard__error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cometchat-stickers-keyboard-error-gap, var(--cometchat-spacing-3, 12px));
+  padding: var(--cometchat-stickers-keyboard-error-padding, var(--cometchat-padding-4, 16px));
+}
+
+.cometchat-stickers-keyboard__error-icon {
+  color: var(--cometchat-stickers-keyboard-error-icon-color, var(--cometchat-error-color, #F44649));
+  opacity: var(--cometchat-stickers-keyboard-error-icon-opacity, 0.8);
+  width: 48px;
+  height: 48px;
+}
+
+.cometchat-stickers-keyboard__error-icon-mask {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  -webkit-mask: url('../../assets/list_error_state_icon.svg') center center no-repeat;
+  mask: url('../../assets/list_error_state_icon.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-stickers-keyboard__error-text {
+  font: var(--cometchat-stickers-keyboard-error-text-font, var(--cometchat-font-body-regular, 400 14px/16.8px Roboto));
+  color: var(--cometchat-stickers-keyboard-error-text-color, var(--cometchat-text-color-primary, #141414));
+  text-align: center;
+}
+
+.cometchat-stickers-keyboard__retry-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cometchat-stickers-keyboard-retry-button-color, var(--cometchat-primary-button-text, #FFFFFF));
+  background-color: var(--cometchat-stickers-keyboard-retry-button-background, var(--cometchat-primary-button-background, #6852D6));
+  border: var(--cometchat-stickers-keyboard-retry-button-border, none);
+  border-radius: var(--cometchat-stickers-keyboard-retry-button-border-radius, var(--cometchat-radius-2, 8px));
+  padding: var(--cometchat-spacing-1, 4px) var(--cometchat-spacing-3, 12px);
+  font: var(--cometchat-font-button, 500 14px/20px Inter, sans-serif);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-stickers-keyboard__retry-button:hover {
+  opacity: var(--cometchat-stickers-keyboard-retry-button-opacity-hover, 0.9);
+}
+
+.cometchat-stickers-keyboard__retry-button:active {
+  opacity: var(--cometchat-stickers-keyboard-retry-button-opacity-active, 0.8);
+}
+
+/* Empty state */
+.cometchat-stickers-keyboard__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cometchat-stickers-keyboard-empty-gap, var(--cometchat-spacing-3, 12px));
+  padding: var(--cometchat-stickers-keyboard-empty-padding, var(--cometchat-padding-4, 16px));
+}
+
+.cometchat-stickers-keyboard__empty-icon {
+  color: var(--cometchat-stickers-keyboard-empty-icon-color, var(--cometchat-icon-color-tertiary, rgba(20, 20, 20, 0.38)));
+  opacity: var(--cometchat-stickers-keyboard-empty-icon-opacity, 0.6);
+  width: 48px;
+  height: 48px;
+}
+
+.cometchat-stickers-keyboard__empty-icon-mask {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  -webkit-mask: url('../../assets/sticker.svg') center center no-repeat;
+  mask: url('../../assets/sticker.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-stickers-keyboard__empty-text {
+  font: var(--cometchat-stickers-keyboard-empty-text-font, var(--cometchat-font-body-regular, 400 14px/16.8px Roboto));
+  color: var(--cometchat-stickers-keyboard-empty-text-color, var(--cometchat-text-color-secondary, rgba(20, 20, 20, 0.58)));
+  text-align: center;
+}
+
+/* Focus indicators for accessibility */
+.cometchat-stickers-keyboard__tab:focus-visible,
+.cometchat-stickers-keyboard__sticker-item:focus-visible,
+.cometchat-stickers-keyboard__retry-button:focus-visible {
+  outline: var(--cometchat-stickers-keyboard-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-stickers-keyboard-focus-outline-offset, 2px);
+}

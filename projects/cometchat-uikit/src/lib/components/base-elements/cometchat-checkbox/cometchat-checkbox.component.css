@@ -1,0 +1,112 @@
+.cometchat-checkbox {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+.cometchat-checkbox__label {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-checkbox-label-gap, var(--cometchat-spacing-2, 8px));
+  color: var(--cometchat-checkbox-label-color, var(--cometchat-text-color-secondary));
+  font: var(--cometchat-checkbox-label-font, var(--cometchat-font-body-regular));
+  cursor: pointer;
+  user-select: none;
+}
+
+.cometchat-checkbox__input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.cometchat-checkbox__checkmark {
+  display: inline-block;
+  position: relative;
+  width: var(--cometchat-checkbox-checkmark-width, 24px);
+  height: var(--cometchat-checkbox-checkmark-height, 24px);
+  flex-shrink: 0;
+  border-radius: var(--cometchat-checkbox-checkmark-border-radius, var(--cometchat-radius-1, 4px));
+  border: var(--cometchat-checkbox-checkmark-border, 1.5px solid var(--cometchat-border-color-default));
+  background-color: var(--cometchat-checkbox-checkmark-background, var(--cometchat-background-color-01));
+  transition: var(--cometchat-checkbox-checkmark-transition, all 0.2s ease);
+}
+
+.cometchat-checkbox:hover .cometchat-checkbox__checkmark {
+  border: var(--cometchat-checkbox-checkmark-border-hover, 1.5px solid var(--cometchat-border-color-dark));
+}
+
+.cometchat-checkbox__input:checked ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark {
+  border: var(--cometchat-checkbox-checkmark-border-checked, 1.5px solid var(--cometchat-primary-color));
+  background-color: var(--cometchat-checkbox-checkmark-background-checked, var(--cometchat-primary-color));
+}
+
+.cometchat-checkbox__input:indeterminate ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark {
+  border: var(--cometchat-checkbox-checkmark-border-indeterminate, 1.5px solid var(--cometchat-primary-color));
+  background-color: var(--cometchat-checkbox-checkmark-background-indeterminate, var(--cometchat-primary-color));
+}
+
+.cometchat-checkbox__checkmark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--cometchat-checkbox-checkmark-icon-width, 16px);
+  height: var(--cometchat-checkbox-checkmark-icon-height, 16px);
+  background: var(--cometchat-checkbox-checkmark-icon-background, var(--cometchat-static-white));
+  mask: url('../../../assets/checkbox_tick.svg') center center no-repeat;
+  -webkit-mask: url('../../../assets/checkbox_tick.svg') center center no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+
+.cometchat-checkbox__input:checked ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark::after {
+  display: block;
+}
+
+.cometchat-checkbox__input:indeterminate ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark::after {
+  display: block;
+  mask: none;
+  -webkit-mask: none;
+  width: var(--cometchat-checkbox-checkmark-indeterminate-width, 12px);
+  height: var(--cometchat-checkbox-checkmark-indeterminate-height, 2px);
+  background: var(--cometchat-checkbox-checkmark-indeterminate-background, var(--cometchat-static-white));
+}
+
+.cometchat-checkbox__input:disabled ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark {
+  opacity: var(--cometchat-checkbox-checkmark-opacity-disabled, 0.5);
+  cursor: not-allowed;
+}
+
+.cometchat-checkbox__input:disabled ~ .cometchat-checkbox__label .cometchat-checkbox__text {
+  opacity: var(--cometchat-checkbox-text-opacity-disabled, 0.5);
+  cursor: not-allowed;
+}
+
+.cometchat-checkbox__input:disabled ~ .cometchat-checkbox__label {
+  cursor: not-allowed;
+}
+
+/* Focus indicator for keyboard accessibility */
+.cometchat-checkbox__input:focus ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark {
+  outline: var(--cometchat-checkbox-checkmark-outline-focus, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-checkbox-checkmark-outline-offset-focus, 2px);
+}
+
+.cometchat-checkbox__input:focus:not(:focus-visible) ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark {
+  outline: none;
+}
+
+.cometchat-checkbox__input:focus-visible ~ .cometchat-checkbox__label .cometchat-checkbox__checkmark {
+  outline: var(--cometchat-checkbox-checkmark-outline-focus-visible, 2px solid var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-checkbox-checkmark-outline-offset-focus-visible, 2px);
+}
+
+.cometchat-checkbox__text {
+  color: var(--cometchat-checkbox-text-color, var(--cometchat-text-color-secondary));
+  font: var(--cometchat-checkbox-text-font, var(--cometchat-font-body-regular));
+}

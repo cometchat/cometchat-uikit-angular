@@ -1,0 +1,76 @@
+/* ============================================================
+   CometChat Call Buttons Component Styles
+   BEM: .cometchat-call-buttons
+   Requirements: 1.1, 1.2, 2.1, 2.2, 3.2, 4.1, 4.2, 4.3, 10.3
+   ============================================================ */
+
+/* Container: horizontal flex layout for voice + video buttons */
+.cometchat-call-buttons {
+  display: var(--cometchat-call-buttons-display, flex);
+  align-items: var(--cometchat-call-buttons-align-items, center);
+  gap: var(--cometchat-call-buttons-gap, 0px);
+}
+
+/* Voice call button wrapper */
+.cometchat-call-buttons__voice {
+  display: var(--cometchat-call-buttons-voice-display, flex);
+  align-items: var(--cometchat-call-buttons-voice-align-items, center);
+}
+
+/* Video call button wrapper */
+.cometchat-call-buttons__video {
+  display: var(--cometchat-call-buttons-video-display, flex);
+  align-items: var(--cometchat-call-buttons-video-align-items, center);
+}
+
+/* Button customization for voice and video buttons */
+.cometchat-call-buttons__voice,
+.cometchat-call-buttons__video {
+  --cometchat-button-background: var(--cometchat-call-buttons-button-background, transparent);
+  --cometchat-button-width: var(--cometchat-call-buttons-button-width, fit-content);
+  --cometchat-button-height: var(--cometchat-call-buttons-button-height, fit-content);
+  --cometchat-button-background-hover: var(--cometchat-call-buttons-button-background-hover, var(--cometchat-background-color-04, rgba(20, 20, 20, 0.04)));
+  --cometchat-button-icon-background: var(--cometchat-call-buttons-button-icon-background, var(--cometchat-icon-color-primary, #141414));
+  --cometchat-button-padding: var(--cometchat-call-buttons-button-padding, var(--cometchat-spacing-2, 8px));
+  --cometchat-button-hover-padding: var(--cometchat-call-buttons-button-hover-padding, var(--cometchat-spacing-2, 8px));
+  --cometchat-button-hover-border-radius: var(--cometchat-call-buttons-button-hover-border-radius, var(--cometchat-radius-max, 1000px));
+  --cometchat-button-icon-background-hover: var(--cometchat-call-buttons-button-icon-background-hover, var(--cometchat-call-buttons-button-icon-background, var(--cometchat-icon-color-primary, #141414)));
+}
+
+/* Remove active/pressed background change on call buttons */
+.cometchat-call-buttons__voice,
+.cometchat-call-buttons__video {
+  --cometchat-button-background-active: var(--cometchat-call-buttons-button-background-active, transparent);
+}
+
+/* Visible focus indicators on call buttons (Requirement 10.3) */
+.cometchat-call-buttons__voice .cometchat-button:focus-visible,
+.cometchat-call-buttons__video .cometchat-button:focus-visible {
+  outline: var(--cometchat-call-buttons-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-call-buttons-focus-outline-offset, 2px);
+}
+
+@media (prefers-contrast: high) {
+  .cometchat-call-buttons__voice .cometchat-button:focus-visible,
+  .cometchat-call-buttons__video .cometchat-button:focus-visible {
+    outline: var(--cometchat-call-buttons-focus-outline-high-contrast, 3px solid currentColor);
+  }
+}
+
+/* Disabled state styling for call buttons */
+.cometchat-call-buttons__voice .cometchat-button:disabled,
+.cometchat-call-buttons__video .cometchat-button:disabled {
+  cursor: var(--cometchat-call-buttons-disabled-cursor, not-allowed);
+  opacity: var(--cometchat-call-buttons-disabled-opacity, 0.5);
+}
+
+/* Outgoing call backdrop overlay */
+.cometchat-backdrop.cometchat-call-buttons__outgoing-backdrop {
+  position: var(--cometchat-call-buttons-backdrop-position, fixed);
+  inset: var(--cometchat-call-buttons-backdrop-inset, 0);
+  z-index: var(--cometchat-call-buttons-backdrop-z-index, 100);
+  display: var(--cometchat-call-buttons-backdrop-display, flex);
+  align-items: var(--cometchat-call-buttons-backdrop-align-items, center);
+  justify-content: var(--cometchat-call-buttons-backdrop-justify-content, center);
+  background: var(--cometchat-call-buttons-backdrop-background, rgba(0, 0, 0, 0.5));
+}

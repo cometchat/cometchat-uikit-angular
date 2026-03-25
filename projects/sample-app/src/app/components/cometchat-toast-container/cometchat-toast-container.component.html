@@ -1,0 +1,12 @@
+<div class="cometchat-toast-container" role="status" aria-live="polite">
+  @for (toast of toasts(); track toast.id) {
+    <cometchat-toast
+      [text]="toast.message"
+      [type]="getToastType(toast)"
+      [duration]="0"
+      [showCloseButton]="true"
+      [dismissOnEscape]="false"
+      (toastClosed)="onToastClosed(toast.id)"
+    ></cometchat-toast>
+  }
+</div>

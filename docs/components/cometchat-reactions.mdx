@@ -1,0 +1,221 @@
+---
+title: "CometChatReactions"
+description: "A component that renders emoji reaction pills on a message bubble with overflow handling and popover support"
+---
+The `CometChatReactions` component renders emoji reaction pills on a message bubble's footer area. It dynamically calculates how many pills to show based on the parent container width and provides overflow handling via a "+N" button with a popover list.
+
+## Overview
+
+The Reactions component provides interactive emoji reaction display:
+
+- **Dynamic Layout**: Automatically adjusts visible reaction count based on container width
+- **Overflow Handling**: Shows a "+N" button when reactions exceed available space, with a popover list for hidden reactions
+- **Toggle Support**: Clicking a reaction pill emits an event to add or remove the reaction
+- **Hover Tooltips**: Displays reaction info tooltips showing who reacted with each emoji
+- **Alignment Aware**: Adjusts popover placement based on message bubble alignment (left/right)
+- **Responsive**: Adapts popover placement for mobile viewports
+- **Keyboard Accessible**: Full keyboard support for navigating and toggling reactions
+
+
+<Info>
+  **Live Preview** — default reactions preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-reactions--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-reactions--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "150px", border: "1px solid #e0e0e0"}}
+  title="CometChat Reactions — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Reactions Display
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatReactionsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reactions-demo',
+  standalone: true,
+  imports: [CometChatReactionsComponent],
+  template: `
+    <cometchat-reactions
+      [message]="message"
+      [alignment]="'left'"
+      (reactionClick)="onReactionClick($event)">
+    </cometchat-reactions>
+  `
+})
+export class ReactionsDemoComponent {
+  message!: CometChat.BaseMessage;
+
+  onReactionClick(event: { reaction: CometChat.ReactionCount; message: CometChat.BaseMessage }): void {
+    const emoji = event.reaction.getReaction();
+    const isReactedByMe = event.reaction.getReactedByMe();
+    console.log(`${isReactedByMe ? 'Removing' : 'Adding'} reaction: ${emoji}`);
+  }
+}
+```
+
+
+### With Custom Request Builder and Overflow Handling
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatReactionsComponent } from '@cometchat/chat-uikit-angular';
+import { MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-reactions-custom',
+  standalone: true,
+  imports: [CometChatReactionsComponent],
+  template: `
+    <cometchat-reactions
+      [message]="message"
+      [alignment]="alignment"
+      [reactionsRequestBuilder]="requestBuilder"
+      [hoverDebounceTime]="300"
+      (reactionClick)="onReactionClick($event)"
+      (reactionListItemClick)="onListItemClick($event)">
+    </cometchat-reactions>
+  `
+})
+export class ReactionsCustomComponent {
+  message!: CometChat.BaseMessage;
+  alignment = MessageBubbleAlignment.right;
+  requestBuilder!: CometChat.ReactionsRequestBuilder;
+
+  ngOnInit(): void {
+    this.requestBuilder = new CometChat.ReactionsRequestBuilder()
+      .setMessageId(this.message.getId())
+      .setLimit(20);
+  }
+
+  onReactionClick(event: { reaction: CometChat.ReactionCount; message: CometChat.BaseMessage }): void {
+    console.log('Reaction pill clicked:', event.reaction.getReaction());
+  }
+
+  onListItemClick(event: { reaction: CometChat.Reaction; message: CometChat.BaseMessage }): void {
+    console.log('Reaction list item clicked:', event.reaction.getReaction());
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.BaseMessage` | **required** | The message object containing reactions to display |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | Alignment of the message bubble (left or right). Used to determine popover placement for the overflow list |
+| `reactionsRequestBuilder` | `CometChat.ReactionsRequestBuilder` | `undefined` | Optional custom reactions request builder for fetching reaction details |
+| `hoverDebounceTime` | `number` | `500` | Debounce time in milliseconds for hover tooltips |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `reactionClick` | `{ reaction: CometChat.ReactionCount; message: CometChat.BaseMessage }` | Emitted when a reaction pill is clicked. Use this to toggle (add/remove) the reaction |
+| `reactionListItemClick` | `{ reaction: CometChat.Reaction; message: CometChat.BaseMessage }` | Emitted when a reaction list item is clicked from the overflow popover |
+
+## Customization
+
+### CSS Variables
+
+The Reactions component uses BEM-style CSS classes that can be customized:
+
+```css expandable
+/* Reaction pills container */
+.cometchat-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cometchat-spacing-1);
+}
+
+/* Individual reaction pill */
+.cometchat-reactions__pill {
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+  border-radius: var(--cometchat-radius-max);
+  border: 1px solid var(--cometchat-border-color-light);
+  background: var(--cometchat-background-color-01);
+  cursor: pointer;
+}
+
+/* Pill reacted by current user */
+.cometchat-reactions__pill--reacted {
+  border-color: var(--cometchat-primary-color);
+  background: var(--cometchat-extended-primary-color-50);
+}
+
+/* Pill hover state */
+.cometchat-reactions__pill:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+/* More reactions button */
+.cometchat-reactions__more-button {
+  font: var(--cometchat-font-caption1-medium);
+  color: var(--cometchat-text-color-secondary);
+}
+```
+
+### Theming
+
+The component adapts to light and dark themes through CSS variables:
+
+```css expandable
+/* Light theme (default) */
+:root {
+  --cometchat-primary-color: #6852D6;
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-border-color-light: #E8E8E8;
+  --cometchat-extended-primary-color-50: #F5F3FD;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --cometchat-primary-color: #8B7BE8;
+  --cometchat-background-color-01: #1A1A1A;
+  --cometchat-border-color-light: #3A3A3A;
+  --cometchat-extended-primary-color-50: #2D2840;
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Move focus between reaction pills and the more button |
+| `Enter` / `Space` | Toggle the focused reaction (add or remove) |
+| `Enter` / `Space` on "+N" | Open the overflow reaction list popover |
+
+### ARIA Attributes
+
+| Element | Attribute | Value | Description |
+|---------|-----------|-------|-------------|
+| Reaction pill | `role` | `"button"` | Indicates the pill is interactive |
+| Reaction pill | `aria-label` | Dynamic | Describes emoji, count, and whether the current user reacted |
+| Reaction pill | `tabindex` | `"0"` | Makes the pill focusable |
+| More button | `role` | `"button"` | Indicates the overflow button is interactive |
+| More button | `aria-label` | Dynamic | Describes the number of hidden reactions |
+
+### Screen Reader Support
+
+- Reaction pills announce the emoji, count, and user reaction status
+- Toggling a reaction announces whether it was added or removed via a live region
+- The overflow button announces how many additional reactions are hidden
+
+## Related Components
+
+- [CometChatReactionList](/components/cometchat-reaction-list) - Displays the full list of users who reacted, used in the overflow popover
+- [CometChatReactionInfo](/components/cometchat-reaction-info) - Tooltip showing who reacted with a specific emoji
+- [CometChatMessageBubble](/components/cometchat-message-bubble) - Parent component that hosts reactions in its footer
+- [CometChatPopover](/components/cometchat-popover) - Used for the overflow reaction list popover

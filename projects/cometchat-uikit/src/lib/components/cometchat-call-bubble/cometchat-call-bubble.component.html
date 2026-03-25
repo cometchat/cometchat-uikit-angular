@@ -1,0 +1,58 @@
+<!--
+  CometChatCallBubble Template
+
+  Renders call messages with call type icon, title, subtitle, and optional action button.
+  Supports sender/receiver styling variants.
+
+  @see Requirements 2.1, 3.1, 4.1, 5.1
+-->
+
+<div 
+  class="cometchat-call-bubble"
+  [class.cometchat-call-bubble--sender]="isOutgoing"
+  [class.cometchat-call-bubble--receiver]="!isOutgoing"
+  [attr.aria-label]="getAriaLabel()"
+  role="article">
+  
+  <!-- Body Section -->
+  <div class="cometchat-call-bubble__body">
+    <!-- Icon Container -->
+    <div class="cometchat-call-bubble__icon-wrapper">
+      <div 
+        class="cometchat-call-bubble__icon"
+        [style.mask]="'url(' + computedIconUrl + ') center center no-repeat'"
+        [style.-webkit-mask]="'url(' + computedIconUrl + ') center center no-repeat'"
+        [style.mask-size]="'contain'"
+        [style.-webkit-mask-size]="'contain'"
+        [attr.aria-label]="computedTitle"
+        role="img">
+      </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="cometchat-call-bubble__content">
+      <!-- Title -->
+      <div class="cometchat-call-bubble__title">
+        {{ computedTitle }}
+      </div>
+      
+      <!-- Subtitle -->
+      <div class="cometchat-call-bubble__subtitle">
+        {{ computedSubtitle }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Action Button (Optional) -->
+  @if (showButton && buttonText && !disableInteraction) {
+    <button 
+      class="cometchat-call-bubble__button"
+      (click)="onButtonClick()"
+      (keydown.enter)="onButtonClick()"
+      (keydown.space)="onButtonClick(); $event.preventDefault()"
+      [attr.aria-label]="buttonText"
+      type="button">
+      {{ buttonText }}
+    </button>
+  }
+</div>

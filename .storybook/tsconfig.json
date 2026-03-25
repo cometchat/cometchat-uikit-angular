@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "../projects/cometchat-uikit/src/**/*",
+    "./**/*"
+  ],
+  "exclude": [
+    "../node_modules",
+    "../projects/cometchat-uikit/src/**/*.spec.ts",
+    "../projects/cometchat-uikit/src/lib/testing/**",
+    "./__tests__/**"
+  ]
+}

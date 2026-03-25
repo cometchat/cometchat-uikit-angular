@@ -1,0 +1,67 @@
+@if (hasTarget) {
+  <div class="cometchat-call-buttons">
+    <!-- Voice Call Button -->
+    @if (!effectiveHideVoiceCallButton()) {
+      @if (voiceCallButtonView) {
+        <ng-container *ngTemplateOutlet="voiceCallButtonView"></ng-container>
+      } @else {
+        <div class="cometchat-call-buttons__voice">
+          <cometchat-button
+            [iconURL]="voiceCallIconUrl"
+            [hoverText]="'call_button_voice_hover' | translate"
+            [disabled]="isDisabled()"
+            [attr.aria-label]="'call_button_voice_hover' | translate"
+            [attr.aria-disabled]="isDisabled()"
+            tabindex="0"
+            (click)="onVoiceCallButtonClick()"
+            (keydown.enter)="onVoiceCallButtonClick()"
+            (keydown.space)="onVoiceCallButtonClick()">
+          </cometchat-button>
+        </div>
+      }
+    }
+
+    <!-- Video Call Button -->
+    @if (!effectiveHideVideoCallButton()) {
+      @if (videoCallButtonView) {
+        <ng-container *ngTemplateOutlet="videoCallButtonView"></ng-container>
+      } @else {
+        <div class="cometchat-call-buttons__video">
+          <cometchat-button
+            [iconURL]="videoCallIconUrl"
+            [hoverText]="'call_button_video_hover' | translate"
+            [disabled]="isDisabled()"
+            [attr.aria-label]="'call_button_video_hover' | translate"
+            [attr.aria-disabled]="isDisabled()"
+            tabindex="0"
+            (click)="onVideoCallButtonClick()"
+            (keydown.enter)="onVideoCallButtonClick()"
+            (keydown.space)="onVideoCallButtonClick()">
+          </cometchat-button>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Outgoing Call Screen (user calls only) -->
+  @if (!hideOverlays && showOutgoingCall()) {
+    <div class="cometchat-backdrop cometchat-call-buttons__outgoing-backdrop">
+      <cometchat-outgoing-call
+        [call]="activeCallObject()"
+        [disableSoundForCalls]="effectiveOutgoingCallDisableSoundForCalls()"
+        [customSoundForCalls]="effectiveOutgoingCallCustomSoundForCalls()"
+        (callCanceled)="onOutgoingCallCanceled()">
+      </cometchat-outgoing-call>
+    </div>
+  }
+
+  <!-- Ongoing Call Screen (after call accepted or group call initiated) -->
+  @if (!hideOverlays && showOngoingCall()) {
+    <cometchat-ongoing-call
+      [sessionID]="ongoingCallSessionId()"
+      [callWorkflow]="ongoingCallWorkflow()"
+      [callSettingsBuilder]="effectiveCallSettingsBuilder"
+      [isAudioOnly]="ongoingCallIsAudioOnly()">
+    </cometchat-ongoing-call>
+  }
+}

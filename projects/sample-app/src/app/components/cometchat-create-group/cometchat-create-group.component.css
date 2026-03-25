@@ -1,0 +1,254 @@
+/* ═══════════════════════════════════════════════════
+   CometChatCreateGroup — Dialog overlay with form
+   Matches React UIKit sample app design
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-create-group {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.cometchat-create-group * {
+  box-sizing: border-box;
+}
+
+.cometchat-create-group__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.cometchat-create-group__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  max-width: 90%;
+  background: var(--cometchat-background-color-01);
+  border-radius: var(--cometchat-radius-4);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  border: 1px solid var(--cometchat-border-color-dark, #dcdcdc);
+}
+
+/* ── Header ── */
+
+.cometchat-create-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: var(--cometchat-spacing-5) var(--cometchat-spacing-4);
+}
+
+.cometchat-create-group__title {
+  font: var(--cometchat-font-heading1-bold);
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-create-group__close-button {
+  position: absolute;
+  right: var(--cometchat-spacing-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-spacing-8);
+  height: var(--cometchat-spacing-8);
+  border: none;
+  background: transparent;
+  color: var(--cometchat-icon-color-primary);
+  font: var(--cometchat-font-heading4-medium);
+  cursor: pointer;
+  border-radius: var(--cometchat-radius-max);
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-create-group__close-button:hover .cometchat-create-group__close-icon {
+  background: var(--cometchat-primary-color);
+}
+
+.cometchat-create-group__close-button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+.cometchat-create-group__close-icon {
+  width: 24px;
+  height: 24px;
+  background-color: var(--cometchat-icon-color-primary);
+  -webkit-mask: url('../../../assets/close.svg') center center / contain no-repeat;
+  mask: url('../../../assets/close.svg') center center / contain no-repeat;
+}
+
+/* ── Form ── */
+
+.cometchat-create-group__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-5);
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-10) var(--cometchat-spacing-10);
+}
+
+.cometchat-create-group__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2);
+}
+
+.cometchat-create-group__label {
+  color: var(--cometchat-text-color-primary, #141414);
+  font: var(--cometchat-font-caption1-medium);
+  font-style: normal;
+}
+
+.cometchat-create-group__input {
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+  border: none;
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(--cometchat-background-color-02);
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  outline: none;
+  transition: box-shadow 0.2s ease;
+  width: 100%;
+}
+
+.cometchat-create-group__input::placeholder {
+  color: var(--cometchat-text-color-tertiary);
+}
+
+.cometchat-create-group__input:focus {
+  box-shadow: inset 0 0 0 1px var(--cometchat-primary-color);
+}
+
+/* ── Password input wrapper ── */
+
+.cometchat-create-group__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cometchat-create-group__input-wrapper .cometchat-create-group__input {
+  padding-right: var(--cometchat-spacing-8);
+}
+
+.cometchat-create-group__toggle-password {
+  position: absolute;
+  right: var(--cometchat-spacing-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--cometchat-radius-max);
+  padding: 0;
+}
+
+.cometchat-create-group__toggle-password:hover {
+  background: var(--cometchat-background-color-03);
+}
+
+.cometchat-create-group__toggle-password:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+.cometchat-create-group__eye-icon {
+  width: 20px;
+  height: 20px;
+  background-color: var(--cometchat-icon-color-secondary);
+  -webkit-mask: url('../../../assets/visibility_off.svg') center / contain no-repeat;
+  mask: url('../../../assets/visibility_off.svg') center / contain no-repeat;
+}
+
+.cometchat-create-group__eye-icon--visible {
+  -webkit-mask-image: url('../../../assets/visibility.svg');
+  mask-image: url('../../../assets/visibility.svg');
+}
+
+/* ── Type selector (rounded toggle buttons) ── */
+
+.cometchat-create-group__type-options {
+  display: flex;
+  gap: 0;
+  border-radius: var(--cometchat-radius-max);
+  overflow: hidden;
+  background: var(--cometchat-background-color-03, #F5F5F5);
+}
+
+.cometchat-create-group__type-button {
+  flex: 1;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+  border: none;
+  border-radius: var(--cometchat-radius-max);
+  border: 2px solid var(--cometchat-border-color-light, #F5F5F5);
+  background: transparent;
+  font: var(--cometchat-font-heading4-medium);
+  color: var(--cometchat-text-color-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cometchat-create-group__type-button:hover {
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-create-group__type-button--active {
+  background: var(--cometchat-background-color-01);
+  color: var(--cometchat-primary-color);
+  font: var(--cometchat-font-heading4-bold);
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); */
+}
+
+.cometchat-create-group__type-button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+/* ── Actions ── */
+
+.cometchat-create-group__actions {
+  padding-top: var(--cometchat-spacing-2);
+}
+
+.cometchat-create-group__submit-button {
+  width: 100%;
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+  border: none;
+  border-radius: var(--cometchat-radius-3);
+  background: var(--cometchat-primary-button-background);
+  font: var(--cometchat-font-heading4-bold);
+  color: var(--cometchat-primary-button-text);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-create-group__submit-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.cometchat-create-group__submit-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cometchat-create-group__submit-button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-static-white);
+}
+
+/* ── Responsive Design ── */
+
+@media (max-width: 480px) {
+  .cometchat-create-group__title {
+    font: var(--cometchat-font-heading4-bold);
+  }
+}

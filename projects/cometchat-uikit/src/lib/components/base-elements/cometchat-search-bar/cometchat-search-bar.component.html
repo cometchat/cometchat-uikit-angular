@@ -1,0 +1,25 @@
+<div class="cometchat-search-bar" role="search">
+  <div class="cometchat-search-bar__icon" aria-hidden="true"></div>
+  <input 
+    #searchInput
+    type="search"
+    class="cometchat-search-bar__input" 
+    [(ngModel)]="searchValue"
+    (ngModelChange)="onSearchValueChange($event)"
+    [placeholder]="placeholderText"
+    role="searchbox"
+    [attr.aria-label]="searchAriaLabel"
+  />
+  @if (showClearButton) {
+    <button 
+      class="cometchat-search-bar__clear"
+      (click)="onClearClick()"
+      (keydown)="onClearKeyDown($event)"
+      type="button"
+      [attr.aria-label]="clearButtonAriaLabel"
+      tabindex="0"
+    >
+      <div class="cometchat-search-bar__clear-icon" aria-hidden="true"></div>
+    </button>
+  }
+</div>

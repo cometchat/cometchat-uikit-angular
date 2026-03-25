@@ -1,0 +1,409 @@
+---
+title: "CometChatSearchBar"
+description: "A search input component with debounced search, clear button, and full keyboard accessibility for filtering content"
+---
+
+## Overview
+
+The CometChatSearchBar component provides a search input with debounced search functionality, a clear button, and full keyboard accessibility. It's designed for filtering and searching content in lists, conversations, and other UI elements.
+
+## Basic Usage
+
+### Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatSearchBarComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CometChatSearchBarComponent],
+  template: `
+    <cometchat-search-bar
+      [placeholderText]="'Search messages...'"
+      (searchChanged)="onSearchChanged($event)"
+    ></cometchat-search-bar>
+  `
+})
+export class AppComponent {
+  onSearchChanged(event: { value: string }): void {
+    console.log('Search value:', event.value);
+    // Perform search operation
+  }
+}
+```
+
+### With Initial Value
+
+```typescript
+<cometchat-search-bar
+  [searchText]="initialSearchText"
+  [placeholderText]="'Search users...'"
+  (searchChanged)="onSearchChanged($event)"
+></cometchat-search-bar>
+```
+
+### Custom Debounce Delay
+
+```typescript
+<cometchat-search-bar
+  [debounceDelay]="500"
+  [placeholderText]="'Search...'"
+  (searchChanged)="onSearchChanged($event)"
+></cometchat-search-bar>
+```
+
+### With Clear Button Handler
+
+```typescript
+<cometchat-search-bar
+  [placeholderText]="'Search conversations...'"
+  (searchChanged)="onSearchChanged($event)"
+  (clearClick)="onClearSearch()"
+></cometchat-search-bar>
+```
+
+```typescript expandable
+export class AppComponent {
+  onSearchChanged(event: { value: string }): void {
+    console.log('Search value:', event.value);
+  }
+
+  onClearSearch(): void {
+    console.log('Search cleared');
+    // Reset search results
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default search bar.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-search-bar--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-search-bar--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "80px", border: "1px solid #e0e0e0"}}
+  title="Search Bar — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `searchText` | `string` | `''` | Initial/controlled search text value |
+| `placeholderText` | `string` | `'Search'` | Placeholder text for the search input |
+| `debounceDelay` | `number` | `300` | Debounce delay in milliseconds before emitting search events |
+| `ariaLabel` | `string` | `undefined` | Custom aria-label for the search input (overrides placeholderText) |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `searchChanged` | `{ value: string }` | Emitted when search text changes (debounced) |
+| `clearClick` | `void` | Emitted when the clear button is clicked |
+| `focusFirstListItem` | `void` | Emitted when ArrowDown is pressed from the search input, signaling the parent to move focus to the first list item |
+
+## Customization
+
+### Styling with CSS Variables
+
+The CometChatSearchBar component can be customized using CSS variables:
+
+```css expandable
+:root {
+  /* Background and border */
+  --cometchat-search-bar-background-color: #f5f5f5;
+  --cometchat-search-bar-border-color: transparent;
+  --cometchat-search-bar-border-radius: 8px;
+  
+  /* Icon colors */
+  --cometchat-search-bar-icon-color: #666;
+  
+  /* Text colors */
+  --cometchat-text-color-primary: #000;
+  --cometchat-text-color-secondary: #666;
+  
+  /* Typography */
+  --cometchat-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cometchat-font-size-body: 14px;
+  
+  /* Spacing */
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  
+  /* Focus color */
+  --cometchat-primary-color: #3399FF;
+}
+```
+
+### Custom Styling Example
+
+```css
+/* Custom search bar with dark theme */
+.custom-search-bar {
+  --cometchat-search-bar-background-color: #2c2c2c;
+  --cometchat-search-bar-border-color: #444;
+  --cometchat-search-bar-icon-color: #aaa;
+  --cometchat-text-color-primary: #fff;
+  --cometchat-text-color-secondary: #aaa;
+}
+```
+
+```typescript
+<cometchat-search-bar
+  class="custom-search-bar"
+  [placeholderText]="'Search...'"
+  (searchChanged)="onSearchChanged($event)"
+></cometchat-search-bar>
+```
+
+<Info>
+  **Live Preview** — search bar with custom placeholder text.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-search-bar--custom-placeholder)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-search-bar--custom-placeholder&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "80px", border: "1px solid #e0e0e0"}}
+  title="Search Bar — Custom Placeholder"
+  allow="clipboard-write"
+></iframe>
+
+## Advanced Usage
+
+### Controlled Search Input
+
+```typescript expandable
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-search-demo',
+  template: `
+    <cometchat-search-bar
+      [searchText]="searchQuery"
+      [placeholderText]="'Search...'"
+      (searchChanged)="onSearchChanged($event)"
+      (clearClick)="onClearSearch()"
+    ></cometchat-search-bar>
+    
+    @if (searchResults.length > 0) {
+      <div>
+        @for (result of searchResults; track result.id) {
+          <div>
+            {{ result.name }}
+          </div>
+        }
+      </div>
+    }
+  `
+})
+export class SearchDemoComponent {
+  searchQuery = '';
+  searchResults: any[] = [];
+
+  onSearchChanged(event: { value: string }): void {
+    this.searchQuery = event.value;
+    this.performSearch(event.value);
+  }
+
+  onClearSearch(): void {
+    this.searchQuery = '';
+    this.searchResults = [];
+  }
+
+  performSearch(query: string): void {
+    // Implement search logic
+    if (query.trim()) {
+      // Fetch search results
+      this.searchResults = this.filterResults(query);
+    } else {
+      this.searchResults = [];
+    }
+  }
+
+  filterResults(query: string): any[] {
+    // Filter logic here
+    return [];
+  }
+}
+```
+
+### With Loading State
+
+```typescript expandable
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-search-with-loading',
+  template: `
+    <cometchat-search-bar
+      [placeholderText]="'Search users...'"
+      (searchChanged)="onSearchChanged($event)"
+    ></cometchat-search-bar>
+    
+    @if (isLoading) {
+      <div>Loading...</div>
+    }
+    @if (!isLoading && searchResults.length > 0) {
+      <div>
+        <!-- Display results -->
+      </div>
+    }
+  `
+})
+export class SearchWithLoadingComponent {
+  isLoading = false;
+  searchResults: any[] = [];
+
+  async onSearchChanged(event: { value: string }): Promise<void> {
+    if (!event.value.trim()) {
+      this.searchResults = [];
+      return;
+    }
+
+    this.isLoading = true;
+    try {
+      // Simulate API call
+      this.searchResults = await this.fetchSearchResults(event.value);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async fetchSearchResults(query: string): Promise<any[]> {
+    // API call here
+    return [];
+  }
+}
+```
+
+### Debouncing Explanation
+
+The search bar uses RxJS debouncing to prevent excessive search operations. When a user types, the component waits for the specified `debounceDelay` (default 300ms) after the last keystroke before emitting the `searchChanged` event. This improves performance by reducing the number of search operations, especially when searching against a backend API.
+
+```typescript
+// Example: Longer debounce for API searches
+<cometchat-search-bar
+  [debounceDelay]="500"
+  [placeholderText]="'Search users...'"
+  (searchChanged)="searchUsers($event)"
+></cometchat-search-bar>
+```
+
+## Accessibility
+
+The CometChatSearchBar component is fully WCAG 2.1 Level AA compliant with comprehensive keyboard accessibility and screen reader support.
+
+### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| **Tab** | Focus the search input | When navigating to the component |
+| **Type** | Enter search text | When input is focused |
+| **Escape** | Clear the search | When input is focused and has text |
+| **Tab** | Focus the clear button | When clear button is visible |
+| **Enter/Space** | Clear the search | When clear button is focused |
+
+### ARIA Attributes
+
+The component implements proper ARIA attributes for accessibility:
+
+| Element | ARIA Attributes | Purpose |
+|---------|----------------|---------|
+| Container | `role="search"` | Identifies the search landmark region |
+| Input | `role="searchbox"` | Identifies the input as a search field |
+| Input | `aria-label` | Provides accessible label (uses `ariaLabel` prop or falls back to `placeholderText`) |
+| Clear button | `aria-label="Clear search"` | Describes the button's purpose |
+| Icons | `aria-hidden="true"` | Hides decorative icons from screen readers |
+
+### Custom ARIA Labels
+
+You can provide a custom aria-label for better accessibility:
+
+```typescript
+<cometchat-search-bar
+  [placeholderText]="'Search...'"
+  [ariaLabel]="'Search conversations by name or message content'"
+  (searchChanged)="onSearchChanged($event)"
+></cometchat-search-bar>
+```
+
+### Screen Reader Announcements
+
+- The search input is announced as "searchbox" with the aria-label text
+- The clear button is announced as "Clear search button"
+- The search landmark region helps users navigate to the search functionality
+- Decorative icons are hidden from screen readers with `aria-hidden="true"`
+
+### Focus Management
+
+- **Visible Focus Indicators**: Clear focus outlines using `--cometchat-primary-color`
+- **Focus-Visible Support**: Focus indicators only appear for keyboard navigation, not mouse clicks
+- **Tab Order**: Logical tab order from input to clear button
+- **Focus Restoration**: Focus remains on input after clearing with Escape key
+
+### Focus Indicator Styling
+
+The component uses `:focus-visible` to show focus indicators only for keyboard navigation:
+
+```css
+.cometchat-search-bar:focus-within {
+  border-color: var(--cometchat-primary-color, #3399FF);
+}
+
+.cometchat-search-bar__clear:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color, #3399FF);
+  outline-offset: 2px;
+}
+```
+
+### High Contrast Mode
+
+The component supports high contrast mode with enhanced borders and focus indicators:
+
+```css
+@media (prefers-contrast: high) {
+  .cometchat-search-bar {
+    border: 2px solid currentColor;
+  }
+  
+  .cometchat-search-bar__clear:focus-visible {
+    outline: 3px solid currentColor;
+  }
+}
+```
+
+### Accessibility Best Practices
+
+1. **Always provide meaningful labels**: Use the `ariaLabel` prop for descriptive labels
+2. **Test with keyboard only**: Ensure all functionality is accessible without a mouse
+3. **Test with screen readers**: Verify announcements with NVDA, JAWS, or VoiceOver
+4. **Maintain focus visibility**: Don't override the default focus indicators
+5. **Use semantic HTML**: The component uses native `<input type="search">` for better semantics
+
+## Best Practices
+
+1. **Debounce Delay**: Use a longer debounce delay (500-800ms) for API searches to reduce server load
+2. **Clear Feedback**: Always handle the `clearClick` event to reset your search results
+3. **Loading States**: Show loading indicators during search operations
+4. **Empty States**: Display appropriate messages when no results are found
+5. **Accessibility**: Ensure the search bar is keyboard accessible and has proper ARIA labels
+6. **Performance**: Use the debounced `searchChanged` event instead of listening to raw input events
+
+## Browser Compatibility
+
+The CometChatSearchBar component is compatible with all modern browsers:
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+The component uses standard web APIs and RxJS for debouncing, ensuring broad compatibility.

@@ -1,0 +1,89 @@
+<!--
+  CometChatUserItem Template
+  
+  A standalone component for rendering a single user item with support for:
+  - State management (active, selected, focused)
+  - User avatar with online/offline status indicator
+  - Custom templates for leading, title, subtitle, and trailing sections
+  - Context menu integration
+  - Full accessibility support (ARIA labels, keyboard navigation)
+  
+  @see Requirements 1.7, 1.8, 1.9, 1.10, 1.11, 1.12, 1.13, 6.1-6.5
+-->
+
+<div class="cometchat-user-item"
+     [class.cometchat-user-item--active]="isActive"
+     [class.cometchat-user-item--selected]="isSelected"
+     [class.cometchat-user-item--focused]="isFocused"
+     role="option"
+     [attr.tabindex]="tabIndex"
+     [attr.aria-selected]="isSelected"
+     [attr.aria-label]="accessibleLabel"
+     (click)="handleClick()"
+     (keydown)="onKeyDown($event)"
+     (mousedown)="handleMouseDown($event)"
+     (contextmenu)="handleContextMenu($event)">
+  
+  <!-- Leading Section: Avatar and Status Indicator -->
+  @if (leadingView) {
+    <ng-container *ngTemplateOutlet="leadingView; context: { $implicit: user }"></ng-container>
+  } @else {
+    <div class="cometchat-user-item__leading" aria-hidden="true">
+      <!-- Avatar -->
+      <cometchat-avatar 
+        [image]="avatarImage" 
+        [name]="avatarName"
+        class="cometchat-user-item__avatar">
+      </cometchat-avatar>
+      
+      <!-- Status indicator (online/offline) - aria-hidden since status is in aria-label -->
+      @if (!effectiveHideUserStatus()) {
+        <div class="cometchat-user-item__status"
+             [class.cometchat-user-item__status--online]="userStatus === 'online'"
+             [class.cometchat-user-item__status--offline]="userStatus !== 'online'"
+             aria-hidden="true">
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Body Section: Title and Subtitle -->
+  <div class="cometchat-user-item__body">
+    <!-- Title section -->
+    @if (titleView) {
+      <ng-container *ngTemplateOutlet="titleView; context: { $implicit: user }"></ng-container>
+    } @else {
+      <div class="cometchat-user-item__title">
+        <span class="cometchat-user-item__title-text">
+          {{ avatarName }}
+        </span>
+      </div>
+    }
+    
+    <!-- Subtitle section -->
+    @if (subtitleView) {
+      <ng-container *ngTemplateOutlet="subtitleView; context: { $implicit: user }"></ng-container>
+    }
+  </div>
+  
+  <!-- Trailing Section: Context Menu -->
+  @if (trailingView) {
+    <ng-container *ngTemplateOutlet="trailingView; context: { $implicit: user }"></ng-container>
+  } @else {
+    <div class="cometchat-user-item__trailing">
+      <!-- Context menu -->
+      @if (contextMenuOptions && contextMenuOptions.length > 0) {
+        <div class="cometchat-user-item__context-menu">
+          <cometchat-context-menu
+            [data]="contextMenuOptions"
+            [placement]="Placement.left"
+            [topMenuSize]="2"
+            [closeOnOutsideClick]="true"
+            (optionClick)="handleContextMenuOptionClick($any($event))"
+            class="cometchat-user-item__menu">
+          </cometchat-context-menu>
+        </div>
+      }
+    </div>
+  }
+</div>

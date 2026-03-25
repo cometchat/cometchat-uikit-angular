@@ -1,0 +1,540 @@
+# RichTextEditorService API Reference
+
+The `RichTextEditorService` is an Angular service that provides rich text editing capabilities using native browser APIs. It is a lightweight, custom implementation with no external dependencies.
+
+## Overview
+
+The service manages rich text editor instances with support for:
+- Text formatting (bold, italic, underline, strikethrough, code)
+- Block formatting (code blocks, blockquotes)
+- Lists (ordered and unordered)
+- Links with validation
+- Mentions integration
+- Undo/redo history
+- Keyboard shortcuts
+- Full accessibility support
+
+## Installation
+
+The service is provided at root level and automatically available throughout your application:
+
+```typescript
+import { inject } from '@angular/core';
+import { RichTextEditorService } from '@cometchat/chat-uikit-angular';
+
+export class MyComponent {
+  private editorService = inject(RichTextEditorService);
+}
+```
+
+## Creating an Editor
+
+### `createEditor(config?, element?): RichTextEditor`
+
+Creates a new rich text editor instance.
+
+**Parameters:**
+- `config` (optional): Configuration object for the editor
+- `element` (optional): DOM element to mount the editor to
+
+**Returns:** `RichTextEditor` instance
+
+**Example:**
+```typescript expandable
+ngOnInit() {
+  this.editor = this.editorService.createEditor({
+    placeholder: 'Type your message...',
+    autofocus: true,
+    onUpdate: (html, text) => {
+      console.log('Content changed:', html, text);
+    },
+    onSelectionUpdate: (formatState) => {
+      console.log('Format state:', formatState);
+    }
+  });
+}
+```
+
+### Configuration Options
+
+```typescript expandable
+interface RichTextEditorConfig {
+  // Display placeholder text when editor is empty
+  placeholder?: string;
+  
+  // Whether the editor is editable
+  editable?: boolean;
+  
+  // Auto-focus behavior: true, false, 'start', 'end', 'all', or position number
+  autofocus?: boolean | 'start' | 'end' | 'all' | number;
+  
+  // Initial HTML content
+  content?: string;
+  
+  // Callback when content changes
+  onUpdate?: (html: string, text: string) => void;
+  
+  // Callback when selection/format state changes
+  onSelectionUpdate?: (formatState: RichTextFormatState) => void;
+  
+  // Callback when editor receives focus
+  onFocus?: () => void;
+  
+  // Callback when editor loses focus
+  onBlur?: () => void;
+  
+  // Mention-related callbacks
+  onMentionStart?: (query: string) => void;
+  onMentionEnd?: () => void;
+  getMentionSuggestions?: (query: string) => Promise<MentionItem[]>;
+  onMentionSelect?: (item: MentionItem) => void;
+}
+```
+
+## Text Formatting
+
+### `toggleBold(editor: RichTextEditor): void`
+
+Toggles bold formatting on the selected text or at cursor position.
+
+**Keyboard Shortcut:** `Ctrl+B` (Windows/Linux) or `Cmd+B` (Mac)
+
+**Example:**
+```typescript
+applyBold() {
+  this.editorService.toggleBold(this.editor);
+}
+```
+
+### `toggleItalic(editor: RichTextEditor): void`
+
+Toggles italic formatting on the selected text or at cursor position.
+
+**Keyboard Shortcut:** `Ctrl+I` (Windows/Linux) or `Cmd+I` (Mac)
+
+### `toggleUnderline(editor: RichTextEditor): void`
+
+Toggles underline formatting on the selected text or at cursor position.
+
+**Keyboard Shortcut:** `Ctrl+U` (Windows/Linux) or `Cmd+U` (Mac)
+
+### `toggleStrikethrough(editor: RichTextEditor): void`
+
+Toggles strikethrough formatting on the selected text or at cursor position.
+
+### `toggleCode(editor: RichTextEditor): void`
+
+Toggles inline code formatting on the selected text or at cursor position.
+
+## Block Formatting
+
+### `toggleCodeBlock(editor: RichTextEditor): void`
+
+Toggles code block formatting for the current block or selection.
+
+### `toggleBlockquote(editor: RichTextEditor): void`
+
+Toggles blockquote formatting for the current block or selection.
+
+## Lists
+
+### `toggleOrderedList(editor: RichTextEditor): void`
+
+Toggles ordered (numbered) list formatting.
+
+**Behavior:**
+- Press `Enter` to create a new list item
+- Press `Enter` twice to exit the list
+- Press `Tab` to indent a list item
+
+### `toggleBulletList(editor: RichTextEditor): void`
+
+Toggles unordered (bullet) list formatting.
+
+**Behavior:**
+- Press `Enter` to create a new list item
+- Press `Enter` twice to exit the list
+- Press `Tab` to indent a list item
+
+## Links
+
+### `setLink(editor: RichTextEditor, url: string | null): void`
+
+Sets or removes a link on the selected text.
+
+**Parameters:**
+- `url`: The URL to link to, or `null` to remove the link
+
+**Example:**
+```typescript expandable
+addLink() {
+  const url = prompt('Enter URL:');
+  if (url) {
+    this.editorService.setLink(this.editor, url);
+  }
+}
+
+removeLink() {
+  this.editorService.setLink(this.editor, null);
+}
+```
+
+**URL Validation:**
+- URLs are validated before insertion
+- Invalid URLs display an error
+- URLs without protocol are automatically prefixed with `https://`
+
+## History (Undo/Redo)
+
+### `undo(editor: RichTextEditor): boolean`
+
+Undoes the last action in the editor.
+
+**Keyboard Shortcut:** `Ctrl+Z` (Windows/Linux) or `Cmd+Z` (Mac)
+
+**Returns:** `true` if undo was successful, `false` if nothing to undo
+
+### `redo(editor: RichTextEditor): boolean`
+
+Redoes the last undone action in the editor.
+
+**Keyboard Shortcut:** `Ctrl+Y` or `Ctrl+Shift+Z` (Windows/Linux) or `Cmd+Shift+Z` (Mac)
+
+**Returns:** `true` if redo was successful, `false` if nothing to redo
+
+### `canUndo(editor: RichTextEditor): boolean`
+
+Checks if undo is available.
+
+**Returns:** `true` if there are actions to undo
+
+### `canRedo(editor: RichTextEditor): boolean`
+
+Checks if redo is available.
+
+**Returns:** `true` if there are actions to redo
+
+## Content Management
+
+### `getHTML(editor: RichTextEditor): string`
+
+Gets the HTML content from the editor with XSS sanitization.
+
+**Returns:** Sanitized HTML string
+
+**Example:**
+```typescript
+const html = this.editorService.getHTML(this.editor);
+console.log('HTML:', html);
+```
+
+### `getText(editor: RichTextEditor): string`
+
+Gets the plain text content from the editor without formatting.
+
+**Returns:** Plain text string with all HTML tags removed
+
+**Example:**
+```typescript
+const text = this.editorService.getText(this.editor);
+console.log('Plain text:', text);
+```
+
+### `setContent(editor: RichTextEditor, content: string, emitUpdate?: boolean): void`
+
+Sets the HTML content of the editor.
+
+**Parameters:**
+- `content`: HTML content to set
+- `emitUpdate` (optional): Whether to emit update event (default: false)
+
+### `clearContent(editor: RichTextEditor): void`
+
+Clears all content from the editor.
+
+### `insertText(editor: RichTextEditor, text: string): void`
+
+Inserts text at the current cursor position.
+
+### `deleteRange(editor: RichTextEditor, from: number, to: number): void`
+
+Deletes a range of content from the editor.
+
+**Parameters:**
+- `from`: Start position (character offset)
+- `to`: End position (character offset)
+
+### `isEmpty(editor: RichTextEditor): boolean`
+
+Checks if the editor content is empty.
+
+**Returns:** `true` if editor is empty
+
+### `hasFormatting(editor: RichTextEditor): boolean`
+
+Checks if the content has any rich text formatting.
+
+**Returns:** `true` if content has formatting beyond plain text
+
+## Mentions
+
+### `insertMention(editor, id, label, charsToDelete, isSelf?): void`
+
+Inserts a mention at the current cursor position.
+
+**Parameters:**
+- `id`: The unique ID of the mentioned user
+- `label`: The display name of the mentioned user (without @)
+- `charsToDelete`: Number of characters to delete before inserting (e.g., the @ and query text)
+- `isSelf` (optional): Whether the mention is for the logged-in user (default: false)
+
+**Example:**
+```typescript
+onMentionSelect(user: CometChat.User) {
+  this.editorService.insertMention(
+    this.editor,
+    user.getUid(),
+    user.getName(),
+    this.queryLength + 1, // +1 for the @ symbol
+    user.getUid() === this.loggedInUser.getUid()
+  );
+}
+```
+
+### `getTextWithMentionFormat(editor: RichTextEditor): string`
+
+Converts editor content to CometChat mention format.
+
+**Returns:** Text with mentions formatted as `<@uid:{uid}>`
+
+**Example:**
+```typescript
+const formattedText = this.editorService.getTextWithMentionFormat(this.editor);
+// Output: "Hello <@uid:user123>, how are you?"
+```
+
+### `setContentWithMentions(editor, text, mentionedUsers, emitUpdate?): void`
+
+Sets the content of the editor with mentions properly formatted.
+
+**Parameters:**
+- `text`: The text content with mention placeholders in format `<@uid:name>`
+- `mentionedUsers`: Array of mentioned users from the message
+- `emitUpdate` (optional): Whether to emit update event (default: false)
+
+**Example:**
+```typescript
+// When loading a message with mentions
+this.editorService.setContentWithMentions(
+  this.editor,
+  message.getText(),
+  message.getMentionedUsers()
+);
+```
+
+### `getUniqueMentionUids(editor: RichTextEditor): Set<string>`
+
+Gets the set of unique mention UIDs from the editor content.
+
+**Returns:** Set of unique mention UIDs
+
+**Example:**
+```typescript
+const mentionUids = this.editorService.getUniqueMentionUids(this.editor);
+console.log('Mentioned users:', Array.from(mentionUids));
+```
+
+**Mention Limit:** Maximum of 10 unique mentions per message.
+
+## Format State
+
+### `getFormatState(editor: RichTextEditor): RichTextFormatState`
+
+Gets the current format state for the editor.
+
+**Returns:** Object indicating which formats are currently active
+
+```typescript expandable
+interface RichTextFormatState {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strikethrough: boolean;
+  code: boolean;
+  blockquote: boolean;
+  codeBlock: boolean;
+  orderedList: boolean;
+  bulletList: boolean;
+  link: boolean;
+}
+```
+
+**Example:**
+```typescript
+const formatState = this.editorService.getFormatState(this.editor);
+if (formatState.bold) {
+  console.log('Bold is active');
+}
+```
+
+### `formatState` Signal
+
+The service provides a reactive signal for the current format state:
+
+```typescript
+// In your component
+formatState = this.editorService.formatState;
+
+// In your template
+<button [class.active]="formatState().bold">Bold</button>
+```
+
+### `getRichTextMetadata(editor: RichTextEditor): RichTextMetadata`
+
+Gets rich text metadata for a message.
+
+**Returns:** Object with HTML content, plain text, and formatting flag
+
+```typescript
+interface RichTextMetadata {
+  html: string;
+  plainText: string;
+  hasFormatting: boolean;
+}
+```
+
+## Focus Management
+
+### `focus(editor: RichTextEditor, position?): void`
+
+Focuses the editor and optionally positions the cursor.
+
+**Parameters:**
+- `position` (optional): Where to place cursor
+  - `'start'`: Beginning of content
+  - `'end'`: End of content (default)
+  - `'all'`: Select all content
+  - `number`: Specific character position
+
+**Example:**
+```typescript
+// Focus at end
+this.editorService.focus(this.editor);
+
+// Focus at start
+this.editorService.focus(this.editor, 'start');
+
+// Select all
+this.editorService.focus(this.editor, 'all');
+```
+
+### `blur(editor: RichTextEditor): void`
+
+Removes focus from the editor.
+
+## Cleanup
+
+### `destroyEditor(editor: RichTextEditor): void`
+
+Destroys an editor instance and cleans up all resources.
+
+**Important:** Always call this method when the editor is no longer needed to prevent memory leaks.
+
+**Example:**
+```typescript
+ngOnDestroy() {
+  if (this.editor) {
+    this.editorService.destroyEditor(this.editor);
+  }
+}
+```
+
+## Accessibility
+
+The editor includes full accessibility support:
+
+### Keyboard Navigation
+- **Tab**: Focus editor
+- **Ctrl/Cmd+B**: Bold
+- **Ctrl/Cmd+I**: Italic
+- **Ctrl/Cmd+U**: Underline
+- **Ctrl/Cmd+Z**: Undo
+- **Ctrl/Cmd+Y** or **Ctrl/Cmd+Shift+Z**: Redo
+- **Enter**: New line or list item
+- **Enter** (twice in list): Exit list
+- **Tab** (in list): Indent
+- **Escape**: Close mention popup
+- **Arrow keys**: Navigate content
+
+### ARIA Support
+- `role="textbox"` on contenteditable element
+- `aria-label` for editor purpose
+- `aria-multiline="true"` for multiline editor
+- `aria-placeholder` for placeholder text
+- `aria-live="polite"` for format announcements
+
+### Screen Reader Support
+- Formatting changes are announced
+- Mention insertions are announced
+- Undo/redo operations are announced
+
+## Browser Support
+
+The editor supports modern browsers:
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+Fallbacks are provided for unsupported browser APIs.
+
+## Performance
+
+The editor is optimized for performance:
+- **Typing latency**: < 50ms per keystroke (tested with 10,000 characters)
+- **Formatting operations**: < 100ms
+- **Initialization**: < 50ms
+- **History grouping**: Rapid typing is grouped into single undo steps (500ms delay)
+- **Event delegation**: Single event listener on contenteditable element
+- **Memory management**: Automatic cleanup on destroy
+
+## Security
+
+### XSS Protection
+
+All HTML output is sanitized to prevent XSS attacks:
+- Script tags are removed
+- Event handlers are removed
+- Dangerous attributes are removed
+- Only safe HTML tags and attributes are allowed
+
+### Content Validation
+
+- URLs are validated before link insertion
+- Mention data is sanitized
+- Pasted content is sanitized
+
+## Scoping for Multiple Instances
+
+`RichTextEditorService` is provided at the root level (`providedIn: 'root'`), so all message composers share the same editor configuration by default. If you need different editor configurations for different composers (e.g., a main composer with full formatting vs. a thread composer with minimal options), scope the service to a wrapper component:
+
+```typescript expandable
+@Component({
+  selector: 'app-thread-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  providers: [RichTextEditorService], // Scoped instance
+  template: `<cometchat-message-composer [user]="user" [parentMessageId]="parentMessageId"></cometchat-message-composer>`
+})
+export class ThreadComposerComponent {
+  // This is the LOCAL instance, not the root singleton
+  private editorService = inject(RichTextEditorService);
+}
+```
+
+See [CometChatMessageList — Multiple Message Lists with Different Configurations](/components/cometchat-message-list#multiple-message-lists-with-different-configurations) for a complete multi-panel example.
+
+## See Also
+
+- [MessageComposer Component](../components/message-composer.mdx)
+- [Rich Text Formatting Guide](../guides/rich-text-formatting.mdx)

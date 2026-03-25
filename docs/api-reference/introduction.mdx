@@ -1,0 +1,151 @@
+---
+title: Services
+description: "Reference for CometChat UIKit Angular injectable services."
+---
+<Warning>
+This is a beta release (`5.0.0-beta.1`). APIs may change before the stable release. Do not use in production.
+</Warning>
+
+This section documents the Angular services provided by the CometChat UIKit. These are injectable services you use via Angular's dependency injection to manage state, configure components, and customize behavior.
+
+## Core Classes
+
+### CometChatUIKit
+
+The main entry point for initializing and configuring the UIKit.
+
+```typescript expandable
+class CometChatUIKit {
+  static init(settings: UIKitSettings): Promise<void>;
+  static login(uid: string): Promise<CometChat.User>;
+  static loginWithAuthToken(authToken: string): Promise<CometChat.User>;
+  static logout(): Promise<void>;
+  /** Synchronous — returns the in-memory cached user or null. No SDK call. */
+  static getLoggedInUser(): CometChat.User | null;
+  /** Async — verifies the SDK session and returns the user or null. */
+  static getLoggedinUser(): Promise<CometChat.User | null>;
+  static createUser(user: CometChat.User): Promise<CometChat.User>;
+  /** Returns whether calling was enabled via UIKitSettingsBuilder.setCallingEnabled(true). */
+  static isCallingEnabled(): boolean;
+}
+```
+
+<Note>
+  The UIKit exposes two session-check methods with intentionally different casing — this mirrors the underlying CometChat SDK naming.
+
+  - `getLoggedInUser()` (capital **I**, synchronous) — returns the in-memory cached user immediately. Use this for quick checks inside components where you already know the user is logged in.
+  - `getLoggedinUser()` (lowercase **i**, async) — makes an SDK call to verify the session. Use this in `ngOnInit` or `main.ts` before rendering components, as it is the authoritative check.
+
+  The casing difference is not a typo — it is intentional to match the SDK's own API surface.
+</Note>
+
+### UIKitSettings
+
+Build settings using `UIKitSettingsBuilder`:
+
+```typescript
+const uiKitSettings = new UIKitSettingsBuilder()
+  .setAppId('APP_ID')
+  .setRegion('REGION')
+  .setAuthKey('AUTH_KEY') // dev only — use Auth Token in production
+  .subscribePresenceForAllUsers()
+  .setCallingEnabled(true) // enable voice/video calling (default: false)
+  .build();
+```
+
+#### UIKitSettingsBuilder Methods
+
+| Method | Type | Default | Description |
+|--------|------|---------|-------------|
+| `setAppId(appId)` | `string` | — | Your CometChat App ID (required) |
+| `setRegion(region)` | `string` | — | Your CometChat region, e.g. `'us'`, `'eu'`, `'in'` (required) |
+| `setAuthKey(authKey)` | `string` | — | Auth Key for development. Use Auth Token in production |
+| `subscribePresenceForAllUsers()` | — | — | Subscribe to presence updates for all users |
+| `subscribePresenceForFriends()` | — | — | Subscribe to presence updates for friends only |
+| `subscribePresenceForRoles(roles)` | `string[]` | — | Subscribe to presence updates for specific roles |
+| `setAutoEstablishSocketConnection(auto)` | `boolean` | `true` | Auto-establish WebSocket connection on init |
+| `setCallingEnabled(enabled)` | `boolean` | `false` | Enable voice/video calling. When `true`, the Calls SDK is initialized after login and call buttons become visible in MessageHeader, CallButtons, and CallLogs. When `false` (default), call buttons are hidden and the Calls SDK is not initialized |
+| `setCallAppSettings(settings)` | `any` | — | Custom `CallAppSettings` for the Calls SDK. Built via `CometChatUIKitCalls.CallAppSettingsBuilder`. If not set, the UIKit builds default settings from `appId` and `region` |
+| `setStorageMode(mode)` | `CometChat.StorageMode` | `LOCAL` | Storage mode for the SDK |
+| `setAdminHost(host)` | `string` | — | Override the admin host URL |
+| `setClientHost(host)` | `string` | — | Override the client host URL |
+
+<Info>
+  `setCallingEnabled(true)` requires `@cometchat/calls-sdk-javascript` to be installed. Without the Calls SDK package, calling features will not activate even when enabled.
+</Info>
+
+## Services
+
+### Documented Services
+
+| Service | Description | Reference |
+|---------|-------------|-----------|
+| ChatStateService | Centralized chat state management service — tracks active user, group, and conversation across components | [ChatStateService](/api-reference/chat-state-service) |
+| MessageBubbleConfigService | Centralized message bubble view configuration — customize bubble parts globally or per message type | [MessageBubbleConfigService](/api-reference/message-bubble-config-service) |
+| CometChatTemplatesService | SDK-wide template customization service — shared and component-specific templates for all list components | [CometChatTemplatesService](/api-reference/templates-service) |
+| FormatterConfigService | Text formatter configuration service — manages text formatting rules and custom formatters | [FormatterConfigService](/api-reference/formatter-config-service) |
+| RichTextEditorService | Rich text editor configuration service — controls editor behavior, toolbar options, and input modes | [RichTextEditorService](/api-reference/rich-text-editor-service) |
+| GlobalConfig | Centralized configuration via `COMETCHAT_GLOBAL_CONFIG` injection token — sets defaults for display, sound, calls, and more across all components | [GlobalConfig](/customization/global-config) |
+
+### Service Scoping (Multiple Instances)
+
+Most customization services (`MessageBubbleConfigService`, `FormatterConfigService`, `CometChatTemplatesService`, `RichTextEditorService`) are provided at the root level as singletons. This means all component instances share the same configuration by default.
+
+If you need different configurations for different component instances (e.g., a main chat panel and a thread panel with different bubble styles), you can scope a service to a wrapper component by adding it to the component's `providers` array. Angular's hierarchical dependency injection will give that component and its children their own service instance.
+
+```typescript
+@Component({
+  selector: 'app-thread-panel',
+  providers: [MessageBubbleConfigService], // Scoped instance for this subtree
+  template: `<cometchat-message-list ...></cometchat-message-list>`
+})
+export class ThreadPanelComponent { }
+```
+
+See the [State Management Guide — Scoping Customization Services](/guides/state-management#scoping-customization-services-for-multiple-instances) and [CometChatMessageList — Multiple Message Lists](/components/cometchat-message-list#multiple-message-lists-with-different-configurations) for complete examples.
+
+<Warning>
+  Do not scope `ChatStateService` — it is intentionally a singleton that tracks the app-wide active conversation. Use the props-based pattern (`[user]`, `[group]`) for independent panels instead.
+</Warning>
+
+### CometChatMessageEvents
+
+Subscribe to message-related events.
+
+```typescript
+CometChatMessageEvents.ccMessageSent.subscribe((message) => {
+  console.log('Message sent:', message);
+});
+
+CometChatMessageEvents.onTextMessageReceived.subscribe((message) => {
+  console.log('Message received:', message);
+});
+```
+
+### CometChatUserEvents
+
+Subscribe to user-related events.
+
+```typescript
+CometChatUserEvents.ccUserBlocked.subscribe((user) => {
+  console.log('User blocked:', user);
+});
+
+CometChatUserEvents.ccUserUnblocked.subscribe((user) => {
+  console.log('User unblocked:', user);
+});
+```
+
+See the full [Events reference](/events) for all available event names.
+
+## Type Definitions
+
+All types are exported from the main package:
+
+```typescript
+import type {
+  CometChatTheme,
+  SelectionMode,
+  MessageStatus
+} from '@cometchat/chat-uikit-angular';
+```

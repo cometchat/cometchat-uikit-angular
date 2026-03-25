@@ -1,0 +1,5 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="8" fill="#6851FF"/>
+  <path d="M16 8C11.58 8 8 11.58 8 16C8 20.42 11.58 24 16 24C20.42 24 24 20.42 24 16C24 11.58 20.42 8 16 8ZM14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+  <text x="40" y="22" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#141414">CometChat</text>
+</svg>

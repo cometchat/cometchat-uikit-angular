@@ -1,0 +1,73 @@
+/* ═══════════════════════════════════════════════════
+   CometChatThreadedMessages — Thread view panel
+   Right panel with UIKit thread header, message list,
+   and composer with rounded corners + spacing.
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-threaded-messages {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  --cometchat-message-composer-border:1px solid  var(--cometchat-border-color-light);
+}
+
+/* ── Thread Message List ── */
+
+.cometchat-threaded-messages__list {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* NOTE: background override for .cometchat-message-list is in
+   global styles.css — Angular's emulated encapsulation prevents
+   this component's CSS from reaching into UIKit child templates. */
+
+/* ── Shimmer background override for thread list ── */
+.cometchat-threaded-messages .cometchat-message-list__shimmer {
+  background: transparent;
+}
+
+/* ── Thread Composer ── */
+
+.cometchat-threaded-messages__composer {
+  flex-shrink: 0;
+  padding: 0 var(--cometchat-spacing-2) var(--cometchat-spacing-2);
+}
+
+.cometchat-threaded-messages__composer cometchat-message-composer {
+  overflow: hidden;
+}
+
+/* ── Blocked user banner ── */
+
+.cometchat-threaded-messages__blocked-banner {
+  display: flex;
+  width: 100%;
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-5);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--cometchat-spacing-1);
+  flex-shrink: 0;
+  background: var(--cometchat-background-color-04);
+  box-sizing: border-box;
+}
+
+.cometchat-threaded-messages__blocked-banner-text {
+  color: var(--cometchat-text-color-secondary);
+  font: var(--cometchat-font-body-regular);
+  text-align: center;
+}
+
+.cometchat-threaded-messages__blocked-banner-link {
+  display: block;
+  text-decoration: underline;
+  text-decoration-color: var(--cometchat-primary-color);
+  cursor: pointer;
+  color: var(--cometchat-primary-color);
+}

@@ -1,0 +1,406 @@
+/**
+ * CometChatGroupItem Component Styles
+ * 
+ * A standalone component for rendering a single group item with support for:
+ * - State management (active, selected, focused)
+ * - Group icon/avatar with group type indicator
+ * - Custom templates for all sections
+ * - Context menu integration
+ * - Full accessibility support
+ * 
+ * BEM Methodology: Block Element Modifier
+ * - Block: .cometchat-group-item
+ * - Element: .cometchat-group-item__{element}
+ * - Modifier: .cometchat-group-item--{modifier}
+ * 
+ * @see Requirements 2.11, 2.12, 2.13
+ */
+
+/* ============================================
+   Block: cometchat-group-item
+   Base container styles
+   ============================================ */
+
+.cometchat-group-item {
+  display: flex;
+  align-items: center;
+  padding: var(--cometchat-group-item-padding, var(--cometchat-padding-3, 12px) var(--cometchat-padding-4, 16px));
+  gap: var(--cometchat-group-item-gap, var(--cometchat-spacing-3, 12px));
+  background: var(--cometchat-group-item-background, var(--cometchat-background-color-01));
+  /* border-bottom: var(--cometchat-group-item-border-bottom, 1px solid var(--cometchat-border-color-light)); */
+  border-radius: var(--cometchat-group-item-border-radius, 0);
+  cursor: pointer;
+  transition: var(--cometchat-group-item-transition, background-color 0.2s ease);
+  outline: var(--cometchat-group-item-focus-outline, none);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Reset box-sizing for all children */
+.cometchat-group-item,
+.cometchat-group-item * {
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Modifiers: State variations
+   @see Requirements 2.11
+   ============================================ */
+
+/* Hover State - only apply when NOT active */
+.cometchat-group-item:hover:not(.cometchat-group-item--active) {
+  background: var(--cometchat-group-item-background-hover, var(--cometchat-background-color-02));
+}
+
+/* Active State (Currently Selected Group) */
+.cometchat-group-item--active {
+  background-color: var(--cometchat-background-color-04);
+}
+
+/* Selected State (Selection Mode) */
+.cometchat-group-item--selected {
+  background: var(--cometchat-group-item-background-selected, var(--cometchat-background-color-03));
+}
+
+/* Focused State (Keyboard Navigation via Arrow Keys) - ONLY via class, not :focus pseudo-class */
+.cometchat-group-item--focused {
+  box-shadow: var(--cometchat-group-item-focus-box-shadow, inset 0 0 0 2px var(--cometchat-primary-color));
+  z-index: 1;
+}
+
+/* Disable ALL browser focus styling - parent component manages focus via --focused class */
+.cometchat-group-item:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-group-item:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-group-item:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Combined States */
+.cometchat-group-item--active.cometchat-group-item--selected {
+  background: var(--cometchat-background-color-04);
+}
+
+/* Disabled State */
+.cometchat-group-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Leading Section
+   Icon/Avatar and Group Type Indicator
+   ============================================ */
+
+.cometchat-group-item__leading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-group-item-avatar-size, 48px);
+  height: var(--cometchat-group-item-avatar-size, 48px);
+}
+
+/* Avatar */
+.cometchat-group-item__avatar {
+  width: 100%;
+  height: 100%;
+  --cometchat-avatar-size: var(--cometchat-group-item-avatar-size, 48px);
+  --cometchat-avatar-font-size: var(--cometchat-group-item-avatar-font-size, 20px);
+  --cometchat-avatar-border-radius: var(--cometchat-group-item-avatar-border-radius, 50%);
+  --cometchat-avatar-border: var(--cometchat-group-item-avatar-border, none);
+}
+
+/* Group Type Indicator (Public/Private/Password) */
+.cometchat-group-item__type-indicator {
+  position: absolute;
+  bottom: var(--cometchat-group-item-type-position-bottom, 0px);
+  right: var(--cometchat-group-item-type-position-right, 2px);
+  width: var(--cometchat-group-item-type-size, 12px);
+  height: var(--cometchat-group-item-type-size, 12px);
+  border-radius: var(--cometchat-radius-max);
+  border: var(--cometchat-group-item-type-border, none);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.cometchat-group-item__type-indicator--public {
+  background-color: var(--cometchat-group-item-type-public-color, var(--cometchat-success-color));
+}
+
+.cometchat-group-item__type-indicator--private {
+  background-color: var(--cometchat-group-item-type-private-color, var(--cometchat-warning-color));
+}
+
+.cometchat-group-item__type-indicator--private::after {
+  content: '';
+  width: var(--cometchat-group-item-type-icon-width, 10px);
+  height: var(--cometchat-group-item-type-icon-height, 10px);
+  background: var(--cometchat-group-item-type-icon-background, var(--cometchat-static-white));
+  -webkit-mask: url('../../assets/shield.svg') center center no-repeat;
+  mask: url('../../assets/shield.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-group-item__type-indicator--password {
+  background-color: var(--cometchat-group-item-type-password-color, var(--cometchat-success-color));
+}
+
+.cometchat-group-item__type-indicator--password::after {
+  content: '';
+  width: var(--cometchat-group-item-type-icon-width, 10px);
+  height: var(--cometchat-group-item-type-icon-height, 10px);
+  background: var(--cometchat-group-item-type-icon-background, var(--cometchat-static-white));
+  -webkit-mask: url('../../assets/lock.svg') center center no-repeat;
+  mask: url('../../assets/lock.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ============================================
+   Element: Body Section
+   Title and Subtitle
+   ============================================ */
+
+.cometchat-group-item__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+  gap: var(--cometchat-group-item-body-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Title Section */
+.cometchat-group-item__title {
+  display: flex;
+  align-items: center;
+  max-width: var(--cometchat-group-item-title-max-width, 100%);
+}
+
+.cometchat-group-item__title-text {
+  font: var(--cometchat-group-item-title-text-font, var(--cometchat-font-heading4-medium));
+  color: var(--cometchat-group-item-title-text-color, var(--cometchat-text-color-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Subtitle Section */
+.cometchat-group-item__subtitle {
+  display: flex;
+  align-items: center;
+  max-width: var(--cometchat-group-item-subtitle-max-width, 100%);
+  gap: var(--cometchat-group-item-subtitle-gap, var(--cometchat-spacing-1, 4px));
+}
+
+.cometchat-group-item__subtitle-text {
+  font: var(--cometchat-group-item-subtitle-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-group-item-subtitle-color, var(--cometchat-text-color-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Element: Trailing Section
+   Context Menu
+   ============================================ */
+
+.cometchat-group-item__trailing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  gap: var(--cometchat-group-item-trailing-gap, var(--cometchat-spacing-1, 4px));
+  position: relative;
+  min-width: var(--cometchat-group-item-trailing-min-width, 40px);
+}
+
+/* Context Menu */
+.cometchat-group-item__context-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--cometchat-group-item-context-menu-transition, opacity 0.2s ease);
+  background: var(--cometchat-group-item-context-menu-background, var(--cometchat-background-color-01));
+  z-index: 10;
+  pointer-events: none;
+}
+
+.cometchat-group-item__menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* Show context menu on hover or keyboard focus */
+.cometchat-group-item:hover .cometchat-group-item__context-menu,
+.cometchat-group-item--focused .cometchat-group-item__context-menu {
+  display: flex;
+  opacity: var(--cometchat-group-item-context-menu-opacity-hover, 1);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ============================================
+   Accessibility
+   @see Requirements 2.14
+   ============================================ */
+
+/* Screen Reader Only Class */
+.cometchat-group-item__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .cometchat-group-item--focused,
+  .cometchat-group-item:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-group-item {
+    transition: none;
+  }
+  
+  .cometchat-group-item__context-menu {
+    transition: none;
+  }
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/* Tablet and below (768px) */
+@media (max-width: 768px) {
+  .cometchat-group-item {
+    padding: var(--cometchat-group-item-padding-tablet, var(--cometchat-padding-3, 12px));
+    gap: var(--cometchat-group-item-gap-tablet, var(--cometchat-spacing-3, 12px));
+  }
+
+  .cometchat-group-item__leading {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cometchat-group-item__avatar {
+    --cometchat-avatar-size: 40px;
+    --cometchat-avatar-font-size: var(--cometchat-group-item-avatar-font-size-tablet, 18px);
+  }
+
+  .cometchat-group-item__type-indicator {
+    width: var(--cometchat-group-item-type-size-tablet, 10px);
+    height: var(--cometchat-group-item-type-size-tablet, 10px);
+  }
+
+  .cometchat-group-item__type-indicator--password::after,
+  .cometchat-group-item__type-indicator--private::after {
+    width: var(--cometchat-group-item-type-icon-size-tablet, 8px);
+    height: var(--cometchat-group-item-type-icon-size-tablet, 8px);
+  }
+
+  .cometchat-group-item__title-text {
+    font: var(--cometchat-group-item-title-font-tablet, var(--cometchat-font-body-medium));
+  }
+
+  .cometchat-group-item__subtitle-text {
+    font: var(--cometchat-group-item-subtitle-font-tablet, var(--cometchat-font-caption1-regular));
+  }
+
+  /* Hide context menu on mobile - use long press instead */
+  .cometchat-group-item__context-menu {
+    display: none;
+  }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+  .cometchat-group-item {
+    padding: var(--cometchat-group-item-padding-mobile, var(--cometchat-padding-3, 12px) var(--cometchat-padding-3, 12px));
+    gap: var(--cometchat-group-item-gap-mobile, var(--cometchat-spacing-2, 8px));
+  }
+
+  .cometchat-group-item__leading {
+    width: var(--cometchat-group-item-avatar-size-mobile, 40px);
+    height: var(--cometchat-group-item-avatar-size-mobile, 40px);
+  }
+
+  .cometchat-group-item__avatar {
+    --cometchat-avatar-size: var(--cometchat-group-item-avatar-size-mobile, 40px);
+    --cometchat-avatar-font-size: var(--cometchat-group-item-avatar-font-size-mobile, 16px);
+  }
+
+  .cometchat-group-item__type-indicator {
+    width: var(--cometchat-group-item-type-size-mobile, 10px);
+    height: var(--cometchat-group-item-type-size-mobile, 10px);
+  }
+
+  .cometchat-group-item__type-indicator--password::after,
+  .cometchat-group-item__type-indicator--private::after {
+    width: var(--cometchat-group-item-type-icon-size-mobile, 8px);
+    height: var(--cometchat-group-item-type-icon-size-mobile, 8px);
+  }
+
+  .cometchat-group-item__title-text {
+    font: var(--cometchat-group-item-title-font-mobile, var(--cometchat-font-body-medium));
+  }
+
+  .cometchat-group-item__subtitle-text {
+    font: var(--cometchat-group-item-subtitle-font-mobile, var(--cometchat-font-caption1-regular));
+  }
+}
+
+/* Large screens (1200px and above) */
+@media (min-width: 1200px) {
+  .cometchat-group-item {
+    padding: var(--cometchat-group-item-padding-large, var(--cometchat-padding-2, 8px) var(--cometchat-padding-4, 16px));
+  }
+
+  .cometchat-group-item__leading {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cometchat-group-item__avatar {
+    --cometchat-avatar-size: 48px;
+    --cometchat-avatar-font-size: var(--cometchat-group-item-avatar-font-size-large, 22px);
+  }
+
+  .cometchat-group-item__type-indicator {
+    width: var(--cometchat-group-item-type-size-large, 12px);
+    height: var(--cometchat-group-item-type-size-large, 12px);
+  }
+}

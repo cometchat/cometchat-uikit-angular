@@ -1,0 +1,157 @@
+---
+title: "Extensions"
+description: "Overview of CometChat's extensions grouped by Dashboard categories and how they auto-integrate into Angular UIKit components."
+---
+
+## Overview
+
+CometChat UI Kit includes built-in support for extensions that add interactive, secure, and efficient features to chat. Extensions are activated from the CometChat Dashboard and auto-integrate into UI Kit components on init and login.
+
+<Note>
+Ensure `CometChatUIKit.init()` has completed and the user is logged in. Extensions must be activated from the CometChat Dashboard.
+</Note>
+
+## Built-in Extensions
+
+The grouping below mirrors the CometChat Dashboard.
+
+### User Experience
+
+#### Bitly
+
+Shortens long URLs in text messages using Bitly.
+
+#### Link Preview
+
+Displays a summary (title, description, thumbnail) for URLs shared in chat.
+
+Auto-integrates into the Message Bubble of [cometchat-message-list](/components/cometchat-message-list) when activated.
+
+#### Message Shortcuts
+
+Sends predefined messages using short codes (e.g., `!hb` expands to `Happy birthday!`).
+
+#### Pin Message
+
+Pins important messages in a conversation for easy access.
+
+#### Rich Media Preview
+
+Generates rich preview panels for URLs.
+
+#### Save Message
+
+Bookmarks messages for later reference. Saved messages are private to the user.
+
+#### Thumbnail Generation
+
+Creates smaller preview images for shared images, reducing bandwidth.
+
+Auto-integrates into the Message Bubble of [cometchat-message-list](/components/cometchat-message-list) when activated.
+
+#### TinyURL
+
+URL shortening using TinyURL.
+
+#### Voice Transcription
+
+Converts audio messages to text.
+
+### User Engagement
+
+#### Giphy
+
+Search and share GIFs from Giphy.
+
+#### Message Translation
+
+Translates messages into the local locale.
+
+Auto-integrates into the Action Sheet of [cometchat-message-list](/components/cometchat-message-list) when activated.
+
+#### Polls
+
+Creates polls in group discussions with predefined answer options.
+
+Auto-integrates into the Action Sheet of [cometchat-message-composer](/components/cometchat-message-composer) when activated.
+
+#### Reminders
+
+Sets reminders for messages or creates personal reminders. A bot sends a notification when due.
+
+#### Stickers
+
+Sends pre-designed stickers in chat.
+
+Auto-integrates into [cometchat-message-composer](/components/cometchat-message-composer) when activated.
+
+#### Stipop
+
+Integrates Stipop's sticker library.
+
+#### Tenor
+
+Search and share GIFs from Tenor.
+
+### Collaboration
+
+#### Collaborative Document
+
+Shared document editing for real-time collaboration.
+
+Auto-integrates into the Action Sheet of [cometchat-message-composer](/components/cometchat-message-composer) when activated.
+
+#### Collaborative Whiteboard
+
+Real-time shared whiteboard for drawing and brainstorming.
+
+Auto-integrates into the Action Sheet of [cometchat-message-composer](/components/cometchat-message-composer) when activated.
+
+### Security
+
+#### Disappearing Messages
+
+Messages auto-delete after a specified interval. Works for 1:1 and group messages.
+
+### Customer Support
+
+#### Chatwoot
+
+Routes user messages to Chatwoot for customer support.
+
+#### Intercom
+
+Integrates Intercom for in-app customer support.
+
+### Smart Chat Features
+
+#### Conversation Starter
+
+AI-generated opening messages for new chats. See [AI Smart Chat Features](/ai-features).
+
+#### Smart Replies
+
+AI-generated response suggestions based on conversation context. See [AI Smart Chat Features](/ai-features).
+
+#### Conversation Summary
+
+AI-generated recap of long conversations. See [AI Smart Chat Features](/ai-features).
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Message Composer" icon="pen-to-square" href="/components/cometchat-message-composer">
+    Customize the composer where most extensions appear
+  </Card>
+  <Card title="Message List" icon="messages" href="/components/cometchat-message-list">
+    Customize the message list for extension-rendered content
+  </Card>
+  <Card title="Core Features" icon="comments" href="/core-features">
+    Core chat features like messaging and reactions
+  </Card>
+  <Card title="AI Smart Chat Features" icon="robot" href="/ai-features">
+    AI-powered chat capabilities
+  </Card>
+</CardGroup>

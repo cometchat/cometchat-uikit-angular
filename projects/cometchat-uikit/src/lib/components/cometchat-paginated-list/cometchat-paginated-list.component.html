@@ -1,0 +1,134 @@
+<!-- 
+  CometChatPaginatedList Template
+  
+  A generic, reusable component for infinite scroll lists.
+  Handles pagination, loading states, empty states, and error states.
+  Uses IntersectionObserver for efficient scroll detection.
+  
+  Accessibility Features:
+  - role="listbox" on container for screen reader list semantics
+  - role="option" on each item for proper list item semantics
+  - aria-label for list identification
+  - aria-busy indicates loading state
+  - aria-multiselectable for selection mode
+  - Roving tabindex pattern for keyboard navigation
+  - Keyboard navigation with ArrowUp/ArrowDown, Home/End
+  - Scroll into view on focus change
+-->
+
+<div 
+  #listContainer
+  class="cometchat-paginated-list"
+  [class.cometchat-paginated-list--show-scrollbar]="showScrollbar"
+  role="listbox"
+  [attr.aria-label]="ariaLabel || null"
+  [attr.aria-busy]="isFetchingMore() || isLoading"
+  [attr.aria-multiselectable]="isMultiSelect || null"
+  (keydown)="onListKeyDown($event)">
+  
+  <!-- Scroll top anchor for IntersectionObserver -->
+  <div 
+    #scrollTopAnchor 
+    class="cometchat-paginated-list__scroll-anchor cometchat-paginated-list__scroll-anchor--top"
+    aria-hidden="true">
+  </div>
+  
+  <!-- Loading State (initial load only) -->
+  @if (isLoading && items.length === 0) {
+    <div class="cometchat-paginated-list__loading" role="status" aria-live="polite">
+      @if (loadingTemplate) {
+        <ng-container *ngTemplateOutlet="loadingTemplate"></ng-container>
+      } @else {
+        <!-- Default loading spinner - no text to avoid localization in generic component -->
+        <div class="cometchat-paginated-list__loading-default">
+          <span class="cometchat-paginated-list__loading-spinner" aria-hidden="true"></span>
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Error State -->
+  @if (error && !isLoading && !hideError) {
+    <div 
+      #errorStateContainer
+      class="cometchat-paginated-list__error" 
+      role="alert"
+      tabindex="0"
+      [attr.aria-label]="errorStateAriaLabel || null"
+      (keydown.enter)="onRetry()">
+      @if (errorTemplate) {
+        <ng-container *ngTemplateOutlet="errorTemplate; context: { $implicit: error }"></ng-container>
+      } @else {
+        <!-- Default error display - shows error message from Error object -->
+        <div class="cometchat-paginated-list__error-default">
+          <span class="cometchat-paginated-list__error-message">{{ error.message }}</span>
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Empty State -->
+  @if (isEmpty() && !error) {
+    <div 
+      #emptyStateContainer
+      class="cometchat-paginated-list__empty" 
+      role="status"
+      tabindex="0"
+      [attr.aria-label]="emptyStateAriaLabel || null">
+      @if (emptyTemplate) {
+        <ng-container *ngTemplateOutlet="emptyTemplate"></ng-container>
+      } @else {
+        <!-- Default empty state - minimal, parent should provide custom template -->
+        <div class="cometchat-paginated-list__empty-default">
+          <!-- No text - parent component should provide emptyTemplate with localized text -->
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Items List -->
+  @if (hasItems()) {
+    <div class="cometchat-paginated-list__items">
+      @for (item of items; track trackByFn($index, item); let i = $index) {
+        <div 
+          #listItem
+          class="cometchat-paginated-list__item"
+          role="option"
+          [attr.tabindex]="getItemTabIndex(i)"
+          [attr.aria-selected]="isItemSelected(item)"
+          (click)="handleItemClick(item, i)"
+          (focus)="onItemFocus(i)">
+          @if (itemTemplate) {
+            <ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item, index: i }"></ng-container>
+          }
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Loading More Indicator (pagination) -->
+  @if (showLoadingMore()) {
+    <div 
+      class="cometchat-paginated-list__loading-more" 
+      aria-hidden="true">
+      @if (loadingMoreTemplate) {
+        <ng-container *ngTemplateOutlet="loadingMoreTemplate"></ng-container>
+      } @else {
+        <!-- Default loading more spinner -->
+        <div class="cometchat-paginated-list__loading-more-default">
+          <span 
+            class="cometchat-paginated-list__loading-spinner cometchat-paginated-list__loading-spinner--small"
+            aria-hidden="true">
+          </span>
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Scroll bottom anchor for IntersectionObserver -->
+  <div 
+    #scrollBottomAnchor 
+    class="cometchat-paginated-list__scroll-anchor cometchat-paginated-list__scroll-anchor--bottom"
+    aria-hidden="true">
+  </div>
+</div>

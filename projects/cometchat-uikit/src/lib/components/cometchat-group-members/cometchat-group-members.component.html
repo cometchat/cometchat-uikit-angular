@@ -1,0 +1,221 @@
+<!--
+  CometChatGroupMembers Component Template
+
+  This template provides the structure for displaying a list of group members with:
+  - Header section with optional search bar
+  - Member list with role badges and context menus
+  - Loading, empty, and error states
+  - Selection controls (radio/checkbox)
+  - Change scope modal dialog
+  - Full accessibility support
+
+  @see Requirements 1.2-1.5, 4.1-4.4, 5.2-5.3, 8.1, 8.6, 10.1-10.4, 11.1-11.4, 12.1-12.4
+-->
+
+<div
+  class="cometchat cometchat-group-members"
+  [class.cometchat-group-members-hide-scrollbar]="!effectiveShowScrollbar()"
+  role="region"
+  [attr.aria-label]="'member_title' | translate"
+  (click)="handleContainerClick($event)"
+>
+  <!-- ==================== Header Section ==================== -->
+  <div class="cometchat-group-members__header">
+    @if (headerView) {
+      <ng-container *ngTemplateOutlet="headerView"></ng-container>
+    } @else {
+      <!-- Default Header -->
+      <div class="cometchat-group-members__header-default">
+        @if (menuView) {
+          <ng-container *ngTemplateOutlet="menuView"></ng-container>
+        }
+      </div>
+    }
+        <!-- Search Bar (if not hidden) -->
+      @if (!hideSearch) {
+        <div class="cometchat-group-members__search-bar">
+          <cometchat-search-bar
+            [searchText]="searchText()"
+            [placeholderText]="'member_search_placeholder' | translate"
+            [ariaLabel]="'member_search_placeholder' | translate"
+            (searchChanged)="onSearch($event.value)"
+            (clearClick)="onSearch('')">
+          </cometchat-search-bar>
+        </div>
+      }
+  </div>
+
+  <!-- ==================== List Body using CometChatPaginatedList ==================== -->
+  <cometchat-paginated-list
+    #paginatedList
+    #listContainer
+    [items]="groupMembersService.members()"
+    [trackByFn]="trackByMember.bind(this)"
+    [isLoading]="groupMembersService.fetchState() === States.loading && !disableLoadingState"
+    [hasMore]="groupMembersService.hasMore()"
+    [error]="lastError"
+    [showScrollbar]="effectiveShowScrollbar()"
+    [loadingTemplate]="loadingTemplateRef"
+    [emptyTemplate]="emptyTemplateRef"
+    [errorTemplate]="errorTemplateRef"
+    [itemTemplate]="itemTemplateRef"
+    (loadMore)="onLoadMore()"
+    role="listbox"
+    [attr.aria-label]="'member_title' | translate"
+    [attr.aria-busy]="groupMembersService.fetchState() === States.loading"
+    aria-live="polite">
+  </cometchat-paginated-list>
+
+  <!-- ==================== Loading Template ==================== -->
+  <ng-template #loadingTemplateRef>
+    @if (effectiveLoadingView) {
+      <ng-container *ngTemplateOutlet="effectiveLoadingView"></ng-container>
+    } @else {
+      <div class="cometchat-group-members__shimmer" aria-hidden="true">
+        @for (item of shimmerList; track item) {
+          <div class="cometchat-group-members__shimmer-item">
+            <div class="cometchat-group-members__shimmer-item-avatar"></div>
+            <div class="cometchat-group-members__shimmer-item-body">
+              <div class="cometchat-group-members__shimmer-item-body-title"></div>
+              <div class="cometchat-group-members__shimmer-item-body-subtitle"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </ng-template>
+
+  <!-- ==================== Empty Template ==================== -->
+  <ng-template #emptyTemplateRef>
+    @if (effectiveEmptyView) {
+      <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
+    } @else {
+      <div
+        class="cometchat-group-members__empty-state-view"
+        role="status"
+        [attr.aria-label]="'member_empty_title' | translate"
+      >
+        <div class="cometchat-group-members__empty-state-view-icon">
+          <span class="cometchat-group-members__empty-state-view-icon-mask" aria-hidden="true"></span>
+        </div>
+        <h3 class="cometchat-group-members__empty-state-view-title">
+          {{ 'member_empty_title' | translate }}
+        </h3>
+        <p class="cometchat-group-members__empty-state-view-subtitle">
+          {{ 'member_empty_subtitle' | translate }}
+        </p>
+      </div>
+    }
+  </ng-template>
+
+  <!-- ==================== Error Template ==================== -->
+  <ng-template #errorTemplateRef>
+    @if (!hideError) {
+      @if (effectiveErrorView) {
+        <ng-container *ngTemplateOutlet="effectiveErrorView"></ng-container>
+      } @else {
+        <div
+          class="cometchat-group-members__error-state-view"
+          role="alert"
+        >
+          <div class="cometchat-group-members__error-state-view-icon">
+            <span class="cometchat-group-members__error-state-view-icon-mask" aria-hidden="true"></span>
+          </div>
+          <h3 class="cometchat-group-members__error-state-view-title">
+            {{ 'member_error_title' | translate }}
+          </h3>
+          <p class="cometchat-group-members__error-state-view-subtitle">
+            {{ 'member_error_subtitle' | translate }}
+          </p>
+          <button
+            class="cometchat-group-members__error-state-view-retry-button"
+            (click)="handleRetryClick()"
+            type="button">
+            {{ 'error_boundary_retry' | translate }}
+          </button>
+        </div>
+      }
+    }
+  </ng-template>
+
+  <!-- ==================== Item Template ==================== -->
+  <ng-template #itemTemplateRef let-member let-index="index">
+    <!-- Custom Item View -->
+    @if (effectiveItemView) {
+      <div
+        class="cometchat-group-members__list-item-wrapper"
+        [class.cometchat-group-members__list-item-wrapper--focused]="focusedIndex() === index"
+        [attr.data-index]="index"
+        role="option"
+        [attr.aria-label]="getMemberAriaLabel(member)"
+        [attr.aria-selected]="selectionMode !== SelectionMode.none ? isMemberSelected(member) : null"
+        [attr.tabindex]="getTabIndex(index)"
+        (focus)="handleItemFocus(index)"
+        (blur)="handleItemBlur()"
+        (click)="onItemClick(member)"
+        (contextmenu)="handleContextMenu($event)"
+        (keydown)="handleItemKeydown($event, member, index)"
+      >
+        <ng-container *ngTemplateOutlet="effectiveItemView; context: { $implicit: member }"></ng-container>
+      </div>
+    } @else {
+      <!-- Default Item View using CometChatGroupMemberItem -->
+      <cometchat-group-member-item
+        [attr.data-index]="index"
+        [member]="member"
+        [isFocused]="focusedIndex() === index"
+        [isSelected]="isMemberSelected(member)"
+        [tabIndex]="getTabIndex(index)"
+        [hideUserStatus]="effectiveHideUserStatus()"
+        [contextMenuOptions]="selectionMode === SelectionMode.none && hasActionOptions(getOptionsForMember(member)) ? $any(getOptionsForMember(member)) : undefined"
+        [leadingView]="effectiveLeadingView"
+        [titleView]="effectiveTitleView"
+        [subtitleView]="effectiveSubtitleView"
+        [trailingView]="selectionMode !== SelectionMode.none ? selectionControlTemplate : effectiveTrailingView"
+        (itemClick)="onItemClick($event)"
+        (itemFocus)="handleItemFocus(index)"
+        (contextMenuOptionClick)="onOptionClick($event.option, $event.member)"
+      >
+      </cometchat-group-member-item>
+
+      <!-- Selection Control Template (for trailing view when selection mode is active) -->
+      <ng-template #selectionControlTemplate let-item>
+        <div class="cometchat-group-members__selection-control"
+             (click)="$event.stopPropagation()">
+          @if (selectionMode === SelectionMode.multiple) {
+            <cometchat-checkbox
+              [checked]="isMemberSelected(member)"
+              [ariaLabel]="'Select ' + member.getName()"
+              (checkboxChanged)="handleSelectionControlChange(member)">
+            </cometchat-checkbox>
+          } @else if (selectionMode === SelectionMode.single) {
+            <cometchat-radio-button
+              [checked]="isMemberSelected(member)"
+              [ariaLabel]="'Select ' + member.getName()"
+              (radioChanged)="handleSelectionControlChange(member)">
+            </cometchat-radio-button>
+          }
+        </div>
+      </ng-template>
+    }
+  </ng-template>
+
+  <!-- ==================== Change Scope Modal ==================== -->
+  @if (memberToChangeScope()) {
+    <div
+      class="cometchat-group-members__backdrop"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'members_change_role' | translate"
+    >
+      <cometchat-change-scope
+        #changeScopeRef
+        [title]="'members_change_role' | translate"
+        [options]="getAllowedScopes(memberToChangeScope()!)"
+        [defaultSelection]="memberToChangeScope()!.getScope()"
+        (scopeChanged)="onScopeChanged($event)"
+        (closeClick)="onChangeScopeClose()">
+      </cometchat-change-scope>
+    </div>
+  }
+</div>

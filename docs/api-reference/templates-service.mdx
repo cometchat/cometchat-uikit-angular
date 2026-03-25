@@ -1,0 +1,331 @@
+---
+title: CometChat Templates Service
+description: SDK-wide template customization service for all list components
+---
+The `CometChatTemplatesService` provides centralized template customization across all CometChat list components. Register templates once and have them apply to conversations, users, groups, group members, call logs, and message list components.
+
+## Import
+
+```typescript
+import { CometChatTemplatesService } from '@cometchat/chat-uikit-angular';
+```
+
+## Template Priority
+
+Templates are resolved in the following order (highest to lowest):
+
+1. Component `@Input` (e.g. `[loadingView]="myTemplate"`)
+2. Component-specific service templates (e.g. `setUserTemplates()`)
+3. Shared service templates (`setSharedTemplates()`)
+4. Component default
+
+## Shared Templates
+
+Use `setSharedTemplates()` to set loading, empty, or error templates that apply to **all** list components at once. This is the simplest way to brand every list in your app with a single call.
+
+### SharedListTemplates Interface
+
+```typescript
+interface SharedListTemplates {
+  loadingView?: TemplateRef<void>;
+  emptyView?: TemplateRef<void>;
+  errorView?: TemplateRef<{ $implicit: Error }>;
+}
+```
+
+### Example: Override Loading State for All Lists
+
+```typescript expandable
+import { Component, ViewChild, TemplateRef, AfterViewInit, inject } from '@angular/core';
+import { CometChatTemplatesService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-root',
+  template: `
+    <!-- Define a branded loading spinner -->
+    <ng-template #brandedLoading>
+      <div class="my-loading">
+        <div class="my-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    </ng-template>
+
+    <!-- All these lists will use the branded spinner -->
+    <cometchat-conversations></cometchat-conversations>
+    <cometchat-users></cometchat-users>
+    <cometchat-groups></cometchat-groups>
+  `
+})
+export class ChatRootComponent implements AfterViewInit {
+  @ViewChild('brandedLoading', { static: true }) brandedLoading!: TemplateRef<void>;
+  private templatesService = inject(CometChatTemplatesService);
+
+  ngAfterViewInit(): void {
+    this.templatesService.setSharedTemplates({
+      loadingView: this.brandedLoading,
+    });
+  }
+}
+```
+
+
+## Component-Specific Templates
+
+Each list component has its own typed template interface. Component-specific templates take priority over shared templates.
+
+### ConversationTemplates
+
+```typescript expandable
+interface ConversationTemplates {
+  itemView?: TemplateRef<any>;
+  leadingView?: TemplateRef<any>;
+  titleView?: TemplateRef<any>;
+  subtitleView?: TemplateRef<any>;
+  trailingView?: TemplateRef<any>;
+  loadingView?: TemplateRef<void>;
+  emptyView?: TemplateRef<void>;
+  errorView?: TemplateRef<{ $implicit: Error }>;
+}
+```
+
+### UserTemplates
+
+```typescript expandable
+interface UserTemplates {
+  itemView?: TemplateRef<any>;
+  leadingView?: TemplateRef<any>;
+  titleView?: TemplateRef<any>;
+  subtitleView?: TemplateRef<any>;
+  trailingView?: TemplateRef<any>;
+  loadingView?: TemplateRef<void>;
+  emptyView?: TemplateRef<void>;
+  errorView?: TemplateRef<{ $implicit: Error }>;
+}
+```
+
+### GroupTemplates
+
+```typescript expandable
+interface GroupTemplates {
+  itemView?: TemplateRef<any>;
+  leadingView?: TemplateRef<any>;
+  titleView?: TemplateRef<any>;
+  subtitleView?: TemplateRef<any>;
+  trailingView?: TemplateRef<any>;
+  loadingView?: TemplateRef<void>;
+  emptyView?: TemplateRef<void>;
+  errorView?: TemplateRef<{ $implicit: Error }>;
+}
+```
+
+### GroupMemberTemplates
+
+```typescript expandable
+interface GroupMemberTemplates {
+  itemView?: TemplateRef<any>;
+  leadingView?: TemplateRef<any>;
+  titleView?: TemplateRef<any>;
+  subtitleView?: TemplateRef<any>;
+  trailingView?: TemplateRef<any>;
+  loadingView?: TemplateRef<void>;
+  emptyView?: TemplateRef<void>;
+  errorView?: TemplateRef<{ $implicit: Error }>;
+}
+```
+
+### CallLogTemplates
+
+```typescript expandable
+interface CallLogTemplates {
+  itemView?: TemplateRef<any>;
+  leadingView?: TemplateRef<any>;
+  titleView?: TemplateRef<any>;
+  subtitleView?: TemplateRef<any>;
+  trailingView?: TemplateRef<any>;
+  loadingView?: TemplateRef<void>;
+  emptyView?: TemplateRef<void>;
+  errorView?: TemplateRef<{ $implicit: Error }>;
+}
+```
+
+### MessageListTemplates
+
+```typescript
+interface MessageListTemplates {
+  loadingView?: TemplateRef<void>;
+  emptyView?: TemplateRef<void>;
+  errorView?: TemplateRef<{ $implicit: Error }>;
+  headerView?: TemplateRef<any>;
+  footerView?: TemplateRef<any>;
+}
+```
+
+## Methods
+
+### Shared Template Methods
+
+| Method | Description |
+|--------|-------------|
+| `setSharedTemplates(templates)` | Set templates that apply to all list components as a fallback |
+| `getSharedTemplates()` | Get the current shared templates |
+| `clearSharedTemplates()` | Clear all shared templates |
+
+### Conversation Template Methods
+
+| Method | Description |
+|--------|-------------|
+| `setConversationTemplates(templates)` | Set multiple conversation templates at once |
+| `setConversationItemTemplate(template)` | Set template for the entire conversation item |
+| `setConversationLeadingTemplate(template)` | Set template for the leading section |
+| `setConversationTitleTemplate(template)` | Set template for the title section |
+| `setConversationSubtitleTemplate(template)` | Set template for the subtitle section |
+| `setConversationTrailingTemplate(template)` | Set template for the trailing section |
+| `setConversationLoadingTemplate(template)` | Set template for the loading state |
+| `setConversationEmptyTemplate(template)` | Set template for the empty state |
+| `setConversationErrorTemplate(template)` | Set template for the error state |
+| `getConversationTemplates()` | Get the current conversation templates |
+| `clearConversationTemplates()` | Clear all conversation templates |
+
+### User Template Methods
+
+| Method | Description |
+|--------|-------------|
+| `setUserTemplates(templates)` | Set multiple user templates at once |
+| `getUserTemplates()` | Get the current user templates |
+| `clearUserTemplates()` | Clear all user templates |
+
+### Group Template Methods
+
+| Method | Description |
+|--------|-------------|
+| `setGroupTemplates(templates)` | Set multiple group templates at once |
+| `getGroupTemplates()` | Get the current group templates |
+| `clearGroupTemplates()` | Clear all group templates |
+
+### Group Member Template Methods
+
+| Method | Description |
+|--------|-------------|
+| `setGroupMemberTemplates(templates)` | Set multiple group member templates at once |
+| `getGroupMemberTemplates()` | Get the current group member templates |
+| `clearGroupMemberTemplates()` | Clear all group member templates |
+
+### Call Log Template Methods
+
+| Method | Description |
+|--------|-------------|
+| `setCallLogTemplates(templates)` | Set multiple call log templates at once |
+| `getCallLogTemplates()` | Get the current call log templates |
+| `clearCallLogTemplates()` | Clear all call log templates |
+
+### Message List Template Methods
+
+| Method | Description |
+|--------|-------------|
+| `setMessageListTemplates(templates)` | Set multiple message list templates at once |
+| `getMessageListTemplates()` | Get the current message list templates |
+| `clearMessageListTemplates()` | Clear all message list templates |
+
+### Bulk Operations
+
+| Method | Description |
+|--------|-------------|
+| `clearAllTemplates()` | Clear all templates (shared + all component-specific) |
+
+### Resolved Template Helper
+
+| Method | Description |
+|--------|-------------|
+| `resolveTemplate(componentTemplates, slot)` | Resolves a template using the priority chain: component-specific > shared > undefined. Used internally by components. |
+
+
+## Usage Examples
+
+### Shared Loading + Component-Specific Override
+
+```typescript expandable
+@Component({
+  template: `
+    <ng-template #sharedLoading>
+      <my-branded-spinner></my-branded-spinner>
+    </ng-template>
+
+    <ng-template #usersEmpty>
+      <div>No users found. Try a different search.</div>
+    </ng-template>
+
+    <cometchat-conversations></cometchat-conversations>
+    <cometchat-users></cometchat-users>
+    <cometchat-groups></cometchat-groups>
+  `
+})
+export class AppComponent implements AfterViewInit {
+  @ViewChild('sharedLoading', { static: true }) sharedLoading!: TemplateRef<void>;
+  @ViewChild('usersEmpty', { static: true }) usersEmpty!: TemplateRef<void>;
+  private templatesService = inject(CometChatTemplatesService);
+
+  ngAfterViewInit(): void {
+    // All lists get the branded spinner
+    this.templatesService.setSharedTemplates({
+      loadingView: this.sharedLoading,
+    });
+
+    // Users list gets a custom empty state (overrides shared)
+    this.templatesService.setUserTemplates({
+      emptyView: this.usersEmpty,
+    });
+  }
+}
+```
+
+### Scoping for Multiple Instances
+
+By default, `CometChatTemplatesService` is a singleton (`providedIn: 'root'`). If you need different templates for different parts of your app, scope it via a wrapper component:
+
+```typescript expandable
+@Component({
+  selector: 'app-secondary-panel',
+  providers: [CometChatTemplatesService], // Scoped instance
+  template: `
+    <ng-template #altLoading>
+      <div>Loading secondary panel...</div>
+    </ng-template>
+    <cometchat-users></cometchat-users>
+  `
+})
+export class SecondaryPanelComponent implements AfterViewInit {
+  @ViewChild('altLoading', { static: true }) altLoading!: TemplateRef<void>;
+  private templatesService = inject(CometChatTemplatesService);
+
+  ngAfterViewInit(): void {
+    // Only affects components inside this wrapper
+    this.templatesService.setSharedTemplates({
+      loadingView: this.altLoading,
+    });
+  }
+}
+```
+
+### Clearing Templates at Runtime
+
+```typescript
+// Clear just the shared templates (components fall back to defaults)
+this.templatesService.clearSharedTemplates();
+
+// Clear everything at once
+this.templatesService.clearAllTemplates();
+```
+
+## Reactive Access
+
+Each template section exposes both a signal and an Observable for reactive consumption:
+
+| Signal (synchronous) | Observable (RxJS) |
+|---------------------|-------------------|
+| `sharedTemplates()` | `sharedTemplates$` |
+| `conversationTemplates()` | `conversationTemplates$` |
+| `userTemplates()` | `userTemplates$` |
+| `groupTemplates()` | `groupTemplates$` |
+| `groupMemberTemplates()` | `groupMemberTemplates$` |
+| `callLogTemplates()` | `callLogTemplates$` |
+| `messageListTemplates()` | `messageListTemplates$` |

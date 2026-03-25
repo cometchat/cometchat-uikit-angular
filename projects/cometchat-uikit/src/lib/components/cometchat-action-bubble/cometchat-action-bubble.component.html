@@ -1,0 +1,34 @@
+<!--
+  CometChatActionBubble Template
+
+  Renders action/system messages with a centered, pill-shaped appearance.
+  The component only renders when messageText is a valid non-empty string.
+  Optionally displays an icon for call status messages.
+
+  @see Requirements 2.1, 4.1, 6.1, 6.2, 6.4, 6.5
+-->
+
+@if (shouldRender) {
+  <div 
+    class="cometchat-action-bubble"
+    role="status"
+    [attr.aria-label]="messageText">
+    
+    <!-- Icon (shown when iconUrl is provided, e.g., for call status) -->
+    @if (showIcon) {
+      <div 
+        class="cometchat-action-bubble__icon"
+        [class.cometchat-action-bubble__icon--error]="iconErrorColor"
+        [ngStyle]="iconStyles"
+        aria-hidden="true">
+      </div>
+    }
+    
+    <!-- Action Message Text -->
+    <span 
+      class="cometchat-action-bubble__text"
+      [class.cometchat-action-bubble__text--error]="iconErrorColor">
+      {{ messageText }}
+    </span>
+  </div>
+}

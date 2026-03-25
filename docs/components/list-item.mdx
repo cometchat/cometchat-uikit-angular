@@ -1,0 +1,824 @@
+---
+title: List Item
+description: "Generic list item component with customizable views and hover states"
+---
+The `CometChatListItem` component is a versatile list item component that displays user or group information with customizable leading, trailing, title, subtitle, and menu views. It provides consistent styling and behavior for lists throughout your chat application.
+
+## Overview
+
+The ListItem component offers flexible customization options:
+
+- **Avatar Display**: Automatically shows avatar with initials fallback
+- **Template Projection**: Customize any part of the list item with templates
+- **Hover States**: Shows menu view on hover, hiding trailing view
+- **Keyboard Accessible**: Full keyboard navigation support
+- **Click Handling**: Emits events with item ID for easy handling
+
+## Basic Usage
+
+### Simple List Item with Avatar
+
+```html
+<cometchat-list-item
+  [id]="'user-123'"
+  [avatarURL]="'https://example.com/avatar.jpg'"
+  [avatarName]="'John Doe'"
+  [title]="'John Doe'"
+  (listItemClick)="onItemClick($event)">
+</cometchat-list-item>
+```
+
+### List Item with Subtitle
+
+```html expandable
+<cometchat-list-item
+  [id]="'user-456'"
+  [avatarURL]="user.avatar"
+  [avatarName]="user.name"
+  [title]="user.name"
+  [subtitleView]="subtitleTemplate"
+  (listItemClick)="handleUserClick($event)">
+</cometchat-list-item>
+
+<ng-template #subtitleTemplate>
+  <span class="user-status">Online</span>
+</ng-template>
+```
+
+### Using with CometChat User Object
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatListItemComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-list',
+  standalone: true,
+  imports: [CommonModule, CometChatListItemComponent],
+  template: `
+    @for (user of users; track user.getUid()) {
+      <cometchat-list-item
+        [id]="user.getUid()"
+        [avatarURL]="user.getAvatar()"
+        [avatarName]="user.getName()"
+        [title]="user.getName()"
+        [subtitleView]="statusTemplate"
+        (listItemClick)="onUserSelect($event)">
+      </cometchat-list-item>
+    }
+
+    <ng-template #statusTemplate let-user>
+      <span class="status">{{ user.getStatus() }}</span>
+    </ng-template>
+  `
+})
+export class UserListComponent {
+  users: CometChat.User[] = [];
+
+  ngOnInit() {
+    this.loadUsers();
+  }
+
+  loadUsers() {
+    const usersRequest = new CometChat.UsersRequestBuilder()
+      .setLimit(30)
+      .build();
+
+    usersRequest.fetchNext().then(
+      (users: CometChat.User[]) => {
+        this.users = users;
+      }
+    );
+  }
+
+  onUserSelect(event: { id: string }) {
+    console.log('Selected user:', event.id);
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default list item.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-list-item--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-list-item--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="List Item — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `id` | `string` | `''` | Unique identifier for the list item |
+| `avatarURL` | `string` | `''` | URL of the avatar image |
+| `avatarName` | `string` | `''` | Name for generating avatar initials |
+| `title` | `string` | `''` | Primary text displayed in the list item |
+| `subtitle` | `string` | `''` | Subtitle text for accessibility (used in aria-label) |
+| `menuView` | `TemplateRef<any>` | `null` | Template for menu view (shown on hover/focus) |
+| `subtitleView` | `TemplateRef<any>` | `null` | Template for subtitle content |
+| `trailingView` | `TemplateRef<any>` | `null` | Template for trailing content (right side) |
+| `titleView` | `TemplateRef<any>` | `null` | Template for custom title view |
+| `leadingView` | `TemplateRef<any>` | `null` | Template for custom leading view (replaces avatar) |
+| `stopEventPropagation` | `boolean` | `false` | Stop event propagation on trailing view click |
+| `ariaLabel` | `string` | `undefined` | Custom ARIA label (overrides default title + subtitle) |
+| `disableTabIndex` | `boolean` | `false` | Whether to disable the tabindex on the list item (when parent manages focus) |
+| `isFocused` | `boolean` | `false` | Whether the list item is currently focused (managed by parent) |
+| `menuShortcutKey` | `string \| null` | `'M'` | Keyboard shortcut key to toggle the menu view. Per WCAG 2.1.4, single-character shortcuts must be configurable |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `listItemClick` | `{ id: string }` | Emitted when the list item is clicked |
+
+## Template Customization
+
+### Custom Subtitle View
+
+```html expandable
+<cometchat-list-item
+  [id]="user.id"
+  [avatarURL]="user.avatar"
+  [avatarName]="user.name"
+  [title]="user.name"
+  [subtitleView]="subtitleTemplate">
+</cometchat-list-item>
+
+<ng-template #subtitleTemplate>
+  <div class="subtitle-content">
+    <span class="status-dot" [class.online]="user.isOnline"></span>
+    <span class="status-text">{{ user.statusMessage }}</span>
+  </div>
+</ng-template>
+```
+
+### Custom Trailing View
+
+```html expandable
+<cometchat-list-item
+  [id]="conversation.id"
+  [avatarURL]="conversation.avatar"
+  [title]="conversation.name"
+  [trailingView]="trailingTemplate">
+</cometchat-list-item>
+
+<ng-template #trailingTemplate>
+  <div class="trailing-info">
+    <span class="time">{{ conversation.lastMessageTime }}</span>
+    @if (conversation.unreadCount > 0) {
+      <span class="unread-badge">
+        {{ conversation.unreadCount }}
+      </span>
+    }
+  </div>
+</ng-template>
+```
+
+### Menu View (Shown on Hover)
+
+```html expandable
+<cometchat-list-item
+  [id]="user.id"
+  [avatarURL]="user.avatar"
+  [title]="user.name"
+  [trailingView]="trailingTemplate"
+  [menuView]="menuTemplate">
+</cometchat-list-item>
+
+<ng-template #trailingTemplate>
+  <span class="timestamp">2:30 PM</span>
+</ng-template>
+
+<ng-template #menuTemplate>
+  <button class="menu-button" (click)="showOptions($event)">
+    <img src="assets/more-icon.svg" alt="More options">
+  </button>
+</ng-template>
+```
+
+### Custom Leading View
+
+```html expandable
+<cometchat-list-item
+  [id]="item.id"
+  [title]="item.name"
+  [leadingView]="customLeadingTemplate">
+</cometchat-list-item>
+
+<ng-template #customLeadingTemplate>
+  <div class="custom-icon">
+    <img src="assets/group-icon.svg" alt="Group">
+  </div>
+</ng-template>
+```
+
+### Custom Title View
+
+```html expandable
+<cometchat-list-item
+  [id]="user.id"
+  [avatarURL]="user.avatar"
+  [titleView]="titleTemplate">
+</cometchat-list-item>
+
+<ng-template #titleTemplate>
+  <div class="custom-title">
+    <span class="name">{{ user.name }}</span>
+    @if (user.isVerified) {
+      <span class="verified-badge">✓</span>
+    }
+  </div>
+</ng-template>
+```
+
+## Behavior
+
+### Hover State Management
+
+The component automatically manages hover states:
+
+1. **Default State**: Shows `trailingView` on the right side
+2. **Hover State**: Hides `trailingView` and shows `menuView` instead
+3. **Mouse Leave**: Returns to default state
+
+This provides a clean interface where contextual actions appear only when needed.
+
+### Click Handling
+
+```typescript expandable
+@Component({
+  selector: 'app-conversation-list',
+  template: `
+    <cometchat-list-item
+      [id]="conversation.id"
+      [title]="conversation.name"
+      [stopEventPropagation]="true"
+      (listItemClick)="openConversation($event)">
+    </cometchat-list-item>
+  `
+})
+export class ConversationListComponent {
+  openConversation(event: { id: string }) {
+    console.log('Opening conversation:', event.id);
+    // Navigate to conversation or load messages
+  }
+}
+```
+
+### Event Propagation Control
+
+Use `stopEventPropagation` to prevent clicks on trailing/menu views from triggering the list item click:
+
+```html expandable
+<cometchat-list-item
+  [id]="user.id"
+  [title]="user.name"
+  [stopEventPropagation]="true"
+  [trailingView]="actionButtonTemplate"
+  (listItemClick)="selectUser($event)">
+</cometchat-list-item>
+
+<ng-template #actionButtonTemplate>
+  <button (click)="performAction($event)">Action</button>
+</ng-template>
+```
+
+## Customization
+
+### Styling with CSS Variables
+
+```css expandable
+/* Custom list item styling */
+cometchat-list-item {
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-white-hover: #F5F5F5;
+  --cometchat-neutral-color-300: #E0E0E0;
+  --cometchat-text-color-primary: #000000;
+  --cometchat-font-heading4-medium: 500 16px 'Inter';
+  --cometchat-padding-2: 8px;
+  --cometchat-padding-3: 12px;
+  --cometchat-padding-4: 16px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-background-color-01` | Background color | `#FFF` |
+| `--cometchat-white-hover` | Hover background | `#FAFAFA` |
+| `--cometchat-neutral-color-300` | Active background | `#E8E8E8` |
+| `--cometchat-text-color-primary` | Title text color | `#141414` |
+| `--cometchat-font-heading4-medium` | Title font | `500 16px Roboto` |
+| `--cometchat-padding-2` | Vertical padding | `8px` |
+| `--cometchat-padding-3` | Gap between elements | `12px` |
+| `--cometchat-padding-4` | Horizontal padding | `16px` |
+| `--cometchat-primary-color` | Focus outline color | `#3399FF` |
+
+### Custom Styling Examples
+
+```css expandable
+/* Compact list items */
+.compact-list cometchat-list-item {
+  --cometchat-padding-2: 4px;
+  --cometchat-padding-4: 8px;
+}
+
+/* Large list items */
+.large-list cometchat-list-item {
+  --cometchat-padding-2: 12px;
+  --cometchat-padding-4: 20px;
+}
+
+/* Dark theme */
+.dark-theme cometchat-list-item {
+  --cometchat-background-color-01: #1E1E1E;
+  --cometchat-white-hover: #2A2A2A;
+  --cometchat-text-color-primary: #FFFFFF;
+}
+```
+
+## Accessibility
+
+The ListItem component includes comprehensive accessibility features:
+
+### Keyboard Navigation
+
+The component is fully keyboard accessible with the following features:
+
+- **Tab Navigation**: List item is focusable via Tab key (tabindex="0")
+- **Enter/Space Activation**: Both Enter and Space keys activate the list item
+- **Menu Access**: Press 'M' key to toggle menu view visibility
+- **Nested Elements**: All nested interactive elements (buttons, links) are independently focusable
+- **Logical Tab Order**: Tab order follows visual layout (parent list item, then nested elements)
+
+### Keyboard Support
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Focus the list item |
+| `Shift+Tab` | Focus previous element |
+| `Enter` | Activate the list item (triggers click event) |
+| `Space` | Activate the list item (triggers click event) |
+| `M` | Toggle menu view visibility (when menuView is provided) |
+
+### ARIA Attributes
+
+The component implements proper ARIA attributes for screen reader support:
+
+- **role="listitem"**: Identifies the element as a list item
+- **aria-label**: Provides descriptive label combining title and subtitle
+- **aria-describedby**: Links to subtitle element for additional context
+- **role="group"**: Applied to menu view container
+- **Custom Labels**: Support for custom aria-label via `ariaLabel` input
+
+### Focus Management
+
+- **Visible Focus Indicators**: Clear 2px outline in primary color with 2px offset
+- **High Contrast Mode**: Enhanced 3px outline for better visibility
+- **Focus-Visible**: Uses :focus-visible pseudo-class for keyboard-only focus indicators
+- **Nested Element Focus**: Independent focus indicators for all nested interactive elements
+- **Menu Persistence**: Menu view remains visible when list item has focus
+
+### Nested Interactive Elements
+
+The component properly handles nested interactive elements:
+
+- **Independent Focusability**: All nested buttons, links, and elements with tabindex are independently focusable
+- **Event Isolation**: Clicking nested elements doesn't trigger parent list item click
+- **Proper Tab Order**: Nested elements follow logical tab order after parent
+- **Focus Indicators**: Each nested element has its own visible focus indicator
+
+### Screen Reader Support
+
+- **Semantic HTML**: Uses proper HTML structure for screen readers
+- **Descriptive Labels**: Combines title and subtitle for complete context
+- **State Announcements**: Menu view has descriptive aria-label
+- **Subtitle Association**: Subtitle is properly associated via aria-describedby
+
+### Best Practices for Accessibility
+
+<Tip>
+  Always provide meaningful `title` and `subtitle` values for better screen reader context. The component automatically combines these for the aria-label.
+</Tip>
+
+<Warning>
+  When using nested interactive elements (buttons, links), ensure they have proper labels and are keyboard accessible. The component preserves their focusability.
+</Warning>
+
+<Info>
+  The menu view can be accessed via keyboard (M key) or mouse hover, ensuring all users can access contextual actions.
+</Info>
+
+### Customizing Accessibility
+
+You can customize accessibility features:
+
+```html expandable
+<!-- Custom ARIA label -->
+<cometchat-list-item
+  [id]="user.id"
+  [title]="user.name"
+  [subtitle]="user.status"
+  [ariaLabel]="'User ' + user.name + ', status: ' + user.status">
+</cometchat-list-item>
+
+<!-- Nested interactive elements -->
+<cometchat-list-item
+  [id]="user.id"
+  [title]="user.name"
+  [trailingView]="actionsTemplate">
+</cometchat-list-item>
+
+<ng-template #actionsTemplate>
+  <button 
+    aria-label="Call user"
+    (click)="callUser($event)">
+    📞
+  </button>
+  <button 
+    aria-label="Message user"
+    (click)="messageUser($event)">
+    💬
+  </button>
+</ng-template>
+```
+
+## Accessibility
+
+## Examples
+
+### User List with Status
+
+```typescript expandable
+@Component({
+  selector: 'app-users-with-status',
+  standalone: true,
+  imports: [CommonModule, CometChatListItemComponent],
+  template: `
+    <div class="user-list">
+      @for (user of users; track user.id) {
+        <cometchat-list-item
+          [id]="user.id"
+          [avatarURL]="user.avatar"
+          [avatarName]="user.name"
+          [title]="user.name"
+          [subtitleView]="statusTemplate"
+          (listItemClick)="selectUser($event)">
+        </cometchat-list-item>
+      }
+    </div>
+
+    <ng-template #statusTemplate let-user>
+      <div class="status-container">
+        <span class="status-dot" [class.online]="user.isOnline"></span>
+        <span class="status-text">{{ user.isOnline ? 'Online' : 'Offline' }}</span>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .user-list {
+      border: 1px solid #E0E0E0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .status-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #9E9E9E;
+    }
+    .status-dot.online {
+      background: #4CAF50;
+    }
+    .status-text {
+      font-size: 14px;
+      color: #757575;
+    }
+  `]
+})
+export class UsersWithStatusComponent {
+  users = [
+    { id: '1', name: 'John Doe', avatar: '', isOnline: true },
+    { id: '2', name: 'Jane Smith', avatar: '', isOnline: false },
+    { id: '3', name: 'Bob Wilson', avatar: '', isOnline: true }
+  ];
+
+  selectUser(event: { id: string }) {
+    console.log('Selected user:', event.id);
+  }
+}
+```
+
+### Conversation List with Unread Count
+
+```typescript expandable
+@Component({
+  selector: 'app-conversation-list',
+  standalone: true,
+  imports: [CommonModule, CometChatListItemComponent],
+  template: `
+    @for (conversation of conversations; track conversation.id) {
+      <cometchat-list-item
+        [id]="conversation.id"
+        [avatarURL]="conversation.avatar"
+        [avatarName]="conversation.name"
+        [title]="conversation.name"
+        [subtitleView]="lastMessageTemplate"
+        [trailingView]="trailingTemplate"
+        [menuView]="menuTemplate"
+        (listItemClick)="openConversation($event)">
+      </cometchat-list-item>
+    }
+
+    <ng-template #lastMessageTemplate let-conv>
+      <span class="last-message">{{ conv.lastMessage }}</span>
+    </ng-template>
+
+    <ng-template #trailingTemplate let-conv>
+      <div class="trailing-content">
+        <span class="time">{{ conv.time }}</span>
+        @if (conv.unreadCount > 0) {
+          <span class="unread-badge">{{ conv.unreadCount }}</span>
+        }
+      </div>
+    </ng-template>
+
+    <ng-template #menuTemplate>
+      <button class="more-button" (click)="showMenu($event)">⋮</button>
+    </ng-template>
+  `,
+  styles: [`
+    .last-message {
+      font-size: 14px;
+      color: #757575;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .trailing-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .time {
+      font-size: 12px;
+      color: #9E9E9E;
+    }
+    .unread-badge {
+      background: #3399FF;
+      color: white;
+      border-radius: 10px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .more-button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+    }
+  `]
+})
+export class ConversationListComponent {
+  conversations = [
+    {
+      id: '1',
+      name: 'John Doe',
+      avatar: '',
+      lastMessage: 'Hey, how are you?',
+      time: '2:30 PM',
+      unreadCount: 3
+    },
+    {
+      id: '2',
+      name: 'Team Chat',
+      avatar: '',
+      lastMessage: 'Meeting at 3 PM',
+      time: '1:15 PM',
+      unreadCount: 0
+    }
+  ];
+
+  openConversation(event: { id: string }) {
+    console.log('Opening conversation:', event.id);
+  }
+
+  showMenu(event: MouseEvent) {
+    event.stopPropagation();
+    console.log('Show menu');
+  }
+}
+```
+
+### Group List with Custom Icons
+
+```typescript expandable
+@Component({
+  selector: 'app-group-list',
+  standalone: true,
+  imports: [CommonModule, CometChatListItemComponent],
+  template: `
+    @for (group of groups; track group.id) {
+      <cometchat-list-item
+        [id]="group.id"
+        [title]="group.name"
+        [leadingView]="groupIconTemplate"
+        [subtitleView]="memberCountTemplate"
+        (listItemClick)="openGroup($event)">
+      </cometchat-list-item>
+    }
+
+    <ng-template #groupIconTemplate>
+      <div class="group-icon">
+        <img src="assets/group.svg" alt="Group">
+      </div>
+    </ng-template>
+
+    <ng-template #memberCountTemplate let-group>
+      <span class="member-count">{{ group.memberCount }} members</span>
+    </ng-template>
+  `,
+  styles: [`
+    .group-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #E3F2FD;
+      border-radius: 50%;
+    }
+    .group-icon img {
+      width: 24px;
+      height: 24px;
+    }
+    .member-count {
+      font-size: 14px;
+      color: #757575;
+    }
+  `]
+})
+export class GroupListComponent {
+  groups = [
+    { id: '1', name: 'Project Team', memberCount: 12 },
+    { id: '2', name: 'Design Squad', memberCount: 8 },
+    { id: '3', name: 'Engineering', memberCount: 25 }
+  ];
+
+  openGroup(event: { id: string }) {
+    console.log('Opening group:', event.id);
+  }
+}
+```
+
+<Info>
+  **Live Preview** — multiple list items displayed together.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-list-item--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-list-item--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="List Item — Multiple Items"
+  allow="clipboard-write"
+></iframe>
+
+## Best Practices
+
+<Tip>
+  Always provide an `id` property for proper event handling and tracking. This is especially important when working with lists of items.
+</Tip>
+
+<Warning>
+  When using `menuView`, remember that it replaces `trailingView` on hover. Design your UI accordingly to avoid confusion.
+</Warning>
+
+<Info>
+  Use `stopEventPropagation` when you have clickable elements in `trailingView` or `menuView` that shouldn't trigger the list item click event.
+</Info>
+
+<Tip>
+  For better performance with large lists, use Angular's `@for` with `track` to help Angular identify which items have changed.
+</Tip>
+
+## Related Components
+
+- **CometChatAvatar**: Used internally for displaying avatars
+- **CometChatUsers**: Uses ListItem for displaying user lists
+- **CometChatGroups**: Uses ListItem for displaying group lists
+- **CometChatConversations**: Uses ListItem for conversation lists
+- **CometChatGroupMembers**: Uses ListItem for member lists
+
+## Angular Version Compatibility
+
+This component is compatible with Angular versions 14 through 21.
+
+### Compatibility Matrix
+
+| Angular Version | Status | Notes |
+|----------------|--------|-------|
+| 14.x | ✅ Supported | Standalone components, inject() available |
+| 15.x - 21.x | ✅ Supported | All features work |
+
+### API Stability
+
+The component uses only stable Angular APIs:
+- `@Component`, `@Input`, `@Output` (Angular 2+)
+- `@HostListener` (Angular 2+)
+- `EventEmitter`, `ElementRef`, `Renderer2` (Angular 2+)
+- Template projection (Angular 2+)
+- Standalone components (Angular 14+)
+
+### Upgrade Path
+
+No changes required when upgrading from Angular 14 to 21. The component uses stable APIs and follows Angular best practices.
+
+## Integration and Isolation
+
+### Event Listener Scoping
+
+This component uses component-scoped event listeners that don't interfere with your application:
+
+```typescript
+@HostListener('keydown', ['$event'])
+handleKeydown(event: KeyboardEvent): void {
+  // Only handles events within this component
+  // Enter/Space activate list item
+  // M key toggles menu view
+}
+```
+
+### Focus Management
+
+Focus management is isolated to this component:
+- List item is focusable via Tab key
+- Nested interactive elements are independently focusable
+- Focus indicators only appear during keyboard navigation (`:focus-visible`)
+- No global focus manipulation
+
+### Nested Element Handling
+
+The component properly handles nested interactive elements:
+- All nested buttons, links, and focusable elements work independently
+- Event propagation can be controlled via `stopEventPropagation` input
+- Nested elements have their own focus indicators
+- Tab order follows logical visual layout
+
+### Non-Interference
+
+The component is designed to not interfere with your application:
+- ✅ No global event listeners
+- ✅ No document-level DOM manipulation
+- ✅ Component-scoped styles with ViewEncapsulation
+- ✅ Proper cleanup in `ngOnDestroy()`
+
+### Multiple Instances
+
+Multiple list item instances work independently without interference:
+
+```typescript
+// These work independently in a list
+@for (item of items; track item.id) {
+  <cometchat-list-item
+    [id]="item.id"
+    [title]="item.name">
+  </cometchat-list-item>
+}
+```
+
+### Cleanup
+
+The component properly cleans up all resources when destroyed:
+- Event listeners are removed automatically
+- No subscriptions to clean up
+- No memory leaks
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: CommonModule, CometChatAvatarComponent
+- **Template Projection**: Supports multiple ng-template slots
+- **Event Handling**: Proper event propagation control
+- **Accessibility**: Full keyboard and screen reader support
+- **Angular Compatibility**: Works with Angular 14-21
+

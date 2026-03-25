@@ -1,0 +1,98 @@
+.cometchat-action-sheet {
+  display: var(--cometchat-action-sheet-display, flex);
+  width: var(--cometchat-action-sheet-width, max-content);
+  max-height: var(--cometchat-action-sheet-max-height, 310px);
+  padding: var(--cometchat-action-sheet-padding, 0);
+  flex-direction: var(--cometchat-action-sheet-flex-direction, column);
+  align-items: var(--cometchat-action-sheet-align-items, flex-start);
+  position: var(--cometchat-action-sheet-position, relative);
+  border-radius: var(--cometchat-action-sheet-border-radius, var(--cometchat-radius-4, 16px));
+  border: var(--cometchat-action-sheet-border, 1px solid var(--cometchat-border-color-light, #F5F5F5));
+  background: var(--cometchat-action-sheet-background, var(--cometchat-background-color-01, #FFF));
+  box-shadow: var(--cometchat-action-sheet-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+  overflow: hidden;
+  overflow-y: auto;
+  justify-content: var(--cometchat-action-sheet-justify-content, flex-start);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cometchat-action-sheet::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.cometchat-action-sheet__menu {
+  display: var(--cometchat-action-sheet-menu-display, flex);
+  flex-direction: var(--cometchat-action-sheet-menu-flex-direction, column);
+  width: var(--cometchat-action-sheet-menu-width, 100%);
+  list-style: var(--cometchat-action-sheet-menu-list-style, none);
+  padding: var(--cometchat-action-sheet-menu-padding, 0);
+  margin: var(--cometchat-action-sheet-menu-margin, 0);
+}
+
+.cometchat-action-sheet__item {
+  display: var(--cometchat-action-sheet-item-display, flex);
+  align-items: var(--cometchat-action-sheet-item-align-items, center);
+  gap: var(--cometchat-action-sheet-item-gap, var(--cometchat-spacing-2, 8px));
+  padding: var(--cometchat-action-sheet-item-padding, var(--cometchat-padding-4, 16px));
+  cursor: var(--cometchat-action-sheet-item-cursor, pointer);
+  width: var(--cometchat-action-sheet-item-width, 100%);
+  box-sizing: var(--cometchat-action-sheet-item-box-sizing, border-box);
+  outline: var(--cometchat-action-sheet-item-outline, none);
+  list-style: var(--cometchat-action-sheet-item-list-style, none);
+}
+
+.cometchat-action-sheet__item:hover {
+  background: var(--cometchat-action-sheet-item-background-hover, var(--cometchat-white-hover));
+}
+
+/* Focus indicator for keyboard navigation */
+.cometchat-action-sheet__item:focus {
+  background: var(--cometchat-action-sheet-item-background-focus, var(--cometchat-white-hover));
+  outline: var(--cometchat-action-sheet-item-outline-focus, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-action-sheet-item-outline-offset-focus, 2px);
+  border-radius: var(--cometchat-action-sheet-item-border-radius-focus, var(--cometchat-radius-2, 8px));
+}
+
+/* Remove any pseudo-element artifacts */
+.cometchat-action-sheet__item::before,
+.cometchat-action-sheet__item::after {
+  display: var(--cometchat-action-sheet-item-pseudo-display, none);
+}
+
+.cometchat-action-sheet__item-icon {
+  display: var(--cometchat-action-sheet-item-icon-display, flex);
+  width: var(--cometchat-action-sheet-item-icon-width, 24px);
+  height: var(--cometchat-action-sheet-item-icon-height, 24px);
+  justify-content: var(--cometchat-action-sheet-item-icon-justify-content, center);
+  align-items: var(--cometchat-action-sheet-item-icon-align-items, center);
+  background: var(--cometchat-action-sheet-item-icon-background, var(--cometchat-icon-color-highlight, #6852D6));
+  mask-size: var(--cometchat-action-sheet-item-icon-mask-size, contain);
+  -webkit-mask-size: var(--cometchat-action-sheet-item-icon-mask-size, contain);
+}
+
+.cometchat-action-sheet__item-body {
+  display: var(--cometchat-action-sheet-item-body-display, -webkit-box);
+  -webkit-box-orient: var(--cometchat-action-sheet-item-body-box-orient, vertical);
+  -webkit-line-clamp: var(--cometchat-action-sheet-item-body-line-clamp, 1);
+  overflow: var(--cometchat-action-sheet-item-body-overflow, hidden);
+  color: var(--cometchat-action-sheet-item-body-color, var(--cometchat-text-color-primary, #141414));
+  text-overflow: var(--cometchat-action-sheet-item-body-text-overflow, ellipsis);
+  font: var(--cometchat-action-sheet-item-body-font, var(--cometchat-font-heading4-regular, 400 16px Roboto));
+  line-height: var(--cometchat-action-sheet-item-body-line-height, 120%);
+  text-align: var(--cometchat-action-sheet-item-body-text-align, left);
+}
+
+/* When used inside a popover, adapt to content and available space.
+ * Note: With Angular's emulated ViewEncapsulation, this rule only applies
+ * if the action sheet is used within a .cometchat-popover in the same component scope.
+ */
+.cometchat-popover .cometchat-action-sheet {
+  position: relative;
+  max-height: var(--cometchat-action-sheet-popover-max-height, 310px);
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+}

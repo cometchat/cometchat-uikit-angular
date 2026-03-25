@@ -1,0 +1,319 @@
+/**
+ * CometChatPollBubble Styles
+ *
+ * BEM naming convention with CSS variables from css-variables.css.
+ * Styles will be fully implemented in subsequent tasks.
+ *
+ * @see Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+ */
+
+/* Block */
+.cometchat-poll-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-poll-bubble-gap, var(--cometchat-spacing-4, 16px));
+  padding: var(--cometchat-poll-bubble-padding, var(--cometchat-padding-2, 8px));
+  border-radius: var(--cometchat-poll-bubble-border-radius, var(--cometchat-radius-3, 12px));
+  width: var(--cometchat-poll-bubble-width, 240px);
+  max-width: var(--cometchat-poll-bubble-max-width, 240px);
+}
+
+/* ============================================
+   Background Inheritance: Message Bubble Context
+   
+   NOTE: Parent override is handled via CSS custom property
+   --cometchat-poll-bubble-background which can be set by parent
+   components. The bubble uses this variable with a fallback to
+   the default theme background color.
+   ============================================ */
+
+/* Modifiers - Sender variant */
+/* Uses CSS variable for background to allow parent override */
+.cometchat-poll-bubble--sender {
+  background: var(--cometchat-poll-bubble-background, var(--cometchat-primary-color));
+}
+
+/* Modifiers - Receiver variant */
+/* Uses CSS variable for background to allow parent override */
+.cometchat-poll-bubble--receiver {
+  background: var(--cometchat-poll-bubble-background, var(--cometchat-neutral-color-300));
+}
+
+/* ============================================================================
+ * Poll Question Styles
+ * @see Requirements 2.1, 2.2, 2.3, 2.4, 2.5
+ * ============================================================================ */
+
+/* Question - Base styles */
+.cometchat-poll-bubble__question {
+  font: var(--cometchat-font-heading4-bold);
+  margin: 0;
+  word-wrap: break-word;
+  text-align: left;
+  width: 100%;
+}
+
+/* Question - Sender variant (static white color) */
+.cometchat-poll-bubble--sender .cometchat-poll-bubble__question {
+  color: var(--cometchat-static-white);
+}
+
+/* Question - Receiver variant (primary text color) */
+.cometchat-poll-bubble--receiver .cometchat-poll-bubble__question {
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* ============================================================================
+ * Poll Options List Styles
+ * @see Requirements 3.1, 3.2, 3.3, 3.4, 8.1
+ * ============================================================================ */
+
+/* Options list - Base styles */
+.cometchat-poll-bubble__options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  padding-bottom: var(--cometchat-poll-bubble-options-padding-bottom, var(--cometchat-padding-3, 12px));
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-poll-bubble-options-gap, var(--cometchat-spacing-5, 20px));
+  width: 100%;
+}
+
+/* Option item - Base styles */
+.cometchat-poll-bubble__option-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cometchat-poll-bubble-option-item-gap, var(--cometchat-spacing-2, 8px));
+  cursor: pointer;
+  width: 100%;
+  outline: none;
+}
+
+/* Option item - Hover state */
+/* No background change on hover to match React */
+
+/* Option item - Focus state for accessibility */
+.cometchat-poll-bubble__option-item:focus-visible {
+  outline: var(--cometchat-poll-bubble-option-item-focus-outline, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-poll-bubble-option-item-focus-outline-offset, 2px);
+}
+
+/* Option leading (radio button container) */
+.cometchat-poll-bubble__option-leading {
+  flex-shrink: 0;
+  pointer-events: none; /* Disable direct interaction - parent li handles clicks */
+}
+
+/* Option body */
+.cometchat-poll-bubble__option-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-poll-bubble-option-body-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Option content (text + tail) */
+.cometchat-poll-bubble__option-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--cometchat-poll-bubble-option-content-gap, var(--cometchat-spacing-2, 8px));
+}
+
+/* Option text - Base styles */
+.cometchat-poll-bubble__option-text {
+  font: var(--cometchat-font-body-regular);
+  flex: 1;
+  word-wrap: break-word;
+}
+
+/* Option text - Sender variant (static white color) */
+.cometchat-poll-bubble--sender .cometchat-poll-bubble__option-text {
+  color: var(--cometchat-static-white);
+}
+
+/* Option text - Receiver variant (primary text color) */
+.cometchat-poll-bubble--receiver .cometchat-poll-bubble__option-text {
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* ============================================================================
+ * Radio Button Styling via CSS Variables
+ * @see React UIKit PollsBubble.css
+ * 
+ * Note: Radio button styles are configured via CSS custom properties
+ * because of Angular's view encapsulation. We cannot directly style
+ * the radio button's internal elements from the poll bubble CSS.
+ * ============================================================================ */
+
+/* Receiver (incoming messages): Configure radio button with primary color styling */
+.cometchat-poll-bubble--receiver .cometchat-poll-bubble__option-leading {
+  --cometchat-radio-button-size: 20px;
+  --cometchat-radio-button-border:2px solid var(--cometchat-primary-color);
+  --cometchat-radio-button-border-color-checked: var(--cometchat-primary-color);
+  --cometchat-radio-button-border-color-hover: var(--cometchat-primary-color);
+  --cometchat-radio-button-inner-circle-background: var(--cometchat-primary-color);
+  --cometchat-radio-button-inner-circle-size: 10px;
+  --cometchat-radio-button-background:transparent;
+  --cometchat-radio-button-opacity-disabled: 1;
+  --cometchat-radio-button-border-color-disabled: var(--cometchat-primary-color);
+}
+
+/* Sender (outgoing messages): Configure radio button with white styling */
+.cometchat-poll-bubble--sender .cometchat-poll-bubble__option-leading {
+  --cometchat-radio-button-size: 20px;
+  --cometchat-radio-button-border: 2px solid var(--cometchat-static-white);
+  --cometchat-radio-button-border-color-checked: var(--cometchat-static-white);
+  --cometchat-radio-button-border-color-hover: var(--cometchat-primary-color);
+  --cometchat-radio-button-background: transparent;
+  --cometchat-radio-button-inner-circle-background: var(--cometchat-static-white);
+  --cometchat-radio-button-inner-circle-size: 10px;
+  --cometchat-radio-button-opacity-disabled: 1;
+  --cometchat-radio-button-border-color-disabled: var(--cometchat-static-white);
+}
+
+/* Option tail (vote count container) */
+.cometchat-poll-bubble__option-tail {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-poll-bubble-option-tail-gap, var(--cometchat-spacing-2, 8px));
+}
+
+/* Vote count - Base styles */
+.cometchat-poll-bubble__vote-count {
+  font: var(--cometchat-poll-bubble-vote-count-font, var(--cometchat-font-caption1-medium, 500 12px Roboto));
+  min-width: var(--cometchat-poll-bubble-vote-count-min-width, 5px);
+  text-align: right;
+}
+
+/* Vote count - Sender variant (static white color) */
+.cometchat-poll-bubble--sender .cometchat-poll-bubble__vote-count {
+  color: var(--cometchat-static-white);
+}
+
+/* Vote count - Receiver variant (secondary text color) */
+.cometchat-poll-bubble--receiver .cometchat-poll-bubble__vote-count {
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* ============================================================================
+ * Voter Avatars Styles
+ * @see Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
+ * ============================================================================ */
+
+/* Voter avatars container - stacked/overlapping layout */
+.cometchat-poll-bubble__voter-avatars {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Individual voter avatar wrapper */
+/* z-index requires position context, so position: relative is needed */
+.cometchat-poll-bubble__voter-avatar {
+  position: relative;
+  width: var(--cometchat-poll-bubble-voter-avatar-width, 20px);
+  height: var(--cometchat-poll-bubble-voter-avatar-height, 20px);
+  margin-right: var(--cometchat-poll-bubble-voter-avatar-margin-right, -8px);
+  border-radius: var(--cometchat-poll-bubble-voter-avatar-border-radius, var(--cometchat-radius-max, 1000px));
+  overflow: hidden;
+}
+
+/* Last avatar modifier - no negative margin */
+.cometchat-poll-bubble__voter-avatar--last {
+  margin-right: 0;
+}
+
+/* Ensure avatar component fills the container */
+.cometchat-poll-bubble__voter-avatar cometchat-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+/* Avatar image styling for incoming messages */
+.cometchat-poll-bubble--receiver .cometchat-poll-bubble__voter-avatar .cometchat-avatar img {
+  border: var(--cometchat-poll-bubble-voter-avatar-border-receiver, 1px solid var(--cometchat-neutral-color-300, #E0E0E0));
+}
+.cometchat-poll-bubble {
+  --cometchat-avatar-size: var(--cometchat-poll-bubble-avatar-size, 20px);
+}
+
+/* Avatar image styling for outgoing messages */
+.cometchat-poll-bubble--sender .cometchat-poll-bubble__voter-avatar .cometchat-avatar img {
+  border: var(--cometchat-poll-bubble-voter-avatar-border-sender, 1px solid var(--cometchat-primary-color, #6852D6));
+}
+
+/* Avatar text styling */
+.cometchat-poll-bubble .cometchat-avatar .cometchat-avatar__text {
+  --cometchat-poll-bubble-avatar-text-width:20px;
+  --cometchat-poll-bubble-avatar-text-height:20px;
+  --cometchat-poll-bubble-avatar-text-border-radius:var(--cometchat-radius-max, 1000px);
+  --cometchat-poll-bubble-avatar-text-background:var(--cometchat-extended-primary-color-600, #7A6BD6);
+  --cometchat-poll-bubble-avatar-text-font:var(--cometchat-font-caption2-regular, 400 10px Roboto);
+  --cometchat-poll-bubble-avatar-text-color:var(--cometchat-static-white, #FFFFFF);
+}
+
+/* ============================================================================
+ * Progress Bar Styles
+ * @see Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 8.8
+ * ============================================================================ */
+
+/* Progress bar - Base styles */
+.cometchat-poll-bubble__progress {
+  height: var(--cometchat-poll-bubble-progress-height, 8px);
+  border-radius: var(--cometchat-poll-bubble-progress-border-radius, var(--cometchat-radius-4, 16px));
+  overflow: hidden;
+  margin-top: var(--cometchat-poll-bubble-progress-margin-top, 3px);
+  width: 100%;
+}
+
+/* Progress bar background - Receiver variant */
+.cometchat-poll-bubble--receiver .cometchat-poll-bubble__progress {
+  background: var(--cometchat-poll-bubble-progress-background-receiver, var(--cometchat-neutral-color-400, #BDBDBD));
+}
+
+/* Progress bar background - Sender variant */
+.cometchat-poll-bubble--sender .cometchat-poll-bubble__progress {
+  background: var(--cometchat-poll-bubble-progress-background-sender, var(--cometchat-extended-primary-color-700, #8A7BD6));
+}
+
+/* Progress bar fill - Base styles */
+.cometchat-poll-bubble__progress-fill {
+  height: 100%;
+  border-radius: var(--cometchat-poll-bubble-progress-fill-border-radius, var(--cometchat-radius-4, 16px));
+  transition: var(--cometchat-poll-bubble-progress-fill-transition, width 0.3s ease);
+}
+
+/* Progress bar fill - Sender variant (white) */
+.cometchat-poll-bubble--sender .cometchat-poll-bubble__progress-fill {
+  background: var(--cometchat-poll-bubble-progress-fill-background-sender, var(--cometchat-static-white, #FFFFFF));
+}
+
+/* Progress bar fill - Receiver variant (primary color) */
+.cometchat-poll-bubble--receiver .cometchat-poll-bubble__progress-fill {
+  background: var(--cometchat-poll-bubble-progress-fill-background-receiver, var(--cometchat-primary-color, #6852D6));
+}
+
+
+/* ============================================================================
+ * Empty State Styles
+ * @see Requirements 13.1, 13.2
+ * ============================================================================ */
+
+/* Empty state - displayed when poll data is missing or options are empty */
+.cometchat-poll-bubble__empty {
+  font: var(--cometchat-poll-bubble-empty-font, var(--cometchat-font-body-regular, 400 14px Roboto));
+  color: var(--cometchat-poll-bubble-empty-color, var(--cometchat-text-color-tertiary, #757575));
+  text-align: center;
+  padding: var(--cometchat-poll-bubble-empty-padding, var(--cometchat-padding-4, 16px));
+}
+
+/* ============================================================================
+ * Disabled Interaction State
+ * Applied when disableInteraction is true (e.g., thread header parent bubble)
+ * ============================================================================ */
+
+.cometchat-poll-bubble__option-item--disabled-interaction {
+  pointer-events: none;
+  cursor: default;
+}

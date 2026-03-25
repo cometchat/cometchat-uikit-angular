@@ -1,0 +1,15 @@
+@if (sessionID) {
+  @if (callScreenView) {
+    <ng-container *ngTemplateOutlet="callScreenView; context: templateContext"></ng-container>
+  } @else {
+    <div
+      class="cometchat-ongoing-call"
+      #callScreenFrame
+      role="application"
+      tabindex="0"
+      aria-live="polite"
+      [attr.aria-label]="'accessibility_ongoing_call' | translate"
+      (keydown)="onKeyDown($event)">
+    </div>
+  }
+}

@@ -1,0 +1,238 @@
+---
+title: "Message Privately"
+sidebarTitle: "Message Privately"
+description: "Launch a direct 1:1 chat from a group member profile in CometChat Angular UIKit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key components | `cometchat-group-members`, `cometchat-message-list`, `cometchat-message-composer`, `cometchat-message-header` |
+| Init | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Purpose | Launch a direct 1:1 chat from a group member profile |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Related | [All Guides](/guides/overview) |
+
+</Accordion>
+
+Message Privately lets users start a direct 1:1 conversation with a group member without leaving the group context. The user can return to the group after the private chat.
+
+Before starting, complete the [Integration Guide](/integration).
+
+---
+
+## Components
+
+| Component / Selector | Role |
+|:---|:---|
+| `cometchat-group-members` | Displays group members with click handlers for private messaging |
+| `cometchat-message-header` | Header showing private chat information |
+| `cometchat-message-list` | Displays private conversation messages |
+| `cometchat-message-composer` | Input component for composing private messages |
+
+---
+
+## Implementation Steps
+
+### 1. Group Member Click Handler
+
+When a group member is clicked, cast them to a `User` object and initiate a private chat. Save the current group so the user can return to it later.
+
+```typescript expandable
+import { Component, OnDestroy } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKitConstants } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-private-chat',
+  standalone: true,
+  imports: [],
+  template: `<!-- see steps below -->`
+})
+export class PrivateChatComponent implements OnDestroy {
+  currentGroup: CometChat.Group | undefined;
+  previousGroup: CometChat.Group | undefined;
+  privateChatUser: CometChat.User | undefined;
+  showPrivateChat = false;
+
+  onGroupMemberClick(member: CometChat.GroupMember): void {
+    const user = member as unknown as CometChat.User;
+    this.startPrivateChat(user, this.currentGroup!);
+  }
+
+  startPrivateChat(user: CometChat.User, fromGroup: CometChat.Group): void {
+    this.previousGroup = fromGroup;
+    this.privateChatUser = user;
+    this.showPrivateChat = true;
+  }
+
+  ngOnDestroy(): void {
+    this.privateChatUser = undefined;
+    this.previousGroup = undefined;
+  }
+}
+```
+
+---
+
+### 2. Group Members with Private Messaging Option
+
+Render `cometchat-group-members` and handle the `(itemClick)` output to trigger the private chat flow.
+
+```html
+<cometchat-group-members
+  [group]="currentGroup"
+  (itemClick)="onGroupMemberClick($event)">
+</cometchat-group-members>
+```
+
+---
+
+### 3. Private Chat Interface
+
+Render a full chat view (header, message list, composer) for the 1:1 conversation. The header includes a back button that returns the user to the original group.
+
+```html expandable
+@if (showPrivateChat && privateChatUser) {
+  <div class="cometchat-private-chat">
+    <cometchat-message-header
+      [user]="privateChatUser"
+      (backClick)="returnToGroup()">
+    </cometchat-message-header>
+
+    <cometchat-message-list
+      [user]="privateChatUser">
+    </cometchat-message-list>
+
+    <cometchat-message-composer
+      [user]="privateChatUser">
+    </cometchat-message-composer>
+  </div>
+}
+```
+
+---
+
+### 4. Return to Group
+
+When the user clicks back, restore the previous group context and close the private chat view.
+
+```typescript
+returnToGroup(): void {
+  if (this.previousGroup) {
+    this.currentGroup = this.previousGroup;
+    this.previousGroup = undefined;
+  }
+  this.privateChatUser = undefined;
+  this.showPrivateChat = false;
+}
+```
+
+---
+
+### 5. Full Component Example
+
+A complete standalone component wiring group members, private chat, and navigation together.
+
+```typescript expandable
+import { Component, Input, OnDestroy } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatGroupMembersComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-with-private-chat',
+  standalone: true,
+  imports: [
+    CometChatGroupMembersComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent
+  ],
+  template: `
+    @if (showPrivateChat && privateChatUser) {
+      <div class="cometchat-private-chat">
+        <cometchat-message-header
+          [user]="privateChatUser"
+          (backClick)="returnToGroup()">
+        </cometchat-message-header>
+
+        <cometchat-message-list
+          [user]="privateChatUser">
+        </cometchat-message-list>
+
+        <cometchat-message-composer
+          [user]="privateChatUser">
+        </cometchat-message-composer>
+      </div>
+    } @else {
+      <cometchat-group-members
+        [group]="group"
+        (itemClick)="onGroupMemberClick($event)">
+      </cometchat-group-members>
+    }
+  `
+})
+export class GroupWithPrivateChatComponent implements OnDestroy {
+  @Input() group!: CometChat.Group;
+
+  previousGroup: CometChat.Group | undefined;
+  privateChatUser: CometChat.User | undefined;
+  showPrivateChat = false;
+
+  onGroupMemberClick(member: CometChat.GroupMember): void {
+    const user = member as unknown as CometChat.User;
+    this.previousGroup = this.group;
+    this.privateChatUser = user;
+    this.showPrivateChat = true;
+  }
+
+  returnToGroup(): void {
+    this.privateChatUser = undefined;
+    this.showPrivateChat = false;
+  }
+
+  ngOnDestroy(): void {
+    this.privateChatUser = undefined;
+    this.previousGroup = undefined;
+  }
+}
+```
+
+---
+
+## Feature Matrix
+
+| Feature | Component / Method | Description |
+|:---|:---|:---|
+| Group member selection | `cometchat-group-members` with `(itemClick)` | Triggers private chat from member list |
+| Private chat initiation | `startPrivateChat()` | Saves group context and opens 1:1 chat |
+| Private chat interface | `cometchat-message-header`, `cometchat-message-list`, `cometchat-message-composer` | Full 1:1 chat view with `[user]` binding |
+| Context preservation | `previousGroup` property | Stores the group to return to |
+| Return to group | `returnToGroup()` | Restores group context and closes private chat |
+| Cleanup | `ngOnDestroy` | Clears private chat state on component destroy |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Group Members" href="/components/cometchat-group-members">
+    Display and manage group member lists.
+  </Card>
+  <Card title="Message List" href="/components/cometchat-message-list">
+    Render real-time message threads.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Sample App" href="https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app">
+    Full working sample application on GitHub.
+  </Card>
+</CardGroup>

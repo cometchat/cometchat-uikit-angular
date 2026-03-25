@@ -1,0 +1,112 @@
+/* ═══════════════════════════════════════════════════
+   CometChatTransferOwnership — Modal for transferring group ownership
+   Uses cometchat-group-members internally with custom trailing view.
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-transfer-ownership {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--cometchat-background-color-01);
+}
+
+/* Force the group-members custom element to be a block with constrained height */
+.cometchat-transfer-ownership > cometchat-group-members {
+  display: block;
+  height: calc(100% - 72px);
+  overflow: hidden;
+}
+
+/* Make paginated-list a proper flex child inside group-members */
+.cometchat-transfer-ownership cometchat-paginated-list {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+/* ── Trailing View (Radio Button) ── */
+
+.cometchat-transfer-ownership__radio-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Footer Buttons ── */
+
+.cometchat-transfer-ownership__buttons-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex-shrink: 0;
+  border-top: 1px solid var(--cometchat-border-color-light);
+}
+
+.cometchat-transfer-ownership__error-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--cometchat-spacing-1);
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+  align-self: stretch;
+  border-radius: var(--cometchat-radius-2);
+  background: rgba(244, 70, 73, 0.1);
+  color: var(--cometchat-error-color);
+  font: var(--cometchat-font-body-regular);
+  margin: var(--cometchat-spacing-2) var(--cometchat-spacing-4) 0;
+}
+
+.cometchat-transfer-ownership__buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--cometchat-spacing-2);
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+}
+
+.cometchat-transfer-ownership__cancel-button {
+  flex: 1;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-4);
+  border: 1px solid var(--cometchat-border-color-dark);
+  border-radius: var(--cometchat-radius-2);
+  background: var(--cometchat-background-color-01);
+  color: var(--cometchat-text-color-primary);
+  font: var(--cometchat-font-button-medium);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-transfer-ownership__cancel-button:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+.cometchat-transfer-ownership__cancel-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cometchat-primary-color);
+}
+
+.cometchat-transfer-ownership__transfer-button {
+  flex: 1;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-4);
+  border: none;
+  border-radius: var(--cometchat-radius-2);
+  background: var(--cometchat-primary-button-background);
+  color: var(--cometchat-primary-button-text);
+  font: var(--cometchat-font-button-medium);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-transfer-ownership__transfer-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.cometchat-transfer-ownership__transfer-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cometchat-primary-color);
+}
+
+.cometchat-transfer-ownership__transfer-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

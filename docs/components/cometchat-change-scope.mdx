@@ -1,0 +1,373 @@
+---
+title: "CometChatChangeScope"
+description: "A dialog component for changing group member roles/scopes with radio button selection"
+---
+
+## Overview
+
+The `CometChatChangeScope` component provides a dialog interface for changing group member roles or scopes. It uses radio buttons for scope selection and includes loading and error state management for async operations.
+
+## Basic Usage
+
+### Basic Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatChangeScopeComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-example',
+  template: `
+    <cometchat-change-scope
+      [title]="'Change Member Role'"
+      [buttonText]="'Confirm'"
+      [options]="scopeOptions"
+      [defaultSelection]="currentScope"
+      (scopeChanged)="onScopeChange($event)"
+      (closeClick)="onClose()">
+    </cometchat-change-scope>
+  `
+})
+export class ExampleComponent {
+  scopeOptions = ['admin', 'moderator', 'participant'];
+  currentScope = 'participant';
+
+  onScopeChange(newScope: string) {
+    console.log('Scope changed to:', newScope);
+    // Handle async operation here
+  }
+
+  onClose() {
+    console.log('Dialog closed');
+  }
+}
+```
+
+### With Async Operation Handling
+
+```typescript expandable
+import { Component, ViewChild } from '@angular/core';
+import { CometChatChangeScopeComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-example',
+  template: `
+    <cometchat-change-scope
+      #changeScopeDialog
+      [title]="'Change Member Role'"
+      [options]="['admin', 'moderator', 'participant']"
+      [defaultSelection]="'participant'"
+      (scopeChanged)="handleScopeChange($event)"
+      (closeClick)="closeDialog()">
+    </cometchat-change-scope>
+  `
+})
+export class ExampleComponent {
+  @ViewChild('changeScopeDialog') changeScopeDialog!: CometChatChangeScopeComponent;
+
+  async handleScopeChange(newScope: string) {
+    try {
+      // Perform async operation (e.g., API call)
+      await this.updateMemberScope(newScope);
+      
+      // Call setSuccess() on successful operation
+      this.changeScopeDialog.setSuccess();
+      this.closeDialog();
+    } catch (error) {
+      // Call setError() on failed operation
+      this.changeScopeDialog.setError();
+    }
+  }
+
+  async updateMemberScope(scope: string): Promise<void> {
+    // Your API call here
+    return new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  closeDialog() {
+    // Handle dialog close
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default change scope selector.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-change-scope--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-change-scope--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Change Scope — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `title` | `string` | `'Change Scope'` | Title text displayed in the dialog header |
+| `buttonText` | `string` | `'Confirm'` | Text for the confirm/submit button |
+| `options` | `string[]` | `[]` | Array of available scope options to display as radio buttons |
+| `defaultSelection` | `string` | `''` | Currently selected scope (default value) |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `scopeChanged` | `string` | Emitted when the confirm button is clicked. Returns the selected scope value. Parent should handle async operation and call `setSuccess()` or `setError()` |
+| `closeClick` | `void` | Emitted when the close button or cancel button is clicked |
+
+## Methods
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `setSuccess()` | None | Call this method after successful async operation to clear loading state |
+| `setError()` | None | Call this method after failed async operation to show error message |
+
+## Customization
+
+### Styling with CSS Variables
+
+```css expandable
+/* Dialog background and border */
+--cometchat-background-color: #ffffff;
+--cometchat-border-color: #e0e0e0;
+--cometchat-border-radius: 8px;
+--cometchat-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+/* Text colors */
+--cometchat-text-color: #333333;
+--cometchat-text-color-secondary: #666666;
+
+/* Interactive elements */
+--cometchat-primary-color: #6851ff;
+--cometchat-hover-background: #f5f5f5;
+
+/* Error state */
+--cometchat-error-background: #ffebee;
+--cometchat-error-color: #c62828;
+```
+
+### Example with Custom Styling
+
+```typescript expandable
+@Component({
+  selector: 'app-example',
+  template: `
+    <div class="custom-change-scope">
+      <cometchat-change-scope
+        [title]="'Update User Role'"
+        [buttonText]="'Save Changes'"
+        [options]="roles"
+        [defaultSelection]="currentRole"
+        (scopeChanged)="onRoleChange($event)"
+        (closeClick)="onCancel()">
+      </cometchat-change-scope>
+    </div>
+  `,
+  styles: [`
+    .custom-change-scope {
+      --cometchat-primary-color: #2196F3;
+      --cometchat-border-radius: 12px;
+      --cometchat-background-color: #fafafa;
+    }
+  `]
+})
+export class ExampleComponent {
+  roles = ['Owner', 'Admin', 'Member', 'Guest'];
+  currentRole = 'Member';
+
+  onRoleChange(newRole: string) {
+    console.log('Role changed to:', newRole);
+  }
+
+  onCancel() {
+    console.log('Cancelled');
+  }
+}
+```
+
+<Info>
+  **Live Preview** — change scope with descriptive option labels.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-change-scope--available-scope-options)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-change-scope--available-scope-options&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Change Scope — Descriptive Options"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The `CometChatChangeScope` component is built with comprehensive WCAG 2.1 Level AA accessibility support:
+
+### Keyboard Navigation
+
+The component supports full keyboard navigation for users who cannot use a mouse:
+
+| Key | Action | Context |
+|-----|--------|---------|
+| **Tab** | Move focus forward through interactive elements | Navigate between radio buttons, Cancel button, and Confirm button |
+| **Shift + Tab** | Move focus backward through interactive elements | Reverse navigation through the dialog |
+| **Arrow Keys** (↑↓) | Navigate between radio button options | When focus is on any radio button in the group |
+| **Space** | Select focused radio button or activate focused button | When focus is on a radio button or button element |
+| **Enter** | Activate focused button | When focus is on Cancel or Confirm button |
+| **Escape** | Close the dialog | Works from anywhere within the dialog, including during loading state |
+
+### Screen Reader Support
+
+The component provides comprehensive screen reader support:
+
+- **Dialog Role**: The container has `role="dialog"` and `aria-modal="true"` to announce it as a modal dialog
+- **Dialog Label**: The dialog is labeled with `aria-labelledby` pointing to the title for context
+- **Radio Group**: The options container has `role="radiogroup"` with `aria-label` for proper announcement
+- **Radio Buttons**: Each option uses native radio button semantics with proper labels
+- **Error Announcements**: Error messages use `role="alert"` for immediate screen reader announcement
+- **Button Labels**: The close button has `aria-label="Close"` for screen reader users
+- **Loading State**: The Confirm button announces loading state via `aria-busy` attribute
+
+### Focus Management
+
+The component implements proper focus management for keyboard accessibility:
+
+- **Auto-Focus**: When the dialog opens, focus automatically moves to the first radio button
+- **Focus Indicators**: All interactive elements have visible focus indicators using `:focus-visible`
+- **Focus Order**: Logical tab order follows visual layout:
+  1. Close button (×)
+  2. Radio button options (with arrow key navigation)
+  3. Cancel button
+  4. Confirm button
+- **Focus Containment**: Focus remains within the dialog while it's open
+- **Escape Key**: Pressing Escape closes the dialog from any focused element
+
+### Visual Focus Indicators
+
+All interactive elements have clear visual focus indicators:
+
+- **Close Button**: 2px solid outline in primary color with 2px offset
+- **Radio Buttons**: Handled by `CometChatRadioButton` component with proper focus styles
+- **Action Buttons**: Handled by `CometChatButton` component with proper focus styles
+- **Keyboard-Only**: Focus indicators only appear for keyboard navigation (`:focus-visible`), not mouse clicks
+
+### ARIA Attributes
+
+The component uses the following ARIA attributes for accessibility:
+
+| Element | ARIA Attributes | Purpose |
+|---------|----------------|---------|
+| Dialog container | `role="dialog"`, `aria-modal="true"`, `aria-labelledby` | Identifies as modal dialog with title reference |
+| Title | `id="change-scope-title"` | Provides accessible name for dialog |
+| Radio group | `role="radiogroup"`, `aria-label` | Groups radio buttons with descriptive label |
+| Error message | `role="alert"` | Announces errors immediately to screen readers |
+| Close button | `aria-label="Close"` | Provides accessible name for icon-only button |
+| Confirm button | `aria-busy` (when loading) | Announces loading state |
+
+### Accessibility Best Practices
+
+When using this component, follow these best practices:
+
+1. **Provide Clear Title**: Use a descriptive title that explains the purpose of the dialog
+2. **Descriptive Options**: Use clear, understandable labels for scope options
+3. **Error Handling**: Implement proper error handling and call `setError()` on failures
+4. **Focus Restoration**: When closing the dialog, restore focus to the element that opened it
+5. **Keyboard Testing**: Test the component with keyboard-only navigation
+6. **Screen Reader Testing**: Test with screen readers (NVDA, JAWS, VoiceOver)
+
+### Testing Accessibility
+
+To verify accessibility:
+
+```typescript expandable
+// Test keyboard navigation
+it('should support full keyboard navigation', () => {
+  // Tab through all interactive elements
+  // Use arrow keys to navigate radio options
+  // Press Escape to close
+  // Verify focus indicators are visible
+});
+
+// Test screen reader announcements
+it('should announce changes to screen readers', () => {
+  // Verify dialog role and label
+  // Verify radiogroup role and label
+  // Verify error messages use role="alert"
+});
+```
+
+### Known Limitations
+
+- **Focus Trap**: The component does not implement a focus trap. Parent components should handle focus trapping if needed for modal contexts.
+- **Focus Restoration**: The component emits `closeClick` event but does not automatically restore focus. Parent components should handle focus restoration.
+
+### WCAG 2.1 Compliance
+
+This component meets the following WCAG 2.1 Level AA success criteria:
+
+- **1.3.1 Info and Relationships (Level A)**: Proper semantic HTML and ARIA roles
+- **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- **2.1.2 No Keyboard Trap (Level A)**: Escape key allows exiting the dialog
+- **2.4.3 Focus Order (Level A)**: Logical focus order follows visual layout
+- **2.4.7 Focus Visible (Level AA)**: Clear focus indicators on all interactive elements
+- **3.2.1 On Focus (Level A)**: No unexpected context changes on focus
+- **4.1.2 Name, Role, Value (Level A)**: Proper ARIA attributes and semantic HTML
+- **4.1.3 Status Messages (Level AA)**: Error messages use `role="alert"`
+
+## Best Practices
+
+1. **Handle Async Operations**: Always call `setSuccess()` or `setError()` after async operations complete
+2. **Provide Clear Options**: Use descriptive scope names that users will understand
+3. **Default Selection**: Always provide a `defaultSelection` that matches the current state
+4. **Error Handling**: Implement proper error handling and call `setError()` on failures
+5. **Loading State**: The component automatically manages loading state during operations
+6. **Disabled State**: Submit button is automatically disabled when selection hasn't changed
+
+## Common Use Cases
+
+### Group Member Role Management
+
+```typescript expandable
+changeMemberRole(memberId: string, newRole: string) {
+  this.showChangeScopeDialog = true;
+  this.currentMemberId = memberId;
+  this.scopeOptions = ['admin', 'moderator', 'participant'];
+  this.currentScope = this.getMemberRole(memberId);
+}
+
+async handleRoleChange(newRole: string) {
+  try {
+    await this.groupService.updateMemberRole(
+      this.currentMemberId,
+      newRole
+    );
+    this.changeScopeDialog.setSuccess();
+    this.showChangeScopeDialog = false;
+  } catch (error) {
+    this.changeScopeDialog.setError();
+  }
+}
+```
+
+### Permission Level Changes
+
+```typescript
+changePermissionLevel(userId: string) {
+  this.scopeOptions = ['read', 'write', 'admin'];
+  this.currentScope = this.getUserPermission(userId);
+  this.showDialog = true;
+}
+```
+
+## Notes
+
+- The submit button is automatically disabled when the selected value matches the default selection
+- The submit button is also disabled during loading state
+- Error messages are displayed below the options and above the action buttons
+- The component uses `CometChatRadioButton` and `CometChatButton` components internally
+- Loading state is managed internally but requires parent to call `setSuccess()` or `setError()`

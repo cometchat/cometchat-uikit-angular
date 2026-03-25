@@ -1,0 +1,1112 @@
+---
+title: Toast
+description: "A toast notification component for displaying temporary feedback messages with auto-dismiss, manual close, and programmatic service support"
+---
+The `CometChatToast` component provides a consistent, accessible toast notification system across the UIKit. It supports different types (success, error, warning, info) with auto-dismiss functionality, manual close options, and a programmatic service for creating toasts dynamically.
+
+## Overview
+
+The Toast component is designed for providing temporary feedback to users:
+
+- **Multiple Types**: Success, error, warning, and info variants with appropriate icons
+- **Auto-Dismiss**: Configurable duration for automatic dismissal
+- **Manual Control**: Optional close button for user-controlled dismissal
+- **Programmatic API**: Service-based creation for dynamic toast management
+- **Toast Stacking**: Multiple toasts stack vertically with proper spacing
+- **Accessibility**: ARIA live regions and keyboard support for screen readers
+- **Customizable**: CSS variable-based styling for easy theming
+
+## Basic Usage
+
+### Simple Toast
+
+```html
+<cometchat-toast 
+  [text]="'Operation completed successfully!'" 
+  [type]="'success'"
+  (toastClosed)="onToastClose()">
+</cometchat-toast>
+```
+
+### Error Toast
+
+```html
+<cometchat-toast 
+  [text]="'An error occurred. Please try again.'" 
+  [type]="'error'"
+  [duration]="5000"
+  (toastClosed)="onToastClose()">
+</cometchat-toast>
+```
+
+### Warning Toast
+
+```html
+<cometchat-toast 
+  [text]="'Your session will expire in 5 minutes.'" 
+  [type]="'warning'"
+  [showCloseButton]="true"
+  (toastClosed)="onToastClose()">
+</cometchat-toast>
+```
+
+### Info Toast
+
+```html
+<cometchat-toast 
+  [text]="'New messages are available.'" 
+  [type]="'info'"
+  [duration]="3000"
+  (toastClosed)="onToastClose()">
+</cometchat-toast>
+```
+
+### Persistent Toast (No Auto-Dismiss)
+
+```html
+<cometchat-toast 
+  [text]="'Important: Please verify your email address.'" 
+  [type]="'warning'"
+  [duration]="0"
+  [showCloseButton]="true"
+  (toastClosed)="onToastClose()">
+</cometchat-toast>
+```
+
+<Info>
+  **Live Preview** — interact with the default toast notification.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-toast--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-toast--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "120px", border: "1px solid #e0e0e0"}}
+  title="Toast — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatToastComponent, ToastType } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-notification-demo',
+  standalone: true,
+  imports: [CometChatToastComponent],
+  template: `
+    <div class="notification-demo">
+      <h3>Toast Notifications</h3>
+      
+      @if (showSuccessToast) {
+        <cometchat-toast 
+          [text]="'Message sent successfully!'" 
+          [type]="toastTypes.success"
+          [duration]="3000"
+          (toastClosed)="onSuccessToastClose()">
+        </cometchat-toast>
+      }
+      
+      @if (showErrorToast) {
+        <cometchat-toast 
+          [text]="'Failed to send message. Please try again.'" 
+          [type]="toastTypes.error"
+          [duration]="5000"
+          [showCloseButton]="true"
+          (toastClosed)="onErrorToastClose()">
+        </cometchat-toast>
+      }
+      
+      @if (showWarningToast) {
+        <cometchat-toast 
+          [text]="'You are running low on storage space.'" 
+          [type]="toastTypes.warning"
+          [duration]="4000"
+          (toastClosed)="onWarningToastClose()">
+        </cometchat-toast>
+      }
+      
+      @if (showInfoToast) {
+        <cometchat-toast 
+          [text]="'New features are now available!'" 
+          [type]="toastTypes.info"
+          [duration]="3000"
+          (toastClosed)="onInfoToastClose()">
+        </cometchat-toast>
+      }
+      
+      <div class="button-group">
+        <button (click)="showSuccess()">Show Success</button>
+        <button (click)="showError()">Show Error</button>
+        <button (click)="showWarning()">Show Warning</button>
+        <button (click)="showInfo()">Show Info</button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .notification-demo {
+      padding: 20px;
+    }
+    h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #6852D6;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #5842C6;
+    }
+  `]
+})
+export class NotificationDemoComponent {
+  toastTypes = ToastType;
+  showSuccessToast = false;
+  showErrorToast = false;
+  showWarningToast = false;
+  showInfoToast = false;
+
+  showSuccess(): void {
+    this.showSuccessToast = true;
+  }
+
+  showError(): void {
+    this.showErrorToast = true;
+  }
+
+  showWarning(): void {
+    this.showWarningToast = true;
+  }
+
+  showInfo(): void {
+    this.showInfoToast = true;
+  }
+
+  onSuccessToastClose(): void {
+    this.showSuccessToast = false;
+  }
+
+  onErrorToastClose(): void {
+    this.showErrorToast = false;
+  }
+
+  onWarningToastClose(): void {
+    this.showWarningToast = false;
+  }
+
+  onInfoToastClose(): void {
+    this.showInfoToast = false;
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `text` | `string` | `''` | The message text to display in the toast |
+| `type` | `ToastType` | `ToastType.info` | Toast type for styling and icon: `'success'`, `'error'`, `'warning'`, or `'info'` |
+| `duration` | `number` | `3000` | Duration in milliseconds before auto-dismiss. Set to `0` to disable auto-dismiss |
+| `showCloseButton` | `boolean` | `true` | Whether to show the close button for manual dismissal |
+| `dismissOnEscape` | `boolean` | `true` | Whether pressing Escape key dismisses the toast |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `toastClosed` | `EventEmitter<void>` | Emitted when the toast is closed (either automatically or manually) |
+
+## Toast Types
+
+The component supports four toast types, each with its own styling and icon:
+
+```typescript
+export enum ToastType {
+  success = 'success',  // Green with check_circle icon
+  error = 'error',      // Red with error icon
+  warning = 'warning',  // Orange with warning icon
+  info = 'info'         // Blue with info_icon icon
+}
+```
+
+<Info>
+  **Live Preview** — all toast types (success, error, warning, info) side by side.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-toast--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-toast--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "800px", border: "1px solid #e0e0e0"}}
+  title="Toast — All Types"
+  allow="clipboard-write"
+></iframe>
+
+## Using the Toast Service
+
+The `CometChatToastService` provides a programmatic way to create and manage toasts dynamically. This is the recommended approach for most use cases.
+
+### Basic Service Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatToastService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-actions',
+  standalone: true,
+  template: `
+    <div class="message-actions">
+      <button (click)="sendMessage()">Send Message</button>
+      <button (click)="deleteMessage()">Delete Message</button>
+      <button (click)="copyMessage()">Copy Message</button>
+    </div>
+  `
+})
+export class MessageActionsComponent {
+  constructor(private toastService: CometChatToastService) {}
+
+  sendMessage(): void {
+    // Simulate sending message
+    setTimeout(() => {
+      this.toastService.success('Message sent successfully!');
+    }, 500);
+  }
+
+  deleteMessage(): void {
+    // Simulate deleting message
+    setTimeout(() => {
+      this.toastService.error('Failed to delete message. Please try again.');
+    }, 500);
+  }
+
+  copyMessage(): void {
+    // Simulate copying message
+    this.toastService.info('Message copied to clipboard');
+  }
+}
+```
+
+### Service Methods
+
+The toast service provides convenience methods for each toast type:
+
+#### success()
+
+```typescript
+this.toastService.success('Operation completed successfully!');
+
+// With custom options
+this.toastService.success('Profile updated!', {
+  duration: 5000,
+  showCloseButton: false
+});
+```
+
+#### error()
+
+```typescript
+this.toastService.error('An error occurred. Please try again.');
+
+// With custom options
+this.toastService.error('Failed to upload file', {
+  duration: 0, // Persistent toast
+  showCloseButton: true
+});
+```
+
+#### warning()
+
+```typescript
+this.toastService.warning('Your session will expire in 5 minutes.');
+
+// With custom options
+this.toastService.warning('Low storage space', {
+  duration: 10000
+});
+```
+
+#### info()
+
+```typescript
+this.toastService.info('New messages are available.');
+
+// With custom options
+this.toastService.info('Update available', {
+  duration: 4000,
+  showCloseButton: true
+});
+```
+
+#### show() - Custom Configuration
+
+```typescript
+const toastId = this.toastService.show({
+  text: 'Custom toast message',
+  type: ToastType.success,
+  duration: 3000,
+  showCloseButton: true
+});
+
+// Returns the toast ID for later reference
+console.log('Toast ID:', toastId);
+```
+
+### Managing Toasts
+
+#### Remove Specific Toast
+
+```typescript
+const toastId = this.toastService.success('Message sent!');
+
+// Remove after 2 seconds
+setTimeout(() => {
+  this.toastService.remove(toastId);
+}, 2000);
+```
+
+#### Clear All Toasts
+
+```typescript
+// Clear all active toasts
+this.toastService.clear();
+```
+
+#### Get Active Toast Count
+
+```typescript
+const activeCount = this.toastService.getActiveCount();
+console.log(`Active toasts: ${activeCount}`);
+```
+
+## Complete Service Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatToastService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-operations',
+  standalone: true,
+  template: `
+    <div class="chat-operations">
+      <h3>Chat Operations</h3>
+      
+      <div class="operation-buttons">
+        <button (click)="performOperation('send')">Send Message</button>
+        <button (click)="performOperation('delete')">Delete Message</button>
+        <button (click)="performOperation('edit')">Edit Message</button>
+        <button (click)="performOperation('copy')">Copy Message</button>
+        <button (click)="showMultipleToasts()">Show Multiple</button>
+        <button (click)="clearAllToasts()">Clear All</button>
+      </div>
+      
+      <div class="toast-info">
+        <p>Active toasts: {{ getActiveToastCount() }}</p>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .chat-operations {
+      padding: 20px;
+    }
+    .operation-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      background: #6852D6;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    button:hover {
+      background: #5842C6;
+    }
+    .toast-info {
+      margin-top: 20px;
+      padding: 12px;
+      background: #F5F5F5;
+      border-radius: 6px;
+    }
+  `]
+})
+export class ChatOperationsComponent {
+  constructor(private toastService: CometChatToastService) {}
+
+  performOperation(operation: string): void {
+    switch (operation) {
+      case 'send':
+        this.sendMessage();
+        break;
+      case 'delete':
+        this.deleteMessage();
+        break;
+      case 'edit':
+        this.editMessage();
+        break;
+      case 'copy':
+        this.copyMessage();
+        break;
+    }
+  }
+
+  sendMessage(): void {
+    // Simulate API call
+    setTimeout(() => {
+      this.toastService.success('Message sent successfully!', {
+        duration: 3000
+      });
+    }, 500);
+  }
+
+  deleteMessage(): void {
+    // Simulate API call with error
+    setTimeout(() => {
+      this.toastService.error('Failed to delete message. Please try again.', {
+        duration: 5000,
+        showCloseButton: true
+      });
+    }, 500);
+  }
+
+  editMessage(): void {
+    // Simulate API call
+    setTimeout(() => {
+      this.toastService.info('Message updated', {
+        duration: 2000
+      });
+    }, 500);
+  }
+
+  copyMessage(): void {
+    this.toastService.info('Message copied to clipboard', {
+      duration: 2000,
+      showCloseButton: false
+    });
+  }
+
+  showMultipleToasts(): void {
+    this.toastService.success('First toast');
+    setTimeout(() => this.toastService.warning('Second toast'), 200);
+    setTimeout(() => this.toastService.info('Third toast'), 400);
+    setTimeout(() => this.toastService.error('Fourth toast'), 600);
+  }
+
+  clearAllToasts(): void {
+    this.toastService.clear();
+  }
+
+  getActiveToastCount(): number {
+    return this.toastService.getActiveCount();
+  }
+}
+```
+
+## Behavior
+
+### Auto-Dismiss
+
+Toasts automatically dismiss after the specified duration:
+
+```typescript
+// Auto-dismiss after 3 seconds (default)
+this.toastService.success('Message sent!');
+
+// Auto-dismiss after 5 seconds
+this.toastService.error('Error occurred', { duration: 5000 });
+
+// No auto-dismiss (persistent)
+this.toastService.warning('Important notice', { duration: 0 });
+```
+
+### Manual Close
+
+Users can manually close toasts using the close button:
+
+```typescript
+// With close button (default)
+this.toastService.info('New notification', { showCloseButton: true });
+
+// Without close button
+this.toastService.success('Saved!', { showCloseButton: false });
+```
+
+### Toast Stacking
+
+Multiple toasts stack vertically with 10px spacing:
+
+```typescript
+// Create multiple toasts
+this.toastService.success('First operation complete');
+this.toastService.info('Second operation in progress');
+this.toastService.warning('Third operation needs attention');
+
+// They will stack from top to bottom
+```
+
+### Toast Positioning
+
+Toasts are positioned in the top-right corner by default:
+- Fixed position at `top: 20px`, `right: 20px`
+- Z-index of `9999` to appear above other content
+- Stacked vertically with flexbox
+
+## Customization
+
+### Styling with CSS Variables
+
+The Toast component uses CSS variables for comprehensive theming:
+
+```css expandable
+/* Custom toast styling */
+cometchat-toast {
+  --cometchat-success-color: #4CAF50;
+  --cometchat-error-color: #F44336;
+  --cometchat-warning-color: #FF9800;
+  --cometchat-info-color: #2196F3;
+  --cometchat-static-white: #FFFFFF;
+  --cometchat-text-color-primary: #212121;
+  --cometchat-font-body-regular: 400 14px 'Inter';
+  --cometchat-radius-2: 8px;
+  --cometchat-shadow-default: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-success-color` | Success toast background | `#4CAF50` |
+| `--cometchat-error-color` | Error toast background | `#F44336` |
+| `--cometchat-warning-color` | Warning toast background | `#FF9800` |
+| `--cometchat-info-color` | Info toast background | `#2196F3` |
+| `--cometchat-static-white` | Text and icon color | `#FFFFFF` |
+| `--cometchat-text-color-primary` | Message text color | `#212121` |
+| `--cometchat-font-body-regular` | Message font | `400 14px Roboto` |
+| `--cometchat-radius-2` | Border radius | `8px` |
+| `--cometchat-shadow-default` | Box shadow | `0 2px 8px rgba(0, 0, 0, 0.15)` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Dark theme toasts */
+.dark-theme cometchat-toast {
+  --cometchat-success-color: #66BB6A;
+  --cometchat-error-color: #EF5350;
+  --cometchat-warning-color: #FFA726;
+  --cometchat-info-color: #42A5F5;
+  --cometchat-static-white: #FFFFFF;
+}
+
+/* Minimal theme toasts */
+.minimal-theme cometchat-toast {
+  --cometchat-success-color: #E8F5E9;
+  --cometchat-error-color: #FFEBEE;
+  --cometchat-warning-color: #FFF3E0;
+  --cometchat-info-color: #E3F2FD;
+  --cometchat-text-color-primary: #424242;
+  --cometchat-radius-2: 4px;
+}
+```
+
+### Custom Toast Container Position
+
+```typescript expandable
+// The service creates a container at top-right by default
+// You can customize the container position by modifying the service
+
+import { CometChatToastService } from '@cometchat/chat-uikit-angular';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class CustomToastService extends CometChatToastService {
+  protected override initializeContainer(): void {
+    super.initializeContainer();
+    
+    if (this.containerElement) {
+      // Move to bottom-right
+      this.containerElement.style.top = 'auto';
+      this.containerElement.style.bottom = '20px';
+      this.containerElement.style.right = '20px';
+    }
+  }
+}
+```
+
+## Accessibility
+
+The Toast component includes comprehensive accessibility features to ensure WCAG 2.1 Level AA compliance:
+
+### ARIA Attributes
+
+The component automatically sets appropriate ARIA attributes based on toast type:
+
+| Toast Type | ARIA Role | ARIA Live | Behavior |
+|------------|-----------|-----------|----------|
+| `success` | `status` | `polite` | Waits for screen reader pause before announcing |
+| `info` | `status` | `polite` | Waits for screen reader pause before announcing |
+| `warning` | `alert` | `assertive` | Interrupts screen reader for immediate announcement |
+| `error` | `alert` | `assertive` | Interrupts screen reader for immediate announcement |
+
+```typescript
+// Success and info toasts use role="status" with aria-live="polite"
+// They wait for a pause in screen reader activity before announcing
+this.toastService.success('Message sent successfully');
+
+// Warning and error toasts use role="alert" with aria-live="assertive"
+// They interrupt screen reader activity for immediate announcement
+this.toastService.error('Failed to send message');
+```
+
+### Keyboard Support
+
+The Toast component provides full keyboard accessibility:
+
+| Key | Action | Notes |
+|-----|--------|-------|
+| `Tab` | Moves focus to the close button (if visible) | Standard tab navigation |
+| `Enter` | Closes the toast when close button is focused | Activates close button |
+| `Space` | Closes the toast when close button is focused | Activates close button |
+| `Escape` | Dismisses the toast immediately | Works from anywhere on the page |
+
+```typescript
+// Escape key dismissal is enabled by default
+this.toastService.error('An error occurred');
+// User can press Escape to dismiss
+
+// Disable Escape key dismissal if needed
+<cometchat-toast 
+  [text]="'Important message'"
+  [dismissOnEscape]="false">
+</cometchat-toast>
+```
+
+### Screen Reader Announcements
+
+The component provides appropriate announcements based on toast type:
+
+```typescript expandable
+// Error toast - announced immediately with "Alert" prefix
+this.toastService.error('Failed to send message');
+// Screen reader: "Alert: Failed to send message"
+
+// Warning toast - announced immediately with "Alert" prefix
+this.toastService.warning('Your session will expire soon');
+// Screen reader: "Alert: Your session will expire soon"
+
+// Success toast - announced politely with "Status" prefix
+this.toastService.success('Message sent successfully');
+// Screen reader: "Status: Message sent successfully"
+
+// Info toast - announced politely with "Status" prefix
+this.toastService.info('New messages available');
+// Screen reader: "Status: New messages available"
+```
+
+### Focus Management
+
+The Toast component follows accessibility best practices for focus management:
+
+- **No Focus Trap**: Toast does not trap keyboard focus, allowing users to continue interacting with the page
+- **Keyboard Accessible Close Button**: Close button is fully keyboard accessible with visible focus indicators
+- **Focus Indicators**: Clear visual focus indicators meet WCAG contrast requirements (3:1 minimum)
+- **Non-Blocking**: Toast appears as an overlay but doesn't block interaction with underlying content
+
+```typescript
+// Toast appears but doesn't steal focus
+this.toastService.info('New notification');
+// User can continue typing or interacting with the page
+
+// Close button receives focus when tabbed to
+// Visible focus outline appears for keyboard users
+```
+
+### Accessibility Configuration
+
+You can customize accessibility behavior:
+
+```typescript expandable
+// Persistent toast with Escape key disabled (for critical messages)
+this.toastService.error('Critical error - action required', {
+  duration: 0,
+  showCloseButton: true,
+  dismissOnEscape: false
+});
+
+// Quick dismissible toast with all keyboard options
+this.toastService.success('Saved!', {
+  duration: 2000,
+  showCloseButton: true,
+  dismissOnEscape: true
+});
+```
+
+### WCAG 2.1 Level AA Compliance
+
+The Toast component meets the following WCAG 2.1 Level AA success criteria:
+
+- **1.3.1 Info and Relationships**: Proper ARIA roles and attributes convey structure
+- **1.4.3 Contrast (Minimum)**: Text and focus indicators meet 3:1 contrast ratio
+- **2.1.1 Keyboard**: All functionality available via keyboard
+- **2.1.2 No Keyboard Trap**: Focus is not trapped in the toast
+- **2.4.7 Focus Visible**: Clear focus indicators for keyboard navigation
+- **4.1.2 Name, Role, Value**: Proper ARIA attributes for assistive technologies
+- **4.1.3 Status Messages**: Appropriate use of ARIA live regions for announcements
+
+## Examples
+
+### Form Validation Feedback
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CometChatToastService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-form',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label>Username</label>
+        <input formControlName="username" type="text" />
+      </div>
+      
+      <div class="form-group">
+        <label>Email</label>
+        <input formControlName="email" type="email" />
+      </div>
+      
+      <button type="submit">Submit</button>
+    </form>
+  `
+})
+export class UserFormComponent {
+  form: FormGroup;
+
+  constructor(
+    private fb: FormBuilder,
+    private toastService: CometChatToastService
+  ) {
+    this.form = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]]
+    });
+  }
+
+  onSubmit(): void {
+    if (this.form.invalid) {
+      this.toastService.error('Please fill in all required fields correctly', {
+        duration: 4000
+      });
+      return;
+    }
+
+    // Simulate API call
+    setTimeout(() => {
+      this.toastService.success('User profile updated successfully!', {
+        duration: 3000
+      });
+      this.form.reset();
+    }, 1000);
+  }
+}
+```
+
+### API Error Handling
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { CometChatToastService } from '@cometchat/chat-uikit-angular';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
+
+@Component({
+  selector: 'app-data-loader',
+  standalone: true,
+  template: `
+    <div class="data-loader">
+      <button (click)="loadData()">Load Data</button>
+      @if (data) {
+        <div>{{ data | json }}</div>
+      }
+    </div>
+  `
+})
+export class DataLoaderComponent {
+  data: any = null;
+
+  constructor(
+    private http: HttpClient,
+    private toastService: CometChatToastService
+  ) {}
+
+  loadData(): void {
+    this.toastService.info('Loading data...', { duration: 2000 });
+
+    this.http.get('/api/data')
+      .pipe(
+        catchError(error => {
+          this.toastService.error('Failed to load data. Please try again.', {
+            duration: 5000,
+            showCloseButton: true
+          });
+          return of(null);
+        })
+      )
+      .subscribe(data => {
+        if (data) {
+          this.data = data;
+          this.toastService.success('Data loaded successfully!', {
+            duration: 3000
+          });
+        }
+      });
+  }
+}
+```
+
+### Progressive Operations
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatToastService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-file-uploader',
+  standalone: true,
+  template: `
+    <div class="file-uploader">
+      <input type="file" (change)="onFileSelect($event)" />
+      <button (click)="uploadFile()" [disabled]="!selectedFile">
+        Upload File
+      </button>
+    </div>
+  `
+})
+export class FileUploaderComponent {
+  selectedFile: File | null = null;
+
+  constructor(private toastService: CometChatToastService) {}
+
+  onFileSelect(event: any): void {
+    this.selectedFile = event.target.files[0];
+    if (this.selectedFile) {
+      this.toastService.info(`File selected: ${this.selectedFile.name}`, {
+        duration: 2000
+      });
+    }
+  }
+
+  async uploadFile(): Promise<void> {
+    if (!this.selectedFile) return;
+
+    const uploadToastId = this.toastService.info('Uploading file...', {
+      duration: 0,
+      showCloseButton: false
+    });
+
+    try {
+      // Simulate upload
+      await this.simulateUpload();
+      
+      this.toastService.remove(uploadToastId);
+      this.toastService.success('File uploaded successfully!', {
+        duration: 3000
+      });
+      
+      this.selectedFile = null;
+    } catch (error) {
+      this.toastService.remove(uploadToastId);
+      this.toastService.error('Upload failed. Please try again.', {
+        duration: 5000,
+        showCloseButton: true
+      });
+    }
+  }
+
+  private simulateUpload(): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, 2000);
+    });
+  }
+}
+```
+
+### Undo Actions
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatToastService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  template: `
+    <div class="message-list">
+      @for (message of messages; track message.id) {
+        <div class="message-item">
+          <span>{{ message.text }}</span>
+          <button (click)="deleteMessage(message)">Delete</button>
+        </div>
+      }
+    </div>
+  `
+})
+export class MessageListComponent {
+  messages = [
+    { id: 1, text: 'Hello!', deleted: false },
+    { id: 2, text: 'How are you?', deleted: false },
+    { id: 3, text: 'See you later!', deleted: false }
+  ];
+
+  private deletedMessage: any = null;
+  private undoTimeout: any = null;
+
+  constructor(private toastService: CometChatToastService) {}
+
+  deleteMessage(message: any): void {
+    this.deletedMessage = { ...message };
+    const index = this.messages.findIndex(m => m.id === message.id);
+    this.messages.splice(index, 1);
+
+    const toastId = this.toastService.warning('Message deleted', {
+      duration: 5000,
+      showCloseButton: true
+    });
+
+    // Set undo timeout
+    this.undoTimeout = setTimeout(() => {
+      this.deletedMessage = null;
+    }, 5000);
+  }
+
+  undoDelete(): void {
+    if (this.deletedMessage) {
+      this.messages.push(this.deletedMessage);
+      this.deletedMessage = null;
+      
+      if (this.undoTimeout) {
+        clearTimeout(this.undoTimeout);
+      }
+      
+      this.toastService.info('Delete undone', { duration: 2000 });
+    }
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  Use the toast service for programmatic toast creation instead of manually managing toast components in templates.
+</Tip>
+
+<Warning>
+  Avoid showing too many toasts simultaneously. Consider clearing old toasts or limiting the maximum number of active toasts.
+</Warning>
+
+<Info>
+  Use appropriate toast types: success for confirmations, error for failures, warning for cautions, and info for general notifications.
+</Info>
+
+<Tip>
+  For critical errors that require user action, use `duration: 0` to create persistent toasts with a close button.
+</Tip>
+
+<Warning>
+  Keep toast messages concise and actionable. Long messages may be truncated or difficult to read.
+</Warning>
+
+<Info>
+  Error and warning toasts use `aria-live="assertive"` for immediate screen reader announcements, while success and info toasts use `aria-live="polite"` to avoid interrupting users.
+</Info>
+
+## Related Components
+
+- **CometChatConfirmDialog**: For actions requiring explicit confirmation
+- **CometChatActionSheet**: For presenting multiple action options
+- **CometChatPopover**: For contextual information display
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule
+- **Bundle Size**: Minimal footprint (~3KB component + ~2KB service)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant with proper ARIA attributes
+- **Service**: Injectable service for programmatic toast management
+- **Toast Stacking**: Automatic vertical stacking with configurable spacing
+
+
+
+## Service API Reference
+
+### CometChatToastService
+
+```typescript expandable
+class CometChatToastService {
+  // Show a toast with custom configuration
+  show(config: ToastConfig): number;
+  
+  // Convenience methods
+  success(text: string, options?: Partial<ToastConfig>): number;
+  error(text: string, options?: Partial<ToastConfig>): number;
+  warning(text: string, options?: Partial<ToastConfig>): number;
+  info(text: string, options?: Partial<ToastConfig>): number;
+  
+  // Management methods
+  remove(id: number): void;
+  clear(): void;
+  getActiveCount(): number;
+}
+```
+
+### ToastConfig Interface
+
+```typescript
+interface ToastConfig {
+  text: string;                    // Toast message text
+  type?: ToastType;                // Toast type (success, error, warning, info)
+  duration?: number;               // Auto-dismiss duration in ms (0 = no auto-dismiss)
+  showCloseButton?: boolean;       // Show manual close button
+}
+```
+
+### ToastType Enum
+
+```typescript
+enum ToastType {
+  success = 'success',
+  error = 'error',
+  warning = 'warning',
+  info = 'info'
+}
+```

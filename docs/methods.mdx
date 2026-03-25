@@ -1,0 +1,282 @@
+---
+title: "Methods"
+description: "Reference for CometChat Angular UIKit methods including init, login, logout, and message-sending wrappers."
+---
+
+The UIKit wraps the [Chat SDK](/sdk/javascript/overview) methods to manage internal eventing and keep UI components synchronized. Use these wrapper methods instead of raw SDK calls.
+
+<Warning>
+`CometChatUIKit.init()` must be called before rendering any UIKit components or calling any SDK methods. Initialization must complete before login.
+</Warning>
+
+<Warning>
+Auth Key is for development/testing only. In production, generate Auth Tokens on the server using the REST API and pass them to the client via `loginWithAuthToken()`. Never expose Auth Keys in production client code.
+</Warning>
+
+## UIKitSettingsBuilder
+
+`UIKitSettingsBuilder` is a fluent builder for constructing the `UIKitSettings` object passed to `CometChatUIKit.init()`.
+
+| Method | Parameter | Description |
+|--------|-----------|-------------|
+| `setAppId(appId)` | `string` | Your CometChat App ID from the Dashboard |
+| `setRegion(region)` | `string` | App region (e.g. `'us'`, `'eu'`) |
+| `setAuthKey(authKey)` | `string` | Auth Key for dev/testing — use Auth Token in production |
+| `subscribePresenceForAllUsers()` | — | Subscribe to presence updates for all users |
+| `subscribePresenceForFriends()` | — | Subscribe to presence updates for friends only |
+| `subscribePresenceForRoles(roles)` | `string[]` | Subscribe to presence updates for users with specific roles |
+| `setRoles(roles)` | `string[]` | Set roles filter independently of presence subscription |
+| `setAutoEstablishSocketConnection(autoEstablish)` | `boolean` | Control whether the WebSocket connects automatically on init |
+| `setAdminHost(adminHost)` | `string` | Override the admin API host (custom/on-premise deployments) |
+| `setClientHost(clientHost)` | `string` | Override the client API host (custom/on-premise deployments) |
+| `setStorageMode(storageMode)` | `CometChat.StorageMode` | Set the storage mode for SDK data persistence |
+| `build()` | — | Returns the configured `UIKitSettings` instance |
+
+```typescript expandable
+import { UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId('APP_ID')
+  .setRegion('REGION')
+  .setAuthKey('AUTH_KEY')
+  .subscribePresenceForFriends()
+  .setAutoEstablishSocketConnection(true)
+  .build();
+```
+
+---
+
+## Methods
+
+All methods are accessed via the `CometChatUIKit` class.
+
+### Init
+
+Initializes the CometChat SDK. Must be called on app startup before any other UIKit method.
+
+<Note>
+Replace `APP_ID`, `REGION`, and `AUTH_KEY` with values from the CometChat Dashboard. `Auth Key` is optional — use [Auth Token](#login-using-auth-token) for production.
+</Note>
+
+```typescript expandable
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const COMETCHAT_CONSTANTS = {
+  APP_ID: 'APP_ID',
+  REGION: 'REGION',
+  AUTH_KEY: 'AUTH_KEY',
+};
+
+const UIKitSettings = new UIKitSettingsBuilder()
+  .setAppId(COMETCHAT_CONSTANTS.APP_ID)
+  .setRegion(COMETCHAT_CONSTANTS.REGION)
+  .setAuthKey(COMETCHAT_CONSTANTS.AUTH_KEY)
+  .subscribePresenceForFriends()
+  .build();
+
+CometChatUIKit.init(UIKitSettings)?.then(() => {
+  // login your user
+});
+```
+
+---
+
+### Get Logged In User
+
+Checks for an existing session in the SDK. Returns the logged-in user details or `null`.
+
+```typescript
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+CometChatUIKit.getLoggedinUser()
+  .then((user) => {
+    // Login user
+  })
+  .catch(console.log);
+```
+
+---
+
+### Login using Auth Key
+
+Simple authentication for development/POC. For production, use [Auth Token](#login-using-auth-token).
+
+```typescript expandable
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+const UID = 'UID';
+
+CometChatUIKit.getLoggedinUser()
+  .then((user) => {
+    if (!user) {
+      CometChatUIKit.login(UID)
+        .then((user) => {
+          console.log('Login Successful:', { user });
+        })
+        .catch(console.log);
+    }
+  })
+  .catch(console.log);
+```
+
+---
+
+### Login using Auth Token
+
+Production-safe authentication that does not expose the Auth Key in client code.
+
+1. [Create a User](https://api-explorer.cometchat.com/reference/creates-user) via the CometChat API when the user signs up in your app.
+2. [Create an Auth Token](https://api-explorer.cometchat.com/reference/create-authtoken) via the CometChat API for the new user and save the token in your database.
+3. Load the Auth Token in your client and pass it to the `loginWithAuthToken()` method.
+
+```typescript expandable
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+const authToken = 'AUTH_TOKEN';
+
+CometChatUIKit.getLoggedinUser()
+  .then((user) => {
+    if (!user) {
+      CometChatUIKit.loginWithAuthToken(authToken)
+        .then((user) => {
+          console.log('Login Successful:', { user });
+        })
+        .catch(console.log);
+    }
+  })
+  .catch(console.log);
+```
+
+---
+
+### Logout
+
+Ends the current user session.
+
+```typescript
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+CometChatUIKit.logout();
+```
+
+---
+
+### Create User
+
+Takes a `User` object and Auth Key, returns the created `User` object.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+const authKey = 'AUTH_KEY';
+const UID = 'user1';
+const name = 'Kevin';
+
+const user = new CometChat.User(UID);
+user.setName(name);
+CometChatUIKit.createUser(user, authKey)
+  .then((user) => {
+    console.log('User created:', user);
+  })
+  .catch(console.log);
+```
+
+---
+
+### Update User
+
+Takes a `User` object and Auth Key, returns the updated `User` object.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+
+const authKey = 'AUTH_KEY';
+const UID = 'user1';
+const name = 'Kevin Fernandez';
+
+const user = new CometChat.User(UID);
+user.setName(name);
+CometChatUIKit.updateUser(user, authKey)
+  .then((user) => {
+    console.log('User updated:', user);
+  })
+  .catch(console.log);
+```
+
+---
+
+### Base Message
+
+#### Text Message
+
+Sends a text message in a 1:1 or group chat. Takes a `TextMessage` object.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+import { CometChatUIKitConstants } from '@cometchat/chat-uikit-angular';
+
+const receiverID = 'UID';
+const messageText = 'Hello world!';
+const receiverType = CometChatUIKitConstants.MessageReceiverType.user;
+const textMessage = new CometChat.TextMessage(receiverID, messageText, receiverType);
+
+CometChatUIKit.sendTextMessage(textMessage)
+  .then((message) => {
+    console.log('Message sent successfully:', message);
+  })
+  .catch(console.log);
+```
+
+---
+
+#### Media Message
+
+Sends a media message in a 1:1 or group chat. Takes a `MediaMessage` object.
+
+<Note>
+Replace `file` with the actual [File](https://developer.mozilla.org/en-US/docs/Web/API/File) object.
+</Note>
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+import { CometChatUIKitConstants } from '@cometchat/chat-uikit-angular';
+
+const receiverID = 'UID';
+const messageType = CometChatUIKitConstants.MessageTypes.file;
+const receiverType = CometChatUIKitConstants.MessageReceiverType.user;
+const mediaMessage = new CometChat.MediaMessage(receiverID, file, messageType, receiverType);
+
+CometChatUIKit.sendMediaMessage(mediaMessage)
+  .then((message) => {
+    console.log('Media message sent successfully:', message);
+  })
+  .catch(console.log);
+```
+
+---
+
+#### Custom Message
+
+Sends a custom message (neither text nor media) in a 1:1 or group chat. Takes a `CustomMessage` object.
+
+```typescript expandable
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+import { CometChatUIKitConstants } from '@cometchat/chat-uikit-angular';
+
+const receiverID = 'UID';
+const customData = { latitude: '50.6192171633316', longitude: '-72.68182268750002' };
+const customType = 'location';
+const receiverType = CometChatUIKitConstants.MessageReceiverType.user;
+const customMessage = new CometChat.CustomMessage(receiverID, receiverType, customType, customData);
+
+CometChatUIKit.sendCustomMessage(customMessage)
+  .then((message) => {
+    console.log('Custom message sent successfully:', message);
+  })
+  .catch(console.log);
+```

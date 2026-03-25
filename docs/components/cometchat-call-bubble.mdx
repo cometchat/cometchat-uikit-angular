@@ -1,0 +1,394 @@
+---
+title: "CometChatCallBubble"
+description: "An Angular component for displaying call messages in a chat interface with call type, status, duration, and optional action button"
+---
+The `CometChatCallBubble` component is a standalone Angular component that renders call messages within chat conversations. It displays call information including call type (audio/video), call status, duration, and an optional action button for call-back functionality.
+
+## Overview
+
+The Call Bubble component provides a comprehensive display for call messages with support for both sender (outgoing) and receiver (incoming) styling variants:
+
+- **Call Type Icon Display**: Shows audio or video call icons with incoming/outgoing variants
+- **Call Title**: Displays "Voice Call" or "Video Call" based on call type
+- **Call Subtitle**: Shows call duration (for ended calls) or status (missed, cancelled, etc.)
+- **Optional Action Button**: Configurable button for actions like "Call Back" or "Join"
+- **Sender/Receiver Variants**: Different styling for outgoing vs incoming call messages
+- **Full Accessibility Support**: ARIA labels, keyboard navigation, and screen reader support
+- **CSS Variable-Based Theming**: Easy customization via CSS variables
+- **OnPush Change Detection**: Optimized performance
+
+
+<Info>
+  **Live Preview** — Default call bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--call-audio-ended)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--call-audio-ended&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "200px", border: "1px solid #e0e0e0"}}
+  title="CometChat Call Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Call Bubble (Receiver Variant)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatCallBubbleComponent],
+  template: `
+    <cometchat-call-bubble
+      [message]="callMessage"
+    ></cometchat-call-bubble>
+  `
+})
+export class ChatMessageComponent {
+  callMessage!: CometChat.Call;
+}
+```
+
+### Sender Variant (Outgoing Call)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatCallBubbleComponent],
+  template: `
+    <cometchat-call-bubble
+      [message]="callMessage"
+      [alignment]="'right'"
+    ></cometchat-call-bubble>
+  `
+})
+export class ChatMessageComponent {
+  callMessage!: CometChat.Call;
+}
+```
+
+### With Action Button
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallBubbleComponent, CallButtonClickEvent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatCallBubbleComponent],
+  template: `
+    <cometchat-call-bubble
+      [message]="callMessage"
+      [buttonText]="'Call Back'"
+      (buttonClick)="onCallBack($event)"
+    ></cometchat-call-bubble>
+  `
+})
+export class ChatMessageComponent {
+  callMessage!: CometChat.Call;
+
+  onCallBack(event: CallButtonClickEvent): void {
+    console.log('Call back requested for session:', event.sessionId);
+    // Initiate call back using event.message
+  }
+}
+```
+
+### Incoming vs Outgoing Calls
+
+```typescript expandable
+import { Component, Input } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatCallBubbleComponent],
+  template: `
+    <!-- Incoming call (receiver variant) -->
+    <cometchat-call-bubble
+      [message]="incomingCall"
+      [alignment]="'left'"
+    ></cometchat-call-bubble>
+
+    <!-- Outgoing call (sender variant) -->
+    <cometchat-call-bubble
+      [message]="outgoingCall"
+      [alignment]="'right'"
+    ></cometchat-call-bubble>
+  `
+})
+export class MessageListComponent {
+  @Input() incomingCall!: CometChat.Call;
+  @Input() outgoingCall!: CometChat.Call;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.Call` | **required** | The CometChat Call message object containing call information. The component extracts call type, status, duration, and session ID from this object |
+| `alignment` | `'left' \| 'right'` | `'left'` | Determines sender (right) or receiver (left) styling. When `'right'`, applies primary color background with white text. When `'left'`, applies neutral background with neutral text |
+| `iconUrl` | `string` | `undefined` | Optional custom icon URL to override the default call type icon |
+| `title` | `string` | `undefined` | Optional custom title to override the default call type title (Voice Call / Video Call) |
+| `subtitle` | `string` | `undefined` | Optional custom subtitle to override the default status/duration display |
+| `buttonText` | `string` | `undefined` | Optional button text for the action button. If provided and non-empty, the button will be displayed |
+| `disableInteraction` | `boolean` | `false` | When true, disables the action button and other interactive elements within the bubble |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `buttonClick` | `EventEmitter<CallButtonClickEvent>` | Emitted when the action button is clicked. Contains the session ID and the call message object |
+
+### CallButtonClickEvent Interface
+
+```typescript
+interface CallButtonClickEvent {
+  /** The session ID of the call */
+  sessionId: string;
+  /** The call message object */
+  message: CometChat.Call;
+}
+```
+
+## Call Statuses
+
+The component supports the following call statuses:
+
+| Status | Display Text | Description |
+|--------|--------------|-------------|
+| `initiated` | "Calling..." | Call has been initiated but not yet answered |
+| `ongoing` | "Calling..." | Call is currently in progress |
+| `ended` | Duration or "Call Ended" | Call has ended (shows duration if available) |
+| `missed` | "Missed Call" | Incoming call that was not answered |
+| `cancelled` | "Call Canceled" | Call was cancelled by the caller |
+| `rejected` | "Call Rejected" | Call was rejected by the receiver |
+| `busy` | "Call Busy" | Receiver was busy |
+| `unanswered` | "Call Unanswered" | Call was not answered |
+
+## Customization
+
+### Styling with CSS Variables
+
+The Call Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom call bubble styling */
+cometchat-call-bubble {
+  /* Spacing */
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-5: 20px;
+
+  /* Typography */
+  --cometchat-font-body-medium: 500 14px/16.8px 'Roboto';
+  --cometchat-font-caption1-regular: 400 12px/14.4px 'Roboto';
+
+  /* Colors - Sender variant */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-static-white: #FFFFFF;
+  --cometchat-extended-primary-color-800: #4A3A9E;
+
+  /* Colors - Receiver variant */
+  --cometchat-neutral-color-300: #E8E8E8;
+  --cometchat-neutral-color-600: #727272;
+  --cometchat-neutral-color-900: #141414;
+  --cometchat-border-color-dark: #CCCCCC;
+
+  /* Border radius */
+  --cometchat-radius-3: 12px;
+  --cometchat-radius-max: 1000px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-2` | Icon wrapper padding, button gap | `8px` |
+| `--cometchat-spacing-3` | Body padding | `12px` |
+| `--cometchat-spacing-5` | Button horizontal padding | `20px` |
+| `--cometchat-font-body-medium` | Title and button text font | `500 14px/16.8px Roboto` |
+| `--cometchat-font-caption1-regular` | Subtitle font | `400 12px/14.4px Roboto` |
+| `--cometchat-primary-color` | Sender background, icon color | `#6852D6` |
+| `--cometchat-static-white` | Sender text, icon background | `#FFFFFF` |
+| `--cometchat-extended-primary-color-800` | Sender button border | `#4A3A9E` |
+| `--cometchat-neutral-color-300` | Receiver background | `#E8E8E8` |
+| `--cometchat-neutral-color-600` | Receiver subtitle color | `#727272` |
+| `--cometchat-neutral-color-900` | Receiver title/button color | `#141414` |
+| `--cometchat-border-color-dark` | Receiver button border | `#CCCCCC` |
+| `--cometchat-radius-3` | Container border radius | `12px` |
+| `--cometchat-radius-max` | Icon wrapper border radius | `1000px` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for sender variant */
+.theme-blue cometchat-call-bubble {
+  --cometchat-primary-color: #1976D2;
+  --cometchat-extended-primary-color-800: #1565C0;
+}
+
+/* Green theme for sender variant */
+.theme-green cometchat-call-bubble {
+  --cometchat-primary-color: #4CAF50;
+  --cometchat-extended-primary-color-800: #388E3C;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-call-bubble {
+  --cometchat-neutral-color-300: #424242;
+  --cometchat-neutral-color-600: #B0B0B0;
+  --cometchat-neutral-color-900: #FFFFFF;
+  --cometchat-border-color-dark: #616161;
+}
+```
+
+### Custom Icon Override
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-call-bubble',
+  standalone: true,
+  imports: [CometChatCallBubbleComponent],
+  template: `
+    <cometchat-call-bubble
+      [message]="callMessage"
+      [iconUrl]="'assets/custom-call-icon.svg'"
+    ></cometchat-call-bubble>
+  `
+})
+export class CustomCallBubbleComponent {
+  callMessage!: CometChat.Call;
+}
+```
+
+### Custom Title and Subtitle
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCallBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-call-bubble',
+  standalone: true,
+  imports: [CometChatCallBubbleComponent],
+  template: `
+    <cometchat-call-bubble
+      [message]="callMessage"
+      [title]="'Conference Call'"
+      [subtitle]="'3 participants'"
+    ></cometchat-call-bubble>
+  `
+})
+export class CustomCallBubbleComponent {
+  callMessage!: CometChat.Call;
+}
+```
+
+## Accessibility
+
+The Call Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: The container has an aria-label describing the call type and status
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with role="article"
+- ✅ **1.4.3 Contrast (Minimum) (Level AA)**: Sufficient color contrast for text readability
+- ✅ **2.1.1 Keyboard (Level A)**: Action button is fully keyboard accessible
+- ✅ **2.4.7 Focus Visible (Level AA)**: Visible focus indicators on interactive elements
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Container | `"article"` | Indicates this is a self-contained composition |
+| `aria-label` | Container | `"{Call Type} - {Status}"` | Provides accessible name for screen readers |
+| `aria-label` | Button | Button text | Provides accessible name for the action button |
+| `type` | Button | `"button"` | Indicates this is a button element |
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Move focus to the action button |
+| `Enter` | Activate the action button |
+| `Space` | Activate the action button |
+
+### Screen Reader Behavior
+
+Screen readers announce the call bubble with the call type and status (e.g., "Voice Call - Missed Call"). The action button is announced with its text label. The `role="article"` attribute ensures screen readers treat this as a self-contained piece of content.
+
+### Color Contrast
+
+Both sender and receiver variants maintain sufficient color contrast:
+- **Sender variant**: White text on primary color background (typically purple #6852D6)
+- **Receiver variant**: Neutral-900 title and neutral-600 subtitle on neutral-300 background
+
+## Best Practices
+
+<Tip>
+  Use the call bubble to display call messages in your chat interface, providing users with clear information about call type, status, and duration.
+</Tip>
+
+<Warning>
+  The component requires a valid CometChat.Call message object. Ensure you pass a properly initialized call message to avoid fallback state rendering.
+</Warning>
+
+<Info>
+  The default title and subtitle are automatically derived from the call message. Only provide custom values via the `title` and `subtitle` inputs if you need to override the default behavior.
+</Info>
+
+<Tip>
+  Use the `buttonText` input to add call-back functionality. The `buttonClick` event provides the session ID and message object for initiating a return call.
+</Tip>
+
+<Info>
+  All text in the component is localized. The component uses existing localization keys from the UIKit for call-related text.
+</Info>
+
+## Related Components
+
+- **CometChatAudioBubble**: Displays audio messages
+- **CometChatVideoBubble**: Displays video messages
+- **CometChatDeleteBubble**: Displays deleted message placeholders
+- **CometChatActionBubble**: Displays action/system messages
+- **CometChatMessageList**: Displays lists of messages including call messages
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: Uses CometChatLocalize for text localization, TranslatePipe for template localization
+- **Bundle Size**: Minimal footprint (~3KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **Width**: Fixed 240px width for consistent bubble sizing
+- **Icon Size**: 40px container with 20px icon

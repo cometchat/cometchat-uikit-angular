@@ -1,0 +1,97 @@
+<!--
+  CometChatGroupMemberItem Template
+  
+  A standalone component for rendering a single group member item with:
+  - State management (active, selected, focused)
+  - Member avatar with online/offline status indicator
+  - Role badge (owner, admin, moderator)
+  - Context menu integration
+  - Full keyboard accessibility with ARIA support
+  
+  @see Requirements 10.1-10.6
+-->
+
+<div class="cometchat-group-member-item"
+     [class.cometchat-group-member-item--active]="isActive"
+     [class.cometchat-group-member-item--selected]="isSelected"
+     [class.cometchat-group-member-item--focused]="isFocused"
+     role="option"
+     [attr.tabindex]="tabIndex"
+     [attr.aria-selected]="isSelected"
+     [attr.aria-label]="accessibleLabel"
+     (click)="handleClick()"
+     (keydown)="onKeyDown($event)"
+     (mousedown)="handleMouseDown($event)"
+     (focus)="onItemFocus()"
+     (contextmenu)="handleContextMenu($event)">
+  
+  <!-- Leading Section: Avatar and Status Indicator (aria-hidden since info is in aria-label) -->
+  @if (leadingView) {
+    <ng-container *ngTemplateOutlet="leadingView; context: { $implicit: member }"></ng-container>
+  } @else {
+    <div class="cometchat-group-member-item__leading" aria-hidden="true">
+      <cometchat-avatar 
+        [image]="avatarImage" 
+        [name]="avatarName"
+        class="cometchat-group-member-item__avatar">
+      </cometchat-avatar>
+      
+      <!-- Status indicator (aria-hidden since status is in aria-label) -->
+      @if (!effectiveHideUserStatus() && memberStatus === 'online') {
+        <div class="cometchat-group-member-item__status"
+             [class.cometchat-group-member-item__status--online]="memberStatus === 'online'"
+             aria-hidden="true">
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Body Section: Title and Subtitle -->
+  <div class="cometchat-group-member-item__body">
+    @if (titleView) {
+      <ng-container *ngTemplateOutlet="titleView; context: { $implicit: member }"></ng-container>
+    } @else {
+      <div class="cometchat-group-member-item__title">
+        <span class="cometchat-group-member-item__title-text">
+          {{ avatarName }}
+        </span>
+      </div>
+    }
+    
+    @if (subtitleView) {
+      <ng-container *ngTemplateOutlet="subtitleView; context: { $implicit: member }"></ng-container>
+    }
+  </div>
+  
+  <!-- Trailing Section: Role Badge and Context Menu -->
+  @if (trailingView) {
+    <ng-container *ngTemplateOutlet="trailingView; context: { $implicit: member }"></ng-container>
+  } @else {
+    <div class="cometchat-group-member-item__trailing">
+      <!-- Role Badge (hidden for participants, aria-hidden since scope is in aria-label) -->
+      @if (memberScope !== 'participant') {
+        <span class="cometchat-group-member-item__role-badge"
+              [class.cometchat-group-member-item__role-badge--owner]="memberScope === 'owner'"
+              [class.cometchat-group-member-item__role-badge--admin]="memberScope === 'admin'"
+              [class.cometchat-group-member-item__role-badge--moderator]="memberScope === 'moderator'"
+              aria-hidden="true">
+          {{ scopeLabel }}
+        </span>
+      }
+      
+      <!-- Context Menu -->
+      @if (contextMenuOptions && contextMenuOptions.length > 0) {
+        <div class="cometchat-group-member-item__context-menu">
+          <cometchat-context-menu
+            [data]="contextMenuOptions"
+            [placement]="Placement.left"
+            [topMenuSize]="1"
+            [closeOnOutsideClick]="true"
+            (optionClick)="handleContextMenuOptionClick($any($event))"
+            class="cometchat-group-member-item__menu">
+          </cometchat-context-menu>
+        </div>
+      }
+    </div>
+  }
+</div>

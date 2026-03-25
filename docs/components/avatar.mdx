@@ -1,0 +1,380 @@
+---
+title: Avatar
+description: "Display user avatars with automatic fallback to initials"
+---
+The `CometChatAvatar` component displays a user's avatar image or automatically generates initials from their name as a fallback. It provides a consistent visual representation of users throughout your chat application.
+
+## Overview
+
+The Avatar component intelligently handles image loading and provides graceful fallbacks:
+
+- **Image Display**: Shows the provided avatar image when available
+- **Automatic Fallback**: Displays initials when image fails to load or is unavailable
+- **Accessibility**: Includes proper ARIA attributes for screen readers
+- **Customizable**: Supports CSS variable-based styling
+
+## Basic Usage
+
+### Simple Avatar with Image
+
+```html
+<cometchat-avatar 
+  [image]="'https://example.com/avatar.jpg'" 
+  [name]="'John Doe'">
+</cometchat-avatar>
+```
+
+### Avatar with Name Only (Shows Initials)
+
+```html
+<cometchat-avatar [name]="'Jane Smith'"></cometchat-avatar>
+```
+
+### Using with CometChat User Object
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAvatarComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-profile',
+  standalone: true,
+  imports: [CometChatAvatarComponent],
+  template: `
+    <cometchat-avatar 
+      [image]="user?.getAvatar()" 
+      [name]="user?.getName()">
+    </cometchat-avatar>
+  `
+})
+export class UserProfileComponent {
+  user: CometChat.User | null = null;
+
+  ngOnInit() {
+    // Fetch user data
+    CometChat.getUser('user-id').then(
+      (user: CometChat.User) => {
+        this.user = user;
+      }
+    );
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default avatar.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-avatar--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-avatar--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="Avatar — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `image` | `string` | `''` | URL of the avatar image to display |
+| `name` | `string` | `''` | Name used for generating initials when image is unavailable |
+
+## Behavior
+
+### Initials Generation
+
+The component automatically generates initials from the provided name:
+
+- **Multiple Words**: First character of first word + first character of second word
+  - Example: "John Doe" → "JD"
+- **Single Word**: First two characters
+  - Example: "Alice" → "AL"
+- **Empty Name**: Shows empty avatar with background color
+
+All initials are displayed in uppercase.
+
+### Image Loading
+
+The component handles image loading gracefully:
+
+1. If `image` URL is provided, attempts to load the image
+2. If image fails to load (404, network error, etc.), automatically falls back to initials
+3. If no `image` is provided, displays initials immediately
+
+## Customization
+
+### Styling with CSS Variables
+
+The Avatar component uses CSS variables for easy customization:
+
+```css
+/* Custom avatar styling */
+cometchat-avatar {
+  --cometchat-extended-primary-color-500: #4A90E2;
+  --cometchat-primary-button-icon: #FFFFFF;
+  --cometchat-radius-max: 8px; /* Square corners */
+  --cometchat-font-heading3-bold: 700 18px 'Inter';
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-extended-primary-color-500` | Background color for initials | `#AA9EE8` |
+| `--cometchat-primary-button-icon` | Text color for initials | `#FFF` |
+| `--cometchat-radius-max` | Border radius | `1000px` (circular) |
+| `--cometchat-font-heading3-bold` | Font for initials | `700 20px Roboto` |
+
+### Custom Sizing
+
+```css expandable
+/* Large avatar */
+.large-avatar cometchat-avatar {
+  width: 80px;
+  height: 80px;
+}
+
+/* Small avatar */
+.small-avatar cometchat-avatar {
+  width: 32px;
+  height: 32px;
+}
+```
+
+### Custom Colors
+
+```css expandable
+/* Different color schemes */
+.avatar-blue cometchat-avatar {
+  --cometchat-extended-primary-color-500: #2196F3;
+}
+
+.avatar-green cometchat-avatar {
+  --cometchat-extended-primary-color-500: #4CAF50;
+}
+
+.avatar-orange cometchat-avatar {
+  --cometchat-extended-primary-color-500: #FF9800;
+}
+```
+
+<Info>
+  **Live Preview** — all avatar variations side by side.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-avatar--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-avatar--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Avatar — All Variations"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The Avatar component is fully accessible and follows WCAG 2.1 Level AA guidelines for non-interactive display components.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: All images have text alternatives
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with ARIA roles
+- ✅ **1.4.3 Contrast (Level AA)**: Default colors meet minimum contrast ratios
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Container | `"img"` | Identifies the avatar as an image element |
+| `aria-label` | Container | `"Avatar for {name}"` or `"Avatar"` | Provides accessible name for screen readers |
+| `alt` | Image | `{name}` or `"avatar"` | Alternative text for the image |
+| `aria-hidden` | Initials span | `"true"` | Hides decorative text from screen readers (label already provided on container) |
+
+### Screen Reader Behavior
+
+When a screen reader encounters the Avatar component:
+
+1. **With name**: Announces "Avatar for John Doe, image"
+2. **Without name**: Announces "Avatar, image"
+3. **Initials display**: Initials are hidden from screen readers to avoid redundant announcements
+
+### Non-Interactive Component
+
+The Avatar component is **non-interactive** by design:
+
+- ❌ **No keyboard navigation required**: Component is purely presentational
+- ❌ **Not focusable**: No interactive elements to receive focus
+- ✅ **Screen reader accessible**: Properly announced with semantic information
+
+If you need an interactive avatar (e.g., clickable to view profile), wrap it in a button:
+
+```html expandable
+<button 
+  type="button" 
+  (click)="viewProfile(user)"
+  [attr.aria-label]="'View profile of ' + user.name"
+>
+  <cometchat-avatar 
+    [image]="user.avatar" 
+    [name]="user.name"
+  ></cometchat-avatar>
+</button>
+```
+
+### High Contrast Mode Support
+
+The component works well in high contrast mode. For enhanced visibility, you can add a border:
+
+```css
+@media (prefers-contrast: high) {
+  cometchat-avatar {
+    border: 2px solid currentColor;
+  }
+}
+```
+
+### Accessibility Best Practices
+
+<Tip>
+  Always provide the `name` property, even when an image is available. This ensures screen readers can announce meaningful information if the image fails to load.
+</Tip>
+
+<Warning>
+  If you make the avatar clickable by wrapping it in a button or link, ensure the wrapper has an appropriate `aria-label` that describes the action (e.g., "View profile of John Doe").
+</Warning>
+
+<Info>
+  The component automatically handles all accessibility requirements. No additional ARIA attributes or keyboard handling is needed for the avatar itself.
+</Info>
+
+## Examples
+
+### User List with Avatars
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatAvatarComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-list',
+  standalone: true,
+  imports: [CommonModule, CometChatAvatarComponent],
+  template: `
+    <div class="user-list">
+      @for (user of users; track user.id) {
+        <div class="user-item">
+          <cometchat-avatar 
+            [image]="user.avatar" 
+            [name]="user.name">
+          </cometchat-avatar>
+          <span class="user-name">{{ user.name }}</span>
+        </div>
+      }
+    </div>
+  `,
+  styles: [`
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .user-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+  `]
+})
+export class UserListComponent {
+  users = [
+    { id: 1, name: 'John Doe', avatar: 'https://example.com/john.jpg' },
+    { id: 2, name: 'Jane Smith', avatar: '' },
+    { id: 3, name: 'Bob Wilson', avatar: 'https://example.com/bob.jpg' }
+  ];
+}
+```
+
+### Avatar with Status Indicator
+
+```typescript expandable
+@Component({
+  selector: 'app-user-avatar-with-status',
+  standalone: true,
+  imports: [CometChatAvatarComponent],
+  template: `
+    <div class="avatar-container">
+      <cometchat-avatar 
+        [image]="user.avatar" 
+        [name]="user.name">
+      </cometchat-avatar>
+      <span class="status-indicator" [class.online]="user.isOnline"></span>
+    </div>
+  `,
+  styles: [`
+    .avatar-container {
+      position: relative;
+      display: inline-block;
+    }
+    .status-indicator {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+      border: 2px solid white;
+    }
+    .status-indicator.online {
+      background: #4CAF50;
+    }
+  `]
+})
+export class UserAvatarWithStatusComponent {
+  user = {
+    name: 'John Doe',
+    avatar: 'https://example.com/avatar.jpg',
+    isOnline: true
+  };
+}
+```
+
+## Best Practices
+
+<Tip>
+  Always provide both `image` and `name` properties. This ensures a good user experience even when images fail to load.
+</Tip>
+
+<Warning>
+  The component automatically handles image loading errors. Don't wrap it in additional error handling unless you need custom behavior.
+</Warning>
+
+<Info>
+  For consistent sizing across your application, define avatar size classes in your global styles rather than inline styles.
+</Info>
+
+## Related Components
+
+- **CometChatListItem**: Uses Avatar component for displaying user/group items
+- **CometChatMessageHeader**: Displays avatar in message conversation headers
+- **CometChatUsers**: Shows avatars in user lists
+- **CometChatGroups**: Displays group avatars
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Only requires Angular CommonModule
+- **Bundle Size**: Minimal footprint (~2KB)

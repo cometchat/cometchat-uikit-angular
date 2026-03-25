@@ -1,0 +1,133 @@
+---
+title: "CometChatErrorBoundary"
+description: "A reusable wrapper component that catches errors from projected child content and renders a fallback UI"
+---
+The `CometChatErrorBoundary` component wraps child content via `ng-content` and renders a fallback UI when an error is reported. It supports custom fallback templates and emits structured error context for logging and analytics.
+
+## Overview
+
+- **Error Isolation**: Prevents a rendering error in one component from crashing the entire view
+- **Custom Fallback**: Accepts an optional `TemplateRef` for custom error UI
+- **Signal-Based State**: Uses Angular signals for efficient error state management
+- **Retry Support**: Built-in retry button to reset error state and re-render children
+- **Structured Error Context**: Emits `ErrorContext` with error, component name, and timestamp
+- **OnPush Change Detection**: Efficient rendering with `ChangeDetectionStrategy.OnPush`
+
+<Info>
+  **Live Preview** — default error boundary preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-error-boundary--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-error-boundary--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "300px", border: "1px solid #e0e0e0"}}
+  title="CometChat Error Boundary — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatErrorBoundaryComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-safe-wrapper',
+  standalone: true,
+  imports: [CometChatErrorBoundaryComponent],
+  template: `
+    <cometchat-error-boundary
+      componentName="MessageBubble"
+      (error)="onError($event)">
+      <cometchat-message-bubble [message]="msg"></cometchat-message-bubble>
+    </cometchat-error-boundary>
+  `
+})
+export class SafeWrapperComponent {
+  msg: any;
+
+  onError(ctx: any): void {
+    console.error('Error in', ctx.componentName, ctx.error);
+  }
+}
+```
+
+### With Custom Fallback Template
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatErrorBoundaryComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-fallback',
+  standalone: true,
+  imports: [CometChatErrorBoundaryComponent],
+  template: `
+    <cometchat-error-boundary
+      [fallbackView]="customFallback"
+      componentName="MyComponent">
+      <my-component></my-component>
+    </cometchat-error-boundary>
+
+    <ng-template #customFallback let-ctx>
+      <div class="error-panel">
+        <p>Error in {{ ctx.componentName }}: {{ ctx.error.message }}</p>
+        <small>{{ ctx.timestamp | date:'medium' }}</small>
+      </div>
+    </ng-template>
+  `
+})
+export class CustomFallbackComponent {}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `fallbackView` | `TemplateRef<{ $implicit: ErrorContext }>` | `undefined` | Optional custom fallback template rendered when an error occurs. Receives `ErrorContext` as implicit context. |
+| `componentName` | `string` | `'Unknown'` | Name identifying the wrapped component, used in the emitted `ErrorContext`. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `error` | `ErrorContext` | Emitted when an error is caught. Contains `error`, `componentName`, and `timestamp`. |
+
+### ErrorContext Interface
+
+```typescript
+interface ErrorContext {
+  error: Error;           // The original error that was caught
+  componentName: string;  // Name identifying the source component
+  timestamp: number;      // Epoch milliseconds when the error occurred
+}
+```
+
+## Customization
+
+### Styling with CSS Variables
+
+The default fallback UI uses BEM-named CSS classes prefixed with `cometchat-error-boundary`:
+
+```css
+cometchat-error-boundary {
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+}
+```
+
+### Dark Theme
+
+```css
+[data-theme="dark"] cometchat-error-boundary {
+  --cometchat-background-color-01: #1a1a1a;
+  --cometchat-text-color-primary: #ffffff;
+  --cometchat-text-color-secondary: #cccccc;
+}
+```

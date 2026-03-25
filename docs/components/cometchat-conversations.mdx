@@ -1,0 +1,1682 @@
+---
+title: "CometChatConversations"
+description: "A comprehensive Angular component for displaying and managing real-time chat conversations with extensive customization options"
+---
+
+## Overview
+
+The CometChatConversations component displays a real-time list of conversations (both user and group conversations) for the logged-in user. It provides a rich set of features including real-time updates, search functionality, selection modes, keyboard navigation, and extensive customization through templates and styling.
+
+The component follows a **Hybrid Approach** architecture where:
+- **ConversationsService** handles all SDK interactions, state management, and real-time updates
+- **Component @Input properties** allow developers to override service behavior for flexibility
+- **Both service methods and @Input properties** are available, with @Input taking priority when provided
+
+### Key Features
+
+- **Real-time Updates**: Automatic updates for new messages, typing indicators, and user status changes
+- **Flexible Customization**: Extensive template projection for all UI sections
+- **Service-Based Architecture**: Clean separation of concerns with Angular best practices
+- **Keyboard Navigation**: Full keyboard accessibility with arrow keys and shortcuts (WCAG 2.1 Level AA compliant)
+- **Selection Modes**: Support for single and multiple conversation selection
+- **Search Functionality**: Built-in search with debouncing
+- **Context Menu**: Customizable actions for each conversation
+- **Sound Notifications**: Optional notification sounds for new messages
+- **Error Handling**: Comprehensive error handling with retry logic
+
+## Keyboard Accessibility
+
+CometChatConversations is fully keyboard accessible and meets WCAG 2.1 Level AA standards. All functionality can be accessed using only the keyboard.
+
+### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate between UI elements | Global |
+| `Shift + Tab` | Navigate backwards | Global |
+| `↓` (Down Arrow) | Focus next conversation | When list is focused |
+| `↑` (Up Arrow) | Focus previous conversation | When list is focused |
+| `Enter` | Open/activate focused conversation | When conversation is focused |
+| `Space` | Toggle selection (in selection mode) or activate | When conversation is focused |
+| `Escape` | Clear selection and reset focus | When list is focused |
+| `/` | Focus search bar | When search is enabled |
+
+### Context Menu Keyboard Navigation
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Enter` or `Space` | Open context menu | When more button is focused |
+| `↓` (Down Arrow) | Focus next menu item | When menu is open |
+| `↑` (Up Arrow) | Focus previous menu item | When menu is open |
+| `Enter` or `Space` | Select focused menu item | When menu item is focused |
+| `Escape` | Close menu | When menu is open |
+
+### Accessibility Features
+
+**ARIA Attributes:**
+- `role="list"` on conversations container
+- `role="listitem"` on each conversation
+- `aria-label` with conversation details (name, last message, unread count)
+- `aria-selected` indicates selected conversations
+- `aria-live="polite"` region for screen reader announcements
+- Proper `tabindex` management (roving tabindex pattern)
+
+**Screen Reader Support:**
+- Announces conversation details when focused
+- Announces selection state changes
+- Announces when search bar is focused
+- Live region for dynamic updates
+- Semantic HTML structure
+
+**Focus Management:**
+- Visible focus indicators (2px border) meeting WCAG contrast requirements
+- Focus trap within modals (delete confirmation)
+- Focus restoration after closing overlays
+- Roving tabindex for efficient keyboard navigation
+- High contrast mode support
+
+**WCAG 2.1 Compliance:**
+- ✅ 2.1.1 Keyboard (Level A) - All functionality available via keyboard
+- ✅ 2.1.2 No Keyboard Trap (Level A) - Users can navigate away using keyboard
+- ✅ 2.4.3 Focus Order (Level A) - Logical focus order
+- ✅ 2.4.7 Focus Visible (Level AA) - Visible focus indicators
+- ✅ 4.1.2 Name, Role, Value (Level A) - Proper ARIA attributes
+- ✅ 4.1.3 Status Messages (Level AA) - Screen reader announcements
+
+### Customizing Keyboard Behavior
+
+The component's keyboard handlers are scoped to the list container and won't interfere with your application's global keyboard shortcuts. If you need to disable specific shortcuts, handle this at the application level:
+
+```typescript
+@HostListener('keydown', ['$event'])
+handleKeydown(event: KeyboardEvent) {
+  // Prevent '/' from focusing search if you use it for something else
+  if (event.key === '/' && yourCondition) {
+    event.stopPropagation();
+    // Your custom logic
+  }
+}
+```
+
+## Basic Usage
+
+### Simple Implementation
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatConversationsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <cometchat-conversations
+      (itemClick)="onConversationClick($event)"
+    ></cometchat-conversations>
+  `
+})
+export class ChatComponent {
+  onConversationClick(conversation: any): void {
+    console.log('Selected conversation:', conversation);
+    // Navigate to messages view
+  }
+}
+```
+
+### With Custom Title and Search
+
+```typescript
+<cometchat-conversations
+  [title]="'My Chats'"
+  [showSearchBar]="true"
+  (itemClick)="onConversationClick($event)"
+  (searchBarClick)="onSearchClick()"
+></cometchat-conversations>
+```
+
+<Info>
+  **Live Preview** — interact with the default conversations list.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-conversations-cometchat-conversations--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-conversations-cometchat-conversations--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChatConversations — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+### Display Control Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideReceipts` | `boolean` | `false` | Hide message read receipts in conversation items |
+| `hideError` | `boolean` | `false` | Hide error views when errors occur |
+| `hideDeleteConversation` | `boolean` | `false` | Hide delete option in context menu |
+| `hideUserStatus` | `boolean` | `false` | Hide online/offline status indicators |
+| `hideGroupType` | `boolean` | `false` | Hide group type icons for group conversations |
+| `showScrollbar` | `boolean` | `false` | Show/hide scrollbar in conversation list |
+| `showSearchBar` | `boolean` | `false` | Show/hide search bar in header |
+
+### Data Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `conversationsRequestBuilder` | `ConversationsRequestBuilder` | `undefined` | Custom request builder for filtering and pagination |
+| `activeConversation` | `Conversation` | `undefined` | Currently active/highlighted conversation |
+| `textFormatters` | `CometChatTextFormatter[]` | `[]` | Custom text formatters for message previews |
+| `selectionMode` | `SelectionMode` | `'none'` | Selection mode: `'none'`, `'single'`, or `'multiple'` |
+| `lastMessageDateTimeFormat` | `CalendarObject` | `undefined` | Custom date/time format configuration |
+
+### Customization Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `options` | `(conversation: Conversation) => CometChatOption[]` | `undefined` | Function to provide custom context menu options |
+| `disableDefaultContextMenu` | `boolean` | `true` | When true, prevents the browser's native context menu and shows the custom context menu instead |
+| `slots` | `Partial<ConversationSlots>` | `undefined` | Slot-based customization for fine-grained UI control of conversation items |
+
+### Sound Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `disableSoundForMessages` | `boolean` | `false` | Disable notification sounds for new messages |
+| `customSoundForMessages` | `string` | `undefined` | Custom sound URL for notifications |
+
+### Template Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `headerView` | `TemplateRef<any>` | `undefined` | Custom template for entire header section |
+| `menuView` | `TemplateRef<any>` | `undefined` | Custom template for menu area in the header (e.g., action buttons, 3-dot menu) |
+| `loadingView` | `TemplateRef<any>` | `undefined` | Custom template for loading state |
+| `emptyView` | `TemplateRef<any>` | `undefined` | Custom template for empty state |
+| `errorView` | `TemplateRef<any>` | `undefined` | Custom template for error state |
+| `searchView` | `TemplateRef<any>` | `undefined` | Custom template for search bar |
+| `itemView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for entire conversation item |
+| `leadingView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for leading section (avatar area) |
+| `titleView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for title section |
+| `subtitleView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for subtitle section (message preview) |
+| `trailingView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for trailing section (timestamp, badges) |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `CometChat.Conversation` | Emitted when a conversation is clicked |
+| `select` | `{conversation: Conversation, selected: boolean}` | Emitted when a conversation is selected/deselected |
+| `error` | `CometChat.CometChatException` | Emitted when an error occurs |
+| `searchBarClick` | `void` | Emitted when search bar is clicked |
+| `contextMenuOpen` | `CometChat.Conversation` | Emitted when a context menu is opened on a conversation |
+| `contextMenuClose` | `CometChat.Conversation` | Emitted when a context menu is closed |
+| `scrollToTop` | `void` | Emitted when the list is scrolled to the top |
+| `scrollToBottom` | `void` | Emitted when the list is scrolled to the bottom |
+| `selectionChange` | `SelectionState` | Emitted when the selection state changes in selection mode |
+
+
+## Usage Patterns
+
+CometChatConversations supports two usage patterns. The default service-based approach uses `ChatStateService` to automatically wire downstream components. Alternatively, you can pass data explicitly via `@Input()` bindings.
+
+<Tabs>
+<Tab title="Using Service">
+
+When a user clicks a conversation, `ChatStateService` stores the active user or group. Downstream components like `cometchat-message-header`, `cometchat-message-list`, and `cometchat-message-composer` automatically subscribe to state changes — no explicit prop passing required.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <cometchat-conversations
+        (itemClick)="onConversationClick($event)"
+      ></cometchat-conversations>
+
+      <div class="chat-panel">
+        <!-- These components auto-subscribe to ChatStateService -->
+        <cometchat-message-header></cometchat-message-header>
+        <cometchat-message-list></cometchat-message-list>
+        <cometchat-message-composer></cometchat-message-composer>
+      </div>
+    </div>
+  `,
+})
+export class ChatComponent {
+  onConversationClick(conversation: any): void {
+    // ChatStateService is updated automatically —
+    // message-header, message-list, and message-composer react to the change
+  }
+}
+```
+
+<Tip>
+  This is the recommended approach for most applications. It reduces boilerplate and keeps components in sync automatically.
+</Tip>
+
+</Tab>
+<Tab title="Using Props">
+
+Pass `[user]` or `[group]` inputs directly to override `ChatStateService` state for each component instance. This is useful when you manage conversation selection yourself or render multiple chat panels.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [
+    CometChatConversationsComponent,
+    CometChatMessageHeaderComponent,
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+  ],
+  template: `
+    <div class="chat-layout">
+      <cometchat-conversations
+        (itemClick)="onConversationClick($event)"
+      ></cometchat-conversations>
+
+      @if (selectedUser) {
+        <div class="chat-panel">
+          <cometchat-message-header [user]="selectedUser"></cometchat-message-header>
+          <cometchat-message-list [user]="selectedUser"></cometchat-message-list>
+          <cometchat-message-composer [user]="selectedUser"></cometchat-message-composer>
+        </div>
+      }
+      @if (selectedGroup) {
+        <div class="chat-panel">
+          <cometchat-message-header [group]="selectedGroup"></cometchat-message-header>
+          <cometchat-message-list [group]="selectedGroup"></cometchat-message-list>
+          <cometchat-message-composer [group]="selectedGroup"></cometchat-message-composer>
+        </div>
+      }
+    </div>
+  `,
+})
+export class ChatComponent {
+  selectedUser: CometChat.User | null = null;
+  selectedGroup: CometChat.Group | null = null;
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    const conversationWith = conversation.getConversationWith();
+    if (conversationWith instanceof CometChat.User) {
+      this.selectedUser = conversationWith;
+      this.selectedGroup = null;
+    } else if (conversationWith instanceof CometChat.Group) {
+      this.selectedGroup = conversationWith;
+      this.selectedUser = null;
+    }
+  }
+}
+```
+
+<Note>
+  When `[user]` or `[group]` inputs are provided, they take priority over `ChatStateService` state for that component instance.
+</Note>
+
+</Tab>
+</Tabs>
+
+## Advanced Usage
+
+### Filtering Conversations
+
+Use the `conversationsRequestBuilder` to filter conversations by type, tags, or other criteria:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-filtered-conversations',
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <cometchat-conversations
+      [conversationsRequestBuilder]="conversationsBuilder"
+      (itemClick)="onConversationClick($event)"
+    ></cometchat-conversations>
+  `
+})
+export class FilteredConversationsComponent implements OnInit {
+  conversationsBuilder!: CometChat.ConversationsRequestBuilder;
+
+  ngOnInit(): void {
+    // Show only user conversations with limit of 20
+    this.conversationsBuilder = new CometChat.ConversationsRequestBuilder()
+      .setLimit(20)
+      .setConversationType('user')
+      .withTags(true);
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('Conversation clicked:', conversation);
+  }
+}
+```
+
+### Selection Mode
+
+Enable single or multiple conversation selection:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatConversationsComponent, SelectionMode } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-selectable-conversations',
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <div class="conversation-manager">
+      <div class="toolbar">
+        <button (click)="deleteSelected()" [disabled]="selectedConversations.length === 0">
+          Delete Selected ({{ selectedConversations.length }})
+        </button>
+      </div>
+      
+      <cometchat-conversations
+        [selectionMode]="selectionMode"
+        (select)="onConversationSelect($event)"
+        (itemClick)="onConversationClick($event)"
+      ></cometchat-conversations>
+    </div>
+  `
+})
+export class SelectableConversationsComponent {
+  selectionMode = SelectionMode.multiple;
+  selectedConversations: any[] = [];
+
+  onConversationSelect(event: { conversation: any; selected: boolean }): void {
+    if (event.selected) {
+      this.selectedConversations.push(event.conversation);
+    } else {
+      this.selectedConversations = this.selectedConversations.filter(
+        c => c.getConversationId() !== event.conversation.getConversationId()
+      );
+    }
+  }
+
+  onConversationClick(conversation: any): void {
+    console.log('Conversation clicked:', conversation);
+  }
+
+  deleteSelected(): void {
+    console.log('Deleting conversations:', this.selectedConversations);
+    // Implement delete logic
+  }
+}
+```
+
+### Custom Context Menu Options
+
+Provide custom actions for each conversation:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationsComponent, CometChatOption } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-menu-conversations',
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <cometchat-conversations
+      [options]="getCustomOptions"
+      (itemClick)="onConversationClick($event)"
+    ></cometchat-conversations>
+  `
+})
+export class CustomMenuConversationsComponent {
+  getCustomOptions = (conversation: CometChat.Conversation): CometChatOption[] => {
+    return [
+      {
+        id: 'pin',
+        title: 'Pin Conversation',
+        iconURL: 'assets/pin-icon.svg',
+        onClick: () => this.pinConversation(conversation)
+      },
+      {
+        id: 'mute',
+        title: 'Mute Notifications',
+        iconURL: 'assets/mute-icon.svg',
+        onClick: () => this.muteConversation(conversation)
+      },
+      {
+        id: 'archive',
+        title: 'Archive',
+        iconURL: 'assets/archive-icon.svg',
+        onClick: () => this.archiveConversation(conversation)
+      },
+      {
+        id: 'delete',
+        title: 'Delete',
+        iconURL: 'assets/delete-icon.svg',
+        onClick: () => this.deleteConversation(conversation)
+      }
+    ];
+  };
+
+  pinConversation(conversation: CometChat.Conversation): void {
+    console.log('Pinning conversation:', conversation);
+    // Implement pin logic
+  }
+
+  muteConversation(conversation: CometChat.Conversation): void {
+    console.log('Muting conversation:', conversation);
+    // Implement mute logic
+  }
+
+  archiveConversation(conversation: CometChat.Conversation): void {
+    console.log('Archiving conversation:', conversation);
+    // Implement archive logic
+  }
+
+  deleteConversation(conversation: CometChat.Conversation): void {
+    console.log('Deleting conversation:', conversation);
+    // Implement delete logic
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('Conversation clicked:', conversation);
+  }
+}
+```
+
+
+## Customization with Templates
+
+### Custom Subtitle View
+
+Customize the message preview section:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-subtitle',
+  standalone: true,
+  imports: [CommonModule, CometChatConversationsComponent],
+  template: `
+    <cometchat-conversations
+      [subtitleView]="customSubtitle"
+      (itemClick)="onConversationClick($event)"
+    >
+      <ng-template #customSubtitle let-conversation>
+        <div class="custom-subtitle">
+          <span class="message-preview">
+            {{ getMessagePreview(conversation) }}
+          </span>
+          <span class="message-time">
+            {{ getRelativeTime(conversation) }}
+          </span>
+        </div>
+      </ng-template>
+    </cometchat-conversations>
+  `,
+  styles: [`
+    .custom-subtitle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    .message-preview {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #666;
+      font-size: 14px;
+    }
+    .message-time {
+      margin-left: 8px;
+      color: #999;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+  `]
+})
+export class CustomSubtitleComponent {
+  getMessagePreview(conversation: CometChat.Conversation): string {
+    const lastMessage = conversation.getLastMessage();
+    if (!lastMessage) return 'No messages yet';
+    
+    if (lastMessage.getType() === 'text') {
+      return (lastMessage as CometChat.TextMessage).getText();
+    } else if (lastMessage.getType() === 'image') {
+      return '📷 Image';
+    } else if (lastMessage.getType() === 'video') {
+      return '🎥 Video';
+    } else if (lastMessage.getType() === 'audio') {
+      return '🎵 Audio';
+    } else if (lastMessage.getType() === 'file') {
+      return '📎 File';
+    }
+    return 'Message';
+  }
+
+  getRelativeTime(conversation: CometChat.Conversation): string {
+    const lastMessage = conversation.getLastMessage();
+    if (!lastMessage) return '';
+    
+    const timestamp = lastMessage.getSentAt();
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+    
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('Conversation clicked:', conversation);
+  }
+}
+```
+
+### Custom Leading View with Status
+
+Customize the avatar and status indicator:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationsComponent, CometChatAvatarComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-leading',
+  standalone: true,
+  imports: [CommonModule, CometChatConversationsComponent, CometChatAvatarComponent],
+  template: `
+    <cometchat-conversations
+      [leadingView]="customLeading"
+      (itemClick)="onConversationClick($event)"
+    >
+      <ng-template #customLeading let-conversation>
+        <div class="custom-leading">
+          <div class="avatar-container">
+            <cometchat-avatar
+              [image]="getAvatar(conversation)"
+              [name]="getName(conversation)"
+              [size]="'large'"
+            ></cometchat-avatar>
+            @if (isOnline(conversation)) {
+              <span class="online-indicator"></span>
+            }
+          </div>
+          @if (getUnreadCount(conversation) > 0) {
+            <span class="unread-badge">
+              {{ getUnreadCount(conversation) }}
+            </span>
+          }
+        </div>
+      </ng-template>
+    </cometchat-conversations>
+  `,
+  styles: [`
+    .custom-leading {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .avatar-container {
+      position: relative;
+    }
+    .online-indicator {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      background-color: #4CAF50;
+      border: 2px solid white;
+      border-radius: 50%;
+    }
+    .unread-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background-color: #FF3B30;
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+    }
+  `]
+})
+export class CustomLeadingComponent {
+  getAvatar(conversation: CometChat.Conversation): string {
+    const conversationWith = conversation.getConversationWith();
+    if (conversationWith instanceof CometChat.User) {
+      return conversationWith.getAvatar();
+    } else if (conversationWith instanceof CometChat.Group) {
+      return conversationWith.getIcon();
+    }
+    return '';
+  }
+
+  getName(conversation: CometChat.Conversation): string {
+    const conversationWith = conversation.getConversationWith();
+    if (conversationWith instanceof CometChat.User) {
+      return conversationWith.getName();
+    } else if (conversationWith instanceof CometChat.Group) {
+      return conversationWith.getName();
+    }
+    return '';
+  }
+
+  isOnline(conversation: CometChat.Conversation): boolean {
+    const conversationWith = conversation.getConversationWith();
+    if (conversationWith instanceof CometChat.User) {
+      return conversationWith.getStatus() === 'online';
+    }
+    return false;
+  }
+
+  getUnreadCount(conversation: CometChat.Conversation): number {
+    return conversation.getUnreadMessageCount();
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('Conversation clicked:', conversation);
+  }
+}
+```
+
+
+<Info>
+  **Live Preview** — conversations list with custom templates applied.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-conversations-cometchat-conversations--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-conversations-cometchat-conversations--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChatConversations — With Custom Templates"
+  allow="clipboard-write"
+></iframe>
+
+
+### Custom Empty and Error States
+
+Provide custom views for empty and error states:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChatConversationsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-states',
+  standalone: true,
+  imports: [CommonModule, CometChatConversationsComponent],
+  template: `
+    <cometchat-conversations
+      [emptyView]="customEmpty"
+      [errorView]="customError"
+      (itemClick)="onConversationClick($event)"
+    >
+      <ng-template #customEmpty>
+        <div class="custom-empty-state">
+          <img src="assets/empty-conversations.svg" alt="No conversations" />
+          <h3>No Conversations Yet</h3>
+          <p>Start a new conversation to get started</p>
+          <button class="start-chat-btn" (click)="startNewChat()">
+            Start New Chat
+          </button>
+        </div>
+      </ng-template>
+
+      <ng-template #customError>
+        <div class="custom-error-state">
+          <img src="assets/error-icon.svg" alt="Error" />
+          <h3>Oops! Something went wrong</h3>
+          <p>We couldn't load your conversations</p>
+          <button class="retry-btn" (click)="retryLoading()">
+            Try Again
+          </button>
+        </div>
+      </ng-template>
+    </cometchat-conversations>
+  `,
+  styles: [`
+    .custom-empty-state,
+    .custom-error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .custom-empty-state img,
+    .custom-error-state img {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+    }
+    .custom-empty-state h3,
+    .custom-error-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+    .custom-empty-state p,
+    .custom-error-state p {
+      font-size: 14px;
+      color: #666;
+      margin: 0 0 20px 0;
+    }
+    .start-chat-btn,
+    .retry-btn {
+      padding: 10px 24px;
+      background-color: #6852D6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .start-chat-btn:hover,
+    .retry-btn:hover {
+      background-color: #5742B8;
+    }
+  `]
+})
+export class CustomStatesComponent {
+  startNewChat(): void {
+    console.log('Starting new chat');
+    // Navigate to user selection or open new chat dialog
+  }
+
+  retryLoading(): void {
+    console.log('Retrying to load conversations');
+    // Trigger reload
+  }
+
+  onConversationClick(conversation: any): void {
+    console.log('Conversation clicked:', conversation);
+  }
+}
+```
+
+## Slot-Based Customization
+
+The `slots` input provides fine-grained control over individual UI elements within each conversation item. Unlike section-level templates (`leadingView`, `subtitleView`, etc.) which replace entire sections, slots let you override a single element — like just the avatar, just the unread badge, or just the timestamp — while keeping everything else at its default.
+
+### When to Use Slots vs Templates
+
+| Approach | Replaces | Use when |
+|----------|----------|----------|
+| `slots` | A single element (e.g., just the avatar) | You want surgical control over one element |
+| `leadingView` / `subtitleView` / `trailingView` | An entire section | You want to redesign a whole area |
+| `itemView` | The entire conversation item | You want full control over the row |
+
+### Available Slots
+
+Slots are organized into three sections of the conversation item:
+
+**Leading section** (left side):
+
+| Slot | Description |
+|------|-------------|
+| `avatar` | The user/group avatar image |
+| `statusIndicator` | Online/offline status dot |
+| `groupTypeIcon` | Public/private/password group icon |
+| `typingIndicator` | Animated typing dots |
+
+**Body section** (center):
+
+| Slot | Description |
+|------|-------------|
+| `title` | Conversation name (user or group) |
+| `subtitle` | Last message preview text |
+| `subtitleReceipt` | Receipt icon in the subtitle row |
+
+**Trailing section** (right side):
+
+| Slot | Description |
+|------|-------------|
+| `timestamp` | Last message time |
+| `unreadBadge` | Unread message count badge |
+| `receipt` | Message receipt indicator (sent/delivered/read) |
+| `contextMenuTrigger` | The "more options" button |
+
+### ConversationSlotContext
+
+Every slot template receives a `ConversationSlotContext` object as its implicit variable, plus any slot-specific extras:
+
+```typescript
+interface ConversationSlotContext {
+  $implicit: CometChat.Conversation;  // available as let-conversation
+  conversation: CometChat.Conversation;
+  isActive: boolean;     // is this the currently open conversation
+  isSelected: boolean;   // is this selected in selection mode
+  unreadCount: number;
+  isTyping: boolean;
+}
+```
+
+Slots with extra context variables:
+
+| Slot | Extra variable | Type |
+|------|---------------|------|
+| `statusIndicator` | `status` | `string` (`'online'` \| `'offline'`) |
+| `groupTypeIcon` | `groupType` | `string` (`'public'` \| `'private'` \| `'password'`) |
+| `title` | `title` | `string` |
+| `subtitle` | `subtitle` | `string` |
+| `subtitleReceipt` | `receiptStatus` | `string` (`'sent'` \| `'delivered'` \| `'read'` \| `'wait'` \| `'error'`) |
+| `timestamp` | `timestamp` | `number` (Unix seconds) |
+| `unreadBadge` | `count` | `number` |
+| `receipt` | `receiptStatus` | `string` |
+
+### Usage
+
+Import the types:
+
+```typescript
+import { ConversationSlots, ConversationSlotContext } from '@cometchat/chat-uikit-angular';
+```
+
+#### Override a single slot
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationsComponent, ConversationSlots } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-badge',
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <!-- Custom unread badge — only this element changes, everything else is default -->
+    <ng-template #customBadge let-count="count">
+      @if (count > 0) {
+        <span class="my-badge">{{ count > 99 ? '99+' : count }}</span>
+      }
+    </ng-template>
+
+    <cometchat-conversations
+      [slots]="slots"
+      (itemClick)="onConversationClick($event)"
+    ></cometchat-conversations>
+  `,
+  styles: [`
+    .my-badge {
+      background: var(--cometchat-primary-color);
+      color: var(--cometchat-static-white);
+      border-radius: var(--cometchat-radius-max);
+      padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+      font: var(--cometchat-font-caption1-bold);
+      min-width: 20px;
+      text-align: center;
+    }
+  `]
+})
+export class CustomBadgeComponent {
+  @ViewChild('customBadge') customBadge!: TemplateRef<any>;
+
+  get slots(): ConversationSlots {
+    return { unreadBadge: this.customBadge };
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('Selected:', conversation);
+  }
+}
+```
+
+#### Override multiple slots
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationsComponent, ConversationSlots } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-slots',
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <!-- Custom avatar with ring for active conversations -->
+    <ng-template #avatarSlot let-conversation let-isActive="isActive">
+      <div class="avatar-wrapper" [class.active-ring]="isActive">
+        <img
+          [src]="getAvatar(conversation)"
+          [alt]="getName(conversation)"
+          class="avatar-img"
+        />
+      </div>
+    </ng-template>
+
+    <!-- Custom timestamp -->
+    <ng-template #timestampSlot let-timestamp="timestamp">
+      <span class="custom-time">{{ timestamp * 1000 | date:'shortTime' }}</span>
+    </ng-template>
+
+    <!-- Custom typing indicator -->
+    <ng-template #typingSlot let-isTyping="isTyping">
+      @if (isTyping) {
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      }
+    </ng-template>
+
+    <cometchat-conversations
+      [slots]="slots"
+      (itemClick)="onConversationClick($event)"
+    ></cometchat-conversations>
+  `
+})
+export class CustomSlotsComponent implements AfterViewInit {
+  @ViewChild('avatarSlot') avatarSlot!: TemplateRef<any>;
+  @ViewChild('timestampSlot') timestampSlot!: TemplateRef<any>;
+  @ViewChild('typingSlot') typingSlot!: TemplateRef<any>;
+
+  slots: Partial<ConversationSlots> = {};
+
+  ngAfterViewInit(): void {
+    this.slots = {
+      avatar: this.avatarSlot,
+      timestamp: this.timestampSlot,
+      typingIndicator: this.typingSlot,
+    };
+  }
+
+  getAvatar(conversation: CometChat.Conversation): string {
+    const entity = conversation.getConversationWith();
+    return entity instanceof CometChat.User
+      ? entity.getAvatar()
+      : (entity as CometChat.Group).getIcon();
+  }
+
+  getName(conversation: CometChat.Conversation): string {
+    return conversation.getConversationWith().getName();
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('Selected:', conversation);
+  }
+}
+```
+
+<Tip>
+  Slots and section templates can be combined. For example, use `slots.avatar` to customize just the avatar while using `subtitleView` to replace the entire subtitle section.
+</Tip>
+
+<Note>
+  Slots are passed through to `CometChatConversationItem` internally. The `slots` input on `CometChatConversations` applies the same slots to every item in the list.
+</Note>
+
+---
+
+## Service Configuration (Hybrid Approach)
+
+The component supports both service-level and component-level configuration. Service configuration applies globally to all component instances, while component @Input properties override service settings for specific instances.
+
+### Global Service Configuration
+
+Configure the ConversationsService to set defaults for all component instances:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { ConversationsService } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-root',
+  template: `
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent implements OnInit {
+  constructor(private conversationsService: ConversationsService) {}
+
+  ngOnInit(): void {
+    // Configure globally for all CometChatConversations instances
+    const builder = new CometChat.ConversationsRequestBuilder()
+      .setLimit(30)
+      .withTags(true);
+    
+    this.conversationsService.setConversationsRequestBuilder(builder);
+  }
+}
+```
+
+### Per-Instance Override
+
+Override service configuration for specific component instances:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatConversationsComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-conversations',
+  standalone: true,
+  imports: [CometChatConversationsComponent],
+  template: `
+    <!-- This instance shows only user conversations -->
+    <cometchat-conversations
+      [conversationsRequestBuilder]="userConversationsBuilder"
+      [title]="'Direct Messages'"
+      (itemClick)="onConversationClick($event)"
+    ></cometchat-conversations>
+  `
+})
+export class UserConversationsComponent implements OnInit {
+  userConversationsBuilder!: CometChat.ConversationsRequestBuilder;
+
+  ngOnInit(): void {
+    // Override service configuration for this instance
+    this.userConversationsBuilder = new CometChat.ConversationsRequestBuilder()
+      .setLimit(20)
+      .setConversationType('user');
+  }
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('User conversation clicked:', conversation);
+  }
+}
+```
+
+### Setting Active Conversation
+
+Set the active conversation globally or per-instance:
+
+```typescript expandable
+// Global (via service)
+constructor(private conversationsService: ConversationsService) {}
+
+selectConversation(conversation: CometChat.Conversation): void {
+  this.conversationsService.setActiveConversation(conversation);
+  // All CometChatConversations instances will highlight this conversation
+}
+
+// Per-instance (via @Input)
+<cometchat-conversations
+  [activeConversation]="currentConversation"
+  (itemClick)="onConversationClick($event)"
+></cometchat-conversations>
+```
+
+
+## Styling with CSS Variables
+
+The CometChatConversations component uses CSS variables for comprehensive theming:
+
+```css expandable
+cometchat-conversations {
+  /* Background colors */
+  --cometchat-background-color-primary: #ffffff;
+  --cometchat-background-color-hover: #f5f5f5;
+  --cometchat-background-color-active: #e8e8ff;
+  
+  /* Text colors */
+  --cometchat-text-color-primary: #000000;
+  --cometchat-text-color-secondary: #666666;
+  --cometchat-text-color-tertiary: #999999;
+  
+  /* Border colors */
+  --cometchat-border-color-light: #e8e8e8;
+  --cometchat-border-color-default: #dcdcdc;
+  
+  /* Primary color */
+  --cometchat-primary-color: #6852D6;
+  
+  /* Typography */
+  --cometchat-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cometchat-font-size-heading: 18px;
+  --cometchat-font-size-body: 14px;
+  --cometchat-font-size-caption: 12px;
+  
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  
+  /* Border radius */
+  --cometchat-radius-1: 4px;
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+  
+  /* Badge colors */
+  --cometchat-unread-badge-background: #FF3B30;
+  --cometchat-unread-badge-text: #ffffff;
+  
+  /* Status colors */
+  --cometchat-status-online: #4CAF50;
+  --cometchat-status-offline: #999999;
+}
+```
+
+### Dark Theme Example
+
+```css expandable
+.dark-theme cometchat-conversations {
+  --cometchat-background-color-primary: #1a1a1a;
+  --cometchat-background-color-hover: #2a2a2a;
+  --cometchat-background-color-active: #3a3a4a;
+  --cometchat-text-color-primary: #ffffff;
+  --cometchat-text-color-secondary: #cccccc;
+  --cometchat-text-color-tertiary: #999999;
+  --cometchat-border-color-light: #333333;
+  --cometchat-border-color-default: #444444;
+}
+```
+
+### Custom Brand Colors
+
+```css
+.branded-conversations cometchat-conversations {
+  --cometchat-primary-color: #FF6B35;
+  --cometchat-unread-badge-background: #FF6B35;
+  --cometchat-background-color-active: #fff5f2;
+}
+```
+
+## Accessibility
+
+The CometChatConversations component includes comprehensive accessibility features to ensure usability for all users.
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Move focus to/from the conversation list |
+| `Arrow Down` | Focus next conversation in the list |
+| `Arrow Up` | Focus previous conversation in the list |
+| `Enter` / `Space` | Select the focused conversation |
+| `Escape` | Clear selection or close open menus |
+
+### ARIA Support
+
+The component includes proper ARIA attributes for screen reader compatibility:
+
+- `role="list"` on the conversation list container
+- `role="listitem"` on each conversation item
+- `aria-label` with conversation name and last message preview
+- `aria-selected` attribute based on selection state
+- `aria-live="polite"` for real-time updates announcements
+- `tabindex` management for keyboard navigation
+
+### Screen Reader Announcements
+
+The component announces important state changes to screen readers:
+
+- New message received: "New message from [User Name]"
+- Conversation selected: "Conversation with [User Name] selected"
+- Typing indicator: "[User Name] is typing"
+- Error states: "Error loading conversations"
+- Empty state: "No conversations available"
+
+### Focus Management
+
+- Clear focus indicators using the primary color
+- Focus is maintained when navigating with keyboard
+- Focus returns to the last focused item after menu interactions
+- Focus is trapped within modal dialogs (context menus)
+
+### High Contrast Mode
+
+The component supports high contrast mode with enhanced visual indicators:
+
+```css
+@media (prefers-contrast: high) {
+  cometchat-conversations {
+    --cometchat-border-color-default: #000000;
+    --cometchat-text-color-primary: #000000;
+  }
+}
+```
+
+### Reduced Motion
+
+Respects user's motion preferences:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  cometchat-conversations * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+
+## Real-Time Features
+
+### Automatic Updates
+
+The component automatically updates in real-time for:
+
+- **New Messages**: Conversations move to the top when new messages arrive
+- **Message Updates**: Edited or deleted messages update the preview
+- **Typing Indicators**: Shows when users are typing
+- **User Status**: Online/offline status updates in real-time
+- **Read Receipts**: Updates when messages are read
+- **Unread Count**: Badge updates automatically
+
+### Sound Notifications
+
+Enable sound notifications for new messages:
+
+```typescript
+<cometchat-conversations
+  [disableSoundForMessages]="false"
+  [customSoundForMessages]="'assets/sounds/notification.mp3'"
+  (itemClick)="onConversationClick($event)"
+></cometchat-conversations>
+```
+
+The component includes built-in sound throttling (max 1 sound per 2 seconds) to prevent notification spam.
+
+### Typing Indicators
+
+Typing indicators are shown automatically in the subtitle section:
+
+```typescript
+// Typing indicator is displayed as:
+// "John is typing..." (for user conversations)
+// "Alice is typing..." (for group conversations)
+```
+
+## Error Handling
+
+### Built-in Error Handling
+
+The component includes comprehensive error handling:
+
+```typescript
+<cometchat-conversations
+  [hideError]="false"
+  (error)="handleError($event)"
+  (itemClick)="onConversationClick($event)"
+></cometchat-conversations>
+```
+
+```typescript expandable
+handleError(error: CometChat.CometChatException): void {
+  console.error('Conversation error:', error);
+  
+  // Show user-friendly error message
+  if (error.code === 'NETWORK_ERROR') {
+    this.showToast('Network error. Please check your connection.');
+  } else if (error.code === 'AUTH_ERROR') {
+    this.showToast('Authentication error. Please log in again.');
+  } else {
+    this.showToast('An error occurred. Please try again.');
+  }
+}
+```
+
+### Retry Logic
+
+The service includes automatic retry logic with exponential backoff for recoverable errors:
+
+- Network errors: Retries up to 3 times
+- Timeout errors: Retries with increasing delays (1s, 2s, 4s)
+- Authentication errors: No retry (requires user action)
+
+### Custom Error View
+
+Provide a custom error view with retry functionality:
+
+```typescript expandable
+<cometchat-conversations
+  [errorView]="customError"
+  (error)="handleError($event)"
+>
+  <ng-template #customError>
+    <div class="error-container">
+      <p>Failed to load conversations</p>
+      <button (click)="retryLoading()">Retry</button>
+    </div>
+  </ng-template>
+</cometchat-conversations>
+```
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatconversations).
+</Info>
+
+## Best Practices
+
+<Tip>
+  Use the service-based configuration for global settings and component @Input properties for instance-specific overrides. This provides maximum flexibility.
+</Tip>
+
+<Warning>
+  Always unsubscribe from observables in `ngOnDestroy` to prevent memory leaks. The component handles this automatically, but be careful with custom subscriptions.
+</Warning>
+
+<Info>
+  The component uses `OnPush` change detection strategy for optimal performance. If you're using custom templates with external state, ensure proper change detection triggering.
+</Info>
+
+<Tip>
+  Use the `trackBy` function in custom templates when iterating over conversations to improve rendering performance.
+</Tip>
+
+<Warning>
+  When using custom context menu options, ensure the `onClick` handlers are properly bound to avoid `this` context issues. Use arrow functions or `.bind(this)`.
+</Warning>
+
+<Info>
+  The component automatically handles pagination when scrolling to the bottom. You don't need to implement pagination logic manually.
+</Info>
+
+## Complete Example
+
+Here's a comprehensive example combining multiple features:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatConversationsComponent,
+  ConversationsService,
+  SelectionMode,
+  CometChatOption,
+  CometChatTextFormatter
+} from '@cometchat/chat-uikit-angular';
+import { Subject, takeUntil } from 'rxjs';
+
+@Component({
+  selector: 'app-conversations-demo',
+  standalone: true,
+  imports: [CommonModule, CometChatConversationsComponent],
+  template: `
+    <div class="conversations-container">
+      @if (selectedConversations.length > 0) {
+        <div class="toolbar">
+          <span>{{ selectedConversations.length }} selected</span>
+          <button (click)="deleteSelected()">Delete</button>
+          <button (click)="clearSelection()">Clear</button>
+        </div>
+      }
+
+      <cometchat-conversations
+        [title]="'My Conversations'"
+        [showSearchBar]="true"
+        [conversationsRequestBuilder]="conversationsBuilder"
+        [selectionMode]="selectionMode"
+        [textFormatters]="textFormatters"
+        [options]="getCustomOptions"
+        [hideReceipts]="false"
+        [disableSoundForMessages]="false"
+        [subtitleView]="customSubtitle"
+        (itemClick)="onConversationClick($event)"
+        (select)="onConversationSelect($event)"
+        (error)="handleError($event)"
+        (searchBarClick)="onSearchClick()"
+      >
+        <ng-template #customSubtitle let-conversation>
+          <div class="custom-subtitle">
+            <span class="preview">{{ getMessagePreview(conversation) }}</span>
+            <span class="time">{{ getRelativeTime(conversation) }}</span>
+          </div>
+        </ng-template>
+      </cometchat-conversations>
+    </div>
+  `,
+  styles: [`
+    .conversations-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background-color: #f5f5f5;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .toolbar span {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .toolbar button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .toolbar button:first-of-type {
+      background-color: #FF3B30;
+      color: white;
+    }
+    .toolbar button:last-of-type {
+      background-color: #e8e8e8;
+      color: #333;
+    }
+    .custom-subtitle {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .custom-subtitle .preview {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #666;
+    }
+    .custom-subtitle .time {
+      margin-left: 8px;
+      color: #999;
+      font-size: 12px;
+    }
+  `]
+})
+export class ConversationsDemoComponent implements OnInit, OnDestroy {
+  conversationsBuilder!: CometChat.ConversationsRequestBuilder;
+  selectionMode = SelectionMode.multiple;
+  textFormatters: CometChatTextFormatter[] = [];
+  selectedConversations: CometChat.Conversation[] = [];
+  
+  private destroy$ = new Subject<void>();
+
+  constructor(private conversationsService: ConversationsService) {}
+
+  ngOnInit(): void {
+    // Configure conversations request
+    this.conversationsBuilder = new CometChat.ConversationsRequestBuilder()
+      .setLimit(30)
+      .withTags(true);
+
+    // Subscribe to service observables if needed
+    this.conversationsService.conversations$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(conversations => {
+        console.log('Conversations updated:', conversations.length);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  getCustomOptions = (conversation: CometChat.Conversation): CometChatOption[] => {
+    return [
+      {
+        id: 'pin',
+        title: 'Pin',
+        iconURL: 'assets/pin.svg',
+        onClick: () => this.pinConversation(conversation)
+      },
+      {
+        id: 'mute',
+        title: 'Mute',
+        iconURL: 'assets/mute.svg',
+        onClick: () => this.muteConversation(conversation)
+      },
+      {
+        id: 'delete',
+        title: 'Delete',
+        iconURL: 'assets/delete.svg',
+        onClick: () => this.deleteConversation(conversation)
+      }
+    ];
+  };
+
+  onConversationClick(conversation: CometChat.Conversation): void {
+    console.log('Conversation clicked:', conversation);
+    // Navigate to messages view
+    this.conversationsService.setActiveConversation(conversation);
+  }
+
+  onConversationSelect(event: { conversation: CometChat.Conversation; selected: boolean }): void {
+    if (event.selected) {
+      this.selectedConversations.push(event.conversation);
+    } else {
+      this.selectedConversations = this.selectedConversations.filter(
+        c => c.getConversationId() !== event.conversation.getConversationId()
+      );
+    }
+  }
+
+  handleError(error: CometChat.CometChatException): void {
+    console.error('Conversation error:', error);
+    // Show error toast or notification
+  }
+
+  onSearchClick(): void {
+    console.log('Search clicked');
+  }
+
+  getMessagePreview(conversation: CometChat.Conversation): string {
+    const lastMessage = conversation.getLastMessage();
+    if (!lastMessage) return 'No messages yet';
+    
+    if (lastMessage.getType() === 'text') {
+      return (lastMessage as CometChat.TextMessage).getText();
+    }
+    return 'Media message';
+  }
+
+  getRelativeTime(conversation: CometChat.Conversation): string {
+    const lastMessage = conversation.getLastMessage();
+    if (!lastMessage) return '';
+    
+    const timestamp = lastMessage.getSentAt();
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+    
+    if (diff < 60) return 'now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+    return `${Math.floor(diff / 86400)}d`;
+  }
+
+  pinConversation(conversation: CometChat.Conversation): void {
+    console.log('Pinning:', conversation);
+    // Implement pin logic
+  }
+
+  muteConversation(conversation: CometChat.Conversation): void {
+    console.log('Muting:', conversation);
+    // Implement mute logic
+  }
+
+  deleteConversation(conversation: CometChat.Conversation): void {
+    console.log('Deleting:', conversation);
+    this.conversationsService.deleteConversation(conversation.getConversationId());
+  }
+
+  deleteSelected(): void {
+    this.selectedConversations.forEach(conversation => {
+      this.conversationsService.deleteConversation(conversation.getConversationId());
+    });
+    this.selectedConversations = [];
+  }
+
+  clearSelection(): void {
+    this.selectedConversations = [];
+  }
+}
+```
+
+## Related Components
+
+- **CometChatMessageList**: Display messages for a selected conversation
+- **CometChatUsers**: List and select users to start conversations
+- **CometChatGroups**: List and select groups to start conversations
+- **CometChatSearchBar**: Search component used in the conversations header
+- **CometChatContextMenu**: Context menu for conversation actions
+- **CometChatAvatar**: Avatar component used in conversation items
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses `OnPush` strategy for optimal performance
+- **Service Architecture**: All SDK logic in ConversationsService
+- **Real-time Updates**: Automatic via SDK listeners
+- **Pagination**: Automatic on scroll with intersection observers
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Bundle Size**: Optimized for production builds
+
+## Browser Compatibility
+
+The CometChatConversations component is compatible with all modern browsers:
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+The component uses standard web APIs and RxJS for state management, ensuring broad compatibility.
+

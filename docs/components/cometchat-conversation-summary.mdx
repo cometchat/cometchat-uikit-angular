@@ -1,0 +1,94 @@
+---
+title: "CometChatConversationSummary"
+description: "An AI-powered component that displays a conversation summary panel with loading, empty, and error states"
+---
+The `CometChatConversationSummary` component displays an AI-generated conversation summary in a panel with a localized title, close button, and body area. It fetches the summary via a provided callback on initialization, showing a loading shimmer during the fetch, then transitions to loaded, empty, or error state.
+
+## Overview
+
+- **AI-Generated Summary**: Fetches a conversation summary from the CometChat AI extension
+- **State Management**: Signal-based state transitions between loading, loaded, empty, and error
+- **Localized UI**: All text rendered via the `translate` pipe
+- **Keyboard Accessible**: Close button is operable via Enter and Space keys
+- **OnPush Change Detection**: Efficient rendering with `ChangeDetectionStrategy.OnPush`
+
+<Info>
+  **Live Preview** — default conversation summary preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-ai-conversation-summary--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-ai-conversation-summary--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "150px", border: "1px solid #e0e0e0"}}
+  title="CometChat Conversation Summary — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatConversationSummaryComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-summary-demo',
+  standalone: true,
+  imports: [CometChatConversationSummaryComponent],
+  template: `
+    <cometchat-conversation-summary
+      [getConversationSummary]="fetchSummary"
+      [closeCallback]="onClose">
+    </cometchat-conversation-summary>
+  `
+})
+export class SummaryDemoComponent {
+  fetchSummary = async (): Promise<string> => {
+    // Replace with actual SDK call
+    return 'The conversation covered project deadlines and task assignments.';
+  };
+
+  onClose = (): void => {
+    console.log('Summary panel closed');
+  };
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `getConversationSummary` | `() => Promise<string>` | `undefined` | Callback that fetches the conversation summary. Returns a Promise resolving to the summary text. |
+| `closeCallback` | `() => void` | `undefined` | Callback invoked when the close button is clicked to dismiss the panel. |
+
+## Events
+
+This component does not emit any `@Output()` events. Interaction is handled via the `closeCallback` input.
+
+## Customization
+
+### Styling with CSS Variables
+
+The component uses BEM-named CSS classes prefixed with `cometchat-conversation-summary` and references standard CometChat CSS variables for theming:
+
+```css
+cometchat-conversation-summary {
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+}
+```
+
+### Dark Theme
+
+```css
+[data-theme="dark"] cometchat-conversation-summary {
+  --cometchat-background-color-01: #1a1a1a;
+  --cometchat-text-color-primary: #ffffff;
+  --cometchat-text-color-secondary: #cccccc;
+}
+```

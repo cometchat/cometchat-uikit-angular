@@ -1,0 +1,714 @@
+---
+title: Date
+description: "Display formatted timestamps with flexible date formatting options"
+---
+The `CometChatDate` component provides consistent date and time formatting throughout your chat application. It accepts a Unix timestamp and a calendar configuration object to display dates in various formats using the CometChatLocalize service.
+
+## Overview
+
+The Date component simplifies timestamp display with flexible formatting:
+
+- **Flexible Formatting**: Supports custom date patterns for different contexts
+- **Localization**: Integrates with CometChatLocalize for internationalized date formats
+- **Relative Time**: Can display "Today", "Yesterday", or custom relative formats
+- **Consistent Display**: Ensures uniform date presentation across the application
+- **Lightweight**: Minimal component with no external dependencies
+
+## Basic Usage
+
+### Simple Date Display
+
+```html
+<cometchat-date 
+  [timestamp]="1704067200" 
+  [calendarObject]="dateFormat">
+</cometchat-date>
+```
+
+### Using with Message Timestamps
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatDateComponent } from '@cometchat/chat-uikit-angular';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-timestamp',
+  standalone: true,
+  imports: [CometChatDateComponent],
+  template: `
+    <div class="message-info">
+      <span class="sender-name">{{ message.getSender()?.getName() }}</span>
+      <cometchat-date 
+        [timestamp]="message.getSentAt()" 
+        [calendarObject]="timestampFormat">
+      </cometchat-date>
+    </div>
+  `
+})
+export class MessageTimestampComponent {
+  message!: CometChat.BaseMessage;
+  
+  timestampFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '[Yesterday] h:mm A',
+    otherDays: 'DD/MM/YYYY h:mm A'
+  };
+}
+```
+
+### Different Date Formats
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDateComponent } from '@cometchat/chat-uikit-angular';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-date-examples',
+  standalone: true,
+  imports: [CometChatDateComponent],
+  template: `
+    <div class="date-examples">
+      <!-- Time only for today -->
+      <cometchat-date 
+        [timestamp]="todayTimestamp" 
+        [calendarObject]="timeOnlyFormat">
+      </cometchat-date>
+      
+      <!-- Full date and time -->
+      <cometchat-date 
+        [timestamp]="pastTimestamp" 
+        [calendarObject]="fullDateFormat">
+      </cometchat-date>
+      
+      <!-- Relative format -->
+      <cometchat-date 
+        [timestamp]="yesterdayTimestamp" 
+        [calendarObject]="relativeFormat">
+      </cometchat-date>
+    </div>
+  `
+})
+export class DateExamplesComponent {
+  todayTimestamp = Math.floor(Date.now() / 1000);
+  yesterdayTimestamp = Math.floor((Date.now() - 86400000) / 1000);
+  pastTimestamp = Math.floor((Date.now() - 604800000) / 1000);
+  
+  timeOnlyFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '[Yesterday]',
+    otherDays: 'MMM DD'
+  };
+  
+  fullDateFormat: CalendarObject = {
+    today: '[Today at] h:mm A',
+    yesterday: '[Yesterday at] h:mm A',
+    otherDays: 'MMMM DD, YYYY [at] h:mm A'
+  };
+  
+  relativeFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '[Yesterday] h:mm A',
+    lastWeek: 'dddd [at] h:mm A',
+    otherDays: 'DD/MM/YYYY'
+  };
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default date display.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-date--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-date--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "80px", border: "1px solid #e0e0e0"}}
+  title="Date — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `timestamp` | `number` | Required | Unix timestamp in seconds representing the date/time to display |
+| `calendarObject` | `CalendarObject` | Required | Configuration object defining date format patterns for different time ranges |
+
+## CalendarObject Interface
+
+The `CalendarObject` interface defines how dates are formatted based on when they occurred:
+
+```typescript expandable
+interface CalendarObject {
+  /** Format for today's date (e.g., 'h:mm A') */
+  today?: string;
+  /** Format for yesterday's date (e.g., '[Yesterday] h:mm A') */
+  yesterday?: string;
+  /** Format for dates within the last week (e.g., 'dddd h:mm A') */
+  lastWeek?: string;
+  /** Format for all other dates (e.g., 'DD/MM/YYYY') */
+  otherDays?: string;
+}
+```
+
+### Format Tokens
+
+The component uses moment.js-style format tokens:
+
+| Token | Output | Description |
+|-------|--------|-------------|
+| `h` | 1-12 | Hour (12-hour format) |
+| `hh` | 01-12 | Hour (12-hour format, zero-padded) |
+| `H` | 0-23 | Hour (24-hour format) |
+| `HH` | 00-23 | Hour (24-hour format, zero-padded) |
+| `m` | 0-59 | Minute |
+| `mm` | 00-59 | Minute (zero-padded) |
+| `s` | 0-59 | Second |
+| `ss` | 00-59 | Second (zero-padded) |
+| `A` | AM/PM | Meridiem (uppercase) |
+| `a` | am/pm | Meridiem (lowercase) |
+| `D` | 1-31 | Day of month |
+| `DD` | 01-31 | Day of month (zero-padded) |
+| `M` | 1-12 | Month number |
+| `MM` | 01-12 | Month number (zero-padded) |
+| `MMM` | Jan-Dec | Month name (abbreviated) |
+| `MMMM` | January-December | Month name (full) |
+| `YY` | 00-99 | Year (2 digits) |
+| `YYYY` | 2024 | Year (4 digits) |
+| `dddd` | Monday-Sunday | Day of week (full) |
+| `ddd` | Mon-Sun | Day of week (abbreviated) |
+| `[text]` | text | Literal text (not formatted) |
+
+## Behavior
+
+### Date Formatting Logic
+
+The component uses `CometChatLocalize.formatDate()` which determines the appropriate format based on the timestamp:
+
+1. **Today**: If timestamp is from today, uses `calendarObject.today` format
+2. **Yesterday**: If timestamp is from yesterday, uses `calendarObject.yesterday` format
+3. **Last Week**: If timestamp is within the last 7 days, uses `calendarObject.lastWeek` format (if provided)
+4. **Other Days**: For all other dates, uses `calendarObject.otherDays` format
+
+### Timestamp Format
+
+The `timestamp` property expects a Unix timestamp in **seconds** (not milliseconds):
+
+```typescript
+// Correct - Unix timestamp in seconds
+const timestamp = Math.floor(Date.now() / 1000);
+
+// Incorrect - JavaScript Date.now() returns milliseconds
+const timestamp = Date.now(); // Don't use this directly
+```
+
+## Examples
+
+### Message List Timestamps
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatDateComponent } from '@cometchat/chat-uikit-angular';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CommonModule, CometChatDateComponent],
+  template: `
+    <div class="message-list">
+      @for (message of messages; track message.getId()) {
+        <div class="message-item">
+          <div class="message-content">
+            {{ message.getText() }}
+          </div>
+          <div class="message-timestamp">
+            <cometchat-date 
+              [timestamp]="message.getSentAt()" 
+              [calendarObject]="messageTimestampFormat">
+            </cometchat-date>
+          </div>
+        </div>
+      }
+    </div>
+  `,
+  styles: [`
+    .message-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .message-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .message-timestamp {
+      font-size: 12px;
+      color: #666;
+    }
+  `]
+})
+export class MessageListComponent {
+  messages: CometChat.BaseMessage[] = [];
+  
+  messageTimestampFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '[Yesterday] h:mm A',
+    otherDays: 'MMM DD, YYYY'
+  };
+  
+  ngOnInit() {
+    // Load messages
+    this.loadMessages();
+  }
+  
+  loadMessages(): void {
+    // Implementation to fetch messages
+  }
+}
+```
+
+### Conversation List Last Message Time
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatDateComponent } from '@cometchat/chat-uikit-angular';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-conversation-list',
+  standalone: true,
+  imports: [CommonModule, CometChatDateComponent],
+  template: `
+    <div class="conversation-list">
+      @for (conversation of conversations; track conversation.getConversationId()) {
+        <div class="conversation-item">
+          <div class="conversation-info">
+            <h3>{{ getConversationName(conversation) }}</h3>
+            <p>{{ conversation.getLastMessage()?.getText() }}</p>
+          </div>
+          <div class="conversation-time">
+            <cometchat-date 
+              [timestamp]="conversation.getLastMessage()?.getSentAt() || 0" 
+              [calendarObject]="conversationTimeFormat">
+            </cometchat-date>
+          </div>
+        </div>
+      }
+    </div>
+  `,
+  styles: [`
+    .conversation-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .conversation-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    .conversation-time {
+      font-size: 11px;
+      color: #999;
+      white-space: nowrap;
+    }
+  `]
+})
+export class ConversationListComponent {
+  conversations: CometChat.Conversation[] = [];
+  
+  conversationTimeFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '[Yesterday]',
+    lastWeek: 'ddd',
+    otherDays: 'DD/MM/YY'
+  };
+  
+  getConversationName(conversation: CometChat.Conversation): string {
+    const conversationWith = conversation.getConversationWith();
+    if (conversationWith instanceof CometChat.User) {
+      return conversationWith.getName();
+    } else if (conversationWith instanceof CometChat.Group) {
+      return conversationWith.getName();
+    }
+    return '';
+  }
+}
+```
+
+### Full Date and Time Display
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDateComponent } from '@cometchat/chat-uikit-angular';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-details',
+  standalone: true,
+  imports: [CometChatDateComponent],
+  template: `
+    <div class="message-details">
+      <div class="detail-row">
+        <span class="label">Sent:</span>
+        <cometchat-date 
+          [timestamp]="sentTimestamp" 
+          [calendarObject]="detailDateFormat">
+        </cometchat-date>
+      </div>
+      <div class="detail-row">
+        <span class="label">Delivered:</span>
+        <cometchat-date 
+          [timestamp]="deliveredTimestamp" 
+          [calendarObject]="detailDateFormat">
+        </cometchat-date>
+      </div>
+      <div class="detail-row">
+        <span class="label">Read:</span>
+        <cometchat-date 
+          [timestamp]="readTimestamp" 
+          [calendarObject]="detailDateFormat">
+        </cometchat-date>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .message-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px;
+    }
+    .detail-row {
+      display: flex;
+      gap: 12px;
+    }
+    .label {
+      font-weight: 600;
+      min-width: 80px;
+    }
+  `]
+})
+export class MessageDetailsComponent {
+  sentTimestamp = 1704067200;
+  deliveredTimestamp = 1704067260;
+  readTimestamp = 1704067320;
+  
+  detailDateFormat: CalendarObject = {
+    today: '[Today at] h:mm:ss A',
+    yesterday: '[Yesterday at] h:mm:ss A',
+    otherDays: 'MMMM DD, YYYY [at] h:mm:ss A'
+  };
+}
+```
+
+### Custom Format for Different Contexts
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDateComponent } from '@cometchat/chat-uikit-angular';
+import { CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-date-formats',
+  standalone: true,
+  imports: [CometChatDateComponent],
+  template: `
+    <div class="format-examples">
+      <div class="format-section">
+        <h4>Compact Format (for lists)</h4>
+        <cometchat-date 
+          [timestamp]="timestamp" 
+          [calendarObject]="compactFormat">
+        </cometchat-date>
+      </div>
+      
+      <div class="format-section">
+        <h4>Detailed Format (for headers)</h4>
+        <cometchat-date 
+          [timestamp]="timestamp" 
+          [calendarObject]="detailedFormat">
+        </cometchat-date>
+      </div>
+      
+      <div class="format-section">
+        <h4>Short Format (for badges)</h4>
+        <cometchat-date 
+          [timestamp]="timestamp" 
+          [calendarObject]="shortFormat">
+        </cometchat-date>
+      </div>
+    </div>
+  `
+})
+export class DateFormatsComponent {
+  timestamp = Math.floor(Date.now() / 1000);
+  
+  // Compact format for conversation lists
+  compactFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '[Yest]',
+    lastWeek: 'ddd',
+    otherDays: 'DD/MM'
+  };
+  
+  // Detailed format for message headers
+  detailedFormat: CalendarObject = {
+    today: '[Today at] h:mm A',
+    yesterday: '[Yesterday at] h:mm A',
+    lastWeek: 'dddd [at] h:mm A',
+    otherDays: 'MMMM DD, YYYY [at] h:mm A'
+  };
+  
+  // Short format for notification badges
+  shortFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '1d',
+    lastWeek: 'ddd',
+    otherDays: 'MMM DD'
+  };
+}
+```
+
+<Info>
+  **Live Preview** — date component in timeline format.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-date--older-timestamp)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-date--older-timestamp&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="Date — Timeline"
+  allow="clipboard-write"
+></iframe>
+
+## Customization
+
+### Styling with CSS Variables
+
+The Date component inherits text styling from its parent container. You can customize the appearance using standard CSS:
+
+```css expandable
+/* Custom date styling */
+.custom-date cometchat-date {
+  color: #666;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* Timestamp in message bubble */
+.message-timestamp cometchat-date {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+
+/* Date in conversation list */
+.conversation-date cometchat-date {
+  color: #999;
+  font-size: 11px;
+  font-weight: 500;
+}
+```
+
+### Global Date Format Configuration
+
+You can set a global date format using CometChatLocalize:
+
+```typescript
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+// Set global calendar format
+CometChatLocalize.calendarObject = {
+  today: 'h:mm A',
+  yesterday: '[Yesterday] h:mm A',
+  lastWeek: 'dddd h:mm A',
+  otherDays: 'DD/MM/YYYY h:mm A'
+};
+```
+
+Components will use the global format unless a specific `calendarObject` is provided.
+
+## Accessibility
+
+The Date component is fully accessible and follows WCAG 2.1 Level AA guidelines for non-interactive display components.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.3.1 Info and Relationships (Level A)**: Uses semantic `<time>` element with proper datetime attribute
+- ✅ **1.4.3 Contrast (Level AA)**: Default colors meet minimum contrast ratios
+- ✅ **4.1.2 Name, Role, Value (Level A)**: Proper semantic HTML with accessible labels
+
+### Semantic HTML
+
+The component uses the HTML5 `<time>` element for proper semantic structure:
+
+```html
+<time 
+  class="cometchat-date"
+  datetime="2026-01-15T15:45:30.000Z"
+  aria-label="January 15, 2026 at 3:45 PM"
+>
+  3:45 PM
+</time>
+```
+
+### ARIA Attributes
+
+The component automatically applies appropriate attributes:
+
+| Attribute | Value | Purpose |
+|-----------|-------|---------|
+| `datetime` | ISO 8601 format | Machine-readable timestamp for assistive technologies |
+| `aria-label` | Full date/time | Provides complete date information for screen readers |
+
+### Screen Reader Behavior
+
+When a screen reader encounters the Date component:
+
+1. **Visual text**: Reads the formatted date (e.g., "3:45 PM")
+2. **ARIA label**: Announces full date and time (e.g., "January 15, 2026 at 3:45 PM")
+3. **Semantic element**: Identifies it as a time element
+
+This dual approach ensures users get:
+- **Sighted users**: See the compact, context-appropriate format
+- **Screen reader users**: Hear the complete date and time information
+
+### Non-Interactive Component
+
+The Date component is **non-interactive** by design:
+
+- ❌ **No keyboard navigation required**: Component is purely presentational
+- ❌ **Not focusable**: No interactive elements to receive focus
+- ✅ **Screen reader accessible**: Properly announced with semantic information
+
+### Accessibility Best Practices
+
+<Tip>
+  The component automatically provides full date/time information to screen readers via `aria-label`, even when displaying compact formats like "3:45 PM" or "Yesterday".
+</Tip>
+
+<Info>
+  The `datetime` attribute uses ISO 8601 format, which is the standard machine-readable format recognized by assistive technologies and search engines.
+</Info>
+
+<Warning>
+  If you wrap the date in a clickable element (button or link), ensure the wrapper has an appropriate `aria-label` that describes the action, not just the date.
+</Warning>
+
+### Example: Accessible Date in Context
+
+```html expandable
+<!-- Good: Date provides full context to screen readers -->
+<div class="message-info">
+  <span class="sender">John Doe</span>
+  <cometchat-date 
+    [timestamp]="timestamp" 
+    [calendarObject]="format">
+  </cometchat-date>
+  <!-- Screen reader hears: "John Doe, January 15, 2026 at 3:45 PM" -->
+</div>
+
+<!-- Good: Clickable date with descriptive label -->
+<button 
+  (click)="showMessageDetails()"
+  [attr.aria-label]="'View message details from ' + fullDateString"
+>
+  <cometchat-date 
+    [timestamp]="timestamp" 
+    [calendarObject]="format">
+  </cometchat-date>
+</button>
+```
+
+## Best Practices
+
+<Tip>
+  Define reusable `CalendarObject` constants for different contexts (messages, conversations, details) to maintain consistency across your application.
+</Tip>
+
+<Warning>
+  Always provide both `timestamp` and `calendarObject` properties. The component requires both to function correctly.
+</Warning>
+
+<Info>
+  Use literal text in square brackets `[text]` to include words like "at", "Yesterday", or "Today" in your date formats without them being interpreted as format tokens.
+</Info>
+
+<Tip>
+  For conversation lists, use shorter formats (like "h:mm A" for today and "MMM DD" for older dates) to save space. For detail views, use more descriptive formats.
+</Tip>
+
+## Common Format Patterns
+
+### Message Timestamps
+```typescript
+{
+  today: 'h:mm A',              // "3:45 PM"
+  yesterday: '[Yesterday] h:mm A',  // "Yesterday 3:45 PM"
+  otherDays: 'MMM DD, YYYY'     // "Jan 15, 2024"
+}
+```
+
+### Conversation List
+```typescript
+{
+  today: 'h:mm A',              // "3:45 PM"
+  yesterday: '[Yesterday]',     // "Yesterday"
+  lastWeek: 'ddd',              // "Mon"
+  otherDays: 'DD/MM/YY'         // "15/01/24"
+}
+```
+
+### Full Details
+```typescript
+{
+  today: '[Today at] h:mm:ss A',           // "Today at 3:45:30 PM"
+  yesterday: '[Yesterday at] h:mm:ss A',   // "Yesterday at 3:45:30 PM"
+  otherDays: 'MMMM DD, YYYY [at] h:mm A'   // "January 15, 2024 at 3:45 PM"
+}
+```
+
+### European Format
+```typescript
+{
+  today: 'HH:mm',               // "15:45"
+  yesterday: '[Hier] HH:mm',    // "Hier 15:45"
+  otherDays: 'DD/MM/YYYY HH:mm' // "15/01/2024 15:45"
+}
+```
+
+## Related Components
+
+- **CometChatMessageList**: Uses Date component for message timestamps
+- **CometChatConversations**: Displays last message time using Date component
+- **CometChatMessageHeader**: Shows conversation start time
+- **CometChatFullScreenViewer**: Displays image sent time in header
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses default change detection strategy
+- **Dependencies**: Requires CometChatLocalize service for date formatting
+- **Bundle Size**: Minimal footprint (~1KB)
+- **Format Engine**: Uses moment.js-compatible format tokens
+- **Localization**: Automatically respects locale settings from CometChatLocalize
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatdate).
+</Info>
+
+

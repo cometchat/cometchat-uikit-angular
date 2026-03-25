@@ -1,0 +1,364 @@
+/**
+ * CometChatUserItem Component Styles
+ * 
+ * A standalone component for rendering a single user item with support for:
+ * - State management (active, selected, focused)
+ * - User avatar with online/offline status indicator
+ * - Custom templates for all sections
+ * - Context menu integration
+ * - Full accessibility support
+ * 
+ * BEM Methodology: Block Element Modifier
+ * - Block: .cometchat-user-item
+ * - Element: .cometchat-user-item__{element}
+ * - Modifier: .cometchat-user-item--{modifier}
+ * 
+ * @see Requirements 1.10, 1.11, 1.12
+ */
+
+/* ============================================
+   Block: cometchat-user-item
+   Base container styles
+   ============================================ */
+
+.cometchat-user-item {
+  display: flex;
+  align-items: center;
+  padding: var(--cometchat-user-item-padding, var(--cometchat-padding-3, 12px) var(--cometchat-padding-4, 16px));
+  gap: var(--cometchat-user-item-gap, var(--cometchat-spacing-3, 12px));
+  background: var(--cometchat-user-item-background, var(--cometchat-background-color-01));
+  /* border-bottom: var(--cometchat-user-item-border-bottom, 1px solid var(--cometchat-border-color-light)); */
+  border-radius: var(--cometchat-user-item-border-radius, 0);
+  cursor: pointer;
+  transition: var(--cometchat-user-item-transition, background-color 0.2s ease);
+  outline: var(--cometchat-user-item-focus-outline, none);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Reset box-sizing for all children */
+.cometchat-user-item,
+.cometchat-user-item * {
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Modifiers: State variations
+   @see Requirements 1.10
+   ============================================ */
+
+/* Hover State - only apply when NOT active */
+.cometchat-user-item:hover:not(.cometchat-user-item--active) {
+  background: var(--cometchat-user-item-background-hover, var(--cometchat-background-color-02));
+}
+
+/* Active State (Currently Selected User) */
+.cometchat-user-item--active {
+  background-color: var(--cometchat-background-color-04);
+}
+
+/* Selected State (Selection Mode) */
+.cometchat-user-item--selected {
+  /* background: var(--cometchat-user-item-background-selected, var(--cometchat-background-color-03)); */
+}
+
+/* Focused State (Keyboard Navigation via Arrow Keys) - ONLY via class, not :focus pseudo-class */
+.cometchat-user-item--focused {
+  box-shadow: var(--cometchat-user-item-focus-box-shadow, inset 0 0 0 2px var(--cometchat-primary-color));
+  z-index: 1;
+}
+
+/* Disable ALL browser focus styling - parent component manages focus via --focused class */
+.cometchat-user-item:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-user-item:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.cometchat-user-item:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Combined States */
+.cometchat-user-item--active.cometchat-user-item--selected {
+  background: var(--cometchat-background-color-04);
+}
+
+/* Disabled State */
+.cometchat-user-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Leading Section
+   Avatar and Status Indicator
+   ============================================ */
+
+.cometchat-user-item__leading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+/* Avatar */
+.cometchat-user-item__avatar {
+  width: 100%;
+  height: 100%;
+  --cometchat-avatar-size: 48px;
+  --cometchat-avatar-font-size: var(--cometchat-user-item-avatar-font-size, 20px);
+  --cometchat-avatar-border-radius: var(--cometchat-user-item-avatar-border-radius, 50%);
+  --cometchat-avatar-border: var(--cometchat-user-item-avatar-border, none);
+}
+
+/* Status Indicator (Online/Offline) */
+.cometchat-user-item__status {
+  position: absolute;
+  bottom: 2px;
+  right: 6px;
+  transform: translate(25%, 25%);
+  width: var(--cometchat-user-item-status-size, 10px);
+  height: var(--cometchat-user-item-status-size, 10px);
+  border-radius: var(--cometchat-radius-max);
+  border: var(--cometchat-user-item-status-border, none);
+  z-index: 2;
+}
+
+.cometchat-user-item__status--online {
+  background-color: var(--cometchat-user-item-status-online-color, var(--cometchat-status-indicator-online-color, var(--cometchat-success-color)));
+}
+
+.cometchat-user-item__status--offline {
+  background-color: var(--cometchat-user-item-status-offline-color, var(--cometchat-status-indicator-offline-color, var(--cometchat-neutral-color-400)));
+  display: none; /* Hide offline indicator by default */
+}
+
+/* ============================================
+   Element: Body Section
+   Title and Subtitle
+   ============================================ */
+
+.cometchat-user-item__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+  gap: var(--cometchat-user-item-body-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Title Section */
+.cometchat-user-item__title {
+  display: flex;
+  align-items: center;
+  max-width: var(--cometchat-user-item-title-max-width, 100%);
+}
+
+.cometchat-user-item__title-text {
+  font: var(--cometchat-user-item-title-text-font, var(--cometchat-font-heading4-medium));
+  color: var(--cometchat-user-item-title-text-color, var(--cometchat-text-color-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Subtitle Section */
+.cometchat-user-item__subtitle {
+  display: flex;
+  align-items: center;
+  max-width: var(--cometchat-user-item-subtitle-max-width, 100%);
+  gap: var(--cometchat-user-item-subtitle-gap, var(--cometchat-spacing-1, 4px));
+}
+
+.cometchat-user-item__subtitle-text {
+  font: var(--cometchat-user-item-subtitle-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-user-item-subtitle-color, var(--cometchat-text-color-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Element: Trailing Section
+   Context Menu
+   ============================================ */
+
+.cometchat-user-item__trailing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  gap: var(--cometchat-user-item-trailing-gap, var(--cometchat-spacing-1, 4px));
+  position: relative;
+  min-width: var(--cometchat-user-item-trailing-min-width, 40px);
+}
+
+/* Context Menu */
+.cometchat-user-item__context-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--cometchat-user-item-context-menu-transition, opacity 0.2s ease);
+  background: var(--cometchat-user-item-context-menu-background, var(--cometchat-background-color-01));
+  z-index: 10;
+  pointer-events: none;
+}
+
+.cometchat-user-item__menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* Show context menu on hover or keyboard focus */
+.cometchat-user-item:hover .cometchat-user-item__context-menu,
+.cometchat-user-item--focused .cometchat-user-item__context-menu {
+  display: flex;
+  opacity: var(--cometchat-user-item-context-menu-opacity-hover, 1);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ============================================
+   Accessibility
+   @see Requirements 1.13
+   ============================================ */
+
+/* Screen Reader Only Class */
+.cometchat-user-item__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .cometchat-user-item--focused,
+  .cometchat-user-item:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-user-item {
+    transition: none;
+  }
+  
+  .cometchat-user-item__context-menu {
+    transition: none;
+  }
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/* Tablet and below (768px) */
+@media (max-width: 768px) {
+  .cometchat-user-item {
+    padding: var(--cometchat-user-item-padding-tablet, var(--cometchat-padding-3, 12px));
+    gap: var(--cometchat-user-item-gap-tablet, var(--cometchat-spacing-3, 12px));
+  }
+
+  .cometchat-user-item__leading {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cometchat-user-item__avatar {
+    --cometchat-avatar-size: 40px;
+    --cometchat-avatar-font-size: var(--cometchat-user-item-avatar-font-size-tablet, 18px);
+  }
+
+  .cometchat-user-item__status {
+    width: var(--cometchat-user-item-status-size-tablet, 12px);
+    height: var(--cometchat-user-item-status-size-tablet, 12px);
+  }
+
+  .cometchat-user-item__title-text {
+    font: var(--cometchat-user-item-title-font-tablet, var(--cometchat-font-body-medium));
+  }
+
+  .cometchat-user-item__subtitle-text {
+    font: var(--cometchat-user-item-subtitle-font-tablet, var(--cometchat-font-caption1-regular));
+  }
+
+  /* Hide context menu on mobile - use long press instead */
+  .cometchat-user-item__context-menu {
+    display: none;
+  }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+  .cometchat-user-item {
+    padding: var(--cometchat-user-item-padding-mobile, var(--cometchat-padding-3, 12px) var(--cometchat-padding-3, 12px));
+    gap: var(--cometchat-user-item-gap-mobile, var(--cometchat-spacing-2, 8px));
+  }
+
+  .cometchat-user-item__leading {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cometchat-user-item__avatar {
+    --cometchat-avatar-size: 40px;
+    --cometchat-avatar-font-size: var(--cometchat-user-item-avatar-font-size-mobile, 16px);
+  }
+
+  .cometchat-user-item__status {
+    width: var(--cometchat-user-item-status-size-mobile, 8px);
+    height: var(--cometchat-user-item-status-size-mobile, 8px);
+    bottom: 3px;
+    right: 4px;
+  }
+
+  .cometchat-user-item__title-text {
+    font: var(--cometchat-user-item-title-font-mobile, var(--cometchat-font-body-medium));
+  }
+
+  .cometchat-user-item__subtitle-text {
+    font: var(--cometchat-user-item-subtitle-font-mobile, var(--cometchat-font-caption1-regular));
+  }
+}
+
+/* Large screens (1200px and above) */
+@media (min-width: 1200px) {
+  .cometchat-user-item {
+    padding: var(--cometchat-user-item-padding-large, var(--cometchat-padding-2, 8px) var(--cometchat-padding-4, 16px));
+  }
+
+  .cometchat-user-item__leading {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cometchat-user-item__avatar {
+    --cometchat-avatar-size: 48px;
+    --cometchat-avatar-font-size: var(--cometchat-user-item-avatar-font-size-large, 22px);
+  }
+}

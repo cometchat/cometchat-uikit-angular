@@ -1,0 +1,271 @@
+/* ═══════════════════════════════════════════════════
+   CometChatHome — Pure layout shell
+   Desktop: three-column flex (left | center | right)
+   Mobile:  single panel via --hidden modifier
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-home {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--cometchat-background-color-01);
+  position: relative;
+}
+
+/* ── Left Panel (Tabs + Selector) ── */
+
+.cometchat-home__left-panel {
+  display: flex;
+  flex: 0 1 30%;
+  flex-direction: column;
+  max-width: 450px;
+  min-width: 280px;
+  height: 100%;
+  border-right: none;
+  background: var(--cometchat-background-color-01);
+  overflow: hidden;
+  /* z-index: 0; */
+}
+
+/* ── Center Panel (Messages) ── */
+
+.cometchat-home__center-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 40%;
+  height: 100%;
+  min-width: 0;
+  background: var(--cometchat-background-color-03);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ── Right Panel (Side Panel / Thread) ── */
+
+.cometchat-home__right-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 30%;
+  max-width: 420px;
+  min-width: 280px;
+  height: 100%;
+  /* border-left: 1px solid var(--cometchat-border-color-light); */
+  background: var(--cometchat-background-color-01);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Landmark panels receive only programmatic focus (tabindex="-1")
+   for screen reader navigation — suppress the visible focus ring. */
+.cometchat-home__left-panel:focus-visible,
+.cometchat-home__center-panel:focus-visible,
+.cometchat-home__right-panel:focus-visible {
+  outline: none;
+}
+
+/* ── Resize Handles ── */
+
+.cometchat-home__resize-handle {
+  width: 4px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 5;
+  transition: background 0.15s ease;
+}
+
+.cometchat-home__resize-handle:hover,
+.cometchat-home__resize-handle--active {
+  background: var(--cometchat-primary-color);
+}
+
+/* Wider invisible hit area for easier grabbing */
+.cometchat-home__resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  right: -4px;
+}
+
+/* Hide resize handles on mobile */
+.cometchat-home--mobile .cometchat-home__resize-handle {
+  display: none;
+}
+
+/* When resizing, disable pointer events on panels to prevent iframe/selection issues */
+.cometchat-home--resizing .cometchat-home__left-panel,
+.cometchat-home--resizing .cometchat-home__center-panel,
+.cometchat-home--resizing .cometchat-home__right-panel {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Overlay panel — covers the right panel completely (e.g. add-members over group-details) */
+.cometchat-home__overlay-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--cometchat-background-color-01);
+}
+
+/* ── Placeholders (temporary until child components are built) ── */
+
+.cometchat-home__selector-placeholder,
+.cometchat-home__messages-placeholder,
+.cometchat-home__panel-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+
+.cometchat-home__selector-placeholder {
+  flex: 1;
+}
+
+.cometchat-home__messages-placeholder {
+  flex: 1;
+}
+
+.cometchat-home__panel-placeholder {
+  flex: 1;
+}
+
+/* ── Dialog Overlays ── */
+
+.cometchat-home__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-background-color-01);
+  z-index: 10;
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+
+/* ── Toast Container ── */
+
+.cometchat-home__toast-container {
+  position: fixed;
+  top: var(--cometchat-spacing-4);
+  right: var(--cometchat-spacing-4);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2);
+}
+
+/* ═══════════════════════════════════════════════════
+   Mobile Layout (≤768px)
+   Show only one panel at a time via --hidden modifier.
+   The active panel is controlled by NavigationService.mobilePanel.
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-home--mobile .cometchat-home__left-panel {
+  width: 100%;
+  min-width: 100%;
+  border-right: none;
+
+}
+
+.cometchat-home--mobile .cometchat-home__center-panel {
+  width: 100%;
+}
+
+.cometchat-home--mobile .cometchat-home__right-panel {
+  width: 100%;
+  min-width: 100%;
+  border-left: none;
+}
+
+/* Hidden panels on mobile */
+.cometchat-home__left-panel--hidden,
+.cometchat-home__center-panel--hidden,
+.cometchat-home__right-panel--hidden {
+  display: none;
+}
+
+/* Expanded right panel — fills remaining space (used for call log details) */
+.cometchat-home__right-panel--expanded {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   Overlay Layers — Panel, Modal, Dialog, Ongoing Call
+   Rendered when AppStateService signals are non-null.
+   ═══════════════════════════════════════════════════ */
+
+/* ── Panel Overlay ── */
+
+.cometchat-home__panel-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background: var(--cometchat-background-color-01);
+  overflow: hidden;
+}
+
+/* ── Modal Overlay ── */
+
+.cometchat-home__modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-backdrop-color, rgba(0, 0, 0, 0.5));
+}
+
+.cometchat-home__modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 90%;
+  max-width: 90%;
+  overflow: auto;
+  border-radius: var(--cometchat-radius-3);
+  background: var(--cometchat-background-color-01);
+}
+
+/* ── Dialog Overlay ── */
+
+.cometchat-home__dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-backdrop-color, rgba(0, 0, 0, 0.5));
+}
+
+.cometchat-home__dialog-content {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--cometchat-radius-3);
+  background: var(--cometchat-background-color-01);
+}
+
+/* ── Ongoing Call Overlay ── */
+
+.cometchat-home__ongoing-call-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  background: var(--cometchat-background-color-01);
+  overflow: hidden;
+}

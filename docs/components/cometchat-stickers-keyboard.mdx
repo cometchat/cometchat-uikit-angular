@@ -1,0 +1,190 @@
+---
+title: "CometChatStickersKeyboard"
+description: "A component for browsing and selecting stickers organized by category tabs with a grid layout"
+---
+The `CometChatStickersKeyboard` component provides a browsable sticker picker that fetches stickers from the CometChat stickers extension. Stickers are organized by category tabs with a grid layout, supporting loading, empty, and error states.
+
+## Overview
+
+The Stickers Keyboard component enables sticker selection:
+
+- **Category Tabs**: Stickers are organized into categories displayed as tabs with icon previews
+- **Grid Layout**: Stickers within each category are displayed in a 4-column grid
+- **State Management**: Handles loading, loaded, empty, and error states
+- **Auto Focus**: Optionally focuses the first tab when the keyboard opens
+- **Focus Trapping**: Optionally traps focus within the keyboard for modal-like behavior
+- **Keyboard Accessible**: Full keyboard navigation including Tab, Arrow keys for grid navigation, Enter/Space to select, and Escape to close
+
+
+<Info>
+  **Live Preview** — default stickers keyboard preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-stickers-keyboard--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-stickers-keyboard--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "400px", border: "1px solid #e0e0e0"}}
+  title="CometChat Stickers Keyboard — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Sticker Picker
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatStickersKeyboardComponent,
+  StickerClickEvent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-stickers-demo',
+  standalone: true,
+  imports: [CometChatStickersKeyboardComponent],
+  template: `
+    <cometchat-stickers-keyboard
+      (stickerClick)="onStickerSelect($event)"
+      (closeKeyboard)="onCloseStickers()">
+    </cometchat-stickers-keyboard>
+  `
+})
+export class StickersDemoComponent {
+  onStickerSelect(event: StickerClickEvent): void {
+    console.log('Sticker selected:', event.stickerUrl, event.stickerName);
+  }
+
+  onCloseStickers(): void {
+    console.log('Sticker keyboard closed');
+  }
+}
+```
+
+### With Custom State Text
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatStickersKeyboardComponent,
+  StickerClickEvent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-stickers',
+  standalone: true,
+  imports: [CometChatStickersKeyboardComponent],
+  template: `
+    <cometchat-stickers-keyboard
+      [errorStateText]="'Unable to load stickers. Please try again.'"
+      [emptyStateText]="'No stickers available yet.'"
+      [autoFocus]="true"
+      [trapFocus]="true"
+      (stickerClick)="onStickerSelect($event)"
+      (closeKeyboard)="onClose()">
+    </cometchat-stickers-keyboard>
+  `
+})
+export class CustomStickersComponent {
+  onStickerSelect(event: StickerClickEvent): void {
+    console.log('Selected:', event.stickerName);
+  }
+
+  onClose(): void {
+    // Handle keyboard close
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `errorStateText` | `string` | `undefined` | Custom text displayed when stickers fail to load. Falls back to a localized default if not provided. |
+| `emptyStateText` | `string` | `undefined` | Custom text displayed when no stickers are available. Falls back to a localized default if not provided. |
+| `autoFocus` | `boolean` | `true` | Whether to automatically focus the first category tab when the keyboard opens. |
+| `trapFocus` | `boolean` | `true` | Whether to trap focus within the keyboard, preventing Tab from leaving the component. Useful for modal or popover contexts. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `stickerClick` | `StickerClickEvent` | Emitted when a sticker is clicked. The payload contains `stickerUrl` (URL of the selected sticker) and `stickerName` (name of the selected sticker). |
+| `closeKeyboard` | `void` | Emitted when the keyboard should close, triggered by pressing the Escape key. |
+
+### StickerClickEvent Interface
+
+```typescript
+interface StickerClickEvent {
+  /** URL of the selected sticker */
+  stickerUrl: string;
+  /** Name of the selected sticker */
+  stickerName: string;
+}
+```
+
+## Customization
+
+### CSS Variables
+
+The Stickers Keyboard component uses BEM-style CSS classes that can be customized with CSS variables:
+
+```css expandable
+/* Keyboard container */
+.cometchat-stickers-keyboard {
+  background: var(--cometchat-background-color-01);
+  border-radius: var(--cometchat-radius-3);
+}
+
+/* Category tabs */
+.cometchat-stickers-keyboard__tabs {
+  gap: var(--cometchat-spacing-1);
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+/* Active tab */
+.cometchat-stickers-keyboard__tab--active {
+  border-bottom-color: var(--cometchat-primary-color);
+}
+
+/* Sticker grid */
+.cometchat-stickers-keyboard__grid {
+  padding: var(--cometchat-spacing-2);
+  gap: var(--cometchat-spacing-2);
+}
+
+/* Individual sticker item */
+.cometchat-stickers-keyboard__sticker {
+  border-radius: var(--cometchat-radius-2);
+}
+
+.cometchat-stickers-keyboard__sticker:hover {
+  background: var(--cometchat-background-color-03);
+}
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Tab**: Moves focus between the category tabs and the sticker grid
+- **ArrowLeft / ArrowRight**: Navigate between category tabs
+- **ArrowUp / ArrowDown / ArrowLeft / ArrowRight**: Navigate the sticker grid in 2D (4-column layout)
+- **Enter / Space**: Select the focused sticker, emitting the `stickerClick` event
+- **Escape**: Close the keyboard, emitting the `closeKeyboard` event
+- Focus trapping keeps keyboard navigation within the component when `trapFocus` is enabled
+
+### Screen Reader Support
+
+- Category tabs are announced with their category name
+- Sticker items are announced with their sticker name
+- State changes (loading, error, empty) are announced via the `LiveAnnouncerService`
+
+## Related Components
+
+- [CometChatStickerBubble](/components/cometchat-sticker-bubble) - Displays a sent sticker in a message bubble
+- [CometChatMessageComposer](/components/cometchat-message-composer) - Message composer that integrates the stickers keyboard
+- [CometChatEmojiKeyboard](/components/cometchat-emoji-keyboard) - Similar keyboard component for emoji selection

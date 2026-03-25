@@ -1,0 +1,12 @@
+{
+  "name": "cometchat-uikit-angular-docs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "mintlify dev",
+    "build": "mintlify build"
+  },
+  "devDependencies": {
+    "mintlify": "^4.0.0"
+  }
+}

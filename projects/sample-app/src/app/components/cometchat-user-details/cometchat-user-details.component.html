@@ -1,0 +1,100 @@
+@if (user(); as activeUser) {
+  <!-- Block user confirmation dialog -->
+  @if (showBlockConfirm()) {
+    <div class="cometchat-block-user-dialog__backdrop">
+      <cometchat-confirm-dialog
+        #blockDialog
+        [title]="'block_contact' | translate"
+        [messageText]="'confirm_block_contact' | translate"
+        [confirmButtonText]="'details_block_user' | translate"
+        (confirmClick)="onBlockConfirm()"
+        (cancelClick)="onBlockCancel()"
+      ></cometchat-confirm-dialog>
+    </div>
+  }
+
+  <!-- Delete chat confirmation dialog -->
+  @if (showDeleteConfirm()) {
+    <div class="cometchat-delete-chat-dialog__backdrop">
+      <cometchat-confirm-dialog
+        #deleteDialog
+        [title]="'delete_chat' | translate"
+        [messageText]="'confirm_delete_chat' | translate"
+        [confirmButtonText]="'conversation_delete_title' | translate"
+        (confirmClick)="onDeleteConfirm()"
+        (cancelClick)="onDeleteCancel()"
+      ></cometchat-confirm-dialog>
+    </div>
+  }
+
+  <!-- Header -->
+  <div class="cometchat-user-details__header">
+    <div class="cometchat-user-details__header-text">{{ 'user_info' | translate }}</div>
+    <div
+      class="cometchat-user-details__header-icon"
+      (click)="onClose()"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="'thread_close_hover' | translate"
+      (keydown.enter)="onClose()"
+      (keydown.space)="onClose()"
+    ></div>
+  </div>
+
+  <!-- Content -->
+  <div class="cometchat-user-details__content">
+    <div class="cometchat-user-details__content-avatar">
+      <cometchat-avatar
+        [image]="activeUser.getAvatar()"
+        [name]="activeUser.getName()"
+      ></cometchat-avatar>
+    </div>
+    <div>
+      <div class="cometchat-user-details__content-title">{{ activeUser.getName() }}</div>
+      @if (showStatus()) {
+        <div class="cometchat-user-details__content-description">
+          @if (isOnline()) {
+            {{ 'message_header_status_online' | translate }}
+          } @else {
+            {{ 'message_header_status_offline' | translate }}
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Action items -->
+    <div class="cometchat-user-details__content-action">
+      <div
+        class="cometchat-user-details__content-action-item"
+        (click)="onBlockActionClick()"
+        role="button"
+        tabindex="0"
+        (keydown.enter)="onBlockActionClick()"
+        (keydown.space)="onBlockActionClick()"
+      >
+        <div class="cometchat-user-details__content-action-item-icon cometchat-user-details__content-action-item-icon--block"></div>
+        <div class="cometchat-user-details__content-action-item-text">
+          @if (isBlocked()) {
+            {{ 'details_unblock_user' | translate }}
+          } @else {
+            {{ 'details_block_user' | translate }}
+          }
+        </div>
+      </div>
+      <div
+        class="cometchat-user-details__content-action-item"
+        [class.cometchat-user-details__content-action-item-disabled]="isDeleteDisabled()"
+        (click)="onDeleteActionClick()"
+        role="button"
+        tabindex="0"
+        (keydown.enter)="onDeleteActionClick()"
+        (keydown.space)="onDeleteActionClick()"
+      >
+        <div class="cometchat-user-details__content-action-item-icon cometchat-user-details__content-action-item-icon--delete"></div>
+        <div class="cometchat-user-details__content-action-item-text">
+          {{ 'delete_chat' | translate }}
+        </div>
+      </div>
+    </div>
+  </div>
+}

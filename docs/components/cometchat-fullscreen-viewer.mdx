@@ -1,0 +1,1542 @@
+---
+title: "CometChatFullscreenViewer"
+description: "A comprehensive Angular component for viewing images and videos in fullscreen mode with gallery navigation, keyboard controls, and accessibility support"
+---
+The `CometChatFullscreenViewer` component is a sophisticated fullscreen media viewer that displays images and videos in an immersive modal experience. It serves as the unified viewer for all media types in the CometChat Angular UIKit, supporting both single media viewing and gallery-style navigation through multiple attachments.
+
+## Overview
+
+The Fullscreen Viewer component provides a rich media viewing experience while maintaining visual consistency with the design system and ensuring full accessibility:
+
+- **Unified Media Viewing**: Single component for both images and videos
+- **Gallery Mode**: Navigate through multiple media attachments with previous/next controls
+- **Single Mode**: Display individual media items (backward compatible)
+- **Keyboard Navigation**: Full keyboard support (Arrow keys, Escape)
+- **Sender Information**: Display sender avatar and name in header
+- **Position Indicator**: Shows current position in gallery (e.g., "3 of 10")
+- **Download Support**: Download button for saving media to device
+- **Video Playback Control**: Automatic video stop on navigation and close
+- **Body Scroll Management**: Prevents background scrolling when viewer is open
+- **Focus Management**: Traps focus within viewer and restores on close
+- **Accessibility**: Full WCAG 2.1 Level AA compliance with ARIA support
+
+## Basic Usage
+
+### Simple Image Viewer
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-image-viewer',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <button (click)="openViewer()">View Image</button>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [url]="imageUrl"
+      [mediaType]="'image'"
+      [senderName]="'John Doe'"
+      [senderAvatarUrl]="'https://example.com/avatar.jpg'"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class ImageViewerComponent {
+  isViewerOpen = false;
+  imageUrl = 'https://example.com/image.jpg';
+
+  openViewer(): void {
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+}
+```
+
+### Simple Video Viewer
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-video-viewer',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <button (click)="openViewer()">View Video</button>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [url]="videoUrl"
+      [mediaType]="'video'"
+      [senderName]="'Jane Smith'"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class VideoViewerComponent {
+  isViewerOpen = false;
+  videoUrl = 'https://example.com/video.mp4';
+
+  openViewer(): void {
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+}
+```
+
+### Gallery Mode with Multiple Images
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-image-gallery',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <button (click)="openGallery()">View Gallery</button>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="imageAttachments"
+      [startIndex]="0"
+      [senderName]="'John Doe'"
+      [senderAvatarUrl]="'https://example.com/avatar.jpg'"
+      (closeClick)="closeViewer()"
+      (indexChange)="onIndexChange($event)"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class ImageGalleryComponent {
+  isViewerOpen = false;
+  
+  imageAttachments: MediaAttachment[] = [
+    { url: 'https://example.com/image1.jpg', type: 'image', name: 'Photo 1.jpg' },
+    { url: 'https://example.com/image2.jpg', type: 'image', name: 'Photo 2.jpg' },
+    { url: 'https://example.com/image3.jpg', type: 'image', name: 'Photo 3.jpg' }
+  ];
+
+  openGallery(): void {
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+
+  onIndexChange(index: number): void {
+    console.log('Now viewing image:', index + 1);
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default fullscreen viewer.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-fullscreen-viewer--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-fullscreen-viewer--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Fullscreen Viewer — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `isOpen` | `boolean` | `false` | Controls the visibility of the fullscreen viewer |
+| `attachments` | `MediaAttachment[]` | `[]` | Array of media attachments for gallery mode |
+| `startIndex` | `number` | `0` | Starting index when opening gallery mode |
+| `url` | `string` | `''` | Single media URL for single mode (backward compatible) |
+| `mediaType` | `'image' \| 'video' \| 'audio' \| 'file'` | `'image'` | Type of media for single mode |
+| `message` | `CometChat.BaseMessage` | `undefined` | CometChat message object for extracting sender info (optional) |
+| `explicitSenderName` | `string` | `''` | Explicit sender name to display in header |
+| `explicitSenderAvatarUrl` | `string` | `''` | Explicit sender avatar URL to display in header |
+| `fileName` | `string` | `''` | File name for file preview display |
+| `fileSize` | `number` | `undefined` | File size in bytes for file preview display |
+| `placeholderImage` | `string` | `undefined` | Placeholder image URL shown while media is loading |
+| `imageSentAtDateTimeFormat` | `CalendarObject` | `undefined` | Custom format for timestamps associated with images |
+| `downloadIconUrl` | `string` | `'assets/download.svg'` | Custom download button icon URL |
+| `prevIconUrl` | `string` | `'assets/arrow_back.svg'` | Custom previous button icon URL |
+| `nextIconUrl` | `string` | `'assets/arrow_forward.svg'` | Custom next button icon URL |
+| `enablePictureInPicture` | `boolean` | `true` | Enable/disable Picture-in-Picture mode for videos |
+| `pipIconUrl` | `string` | `'assets/pip.svg'` | Custom PIP button icon URL |
+| `pipExitIconUrl` | `string` | `'assets/pip_exit.svg'` | Custom PIP exit button icon URL |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeClick` | `void` | Emitted when the close button is clicked or Escape key is pressed |
+| `downloadClick` | `MediaAttachment \| string` | Emitted when the download button is clicked. Contains the current media attachment or URL |
+| `indexChange` | `number` | Emitted when navigating between media items in gallery mode. Contains the new index |
+| `pipStateChange` | `boolean` | Emitted when entering or exiting Picture-in-Picture mode. `true` when entering, `false` when exiting |
+
+## MediaAttachment Interface
+
+```typescript
+interface MediaAttachment {
+  url: string;              // Required: Media URL
+  type: 'image' | 'video';  // Required: Media type
+  name?: string;            // Optional: Filename for download
+  mimeType?: string;        // Optional: MIME type
+  size?: number;            // Optional: File size in bytes
+}
+```
+
+## Advanced Usage
+
+### Gallery Mode with Mixed Media
+
+The viewer seamlessly handles both images and videos in the same gallery:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-mixed-gallery',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <button (click)="openGallery()">View Mixed Gallery</button>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="mixedAttachments"
+      [startIndex]="currentIndex"
+      [senderName]="'Alice Johnson'"
+      (closeClick)="closeViewer()"
+      (indexChange)="onIndexChange($event)"
+      (downloadClick)="onDownload($event)"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class MixedGalleryComponent {
+  isViewerOpen = false;
+  currentIndex = 0;
+  
+  mixedAttachments: MediaAttachment[] = [
+    { url: 'https://example.com/photo1.jpg', type: 'image', name: 'Vacation Photo.jpg' },
+    { url: 'https://example.com/video1.mp4', type: 'video', name: 'Beach Video.mp4' },
+    { url: 'https://example.com/photo2.jpg', type: 'image', name: 'Sunset.jpg' },
+    { url: 'https://example.com/video2.mp4', type: 'video', name: 'Highlights.mp4' }
+  ];
+
+  openGallery(): void {
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+
+  onIndexChange(index: number): void {
+    this.currentIndex = index;
+    console.log('Now viewing:', this.mixedAttachments[index].name);
+  }
+
+  onDownload(media: MediaAttachment | string): void {
+    console.log('Downloading:', media);
+  }
+}
+```
+
+**Mixed Gallery Features:**
+- Seamlessly switches between image and video rendering
+- Videos automatically stop when navigating away
+- Each media type displays appropriately (img element for images, video element with controls for videos)
+- Download works for both images and videos
+
+<Info>
+  **Live Preview** — fullscreen viewer with a portrait-oriented image.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-misc-fullscreen-viewer--single-image)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-misc-fullscreen-viewer--single-image&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Fullscreen Viewer — Portrait Image"
+  allow="clipboard-write"
+></iframe>
+
+### Opening Gallery at Specific Index
+
+Start the gallery at any position using the `startIndex` property:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thumbnail-grid',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <div class="thumbnail-grid">
+      @for (attachment of attachments; track attachment.url; let i = $index) {
+        <img 
+          [src]="attachment.url" 
+          [alt]="attachment.name"
+          (click)="openGalleryAt(i)"
+          class="thumbnail"
+        />
+      }
+    </div>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="attachments"
+      [startIndex]="selectedIndex"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  `,
+  styles: [`
+    .thumbnail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    
+    .thumbnail {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .thumbnail:hover {
+      transform: scale(1.05);
+    }
+  `]
+})
+export class ThumbnailGridComponent {
+  isViewerOpen = false;
+  selectedIndex = 0;
+  
+  attachments: MediaAttachment[] = [
+    { url: 'https://example.com/img1.jpg', type: 'image' },
+    { url: 'https://example.com/img2.jpg', type: 'image' },
+    { url: 'https://example.com/img3.jpg', type: 'image' },
+    { url: 'https://example.com/img4.jpg', type: 'image' }
+  ];
+
+  openGalleryAt(index: number): void {
+    this.selectedIndex = index;
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+}
+```
+
+### Using with CometChat Messages
+
+Extract attachments from CometChat.MediaMessage objects:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFullScreenViewerComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-viewer',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="mediaAttachments"
+      [message]="message"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class MessageViewerComponent {
+  isViewerOpen = false;
+  message!: CometChat.MediaMessage;
+  mediaAttachments: MediaAttachment[] = [];
+
+  openMessageMedia(message: CometChat.MediaMessage): void {
+    this.message = message;
+    
+    // Extract attachments from message
+    const attachments = message.getAttachments();
+    this.mediaAttachments = attachments.map(att => ({
+      url: att.url,
+      type: message.getType() === 'image' ? 'image' : 'video',
+      name: att.name,
+      mimeType: att.mimeType,
+      size: att.size
+    }));
+    
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+}
+```
+
+### Keyboard Navigation
+
+The viewer provides full keyboard support for navigation and control:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-keyboard-demo',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <div class="instructions">
+      <h3>Keyboard Shortcuts:</h3>
+      <ul>
+        <li><kbd>→</kbd> Next image/video</li>
+        <li><kbd>←</kbd> Previous image/video</li>
+        <li><kbd>Esc</kbd> Close viewer</li>
+        <li><kbd>Tab</kbd> Navigate controls</li>
+        <li><kbd>Enter</kbd> Activate focused button</li>
+      </ul>
+      <button (click)="openViewer()">Open Gallery (Try Keyboard Navigation)</button>
+    </div>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="attachments"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  `,
+  styles: [`
+    .instructions {
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    
+    kbd {
+      padding: 2px 6px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  `]
+})
+export class KeyboardDemoComponent {
+  isViewerOpen = false;
+  attachments = [
+    { url: 'https://example.com/img1.jpg', type: 'image' as const },
+    { url: 'https://example.com/img2.jpg', type: 'image' as const },
+    { url: 'https://example.com/img3.jpg', type: 'image' as const }
+  ];
+
+  openViewer(): void {
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+}
+```
+
+**Keyboard Shortcuts:**
+- **Right Arrow (→)**: Navigate to next media item
+- **Left Arrow (←)**: Navigate to previous media item
+- **Escape (Esc)**: Close the viewer
+- **Tab**: Navigate between interactive elements (close, download, previous, next buttons)
+- **Enter/Space**: Activate the focused button
+
+### Video Playback Management
+
+The viewer automatically manages video playback to prevent resource leaks:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-video-gallery',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <button (click)="openViewer()">View Video Gallery</button>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="videoAttachments"
+      (closeClick)="onClose()"
+      (indexChange)="onNavigate($event)"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class VideoGalleryComponent {
+  isViewerOpen = false;
+  
+  videoAttachments: MediaAttachment[] = [
+    { url: 'https://example.com/video1.mp4', type: 'video', name: 'Tutorial Part 1.mp4' },
+    { url: 'https://example.com/video2.mp4', type: 'video', name: 'Tutorial Part 2.mp4' },
+    { url: 'https://example.com/video3.mp4', type: 'video', name: 'Tutorial Part 3.mp4' }
+  ];
+
+  openViewer(): void {
+    this.isViewerOpen = true;
+  }
+
+  onNavigate(index: number): void {
+    console.log('Navigated to video:', index + 1);
+    // Previous video automatically stopped
+  }
+
+  onClose(): void {
+    console.log('Viewer closed');
+    // All videos automatically stopped
+    this.isViewerOpen = false;
+  }
+}
+```
+
+**Video Playback Features:**
+- Videos display with standard HTML5 controls (play, pause, seek, volume, fullscreen)
+- Automatic video stop when navigating to another media item
+- Automatic video stop when closing the viewer
+- Automatic video stop on component destruction
+- Prevents memory leaks and improves performance
+
+## Customization
+
+### Styling with CSS Variables
+
+The Fullscreen Viewer component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom fullscreen viewer styling */
+cometchat-fullscreen-viewer {
+  /* Spacing */
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  --cometchat-spacing-6: 24px;
+
+  /* Typography */
+  --cometchat-font-body-medium: 500 14px 'Inter';
+  --cometchat-font-caption1-regular: 400 12px 'Inter';
+
+  /* Colors */
+  --cometchat-background-color-01: #FFFFFF;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-white: #FFFFFF;
+  --cometchat-icon-color-white: #FFFFFF;
+
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-max: 1000px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-2` to `--cometchat-spacing-6` | Padding, margin, gap | `8px` to `24px` |
+| `--cometchat-font-body-medium` | Sender name font | `500 14px Roboto` |
+| `--cometchat-font-caption1-regular` | Index display font | `400 12px Roboto` |
+| `--cometchat-background-color-01` | Header background | `#FFFFFF` |
+| `--cometchat-text-color-primary` | Sender name color | `#141414` |
+| `--cometchat-text-color-white` | Index text color | `#FFFFFF` |
+| `--cometchat-icon-color-white` | Button icon color | `#FFFFFF` |
+| `--cometchat-radius-2` | Avatar border radius | `8px` |
+| `--cometchat-radius-max` | Button border radius | `1000px` (circular) |
+
+### Custom Color Schemes
+
+```css expandable
+/* Dark theme */
+[data-theme="dark"] cometchat-fullscreen-viewer {
+  --cometchat-background-color-01: rgba(30, 30, 30, 0.95);
+  --cometchat-text-color-primary: #FFFFFF;
+}
+
+/* Custom accent color */
+.custom-viewer cometchat-fullscreen-viewer {
+  --cometchat-primary-color: #FF5722;
+}
+```
+
+### Custom Button Styling
+
+```css expandable
+/* Custom navigation buttons */
+::ng-deep .cometchat-fullscreen-viewer__nav-button {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+}
+
+::ng-deep .cometchat-fullscreen-viewer__nav-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+::ng-deep .cometchat-fullscreen-viewer__nav-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Custom close button */
+::ng-deep .cometchat-fullscreen-viewer__close-button {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  padding: 12px;
+}
+
+::ng-deep .cometchat-fullscreen-viewer__close-button:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+```
+
+### Custom Header Styling
+
+```css expandable
+/* Custom header styling */
+::ng-deep .cometchat-fullscreen-viewer__header {
+  background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+  padding: 20px;
+}
+
+::ng-deep .cometchat-fullscreen-viewer__sender-name {
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+::ng-deep .cometchat-fullscreen-viewer__index-display {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 6px 12px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+```
+
+### Custom Backdrop Styling
+
+```css expandable
+/* Custom backdrop */
+::ng-deep .cometchat-fullscreen-viewer__overlay {
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+}
+
+/* Animated backdrop */
+::ng-deep .cometchat-fullscreen-viewer__overlay {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+```
+
+## Accessibility
+
+The Fullscreen Viewer component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: All images and videos have descriptive ARIA labels
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with dialog role
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.1.2 No Keyboard Trap (Level A)**: Focus trap implemented correctly with escape mechanism
+- ✅ **2.4.3 Focus Order (Level A)**: Logical focus order through interactive elements
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators on all interactive elements
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+## Picture-in-Picture (PIP) Mode
+
+The Fullscreen Viewer supports Picture-in-Picture (PIP) mode for videos, allowing users to minimize video playback into a floating window while browsing other content. This is an enterprise feature that enhances the video viewing experience.
+
+### Overview
+
+Picture-in-Picture mode enables:
+- **Floating Video Window**: Minimize video to a small, always-on-top window
+- **Multitasking**: Continue browsing while watching video
+- **Browser Controls**: Use native browser PIP controls (play/pause, close)
+- **Seamless Integration**: Works with both single video and gallery modes
+
+### Enabling PIP
+
+Enable PIP mode by setting the `enablePictureInPicture` input to `true`:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-pip-video',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [url]="videoUrl"
+      [mediaType]="'video'"
+      [enablePictureInPicture]="true"
+      (closeClick)="closeViewer()"
+      (pipStateChange)="onPipStateChange($event)"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class PipVideoComponent {
+  isViewerOpen = false;
+  videoUrl = 'https://example.com/video.mp4';
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+
+  onPipStateChange(isPipMode: boolean): void {
+    console.log('PIP mode:', isPipMode ? 'active' : 'inactive');
+  }
+}
+```
+
+### PIP Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `enablePictureInPicture` | `boolean` | `true` | Enable/disable PIP functionality |
+| `pipIconUrl` | `string` | `'assets/pip.svg'` | Custom PIP button icon URL |
+| `pipExitIconUrl` | `string` | `'assets/pip_exit.svg'` | Custom PIP exit button icon URL |
+
+### PIP Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `pipStateChange` | `boolean` | Emitted when entering or exiting PIP mode. `true` when entering, `false` when exiting |
+
+### PIP with Gallery Mode
+
+PIP works seamlessly with gallery navigation:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatFullScreenViewerComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-pip-gallery',
+  standalone: true,
+  imports: [CometChatFullScreenViewerComponent],
+  template: `
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="videoAttachments"
+      [enablePictureInPicture]="true"
+      (closeClick)="closeViewer()"
+      (indexChange)="onIndexChange($event)"
+      (pipStateChange)="onPipStateChange($event)"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class PipGalleryComponent {
+  isViewerOpen = false;
+  isPipActive = false;
+  
+  videoAttachments: MediaAttachment[] = [
+    { url: 'https://example.com/video1.mp4', type: 'video', name: 'Video 1' },
+    { url: 'https://example.com/video2.mp4', type: 'video', name: 'Video 2' },
+    { url: 'https://example.com/video3.mp4', type: 'video', name: 'Video 3' }
+  ];
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+
+  onIndexChange(index: number): void {
+    // PIP automatically exits when navigating to another video
+    console.log('Navigated to video:', index + 1);
+  }
+
+  onPipStateChange(isPipMode: boolean): void {
+    this.isPipActive = isPipMode;
+    console.log('PIP mode:', isPipMode ? 'active' : 'inactive');
+  }
+}
+```
+
+**Gallery Navigation Behavior:**
+- When navigating to another video while in PIP mode, PIP automatically exits
+- The new video loads in the fullscreen viewer
+- User can re-enter PIP mode with the new video
+- When navigating to an image, PIP exits (images don't support PIP)
+
+### Browser Support
+
+PIP requires browser support for the Picture-in-Picture API. The component automatically detects support and only shows the PIP button when available.
+
+**Supported Browsers:**
+- ✅ Chrome 70+
+- ✅ Edge 79+
+- ✅ Safari 13.1+
+- ✅ Opera 57+
+- ❌ Firefox (limited support, requires user gesture)
+
+**Checking Support:**
+```typescript
+// The component checks this internally
+const isPipSupported = document.pictureInPictureEnabled;
+```
+
+### PIP Button Visibility
+
+The PIP button is only visible when:
+1. `enablePictureInPicture` is `true`
+2. The current media is a video (not an image)
+3. The browser supports the Picture-in-Picture API
+
+### PIP Behavior
+
+**Entering PIP:**
+- Click the PIP button in the viewer header
+- Video starts playing (if paused) and enters PIP mode
+- Video continues playing in a floating window above all other content
+- **Fullscreen viewer stays open** to keep the video element in the DOM
+- The `pipStateChange` event is emitted with `true`
+
+**Exiting PIP:**
+- Click the close button on the PIP window
+- Use browser controls to close the PIP window
+- The video will stop playing when PIP is closed
+- The `pipStateChange` event is emitted with `false`
+
+**Automatic PIP Exit:**
+- When navigating to another video in gallery mode
+- When navigating to an image in gallery mode
+- When closing the fullscreen viewer (via close button or Escape key)
+- When the component is destroyed
+
+<Info>
+  The fullscreen viewer must stay open while PIP is active because the video element needs to remain in the DOM for PIP to work. If you close the viewer (via close button or Escape), the PIP window will also close.
+</Info>
+
+<Tip>
+  To use PIP effectively: click the PIP button, then minimize or switch away from the browser tab. The video will continue playing in the floating PIP window.
+</Tip>
+
+### Styling PIP Button
+
+Customize the PIP button appearance using CSS:
+
+```css expandable
+/* PIP button styling */
+::ng-deep .cometchat-fullscreen-viewer__pip-button {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  padding: 8px;
+  transition: all 0.2s ease;
+}
+
+::ng-deep .cometchat-fullscreen-viewer__pip-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* Active PIP state */
+::ng-deep .cometchat-fullscreen-viewer__pip-button--active {
+  background: var(--cometchat-primary-color);
+}
+```
+
+### PIP Limitations
+
+<Warning>
+  PIP is only available for video content. Images do not support Picture-in-Picture.
+</Warning>
+
+<Info>
+  Only one video can be in PIP mode at a time (browser limitation). Entering PIP with a new video will exit PIP for any existing video.
+</Info>
+
+<Warning>
+  Some browsers require a user gesture (click) to enter PIP mode. The component handles this by using the PIP button click as the gesture.
+</Warning>
+
+<Warning>
+  The video must be playing to enter PIP mode. The component automatically starts playback when you click the PIP button if the video is paused.
+</Warning>
+
+<Tip>
+  Use the `pipStateChange` event to track PIP state and update your UI accordingly (e.g., show a "Video playing in PIP" indicator).
+</Tip>
+
+### Keyboard Support
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate forward through controls | Close → Download → Previous → Next |
+| `Shift + Tab` | Navigate backward through controls | Reverse order |
+| `Enter` | Activate focused button | Any button |
+| `Space` | Activate focused button | Any button |
+| `Right Arrow` | Navigate to next media | Gallery mode |
+| `Left Arrow` | Navigate to previous media | Gallery mode |
+| `Escape` | Close viewer | Anytime viewer is open |
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Viewer container | `"dialog"` | Identifies as modal dialog |
+| `aria-modal` | Viewer container | `"true"` | Indicates modal behavior |
+| `aria-label` | Viewer container | `"Fullscreen media viewer"` | Provides accessible name |
+| `aria-label` | Close button | Localized "Close" | Describes close action |
+| `aria-label` | Download button | Localized "Download" | Describes download action |
+| `aria-label` | Previous button | Localized "Previous" | Describes previous action |
+| `aria-label` | Next button | Localized "Next" | Describes next action |
+| `aria-disabled` | Navigation buttons | `"true"` when disabled | Indicates disabled state |
+| `aria-live` | Index display | `"polite"` | Announces position changes |
+| `alt` | Image elements | Descriptive text | Provides image description |
+
+### Screen Reader Behavior
+
+Screen readers announce the fullscreen viewer with:
+1. **Opening**: "Dialog, Fullscreen media viewer"
+2. **Image display**: "Image from [sender name]"
+3. **Video display**: "Video from [sender name]"
+4. **Navigation**: "Button, Next" / "Button, Previous"
+5. **Position changes**: "3 of 10" (via aria-live region)
+6. **Disabled buttons**: "Button, Next, disabled"
+7. **Closing**: Focus returns to triggering element
+
+### Focus Management
+
+The component implements comprehensive focus management:
+
+**On Open:**
+- Focus moves to close button
+- Focus is trapped within the viewer
+- Tab cycles through: Close → Download → Previous → Next → Close
+
+**On Navigate:**
+- Focus remains on the control that triggered navigation
+- Position change announced via aria-live region
+
+**On Close:**
+- Focus returns to the element that opened the viewer
+- Body scroll is restored
+- Focus trap is removed
+
+### Accessibility Best Practices
+
+<Tip>
+  The component automatically handles all accessibility requirements. No additional ARIA attributes or keyboard handling is needed.
+</Tip>
+
+<Warning>
+  When opening the viewer programmatically, consider passing the triggering element reference to ensure proper focus restoration.
+</Warning>
+
+<Info>
+  All interactive elements have visible focus indicators that meet WCAG 2.1 Level AA contrast requirements.
+</Info>
+
+<Tip>
+  The focus trap ensures keyboard users can't accidentally tab out of the viewer, improving usability and accessibility.
+</Tip>
+
+## Best Practices
+
+<Tip>
+  Use gallery mode (`attachments` array) for multiple media items instead of opening the viewer multiple times.
+</Tip>
+
+<Warning>
+  The viewer prevents body scroll while open. Avoid programmatically scrolling the page while the viewer is active.
+</Warning>
+
+<Info>
+  Videos automatically stop when navigating away or closing the viewer. No manual cleanup is required.
+</Info>
+
+<Tip>
+  Handle the `indexChange` event to track user navigation through the gallery for analytics or state management.
+</Tip>
+
+<Warning>
+  The `isOpen` property controls visibility. Always set it to `false` in your `closeClick` handler to properly close the viewer.
+</Warning>
+
+<Info>
+  The viewer works in both single mode (backward compatible with `url` prop) and gallery mode (`attachments` array).
+</Info>
+
+<Tip>
+  Provide sender information (`senderName` and `senderAvatarUrl`) for better context, especially in chat applications.
+</Tip>
+
+<Warning>
+  Ensure media URLs are accessible and not blocked by CORS policies. The viewer cannot display media from restricted sources.
+</Warning>
+
+## Examples
+
+### Complete Gallery Component
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatFullScreenViewerComponent, 
+  MediaAttachment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-media-gallery',
+  standalone: true,
+  imports: [CommonModule, CometChatFullScreenViewerComponent],
+  template: `
+    <div class="gallery-container">
+      <h2>{{ 'media_gallery_title' | translate }}</h2>
+      
+      <div class="thumbnail-grid">
+        @for (media of mediaItems; track media.url; let i = $index) {
+          <div class="thumbnail-item" (click)="openGallery(i)">
+            @if (media.type === 'image') {
+              <img [src]="media.url" [alt]="media.name" />
+            } @else {
+              <div class="video-thumbnail">
+                <img [src]="media.thumbnail || 'assets/video-placeholder.png'" [alt]="media.name" />
+                <div class="play-overlay">▶</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="mediaItems"
+      [startIndex]="selectedIndex"
+      [senderName]="senderName"
+      [senderAvatarUrl]="senderAvatar"
+      (closeClick)="closeViewer()"
+      (indexChange)="onIndexChange($event)"
+      (downloadClick)="onDownload($event)"
+    ></cometchat-fullscreen-viewer>
+  `,
+  styles: [`
+    .gallery-container {
+      padding: 20px;
+    }
+
+    .thumbnail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .thumbnail-item {
+      position: relative;
+      cursor: pointer;
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      transition: transform 0.2s;
+    }
+
+    .thumbnail-item:hover {
+      transform: scale(1.05);
+    }
+
+    .thumbnail-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-thumbnail {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .play-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+    }
+  `]
+})
+export class MediaGalleryComponent implements OnInit {
+  isViewerOpen = false;
+  selectedIndex = 0;
+  senderName = '';
+  senderAvatar = '';
+  
+  mediaItems: MediaAttachment[] = [];
+
+  async ngOnInit(): Promise<void> {
+    await this.loadMediaFromMessages();
+  }
+
+  async loadMediaFromMessages(): Promise<void> {
+    try {
+      const messagesRequest = new CometChat.MessagesRequestBuilder()
+        .setLimit(50)
+        .setTypes([CometChat.MESSAGE_TYPE.IMAGE, CometChat.MESSAGE_TYPE.VIDEO])
+        .build();
+
+      const messages = await messagesRequest.fetchPrevious();
+      
+      // Extract media attachments from messages
+      this.mediaItems = messages.flatMap((msg: any) => {
+        const attachments = msg.getAttachments() || [];
+        return attachments.map((att: any) => ({
+          url: att.url,
+          type: msg.getType() === 'image' ? 'image' as const : 'video' as const,
+          name: att.name,
+          thumbnail: att.thumbnail,
+          mimeType: att.mimeType,
+          size: att.size
+        }));
+      });
+
+      // Get sender info from first message
+      if (messages.length > 0) {
+        const sender = messages[0].getSender();
+        this.senderName = sender.getName();
+        this.senderAvatar = sender.getAvatar();
+      }
+    } catch (error) {
+      console.error('Error loading media:', error);
+    }
+  }
+
+  openGallery(index: number): void {
+    this.selectedIndex = index;
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+
+  onIndexChange(index: number): void {
+    this.selectedIndex = index;
+    console.log('Viewing media:', this.mediaItems[index].name);
+  }
+
+  onDownload(media: MediaAttachment | string): void {
+    console.log('Downloading:', media);
+    // Implement download logic
+  }
+}
+```
+
+### Integration with Image Bubble
+
+```typescript expandable
+import { Component, Input } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatImageBubbleComponent,
+  CometChatFullScreenViewerComponent,
+  MediaAttachment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-image-message',
+  standalone: true,
+  imports: [CometChatImageBubbleComponent, CometChatFullScreenViewerComponent],
+  template: `
+    <cometchat-image-bubble
+      [message]="message"
+      (imageClick)="openViewer($event)"
+    ></cometchat-image-bubble>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="attachments"
+      [startIndex]="selectedIndex"
+      [message]="message"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class ImageMessageComponent {
+  @Input() message!: CometChat.MediaMessage;
+  
+  isViewerOpen = false;
+  selectedIndex = 0;
+  attachments: MediaAttachment[] = [];
+
+  openViewer(event: { attachment: MediaAttachment; index: number }): void {
+    // Extract all attachments from message
+    const messageAttachments = this.message.getAttachments();
+    this.attachments = messageAttachments.map(att => ({
+      url: att.url,
+      type: 'image' as const,
+      name: att.name,
+      mimeType: att.mimeType,
+      size: att.size
+    }));
+    
+    this.selectedIndex = event.index;
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+}
+```
+
+### Integration with Video Bubble
+
+```typescript expandable
+import { Component, Input } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatVideoBubbleComponent,
+  CometChatFullScreenViewerComponent,
+  MediaAttachment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-video-message',
+  standalone: true,
+  imports: [CometChatVideoBubbleComponent, CometChatFullScreenViewerComponent],
+  template: `
+    <cometchat-video-bubble
+      [message]="message"
+      (videoClick)="openViewer($event)"
+    ></cometchat-video-bubble>
+    
+    <cometchat-fullscreen-viewer
+      [isOpen]="isViewerOpen"
+      [attachments]="attachments"
+      [startIndex]="selectedIndex"
+      [message]="message"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  `
+})
+export class VideoMessageComponent {
+  @Input() message!: CometChat.MediaMessage;
+  
+  isViewerOpen = false;
+  selectedIndex = 0;
+  attachments: MediaAttachment[] = [];
+
+  openViewer(event: { attachment: MediaAttachment; index: number }): void {
+    // Extract all video attachments from message
+    const messageAttachments = this.message.getAttachments();
+    this.attachments = messageAttachments.map(att => ({
+      url: att.url,
+      type: 'video' as const,
+      name: att.name,
+      mimeType: att.mimeType,
+      size: att.size
+    }));
+    
+    this.selectedIndex = event.index;
+    this.isViewerOpen = true;
+  }
+
+  closeViewer(): void {
+    this.isViewerOpen = false;
+  }
+}
+```
+
+## Related Components
+
+- **CometChatImageBubble**: Displays image messages with grid layouts and uses fullscreen viewer for gallery
+- **CometChatVideoBubble**: Displays video messages with thumbnails and uses fullscreen viewer for playback
+- **CometChatFileBubble**: Displays file attachments with download functionality
+- **CometChatMessageBubble**: Container component that uses media bubbles for rendering
+- **CometChatMessageList**: Displays lists of messages including media messages
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: 
+  - Angular CommonModule
+  - CometChat SDK for message types (optional)
+  - CometChatAvatar for sender display
+  - TranslatePipe for localization
+- **Bundle Size**: Minimal footprint (~15KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **Browser Support**: Modern browsers with ES6+ support
+
+## Performance Considerations
+
+### Optimization Strategies
+
+**Change Detection:**
+- Uses OnPush strategy to minimize unnecessary re-renders
+- Only updates when inputs change or events are emitted
+
+**Video Management:**
+- Videos only load when displayed (not preloaded)
+- Automatic video stop prevents memory leaks
+- Video elements cleaned up on navigation and close
+
+**Body Scroll Management:**
+- Efficient CSS-based scroll prevention
+- Original scroll position preserved and restored
+- No layout thrashing or reflows
+
+**Focus Management:**
+- Minimal DOM queries for focus trap
+- Focus restoration uses stored reference
+- No unnecessary focus changes during navigation
+
+**Keyboard Handling:**
+- Single global keyboard listener
+- Event delegation for efficiency
+- Listener removed on component destruction
+
+### Best Practices for Performance
+
+<Tip>
+  The component uses OnPush change detection. Ensure attachment arrays are immutable for optimal performance.
+</Tip>
+
+<Info>
+  Videos are not preloaded. They only start loading when displayed in the viewer, saving bandwidth.
+</Info>
+
+<Warning>
+  Avoid frequently toggling `isOpen`. Each open/close cycle manages body scroll and focus, which has a small performance cost.
+</Warning>
+
+<Info>
+  The component automatically cleans up all resources (video elements, event listeners, body scroll) on destruction.
+</Info>
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatfullscreenviewer).
+</Info>
+
+## FAQ
+
+### Q: Can I use this component outside of CometChat message contexts?
+
+**A:** Yes! The component is standalone and can be used anywhere you need fullscreen media viewing. Just provide the `attachments` array or `url` property with your media.
+
+### Q: How do I customize the viewer's appearance?
+
+**A:** Use CSS variables for theming or `::ng-deep` for deep styling:
+
+```css
+cometchat-fullscreen-viewer {
+  --cometchat-background-color-01: rgba(0, 0, 0, 0.95);
+}
+
+::ng-deep .cometchat-fullscreen-viewer__nav-button {
+  background: rgba(255, 255, 255, 0.3);
+}
+```
+
+### Q: Can I disable specific features like download or navigation?
+
+**A:** The component doesn't have props to disable features, but you can hide them with CSS:
+
+```css
+/* Hide download button */
+::ng-deep .cometchat-fullscreen-viewer__download-button {
+  display: none;
+}
+
+/* Hide navigation buttons */
+::ng-deep .cometchat-fullscreen-viewer__nav-button {
+  display: none;
+}
+```
+
+### Q: Does the viewer support image zoom or pinch-to-zoom?
+
+**A:** The current version displays images at their full size. Advanced zoom features like pinch-to-zoom are not currently supported but may be added in future versions.
+
+### Q: How do I handle download events?
+
+**A:** Listen to the `downloadClick` event:
+
+```typescript expandable
+onDownload(media: MediaAttachment | string): void {
+  if (typeof media === 'string') {
+    // Single mode - media is URL string
+    window.open(media, '_blank');
+  } else {
+    // Gallery mode - media is MediaAttachment object
+    const link = document.createElement('a');
+    link.href = media.url;
+    link.download = media.name || 'download';
+    link.click();
+  }
+}
+```
+
+### Q: Can I programmatically navigate to a specific index?
+
+**A:** Yes, update the `startIndex` property:
+
+```typescript
+// Navigate to third item
+this.startIndex = 2;
+```
+
+Note: This only works when the viewer is opening. To navigate while open, you'll need to close and reopen with a new `startIndex`.
+
+### Q: Does the viewer work on mobile devices?
+
+**A:** Yes! The viewer is fully responsive and works on mobile devices. Touch gestures for navigation are not currently supported, but the navigation buttons work on touch screens.
+
+### Q: How do I track which media item the user is viewing?
+
+**A:** Listen to the `indexChange` event:
+
+```typescript
+onIndexChange(index: number): void {
+  console.log('User is viewing item:', index + 1);
+  // Track analytics, update state, etc.
+}
+```
+
+### Q: Can I use this with non-CometChat media sources?
+
+**A:** Absolutely! The component works with any valid image or video URLs:
+
+```typescript
+const myMedia: MediaAttachment[] = [
+  { url: 'https://my-cdn.com/photo1.jpg', type: 'image', name: 'Photo 1' },
+  { url: 'https://my-cdn.com/video1.mp4', type: 'video', name: 'Video 1' }
+];
+```
+
+### Q: What video formats are supported?
+
+**A:** The viewer uses HTML5 video element, which supports:
+- **MP4** (H.264 codec) - Best compatibility
+- **WebM** (VP8/VP9 codec)
+- **Ogg** (Theora codec)
+
+Support varies by browser. MP4 with H.264 has the widest support.
+
+### Q: How do I use Picture-in-Picture mode?
+
+**A:** Enable PIP by setting `enablePictureInPicture` to `true`:
+
+```typescript
+<cometchat-fullscreen-viewer
+  [isOpen]="isViewerOpen"
+  [url]="videoUrl"
+  [mediaType]="'video'"
+  [enablePictureInPicture]="true"
+  (pipStateChange)="onPipStateChange($event)"
+></cometchat-fullscreen-viewer>
+```
+
+The PIP button appears in the header for videos when the browser supports PIP. Click it to minimize the video to a floating window.
+
+### Q: Why isn't the PIP button showing?
+
+**A:** The PIP button only appears when:
+1. `enablePictureInPicture` is `true` (default)
+2. The current media is a video (not an image)
+3. The browser supports the Picture-in-Picture API
+
+Check browser support: Chrome 70+, Edge 79+, Safari 13.1+, Opera 57+. Firefox has limited support.
+
+### Q: How do I prevent the viewer from closing when clicking the backdrop?
+
+**A:** The viewer currently closes when clicking the backdrop (this is standard modal behavior). To prevent this, you would need to modify the component or handle the `closeClick` event conditionally.
+
+### Q: Can I add custom buttons to the viewer header?
+
+**A:** The component doesn't support custom buttons via props. You would need to use CSS to position custom elements or fork the component for extensive customization.
+
+## Changelog
+
+### v5.0.0 (Current)
+- ✨ **New**: Unified fullscreen viewer for images and videos
+- ✨ **New**: Gallery mode with navigation controls
+- ✨ **New**: Keyboard navigation (Arrow keys, Escape)
+- ✨ **New**: Sender information display in header
+- ✨ **New**: Position indicator (X of Y)
+- ✨ **New**: Automatic video playback management
+- ✨ **New**: Focus trap and focus restoration
+- ✨ **New**: Body scroll prevention
+- ✨ **New**: Full WCAG 2.1 Level AA accessibility
+- ✨ **New**: Picture-in-Picture (PIP) mode for videos (Enterprise feature)
+- ✨ **New**: PIP state change events for tracking PIP mode
+- ✨ **New**: Browser support detection for PIP
+- 🔄 **Changed**: Replaces `image-gallery-viewer` and `video-player-viewer`
+- 🔄 **Changed**: New API with `attachments` array for gallery mode
+- 🔄 **Changed**: Backward compatible with single mode (`url` prop)
+
+### Deprecated Components
+- ⚠️ **Deprecated**: `image-gallery-viewer` - Use `CometChatFullscreenViewer` instead
+- ⚠️ **Deprecated**: `video-player-viewer` - Use `CometChatFullscreenViewer` instead
+
+These deprecated components will be removed in v6.0.0. Please migrate to `CometChatFullscreenViewer`.
+
+## Support
+
+For issues, questions, or feature requests:
+- 📖 [Documentation](https://www.cometchat.com/docs/angular-uikit)
+- 💬 [Community Forum](https://forum.cometchat.com)
+- 🐛 [GitHub Issues](https://github.com/cometchat/cometchat-chat-uikit-angular)
+- 📧 [Support Email](mailto:support@cometchat.com)

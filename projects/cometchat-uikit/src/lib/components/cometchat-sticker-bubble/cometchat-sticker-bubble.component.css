@@ -1,0 +1,63 @@
+/**
+ * CometChatStickerBubble Styles
+ *
+ * BEM CSS methodology with CSS variables for theming.
+ * All values use CSS variables from css-variables.css.
+ *
+ * @see Requirements 3.2, 3.6, 3.7
+ */
+
+/* ============================================
+   Block: cometchat-sticker-bubble
+   ============================================ */
+
+/**
+ * Main container for sticker message bubbles.
+ * Displays as a flex container centered with padding.
+ *
+ * @see Requirements 3.6, 3.7
+ */
+.cometchat-sticker-bubble {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--cometchat-sticker-bubble-padding, var(--cometchat-padding-2, 8px));
+}
+
+/* ============================================
+   Modifiers: Alignment Variants
+   ============================================ */
+
+/**
+ * Incoming (left-aligned) sticker styling.
+ *
+ * @see Requirements 3.4
+ */
+.cometchat-sticker-bubble--incoming {
+  justify-content: flex-start;
+}
+
+/**
+ * Outgoing (right-aligned) sticker styling.
+ *
+ * @see Requirements 3.5
+ */
+.cometchat-sticker-bubble--outgoing {
+  justify-content: flex-end;
+}
+
+/* ============================================
+   Element: Image
+   ============================================ */
+
+/**
+ * Sticker image constrained to max dimensions with
+ * object-fit: contain to preserve aspect ratio.
+ *
+ * @see Requirements 3.2
+ */
+.cometchat-sticker-bubble__image {
+  max-width: var(--cometchat-sticker-bubble-image-max-width, 150px);
+  max-height: var(--cometchat-sticker-bubble-image-max-height, 150px);
+  object-fit: contain;
+}

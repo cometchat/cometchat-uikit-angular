@@ -1,0 +1,214 @@
+{
+  "name": "CometChat UIKit Angular",
+  "theme": "mint",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#6851FF",
+    "light": "#8B7AFF",
+    "dark": "#6851FF"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@cometchat.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.cometchat.com"
+    }
+  },
+  "footer": {
+    "socials": {
+      "twitter": "https://twitter.com/cometchat",
+      "github": "https://github.com/cometchat",
+      "linkedin": "https://www.linkedin.com/company/cometchat"
+    }
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Overview",
+        "pages": ["introduction"]
+      },
+      {
+        "group": "Getting Started",
+        "pages": [
+          "installation",
+          "quickstart",
+          "integration"
+        ]
+      },
+      {
+        "group": "Features",
+        "pages": [
+          {
+            "group": "Chat",
+            "pages": [
+              "core-features",
+              "extensions",
+              "ai-features"
+            ]
+          },
+          {
+            "group": "Call",
+            "pages": ["call-features"]
+          }
+        ]
+      },
+      {
+        "group": "Theming",
+        "pages": [
+          "customization/theming",
+          "customization/localization",
+          "customization/global-config",
+          "sound-manager"
+        ]
+      },
+      {
+        "group": "Components",
+        "pages": [
+          "components/overview",
+          {
+            "group": "Conversations",
+            "pages": [
+              "components/cometchat-conversations",
+              "components/cometchat-conversation-item"
+            ]
+          },
+          {
+            "group": "Users",
+            "pages": [
+              "components/cometchat-users",
+              "components/cometchat-user-item"
+            ]
+          },
+          {
+            "group": "Groups",
+            "pages": [
+              "components/cometchat-groups",
+              "components/cometchat-group-item"
+            ]
+          },
+          {
+            "group": "Group Members",
+            "pages": [
+              "components/cometchat-group-members",
+              "components/cometchat-group-member-item"
+            ]
+          },
+          {
+            "group": "Message Header",
+            "pages": ["components/cometchat-message-header"]
+          },
+          {
+            "group": "Message List",
+            "pages": ["components/cometchat-message-list"]
+          },
+          {
+            "group": "Message Composer",
+            "pages": ["components/cometchat-message-composer"]
+          },
+          {
+            "group": "Message Bubble",
+            "pages": ["components/cometchat-message-bubble"]
+          },
+          {
+            "group": "Message Information",
+            "pages": ["components/cometchat-message-information"]
+          },
+          {
+            "group": "Thread Header",
+            "pages": ["components/cometchat-thread-header"]
+          },
+          {
+            "group": "Message Bubbles",
+            "pages": [
+              "components/cometchat-text-bubble",
+              "components/cometchat-image-bubble",
+              "components/cometchat-video-bubble",
+              "components/cometchat-audio-bubble",
+              "components/cometchat-file-bubble",
+              "components/cometchat-action-bubble",
+              "components/cometchat-delete-bubble",
+              "components/cometchat-call-bubble",
+              "components/cometchat-poll-bubble",
+              "components/cometchat-collaborative-document-bubble",
+              "components/cometchat-collaborative-whiteboard-bubble",
+              "components/cometchat-sticker-bubble",
+              "components/cometchat-stickers-keyboard"
+            ]
+          },
+          {
+            "group": "Reactions",
+            "pages": [
+              "components/cometchat-reactions",
+              "components/cometchat-reaction-list",
+              "components/cometchat-reaction-info"
+            ]
+          },
+          {
+            "group": "Calls",
+            "pages": [
+              "components/cometchat-call-buttons",
+              "components/cometchat-incoming-call",
+              "components/cometchat-outgoing-call",
+              "components/cometchat-call-logs"
+            ]
+          },
+          {
+            "group": "AI",
+            "pages": [
+              "components/cometchat-smart-replies",
+              "components/cometchat-conversation-starter",
+              "components/cometchat-conversation-summary"
+            ]
+          }
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "events",
+          "methods",
+          "accessibility",
+          "troubleshooting"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/overview",
+          "guides/state-management",
+          "guides/threaded-messages",
+          "guides/group-chat",
+          "guides/new-chat",
+          "guides/block-unblock-user",
+          "guides/message-privately",
+          "guides/call-log-details",
+          "guides/custom-text-formatter",
+          "guides/mentions-formatter",
+          "guides/shortcut-formatter",
+          "guides/hashtag-formatter"
+        ]
+      },
+      {
+        "group": "Services",
+        "pages": [
+          "api-reference/introduction",
+          "api-reference/chat-state-service",
+          "api-reference/message-bubble-config-service",
+          "api-reference/templates-service",
+          "api-reference/formatter-config-service",
+          "api-reference/rich-text-editor-service"
+        ]
+      }
+    ]
+  }
+}

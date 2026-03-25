@@ -1,0 +1,156 @@
+---
+title: "CometChatUserItem"
+description: "A standalone Angular component for rendering a single user item with avatar, status indicator, custom templates, and context menu support"
+---
+
+## Overview
+
+The CometChatUserItem component renders a single user entry within a list. It displays the user's avatar, name, and online/offline status indicator, and supports custom templates for all visual sections. The component integrates a context menu for user-specific actions and provides full keyboard accessibility with ARIA support.
+
+### Key Features
+
+- **State Management**: Active, selected, and focused states with distinct visual styling
+- **User Avatar**: Displays the user's avatar image with an online/offline status indicator
+- **Custom Templates**: Template projection for leading, title, subtitle, and trailing sections
+- **Context Menu**: Configurable context menu options on hover or right-click
+- **Keyboard Accessibility**: Full keyboard support with Enter, Space, and Shift+F10 shortcuts
+- **Global Config Priority**: Supports a three-tier priority system (Input > GlobalConfig > Default)
+
+
+<Info>
+  **Live Preview** — default user item preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-users-cometchat-user-item--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-users-cometchat-user-item--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="CometChat User Item — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUserItemComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-item-demo',
+  standalone: true,
+  imports: [CometChatUserItemComponent],
+  template: `
+    <cometchat-user-item
+      [user]="user"
+      [isActive]="false"
+      (itemClick)="onItemClick($event)"
+    ></cometchat-user-item>
+  `
+})
+export class UserItemDemoComponent {
+  user!: CometChat.User;
+
+  onItemClick(user: CometChat.User): void {
+    console.log('User clicked:', user.getName());
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user` | `CometChat.User` | *required* | The user object to render. Primary data source for the component. |
+| `isActive` | `boolean` | `false` | Whether this user item is currently active/selected for viewing. Applies active styling. |
+| `isSelected` | `boolean` | `false` | Whether this user item is selected in selection mode. Shows selection indicator. |
+| `isFocused` | `boolean` | `false` | Whether this user item currently has keyboard focus. Applies focus styling. |
+| `tabIndex` | `number` | `-1` | The tabindex for roving tabindex pattern. Only the focused item should have `0`. |
+| `hideUserStatus` | `boolean` | `false` | Whether to hide the user online/offline status indicator. Supports global config override. |
+| `disableDefaultContextMenu` | `boolean` | `true` | Whether to disable the browser's default context menu on right-click/long-press. |
+| `contextMenuOptions` | `CometChatOption[]` | `undefined` | Options for the context menu displayed on hover/right-click. |
+| `leadingView` | `TemplateRef<{ $implicit: CometChat.User }>` | `undefined` | Custom template for the leading section (avatar area). |
+| `titleView` | `TemplateRef<{ $implicit: CometChat.User }>` | `undefined` | Custom template for the title section. |
+| `subtitleView` | `TemplateRef<{ $implicit: CometChat.User }>` | `undefined` | Custom template for the subtitle section. |
+| `trailingView` | `TemplateRef<{ $implicit: CometChat.User }>` | `undefined` | Custom template for the trailing section. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `CometChat.User` | Emitted when the user item is clicked or activated via keyboard. |
+| `itemSelect` | `{ user: CometChat.User; selected: boolean }` | Emitted when the user is selected/deselected in selection mode. |
+| `contextMenuOpen` | `CometChat.User` | Emitted when the context menu is opened. |
+| `contextMenuOptionClick` | `{ option: CometChatOption; user: CometChat.User }` | Emitted when a context menu option is clicked. |
+
+## Customization
+
+### CSS Variable Overrides
+
+The component uses CometChat CSS variables for theming. Override them on the host element or a parent wrapper:
+
+```css
+cometchat-user-item {
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-background-color-03: #e8e8e8;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-success-color: #09C26F;
+  --cometchat-border-color-light: #e8e8e8;
+}
+```
+
+### Custom Templates
+
+Provide custom templates via inputs to override any visual section:
+
+```html expandable
+<cometchat-user-item
+  [user]="user"
+  [subtitleView]="customSubtitle"
+  [trailingView]="customTrailing"
+>
+  <ng-template #customSubtitle let-user>
+    <span class="custom-status">{{ user.getStatus() }}</span>
+  </ng-template>
+
+  <ng-template #customTrailing let-user>
+    <button (click)="sendMessage(user); $event.stopPropagation()">
+      Message
+    </button>
+  </ng-template>
+</cometchat-user-item>
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Activate the user item (emits `itemClick`) |
+| `Space` | Activate the user item (emits `itemClick`) |
+| `Shift + F10` | Open the context menu |
+| `ContextMenu` | Open the context menu |
+
+### ARIA Attributes
+
+- `role="option"` on the item container
+- `aria-selected` reflects the current selection state
+- `aria-label` combines the user name and online/offline status for screen readers
+- Proper `tabindex` management via roving tabindex pattern
+
+### Focus Management
+
+- Visible focus indicator meeting WCAG contrast requirements
+- Mouse clicks prevent focus outline (focus ring only appears for keyboard navigation)
+- Roving tabindex pattern for efficient list navigation
+
+## Related Components
+
+- [CometChatUsers](./cometchat-users.mdx) — Parent list component that renders multiple user items
+- [CometChatAvatar](./cometchat-avatar.mdx) — Used internally for the user avatar
+- [CometChatContextMenu](./cometchat-context-menu.mdx) — Used internally for the context menu

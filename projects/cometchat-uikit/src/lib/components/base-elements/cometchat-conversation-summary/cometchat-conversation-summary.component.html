@@ -1,0 +1,69 @@
+<!--
+  CometChatConversationSummary Component Template
+
+  Displays an AI-generated conversation summary panel with:
+  - Header with localized title and close button
+  - Body area with loading shimmer, summary text, empty state, or error state
+
+  Accessibility Features:
+  - role="region" for semantic structure
+  - Close button with aria-label, focusable, keyboard operable (Enter/Space)
+  - Loading state with role="status" for screen readers
+  - Error state with role="alert" for screen readers
+
+  Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 12.1
+-->
+
+<div class="cometchat-conversation-summary__wrapper" role="region"
+  [attr.aria-label]="'ai_conversation_summary_title' | translate">
+  <div class="cometchat-conversation-summary">
+
+    <!-- Header: Title + Close Button -->
+    <div class="cometchat-conversation-summary__header">
+      <div class="cometchat-conversation-summary__header-title">
+        {{ 'ai_conversation_summary_title' | translate }}
+      </div>
+      <button
+        type="button"
+        class="cometchat-conversation-summary__header-close-button"
+        [attr.aria-label]="'close' | translate"
+        tabindex="0"
+        (click)="closeCallback?.()"
+        (keydown)="onCloseKeydown($event)">
+        <span
+          class="cometchat-conversation-summary__header-close-icon"
+          aria-hidden="true">
+        </span>
+      </button>
+    </div>
+
+    <!-- Body: State-based content -->
+    <div class="cometchat-conversation-summary__body">
+      @switch (state()) {
+        @case (States.loading) {
+          <div class="cometchat-conversation-summary__shimmer" role="status">
+            <div class="cometchat-conversation-summary__shimmer-line cometchat-conversation-summary__shimmer-line--long"></div>
+            <div class="cometchat-conversation-summary__shimmer-line cometchat-conversation-summary__shimmer-line--medium"></div>
+            <div class="cometchat-conversation-summary__shimmer-line cometchat-conversation-summary__shimmer-line--short"></div>
+          </div>
+        }
+        @case (States.loaded) {
+          <div class="cometchat-conversation-summary__text">
+            {{ summaryText() }}
+          </div>
+        }
+        @case (States.empty) {
+          <div class="cometchat-conversation-summary__empty">
+            {{ 'ai_conversation_summary_empty' | translate }}
+          </div>
+        }
+        @case (States.error) {
+          <div class="cometchat-conversation-summary__error" role="alert">
+            {{ 'ai_conversation_summary_error' | translate }}
+          </div>
+        }
+      }
+    </div>
+
+  </div>
+</div>

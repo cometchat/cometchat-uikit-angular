@@ -1,0 +1,266 @@
+---
+title: "CometChatDeleteBubble"
+description: "A simple Angular component for displaying deleted message placeholders in a chat interface"
+---
+The `CometChatDeleteBubble` component is a simple presentational Angular component that displays a placeholder indicating a message has been deleted. Unlike other message bubble components, it does NOT accept a CometChat message object - only simple inputs for styling and text customization.
+
+## Overview
+
+The Delete Bubble component provides a clear visual indicator that a message was deleted, with support for both sender (outgoing) and receiver (incoming) styling variants:
+
+- **Delete Icon Display**: Shows a recognizable delete/trash icon
+- **Localized Default Text**: Displays "This message was deleted" in the user's language
+- **Custom Text Support**: Allows overriding the default text
+- **Sender/Receiver Variants**: Different styling for outgoing vs incoming messages
+- **Full Accessibility Support**: ARIA role and labels for screen readers
+- **CSS Variable-Based Theming**: Easy customization via CSS variables
+
+
+<Info>
+  **Live Preview** — Default delete bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--deleted)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--deleted&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "200px", border: "1px solid #e0e0e0"}}
+  title="CometChat Delete Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Delete Bubble (Receiver Variant)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDeleteBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatDeleteBubbleComponent],
+  template: `
+    <cometchat-delete-bubble></cometchat-delete-bubble>
+  `
+})
+export class ChatMessageComponent {}
+```
+
+### Sender Variant (Outgoing Message)
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDeleteBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatDeleteBubbleComponent],
+  template: `
+    <cometchat-delete-bubble
+      [isSentByMe]="true"
+    ></cometchat-delete-bubble>
+  `
+})
+export class ChatMessageComponent {}
+```
+
+### Custom Text
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDeleteBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatDeleteBubbleComponent],
+  template: `
+    <cometchat-delete-bubble
+      [text]="'Message removed by admin'"
+    ></cometchat-delete-bubble>
+  `
+})
+export class ChatMessageComponent {}
+```
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatDeleteBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatDeleteBubbleComponent],
+  template: `
+    <!-- Incoming deleted message (receiver variant) -->
+    <cometchat-delete-bubble
+      [isSentByMe]="false"
+    ></cometchat-delete-bubble>
+
+    <!-- Outgoing deleted message (sender variant) -->
+    <cometchat-delete-bubble
+      [isSentByMe]="true"
+    ></cometchat-delete-bubble>
+  `
+})
+export class MessageListComponent {}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `isSentByMe` | `boolean` | `false` | Determines sender (outgoing) or receiver (incoming) styling. When `true`, applies primary color background with white text/icon. When `false`, applies neutral background with neutral text/icon |
+| `text` | `string` | `undefined` | Optional custom text to display instead of the default localized text. If not provided, uses the "message_deleted" localization key |
+
+## Customization
+
+### Styling with CSS Variables
+
+The Delete Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom delete bubble styling */
+cometchat-delete-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+
+  /* Typography */
+  --cometchat-font-body-regular: 400 14px/16.8px 'Roboto';
+
+  /* Colors - Sender variant */
+  --cometchat-primary-color: #6852D6;
+  --cometchat-static-white: #FFFFFF;
+
+  /* Colors - Receiver variant */
+  --cometchat-neutral-color-300: #E8E8E8;
+  --cometchat-neutral-color-600: #727272;
+
+  /* Border radius */
+  --cometchat-radius-3: 12px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` | Gap between icon and text | `4px` |
+| `--cometchat-spacing-2` | Container padding | `8px` |
+| `--cometchat-font-body-regular` | Text font style | `400 14px/16.8px Roboto` |
+| `--cometchat-primary-color` | Sender variant background | `#6852D6` |
+| `--cometchat-static-white` | Sender variant text/icon color | `#FFFFFF` |
+| `--cometchat-neutral-color-300` | Receiver variant background | `#E8E8E8` |
+| `--cometchat-neutral-color-600` | Receiver variant text/icon color | `#727272` |
+| `--cometchat-radius-3` | Border radius | `12px` |
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for sender variant */
+.theme-blue cometchat-delete-bubble {
+  --cometchat-primary-color: #1976D2;
+}
+
+/* Green theme for sender variant */
+.theme-green cometchat-delete-bubble {
+  --cometchat-primary-color: #4CAF50;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-delete-bubble {
+  --cometchat-neutral-color-300: #424242;
+  --cometchat-neutral-color-600: #B0B0B0;
+}
+```
+
+### Custom Icon Styling
+
+The delete icon uses CSS mask technique, allowing color customization via the background property:
+
+```css expandable
+/* Custom icon color for receiver variant */
+::ng-deep .cometchat-delete-bubble--receiver .cometchat-delete-bubble__icon {
+  background: #FF5722;
+}
+
+/* Custom icon size */
+::ng-deep .cometchat-delete-bubble__icon {
+  width: 20px;
+  height: 20px;
+}
+```
+
+## Accessibility
+
+The Delete Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: The container has an aria-label with the displayed text
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with role="status"
+- ✅ **1.4.3 Contrast (Minimum) (Level AA)**: Sufficient color contrast for text readability
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Container | `"status"` | Indicates this is a status message |
+| `aria-label` | Container | Displayed text | Provides accessible name for screen readers |
+| `aria-hidden` | Icon | `"true"` | Hides decorative icon from screen readers |
+
+### Screen Reader Behavior
+
+Screen readers announce the delete bubble as a status message with the displayed text (either the localized default "This message was deleted" or custom text). The `role="status"` attribute ensures that screen readers treat this as an informational message rather than interactive content.
+
+### Color Contrast
+
+Both sender and receiver variants maintain sufficient color contrast:
+- **Sender variant**: White text on primary color background (typically purple #6852D6)
+- **Receiver variant**: Neutral-600 text on neutral-300 background
+
+## Best Practices
+
+<Tip>
+  Use the delete bubble to indicate that a message was deleted, providing users with context about missing content in the conversation.
+</Tip>
+
+<Warning>
+  The component does NOT accept a CometChat message object. You must determine the `isSentByMe` value based on the original message sender.
+</Warning>
+
+<Info>
+  The default text is automatically localized. Only provide custom text via the `text` input if you need to override the default message.
+</Info>
+
+<Tip>
+  For consistent styling, use the sender variant (`isSentByMe="true"`) for messages the logged-in user deleted, and the receiver variant for messages deleted by others.
+</Tip>
+
+## Related Components
+
+- **CometChatActionBubble**: Displays action/system messages
+- **CometChatTextBubble**: Displays text messages
+- **CometChatMessageList**: Displays lists of messages including deleted message placeholders
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: Uses CometChatLocalize for default text localization
+- **Bundle Size**: Minimal footprint (~2KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+- **Max Width**: 270px to maintain consistent bubble sizing

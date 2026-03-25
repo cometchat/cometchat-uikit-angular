@@ -1,0 +1,219 @@
+---
+title: "Global Configuration"
+description: "Centralized configuration for CometChat Angular UIKit components using the COMETCHAT_GLOBAL_CONFIG injection token"
+---
+
+## Overview
+
+The CometChat Angular UIKit provides a centralized configuration system through the `COMETCHAT_GLOBAL_CONFIG` injection token. This allows you to set default values for common properties across all UIKit components from a single location, without having to pass the same inputs to every component instance.
+
+### Priority System
+
+All configurable properties follow a three-tier priority system:
+
+1. `@Input` value (if explicitly set on the component)
+2. `GlobalConfig` value (from the injection token)
+3. Component's internal default value
+
+This means you can set a global default and still override it on individual component instances when needed.
+
+## Setup
+
+### Standalone Application (app.config.ts)
+
+```typescript expandable
+import { ApplicationConfig } from '@angular/core';
+import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '@cometchat/chat-uikit-angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    {
+      provide: COMETCHAT_GLOBAL_CONFIG,
+      useValue: {
+        hideReceipts: true,
+        hideUserStatus: false,
+        showSearchBar: true,
+        disableSoundForMessages: false,
+      } as GlobalConfig,
+    },
+  ],
+};
+```
+
+### NgModule Application (app.module.ts)
+
+```typescript expandable
+import { NgModule } from '@angular/core';
+import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '@cometchat/chat-uikit-angular';
+
+@NgModule({
+  providers: [
+    {
+      provide: COMETCHAT_GLOBAL_CONFIG,
+      useValue: {
+        hideReceipts: true,
+        showSearchBar: true,
+      } as GlobalConfig,
+    },
+  ],
+})
+export class AppModule {}
+```
+
+### Dynamic Configuration with Factory
+
+```typescript expandable
+import { COMETCHAT_GLOBAL_CONFIG } from '@cometchat/chat-uikit-angular';
+
+{
+  provide: COMETCHAT_GLOBAL_CONFIG,
+  useFactory: (envService: EnvironmentService) => ({
+    hideReceipts: envService.isProduction,
+    disableSoundForMessages: envService.isMobile,
+    showSearchBar: true,
+  }),
+  deps: [EnvironmentService],
+}
+```
+
+## Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideReceipts` | `boolean` | `undefined` | Hide read receipts across all components |
+| `hideError` | `boolean` | `undefined` | Hide error states across all components |
+| `hideUserStatus` | `boolean` | `undefined` | Hide user online/offline status indicators |
+| `hideGroupType` | `boolean` | `undefined` | Hide group type badges (public/private/password) |
+| `showScrollbar` | `boolean` | `undefined` | Show scrollbar in list components |
+| `showSearchBar` | `boolean` | `undefined` | Show search bar in list components |
+| `disableSoundForMessages` | `boolean` | `undefined` | Disable sound notifications for messages |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Text formatters for message rendering |
+| `disableDefaultContextMenu` | `boolean` | `undefined` | Disable right-click context menu across components |
+| `hideVoiceCallButton` | `boolean` | `undefined` | Hide voice call button across components. Note: call buttons are already hidden by default unless calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`. Use this property to hide call buttons even when calling is enabled. |
+| `hideVideoCallButton` | `boolean` | `undefined` | Hide video call button across components. Note: call buttons are already hidden by default unless calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`. Use this property to hide call buttons even when calling is enabled. |
+| `disableSoundForCalls` | `boolean` | `undefined` | Disable sound for incoming/outgoing calls |
+| `customSoundForCalls` | `string` | `undefined` | Custom sound URL for calls |
+| `customSoundForMessages` | `string` | `undefined` | Custom sound URL for messages |
+| `hideAvatar` | `boolean` | `undefined` | Hide avatar across components |
+| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` for call components (call buttons, call logs, ongoing call) |
+
+<Note>
+  All properties are optional. When a property is `undefined` (not set), the component falls back to its own internal default.
+</Note>
+
+## Call Settings Customization
+
+The `callSettingsBuilder` property lets you provide a custom `CometChatCalls.CallSettingsBuilder` that is used across all call-related components. This is useful for configuring call UI features like layout, recording, analytics, or audio-only mode globally.
+
+### Global Call Settings
+
+```typescript expandable
+import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
+import { COMETCHAT_GLOBAL_CONFIG } from '@cometchat/chat-uikit-angular';
+
+const customCallSettings = new CometChatCalls.CallSettingsBuilder()
+  .enableDefaultLayout(true)
+  .setIsAudioOnlyCall(false);
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    {
+      provide: COMETCHAT_GLOBAL_CONFIG,
+      useValue: {
+        callSettingsBuilder: customCallSettings,
+      },
+    },
+  ],
+};
+```
+
+### Per-Component Override
+
+Even with a global `callSettingsBuilder`, you can override it on individual component instances:
+
+```html expandable
+<!-- This component uses the per-instance builder, ignoring GlobalConfig -->
+<cometchat-call-buttons
+  [user]="activeUser"
+  [callSettingsBuilder]="myCustomBuilder">
+</cometchat-call-buttons>
+
+<!-- This component falls back to GlobalConfig.callSettingsBuilder -->
+<cometchat-call-logs
+  (itemClick)="onCallLogClick($event)">
+</cometchat-call-logs>
+```
+
+### Components That Support callSettingsBuilder
+
+| Component | Behavior |
+|-----------|----------|
+| [CometChatOngoingCall](/components/cometchat-ongoing-call) | Accepts `callSettingsBuilder` as `@Input`. Passes it to `OngoingCallService`. |
+| [CometChatCallButtons](/components/cometchat-call-buttons) | Accepts `callSettingsBuilder` as `@Input`. Forwards to `CometChatOngoingCall`. |
+| [CometChatMessageHeader](/components/cometchat-message-header) | Accepts `callSettingsBuilder` as `@Input`. Forwards to `CometChatCallButtons`. |
+| [CometChatCallLogs](/components/cometchat-call-logs) | Accepts `callSettingsBuilder` as `@Input`. Uses it in the ongoing call overlay. |
+
+## Components That Read GlobalConfig
+
+The following components read from `COMETCHAT_GLOBAL_CONFIG` and apply the three-tier priority system:
+
+| Component | Properties Read |
+|-----------|----------------|
+| CometChatConversations | `hideReceipts`, `hideError`, `hideUserStatus`, `hideGroupType`, `showScrollbar`, `showSearchBar`, `disableSoundForMessages`, `textFormatters`, `customSoundForMessages`, `hideAvatar`, `disableDefaultContextMenu` |
+| CometChatMessageHeader | `hideUserStatus`, `hideVoiceCallButton`, `hideVideoCallButton` |
+| CometChatMessageList | `hideReceipts`, `hideError`, `textFormatters`, `disableSoundForMessages`, `customSoundForMessages`, `disableDefaultContextMenu` |
+| CometChatMessageComposer | `textFormatters`, `disableSoundForMessages`, `customSoundForMessages` |
+| CometChatCallButtons | `hideVoiceCallButton`, `hideVideoCallButton`, `disableSoundForCalls`, `customSoundForCalls`, `callSettingsBuilder` |
+| CometChatCallLogs | `showScrollbar`, `callSettingsBuilder` |
+| CometChatUsers | `hideUserStatus`, `showScrollbar`, `showSearchBar`, `hideAvatar`, `disableDefaultContextMenu` |
+| CometChatGroups | `hideGroupType`, `showScrollbar`, `showSearchBar`, `hideAvatar`, `disableDefaultContextMenu` |
+| CometChatGroupMembers | `hideUserStatus`, `showScrollbar`, `showSearchBar`, `hideAvatar`, `disableDefaultContextMenu` |
+| CometChatOutgoingCall | `disableSoundForCalls`, `customSoundForCalls` |
+| CometChatIncomingCall | `disableSoundForCalls`, `customSoundForCalls` |
+
+## Full Example
+
+```typescript expandable
+import { ApplicationConfig } from '@angular/core';
+import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
+import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '@cometchat/chat-uikit-angular';
+
+const callSettings = new CometChatCalls.CallSettingsBuilder()
+  .enableDefaultLayout(true)
+  .setIsAudioOnlyCall(false);
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    {
+      provide: COMETCHAT_GLOBAL_CONFIG,
+      useValue: {
+        // Display
+        hideReceipts: false,
+        hideUserStatus: false,
+        hideGroupType: false,
+        hideAvatar: false,
+        showScrollbar: false,
+        showSearchBar: true,
+
+        // Sound
+        disableSoundForMessages: false,
+        disableSoundForCalls: false,
+
+        // Calls
+        hideVoiceCallButton: false,
+        hideVideoCallButton: false,
+        callSettingsBuilder: callSettings,
+
+        // Context menu
+        disableDefaultContextMenu: false,
+      } as GlobalConfig,
+    },
+  ],
+};
+```
+
+## Related
+
+- [Theming](/customization/theming) — Customize the visual appearance with CSS variables
+- [Localization](/customization/localization) — Configure language and translations
+- [ChatStateService](/api-reference/chat-state-service) — Centralized chat state management

@@ -1,0 +1,104 @@
+/* ============================================================
+   CometChat Outgoing Call Component Styles
+   BEM: .cometchat-outgoing-call
+   Requirements: 6.1, 6.2, 7.4
+   ============================================================ */
+
+/* Card container: centered flex column, desktop dimensions */
+.cometchat-outgoing-call {
+  display: var(--cometchat-outgoing-call-display, flex);
+  flex-direction: var(--cometchat-outgoing-call-flex-direction, column);
+  align-items: var(--cometchat-outgoing-call-align-items, center);
+  justify-content: var(--cometchat-outgoing-call-justify-content, center);
+  width: var(--cometchat-outgoing-call-width, 360px);
+  height: var(--cometchat-outgoing-call-height, 540px);
+  padding: var(--cometchat-outgoing-call-padding, var(--cometchat-padding-5, 20px));
+  gap: var(--cometchat-outgoing-call-gap, var(--cometchat-spacing-2, 8px));
+  border-radius: var(--cometchat-outgoing-call-border-radius, var(--cometchat-radius-5, 20px));
+  border: var(--cometchat-outgoing-call-border, 1px solid var(--cometchat-border-color-light, #F5F5F5));
+  background: var(--cometchat-outgoing-call-background, var(--cometchat-background-color-01, #FFF));
+  box-shadow: var(--cometchat-outgoing-call-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+  box-sizing: var(--cometchat-outgoing-call-box-sizing, border-box);
+  --cometchat-avatar-width:160px;
+  --cometchat-avatar-height:160px;
+}
+
+/* Title + Subtitle container */
+.cometchat-outgoing-call__title-container {
+  display: var(--cometchat-outgoing-call-title-container-display, flex);
+  flex-direction: var(--cometchat-outgoing-call-title-container-flex-direction, column);
+  align-items: var(--cometchat-outgoing-call-title-container-align-items, center);
+  gap: var(--cometchat-outgoing-call-title-container-gap, var(--cometchat-spacing-1, 4px));
+  text-align: var(--cometchat-outgoing-call-title-container-text-align, center);
+}
+
+/* Receiver name */
+.cometchat-outgoing-call__title {
+  font: var(--cometchat-outgoing-call-title-font, var(--cometchat-font-heading1-bold, 700 24px Roboto));
+  color: var(--cometchat-outgoing-call-title-color, var(--cometchat-text-color-primary, #141414));
+  overflow: var(--cometchat-outgoing-call-title-overflow, hidden);
+  text-overflow: var(--cometchat-outgoing-call-title-text-overflow, ellipsis);
+  white-space: var(--cometchat-outgoing-call-title-white-space, nowrap);
+  max-width: var(--cometchat-outgoing-call-title-max-width, 320px);
+}
+
+/* "Calling..." subtitle */
+.cometchat-outgoing-call__subtitle {
+  font: var(--cometchat-outgoing-call-subtitle-font, var(--cometchat-font-body-regular, 400 14px Roboto));
+  color: var(--cometchat-outgoing-call-subtitle-color, var(--cometchat-text-color-secondary, #8A8A8A));
+}
+
+/* Avatar wrapper */
+.cometchat-outgoing-call__avatar {
+  --cometchat-avatar-size: var(--cometchat-outgoing-call-avatar-size, 160px);
+  margin-top: var(--cometchat-outgoing-call-avatar-margin-top, var(--cometchat-margin-8, 32px));
+  margin-bottom: var(--cometchat-outgoing-call-avatar-margin-bottom, var(--cometchat-margin-8, 32px));
+  flex-shrink: var(--cometchat-outgoing-call-avatar-flex-shrink, 0);
+}
+
+/* Cancel button wrapper */
+.cometchat-outgoing-call__button {
+  --cometchat-button-background: var(--cometchat-outgoing-call-button-background, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-hover: var(--cometchat-outgoing-call-button-background-hover, var(--cometchat-error-color, #F44649));
+  --cometchat-button-background-active: var(--cometchat-outgoing-call-button-background-active, var(--cometchat-error-color, #F44649));
+  --cometchat-button-icon-background: var(--cometchat-outgoing-call-button-icon-background, var(--cometchat-static-white, #FFFFFF));
+  --cometchat-button-text-color: var(--cometchat-outgoing-call-button-text-color, var(--cometchat-static-white, #FFFFFF));
+  --cometchat-button-border-radius: var(--cometchat-outgoing-call-button-border-radius, var(--cometchat-radius-max, 1000px));
+  --cometchat-button-height: var(--cometchat-outgoing-call-button-height, 48px);
+  --cometchat-button-width: var(--cometchat-outgoing-call-button-width, 48px);
+  --cometchat-button-padding: var(--cometchat-outgoing-call-button-padding, 0);
+  --cometchat-button-border: var(--cometchat-outgoing-call-button-border, none);
+  --cometchat-button-hover-padding: var(--cometchat-outgoing-call-button-hover-padding, 0);
+  --cometchat-button-hover-border-radius: var(--cometchat-outgoing-call-button-hover-border-radius, var(--cometchat-radius-max, 1000px));
+}
+
+.cometchat-outgoing-call__button cometchat-button,
+.cometchat-outgoing-call__button .cometchat-button {
+  border-radius: var(--cometchat-outgoing-call-button-border-radius-override, var(--cometchat-radius-max, 1000px));
+}
+
+/* Visible focus indicator on cancel button (Requirement 7.4) */
+.cometchat-outgoing-call__button .cometchat-button:focus-visible {
+  outline: var(--cometchat-outgoing-call-button-outline-focus, 2px solid var(--cometchat-primary-color, #6852D6));
+  outline-offset: var(--cometchat-outgoing-call-button-outline-offset-focus, 2px);
+}
+
+@media (prefers-contrast: high) {
+  .cometchat-outgoing-call__button .cometchat-button:focus-visible {
+    outline: var(--cometchat-outgoing-call-button-outline-focus-high-contrast, 3px solid currentColor);
+  }
+}
+
+/* ============================================================
+   Mobile: viewport ≤ 768px
+   Full viewport width/height, no border-radius, no border/shadow
+   ============================================================ */
+@media (max-width: 768px) {
+  .cometchat-outgoing-call {
+    width: var(--cometchat-outgoing-call-width-mobile, 100vw);
+    height: var(--cometchat-outgoing-call-height-mobile, 100vh);
+    border-radius: var(--cometchat-outgoing-call-border-radius-mobile, 0);
+    border: var(--cometchat-outgoing-call-border-mobile, none);
+    box-shadow: var(--cometchat-outgoing-call-box-shadow-mobile, none);
+  }
+}

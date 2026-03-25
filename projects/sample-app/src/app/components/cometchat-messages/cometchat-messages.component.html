@@ -1,0 +1,36 @@
+<div class="cometchat-messages">
+  <!-- Message Header -->
+  <div class="cometchat-messages__header">
+    <cometchat-message-header
+      #messageHeader
+      [showBackButton]="showBackButton()"
+      (backClick)="onBackClick()"
+      (itemClick)="onHeaderItemClick()"
+      (searchClick)="onSearchClick()"
+    ></cometchat-message-header>
+  </div>
+
+  <!-- Message List -->
+  <div class="cometchat-messages__list">
+    <cometchat-message-list
+      [goToMessageId]="goToMessageId()"
+      (threadRepliesClick)="onThreadRepliesClick($event)"
+    ></cometchat-message-list>
+  </div>
+
+  <!-- Message Composer (hidden when blocked by user) -->
+  @if (isBlockedByMe()) {
+    <div class="cometchat-messages__blocked-banner">
+      <div class="cometchat-messages__blocked-banner-text">
+        {{ 'cannot_send_to_blocked_user' | translate }}
+        <button class="cometchat-messages__blocked-banner-link" type="button" [attr.aria-label]="'click_to_unblock' | translate" (click)="onUnblockUser()">{{ 'click_to_unblock' | translate }}</button>
+      </div>
+    </div>
+  } @else {
+    <div class="cometchat-messages__composer">
+      <cometchat-message-composer></cometchat-message-composer>
+    </div>
+  }
+
+
+</div>

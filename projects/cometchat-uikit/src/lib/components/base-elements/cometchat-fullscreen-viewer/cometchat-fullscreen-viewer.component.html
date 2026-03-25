@@ -1,0 +1,260 @@
+<div class="cometchat">
+  <div 
+    #viewerContainer
+    class="cometchat-fullscreen-viewer"
+    [class.cometchat-fullscreen-viewer--pip-active]="isPipMode"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="getViewerAriaLabel()"
+  >
+    <!-- PIP Active Indicator - Shows when video is in Picture-in-Picture mode -->
+    <div *ngIf="isPipMode" class="cometchat-fullscreen-viewer__pip-indicator">
+      <div class="cometchat-fullscreen-viewer__pip-indicator-icon"></div>
+      <div class="cometchat-fullscreen-viewer__pip-indicator-text">
+        {{ getLocalizedString('fullscreen_viewer_pip_active') }}
+      </div>
+      <div class="cometchat-fullscreen-viewer__pip-indicator-subtext">
+        {{ getLocalizedString('fullscreen_viewer_pip_active_hint') }}
+      </div>
+    </div>
+
+    <!-- Header bar with 3 sections: sender info (left), file info (center), actions (right) -->
+    <div class="cometchat-fullscreen-viewer__header">
+      <!-- Left section: Sender info with avatar -->
+      <div class="cometchat-fullscreen-viewer__header-left">
+        <div *ngIf="showSenderInfo" class="cometchat-fullscreen-viewer__sender-info">
+          <!-- Avatar -->
+          <div class="cometchat-fullscreen-viewer__avatar">
+            <img 
+              *ngIf="senderAvatar" 
+              [src]="senderAvatar" 
+              [alt]="senderName"
+              class="cometchat-fullscreen-viewer__avatar-image"
+            />
+            <div 
+              *ngIf="!senderAvatar && senderName" 
+              class="cometchat-fullscreen-viewer__avatar-initials"
+            >
+              {{ senderName.substring(0, 2).toUpperCase() }}
+            </div>
+          </div>
+          
+          <!-- Sender details -->
+          <div class="cometchat-fullscreen-viewer__sender-details">
+            <div class="cometchat-fullscreen-viewer__sender-name">{{ senderName }}</div>
+            <div class="cometchat-fullscreen-viewer__sender-status">{{ getLocalizedString('online') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center section: File info (name, size, type) -->
+      <div class="cometchat-fullscreen-viewer__header-center">
+        <div class="cometchat-fullscreen-viewer__file-info-header">
+          <span class="cometchat-fullscreen-viewer__file-info-name">{{ currentFileName }}</span>
+          <span *ngIf="currentFileSize" class="cometchat-fullscreen-viewer__file-info-separator">•</span>
+          <span *ngIf="currentFileSize" class="cometchat-fullscreen-viewer__file-info-size">{{ currentFileSize }}</span>
+          <span *ngIf="currentFileExtension" class="cometchat-fullscreen-viewer__file-info-separator">•</span>
+          <span *ngIf="currentFileExtension" class="cometchat-fullscreen-viewer__file-info-type">{{ currentFileExtension }}</span>
+        </div>
+      </div>
+
+      <!-- Right section: Gallery index, PIP, Download, Close -->
+      <div class="cometchat-fullscreen-viewer__header-right">
+        <div 
+          *ngIf="isGalleryMode" 
+          class="cometchat-fullscreen-viewer__index-display"
+          aria-live="polite"
+          [attr.aria-label]="getLocalizedString('fullscreen_viewer_index')"
+        >
+          {{ currentIndex + 1 }} {{ getLocalizedString('fullscreen_viewer_of') }} {{ attachments.length }}
+        </div>
+
+        <!-- Picture-in-Picture button (Task 20.5) -->
+        <button
+          *ngIf="showPipButton"
+          class="cometchat-fullscreen-viewer__action-button"
+          [class.cometchat-fullscreen-viewer__action-button--active]="isPipMode"
+          (click)="togglePictureInPicture()"
+          [attr.aria-label]="getPipButtonAriaLabel()"
+          [attr.aria-pressed]="isPipMode"
+          type="button"
+        >
+          <div
+            class="cometchat-fullscreen-viewer__action-icon"
+            [style.-webkit-mask-image]="'url(' + (isPipMode ? pipExitIconUrl : pipIconUrl) + ')'"
+            [style.mask-image]="'url(' + (isPipMode ? pipExitIconUrl : pipIconUrl) + ')'"
+            aria-hidden="true">
+          </div>
+        </button>
+        
+        <!-- Download button -->
+        <button
+          class="cometchat-fullscreen-viewer__action-button"
+          (click)="download()"
+          [attr.aria-label]="getLocalizedString('fullscreen_viewer_download')"
+          type="button"
+        >
+          <div
+            class="cometchat-fullscreen-viewer__action-icon"
+            [style.-webkit-mask-image]="'url(' + downloadIconUrl + ')'"
+            [style.mask-image]="'url(' + downloadIconUrl + ')'"
+            aria-hidden="true">
+          </div>
+        </button>
+
+        <!-- Close button (in header) -->
+        <button
+          #closeButton
+          class="cometchat-fullscreen-viewer__action-button cometchat-fullscreen-viewer__close-btn"
+          (click)="handleCloseClick($event)"
+          (keydown)="handleCloseKeydown($event)"
+          [attr.aria-label]="getLocalizedString('fullscreen_viewer_close')"
+          type="button"
+          tabindex="0"
+        >
+          <div class="cometchat-fullscreen-viewer__close-icon"></div>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Body with media content -->
+    <div class="cometchat-fullscreen-viewer__body">
+      <!-- Progress indicator (for image downloads in single mode) -->
+      <div 
+        *ngIf="isDownloading && !isGalleryMode && mediaType === 'image'" 
+        class="cometchat-fullscreen-viewer__body-download-progress"
+        role="progressbar"
+        [attr.aria-valuenow]="progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-label]="'Loading ' + progress.toFixed(0) + '%'"
+      >
+        <svg>
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            class="cometchat-fullscreen-viewer__body-download-progress-background"
+          ></circle>
+          <circle
+            class="cometchat-fullscreen-viewer__body-download-progress-foreground"
+            cx="50"
+            cy="50"
+            r="40"
+            [style.stroke-dasharray]="progressStrokeDasharray"
+          ></circle>
+        </svg>
+      </div>
+      
+      <!-- Image display (Task 6.3) -->
+      <!-- Gallery mode: use currentAttachment, Single mode: use url -->
+      <img
+        *ngIf="!isDownloading && (isGalleryMode ? currentAttachment?.type === 'image' : mediaType === 'image') && (isGalleryMode ? currentAttachment?.url : (image || url))"
+        [src]="isGalleryMode ? currentAttachment!.url : (image || url)"
+        class="cometchat-fullscreen-viewer__body-image"
+        [alt]="getMediaAltText()"
+      />
+
+      <!-- Video display (Task 6.3) -->
+      <!-- Gallery mode: use currentAttachment, Single mode: use url -->
+      <div 
+        *ngIf="(isGalleryMode ? currentAttachment?.type === 'video' : mediaType === 'video') && (isGalleryMode ? currentAttachment?.url : url) && !videoError" 
+        class="cometchat-fullscreen-viewer__video-container"
+      >
+        <video
+          #videoElement
+          class="cometchat-fullscreen-viewer__body-video"
+          [src]="isGalleryMode ? currentAttachment!.url : url"
+          controls
+          autoplay
+          [attr.aria-label]="getMediaAltText()"
+          (error)="handleVideoError()"
+        >
+          {{ getLocalizedString('full_screen_viewer_video_not_supported') }}
+        </video>
+      </div>
+
+      <!-- Video error state -->
+      <div *ngIf="(isGalleryMode ? currentAttachment?.type === 'video' : mediaType === 'video') && videoError" class="cometchat-fullscreen-viewer__error-state">
+        <div class="cometchat-fullscreen-viewer__error-icon"></div>
+        <div class="cometchat-fullscreen-viewer__error-text">
+          {{ getLocalizedString('full_screen_viewer_video_error') }}
+        </div>
+      </div>
+
+      <!-- Audio display (single mode only) -->
+      <div *ngIf="!isGalleryMode && mediaType === 'audio' && url" class="cometchat-fullscreen-viewer__audio-container">
+        <div class="cometchat-fullscreen-viewer__audio-icon"></div>
+        <audio
+          class="cometchat-fullscreen-viewer__body-audio"
+          [src]="url"
+          controls
+          autoplay
+          [attr.aria-label]="getMediaAltText()"
+        >
+          {{ getLocalizedString('full_screen_viewer_audio_not_supported') }}
+        </audio>
+        <div *ngIf="fileName" class="cometchat-fullscreen-viewer__audio-filename">{{ fileName }}</div>
+      </div>
+
+      <!-- File preview (single mode only) -->
+      <div *ngIf="!isGalleryMode && mediaType === 'file'" class="cometchat-fullscreen-viewer__file-preview">
+        <div class="cometchat-fullscreen-viewer__file-icon">
+          <div class="cometchat-fullscreen-viewer__file-icon-inner"></div>
+          <div *ngIf="fileExtension" class="cometchat-fullscreen-viewer__file-extension">{{ fileExtension }}</div>
+        </div>
+        <div class="cometchat-fullscreen-viewer__file-info">
+          <div class="cometchat-fullscreen-viewer__file-preview-name">{{ fileName || getLocalizedString('fullscreen_viewer_file_fallback') }}</div>
+          <div *ngIf="formattedFileSize" class="cometchat-fullscreen-viewer__file-preview-size">{{ formattedFileSize }}</div>
+        </div>
+        <a 
+          *ngIf="url"
+          [href]="url" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="cometchat-fullscreen-viewer__download-button"
+          [attr.aria-label]="getLocalizedString('fullscreen_viewer_download') + ' ' + fileName"
+        >
+          <span class="cometchat-fullscreen-viewer__download-icon"></span>
+          <span>{{ getLocalizedString('fullscreen_viewer_download') }}</span>
+        </a>
+      </div>
+
+      <!-- Navigation buttons for gallery mode (Task 6.1) -->
+      <button
+        *ngIf="isGalleryMode"
+        class="cometchat-fullscreen-viewer__nav-button cometchat-fullscreen-viewer__nav-button--prev"
+        [disabled]="!canNavigatePrev"
+        [attr.aria-disabled]="!canNavigatePrev"
+        [attr.aria-label]="getLocalizedString('fullscreen_viewer_previous')"
+        (click)="navigatePrev()"
+        type="button"
+      >
+        <div
+          class="cometchat-fullscreen-viewer__nav-icon"
+          [style.-webkit-mask-image]="'url(' + prevIconUrl + ')'"
+          [style.mask-image]="'url(' + prevIconUrl + ')'"
+          aria-hidden="true">
+        </div>
+      </button>
+
+      <button
+        *ngIf="isGalleryMode"
+        class="cometchat-fullscreen-viewer__nav-button cometchat-fullscreen-viewer__nav-button--next"
+        [disabled]="!canNavigateNext"
+        [attr.aria-disabled]="!canNavigateNext"
+        [attr.aria-label]="getLocalizedString('fullscreen_viewer_next')"
+        (click)="navigateNext()"
+        type="button"
+      >
+        <div
+          class="cometchat-fullscreen-viewer__nav-icon"
+          [style.-webkit-mask-image]="'url(' + nextIconUrl + ')'"
+          [style.mask-image]="'url(' + nextIconUrl + ')'"
+          aria-hidden="true">
+        </div>
+      </button>
+    </div>
+    
+  </div>
+</div>

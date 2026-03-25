@@ -1,0 +1,142 @@
+---
+title: "CometChatOutgoingCall"
+description: "A standalone Angular component that displays an outgoing call overlay with receiver information and a cancel button"
+---
+
+## Overview
+
+The CometChatOutgoingCall component renders a full-screen outgoing call overlay when a user initiates a voice or video call. It displays the receiver's name, a "Calling..." subtitle, the receiver's avatar, and a cancel button. The component plays an outgoing ringtone and provides focus-trapped dialog behavior.
+
+### Key Features
+
+- **Receiver Information**: Displays receiver name and avatar for both user and group calls
+- **Ringtone Support**: Plays an outgoing call ringtone with custom sound support
+- **Cancel Action**: Built-in cancel button to abort the outgoing call
+- **Template Overrides**: Replace title, subtitle, avatar, or cancel button with custom templates
+- **Focus Management**: Dialog focus trap with Escape key to cancel
+- **Global Config Priority**: Supports a three-tier priority system (Input > GlobalConfig > Default)
+
+
+<Info>
+  **Live Preview** — default outgoing call preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-calls-cometchat-outgoing-call--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-calls-cometchat-outgoing-call--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "600px", border: "1px solid #e0e0e0"}}
+  title="CometChat Outgoing Call — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatOutgoingCallComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-outgoing-call-demo',
+  standalone: true,
+  imports: [CometChatOutgoingCallComponent],
+  template: `
+    <cometchat-outgoing-call
+      [call]="outgoingCall"
+      (callCanceled)="onCallCanceled()"
+    ></cometchat-outgoing-call>
+  `
+})
+export class OutgoingCallDemoComponent {
+  outgoingCall!: CometChat.Call;
+
+  onCallCanceled(): void {
+    console.log('Outgoing call canceled');
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `call` | `CometChat.Call \| null` | `null` | The outgoing call object. Overrides service state when provided. |
+| `disableSoundForCalls` | `boolean` | `false` | Disables the outgoing call ringtone when `true`. Supports global config override. |
+| `customSoundForCalls` | `string` | `''` | Custom sound URL for the outgoing call ringtone. Supports global config override. |
+| `onError` | `((error: CometChat.CometChatException) => void) \| null` | `null` | Error callback invoked for any error during sound or cancel. |
+| `titleView` | `TemplateRef<{ $implicit: OutgoingCallTemplateContext }> \| null` | `null` | Replaces the default receiver name title. |
+| `subtitleView` | `TemplateRef<{ $implicit: OutgoingCallTemplateContext }> \| null` | `null` | Replaces the default "Calling..." subtitle. |
+| `avatarView` | `TemplateRef<{ $implicit: OutgoingCallTemplateContext }> \| null` | `null` | Replaces the default CometChatAvatar. |
+| `cancelButtonView` | `TemplateRef<{ $implicit: OutgoingCallTemplateContext }> \| null` | `null` | Replaces the default cancel button. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `callCanceled` | `void` | Emitted when the user cancels the outgoing call. |
+| `error` | `CometChat.CometChatException` | Emitted on any error during sound playback or cancellation. |
+
+## Customization
+
+### CSS Variable Overrides
+
+```css
+cometchat-outgoing-call {
+  --cometchat-primary-color: #6852D6;
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-error-color: #F44336;
+}
+```
+
+### Custom Templates
+
+```html expandable
+<cometchat-outgoing-call
+  [call]="outgoingCall"
+  [subtitleView]="customSubtitle"
+  [cancelButtonView]="customCancel"
+>
+  <ng-template #customSubtitle let-ctx>
+    <span>Ringing {{ ctx.receiverName }}...</span>
+  </ng-template>
+
+  <ng-template #customCancel let-ctx>
+    <button class="my-cancel-btn" (click)="cancelCall()">
+      Hang Up
+    </button>
+  </ng-template>
+</cometchat-outgoing-call>
+```
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Activate the cancel button |
+| `Space` | Activate the cancel button |
+| `Escape` | Cancel the outgoing call |
+| `Tab` | Move focus within the dialog |
+
+### ARIA Attributes
+
+- `role="alertdialog"` on the overlay container
+- `aria-labelledby` references the receiver name heading
+- Focus is trapped within the dialog while visible
+- Initial focus is set to the cancel button
+
+### Screen Reader Support
+
+- Outgoing call is announced via a live region with the receiver's name
+- Call ended is announced when the call terminates
+
+## Related Components
+
+- [CometChatCallButtons](./cometchat-call-buttons.mdx) — Parent component that triggers the outgoing call overlay
+- [CometChatOngoingCall](./cometchat-ongoing-call.mdx) — Displayed after the call is accepted
+- [CometChatIncomingCall](./cometchat-incoming-call.mdx) — Handles incoming call notifications

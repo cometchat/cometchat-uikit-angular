@@ -1,0 +1,260 @@
+---
+title: "CometChatActionBubble"
+description: "A simple Angular component for displaying action/system messages in a chat interface"
+---
+The `CometChatActionBubble` component is a simple presentational Angular component that displays action/system messages in a chat interface. These are messages like "User joined the group", "User left the group", or "Group name changed to X".
+
+## Overview
+
+Unlike regular message bubbles that are aligned left (receiver) or right (sender), action bubbles are centered and have a subtle, pill-shaped appearance. The component is purely presentational and does NOT accept a CometChat message object - only a plain text string.
+
+Key features:
+- **Simple Text Display**: Accepts a single text input for the action message
+- **Centered Layout**: Pill-shaped container with subtle styling
+- **Hidden Icon Element**: Available for CSS customization if needed
+- **Full Accessibility Support**: ARIA role and labels for screen readers
+- **CSS Variable-Based Theming**: Easy customization via CSS variables
+
+
+<Info>
+  **Live Preview** — Default action bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--action-message)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--action-message&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "200px", border: "1px solid #e0e0e0"}}
+  title="CometChat Action Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Action Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatActionBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatActionBubbleComponent],
+  template: `
+    <cometchat-action-bubble
+      [messageText]="'User joined the group'"
+    ></cometchat-action-bubble>
+  `
+})
+export class ChatMessageComponent {}
+```
+
+### Various Action Message Types
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatActionBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-action-messages',
+  standalone: true,
+  imports: [CometChatActionBubbleComponent],
+  template: `
+    <!-- User joined -->
+    <cometchat-action-bubble
+      [messageText]="'John joined the group'"
+    ></cometchat-action-bubble>
+
+    <!-- User left -->
+    <cometchat-action-bubble
+      [messageText]="'Sarah left the group'"
+    ></cometchat-action-bubble>
+
+    <!-- Group name changed -->
+    <cometchat-action-bubble
+      [messageText]="'Group name changed to Team Chat'"
+    ></cometchat-action-bubble>
+
+    <!-- Admin changed -->
+    <cometchat-action-bubble
+      [messageText]="'Mike is now an admin'"
+    ></cometchat-action-bubble>
+  `
+})
+export class ActionMessagesComponent {}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `messageText` | `string` | `''` | The action/system message text to display. If empty, null, undefined, or whitespace-only, the component renders nothing |
+| `iconUrl` | `string` | `''` | URL or path to an icon image displayed alongside the action text |
+| `iconErrorColor` | `boolean` | `false` | When true, applies error color styling to the icon (e.g., for missed call indicators) |
+
+## Empty State Handling
+
+The component gracefully handles empty or invalid inputs by not rendering any content:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatActionBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-empty-states',
+  standalone: true,
+  imports: [CometChatActionBubbleComponent],
+  template: `
+    <!-- These will NOT render anything -->
+    <cometchat-action-bubble [messageText]="''"></cometchat-action-bubble>
+    <cometchat-action-bubble [messageText]="null"></cometchat-action-bubble>
+    <cometchat-action-bubble [messageText]="undefined"></cometchat-action-bubble>
+    <cometchat-action-bubble [messageText]="'   '"></cometchat-action-bubble>
+
+    <!-- This WILL render -->
+    <cometchat-action-bubble [messageText]="'Valid message'"></cometchat-action-bubble>
+  `
+})
+export class EmptyStatesComponent {}
+```
+
+## Customization
+
+### Styling with CSS Variables
+
+The Action Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom action bubble styling */
+cometchat-action-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-3: 12px;
+
+  /* Typography */
+  --cometchat-font-caption1-regular: 400 12px/14.4px 'Roboto';
+
+  /* Colors */
+  --cometchat-text-color-secondary: #666666;
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-border-color-default: #E0E0E0;
+
+  /* Border radius */
+  --cometchat-radius-max: 1000px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` | Vertical padding | `4px` |
+| `--cometchat-spacing-3` | Horizontal padding | `12px` |
+| `--cometchat-font-caption1-regular` | Text font style | `400 12px/14.4px Roboto` |
+| `--cometchat-text-color-secondary` | Text color | `#666666` |
+| `--cometchat-background-color-02` | Background color | `#F5F5F5` |
+| `--cometchat-border-color-default` | Border color | `#E0E0E0` |
+| `--cometchat-radius-max` | Border radius (pill shape) | `1000px` |
+
+### Showing the Icon
+
+The component includes a hidden icon element that can be shown via CSS customization:
+
+```css expandable
+/* Show the icon element */
+::ng-deep .cometchat-action-bubble__icon {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  margin-right: var(--cometchat-spacing-1);
+  background-image: url('path/to/your/icon.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+```
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme */
+.theme-blue cometchat-action-bubble {
+  --cometchat-background-color-02: #E3F2FD;
+  --cometchat-border-color-default: #90CAF9;
+  --cometchat-text-color-secondary: #1565C0;
+}
+
+/* Green theme */
+.theme-green cometchat-action-bubble {
+  --cometchat-background-color-02: #E8F5E9;
+  --cometchat-border-color-default: #A5D6A7;
+  --cometchat-text-color-secondary: #2E7D32;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-action-bubble {
+  --cometchat-background-color-02: #2C2C2C;
+  --cometchat-border-color-default: #424242;
+  --cometchat-text-color-secondary: #B0B0B0;
+}
+```
+
+## Accessibility
+
+The Action Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: The container has an aria-label with the message text
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure with role="status"
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names and roles
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `role` | Container | `"status"` | Indicates this is a status message |
+| `aria-label` | Container | Message text | Provides accessible name for screen readers |
+| `aria-hidden` | Icon | `"true"` | Hides decorative icon from screen readers |
+
+### Screen Reader Behavior
+
+Screen readers announce the action bubble as a status message with the provided text content. The `role="status"` attribute ensures that screen readers treat this as an informational message rather than interactive content.
+
+## Best Practices
+
+<Tip>
+  Use action bubbles for system-generated messages that inform users about events in the chat, such as users joining/leaving or group settings changes.
+</Tip>
+
+<Warning>
+  The component does NOT accept a CometChat message object. You must extract and pass the message text directly.
+</Warning>
+
+<Info>
+  The component automatically handles empty, null, undefined, and whitespace-only inputs by not rendering any content.
+</Info>
+
+<Tip>
+  For localization, ensure the message text is already translated before passing it to the component.
+</Tip>
+
+## Related Components
+
+- **CometChatDeleteMessageBubble**: Displays deleted message placeholders
+- **CometChatTextBubble**: Displays text messages
+- **CometChatMessageList**: Displays lists of messages including action bubbles
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: None (purely presentational)
+- **Bundle Size**: Minimal footprint (~2KB)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant

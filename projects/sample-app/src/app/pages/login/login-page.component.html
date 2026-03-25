@@ -1,0 +1,82 @@
+<main [attr.aria-label]="'login_main_label' | translate" id="main-content" tabindex="-1" class="cometchat-login__container">
+  <div class="cometchat-login__logo">
+    <img src="assets/cometchat_logo.svg" alt="CometChat" />
+  </div>
+
+  <div class="cometchat-login__content">
+    <div class="cometchat-login__header">
+      <div class="cometchat-login__title">Sign in to cometchat</div>
+
+      <div class="cometchat-login__sample-users">
+        <div class="cometchat-login__sample-users-title">Using our sample users</div>
+        <div class="cometchat-login__user-list">
+          @for (user of sampleUsers(); track user.uid) {
+            <div
+              class="cometchat-login__user"
+              [class.cometchat-login__user--selected]="selectedUid() === user.uid"
+              (click)="loginWithUser(user.uid)"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'Login as ' + user.name"
+              (keydown.enter)="loginWithUser(user.uid)"
+              (keydown.space)="loginWithUser(user.uid); $event.preventDefault()"
+            >
+              @if (selectedUid() === user.uid) {
+                <div class="cometchat-login__user-selection-indicator">
+                  <div class="cometchat-login__user-selection-checked"></div>
+                </div>
+              }
+              <img
+                class="cometchat-login__user-avatar"
+                [src]="user.avatar"
+                [alt]="user.name"
+              />
+              <div class="cometchat-login__user-details">
+                <div class="cometchat-login__user-name">{{ user.name }}</div>
+                <div class="cometchat-login__user-uid">{{ user.uid }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="cometchat-login__divider-section">
+      <div class="cometchat-login__divider"></div>
+      <span>Or</span>
+      <div class="cometchat-login__divider"></div>
+    </div>
+
+    <div class="cometchat-login__custom-login">
+      <form class="cometchat-login__form" (ngSubmit)="loginWithCustomUid()">
+        <div class="cometchat-login__input-group">
+          <label class="cometchat-login__input-label" for="customUid">Your UID</label>
+          <input
+            id="customUid"
+            type="text"
+            class="cometchat-login__input"
+            placeholder="Enter your UID"
+            [(ngModel)]="customUid"
+            name="customUid"
+            autocomplete="off"
+            required
+          />
+        </div>
+        <button type="submit" class="cometchat-login__submit-button" [disabled]="loggingIn()">
+          Login
+        </button>
+        @if (errorMessage()) {
+          <div class="cometchat-login__error" role="alert">{{ errorMessage() }}</div>
+        }
+        <div class="cometchat-login__note">
+          Change <span class="cometchat-login__note-link" (click)="changeCredentials()" (keydown.enter)="changeCredentials()" tabindex="0" role="link">App Credentials</span>
+        </div>
+      </form>
+    </div>
+
+    <!-- Visually hidden loading status for screen readers -->
+    @if (loggingIn()) {
+      <div class="cometchat-login__sr-status" role="status" aria-live="polite">{{ 'logging_in_status' | translate }}</div>
+    }
+  </div>
+</main>

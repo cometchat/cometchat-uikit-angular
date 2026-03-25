@@ -1,0 +1,953 @@
+<!-- 
+  CometChatMessageComposer Template
+  
+  A comprehensive message composer with support for:
+  - Text input with auto-expand
+  - Attachments with preview
+  - Emoji picker
+  - Voice recording
+  - Mentions
+  - Reply/Edit mode
+  - Rich text editing (optional)
+  
+  @see Requirements 1.1, 1.5, 28.1
+-->
+
+<!-- Error State -->
+<!-- @see Requirements 3.1, 3.2, 3.3, 3.5 -->
+@if (composerError() && !hideError) {
+  <div class="cometchat-message-composer" role="region" [attr.aria-label]="'message_composer_aria_label' | translate">
+    @if (errorStateTemplate || errorView) {
+      <ng-container *ngTemplateOutlet="(errorStateTemplate || errorView)!"></ng-container>
+    } @else {
+      <div class="cometchat-message-composer__error">
+        <p class="cometchat-message-composer__error-text">
+          {{ 'component_error_retry' | translate }}
+        </p>
+        <cometchat-button
+          [text]="'error_boundary_retry' | translate"
+          (click)="handleRetryClick()">
+        </cometchat-button>
+      </div>
+    }
+  </div>
+} @else {
+<div 
+  class="cometchat-message-composer"
+  [class.cometchat-message-composer--single-line]="!isMultilineLayout()"
+  [class.cometchat-message-composer--multiline]="isMultilineLayout()"
+  role="region"
+  [attr.aria-label]="'message_composer_aria_label' | translate"
+  [class.cometchat-message-composer--dragging]="isDraggingOver()"
+  [class.cometchat-message-composer--recording]="isRecording()"
+  (dragenter)="enableDragDrop ? handleDragEnter($event) : null"
+  (dragleave)="enableDragDrop ? handleDragLeave($event) : null"
+  (dragover)="enableDragDrop ? handleDragOver($event) : null"
+  (drop)="enableDragDrop ? handleDrop($event) : null">
+
+  <!-- Bubble Menu (Web/Desktop only) -->
+  <!-- @see Requirements 1.1, 1.2, 1.3, 1.4, 1.7, 4.2 -->
+  @if (showBubbleMenuOnSelection && enableRichText && isBubbleMenuVisible() && !isLinkPopoverOpen()) {
+    <div 
+      #bubbleMenuElement
+      class="cometchat-message-composer__bubble-menu"
+      [attr.data-show]="true"
+      [style.position]="'fixed'"
+      [style.top.px]="bubbleMenuPosition()?.top ?? 0"
+      [style.left.px]="bubbleMenuPosition()?.left ?? 0"
+      role="toolbar"
+      [attr.aria-label]="'message_composer_formatting_options' | translate">
+      <!-- Bold Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().bold"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_bold' | translate"
+        [attr.aria-pressed]="richTextFormatState().bold"
+        (click)="handleToolbarBold()"
+        (keydown.enter)="handleToolbarBold()"
+        (keydown.space)="handleToolbarBold(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--bold"></span>
+      </button>
+
+      <!-- Italic Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().italic"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_italic' | translate"
+        [attr.aria-pressed]="richTextFormatState().italic"
+        (click)="handleToolbarItalic()"
+        (keydown.enter)="handleToolbarItalic()"
+        (keydown.space)="handleToolbarItalic(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--italic"></span>
+      </button>
+
+      <!-- Underline Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().underline"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_underline' | translate"
+        [attr.aria-pressed]="richTextFormatState().underline"
+        (click)="handleToolbarUnderline()"
+        (keydown.enter)="handleToolbarUnderline()"
+        (keydown.space)="handleToolbarUnderline(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--underline"></span>
+      </button>
+
+      <!-- Strikethrough Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().strikethrough"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_strikethrough' | translate"
+        [attr.aria-pressed]="richTextFormatState().strikethrough"
+        (click)="handleToolbarStrikethrough()"
+        (keydown.enter)="handleToolbarStrikethrough()"
+        (keydown.space)="handleToolbarStrikethrough(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--strikethrough"></span>
+      </button>
+
+      <!-- Separator -->
+      <span class="cometchat-message-composer__toolbar-separator" aria-hidden="true"></span>
+
+      <!-- Link Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().link"
+        [attr.aria-label]="'message_composer_link' | translate"
+        [attr.aria-pressed]="richTextFormatState().link"
+        (click)="handleToolbarLink()"
+        (keydown.enter)="handleToolbarLink()"
+        (keydown.space)="handleToolbarLink(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--link"></span>
+      </button>
+
+      <!-- Ordered List Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().orderedList"
+        [attr.aria-label]="'message_composer_ordered_list' | translate"
+        [attr.aria-pressed]="richTextFormatState().orderedList"
+        (click)="handleToolbarOrderedList()"
+        (keydown.enter)="handleToolbarOrderedList()"
+        (keydown.space)="handleToolbarOrderedList(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--ordered-list"></span>
+      </button>
+
+      <!-- Unordered List Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().bulletList"
+        [attr.aria-label]="'message_composer_unordered_list' | translate"
+        [attr.aria-pressed]="richTextFormatState().bulletList"
+        (click)="handleToolbarBulletList()"
+        (keydown.enter)="handleToolbarBulletList()"
+        (keydown.space)="handleToolbarBulletList(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--bullet-list"></span>
+      </button>
+
+      <!-- Separator -->
+      <span class="cometchat-message-composer__toolbar-separator" aria-hidden="true"></span>
+
+      <!-- Inline Code Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().code"
+        [attr.aria-label]="'message_composer_inline_code' | translate"
+        [attr.aria-pressed]="richTextFormatState().code"
+        (click)="handleToolbarInlineCode()"
+        (keydown.enter)="handleToolbarInlineCode()"
+        (keydown.space)="handleToolbarInlineCode(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--inline-code"></span>
+      </button>
+
+      <!-- Code Block Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().codeBlock"
+        [attr.aria-label]="'message_composer_code_block' | translate"
+        [attr.aria-pressed]="richTextFormatState().codeBlock"
+        (click)="handleToolbarCodeBlock()"
+        (keydown.enter)="handleToolbarCodeBlock()"
+        (keydown.space)="handleToolbarCodeBlock(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--code-block"></span>
+      </button>
+
+      <!-- Blockquote Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__bubble-menu-button"
+        [class.cometchat-message-composer__bubble-menu-button--active]="richTextFormatState().blockquote"
+        [attr.aria-label]="'message_composer_blockquote' | translate"
+        [attr.aria-pressed]="richTextFormatState().blockquote"
+        (click)="handleToolbarBlockquote()"
+        (keydown.enter)="handleToolbarBlockquote()"
+        (keydown.space)="handleToolbarBlockquote(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--blockquote"></span>
+      </button>
+    </div>
+  }
+
+  <!-- Header Section (Reply/Edit Preview) -->
+  @if (headerView) {
+    <div class="cometchat-message-composer__header">
+      <ng-container *ngTemplateOutlet="headerView; context: templateContext"></ng-container>
+    </div>
+  } @else if (isInQuotedReplyMode() || isInEditMode()) {
+    <div class="cometchat-message-composer__header">
+      <!-- Reply Preview using CometChatMessagePreview component -->
+      <!-- @see Requirements 2.2, 2.3, 2.4, 2.10 -->
+      <!-- @see Requirements 4.10 - aria-describedby references this element -->
+      @if (isInQuotedReplyMode() && !isInEditMode()) {
+        <div 
+          id="composer-reply-preview"
+          class="cometchat-message-composer__reply-preview">
+          <cometchat-message-preview
+            [message]="messageToReplySignal()"
+            [hideCloseButton]="false"
+            [mode]="'reply'"
+            [previewTitle]="replyPreviewTitleTemplate"
+            [previewSubtitle]="replyPreviewSubtitleTemplate"
+            [ariaLabel]="'message_composer_reply_preview' | translate"
+            (closeClick)="onReplyPreviewClose()">
+          </cometchat-message-preview>
+        </div>
+      }
+
+      <!-- Edit Preview using CometChatMessagePreview component -->
+      <!-- @see Requirements 3.3, 3.9, 5.3, 5.4 -->
+      <!-- @see Requirements 4.10 - aria-describedby references this element -->
+      @if (isInEditMode()) {
+        <div 
+          id="composer-edit-preview"
+          class="cometchat-message-composer__edit-preview">
+          <cometchat-message-preview
+            [message]="getCurrentEditMessage()"
+            [hideCloseButton]="false"
+            [mode]="'edit'"
+            [previewTitle]="editPreviewTitleTemplate"
+            [previewSubtitle]="editPreviewSubtitleTemplate"
+            [ariaLabel]="'message_composer_editing_message' | translate"
+            (closeClick)="onEditPreviewClose()">
+          </cometchat-message-preview>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Reply Preview Title Template -->
+  <ng-template #replyPreviewTitleTemplate>
+    <div class="cometchat-message-composer__reply-preview-title">
+      <span class="cometchat-message-composer__reply-preview-label">
+        {{ 'message_composer_replying_to' | translate }}
+      </span>
+      <span class="cometchat-message-composer__reply-preview-sender">
+        {{ getReplyPreviewTitle() }}
+      </span>
+    </div>
+  </ng-template>
+
+  <!-- Reply Preview Subtitle Template -->
+  <ng-template #replyPreviewSubtitleTemplate>
+    <span 
+      class="cometchat-message-composer__reply-preview-subtitle"
+      [innerHTML]="getReplyPreviewSubtitle()">
+    </span>
+  </ng-template>
+
+  <!-- Edit Preview Title Template -->
+  <!-- @see Requirements 3.3 -->
+  <ng-template #editPreviewTitleTemplate>
+    <div class="cometchat-message-composer__edit-preview-title">
+      <span class="cometchat-message-composer__edit-preview-label">
+        {{ 'message_composer_editing_message' | translate }}
+      </span>
+    </div>
+  </ng-template>
+
+  <!-- Edit Preview Subtitle Template -->
+  <!-- @see Requirements 3.9 - Shows formatted text with mentions properly displayed -->
+  <ng-template #editPreviewSubtitleTemplate>
+    <span 
+      class="cometchat-message-composer__edit-preview-subtitle"
+      [innerHTML]="getEditPreviewSubtitle()">
+    </span>
+  </ng-template>
+
+  <!-- File Size Error Display -->
+  <!-- @see Requirements 12.2, 12.5, 12.6, 12.7, 12.8 -->
+  @if (fileSizeError()) {
+    <div 
+      class="cometchat-message-composer__file-size-error"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true">
+      <span class="cometchat-message-composer__file-size-error-icon" aria-hidden="true">
+        <div 
+          class="cometchat-message-composer__warning-icon-img" 
+          aria-hidden="true"></div>
+      </span>
+      <span class="cometchat-message-composer__file-size-error-message">
+        {{ getFileSizeErrorMessage() }}
+      </span>
+      <button
+        type="button"
+        class="cometchat-message-composer__file-size-error-dismiss"
+        [attr.aria-label]="'message_composer_dismiss_error' | translate"
+        (click)="dismissFileSizeError()"
+        (keydown.enter)="dismissFileSizeError()"
+        (keydown.space)="dismissFileSizeError(); $event.preventDefault()">
+        <span class="cometchat-message-composer__close-icon">×</span>
+      </button>
+    </div>
+  }
+
+  <!-- Mentions Count Warning Banner -->
+  <!-- @see Requirements 6.1, 6.2 -->
+  @if (showMentionsCountWarning()) {
+    <div 
+      class="cometchat-message-composer__mention-warning"
+      role="alert"
+      aria-live="polite"
+      aria-atomic="true">
+      <span class="cometchat-message-composer__mention-warning-icon" aria-hidden="true">
+        <div 
+          class="cometchat-message-composer__mention-warning-icon-img" 
+          aria-hidden="true"></div>
+      </span>
+      <span class="cometchat-message-composer__mention-warning-message">
+        {{ 'message_composer_mention_limit_warning' | translate }}
+      </span>
+    </div>
+  }
+
+  <!-- [DISABLED] Attachment Preview Section — files are sent directly now -->
+
+  <!-- Rich Text Toolbar (always positioned at top when visible) -->
+  @if (shouldShowToolbar()) {
+    <div 
+      class="cometchat-message-composer__toolbar"
+      role="toolbar"
+      [attr.aria-label]="'message_composer_formatting_toolbar' | translate">
+      <!-- Bold Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().bold"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_bold' | translate"
+        [attr.aria-pressed]="richTextFormatState().bold"
+        (click)="handleToolbarBold()"
+        (keydown.enter)="handleToolbarBold()"
+        (keydown.space)="handleToolbarBold(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--bold"></span>
+      </button>
+
+      <!-- Italic Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().italic"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_italic' | translate"
+        [attr.aria-pressed]="richTextFormatState().italic"
+        (click)="handleToolbarItalic()"
+        (keydown.enter)="handleToolbarItalic()"
+        (keydown.space)="handleToolbarItalic(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--italic"></span>
+      </button>
+
+      <!-- Underline Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().underline"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_underline' | translate"
+        [attr.aria-pressed]="richTextFormatState().underline"
+        (click)="handleToolbarUnderline()"
+        (keydown.enter)="handleToolbarUnderline()"
+        (keydown.space)="handleToolbarUnderline(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--underline"></span>
+      </button>
+
+      <!-- Strikethrough Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().strikethrough"
+        [disabled]="isInlineFormattingDisabled()"
+        [attr.aria-label]="'message_composer_strikethrough' | translate"
+        [attr.aria-pressed]="richTextFormatState().strikethrough"
+        (click)="handleToolbarStrikethrough()"
+        (keydown.enter)="handleToolbarStrikethrough()"
+        (keydown.space)="handleToolbarStrikethrough(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--strikethrough"></span>
+      </button>
+
+
+      <!-- Separator -->
+      <span class="cometchat-message-composer__toolbar-separator" aria-hidden="true"></span>
+
+      <!-- Link Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().link"
+        [attr.aria-label]="'message_composer_link' | translate"
+        [attr.aria-pressed]="richTextFormatState().link"
+        (click)="handleToolbarLink()"
+        (keydown.enter)="handleToolbarLink()"
+        (keydown.space)="handleToolbarLink(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--link"></span>
+      </button>
+
+
+      <!-- Ordered List Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().orderedList"
+        [attr.aria-label]="'message_composer_ordered_list' | translate"
+        [attr.aria-pressed]="richTextFormatState().orderedList"
+        (click)="handleToolbarOrderedList()"
+        (keydown.enter)="handleToolbarOrderedList()"
+        (keydown.space)="handleToolbarOrderedList(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--ordered-list"></span>
+      </button>
+
+      <!-- Unordered List Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().bulletList"
+        [attr.aria-label]="'message_composer_unordered_list' | translate"
+        [attr.aria-pressed]="richTextFormatState().bulletList"
+        (click)="handleToolbarBulletList()"
+        (keydown.enter)="handleToolbarBulletList()"
+        (keydown.space)="handleToolbarBulletList(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--bullet-list"></span>
+      </button>
+
+      <!-- Separator -->
+      <span class="cometchat-message-composer__toolbar-separator" aria-hidden="true"></span>
+
+
+      <!-- Inline Code Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().code"
+        [attr.aria-label]="'message_composer_inline_code' | translate"
+        [attr.aria-pressed]="richTextFormatState().code"
+        (click)="handleToolbarInlineCode()"
+        (keydown.enter)="handleToolbarInlineCode()"
+        (keydown.space)="handleToolbarInlineCode(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--inline-code"></span>
+      </button>
+
+      <!-- Code Block Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().codeBlock"
+        [attr.aria-label]="'message_composer_code_block' | translate"
+        [attr.aria-pressed]="richTextFormatState().codeBlock"
+        (click)="handleToolbarCodeBlock()"
+        (keydown.enter)="handleToolbarCodeBlock()"
+        (keydown.space)="handleToolbarCodeBlock(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--code-block"></span>
+      </button>
+
+      <!-- Blockquote Button -->
+      <button
+        type="button"
+        class="cometchat-message-composer__toolbar-button"
+        [class.cometchat-message-composer__toolbar-button--active]="richTextFormatState().blockquote"
+        [attr.aria-label]="'message_composer_blockquote' | translate"
+        [attr.aria-pressed]="richTextFormatState().blockquote"
+        (click)="handleToolbarBlockquote()"
+        (keydown.enter)="handleToolbarBlockquote()"
+        (keydown.space)="handleToolbarBlockquote(); $event.preventDefault()">
+        <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--blockquote"></span>
+      </button>
+    </div>
+  }
+
+  <!-- Main Input Section -->
+  <div 
+    class="cometchat-message-composer__input-section"
+    [class.cometchat-message-composer__input-section--multiline]="isMultilineLayout()"
+    [attr.data-layout]="currentLayoutMode()"
+    [attr.aria-label]="(isMultilineLayout() ? 'message_composer_layout_multiline' : 'message_composer_layout_single_line') | translate"
+    role="group">
+    <!-- Attachment Menu Content Template -->
+    <ng-template #attachmentMenuContent>
+      <cometchat-action-sheet
+        [actions]="attachmentMenuOptions()"
+        (actionItemClick)="handleActionSheetItemClick($event)"
+        (closeSheet)="handleActionSheetClose()">
+      </cometchat-action-sheet>
+    </ng-template>
+
+    <!-- Single-line layout: Attachment button before input -->
+    @if (!isMultilineLayout() && !hideAttachmentButton && !isRecording()) {
+      <div class="cometchat-message-composer__attachment-button-wrapper">
+        @if (attachmentIconView) {
+          <ng-container *ngTemplateOutlet="attachmentIconView"></ng-container>
+        } @else {
+          <cometchat-popover
+            [placement]="Placement.top"
+            [content]="attachmentMenuContent"
+            [closeOnOutsideClick]="true"
+            (popoverOpened)="onAttachmentPopoverOpened()"
+            (popoverClosed)="onAttachmentPopoverClosed()">
+            <div class="cometchat-message-composer__attachment-button-inner"
+              [class.cometchat-message-composer__attachment-button-inner--active]="contentToDisplay() === 'attachments'">
+              <cometchat-button
+                #attachmentButton
+                [iconURL]="contentToDisplay() === 'attachments' ? attachmentIconUrlActive : attachmentIconUrl"
+                [hoverText]="'message_composer_add_attachment' | translate"
+                [ariaLabel]="'message_composer_add_attachment' | translate">
+              </cometchat-button>
+            </div>
+          </cometchat-popover>
+        }
+      </div>
+    }
+
+
+    <!-- Text Input Area -->
+    <div class="cometchat-message-composer__text-input-wrapper"
+      [class.cometchat-message-composer__text-input-wrapper--disabled]="isMultilineLayout() && isRecording()"
+      [class.cometchat-message-composer__text-input-wrapper--hidden]="!isMultilineLayout() && isRecording()">
+      <!-- Contenteditable Input (always rendered, disabled during recording) -->
+      <!-- @see Requirements 4.8 - role="textbox" and aria-multiline="true" -->
+      <!-- @see Requirements 4.9 - aria-label for accessibility -->
+      <!-- @see Requirements 4.10 - aria-describedby for reply preview -->
+      <div
+        #richTextEditorContainer
+        class="cometchat-message-composer__rich-text-editor"
+        [class.cometchat-message-composer__rich-text-editor--plain]="!enableRichText"
+        [class.cometchat-message-composer__rich-text-editor--recording]="isRecording()"
+        role="textbox"
+        aria-multiline="true"
+        [attr.aria-label]="'message_composer_input_aria_label' | translate"
+        [attr.aria-describedby]="isInQuotedReplyMode() ? 'composer-reply-preview' : (isInEditMode() ? 'composer-edit-preview' : null)"
+        [attr.aria-expanded]="isMentionSuggestionsOpen()"
+        [attr.aria-controls]="isMentionSuggestionsOpen() ? 'mention-suggestions-listbox' : null"
+        [attr.aria-activedescendant]="isMentionSuggestionsOpen() && mentionSuggestions().length > 0 ? 'mention-option-' + focusedMentionIndex() : null"
+        [attr.aria-haspopup]="'listbox'"
+        [attr.aria-disabled]="isRecording()"
+        [style.max-height.px]="maxHeight"
+        (paste)="handlePaste($event)">
+      </div>
+
+      <!-- Mention Suggestions Panel -->
+      <!-- @see Requirements 28.8 - role="listbox" with role="option" for each suggestion -->
+      <!-- @see Requirements 11.4 - Scroll listener and loading indicator for pagination -->
+      <!-- Only show when there are suggestions or when loading -->
+      @if (!disableMentions && isMentionSuggestionsOpen() && mentionSuggestions().length > 0) {
+        <div 
+          id="mention-suggestions-listbox"
+          class="cometchat-message-composer__mention-suggestions"
+          role="listbox"
+          [attr.aria-label]="'message_composer_mention_suggestions' | translate"
+          (scroll)="handleMentionsScroll($event)">
+          @for (suggestion of mentionSuggestions(); track suggestion.uid; let i = $index) {
+            <div
+              [id]="'mention-option-' + i"
+              class="cometchat-message-composer__mention-option"
+              [class.cometchat-message-composer__mention-option--focused]="focusedMentionIndex() === i"
+              [class.cometchat-message-composer__mention-option--all]="suggestion.isAllMention"
+              role="option"
+              [attr.aria-selected]="focusedMentionIndex() === i"
+              tabindex="-1"
+              (mousedown)="selectMentionSuggestion(suggestion); $event.preventDefault()"
+              (mouseenter)="focusedMentionIndex.set(i)">
+              <!-- Avatar -->
+              @if (suggestion.isAllMention) {
+                <div class="cometchat-message-composer__mention-option-avatar cometchat-message-composer__mention-option-avatar--all">
+                  <span class="cometchat-message-composer__mention-all-icon">@</span>
+                </div>
+              } @else {
+                <cometchat-avatar
+                  class="cometchat-message-composer__mention-option-avatar"
+                  [image]="suggestion.avatar || ''"
+                  [name]="suggestion.name">
+                </cometchat-avatar>
+              }
+              <!-- Name & Subtitle -->
+              <span class="cometchat-message-composer__mention-option-name">
+                @if (suggestion.isAllMention) {
+                  @{{ suggestion.name }}
+                } @else {
+                  {{ suggestion.name }}
+                }
+              </span>
+              @if (suggestion.isAllMention) {
+                <span class="cometchat-message-composer__mention-option-subtitle">
+                  {{ 'message_composer_mention_notify_everyone_label' | translate }}
+                </span>
+              }
+            </div>
+          }
+          <!-- Loading indicator for pagination (fetching more mentions) -->
+          @if (isFetchingMoreMentions()) {
+            <div class="cometchat-message-composer__mention-loading-more">
+              <span class="cometchat-message-composer__mention-loading-spinner" aria-hidden="true"></span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Multiline layout: Button row with all buttons -->
+    @if (isMultilineLayout()) {
+      <div class="cometchat-message-composer__button-row">
+        @if (!isRecording()) {
+          <!-- Attachment Button -->
+          @if (!hideAttachmentButton) {
+            <div class="cometchat-message-composer__attachment-button-wrapper">
+              @if (attachmentIconView) {
+                <ng-container *ngTemplateOutlet="attachmentIconView"></ng-container>
+              } @else {
+                <cometchat-popover
+                  [placement]="Placement.top"
+                  [content]="attachmentMenuContent"
+                  [closeOnOutsideClick]="true"
+                  (popoverOpened)="onAttachmentPopoverOpened()"
+                  (popoverClosed)="onAttachmentPopoverClosed()">
+                  <div class="cometchat-message-composer__attachment-button-inner"
+                    [class.cometchat-message-composer__attachment-button-inner--active]="contentToDisplay() === 'attachments'">
+                    <cometchat-button
+                      #attachmentButton
+                      [iconURL]="contentToDisplay() === 'attachments' ? attachmentIconUrlActive : attachmentIconUrl"
+                      [hoverText]="'message_composer_add_attachment' | translate"
+                      [ariaLabel]="'message_composer_add_attachment' | translate">
+                    </cometchat-button>
+                  </div>
+                </cometchat-popover>
+              }
+            </div>
+          }
+
+          <!-- Voice Recording Button (multiline: next to attachment) -->
+          @if (!hideVoiceRecordingButton && showVoiceButton()) {
+            <div class="cometchat-message-composer__voice-button-wrapper">
+              @if (voiceRecordingIconView) {
+                <ng-container *ngTemplateOutlet="voiceRecordingIconView"></ng-container>
+              } @else {
+                <div class="cometchat-message-composer__voice-button-inner">
+                  <cometchat-button #voiceButton [iconURL]="voiceIconUrl"
+                    [hoverText]="'message_composer_voice_recording' | translate"
+                    [ariaLabel]="'message_composer_voice_recording' | translate"
+                    (buttonClick)="startInlineRecording()">
+                  </cometchat-button>
+                </div>
+              }
+            </div>
+          }
+
+
+
+          <!-- Auxiliary Buttons (Emoji, Stickers, Voice) -->
+          <div class="cometchat-message-composer__auxiliary-buttons">
+            @if (auxiliaryButtonView) {
+              <ng-container *ngTemplateOutlet="auxiliaryButtonView; context: templateContext"></ng-container>
+            } @else {
+              @if (!hideEmojiKeyboardButton) {
+                <div class="cometchat-message-composer__emoji-button-wrapper">
+                  @if (emojiIconView) {
+                    <ng-container *ngTemplateOutlet="emojiIconView"></ng-container>
+                  } @else {
+                    <cometchat-popover [placement]="Placement.top" [content]="emojiKeyboardContent"
+                      [closeOnOutsideClick]="true" (popoverOpened)="onEmojiPopoverOpened()" (popoverClosed)="onEmojiPopoverClosed()">
+                      <div class="cometchat-message-composer__emoji-button-inner"
+                        [class.cometchat-message-composer__emoji-button-inner--active]="contentToDisplay() === 'emojiKeyboard'">
+                        <cometchat-button #emojiButton
+                          [iconURL]="contentToDisplay() === 'emojiKeyboard' ? emojiIconUrlActive : emojiIconUrl"
+                          [hoverText]="'message_composer_emoji' | translate"
+                          [ariaLabel]="'message_composer_emoji' | translate">
+                        </cometchat-button>
+                      </div>
+                    </cometchat-popover>
+                  }
+                </div>
+              }
+              <ng-template #emojiKeyboardContent>
+                <cometchat-emoji-keyboard (emojiClick)="handleEmojiSelect($event)" (closeKeyboard)="handleEmojiKeyboardClose()">
+                </cometchat-emoji-keyboard>
+              </ng-template>
+              @if (!hideStickersButton) {
+                <div class="cometchat-message-composer__sticker-button-wrapper">
+                  <cometchat-popover [placement]="Placement.top" [content]="stickersKeyboardContent"
+                    [closeOnOutsideClick]="true" (popoverOpened)="onStickersPopoverOpened()" (popoverClosed)="onStickersPopoverClosed()">
+                    <div class="cometchat-message-composer__sticker-button-inner"
+                      [class.cometchat-message-composer__sticker-button-inner--active]="contentToDisplay() === 'stickers'">
+                      <cometchat-button #stickersButton
+                        [iconURL]="contentToDisplay() === 'stickers' ? stickerIconUrlActive : stickerIconUrl"
+                        [hoverText]="'message_composer_sticker_hover' | translate"
+                        [ariaLabel]="'message_composer_sticker_hover' | translate">
+                      </cometchat-button>
+                    </div>
+                  </cometchat-popover>
+                </div>
+              }
+              <ng-template #stickersKeyboardContent>
+                <cometchat-stickers-keyboard (stickerClick)="handleStickerSelect($event)" (closeKeyboard)="handleStickersKeyboardClose()">
+                </cometchat-stickers-keyboard>
+              </ng-template>
+            }
+          </div>
+        } @else {
+          <!-- Recording state: recorder in button row next to send -->
+          <div class="cometchat-message-composer__inline-recorder-wrapper">
+            <cometchat-media-recorder
+              [autoRecording]="true"
+              (submitRecording)="handleRecordingComplete($event)"
+              (closeRecording)="handleRecordingCancel()"
+              (recordingError)="handleRecordingError($event)">
+            </cometchat-media-recorder>
+          </div>
+        }
+
+        <!-- Send Button - always visible -->
+        @if (!hideSendButton) {
+          <div class="cometchat-message-composer__send-button-wrapper">
+            @if (sendButtonView) {
+              <ng-container *ngTemplateOutlet="sendButtonView; context: templateContext"></ng-container>
+            } @else {
+              <div class="cometchat-message-composer__send-button-inner" [class.cometchat-message-composer__send-button-inner--disabled]="!canSend()">
+                <cometchat-button #sendButton [iconURL]="sendIconUrl" [disabled]="!canSend()"
+                  [hoverText]="'message_composer_send' | translate"
+                  [ariaLabel]="'message_composer_send' | translate"
+                  (buttonClick)="handleSend()">
+                </cometchat-button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Single-line layout: Auxiliary buttons and send button -->
+    @if (!isMultilineLayout()) {
+      @if (!isRecording()) {
+        <!-- Normal: auxiliary buttons -->
+        <div class="cometchat-message-composer__auxiliary-buttons">
+          @if (auxiliaryButtonView) {
+            <ng-container *ngTemplateOutlet="auxiliaryButtonView; context: templateContext"></ng-container>
+          } @else {
+            @if (!hideEmojiKeyboardButton) {
+              <div class="cometchat-message-composer__emoji-button-wrapper">
+                @if (emojiIconView) {
+                  <ng-container *ngTemplateOutlet="emojiIconView"></ng-container>
+                } @else {
+                  <cometchat-popover [placement]="Placement.top" [content]="emojiKeyboardContent"
+                    [closeOnOutsideClick]="true" (popoverOpened)="onEmojiPopoverOpened()" (popoverClosed)="onEmojiPopoverClosed()">
+                    <div class="cometchat-message-composer__emoji-button-inner"
+                      [class.cometchat-message-composer__emoji-button-inner--active]="contentToDisplay() === 'emojiKeyboard'">
+                      <cometchat-button #emojiButton
+                        [iconURL]="contentToDisplay() === 'emojiKeyboard' ? emojiIconUrlActive : emojiIconUrl"
+                        [hoverText]="'message_composer_emoji' | translate"
+                        [ariaLabel]="'message_composer_emoji' | translate">
+                      </cometchat-button>
+                    </div>
+                  </cometchat-popover>
+                }
+              </div>
+            }
+            <ng-template #emojiKeyboardContent>
+              <cometchat-emoji-keyboard (emojiClick)="handleEmojiSelect($event)" (closeKeyboard)="handleEmojiKeyboardClose()">
+              </cometchat-emoji-keyboard>
+            </ng-template>
+            @if (!hideStickersButton) {
+              <div class="cometchat-message-composer__sticker-button-wrapper">
+                <cometchat-popover [placement]="Placement.top" [content]="stickersKeyboardContent"
+                  [closeOnOutsideClick]="true" (popoverOpened)="onStickersPopoverOpened()" (popoverClosed)="onStickersPopoverClosed()">
+                  <div class="cometchat-message-composer__sticker-button-inner"
+                    [class.cometchat-message-composer__sticker-button-inner--active]="contentToDisplay() === 'stickers'">
+                    <cometchat-button #stickersButton
+                      [iconURL]="contentToDisplay() === 'stickers' ? stickerIconUrlActive : stickerIconUrl"
+                      [hoverText]="'message_composer_sticker_hover' | translate"
+                      [ariaLabel]="'message_composer_sticker_hover' | translate">
+                    </cometchat-button>
+                  </div>
+                </cometchat-popover>
+              </div>
+            }
+            <ng-template #stickersKeyboardContent>
+              <cometchat-stickers-keyboard (stickerClick)="handleStickerSelect($event)" (closeKeyboard)="handleStickersKeyboardClose()">
+              </cometchat-stickers-keyboard>
+            </ng-template>
+            @if (!hideVoiceRecordingButton && showVoiceButton()) {
+              <div class="cometchat-message-composer__voice-button-wrapper">
+                @if (voiceRecordingIconView) {
+                  <ng-container *ngTemplateOutlet="voiceRecordingIconView"></ng-container>
+                } @else {
+                  <div class="cometchat-message-composer__voice-button-inner">
+                    <cometchat-button #voiceButton [iconURL]="voiceIconUrl"
+                      [hoverText]="'message_composer_voice_recording' | translate"
+                      [ariaLabel]="'message_composer_voice_recording' | translate"
+                      (buttonClick)="startInlineRecording()">
+                    </cometchat-button>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <!-- Recording state: recorder next to send button -->
+        <div class="cometchat-message-composer__inline-recorder-wrapper">
+          <cometchat-media-recorder
+            [autoRecording]="true"
+            (submitRecording)="handleRecordingComplete($event)"
+            (closeRecording)="handleRecordingCancel()"
+            (recordingError)="handleRecordingError($event)">
+          </cometchat-media-recorder>
+        </div>
+      }
+
+      <!-- Send Button - always visible -->
+      @if (!hideSendButton) {
+        <div class="cometchat-message-composer__send-button-wrapper">
+          @if (sendButtonView) {
+            <ng-container *ngTemplateOutlet="sendButtonView; context: templateContext"></ng-container>
+          } @else {
+            <div class="cometchat-message-composer__send-button-inner" [class.cometchat-message-composer__send-button-inner--disabled]="!canSend()">
+              <cometchat-button #sendButton [iconURL]="sendIconUrl" [disabled]="!canSend()"
+                [hoverText]="'message_composer_send' | translate"
+                [ariaLabel]="'message_composer_send' | translate"
+                (buttonClick)="handleSend()">
+              </cometchat-button>
+            </div>
+          }
+        </div>
+      }
+    } <!-- end @if (!isMultilineLayout()) -->
+
+  <!-- Footer Section -->
+  @if (footerView) {
+    <div class="cometchat-message-composer__footer">
+      <ng-container *ngTemplateOutlet="footerView; context: templateContext"></ng-container>
+    </div>
+  }
+
+  <!-- Drop Zone Overlay (shown when dragging files) -->
+  @if (enableDragDrop && isDraggingOver()) {
+    <div 
+      class="cometchat-message-composer__drop-zone"
+      role="region"
+      [attr.aria-label]="'message_composer_drop_files' | translate">
+      <div class="cometchat-message-composer__drop-zone-content">
+        <span class="cometchat-message-composer__drop-zone-icon">📁</span>
+        <span class="cometchat-message-composer__drop-zone-text">
+          {{ 'message_composer_drop_files_here' | translate }}
+        </span>
+      </div>
+    </div>
+  }
+
+  <!-- Hidden File Input -->
+  <input
+    #fileInput
+    type="file"
+    class="cometchat-message-composer__file-input"
+    [attr.aria-hidden]="true"
+    tabindex="-1"
+    multiple
+    (change)="handleFileInputChange($event)">
+
+  <!-- Live Region for Announcements -->
+  <!-- Polite live region for non-urgent announcements (reply/edit preview, message sent, attachments) -->
+  <!-- @see Requirements 28.9, 28.11, 28.12 -->
+  <div 
+    class="cometchat-message-composer__live-region"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true">
+    {{ liveRegionPoliteText() }}
+  </div>
+
+  <!-- Assertive live region for urgent announcements (recording state, errors) -->
+  <!-- @see Requirements 28.10, 28.13 -->
+  <div 
+    class="cometchat-message-composer__live-region"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true">
+    {{ liveRegionAssertiveText() }}
+  </div>
+
+  <!-- Fullscreen Viewer for Attachment Preview -->
+  <!-- @see Requirements 11.1, 11.2, 11.6, 11.7, 11.8, 11.9, 11.10 -->
+  @if (isFullscreenViewerOpen() && getCurrentFullscreenAttachment()) {
+    <div class="cometchat-message-composer__fullscreen-overlay">
+      <cometchat-fullscreen-viewer
+        [url]="getCurrentFullscreenAttachment()?.thumbnailUrl || ''"
+        (closeClick)="handleFullscreenViewerClose()">
+      </cometchat-fullscreen-viewer>
+    </div>
+  }
+
+  <!-- CreatePoll Modal -->
+  <!-- @see Requirements 2.2, 2.3, 2.4, 2.5, 2.6 -->
+  @if (isPollModalOpen()) {
+    <div class="cometchat-message-composer__poll-modal-overlay">
+      <cometchat-create-poll
+        [user]="currentUser() ?? undefined"
+        [group]="currentGroup() ?? undefined"
+        [replyToMessage]="messageToReplySignal() ?? undefined"
+        (closeClick)="closePollModal()"
+        (pollCreated)="onPollCreated()"
+        (error)="error.emit($event)">
+      </cometchat-create-poll>
+    </div>
+  }
+
+  <!-- Link Popover (Quick Actions) -->
+  @if (isLinkPopoverOpen()) {
+    <cometchat-link-popover
+      [url]="linkPopoverUrl()"
+      [text]="linkPopoverText()"
+      [x]="linkPopoverX()"
+      [y]="linkPopoverY()"
+      (editClick)="handleLinkPopoverEdit($event)"
+      (removeClick)="handleLinkPopoverRemove()"
+      (closeClick)="handleLinkPopoverClose()">
+    </cometchat-link-popover>
+  }
+
+  <!-- Link Dialog -->
+  @if (isLinkDialogOpen()) {
+    <div class="cometchat-message-composer__link-dialog-overlay"
+      (click)="handleLinkDialogCancel()">
+      <div (click)="$event.stopPropagation()">
+        <cometchat-link-dialog
+          [mode]="linkDialogMode()"
+          [initialText]="linkDialogInitialText()"
+          [initialUrl]="linkDialogInitialUrl()"
+          [selectedText]="linkDialogInitialText()"
+          (save)="handleLinkDialogSave($event)"
+          (remove)="handleLinkDialogRemove()"
+          (cancel)="handleLinkDialogCancel()">
+        </cometchat-link-dialog>
+      </div>
+    </div>
+  }
+  </div>
+</div>
+}

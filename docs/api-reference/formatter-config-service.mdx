@@ -1,0 +1,819 @@
+
+The `FormatterConfigService` is a centralized Angular service for managing default text formatters across the CometChat UIKit. It provides a single source of truth for formatter configuration, allowing you to set formatters once and have them automatically applied across all text-displaying components.
+
+## Overview
+
+The service manages text formatters that transform raw text into formatted HTML with support for:
+- Mentions (@user) with self-mention detection
+- URLs with automatic link creation
+- Custom formatters (hashtags, emails, etc.)
+- Context-aware formatting (logged-in user, message alignment)
+- Formatter priority ordering
+- Performance optimization through instance reuse
+
+## Installation
+
+The service is provided at root level and automatically available throughout your application:
+
+```typescript
+import { inject } from '@angular/core';
+import { FormatterConfigService } from '@cometchat/chat-uikit-angular';
+
+export class MyComponent {
+  private formatterConfig = inject(FormatterConfigService);
+}
+```
+
+## Default Behavior
+
+When no custom formatters are configured, the service provides two built-in formatters:
+
+1. **CometChatMentionsFormatter** (priority 20)
+   - Detects mentions in format `<@uid:{uid}>` or `<@all:{label}>`
+   - Converts to HTML spans with CSS classes
+   - Applies self-mention detection
+   - Adds direction classes for message alignment
+
+2. **CometChatUrlFormatter** (priority 100)
+   - Detects URLs in text
+   - Converts to clickable links
+   - Adds security attributes (`target="_blank"`, `rel="noopener noreferrer"`)
+
+These formatters are singleton instances, reused across all components for optimal performance.
+
+## Core Methods
+
+### `getDefaultFormatters(): CometChatTextFormatter[]`
+
+Gets the configured default formatters.
+
+**Returns:** Array of text formatters in priority order
+
+**Priority:**
+1. Custom formatters (if set via `setDefaultFormatters`)
+2. Built-in defaults + additional formatters (if added via `addFormatters`)
+3. Built-in defaults only (mentions + URLs)
+
+**Example:**
+```typescript
+export class TextBubbleComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+  private formatters: CometChatTextFormatter[] = [];
+
+  ngOnInit() {
+    // Get default formatters
+    this.formatters = this.formatterConfig.getDefaultFormatters();
+  }
+}
+```
+
+### `setDefaultFormatters(formatters: CometChatTextFormatter[]): void`
+
+Replaces the built-in default formatters with custom formatters.
+
+**Parameters:**
+- `formatters`: Array of custom formatters to use as defaults
+
+**Use Case:** When you want complete control over which formatters are used globally.
+
+**Example:**
+```typescript expandable
+// In app initialization (main.ts or app.component.ts)
+export class AppComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    // Replace defaults with custom formatters
+    const customFormatters = [
+      new MyCustomMentionsFormatter(),
+      new MyCustomUrlFormatter(),
+      new HashtagFormatter(),
+      new EmailFormatter()
+    ];
+    
+    this.formatterConfig.setDefaultFormatters(customFormatters);
+  }
+}
+```
+
+**Note:** Once custom formatters are set, `addFormatters()` has no effect. To add to custom formatters, include them in the array passed to `setDefaultFormatters()`.
+
+### `addFormatters(formatters: CometChatTextFormatter[]): void`
+
+Adds additional formatters to the built-in defaults without replacing them.
+
+**Parameters:**
+- `formatters`: Array of formatters to add to the default set
+
+**Use Case:** When you want to keep the built-in formatters (mentions + URLs) and add custom ones.
+
+**Example:**
+```typescript expandable
+export class AppComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    // Add custom formatters to defaults
+    const additionalFormatters = [
+      new HashtagFormatter(),
+      new EmailFormatter(),
+      new PhoneNumberFormatter()
+    ];
+    
+    this.formatterConfig.addFormatters(additionalFormatters);
+    
+    // Now getDefaultFormatters() returns:
+    // [mentions, URLs, hashtag, email, phone]
+  }
+}
+```
+
+**Note:** If custom formatters have been set via `setDefaultFormatters()`, this method has no effect.
+
+### `resetToDefaults(): void`
+
+Resets to the built-in default formatters, clearing any custom or additional formatters.
+
+**Use Case:** When you want to restore the original formatter configuration.
+
+**Example:**
+```typescript expandable
+export class SettingsComponent {
+  private formatterConfig = inject(FormatterConfigService);
+
+  resetFormatters() {
+    // Clear all customizations
+    this.formatterConfig.resetToDefaults();
+    
+    // Now getDefaultFormatters() returns:
+    // [mentions, URLs]
+  }
+}
+```
+
+### `getFormattersWithContext(loggedInUser?, alignment?): CometChatTextFormatter[]`
+
+Gets formatters configured with context for self-mention detection and direction CSS classes.
+
+**Parameters:**
+- `loggedInUser` (optional): The logged-in user for self-mention detection
+- `alignment` (optional): Message bubble alignment for direction CSS classes
+
+**Returns:** Array of formatters configured with the provided context
+
+**Context Configuration:**
+
+When `loggedInUser` is provided:
+- Mentions formatter applies `cometchat-mentions-you` for self-mentions
+- Mentions formatter applies `cometchat-mentions-other` for other-user mentions
+
+When `alignment` is provided:
+- `MessageBubbleAlignment.left` → adds `cometchat-mentions-incoming` class
+- `MessageBubbleAlignment.right` → adds `cometchat-mentions-outgoing` class
+- `undefined` → no direction classes (for composer, previews, conversation list)
+
+**Example 1: Message List (with alignment)**
+```typescript expandable
+export class MessageListComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+  private formatters: CometChatTextFormatter[] = [];
+
+  ngOnInit() {
+    const loggedInUser = CometChat.getLoggedInUser();
+    
+    // Get formatters with context for each message
+    this.messages.forEach(message => {
+      const alignment = this.getMessageAlignment(message);
+      const formatters = this.formatterConfig.getFormattersWithContext(
+        loggedInUser,
+        alignment
+      );
+      
+      // Pass to text bubble component
+      message.formatters = formatters;
+    });
+  }
+  
+  private getMessageAlignment(message: CometChat.BaseMessage): MessageBubbleAlignment {
+    const loggedInUser = CometChat.getLoggedInUser();
+    return message.getSender().getUid() === loggedInUser?.getUid()
+      ? MessageBubbleAlignment.right
+      : MessageBubbleAlignment.left;
+  }
+}
+```
+
+**Example 2: Message Composer (without alignment)**
+```typescript expandable
+export class MessageComposerComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+  private formatters: CometChatTextFormatter[] = [];
+
+  ngOnInit() {
+    const loggedInUser = CometChat.getLoggedInUser();
+    
+    // Get formatters without alignment for composer
+    // No direction CSS classes will be applied
+    this.formatters = this.formatterConfig.getFormattersWithContext(
+      loggedInUser,
+      undefined
+    );
+  }
+}
+```
+
+**Example 3: Conversation List (without alignment)**
+```typescript expandable
+export class ConversationItemComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+  private formatters: CometChatTextFormatter[] = [];
+
+  ngOnInit() {
+    const loggedInUser = CometChat.getLoggedInUser();
+    
+    // Get formatters without alignment for conversation subtitle
+    // No direction CSS classes will be applied
+    this.formatters = this.formatterConfig.getFormattersWithContext(
+      loggedInUser,
+      undefined
+    );
+  }
+}
+```
+
+## Usage Patterns
+
+### Pattern 1: Use Default Formatters (Recommended)
+
+The simplest approach - let the service provide the default formatters.
+
+```typescript
+export class TextBubbleComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+  private formatters: CometChatTextFormatter[] = [];
+
+  ngOnInit() {
+    // Get default formatters (mentions + URLs)
+    this.formatters = this.formatterConfig.getDefaultFormatters();
+  }
+}
+```
+
+**When to use:** Most components should use this pattern.
+
+### Pattern 2: Set Custom Formatters Globally
+
+Replace the built-in formatters with your own custom set.
+
+```typescript expandable
+// In app initialization (main.ts or app.component.ts)
+export class AppComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    // Define custom formatters
+    const customFormatters = [
+      new MyCustomMentionsFormatter(),
+      new MyCustomUrlFormatter(),
+      new HashtagFormatter()
+    ];
+    
+    // Set as defaults
+    this.formatterConfig.setDefaultFormatters(customFormatters);
+  }
+}
+```
+
+**When to use:** When you need complete control over formatter behavior globally.
+
+### Pattern 3: Extend Default Formatters
+
+Keep the built-in formatters and add custom ones.
+
+```typescript expandable
+export class AppComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    // Add custom formatters to defaults
+    const additionalFormatters = [
+      new HashtagFormatter(),
+      new EmailFormatter()
+    ];
+    
+    this.formatterConfig.addFormatters(additionalFormatters);
+    
+    // All components now get: [mentions, URLs, hashtag, email]
+  }
+}
+```
+
+**When to use:** When you want to add functionality without losing the built-in formatters.
+
+### Pattern 4: Context-Aware Formatting
+
+Configure formatters with logged-in user and message alignment.
+
+```typescript expandable
+export class MessageListComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    const loggedInUser = CometChat.getLoggedInUser();
+    
+    this.messages.forEach(message => {
+      const alignment = this.getMessageAlignment(message);
+      
+      // Get formatters with context
+      const formatters = this.formatterConfig.getFormattersWithContext(
+        loggedInUser,
+        alignment
+      );
+      
+      // Use formatters for this message
+      this.formatMessage(message, formatters);
+    });
+  }
+}
+```
+
+**When to use:** In message lists where self-mention detection and direction classes are needed.
+
+### Pattern 5: Component-Specific Formatters
+
+Override formatters for a specific component instance.
+
+```typescript expandable
+export class CustomTextBubbleComponent implements OnInit {
+  @Input() textFormatters?: CometChatTextFormatter[];
+  
+  private formatterConfig = inject(FormatterConfigService);
+  private formatters: CometChatTextFormatter[] = [];
+
+  ngOnInit() {
+    // Use input formatters if provided, otherwise use defaults
+    this.formatters = this.textFormatters || 
+                      this.formatterConfig.getDefaultFormatters();
+  }
+}
+```
+
+**When to use:** When a specific component needs different formatters than the global defaults.
+
+## Creating Custom Formatters
+
+To create a custom formatter, extend `CometChatTextFormatter`:
+
+```typescript expandable
+import { CometChatTextFormatter } from '@cometchat/chat-uikit-angular';
+
+export class HashtagFormatter extends CometChatTextFormatter {
+  constructor() {
+    super();
+    this.priority = 50; // Execute after mentions (20) but before URLs (100)
+  }
+
+  getRegex(): RegExp {
+    // Match hashtags: #word
+    return /#(\w+)/g;
+  }
+
+  format(text: string, message?: CometChat.BaseMessage): string {
+    return text.replace(this.getRegex(), (match, tag) => {
+      return `<span class="cometchat-hashtag" data-tag="${tag}">#${tag}</span>`;
+    });
+  }
+
+  shouldFormat(text: string, message?: CometChat.BaseMessage): boolean {
+    // Only format if text contains hashtags
+    return this.getRegex().test(text);
+  }
+}
+```
+
+**Using the custom formatter:**
+
+```typescript
+// Add to defaults
+this.formatterConfig.addFormatters([new HashtagFormatter()]);
+
+// Or set as custom defaults
+this.formatterConfig.setDefaultFormatters([
+  new CometChatMentionsFormatter(),
+  new HashtagFormatter(),
+  new CometChatUrlFormatter()
+]);
+```
+
+## Formatter Priority
+
+Formatters execute in order of their `priority` property (lower number = earlier execution):
+
+| Formatter | Priority | Execution Order |
+|-----------|----------|-----------------|
+| Mentions | 20 | First |
+| Emoji | 30 | Second |
+| Custom (example) | 50 | Third |
+| URLs | 100 | Last |
+
+**Why priority matters:**
+
+```typescript
+// Text: "Check out @john's profile at https://example.com"
+
+// Execution order:
+// 1. Mentions formatter (priority 20) → formats @john
+// 2. URL formatter (priority 100) → formats https://example.com
+
+// Result: Both mentions and URLs are properly formatted
+```
+
+**Setting priority in custom formatters:**
+
+```typescript
+export class EmailFormatter extends CometChatTextFormatter {
+  constructor() {
+    super();
+    this.priority = 90; // Execute before URLs but after mentions
+  }
+}
+```
+
+## Performance Optimization
+
+The service optimizes performance through:
+
+### 1. Singleton Instances
+
+Formatters are created once and reused across all components:
+
+```typescript
+// ✅ GOOD: Service reuses instances
+const formatters1 = this.formatterConfig.getDefaultFormatters();
+const formatters2 = this.formatterConfig.getDefaultFormatters();
+// formatters1 and formatters2 contain the same instances
+```
+
+### 2. Lazy Initialization
+
+Built-in formatters are created only when first accessed:
+
+```typescript
+// Formatters are created on first call to getDefaultFormatters()
+// Subsequent calls return the same instances
+```
+
+### 3. Conditional Execution
+
+Formatters check `shouldFormat()` before applying regex:
+
+```typescript expandable
+export class MyFormatter extends CometChatTextFormatter {
+  shouldFormat(text: string): boolean {
+    // Quick check before expensive regex
+    return text.includes('#');
+  }
+  
+  format(text: string): string {
+    // Only called if shouldFormat() returns true
+    return text.replace(/#(\w+)/g, ...);
+  }
+}
+```
+
+## Integration with Components
+
+The service integrates seamlessly with all text-displaying components:
+
+### Text Bubble
+```typescript expandable
+export class CometChatTextBubble implements OnInit {
+  @Input() textFormatters?: CometChatTextFormatter[];
+  
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    const formatters = this.textFormatters || 
+                       this.formatterConfig.getDefaultFormatters();
+    this.applyFormatters(formatters);
+  }
+}
+```
+
+### Message List
+```typescript expandable
+export class CometChatMessageList implements OnInit {
+  @Input() textFormatters?: CometChatTextFormatter[];
+  
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    const formatters = this.textFormatters || 
+                       this.formatterConfig.getDefaultFormatters();
+    // Pass to all child text bubbles
+  }
+}
+```
+
+### Conversations
+```typescript expandable
+export class CometChatConversations implements OnInit {
+  @Input() textFormatters?: CometChatTextFormatter[];
+  
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    const formatters = this.textFormatters || 
+                       this.formatterConfig.getDefaultFormatters();
+    // Pass to all conversation items
+  }
+}
+```
+
+## Best Practices
+
+### 1. Configure Once, Use Everywhere
+
+Set formatters globally in app initialization:
+
+```typescript expandable
+// ✅ GOOD: Configure once in AppComponent
+export class AppComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    this.formatterConfig.addFormatters([
+      new HashtagFormatter(),
+      new EmailFormatter()
+    ]);
+  }
+}
+
+// All components automatically use these formatters
+```
+
+### 2. Use Context-Aware Formatting
+
+Always provide logged-in user for self-mention detection:
+
+```typescript expandable
+// ✅ GOOD: Provide context
+const loggedInUser = CometChat.getLoggedInUser();
+const formatters = this.formatterConfig.getFormattersWithContext(
+  loggedInUser,
+  alignment
+);
+
+// ❌ BAD: No context
+const formatters = this.formatterConfig.getDefaultFormatters();
+// Self-mentions won't be detected
+```
+
+### 3. Respect Formatter Priority
+
+Set appropriate priority values for custom formatters:
+
+```typescript expandable
+// ✅ GOOD: Logical priority
+export class HashtagFormatter extends CometChatTextFormatter {
+  constructor() {
+    super();
+    this.priority = 50; // Between mentions (20) and URLs (100)
+  }
+}
+
+// ❌ BAD: Same priority as built-in
+export class HashtagFormatter extends CometChatTextFormatter {
+  constructor() {
+    super();
+    this.priority = 20; // Conflicts with mentions formatter
+  }
+}
+```
+
+### 4. Implement shouldFormat()
+
+Optimize performance with quick checks:
+
+```typescript
+// ✅ GOOD: Quick check before regex
+shouldFormat(text: string): boolean {
+  return text.includes('#');
+}
+
+// ❌ BAD: Always returns true
+shouldFormat(text: string): boolean {
+  return true; // Regex always runs
+}
+```
+
+### 5. Handle Edge Cases
+
+Ensure formatters handle empty or invalid input:
+
+```typescript
+// ✅ GOOD: Defensive programming
+format(text: string): string {
+  if (!text || text.trim().length === 0) {
+    return text;
+  }
+  
+  return text.replace(this.getRegex(), ...);
+}
+```
+
+## Common Patterns
+
+### Pattern: Feature Flag for Formatters
+
+Enable/disable formatters based on feature flags:
+
+```typescript expandable
+export class AppComponent implements OnInit {
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit() {
+    const formatters: CometChatTextFormatter[] = [
+      new CometChatMentionsFormatter(),
+      new CometChatUrlFormatter()
+    ];
+    
+    // Add optional formatters based on feature flags
+    if (this.featureFlags.hashtagsEnabled) {
+      formatters.push(new HashtagFormatter());
+    }
+    
+    if (this.featureFlags.emailDetectionEnabled) {
+      formatters.push(new EmailFormatter());
+    }
+    
+    this.formatterConfig.setDefaultFormatters(formatters);
+  }
+}
+```
+
+### Pattern: User Preference for Formatters
+
+Allow users to customize formatter behavior:
+
+```typescript expandable
+export class SettingsComponent {
+  private formatterConfig = inject(FormatterConfigService);
+
+  saveFormatterPreferences(preferences: FormatterPreferences) {
+    const formatters: CometChatTextFormatter[] = [];
+    
+    if (preferences.enableMentions) {
+      formatters.push(new CometChatMentionsFormatter());
+    }
+    
+    if (preferences.enableUrls) {
+      formatters.push(new CometChatUrlFormatter());
+    }
+    
+    if (preferences.enableHashtags) {
+      formatters.push(new HashtagFormatter());
+    }
+    
+    this.formatterConfig.setDefaultFormatters(formatters);
+  }
+}
+```
+
+### Pattern: Formatter Testing
+
+Test custom formatters in isolation:
+
+```typescript expandable
+describe('HashtagFormatter', () => {
+  let formatter: HashtagFormatter;
+
+  beforeEach(() => {
+    formatter = new HashtagFormatter();
+  });
+
+  it('should format hashtags', () => {
+    const input = 'Check out #angular and #typescript';
+    const output = formatter.format(input);
+    
+    expect(output).toContain('class="cometchat-hashtag"');
+    expect(output).toContain('data-tag="angular"');
+    expect(output).toContain('data-tag="typescript"');
+  });
+
+  it('should not format without hashtags', () => {
+    const input = 'No hashtags here';
+    expect(formatter.shouldFormat(input)).toBe(false);
+  });
+});
+```
+
+## Troubleshooting
+
+### Formatters Not Applied
+
+**Problem:** Text is not being formatted.
+
+**Solution:** Check that formatters are configured:
+
+```typescript
+// Debug: Log formatters
+const formatters = this.formatterConfig.getDefaultFormatters();
+console.log('Active formatters:', formatters);
+
+// Verify formatters are passed to components
+<cometchat-text-bubble [textFormatters]="formatters"></cometchat-text-bubble>
+```
+
+### Self-Mentions Not Detected
+
+**Problem:** All mentions show as "other" mentions.
+
+**Solution:** Provide logged-in user context:
+
+```typescript
+// ❌ BAD: No context
+const formatters = this.formatterConfig.getDefaultFormatters();
+
+// ✅ GOOD: With context
+const loggedInUser = CometChat.getLoggedInUser();
+const formatters = this.formatterConfig.getFormattersWithContext(loggedInUser);
+```
+
+### Custom Formatters Not Working
+
+**Problem:** Custom formatters added but not executing.
+
+**Solution:** Check if custom formatters were set (which overrides additions):
+
+```typescript expandable
+// If you called setDefaultFormatters(), addFormatters() has no effect
+this.formatterConfig.setDefaultFormatters([...]); // Overrides everything
+this.formatterConfig.addFormatters([...]); // This won't work
+
+// Solution: Include all formatters in setDefaultFormatters()
+this.formatterConfig.setDefaultFormatters([
+  new CometChatMentionsFormatter(),
+  new CometChatUrlFormatter(),
+  new MyCustomFormatter() // Include custom here
+]);
+```
+
+### Formatters Execute in Wrong Order
+
+**Problem:** Formatters execute in unexpected order.
+
+**Solution:** Check priority values:
+
+```typescript expandable
+// Verify priorities
+const formatters = this.formatterConfig.getDefaultFormatters();
+formatters.forEach(f => {
+  console.log(`${f.constructor.name}: priority ${f.priority}`);
+});
+
+// Adjust custom formatter priority
+export class MyFormatter extends CometChatTextFormatter {
+  constructor() {
+    super();
+    this.priority = 50; // Set appropriate value
+  }
+}
+```
+
+## Scoping for Multiple Instances
+
+`FormatterConfigService` is provided at the root level (`providedIn: 'root'`), so all components share the same formatter configuration by default. If you need different formatters for different message lists (e.g., a main chat with full formatting vs. a thread panel with minimal formatting), scope the service to a wrapper component:
+
+```typescript expandable
+@Component({
+  selector: 'app-thread-panel',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  providers: [FormatterConfigService], // Scoped instance
+  template: `<cometchat-message-list [user]="user" [parentMessageId]="parentMessageId"></cometchat-message-list>`
+})
+export class ThreadPanelComponent implements OnInit {
+  // This is the LOCAL instance, not the root singleton
+  private formatterConfig = inject(FormatterConfigService);
+
+  ngOnInit(): void {
+    // Only affects text rendering inside this wrapper
+    // e.g., thread panel uses only URL formatting, no mentions
+    this.formatterConfig.setDefaultFormatters([
+      new CometChatUrlFormatter()
+    ]);
+  }
+}
+```
+
+Angular's hierarchical DI ensures the message list inside the wrapper resolves the local `FormatterConfigService` instance. The main chat panel continues to use the root singleton.
+
+See [CometChatMessageList — Multiple Message Lists with Different Configurations](/components/cometchat-message-list#multiple-message-lists-with-different-configurations) for a complete multi-panel example.
+
+## See Also
+
+- [CometChatTextBubble Component](../components/cometchat-text-bubble.mdx)
+- [CometChatMessageList Component](../components/cometchat-message-list.mdx)
+- [CometChatConversations Component](../components/cometchat-conversations.mdx)
+- [Rich Text Formatting Guide](../guides/rich-text-formatting.mdx)

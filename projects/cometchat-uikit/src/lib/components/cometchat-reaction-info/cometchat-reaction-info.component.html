@@ -1,0 +1,32 @@
+<div 
+  class="cometchat-reaction-info"
+  role="tooltip"
+  aria-live="polite">
+  <div class="cometchat-reaction-info__content">
+    @if (state() === 'loading') {
+      <div 
+        class="cometchat-reaction-info__loading"
+        role="status"
+        [attr.aria-label]="'accessibility_loading' | translate">
+      </div>
+    }
+
+    @if (state() === 'error') {
+      <div 
+        class="cometchat-reaction-info__error"
+        role="alert">
+        {{ 'reaction_list_error' | translate }}
+      </div>
+    }
+
+    @if (state() === 'loaded') {
+      <div class="cometchat-reaction-info__emoji-text">
+        <span class="cometchat-reaction-info__emoji" aria-hidden="true">{{ reaction }}</span>
+        <div>
+          <div class="cometchat-reaction-info__title">{{ getDisplayText() }}</div>
+          <div class="cometchat-reaction-info__description">{{ 'reaction_reacted' | translate }}</div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

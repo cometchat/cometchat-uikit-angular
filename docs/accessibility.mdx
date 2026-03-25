@@ -1,0 +1,80 @@
+---
+title: "Accessibility"
+description: "Overview of accessibility support in the CometChat Angular UIKit, including WCAG compliance, keyboard navigation, and ARIA attributes."
+---
+
+The CometChat Angular UIKit is built with accessibility as a core principle. Components are designed targeting WCAG 2.1 Level AA guidelines, with the goal of making chat interfaces usable by everyone — including users who rely on keyboards, screen readers, or other assistive technologies.
+
+<Note>
+  Full WCAG compliance requires manual testing with assistive technologies and expert accessibility review. The UIKit implements the patterns and attributes described below, but you should validate your specific integration against your accessibility requirements.
+</Note>
+
+Key accessibility features across the UIKit:
+
+- **WCAG 2.1 Level AA target** — Components are built following the Web Content Accessibility Guidelines for contrast, focus management, and semantic markup.
+- **Keyboard navigation** — All interactive components support full keyboard operation using Tab, Enter, Space, Escape, and Arrow keys. Users can navigate, select, and interact without a mouse.
+- **ARIA attributes** — Components use appropriate ARIA roles, labels, and states to communicate structure and behavior to screen readers.
+
+Each component that supports keyboard interaction documents its specific key bindings and focus behavior on its own page. The sections below link to those per-component keyboard accessibility references.
+
+## Components with Keyboard Accessibility
+
+### Conversations
+
+- [CometChatConversations](/components/cometchat-conversations#keyboard-accessibility)
+- [CometChatConversationItem](/components/cometchat-conversation-item#keyboard-accessibility)
+
+### Users
+
+- [CometChatUsers](/components/cometchat-users#keyboard-accessibility)
+- [CometChatUserItem](/components/cometchat-user-item#keyboard-accessibility)
+
+### Groups
+
+- [CometChatGroups](/components/cometchat-groups#keyboard-accessibility)
+- [CometChatGroupItem](/components/cometchat-group-item#keyboard-accessibility)
+
+### Group Members
+
+- [CometChatGroupMembers](/components/cometchat-group-members#keyboard-accessibility)
+- [CometChatGroupMemberItem](/components/cometchat-group-member-item#keyboard-accessibility)
+
+### Messages
+
+- [CometChatMessageHeader](/components/cometchat-message-header#keyboard-accessibility)
+- [CometChatMessageList](/components/cometchat-message-list#keyboard-accessibility)
+- [CometChatMessageComposer](/components/cometchat-message-composer#keyboard-accessibility)
+- [CometChatMessageBubble](/components/cometchat-message-bubble#keyboard-accessibility)
+- [CometChatMessageInformation](/components/cometchat-message-information#keyboard-accessibility)
+- [CometChatThreadHeader](/components/cometchat-thread-header#keyboard-accessibility)
+
+### Message Bubbles
+
+- [CometChatTextBubble](/components/cometchat-text-bubble#keyboard-accessibility)
+- [CometChatImageBubble](/components/cometchat-image-bubble#keyboard-accessibility)
+- [CometChatVideoBubble](/components/cometchat-video-bubble#keyboard-accessibility)
+- [CometChatAudioBubble](/components/cometchat-audio-bubble#keyboard-accessibility)
+- [CometChatFileBubble](/components/cometchat-file-bubble#keyboard-accessibility)
+- [CometChatCallBubble](/components/cometchat-call-bubble#keyboard-accessibility)
+- [CometChatPollBubble](/components/cometchat-poll-bubble#keyboard-accessibility)
+- [CometChatCollaborativeDocumentBubble](/components/cometchat-collaborative-document-bubble#keyboard-accessibility)
+- [CometChatCollaborativeWhiteboardBubble](/components/cometchat-collaborative-whiteboard-bubble#keyboard-accessibility)
+- [CometChatStickersKeyboard](/components/cometchat-stickers-keyboard#keyboard-accessibility)
+
+### Reactions
+
+- [CometChatReactions](/components/cometchat-reactions#keyboard-accessibility)
+- [CometChatReactionList](/components/cometchat-reaction-list#keyboard-accessibility)
+- [CometChatReactionInfo](/components/cometchat-reaction-info#keyboard-accessibility)
+
+### Calls
+
+- [CometChatCallButtons](/components/cometchat-call-buttons#keyboard-accessibility)
+- [CometChatIncomingCall](/components/cometchat-incoming-call#keyboard-accessibility)
+- [CometChatOutgoingCall](/components/cometchat-outgoing-call#keyboard-accessibility)
+- [CometChatCallLogs](/components/cometchat-call-logs#keyboard-accessibility)
+
+### AI Features
+
+- [CometChatSmartReplies](/components/cometchat-smart-replies#keyboard-accessibility)
+- [CometChatConversationStarter](/components/cometchat-conversation-starter#keyboard-accessibility)

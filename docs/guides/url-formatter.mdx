@@ -1,0 +1,150 @@
+---
+title: "URL Formatter"
+description: "Detect and style plain URLs as clickable links with optional tracking logic in CometChat Angular UI Kit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key class | `CometChatUrlsFormatter` (extends `CometChatTextFormatter`) |
+| Required setup | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Purpose | Auto-detects URLs in text messages and converts them to clickable links |
+| Related | [Custom Text Formatter](/guides/custom-text-formatter) \| [All Guides](/guides/overview) |
+
+</Accordion>
+
+`CometChatUrlsFormatter` extends [CometChatTextFormatter](/guides/custom-text-formatter) to detect URLs in text messages and render them as clickable links.
+
+---
+
+## Usage
+
+Extend `CometChatTextFormatter`, set regex patterns for URL detection, and override `onRegexMatch` and `registerEventListeners` to handle formatting and click behavior.
+
+<Tabs>
+<Tab title="CometChatUrlsFormatter.ts">
+```typescript expandable
+import { CometChatTextFormatter } from "@cometchat/chat-uikit-angular";
+
+export class CometChatUrlsFormatter extends CometChatTextFormatter {
+  constructor(regexPatterns: RegExp[]) {
+    super();
+    this.setRegexPatterns(regexPatterns);
+  }
+
+  onRegexMatch(inputText: string): string {
+    return this.formatUrls(inputText);
+  }
+
+  private formatUrls(inputText: string): string {
+    return inputText.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" class="clickable-url" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+  }
+
+  registerEventListeners(element: HTMLElement, classList: DOMTokenList): HTMLElement {
+    if (classList.contains("clickable-url")) {
+      element.addEventListener("click", this.onUrlClick);
+    }
+    return element;
+  }
+
+  private onUrlClick(event: Event) {
+    const target = event.target as HTMLAnchorElement;
+    const url = target.href || target.dataset["url"];
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+}
+```
+</Tab>
+
+<Tab title="Component Usage">
+```typescript expandable
+import { Component, OnInit } from "@angular/core";
+import { CometChat } from "@cometchat/chat-sdk-javascript";
+import { CometChatMessageListComponent } from "@cometchat/chat-uikit-angular";
+import { CometChatUrlsFormatter } from "./CometChatUrlsFormatter";
+
+@Component({
+  selector: "app-url-demo",
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list
+      [user]="chatUser"
+      [textFormatters]="textFormatters">
+    </cometchat-message-list>
+  `,
+})
+export class UrlDemoComponent implements OnInit {
+  chatUser: CometChat.User | undefined;
+  textFormatters = [new CometChatUrlsFormatter([/(https?:\/\/[^\s]+)/g])];
+
+  ngOnInit() {
+    CometChat.getUser("uid").then((user) => {
+      this.chatUser = user;
+    });
+  }
+}
+```
+</Tab>
+</Tabs>
+
+---
+
+## Customization
+
+### Styling links
+
+Apply CSS to your link class:
+
+```css
+.clickable-url {
+  color: var(--cometchat-primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
+```
+
+### Handling clicks
+
+Override `onUrlClick` to add tracking or custom navigation:
+
+```typescript
+private onUrlClick(event: Event) {
+  event.preventDefault();
+  const target = event.target as HTMLAnchorElement;
+  const url = target.href;
+  // Add analytics tracking
+  console.log("URL clicked:", url);
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+```
+
+<Note>
+The `CometChatUrlsFormatter` is included by default in the message list. You only need to pass it explicitly if you want to customize click behavior or combine it with other formatters.
+</Note>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Text Formatter" href="/guides/custom-text-formatter">
+    Build custom inline text patterns.
+  </Card>
+  <Card title="Message List" href="/components/cometchat-message-list">
+    Render real-time message threads.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Mentions Formatter" href="/guides/mentions-formatter">
+    Add @mentions with styled tokens.
+  </Card>
+</CardGroup>

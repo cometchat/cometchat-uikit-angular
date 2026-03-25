@@ -1,0 +1,264 @@
+<!-- 
+  CometChatMessageHeader Component Template
+  
+  Displays the header section of a chat conversation with user/group information,
+  real-time status updates, typing indicators, and action buttons.
+  
+  Structure:
+  - Back Button Section (optional)
+  - Main Content (clickable item)
+    - Leading Section (avatar/status) - Task 8
+    - Body Section (title/subtitle) - Task 9
+    - Trailing Section (action buttons) - Task 10
+  
+  Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 12.3
+-->
+
+<div 
+  class="cometchat cometchat-message-header"
+  role="banner"
+  [attr.aria-label]="getHeaderAriaLabel()">
+
+  <!-- ==================== Back Button Section ==================== -->
+  @if (shouldShowBackButton()) {
+    <div class="cometchat-message-header__back-button-wrapper">
+      @if (effectiveBackButtonView) {
+        <!-- Custom back button view provided via template -->
+        <ng-container *ngTemplateOutlet="effectiveBackButtonView"></ng-container>
+      } @else {
+        <!-- Default back button with arrow icon -->
+        <button
+          type="button"
+          class="cometchat-message-header__back-button"
+          [attr.aria-label]="'accessibility_go_back' | translate"
+          tabindex="0"
+          (click)="handleBackClick()"
+          (keydown)="handleBackKeydown($event)">
+          <span 
+            class="cometchat-message-header__back-button-icon"
+            aria-hidden="true">
+          </span>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- ==================== Main Content Section ==================== -->
+  <!-- This section will be implemented in subsequent tasks (8, 9, 10) -->
+  @if (effectiveHeaderView) {
+    <!-- Custom header view replaces entire content -->
+    <ng-container *ngTemplateOutlet="effectiveHeaderView"></ng-container>
+  } @else {
+    <!-- Default header content -->
+    <div 
+      class="cometchat-message-header__content"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="getItemAriaLabel()"
+      (click)="handleItemClick()"
+      (keydown)="handleItemKeydown($event)">
+      
+      @if (effectiveItemView) {
+        <!-- Custom item view replaces item content -->
+        <ng-container *ngTemplateOutlet="effectiveItemView; context: templateContext"></ng-container>
+      } @else {
+        <!-- Default item layout - to be implemented in Tasks 8, 9, 10 -->
+        
+        <!-- Leading Section (avatar/status) - Task 8 -->
+        <div class="cometchat-message-header__leading">
+          @if (effectiveLeadingView) {
+            <ng-container *ngTemplateOutlet="effectiveLeadingView; context: templateContext"></ng-container>
+          } @else {
+            <!-- Default leading view with avatar and status indicator -->
+            <div class="cometchat-message-header__avatar-container">
+              <!-- CometChatAvatar component -->
+              <cometchat-avatar
+                [image]="getAvatarImage()"
+                [name]="getAvatarName()">
+              </cometchat-avatar>
+              
+              <!-- Status indicator for user conversations (hidden when typing) -->
+              @if (currentUser() && !effectiveHideUserStatus() && !isTyping()) {
+                <span 
+                  class="cometchat-message-header__status-indicator"
+                  [class.cometchat-message-header__status-indicator--online]="userStatusSignal() === 'online'"
+                  [class.cometchat-message-header__status-indicator--offline]="userStatusSignal() !== 'online'"
+                  [attr.aria-label]="userStatusSignal() === 'online' ? ('message_header_status_online' | translate) : ('message_header_status_offline' | translate)"
+                  role="status">
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Body Section (title/subtitle) - Task 9 -->
+        <div class="cometchat-message-header__body">
+          <!-- Title Section -->
+          <div class="cometchat-message-header__title-wrapper">
+            @if (effectiveTitleView) {
+              <ng-container *ngTemplateOutlet="effectiveTitleView; context: templateContext"></ng-container>
+            } @else {
+              <!-- Default title view with user/group name -->
+              <span 
+                class="cometchat-message-header__title"
+                [attr.title]="getDisplayName()">
+                {{ getDisplayName() }}
+              </span>
+            }
+          </div>
+
+          <!-- Subtitle Section -->
+          <div 
+            class="cometchat-message-header__subtitle-wrapper"
+            [attr.aria-live]="isTyping() ? 'polite' : null"
+            [attr.aria-atomic]="isTyping() ? 'true' : null">
+            @if (effectiveSubtitleView) {
+              <ng-container *ngTemplateOutlet="effectiveSubtitleView; context: templateContext"></ng-container>
+            } @else {
+              <!-- Default subtitle view - Requirements 2.1, 2.2, 2.5, 3.4, 4.1, 10.5 -->
+              
+              <!-- User Conversation Subtitle -->
+              @if (currentUser()) {
+                @if (isTyping()) {
+                  <!-- Typing indicator for user -->
+                  <span 
+                    class="cometchat-message-header__subtitle cometchat-message-header__subtitle--typing"
+                    role="status"
+                    aria-live="polite">
+                    <span class="cometchat-message-header__typing-dots" aria-hidden="true">
+                      <span class="cometchat-message-header__typing-dot"></span>
+                      <span class="cometchat-message-header__typing-dot"></span>
+                      <span class="cometchat-message-header__typing-dot"></span>
+                    </span>
+                    <span class="cometchat-message-header__typing-text">{{ 'message_header_typing' | translate }}</span>
+                  </span>
+                } @else if (isUserOnline() && !effectiveHideUserStatus()) {
+                  <!-- Online status -->
+                  <span class="cometchat-message-header__subtitle cometchat-message-header__subtitle--online">
+                    {{ 'message_header_status_online' | translate }}
+                  </span>
+                } @else if (!effectiveHideUserStatus() && getLastActiveTimestamp()) {
+                  <!-- Last active timestamp for offline users -->
+                  <span class="cometchat-message-header__subtitle cometchat-message-header__subtitle--last-active">
+                    <span class="cometchat-message-header__last-seen-label">
+                      {{ 'message_header_last_seen' | translate }}
+                    </span>
+                    <cometchat-date
+                      [timestamp]="getLastActiveTimestamp()!"
+                      [calendarObject]="getLastActiveDateFormat()">
+                    </cometchat-date>
+                  </span>
+                }
+              }
+
+              <!-- Group Conversation Subtitle -->
+              @if (currentGroup()) {
+                @if (isTyping()) {
+                  <!-- Typing indicator for group -->
+                  <span 
+                    class="cometchat-message-header__subtitle cometchat-message-header__subtitle--typing"
+                    role="status"
+                    aria-live="polite">
+                    <span class="cometchat-message-header__typing-dots" aria-hidden="true">
+                      <span class="cometchat-message-header__typing-dot"></span>
+                      <span class="cometchat-message-header__typing-dot"></span>
+                      <span class="cometchat-message-header__typing-dot"></span>
+                    </span>
+                    <span class="cometchat-message-header__typing-text">{{ getTypingText() }}</span>
+                  </span>
+                } @else {
+                  <!-- Member count for groups -->
+                  <span class="cometchat-message-header__subtitle cometchat-message-header__subtitle--members">
+                    {{ getMemberCount() }} 
+                    @if (getMemberCount() === 1) {
+                      {{ 'message_header_member' | translate }}
+                    } @else {
+                      {{ 'message_header_members' | translate }}
+                    }
+                  </span>
+                }
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Trailing Section (action buttons) - Task 10 -->
+        <div class="cometchat-message-header__trailing">
+          @if (effectiveTrailingView) {
+            <ng-container *ngTemplateOutlet="effectiveTrailingView; context: templateContext"></ng-container>
+          } @else {
+            <!-- Default trailing view with call buttons - Requirements 6.1, 6.2, 6.3, 6.4 -->
+            <div class="cometchat-message-header__call-buttons" (click)="$event.stopPropagation()">
+                  <cometchat-call-buttons
+              [user]="currentUser() ?? null"
+              [group]="currentGroup() ?? null"
+              [hideVoiceCallButton]="effectiveHideVoiceCallButton()"
+              [hideVideoCallButton]="effectiveHideVideoCallButton()"
+              [callSettingsBuilder]="callSettingsBuilder"
+             >
+            </cometchat-call-buttons>
+            </div>
+
+            <!-- Search/Summary Menu Section - Requirements 7.1, 8.1, 8.2, 8.3, 8.4 -->
+            <div class="cometchat-message-header__menu-buttons">
+              <!-- Search Button Only (when showSearchOption is true and showConversationSummaryButton is false) -->
+              @if (showSearchOption && !showConversationSummaryButton) {
+                <button
+                  type="button"
+                  class="cometchat-message-header__menu-button cometchat-message-header__menu-button--search"
+                  [attr.aria-label]="'search_title' | translate"
+                  [attr.title]="'search_title' | translate"
+                  tabindex="0"
+                  (click)="handleSearchClick(); $event.stopPropagation()"
+                  (keydown.enter)="handleSearchClick(); $event.stopPropagation(); $event.preventDefault()"
+                  (keydown.space)="handleSearchClick(); $event.stopPropagation(); $event.preventDefault()">
+                  <span 
+                    class="cometchat-message-header__menu-button-icon cometchat-message-header__menu-button-icon--search"
+                    aria-hidden="true">
+                  </span>
+                </button>
+              }
+
+              <!-- Summary Button Only (when showConversationSummaryButton is true and showSearchOption is false) -->
+              @if (showConversationSummaryButton && !showSearchOption) {
+                <button
+                  type="button"
+                  class="cometchat-message-header__menu-button cometchat-message-header__menu-button--summary"
+                  [attr.aria-label]="'ai_conversation_summary_title' | translate"
+                  [attr.title]="'ai_conversation_summary_title' | translate"
+                  tabindex="0"
+                  (click)="handleSummaryClick(); $event.stopPropagation()"
+                  (keydown.enter)="handleSummaryClick(); $event.stopPropagation(); $event.preventDefault()"
+                  (keydown.space)="handleSummaryClick(); $event.stopPropagation(); $event.preventDefault()">
+                  <span 
+                    class="cometchat-message-header__menu-button-icon cometchat-message-header__menu-button-icon--summary"
+                    aria-hidden="true">
+                  </span>
+                </button>
+              }
+
+              <!-- Overflow Menu (when both showSearchOption and showConversationSummaryButton are true) -->
+              @if (shouldShowOverflowMenu()) {
+                <cometchat-context-menu
+                  class="cometchat-message-header__overflow-menu"
+                  [data]="getOverflowMenuOptions()"
+                  [topMenuSize]="1"
+                  [moreIconHoverText]="'message_header_more_options' | translate"
+                  [closeOnOutsideClick]="true"
+                  (optionClick)="handleOverflowMenuOptionClick($event)">
+                </cometchat-context-menu>
+              }
+            </div>
+
+            <!-- Auxiliary Buttons (custom) - Requirements: 6.5 -->
+            @if (effectiveAuxiliaryButtonView) {
+              <div class="cometchat-message-header__auxiliary-buttons">
+                <ng-container *ngTemplateOutlet="effectiveAuxiliaryButtonView; context: templateContext"></ng-container>
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

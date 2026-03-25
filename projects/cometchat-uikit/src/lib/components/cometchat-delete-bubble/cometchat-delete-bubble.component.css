@@ -1,0 +1,126 @@
+/**
+ * CometChatDeleteBubble Styles
+ *
+ * BEM CSS methodology with CSS variables for theming.
+ * All values use CSS variables from css-variables.css.
+ *
+ * @see Requirements 2.4, 2.5, 2.6, 3.1-3.3, 4.1-4.3, 5.1-5.4, 6.1-6.7
+ */
+
+/* ============================================
+   Block: cometchat-delete-bubble
+   ============================================ */
+
+/**
+ * Main container for deleted message placeholders.
+ * Displays as a rounded bubble with icon and text.
+ *
+ * @see Requirements 2.4, 2.5, 2.6
+ */
+.cometchat-delete-bubble {
+  display: flex;
+  padding: var(--cometchat-delete-bubble-padding, var(--cometchat-padding-2, 8px));
+  flex-direction: column;
+  align-items: flex-end;
+  border-radius: var(--cometchat-delete-bubble-border-radius, var(--cometchat-radius-3, 12px));
+  max-width: var(--cometchat-delete-bubble-max-width, 270px);
+}
+
+/* ============================================
+   Modifiers: Sender Variant
+   ============================================ */
+
+/**
+ * Sender variant styling (outgoing messages).
+ * Uses primary color background with white text/icon.
+ *
+ * @see Requirements 3.1, 3.2, 3.3
+ */
+.cometchat-delete-bubble--sender {
+  background: var(--cometchat-delete-bubble-sender-background, var(--cometchat-primary-color, #6852D6));
+}
+
+.cometchat-delete-bubble--sender .cometchat-delete-bubble__icon {
+  background: var(--cometchat-delete-bubble-sender-icon-background, var(--cometchat-static-white, #FFFFFF));
+}
+
+.cometchat-delete-bubble--sender .cometchat-delete-bubble__text {
+  color: var(--cometchat-delete-bubble-sender-text-color, var(--cometchat-static-white, #FFFFFF));
+}
+
+/* ============================================
+   Modifiers: Receiver Variant
+   ============================================ */
+
+/**
+ * Receiver variant styling (incoming messages).
+ * Uses neutral background with neutral text/icon.
+ *
+ * @see Requirements 4.1, 4.2, 4.3
+ */
+.cometchat-delete-bubble--receiver {
+  background: var(--cometchat-delete-bubble-receiver-background, var(--cometchat-neutral-color-300, #E0E0E0));
+}
+
+.cometchat-delete-bubble--receiver .cometchat-delete-bubble__icon {
+  background: var(--cometchat-delete-bubble-receiver-icon-background, var(--cometchat-neutral-color-600, #757575));
+}
+
+.cometchat-delete-bubble--receiver .cometchat-delete-bubble__text {
+  color: var(--cometchat-delete-bubble-receiver-text-color, var(--cometchat-neutral-color-600, #757575));
+}
+
+/* ============================================
+   Element: Body
+   ============================================ */
+
+/**
+ * Body container with flex layout for icon and text.
+ *
+ * @see Requirements 2.1, 2.2, 2.3
+ */
+.cometchat-delete-bubble__body {
+  display: flex;
+  padding: 0;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--cometchat-delete-bubble-body-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* ============================================
+   Element: Icon
+   ============================================ */
+
+/**
+ * Delete icon using CSS mask technique.
+ * Allows icon color to be controlled via background property.
+ *
+ * @see Requirements 5.1, 5.2, 5.3, 5.4
+ */
+.cometchat-delete-bubble__icon {
+  display: flex;
+  width: var(--cometchat-delete-bubble-icon-width, 16px);
+  height: var(--cometchat-delete-bubble-icon-height, 16px);
+  justify-content: center;
+  align-items: center;
+  mask: url('../../assets/message_delete.svg') center center no-repeat;
+  -webkit-mask: url('../../assets/message_delete.svg') center center no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+}
+
+/* ============================================
+   Element: Text
+   ============================================ */
+
+/**
+ * Deleted message text styling.
+ * Uses body-regular font.
+ *
+ * @see Requirements 6.5, 6.6
+ */
+.cometchat-delete-bubble__text {
+  font: var(--cometchat-delete-bubble-text-font, var(--cometchat-font-body-regular, 400 14px/16.8px Roboto));
+  text-align: left;
+  white-space: nowrap;
+}

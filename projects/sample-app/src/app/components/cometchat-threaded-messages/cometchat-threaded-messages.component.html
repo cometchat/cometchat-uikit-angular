@@ -1,0 +1,33 @@
+@if (parentMessage(); as message) {
+  <div class="cometchat-threaded-messages">
+    <!-- Thread Header (UIKit component) -->
+    <cometchat-thread-header
+      [parentMessage]="message"
+      (backClick)="onBackClick()"
+    ></cometchat-thread-header>
+
+    <!-- Thread Message List (includes parent message via parentMessageId) -->
+    <div class="cometchat-threaded-messages__list">
+      <cometchat-message-list
+        [parentMessageId]="parentMessageId()"
+        [hideReplyInThreadOption]="true"
+      ></cometchat-message-list>
+    </div>
+
+    <!-- Thread Message Composer -->
+    @if (showComposer()) {
+      <div class="cometchat-threaded-messages__composer">
+        <cometchat-message-composer
+          [parentMessageId]="parentMessageId()"
+        ></cometchat-message-composer>
+      </div>
+    } @else {
+      <div class="cometchat-threaded-messages__blocked-banner">
+        <div class="cometchat-threaded-messages__blocked-banner-text">
+          {{ 'cannot_send_to_blocked_user' | translate }}
+          <a class="cometchat-threaded-messages__blocked-banner-link" (click)="onUnblockUser()">{{ 'click_to_unblock' | translate }}</a>
+        </div>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,870 @@
+---
+title: "CometChatMessageHeader"
+description: "A feature-rich Angular component for displaying the header section of a chat conversation with real-time status updates, typing indicators, and action buttons"
+---
+
+## Overview
+
+The CometChatMessageHeader component displays the header section of a chat conversation. It shows information about the user or group being chatted with, including real-time status updates, typing indicators, and provides action buttons for calls, search, and AI-powered conversation summary.
+
+The component follows a **Hybrid Approach** architecture where:
+- **MessageHeaderService** handles all SDK interactions, state management, and real-time updates using Angular Signals
+- **Component @Input properties** allow developers to override service behavior for flexibility
+- **Both service methods and @Input properties** are available, with @Input taking priority when provided
+
+### Key Features
+
+- **Real-time Updates**: Automatic updates for user online/offline status and typing indicators
+- **Flexible Customization**: Extensive template projection for all UI sections (header, leading, title, subtitle, trailing)
+- **Service-Based Architecture**: Clean separation of concerns with Angular Signals for reactive state management
+- **Keyboard Navigation**: Full keyboard accessibility with Tab, Enter, Space, and Escape key support (WCAG 2.1 Level AA compliant)
+- **Call Integration**: Built-in voice and video call buttons with customizable visibility
+- **AI Smart Chat Features**: Support for conversation summary generation with configurable message count
+- **Search Integration**: Optional search functionality with event emission
+- **Error Handling**: Comprehensive error handling with event propagation
+
+## Basic Usage
+
+### Simple Implementation with User
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      (backClick)="handleBack()"
+      (itemClick)="showUserDetails($event)"
+    ></cometchat-message-header>
+  `
+})
+export class ChatComponent {
+  selectedUser!: CometChat.User;
+
+  handleBack(): void {
+    // Navigate back to conversation list
+  }
+
+  showUserDetails(user: CometChat.User): void {
+    // Show user details panel
+  }
+}
+```
+
+### Simple Implementation with Group
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-chat',
+  standalone: true,
+  imports: [CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [group]="selectedGroup"
+      [showBackButton]="true"
+      (backClick)="handleBack()"
+      (itemClick)="showGroupDetails($event)"
+    ></cometchat-message-header>
+  `
+})
+export class GroupChatComponent {
+  selectedGroup!: CometChat.Group;
+
+  handleBack(): void {
+    // Navigate back to conversation list
+  }
+
+  showGroupDetails(group: CometChat.Group): void {
+    // Show group details panel
+  }
+}
+```
+
+### With Call Buttons and Search
+
+```typescript expandable
+<cometchat-message-header
+  [user]="selectedUser"
+  [hideVoiceCallButton]="false"
+  [hideVideoCallButton]="false"
+  [showSearchOption]="true"
+  (backClick)="handleBack()"
+  (voiceCallClick)="initiateVoiceCall($event)"
+  (videoCallClick)="initiateVideoCall($event)"
+  (searchClick)="openSearch()"
+></cometchat-message-header>
+```
+
+<Info>
+  **Live Preview** — message header for a user conversation.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-cometchat-message-header--user-chat-header)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-cometchat-message-header--user-chat-header&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="Message Header — User Conversation"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+### Entity Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user` | `CometChat.User` | `undefined` | The user to display in the header (for 1-on-1 conversations). Mutually exclusive with `group`. |
+| `group` | `CometChat.Group` | `undefined` | The group to display in the header (for group conversations). Mutually exclusive with `user`. |
+
+### Display Control Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideUserStatus` | `boolean` | `false` | Hide the user's online/offline status indicator |
+| `showBackButton` | `boolean` | `false` | Show the back button |
+| `hideVoiceCallButton` | `boolean` | `true` | Hide the voice call button. Defaults to `true` (hidden). When calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`, the resolved default becomes `false` (visible). Set to `true` explicitly to hide even when calling is enabled. |
+| `hideVideoCallButton` | `boolean` | `true` | Hide the video call button. Defaults to `true` (hidden). When calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`, the resolved default becomes `false` (visible). Set to `true` explicitly to hide even when calling is enabled. |
+| `showSearchOption` | `boolean` | `false` | Show the search option in the header |
+| `showConversationSummaryButton` | `boolean` | `false` | Show the AI conversation summary button |
+| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` forwarded to the call buttons and ongoing call screen. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
+
+### AI Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `summaryGenerationMessageCount` | `number` | `1000` | Number of messages to use for AI summary generation |
+| `enableAutoSummaryGeneration` | `boolean` | `false` | Automatically generate conversation summary on component initialization |
+
+### Date/Time Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `lastActiveAtDateTimeFormat` | `CalendarObject` | `undefined` | Custom date/time format for the last active timestamp |
+
+### Template Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `headerView` | `TemplateRef<any>` | `undefined` | Custom template for the entire header (replaces all default content) |
+| `itemView` | `TemplateRef<{user?: CometChat.User; group?: CometChat.Group}>` | `undefined` | Custom template for the item section (replaces avatar, title, subtitle) |
+| `leadingView` | `TemplateRef<{user?: CometChat.User; group?: CometChat.Group}>` | `undefined` | Custom template for the leading section (avatar area) |
+| `titleView` | `TemplateRef<{user?: CometChat.User; group?: CometChat.Group}>` | `undefined` | Custom template for the title section (name) |
+| `subtitleView` | `TemplateRef<{user?: CometChat.User; group?: CometChat.Group}>` | `undefined` | Custom template for the subtitle section (status/typing/member count) |
+| `trailingView` | `TemplateRef<{user?: CometChat.User; group?: CometChat.Group}>` | `undefined` | Custom template for the trailing section (action buttons) |
+| `backButtonView` | `TemplateRef<any>` | `undefined` | Custom template for the back button |
+| `auxiliaryButtonView` | `TemplateRef<{user?: CometChat.User; group?: CometChat.Group}>` | `undefined` | Custom template for auxiliary buttons in the trailing section |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `backClick` | `void` | Emitted when the back button is clicked |
+| `itemClick` | `CometChat.User \| CometChat.Group` | Emitted when the header item (avatar/name area) is clicked |
+| `searchClick` | `void` | Emitted when the search option is clicked |
+| `conversationSummaryClick` | `{ messageCount: number }` | Emitted when the conversation summary button is clicked or auto-generation is triggered |
+| `voiceCallClick` | `CometChat.User \| CometChat.Group` | Emitted when the voice call button is clicked |
+| `videoCallClick` | `CometChat.User \| CometChat.Group` | Emitted when the video call button is clicked |
+| `error` | `CometChat.CometChatException` | Emitted when an error occurs in the component or service |
+
+## Usage Patterns
+
+CometChatMessageHeader supports two usage patterns for receiving the active user or group context.
+
+<Tabs>
+<Tab title="Using Service">
+
+When used alongside `cometchat-conversations`, the message header automatically subscribes to `ChatStateService`. No explicit `[user]` or `[group]` input is needed — the component reacts to conversation selection changes.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import {
+  CometChatConversationsComponent,
+  CometChatMessageHeaderComponent,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatConversationsComponent, CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-conversations
+      (itemClick)="onConversationClick($event)"
+    ></cometchat-conversations>
+
+    <!-- Automatically displays the active user/group from ChatStateService -->
+    <cometchat-message-header
+      (backClick)="onBack()"
+    ></cometchat-message-header>
+  `,
+})
+export class ChatComponent {
+  onConversationClick(conversation: any): void {}
+  onBack(): void {}
+}
+```
+
+<Tip>
+  This is the recommended approach. The header stays in sync with the conversation list without manual wiring.
+</Tip>
+
+</Tab>
+<Tab title="Using Props">
+
+Pass `[user]` or `[group]` directly to control which conversation the header displays. This overrides `ChatStateService` state.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      (backClick)="onBack()"
+      (itemClick)="showDetails($event)"
+    ></cometchat-message-header>
+  `,
+})
+export class ChatComponent {
+  selectedUser!: CometChat.User;
+  onBack(): void {}
+  showDetails(user: CometChat.User): void {}
+}
+```
+
+For group conversations:
+
+```typescript
+<cometchat-message-header
+  [group]="selectedGroup"
+  (backClick)="onBack()"
+></cometchat-message-header>
+```
+
+<Note>
+  When `[user]` or `[group]` inputs are provided, they take priority over `ChatStateService` state for that component instance.
+</Note>
+
+</Tab>
+</Tabs>
+
+## Advanced Usage
+
+### With AI Conversation Summary
+
+Enable AI-powered conversation summary with custom message count:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-ai-chat',
+  standalone: true,
+  imports: [CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      [showConversationSummaryButton]="true"
+      [summaryGenerationMessageCount]="500"
+      (conversationSummaryClick)="generateSummary($event)"
+      (itemClick)="showUserDetails($event)"
+    ></cometchat-message-header>
+  `
+})
+export class AIChatComponent {
+  selectedUser!: CometChat.User;
+
+  generateSummary(event: { messageCount: number }): void {
+    console.log('Generating summary with', event.messageCount, 'messages');
+    // Call your AI summary service
+  }
+
+  showUserDetails(user: CometChat.User): void {
+    // Show user details
+  }
+}
+```
+
+### Auto-Generate Summary on Load
+
+```typescript
+<cometchat-message-header
+  [user]="selectedUser"
+  [showConversationSummaryButton]="true"
+  [enableAutoSummaryGeneration]="true"
+  [summaryGenerationMessageCount]="1000"
+  (conversationSummaryClick)="handleSummary($event)"
+></cometchat-message-header>
+```
+
+### With Search and Summary (Overflow Menu)
+
+When both search and summary options are enabled, they appear in an overflow menu:
+
+```typescript
+<cometchat-message-header
+  [user]="selectedUser"
+  [showSearchOption]="true"
+  [showConversationSummaryButton]="true"
+  (searchClick)="openSearch()"
+  (conversationSummaryClick)="generateSummary($event)"
+></cometchat-message-header>
+```
+
+### Custom Call Settings
+
+Override the default `CallSettingsBuilder` used when calls are initiated from the message header:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
+import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-call-header',
+  standalone: true,
+  imports: [CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      [callSettingsBuilder]="customCallSettings">
+    </cometchat-message-header>
+  `
+})
+export class CustomCallHeaderComponent implements OnInit {
+  selectedUser!: CometChat.User;
+  customCallSettings: any;
+
+  ngOnInit(): void {
+    this.customCallSettings = new CometChatCalls.CallSettingsBuilder()
+      .enableDefaultLayout(true)
+      .setIsAudioOnlyCall(false);
+  }
+}
+```
+
+<Tip>
+  You can also set `callSettingsBuilder` globally via [GlobalConfig](/customization/global-config) so all call components use the same settings without passing the input to each one.
+</Tip>
+
+### Custom Last Active Date Format
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageHeaderComponent, CalendarObject } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-date-chat',
+  standalone: true,
+  imports: [CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      [lastActiveAtDateTimeFormat]="customDateFormat"
+      (itemClick)="showUserDetails($event)"
+    ></cometchat-message-header>
+  `
+})
+export class CustomDateChatComponent {
+  selectedUser!: CometChat.User;
+
+  customDateFormat: CalendarObject = {
+    today: 'h:mm A',
+    yesterday: '[Yesterday at] h:mm A',
+    lastWeek: 'dddd [at] h:mm A',
+    otherDays: 'MMM D, YYYY',
+    relativeTime: {
+      minute: 'Just now',
+      minutes: '%d minutes ago',
+      hour: '1 hour ago',
+      hours: '%d hours ago'
+    }
+  };
+
+  showUserDetails(user: CometChat.User): void {
+    // Show user details
+  }
+}
+```
+
+## Customization with Templates
+
+### Custom Subtitle View
+
+Customize the status/typing indicator section:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-subtitle',
+  standalone: true,
+  imports: [CommonModule, CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      [subtitleView]="customSubtitle"
+      (itemClick)="showUserDetails($event)"
+    >
+      <ng-template #customSubtitle let-user="user">
+        <div class="custom-subtitle">
+          @if (isTyping) {
+            <span class="typing-indicator">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              Typing...
+            </span>
+          } @else if (user) {
+            <span [class.online]="user.getStatus() === 'online'">
+              {{ user.getStatus() === 'online' ? '🟢 Online' : '⚫ Offline' }}
+            </span>
+          }
+        </div>
+      </ng-template>
+    </cometchat-message-header>
+  `,
+  styles: [`
+    .custom-subtitle {
+      font-size: 12px;
+      color: #666;
+    }
+    .online {
+      color: #4CAF50;
+    }
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      background: #6852D6;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    .dot:nth-child(1) { animation-delay: -0.32s; }
+    .dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  `]
+})
+export class CustomSubtitleComponent {
+  selectedUser!: CometChat.User;
+  isTyping = false;
+
+  showUserDetails(user: CometChat.User): void {
+    // Show user details
+  }
+}
+```
+
+### Custom Leading View with Badge
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageHeaderComponent, 
+  CometChatAvatarComponent 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-leading',
+  standalone: true,
+  imports: [CommonModule, CometChatMessageHeaderComponent, CometChatAvatarComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      [leadingView]="customLeading"
+      (itemClick)="showUserDetails($event)"
+    >
+      <ng-template #customLeading let-user="user">
+        <div class="custom-leading">
+          <div class="avatar-wrapper">
+            <cometchat-avatar
+              [image]="user?.getAvatar()"
+              [name]="user?.getName()"
+              size="large">
+            </cometchat-avatar>
+            @if (user?.getStatus() === 'online') {
+              <span class="status-badge online"></span>
+            } @else {
+              <span class="status-badge offline"></span>
+            }
+          </div>
+          @if (isVerified) {
+            <span class="verified-badge">✓</span>
+          }
+        </div>
+      </ng-template>
+    </cometchat-message-header>
+  `,
+  styles: [`
+    .custom-leading {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .avatar-wrapper {
+      position: relative;
+    }
+    .status-badge {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      border: 2px solid white;
+      border-radius: 50%;
+    }
+    .status-badge.online {
+      background-color: #4CAF50;
+    }
+    .status-badge.offline {
+      background-color: #9E9E9E;
+    }
+    .verified-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #2196F3;
+      color: white;
+      font-size: 10px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  `]
+})
+export class CustomLeadingComponent {
+  selectedUser!: CometChat.User;
+  isVerified = true;
+
+  showUserDetails(user: CometChat.User): void {
+    // Show user details
+  }
+}
+```
+
+### Custom Trailing View with Additional Actions
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-trailing',
+  standalone: true,
+  imports: [CommonModule, CometChatMessageHeaderComponent],
+  template: `
+    <cometchat-message-header
+      [user]="selectedUser"
+      [trailingView]="customTrailing"
+      (itemClick)="showUserDetails($event)"
+    >
+      <ng-template #customTrailing let-user="user">
+        <div class="custom-trailing">
+          <button 
+            class="action-btn" 
+            (click)="initiateVoiceCall(); $event.stopPropagation()"
+            aria-label="Voice call">
+            📞
+          </button>
+          <button 
+            class="action-btn" 
+            (click)="initiateVideoCall(); $event.stopPropagation()"
+            aria-label="Video call">
+            📹
+          </button>
+          <button 
+            class="action-btn" 
+            (click)="showInfo(); $event.stopPropagation()"
+            aria-label="Info">
+            ℹ️
+          </button>
+          <button 
+            class="action-btn more" 
+            (click)="showMoreOptions(); $event.stopPropagation()"
+            aria-label="More options">
+            ⋮
+          </button>
+        </div>
+      </ng-template>
+    </cometchat-message-header>
+  `,
+  styles: [`
+    .custom-trailing {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+    .action-btn:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    .action-btn:focus {
+      outline: 2px solid #6852D6;
+      outline-offset: 2px;
+    }
+  `]
+})
+export class CustomTrailingComponent {
+  selectedUser!: CometChat.User;
+
+  initiateVoiceCall(): void {
+    console.log('Initiating voice call');
+  }
+
+  initiateVideoCall(): void {
+    console.log('Initiating video call');
+  }
+
+  showInfo(): void {
+    console.log('Showing info');
+  }
+
+  showMoreOptions(): void {
+    console.log('Showing more options');
+  }
+
+  showUserDetails(user: CometChat.User): void {
+    // Show user details
+  }
+}
+```
+
+### Custom Back Button
+
+```typescript expandable
+<cometchat-message-header
+  [user]="selectedUser"
+  [backButtonView]="customBackButton"
+  (backClick)="handleBack()"
+>
+  <ng-template #customBackButton>
+    <button 
+      class="custom-back-btn"
+      (click)="handleBack()"
+      aria-label="Go back">
+      ← Back
+    </button>
+  </ng-template>
+</cometchat-message-header>
+```
+
+<Info>
+  **Live Preview** — message header with a custom back button.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-cometchat-message-header--without-back-button)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-cometchat-message-header--without-back-button&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "100px", border: "1px solid #e0e0e0"}}
+  title="Message Header — Custom Back Button"
+  allow="clipboard-write"
+></iframe>
+
+## Keyboard Accessibility
+
+CometChatMessageHeader is fully keyboard accessible and meets WCAG 2.1 Level AA standards.
+
+### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate between interactive elements | Global |
+| `Shift + Tab` | Navigate backwards | Global |
+| `Enter` | Activate focused element (back button, item, call buttons) | When element is focused |
+| `Space` | Activate focused element | When element is focused |
+| `Escape` | Close overflow menu | When menu is open |
+
+### Accessibility Features
+
+**ARIA Attributes:**
+- `role="banner"` on the header container
+- `role="button"` on the clickable item section
+- `role="status"` on status indicators and typing indicators
+- `aria-label` with user/group name and status information
+- `aria-live="polite"` for typing indicator announcements
+- Proper `tabindex` management for keyboard navigation
+
+**Screen Reader Support:**
+- Announces user/group name and status when focused
+- Announces typing indicator changes
+- Announces status changes (online/offline) via live region
+- Semantic HTML structure with proper heading hierarchy
+
+**Focus Management:**
+- Visible focus indicators (2px border) meeting WCAG contrast requirements
+- Logical tab order through interactive elements
+- Focus trap within overflow menu when open
+
+**WCAG 2.1 Compliance:**
+- ✅ 2.1.1 Keyboard (Level A) - All functionality available via keyboard
+- ✅ 2.1.2 No Keyboard Trap (Level A) - Users can navigate away using keyboard
+- ✅ 2.4.3 Focus Order (Level A) - Logical focus order
+- ✅ 2.4.7 Focus Visible (Level AA) - Visible focus indicators
+- ✅ 4.1.2 Name, Role, Value (Level A) - Proper ARIA attributes
+- ✅ 4.1.3 Status Messages (Level AA) - Screen reader announcements
+
+## Styling with CSS Variables
+
+The CometChatMessageHeader component uses CSS variables for comprehensive theming:
+
+```css expandable
+cometchat-message-header {
+  /* Background colors */
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-background-color-02: #f5f5f5;
+  
+  /* Text colors */
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  
+  /* Border colors */
+  --cometchat-border-color-light: #e8e8e8;
+  
+  /* Primary color */
+  --cometchat-primary-color: #6852D6;
+  
+  /* Status colors */
+  --cometchat-success-color: #09C26F;
+  --cometchat-neutral-color-300: #9E9E9E;
+  
+  /* Typography */
+  --cometchat-font-heading4-bold: 600 16px/22px Inter, sans-serif;
+  --cometchat-font-caption1-regular: 400 12px/16px Inter, sans-serif;
+  
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+  
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-max: 9999px;
+}
+```
+
+### Dark Theme Example
+
+```css
+.dark-theme cometchat-message-header {
+  --cometchat-background-color-01: #1a1a1a;
+  --cometchat-background-color-02: #2a2a2a;
+  --cometchat-text-color-primary: #ffffff;
+  --cometchat-text-color-secondary: #cccccc;
+  --cometchat-border-color-light: #333333;
+}
+```
+
+### Custom Brand Colors
+
+```css
+.branded-header cometchat-message-header {
+  --cometchat-primary-color: #FF6B35;
+  --cometchat-success-color: #00C853;
+}
+```
+
+## Real-Time Features
+
+### Automatic Updates
+
+The component automatically updates in real-time for:
+
+- **User Status**: Online/offline status changes are reflected immediately
+- **Typing Indicators**: Shows when the user is typing (for 1-on-1 conversations)
+- **Group Typing**: Shows who is typing in group conversations with support for multiple users
+- **Member Count**: Updates when members join or leave a group
+- **Last Active**: Updates the last active timestamp for offline users
+
+### Typing Indicator Display
+
+For user conversations:
+- Shows "Typing..." when the user is typing
+
+For group conversations:
+- Single user: "John is typing..."
+- Two users: "John and Jane are typing..."
+- Multiple users: "John and 2 others are typing..."
+
+## Error Handling
+
+The component provides comprehensive error handling through the `onError` event:
+
+```typescript
+<cometchat-message-header
+  [user]="selectedUser"
+  (error)="handleError($event)"
+></cometchat-message-header>
+```
+
+```typescript expandable
+handleError(error: CometChat.CometChatException): void {
+  console.error('Message header error:', error);
+  
+  // Handle specific error codes
+  switch (error.code) {
+    case 'COMPONENT_ERROR':
+      // Handle component-level errors
+      break;
+    case 'LISTENER_ERROR':
+      // Handle listener setup failures
+      break;
+    default:
+      // Handle other errors
+      break;
+  }
+}
+```
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatmessageheader).
+</Info>
+
+

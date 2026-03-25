@@ -1,0 +1,84 @@
+---
+title: "Sound Manager"
+description: "Manage and customize audio cues for incoming/outgoing calls and messages in CometChat Angular UIKit."
+---
+
+`CometChatSoundManager` is a helper class for managing and playing audio cues in the UI Kit — incoming/outgoing calls and messages.
+
+`Sound` is a frozen object on `CometChatSoundManager`, not a separate export. Access sound event keys via `CometChatSoundManager.Sound`.
+
+---
+
+## Methods
+
+### play
+
+Plays the default or custom audio resource for a given sound event.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `sound` | `"incomingCall" \| "incomingMessage" \| "incomingMessageFromOther" \| "outgoingCall" \| "outgoingMessage"` | Sound event key |
+| `customSound` | `string \| null` | Optional custom audio file URL. Defaults to `null` (uses built-in sound). |
+
+### pause
+
+Pauses the currently playing sound and resets playback position.
+
+### onIncomingMessage
+
+Plays the incoming message sound directly. Accepts an optional `customSound` URL.
+
+### onIncomingOtherMessage
+
+Plays the incoming message from another user sound directly. Accepts an optional `customSound` URL.
+
+### onOutgoingMessage
+
+Plays the outgoing message sound directly. Accepts an optional `customSound` URL.
+
+### onIncomingCall
+
+Plays the incoming call sound (loops). Accepts an optional `customSound` URL.
+
+### onOutgoingCall
+
+Plays the outgoing call sound (loops). Accepts an optional `customSound` URL.
+
+### hasInteracted
+
+Returns `boolean` — checks whether the user has interacted with the page (required by browser autoplay policies).
+
+---
+
+## Sound Events
+
+| Event Key | When it plays |
+| --- | --- |
+| `incomingCall` | Incoming call detected |
+| `outgoingCall` | Outgoing call initiated |
+| `incomingMessage` | New message received from the current conversation |
+| `incomingMessageFromOther` | New message received from a different conversation |
+| `outgoingMessage` | Message sent |
+
+Access via `CometChatSoundManager.Sound.incomingCall`, etc.
+
+---
+
+## Usage
+
+```typescript expandable
+import { CometChatSoundManager } from '@cometchat/chat-uikit-angular';
+
+// Play default incoming call sound
+CometChatSoundManager.play(CometChatSoundManager.Sound.incomingCall);
+
+// Play custom sound for incoming message
+CometChatSoundManager.play(CometChatSoundManager.Sound.incomingMessage, 'MP3_FILE_ASSET_PATH');
+
+// Pause the ongoing sound
+CometChatSoundManager.pause();
+
+// Use individual method directly
+CometChatSoundManager.onIncomingCall();
+CometChatSoundManager.onOutgoingMessage('CUSTOM_AUDIO_PATH');
+```

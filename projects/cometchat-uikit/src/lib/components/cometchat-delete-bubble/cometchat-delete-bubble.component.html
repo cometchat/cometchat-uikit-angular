@@ -1,0 +1,30 @@
+<!--
+  CometChatDeleteBubble Template
+
+  Renders deleted message placeholders with sender/receiver styling variants.
+  The component always renders (unlike action bubble which conditionally renders).
+
+  @see Requirements 2.1, 2.2, 2.3, 8.1, 8.2, 8.4
+-->
+
+<div 
+  class="cometchat-delete-bubble"
+  [class.cometchat-delete-bubble--sender]="isSentByMe"
+  [class.cometchat-delete-bubble--receiver]="!isSentByMe"
+  role="status"
+  [attr.aria-label]="displayText">
+  
+  <!-- Body Container -->
+  <div class="cometchat-delete-bubble__body">
+    <!-- Delete Icon -->
+    <div 
+      class="cometchat-delete-bubble__icon"
+      aria-hidden="true">
+    </div>
+    
+    <!-- Deleted Message Text -->
+    <span class="cometchat-delete-bubble__text">
+      {{ displayText }}
+    </span>
+  </div>
+</div>

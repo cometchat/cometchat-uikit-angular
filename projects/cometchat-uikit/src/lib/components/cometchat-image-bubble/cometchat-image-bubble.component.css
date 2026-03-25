@@ -1,0 +1,362 @@
+/**
+ * CometChatImageBubble Styles
+ *
+ * BEM CSS methodology with CSS variables for theming.
+ * All values use CSS variables from css-variables.css.
+ *
+ * @see Requirements 13.7, 14.1, 14.3, 14.4, 14.6, 2.1, 2.2
+ */
+
+/* ============================================
+   Block: cometchat-image-bubble
+   ============================================ */
+
+.cometchat-image-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2);
+  max-width: 100%;
+  position: relative;
+  /* Overflow containment - Requirements 2.4, 2.5, 2.6, 2.7, 2.8 */
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Background Inheritance: Message Bubble Context
+   @see Requirements 2.1, 2.2
+   
+   NOTE: Parent override is handled via CSS custom property
+   --cometchat-image-bubble-background which can be set by parent
+   components. The bubble uses this variable with a fallback to
+   the default theme background color.
+   ============================================ */
+
+/* ============================================
+   Modifiers: Alignment Variants
+   ============================================ */
+
+/**
+ * Incoming message styling (left alignment)
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 13.2, 13.6
+ */
+.cometchat-image-bubble--incoming {
+  /* Incoming messages use default styling with neutral colors */
+  align-items: flex-start;
+}
+
+/* .cometchat-image-bubble--incoming .cometchat-image-bubble__container {
+  background: var(--cometchat-image-bubble-background, var(--cometchat-background-color-02));
+  border: 1px solid var(--cometchat-border-color-light);
+} */
+
+/**
+ * Outgoing message styling (right alignment)
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 13.1, 13.5
+ */
+.cometchat-image-bubble--outgoing {
+  /* Outgoing messages use primary button colors */
+  align-items: flex-end;
+}
+
+/* .cometchat-image-bubble--outgoing .cometchat-image-bubble__container {
+  background: var(--cometchat-image-bubble-background, var(--cometchat-extended-primary-color-50));
+  border: 1px solid var(--cometchat-extended-primary-color-200);
+} */
+
+/* ============================================
+   Modifiers: Layout Variants
+   ============================================ */
+
+/**
+ * Single image layout
+ * @see Requirements 2.1, 2.3
+ */
+.cometchat-image-bubble--single .cometchat-image-bubble__container {
+  max-width: var(--cometchat-image-bubble-single-max-width, 400px);
+}
+
+.cometchat-image-bubble--single .cometchat-image-bubble__image-wrapper {
+  aspect-ratio: auto;
+  max-height: var(--cometchat-image-bubble-single-max-height, 400px);
+}
+
+/**
+ * Grid layout for 2-3 images
+ * @see Requirements 3.1, 3.3
+ */
+.cometchat-image-bubble--grid .cometchat-image-bubble__container {
+  max-width: var(--cometchat-image-bubble-grid-max-width, 400px);
+}
+
+/**
+ * 2×2 grid layout for 4 images
+ * @see Requirements 3.2, 3.3
+ */
+.cometchat-image-bubble--grid-2x2 .cometchat-image-bubble__container {
+  max-width: var(--cometchat-image-bubble-grid-2x2-max-width, 400px);
+}
+
+/**
+ * Overflow layout for >4 images
+ * @see Requirements 4.1, 4.2
+ */
+.cometchat-image-bubble--overflow .cometchat-image-bubble__container {
+  max-width: var(--cometchat-image-bubble-overflow-max-width, 400px);
+}
+
+/* ============================================
+   Element: Container
+   ============================================ */
+
+.cometchat-image-bubble__container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--cometchat-image-bubble-container-max-width, 400px);
+  /* padding: var(--cometchat-spacing-2); */
+  border-radius: var(--cometchat-image-bubble-container-border-radius, var(--cometchat-radius-2));
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ============================================
+   Element: Grid
+   ============================================ */
+
+.cometchat-image-bubble__grid {
+  display: grid;
+  gap: var(--cometchat-spacing-1);
+  width: 100%;
+}
+
+/**
+ * Two-column grid for 2 images
+ * @see Requirements 3.1, 3.3
+ */
+.cometchat-image-bubble__grid--two-col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/**
+ * Three-column grid for 3 images
+ * @see Requirements 3.1, 3.3
+ */
+.cometchat-image-bubble__grid--three-col {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/**
+ * 2×2 grid for 4 images
+ * @see Requirements 3.2, 3.3
+ */
+.cometchat-image-bubble__grid--2x2 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+/**
+ * Overflow grid for >4 images (3 images + overflow tile)
+ * @see Requirements 4.1, 4.3
+ */
+.cometchat-image-bubble__grid--overflow {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+/* ============================================
+   Element: Image Wrapper
+   ============================================ */
+
+.cometchat-image-bubble__image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--cometchat-radius-2);
+  cursor: pointer;
+  background: var(--cometchat-background-color-02);
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-image-bubble__image-wrapper:hover {
+  opacity: 0.9;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-image-bubble__image-wrapper:focus {
+  outline: none;
+}
+
+.cometchat-image-bubble__image-wrapper:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+/* Alternative focus style for media content - uses box-shadow for better visibility against media */
+.cometchat-image-bubble__image-wrapper:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-color-inverse, var(--cometchat-static-white));
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Image
+   ============================================ */
+
+.cometchat-image-bubble__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/**
+ * Loading state for images
+ * @see Requirements 11.5
+ */
+.cometchat-image-bubble__image--loading {
+  background: var(--cometchat-background-color-02);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ============================================
+   Element: Overflow Tile
+   ============================================ */
+
+/**
+ * Overflow tile showing 4th image with overlay
+ * @see Requirements 4.3, 4.4
+ */
+.cometchat-image-bubble__overflow-tile {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--cometchat-radius-2);
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 0.2s ease;
+}
+
+.cometchat-image-bubble__overflow-tile:hover {
+  opacity: 0.9;
+}
+
+/* Focus styles - distinct from hover state */
+/* @see Requirements 21.1-21.6 */
+.cometchat-image-bubble__overflow-tile:focus {
+  outline: none;
+}
+
+.cometchat-image-bubble__overflow-tile:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: var(--cometchat-focus-ring-offset, 2px);
+}
+
+/* Alternative focus style for media content - uses box-shadow for better visibility against media */
+.cometchat-image-bubble__overflow-tile:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-color-inverse, var(--cometchat-static-white));
+  pointer-events: none;
+}
+
+/* ============================================
+   Element: Overflow Overlay
+   ============================================ */
+
+/**
+ * Semi-transparent overlay on overflow tile
+ * @see Requirements 4.3, 4.4
+ */
+.cometchat-image-bubble__overflow-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-image-bubble-overflow-overlay-background, var(--cometchat-overlay-background-light));
+  backdrop-filter: blur(2px);
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-image-bubble__overflow-tile:hover .cometchat-image-bubble__overflow-overlay {
+  background: var(--cometchat-image-bubble-overflow-overlay-background-hover, var(--cometchat-overlay-background-light));
+}
+
+/* ============================================
+   Element: Overflow Text
+   ============================================ */
+
+/**
+ * "+N" text displayed on overflow tile
+ * @see Requirements 4.4, 15.1
+ */
+.cometchat-image-bubble__overflow-text {
+  font: var(--cometchat-font-heading1-bold);
+  color: var(--cometchat-static-white);
+  text-shadow: var(--cometchat-text-shadow-strong);
+}
+
+/* ============================================
+   Element: Caption
+   ============================================ */
+
+/**
+ * Caption container using TextMessageBubbleComponent
+ * @see Requirements 10.1, 10.3
+ */
+.cometchat-image-bubble__caption {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/**
+ * Mobile and tablet adjustments
+ */
+@media (max-width: 768px) {
+  .cometchat-image-bubble__container {
+    max-width: 100%;
+  }
+
+  .cometchat-image-bubble__overflow-text {
+    font: var(--cometchat-font-heading2-bold);
+  }
+}
+
+@media (max-width: 480px) {
+  .cometchat-image-bubble__grid {
+    gap: var(--cometchat-image-bubble-grid-gap-mobile, var(--cometchat-spacing, 2px));
+  }
+
+  .cometchat-image-bubble__overflow-text {
+    font: var(--cometchat-font-heading3-bold);
+  }
+}

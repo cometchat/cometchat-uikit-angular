@@ -1,0 +1,58 @@
+<div class="cometchat-transfer-ownership">
+  <!-- Group Members list with hidden title header and trailing radio buttons -->
+  @if (group(); as g) {
+    <cometchat-group-members
+      [group]="g"
+      [selectionMode]="SelectionMode.none"
+      [headerView]="emptyHeader"
+      [trailingView]="trailingTemplate"
+      [hideSearch]="false"
+    ></cometchat-group-members>
+  }
+
+  <!-- Footer with error, cancel and transfer buttons -->
+  <div class="cometchat-transfer-ownership__buttons-wrapper">
+    @if (transferError()) {
+      <div class="cometchat-transfer-ownership__error-view">
+        {{ 'details_transfer_error' | translate }}
+      </div>
+    }
+    <div class="cometchat-transfer-ownership__buttons">
+      <button
+        class="cometchat-transfer-ownership__cancel-button"
+        (click)="onClose()"
+        type="button"
+      >
+        {{ 'details_transfer_ownership_cancel' | translate }}
+      </button>
+      <button
+        class="cometchat-transfer-ownership__transfer-button"
+        (click)="onTransfer()"
+        [disabled]="!selectedMember() || transferLoading()"
+        type="button"
+      >
+        {{ 'details_transfer_ownership_confirm' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Empty header to hide default group-members title -->
+<ng-template #emptyHeader>
+  <div style="display:none"></div>
+</ng-template>
+
+<!-- Custom trailing view: radio button for non-owner members, nothing for owner -->
+<ng-template #trailingTemplate let-member>
+  @if (!isOwner(member)) {
+    <div class="cometchat-transfer-ownership__radio-wrapper">
+      <cometchat-radio-button
+        name="transfer-ownership"
+        [id]="member.getUid()"
+        [checked]="isSelected(member)"
+        [ariaLabel]="'Select ' + member.getName()"
+        (radioChanged)="onSelectMember(member)"
+      ></cometchat-radio-button>
+    </div>
+  }
+</ng-template>

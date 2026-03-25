@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/cometchat-uikit",
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  },
+  "assets": [
+    "src/lib/assets",
+    { "input": "src/lib/styles", "glob": "**/*.css", "output": "styles" },
+    { "input": "src/lib/styles/fonts", "glob": "**/*", "output": "styles/fonts" },
+    "./screenshots"
+  ]
+}

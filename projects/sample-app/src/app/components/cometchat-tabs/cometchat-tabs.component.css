@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════════════
+   CometChatTabs — Bottom tab navigation
+   Active/hover = colored icon + text, no background fill.
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-tabs {
+  display: flex;
+  width: 100%;
+  background: var(--cometchat-background-color-01);
+  border-top: 1px solid var(--cometchat-border-color-light);
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+  gap: var(--cometchat-spacing-1);
+}
+
+.cometchat-tabs__tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+  background: transparent;
+  color: var(--cometchat-text-color-secondary);
+  font: var(--cometchat-font-caption1-medium);
+  border: none;
+  border-radius: var(--cometchat-radius-2);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  outline: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cometchat-tabs__tab:hover {
+  color: var(--cometchat-primary-color);
+}
+
+.cometchat-tabs__tab:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+.cometchat-tabs__tab--active {
+  color: var(--cometchat-primary-color);
+  font: var(--cometchat-font-caption1-bold);
+}
+
+/* ── Icon (mask-image technique — inherits currentColor) ── */
+
+.cometchat-tabs__tab-icon {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-color: currentColor;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-tabs__tab-text {
+  display: inline-block;
+}
+
+/* ═══════════════════════════════════════════════════
+   Mobile (≤ 480px) — smaller padding, hide text
+   ═══════════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+  .cometchat-tabs {
+    padding: var(--cometchat-spacing-1);
+  }
+
+  .cometchat-tabs__tab {
+    padding: var(--cometchat-spacing-2);
+    font: var(--cometchat-font-caption2-medium);
+  }
+
+  .cometchat-tabs__tab--active {
+    font: var(--cometchat-font-caption2-bold);
+  }
+
+  .cometchat-tabs__tab-text {
+    display: none;
+  }
+}

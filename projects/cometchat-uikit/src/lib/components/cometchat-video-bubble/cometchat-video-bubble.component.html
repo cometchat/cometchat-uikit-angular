@@ -1,0 +1,241 @@
+<!-- Video Bubble Component Template -->
+<div 
+  class="cometchat-video-bubble"
+  [class.cometchat-video-bubble--incoming]="alignment === MessageBubbleAlignment.left"
+  [class.cometchat-video-bubble--outgoing]="alignment === MessageBubbleAlignment.right"
+  [class.cometchat-video-bubble--single]="layoutType === 'single'"
+  [class.cometchat-video-bubble--grid]="layoutType === 'grid'"
+  [class.cometchat-video-bubble--grid-2x2]="layoutType === 'grid-2x2'"
+  [class.cometchat-video-bubble--overflow]="layoutType === 'overflow'">
+  
+  <!-- Single Video Layout -->
+  <div 
+    *ngIf="layoutType === 'single' && attachments.length > 0"
+    class="cometchat-video-bubble__container">
+    <div 
+      class="cometchat-video-bubble__video-wrapper"
+      (click)="onVideoClick(0); $event.stopPropagation()"
+      (keydown)="onThumbnailKeyDown($event, 0)"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="getThumbnailAriaLabel(0)">
+      <!-- Thumbnail -->
+      <img
+        *ngIf="!failedThumbnails.has(0)"
+        class="cometchat-video-bubble__thumbnail"
+        [src]="attachments[0].thumbnail || attachments[0].url"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        (error)="onThumbnailError(0)" />
+      <!-- Placeholder when thumbnail fails -->
+      <div
+        *ngIf="failedThumbnails.has(0)"
+        class="cometchat-video-bubble__thumbnail-placeholder"
+        aria-hidden="true">
+        <div class="cometchat-video-bubble__placeholder-icon"></div>
+      </div>
+      
+      <!-- Play Overlay -->
+      <div class="cometchat-video-bubble__play-overlay" aria-hidden="true">
+        <div class="cometchat-video-bubble__play-icon"></div>
+      </div>
+      
+      <!-- Duration Badge -->
+      <div 
+        *ngIf="attachments[0].duration"
+        class="cometchat-video-bubble__duration-badge"
+        aria-hidden="true">
+        <span class="cometchat-video-bubble__duration-text">
+          {{ formatDuration(attachments[0].duration) }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid Layout (2-3 videos) -->
+  <div 
+    *ngIf="layoutType === 'grid' && attachments.length >= 2 && attachments.length <= 3"
+    class="cometchat-video-bubble__container">
+    <div 
+      class="cometchat-video-bubble__grid"
+      [class.cometchat-video-bubble__grid--two-col]="attachments.length === 2"
+      [class.cometchat-video-bubble__grid--three-col]="attachments.length === 3">
+      <div 
+        *ngFor="let attachment of attachments; let i = index; trackBy: trackByAttachment"
+        class="cometchat-video-bubble__video-wrapper"
+        (click)="onVideoClick(i); $event.stopPropagation()"
+        (keydown)="onThumbnailKeyDown($event, i)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="getThumbnailAriaLabel(i)">
+        <!-- Thumbnail -->
+        <img
+          *ngIf="!failedThumbnails.has(i)"
+          class="cometchat-video-bubble__thumbnail"
+          [src]="attachment.thumbnail || attachment.url"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          (error)="onThumbnailError(i)" />
+        <!-- Placeholder when thumbnail fails -->
+        <div
+          *ngIf="failedThumbnails.has(i)"
+          class="cometchat-video-bubble__thumbnail-placeholder"
+          aria-hidden="true">
+          <div class="cometchat-video-bubble__placeholder-icon"></div>
+        </div>
+        
+        <!-- Play Overlay -->
+        <div class="cometchat-video-bubble__play-overlay" aria-hidden="true">
+          <div class="cometchat-video-bubble__play-icon"></div>
+        </div>
+        
+        <!-- Duration Badge -->
+        <div 
+          *ngIf="attachment.duration"
+          class="cometchat-video-bubble__duration-badge"
+          aria-hidden="true">
+          <span class="cometchat-video-bubble__duration-text">
+            {{ formatDuration(attachment.duration) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2×2 Grid Layout (4 videos) -->
+  <div 
+    *ngIf="layoutType === 'grid-2x2' && attachments.length === 4"
+    class="cometchat-video-bubble__container">
+    <div class="cometchat-video-bubble__grid cometchat-video-bubble__grid--2x2">
+      <div 
+        *ngFor="let attachment of attachments; let i = index; trackBy: trackByAttachment"
+        class="cometchat-video-bubble__video-wrapper"
+        (click)="onVideoClick(i); $event.stopPropagation()"
+        (keydown)="onThumbnailKeyDown($event, i)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="getThumbnailAriaLabel(i)">
+        <!-- Thumbnail -->
+        <img
+          *ngIf="!failedThumbnails.has(i)"
+          class="cometchat-video-bubble__thumbnail"
+          [src]="attachment.thumbnail || attachment.url"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          (error)="onThumbnailError(i)" />
+        <!-- Placeholder when thumbnail fails -->
+        <div
+          *ngIf="failedThumbnails.has(i)"
+          class="cometchat-video-bubble__thumbnail-placeholder"
+          aria-hidden="true">
+          <div class="cometchat-video-bubble__placeholder-icon"></div>
+        </div>
+        
+        <!-- Play Overlay -->
+        <div class="cometchat-video-bubble__play-overlay" aria-hidden="true">
+          <div class="cometchat-video-bubble__play-icon"></div>
+        </div>
+        
+        <!-- Duration Badge -->
+        <div 
+          *ngIf="attachment.duration"
+          class="cometchat-video-bubble__duration-badge"
+          aria-hidden="true">
+          <span class="cometchat-video-bubble__duration-text">
+            {{ formatDuration(attachment.duration) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overflow Layout (>4 videos) -->
+  <div 
+    *ngIf="layoutType === 'overflow' && attachments.length > 4"
+    class="cometchat-video-bubble__container">
+    <div class="cometchat-video-bubble__grid cometchat-video-bubble__grid--overflow">
+      <!-- First 3 videos displayed normally -->
+      <div 
+        *ngFor="let attachment of attachments.slice(0, 3); let i = index; trackBy: trackByAttachment"
+        class="cometchat-video-bubble__video-wrapper"
+        (click)="onVideoClick(i); $event.stopPropagation()"
+        (keydown)="onThumbnailKeyDown($event, i)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="getThumbnailAriaLabel(i)">
+        <!-- Thumbnail -->
+        <img
+          *ngIf="!failedThumbnails.has(i)"
+          class="cometchat-video-bubble__thumbnail"
+          [src]="attachment.thumbnail || attachment.url"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          (error)="onThumbnailError(i)" />
+        <!-- Placeholder when thumbnail fails -->
+        <div
+          *ngIf="failedThumbnails.has(i)"
+          class="cometchat-video-bubble__thumbnail-placeholder"
+          aria-hidden="true">
+          <div class="cometchat-video-bubble__placeholder-icon"></div>
+        </div>
+        
+        <!-- Play Overlay -->
+        <div class="cometchat-video-bubble__play-overlay" aria-hidden="true">
+          <div class="cometchat-video-bubble__play-icon"></div>
+        </div>
+        
+        <!-- Duration Badge -->
+        <div 
+          *ngIf="attachment.duration"
+          class="cometchat-video-bubble__duration-badge"
+          aria-hidden="true">
+          <span class="cometchat-video-bubble__duration-text">
+            {{ formatDuration(attachment.duration) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- 4th tile with overflow indicator -->
+      <div 
+        class="cometchat-video-bubble__overflow-tile"
+        (click)="onVideoClick(3); $event.stopPropagation()"
+        (keydown)="onThumbnailKeyDown($event, 3)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="getOverflowAriaLabel()"
+        [style.background-image]="'url(' + (attachments[3].thumbnail || attachments[3].url) + ')'">
+        <div class="cometchat-video-bubble__overflow-overlay" aria-hidden="true">
+          <span class="cometchat-video-bubble__overflow-text">
+            {{ getOverflowText() }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Caption Rendering -->
+  <div 
+    *ngIf="captionText"
+    class="cometchat-video-bubble__caption">
+    <cometchat-text-bubble
+      [message]="$any(message)"
+      [alignment]="alignment">
+    </cometchat-text-bubble>
+  </div>
+</div>
+
+<!-- Fullscreen Viewer (Gallery Mode) -->
+<cometchat-fullscreen-viewer
+  *ngIf="showPlayerViewer"
+  [attachments]="attachments"
+  [startIndex]="playerStartIndex"
+  [isOpen]="showPlayerViewer"
+  [explicitSenderName]="senderName"
+  [explicitSenderAvatarUrl]="senderAvatarUrl"
+  (closeClick)="closePlayerViewer()"
+  (pipStateChange)="onPipStateChange($event)">
+</cometchat-fullscreen-viewer>

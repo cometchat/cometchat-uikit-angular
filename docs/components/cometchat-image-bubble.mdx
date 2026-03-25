@@ -1,0 +1,544 @@
+---
+title: "CometChatImageBubble"
+description: "A comprehensive Angular component for rendering image messages with grid layouts, fullscreen gallery viewer, and caption support"
+---
+The `CometChatImageBubble` component is a sophisticated image message display component that renders image messages with advanced layout capabilities. It serves as the primary content renderer for image-based messages in the CometChat Angular UIKit, handling everything from single image display to complex multi-image grid layouts with fullscreen viewing capabilities.
+
+## Overview
+
+The Image Bubble component renders image messages while maintaining visual consistency with the design system and ensuring full accessibility:
+
+- **Message Object Processing**: Extracts attachments and metadata from CometChat.MediaMessage objects
+- **Single Image Display**: Full-size image rendering with click-to-expand
+- **Fullscreen Gallery**: Modal viewer with keyboard controls
+- **Caption Support**: Renders captions using TextMessageBubbleComponent
+- **Lazy Loading**: Performance optimization for image loading
+- **Dual Styling**: Supports sender (outgoing) and receiver (incoming) visual variants
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+
+<Info>
+  **Live Preview** — Default image bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--image)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--image&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Image Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Image Message
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatImageBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatImageBubbleComponent],
+  template: `
+    <cometchat-image-bubble
+      [message]="imageMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-image-bubble>
+  `
+})
+export class ChatMessageComponent {
+  imageMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatImageBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatImageBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-image-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.LEFT"
+    ></cometchat-image-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-image-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.RIGHT"
+    ></cometchat-image-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### With Event Handlers
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatImageBubbleComponent, MediaAttachment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-interactive-message',
+  standalone: true,
+  imports: [CometChatImageBubbleComponent],
+  template: `
+    <cometchat-image-bubble
+      [message]="imageMessage"
+      (imageClick)="onImageClick($event)"
+      (viewerOpen)="onViewerOpen()"
+      (viewerClose)="onViewerClose()"
+    ></cometchat-image-bubble>
+  `
+})
+export class InteractiveMessageComponent {
+  imageMessage!: CometChat.MediaMessage;
+
+  onImageClick(event: { attachment: MediaAttachment; index: number }): void {
+    console.log('Image clicked:', event.attachment.url, 'at index:', event.index);
+    // Handle image click - gallery viewer opens automatically
+  }
+
+  onViewerOpen(): void {
+    console.log('Gallery viewer opened');
+    // Track analytics or perform other actions
+  }
+
+  onViewerClose(): void {
+    console.log('Gallery viewer closed');
+    // Track analytics or perform other actions
+  }
+}
+```
+
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The CometChat.MediaMessage object to render. Contains image attachments, metadata, and sender information |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.LEFT` | The alignment of the message bubble. `LEFT` for incoming/receiver messages, `RIGHT` for outgoing/sender messages |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `imageClick` | `{ attachment: MediaAttachment; index: number }` | Emitted when an image is clicked. Contains the clicked attachment object and its index in the attachments array |
+| `viewerOpen` | `void` | Emitted when the fullscreen gallery viewer is opened |
+| `viewerClose` | `void` | Emitted when the fullscreen gallery viewer is closed |
+
+## Advanced Usage
+
+### Single Image Message
+
+The component displays single image messages in full-size layout:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatImageBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-single-image',
+  standalone: true,
+  imports: [CometChatImageBubbleComponent],
+  template: `
+    <cometchat-image-bubble
+      [message]="singleImageMessage"
+    ></cometchat-image-bubble>
+  `
+})
+export class SingleImageComponent {
+  singleImageMessage!: CometChat.MediaMessage;
+}
+```
+
+**Single Image Features:**
+- Full-width display with aspect ratio preservation
+- Lazy loading for performance
+- Click to open fullscreen gallery viewer
+- Alt text for accessibility
+
+### Images with Captions
+
+The component automatically renders captions using the TextMessageBubbleComponent:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatImageBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-captioned-image',
+  standalone: true,
+  imports: [CometChatImageBubbleComponent],
+  template: `
+    <cometchat-image-bubble
+      [message]="captionedImageMessage"
+    ></cometchat-image-bubble>
+  `
+})
+export class CaptionedImageComponent {
+  captionedImageMessage!: CometChat.MediaMessage;
+  
+  // Message with caption in metadata:
+  // message.getText() returns "Beautiful sunset at the beach"
+  // OR
+  // message.getData()?.text returns "Beautiful sunset at the beach"
+}
+```
+
+**Caption Features:**
+- Displays below the image(s)
+- Supports rich text formatting (bold, italic, etc.)
+- Supports @mentions with click events
+- Supports URLs with click events
+- Supports read more/less for long captions
+- Inherits alignment from parent bubble
+
+
+### Fullscreen Gallery Viewer
+
+The component includes an integrated fullscreen gallery viewer with navigation:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatImageBubbleComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-gallery-demo',
+  standalone: true,
+  imports: [CometChatImageBubbleComponent],
+  template: `
+    <cometchat-image-bubble
+      [message]="imageMessage"
+      (viewerOpen)="onGalleryOpen()"
+      (viewerClose)="onGalleryClose()"
+    ></cometchat-image-bubble>
+  `
+})
+export class GalleryDemoComponent {
+  imageMessage!: CometChat.MediaMessage;
+
+  onGalleryOpen(): void {
+    console.log('Gallery opened - track analytics');
+    // Body scroll is automatically prevented
+  }
+
+  onGalleryClose(): void {
+    console.log('Gallery closed - track analytics');
+    // Body scroll is automatically restored
+  }
+}
+```
+
+**Gallery Viewer Features:**
+- Fullscreen modal overlay
+- Current image displayed at full size
+- Navigation controls (previous/next buttons)
+- Image counter (e.g., "3 of 10")
+- Close button
+- Keyboard navigation:
+  - `Right Arrow` - Next image
+  - `Left Arrow` - Previous image
+  - `Escape` - Close viewer
+- Click backdrop to close
+- Focus trap for accessibility
+- Body scroll prevention while open
+
+## Customization
+
+### Styling with CSS Variables
+
+The Image Bubble component uses CSS variables exclusively for easy customization:
+
+```css expandable
+/* Custom image bubble styling */
+cometchat-image-bubble {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Border radius */
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+
+  /* Colors - Incoming messages */
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-border-color-light: #E0E0E0;
+
+  /* Colors - Outgoing messages */
+  --cometchat-primary-button-background: #6852D6;
+
+  /* Overflow overlay */
+  --cometchat-text-color-white: #FFFFFF;
+  --cometchat-font-heading2-bold: 600 20px 'Roboto';
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-spacing-1` | Grid gap, padding | `4px` |
+| `--cometchat-spacing-2` to `--cometchat-spacing-4` | Various spacing | `8px` to `16px` |
+| `--cometchat-radius-2` | Image border radius | `8px` |
+| `--cometchat-radius-3` | Bubble border radius | `12px` |
+| `--cometchat-background-color-02` | Incoming bubble background | `#F5F5F5` |
+| `--cometchat-primary-button-background` | Outgoing bubble background | `#6852D6` |
+| `--cometchat-border-color-light` | Border color | `#E0E0E0` |
+| `--cometchat-text-color-white` | Overflow text color | `#FFFFFF` |
+| `--cometchat-font-heading2-bold` | Overflow text font | `600 20px Roboto` |
+
+
+### Custom Color Schemes
+
+```css expandable
+/* Blue theme for incoming messages */
+.theme-blue cometchat-image-bubble {
+  --cometchat-background-color-02: #E3F2FD;
+  --cometchat-border-color-light: #90CAF9;
+}
+
+/* Green theme for outgoing messages */
+.theme-green cometchat-image-bubble {
+  --cometchat-primary-button-background: #4CAF50;
+}
+
+/* Dark theme */
+[data-theme="dark"] cometchat-image-bubble {
+  --cometchat-background-color-02: #2C2C2C;
+  --cometchat-border-color-light: #404040;
+}
+```
+
+### Custom Grid Spacing
+
+```css
+/* Tighter grid spacing */
+.compact-images cometchat-image-bubble {
+  --cometchat-spacing-1: 2px;
+}
+
+/* Wider grid spacing */
+.spacious-images cometchat-image-bubble {
+  --cometchat-spacing-1: 8px;
+}
+```
+
+### Custom Overflow Indicator Styling
+
+```css expandable
+/* Custom overflow overlay styling */
+::ng-deep .cometchat-image-bubble__overflow-overlay {
+  background: linear-gradient(135deg, rgba(104, 82, 214, 0.9), rgba(104, 82, 214, 0.7));
+}
+
+::ng-deep .cometchat-image-bubble__overflow-text {
+  font-size: 24px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+```
+
+### Custom Gallery Viewer Styling
+
+```css expandable
+/* Custom fullscreen viewer backdrop */
+::ng-deep .cometchat-fullscreen-viewer__backdrop {
+  background: rgba(0, 0, 0, 0.95);
+}
+
+/* Custom navigation buttons */
+::ng-deep .cometchat-fullscreen-viewer__nav-button {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+}
+
+::ng-deep .cometchat-fullscreen-viewer__nav-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Custom close button */
+::ng-deep .cometchat-fullscreen-viewer__close-button {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  padding: 12px;
+}
+```
+
+## Accessibility
+
+The Image Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines.
+
+### WCAG 2.1 Compliance
+
+The component meets the following WCAG 2.1 Level AA success criteria:
+
+- ✅ **1.1.1 Non-text Content (Level A)**: All images have alt text
+- ✅ **1.3.1 Info and Relationships (Level A)**: Proper semantic structure
+- ✅ **2.1.1 Keyboard (Level A)**: All functionality available via keyboard
+- ✅ **2.4.7 Focus Visible (Level AA)**: Clear focus indicators in gallery viewer
+- ✅ **4.1.2 Name, Role, Value (Level A)**: All elements have accessible names
+
+### Keyboard Support
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate to images | When images are focusable |
+| `Enter` | Open gallery viewer | When image is focused |
+| `Space` | Open gallery viewer | When image is focused |
+| `Right Arrow` | Next image | In gallery viewer |
+| `Left Arrow` | Previous image | In gallery viewer |
+| `Escape` | Close gallery viewer | In gallery viewer |
+
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Element | Value | Purpose |
+|-----------|---------|-------|---------|
+| `alt` | Image elements | Descriptive text | Provides text alternative for images |
+| `role` | Gallery viewer | `"dialog"` | Identifies the viewer as a dialog |
+| `aria-modal` | Gallery viewer | `"true"` | Indicates modal behavior |
+| `aria-label` | Navigation buttons | `"Next image"`, `"Previous image"` | Describes button actions |
+| `aria-label` | Close button | `"Close gallery"` | Describes close action |
+| `aria-label` | Overflow indicator | `"+N more images"` | Describes additional images |
+
+### Screen Reader Behavior
+
+Screen readers announce the image bubble with:
+1. **Single image**: "Image, [alt text]"
+2. **Multiple images**: "Image 1 of 3, [alt text]"
+3. **Overflow indicator**: "+3 more images"
+4. **Gallery viewer**: "Dialog, Image gallery, 2 of 5"
+5. **Navigation**: "Button, Next image" / "Button, Previous image"
+
+### Accessibility Best Practices
+
+<Tip>
+  The component automatically handles all accessibility requirements. No additional ARIA attributes or keyboard handling is needed.
+</Tip>
+
+<Warning>
+  When handling `imageClick` events, ensure your custom actions maintain accessibility by managing focus appropriately.
+</Warning>
+
+<Info>
+  All interactive elements (images, navigation buttons) are keyboard accessible and have visible focus indicators.
+</Info>
+
+## Best Practices
+
+<Tip>
+  Always provide the complete CometChat.MediaMessage object to ensure all features (attachments, captions, metadata) work correctly.
+</Tip>
+
+<Warning>
+  The component expects image attachments with valid URLs. Ensure your message objects have properly formatted attachment data.
+</Warning>
+
+<Info>
+  Use the `alignment` property to distinguish between incoming and outgoing messages for proper visual styling.
+</Info>
+
+<Tip>
+  Handle `viewerOpen` and `viewerClose` events to track analytics or perform custom actions when the gallery is used.
+</Tip>
+
+<Warning>
+  The gallery viewer prevents body scroll while open. Avoid programmatically scrolling the page while the viewer is active.
+</Warning>
+
+<Info>
+  The component uses lazy loading for images. Images outside the viewport won't load until they're scrolled into view.
+</Info>
+
+## Related Components
+
+- **CometChatVideoBubble**: Displays video messages with thumbnails and player
+- **CometChatTextBubble**: Used for rendering captions in image messages
+- **CometChatMessageBubble**: Uses Image Bubble as the content view for image messages
+- **CometChatMessageList**: Displays lists of messages including image bubbles
+- **ImageGalleryViewer**: Internal component for fullscreen image viewing
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses OnPush change detection strategy for optimal performance
+- **Dependencies**: 
+  - Angular CommonModule
+  - CometChat SDK for message types
+  - TranslatePipe for localization
+  - CometChatTextBubbleComponent for captions
+  - ImageGalleryViewerComponent for fullscreen viewing
+- **Bundle Size**: Minimal footprint (~12KB including gallery viewer)
+- **BEM CSS**: Follows Block Element Modifier naming convention
+- **Accessibility**: WCAG 2.1 Level AA compliant
+
+## Performance Considerations
+
+### Optimization Strategies
+
+**Change Detection:**
+- Uses OnPush strategy to minimize unnecessary re-renders
+- Only updates when inputs change or events are emitted
+
+**Lazy Loading:**
+- Images use native `loading="lazy"` attribute
+- Images outside viewport don't load until scrolled into view
+- Reduces initial page load time and bandwidth usage
+
+**Layout Determination:**
+- Layout type calculated once during message processing
+- Avoids repeated calculations during rendering
+
+**Gallery Viewer:**
+- Only rendered when open (conditional rendering)
+- Body scroll prevention uses efficient CSS approach
+- Focus trap implemented with minimal DOM manipulation
+
+### Best Practices for Performance
+
+<Tip>
+  The component uses OnPush change detection. Ensure message objects are immutable for optimal performance.
+</Tip>
+
+<Info>
+  Lazy loading is automatic. Images will load as they enter the viewport during scrolling.
+</Info>
+
+<Warning>
+  Avoid frequently changing the message input. Each change triggers re-processing of attachments and layout determination.
+</Warning>
+
+
+<Info>
+For troubleshooting tips, see the [Troubleshooting Guide](/troubleshooting#cometchatimagebubble).
+</Info>
+

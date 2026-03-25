@@ -1,0 +1,592 @@
+---
+title: Popover
+description: "A flexible popover component with viewport-aware positioning, hover/click triggers, and full keyboard accessibility"
+---
+The `CometChatPopover` component provides a floating content container that can be positioned relative to a trigger element. It features intelligent viewport-aware positioning, support for both click and hover triggers, and full keyboard accessibility.
+
+## Overview
+
+The Popover component is designed for displaying contextual content, tooltips, and floating menus:
+
+- **Smart Positioning**: Automatically adjusts placement to stay within viewport
+- **Multiple Triggers**: Supports both click and hover activation
+- **Flexible Content**: Accepts any template content via ng-template
+- **Accessibility**: Full keyboard support with Escape key to close
+- **Customizable**: CSS variable-based styling with optional tooltip arrow
+- **Background Control**: Optional background interaction blocking
+
+## Basic Usage
+
+### Simple Popover (Click Trigger)
+
+```html expandable
+<cometchat-popover 
+  [content]="popoverContent"
+  [placement]="Placement.bottom">
+  <button>Click me</button>
+</cometchat-popover>
+
+<ng-template #popoverContent>
+  <div class="popover-content">
+    <p>This is popover content</p>
+  </div>
+</ng-template>
+```
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatPopoverComponent } from '@cometchat/chat-uikit-angular';
+import { Placement } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-example',
+  standalone: true,
+  imports: [CometChatPopoverComponent],
+  // ... template
+})
+export class ExampleComponent {
+  Placement = Placement;
+}
+```
+
+### Hover Trigger Popover
+
+```html expandable
+<cometchat-popover 
+  [content]="hoverContent"
+  [showOnHover]="true"
+  [debounceOnHover]="300"
+  [placement]="Placement.top">
+  <span>Hover over me</span>
+</cometchat-popover>
+
+<ng-template #hoverContent>
+  <div class="tooltip-content">
+    Quick info tooltip
+  </div>
+</ng-template>
+```
+
+### Popover with Tooltip Arrow
+
+```html expandable
+<cometchat-popover 
+  [content]="tooltipContent"
+  [showTooltip]="true"
+  [placement]="Placement.bottom">
+  <button>Info</button>
+</cometchat-popover>
+
+<ng-template #tooltipContent>
+  <div class="tooltip-text">
+    This is a tooltip with an arrow
+  </div>
+</ng-template>
+```
+
+### Popover with Background Interaction Disabled
+
+```html expandable
+<cometchat-popover 
+  [content]="modalContent"
+  [disableBackgroundInteraction]="true"
+  [closeOnOutsideClick]="true">
+  <button>Open Modal</button>
+</cometchat-popover>
+
+<ng-template #modalContent>
+  <div class="modal-content">
+    <h3>Modal Title</h3>
+    <p>This popover blocks background interaction</p>
+  </div>
+</ng-template>
+```
+
+## Complete Example
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatPopoverComponent } from '@cometchat/chat-uikit-angular';
+import { Placement } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-user-menu',
+  standalone: true,
+  imports: [CometChatPopoverComponent],
+  template: `
+    <div class="user-menu">
+      <cometchat-popover 
+        [content]="menuContent"
+        [placement]="Placement.bottom"
+        [closeOnOutsideClick]="true"
+        (popoverOpened)="onMenuOpened()"
+        (popoverClosed)="onMenuClosed()">
+        <button class="user-avatar">
+          <img [src]="userAvatar" alt="User menu" />
+        </button>
+      </cometchat-popover>
+
+      <ng-template #menuContent>
+        <div class="menu-items">
+          <button class="menu-item" (click)="viewProfile()">
+            View Profile
+          </button>
+          <button class="menu-item" (click)="editSettings()">
+            Settings
+          </button>
+          <button class="menu-item" (click)="logout()">
+            Logout
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  `,
+  styles: [`
+    .user-menu {
+      position: relative;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .menu-items {
+      display: flex;
+      flex-direction: column;
+      min-width: 150px;
+    }
+
+    .menu-item {
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .menu-item:hover {
+      background-color: var(--cometchat-hover-background, #f5f5f5);
+    }
+  `]
+})
+export class UserMenuComponent {
+  Placement = Placement;
+  userAvatar = 'path/to/avatar.jpg';
+
+  onMenuOpened(): void {
+    console.log('Menu opened');
+  }
+
+  onMenuClosed(): void {
+    console.log('Menu closed');
+  }
+
+  viewProfile(): void {
+    console.log('View profile clicked');
+  }
+
+  editSettings(): void {
+    console.log('Settings clicked');
+  }
+
+  logout(): void {
+    console.log('Logout clicked');
+  }
+}
+```
+
+<Info>
+  **Live Preview** — interact with the default popover.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-popover--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-popover--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "250px", border: "1px solid #e0e0e0"}}
+  title="Popover — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `placement` | `Placement` | `Placement.bottom` | Position of popover relative to trigger (top, bottom, left, right) |
+| `closeOnOutsideClick` | `boolean` | `true` | Whether to close popover when clicking outside |
+| `showOnHover` | `boolean` | `false` | Show popover on hover instead of click |
+| `debounceOnHover` | `number` | `500` | Debounce delay in milliseconds for hover trigger |
+| `content` | `TemplateRef<any>` | - | Template reference for popover content (required) |
+| `disableBackgroundInteraction` | `boolean` | `false` | Disable interaction with background when popover is open |
+| `useParentContainer` | `boolean` | `false` | Use parent container as viewport for positioning |
+| `useParentHeight` | `boolean` | `true` | Use parent height for positioning calculations |
+| `showTooltip` | `boolean` | `false` | Show tooltip arrow pointing to trigger |
+| `trapFocus` | `boolean` | `false` | Enable focus trap within popover (recommended for dialog-style popovers) |
+| `ariaLabel` | `string` | - | Custom ARIA label for the popover |
+| `ariaLabelledBy` | `string` | - | ID of element that labels the popover |
+| `ariaDescribedBy` | `string` | - | ID of element that describes the popover |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `popoverOpened` | `void` | Emitted when popover is opened |
+| `popoverClosed` | `void` | Emitted when popover is closed |
+| `outsideClick` | `void` | Emitted when user clicks outside the popover |
+
+## Placement Options
+
+The `Placement` enum provides four positioning options:
+
+```typescript
+enum Placement {
+  top = 'top',
+  right = 'right',
+  bottom = 'bottom',
+  left = 'left'
+}
+```
+
+The popover will automatically adjust its position if there isn't enough space in the specified placement, ensuring it stays within the viewport.
+
+## Customization
+
+### CSS Variables
+
+The popover component uses CSS variables for styling:
+
+```css
+.cometchat-popover__content {
+  --cometchat-background-color: #ffffff;
+  --cometchat-border-color: #e0e0e0;
+  --cometchat-border-radius: 8px;
+  --cometchat-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --cometchat-spacing-2: 8px;
+}
+```
+
+### Custom Styling Example
+
+```css expandable
+/* Custom popover styling */
+.custom-popover .cometchat-popover__content {
+  --cometchat-background-color: #2c3e50;
+  --cometchat-border-color: #34495e;
+  --cometchat-border-radius: 12px;
+  --cometchat-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: white;
+}
+
+/* Custom tooltip arrow */
+.custom-popover .cometchat-popover__content-tooltip-bottom {
+  border-color: transparent transparent #2c3e50 transparent;
+}
+```
+
+<Info>
+  **Live Preview** — all popover placement positions.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/base-elements-popover--all-variants-showcase)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=base-elements-popover--all-variants-showcase&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "500px", border: "1px solid #e0e0e0"}}
+  title="Popover — All Placements"
+  allow="clipboard-write"
+></iframe>
+
+## Accessibility
+
+The CometChatPopover component is fully accessible and WCAG 2.1 Level AA compliant:
+
+### Keyboard Support
+
+| Key | Action |
+|-----|--------|
+| `Escape` | Closes the popover and restores focus to trigger element |
+| `Tab` | Moves focus to next focusable element (trapped within popover when `trapFocus` is enabled) |
+| `Shift + Tab` | Moves focus to previous focusable element (trapped within popover when `trapFocus` is enabled) |
+
+### Focus Management
+
+The popover component provides comprehensive focus management:
+
+- **Focus Restoration**: When the popover closes, focus automatically returns to the trigger element
+- **Focus Trap** (optional): When `trapFocus` is enabled, keyboard focus is contained within the popover
+- **Initial Focus**: When focus trap is enabled, focus moves to the first focusable element in the popover
+
+### ARIA Attributes
+
+The component automatically applies appropriate ARIA attributes:
+
+| Attribute | Applied To | Value | Description |
+|-----------|-----------|-------|-------------|
+| `aria-expanded` | Trigger | `true`/`false` | Indicates whether popover is open or closed |
+| `aria-haspopup` | Trigger | `"dialog"` or `false` | Indicates trigger has a popup (false for tooltips) |
+| `aria-controls` | Trigger | Popover ID | Links trigger to popover content |
+| `role` | Trigger | `"button"` | Identifies trigger as a button |
+| `tabindex` | Trigger | `"0"` | Makes trigger keyboard accessible |
+| `role` | Popover | `"dialog"` or `"tooltip"` | Identifies popover type |
+| `aria-modal` | Popover | `"true"` | Indicates modal behavior when focus trap is enabled |
+| `aria-label` | Popover | Custom label | Provides accessible name (when specified) |
+| `aria-labelledby` | Popover | Element ID | Links to labeling element (when specified) |
+| `aria-describedby` | Popover | Element ID | Links to describing element (when specified) |
+| `aria-hidden` | Tooltip arrow | `"true"` | Hides decorative arrow from screen readers |
+
+### Screen Reader Support
+
+- Popover state changes are announced to screen readers
+- Focus management ensures keyboard users can navigate effectively
+- Escape key provides consistent way to dismiss popover
+- Proper ARIA roles ensure screen readers identify the popover type correctly
+
+### Accessibility Examples
+
+#### Dialog-Style Popover with Focus Trap
+
+```html expandable
+<cometchat-popover 
+  [content]="dialogContent"
+  [trapFocus]="true"
+  [ariaLabel]="'User settings dialog'"
+  [closeOnOutsideClick]="true">
+  <button>Settings</button>
+</cometchat-popover>
+
+<ng-template #dialogContent>
+  <div class="settings-dialog">
+    <h2 id="dialog-title">Settings</h2>
+    <button>Save</button>
+    <button>Cancel</button>
+  </div>
+</ng-template>
+```
+
+#### Tooltip with Proper ARIA
+
+```html expandable
+<cometchat-popover 
+  [content]="tooltipContent"
+  [showOnHover]="true"
+  [showTooltip]="true"
+  [ariaLabel]="'Additional information about this feature'">
+  <button aria-label="Information">ℹ️</button>
+</cometchat-popover>
+
+<ng-template #tooltipContent>
+  <div>This feature helps you manage your account</div>
+</ng-template>
+```
+
+#### Popover with Labeled Content
+
+```html expandable
+<cometchat-popover 
+  [content]="menuContent"
+  [ariaLabelledBy]="'menu-title'"
+  [trapFocus]="true">
+  <button>Actions</button>
+</cometchat-popover>
+
+<ng-template #menuContent>
+  <div class="action-menu">
+    <h3 id="menu-title">Available Actions</h3>
+    <button>Edit</button>
+    <button>Delete</button>
+    <button>Share</button>
+  </div>
+</ng-template>
+```
+
+### Accessibility Best Practices
+
+1. **Use Focus Trap for Dialogs**: Enable `trapFocus` for dialog-style popovers to prevent focus from leaving
+2. **Provide ARIA Labels**: Use `ariaLabel` or `ariaLabelledBy` to provide context for screen reader users
+3. **Keyboard Testing**: Always test with keyboard-only navigation
+4. **Screen Reader Testing**: Test with NVDA, JAWS, or VoiceOver
+5. **Focus Indicators**: Ensure visible focus indicators meet WCAG contrast requirements (3:1 minimum)
+6. **Tooltip vs Dialog**: Use `showTooltip` for simple tooltips, `trapFocus` for interactive dialogs
+7. **Escape Key**: Always allow Escape key to close the popover
+
+### WCAG 2.1 Compliance
+
+The CometChatPopover component meets the following WCAG 2.1 Level AA success criteria:
+
+- **1.3.1 Info and Relationships**: Proper semantic HTML and ARIA attributes
+- **2.1.1 Keyboard**: All functionality available via keyboard
+- **2.1.2 No Keyboard Trap**: Focus can always be moved away (Escape key)
+- **2.4.3 Focus Order**: Logical focus order maintained
+- **2.4.7 Focus Visible**: Clear focus indicators provided
+- **4.1.2 Name, Role, Value**: Proper ARIA roles and attributes
+- **4.1.3 Status Messages**: State changes announced to assistive technologies
+
+## Advanced Usage
+
+### Programmatic Control
+
+You can control the popover programmatically using ViewChild:
+
+```typescript expandable
+import { Component, ViewChild } from '@angular/core';
+import { CometChatPopoverComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-example',
+  template: `
+    <cometchat-popover #popover [content]="content">
+      <button>Trigger</button>
+    </cometchat-popover>
+    
+    <button (click)="openPopover()">Open Programmatically</button>
+    <button (click)="closePopover()">Close Programmatically</button>
+    
+    <ng-template #content>
+      <div>Popover content</div>
+    </ng-template>
+  `
+})
+export class ExampleComponent {
+  @ViewChild('popover') popover!: CometChatPopoverComponent;
+
+  openPopover(): void {
+    this.popover.openPopover();
+  }
+
+  closePopover(): void {
+    this.popover.closePopover();
+  }
+}
+```
+
+### Nested Popovers
+
+```html expandable
+<cometchat-popover [content]="outerContent">
+  <button>Open Menu</button>
+</cometchat-popover>
+
+<ng-template #outerContent>
+  <div class="menu">
+    <cometchat-popover [content]="innerContent" [placement]="Placement.right">
+      <button>Submenu</button>
+    </cometchat-popover>
+  </div>
+</ng-template>
+
+<ng-template #innerContent>
+  <div class="submenu">
+    <button>Option 1</button>
+    <button>Option 2</button>
+  </div>
+</ng-template>
+```
+
+### Responsive Positioning
+
+The popover automatically adjusts its position based on available viewport space:
+
+```html
+<!-- Will automatically flip to top if no space below -->
+<cometchat-popover 
+  [content]="content"
+  [placement]="Placement.bottom">
+  <button>Smart Positioning</button>
+</cometchat-popover>
+```
+
+## Best Practices
+
+1. **Content Size**: Keep popover content concise and focused
+2. **Trigger Clarity**: Make it clear that an element has a popover
+3. **Hover Timing**: Use appropriate debounce delays for hover triggers (300-500ms)
+4. **Mobile Considerations**: Consider using click triggers on mobile devices
+5. **Accessibility**: Always provide keyboard access and proper ARIA attributes
+6. **Performance**: Avoid heavy content in popovers that open frequently
+
+## Common Use Cases
+
+### Tooltip
+
+```html expandable
+<cometchat-popover 
+  [content]="tooltipContent"
+  [showOnHover]="true"
+  [showTooltip]="true"
+  [debounceOnHover]="300">
+  <span class="info-icon">ℹ️</span>
+</cometchat-popover>
+
+<ng-template #tooltipContent>
+  <div class="tooltip">Additional information</div>
+</ng-template>
+```
+
+### Context Menu
+
+```html expandable
+<cometchat-popover 
+  [content]="contextMenu"
+  [placement]="Placement.right"
+  [closeOnOutsideClick]="true">
+  <button class="more-options">⋮</button>
+</cometchat-popover>
+
+<ng-template #contextMenu>
+  <div class="context-menu">
+    <button>Edit</button>
+    <button>Delete</button>
+    <button>Share</button>
+  </div>
+</ng-template>
+```
+
+### User Profile Card
+
+```html expandable
+<cometchat-popover 
+  [content]="profileCard"
+  [showOnHover]="true"
+  [debounceOnHover]="500">
+  <span class="username">@johndoe</span>
+</cometchat-popover>
+
+<ng-template #profileCard>
+  <div class="profile-card">
+    <img src="avatar.jpg" alt="Profile" />
+    <h4>John Doe</h4>
+    <p>Software Developer</p>
+    <button>View Profile</button>
+  </div>
+</ng-template>
+```
+
+## Browser Support
+
+The CometChatPopover component works in all modern browsers:
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+## Related Components
+
+- [CometChatContextMenu](/components/context-menu) - Context menu with popover
+- [CometChatDropDown](/components/cometchat-dropdown) - Dropdown select component
+- [CometChatToast](/components/cometchat-toast) - Toast notifications

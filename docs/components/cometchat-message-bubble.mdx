@@ -1,0 +1,1591 @@
+---
+title: "CometChatMessageBubble"
+description: "A flexible container component for rendering chat messages with configurable view slots, message options, and support for multiple message types"
+---
+The `CometChatMessageBubble` component is a versatile container component that renders chat messages with configurable view slots. It serves as the primary wrapper for displaying messages in the CometChat Angular UIKit, handling message alignment, options menus, status indicators, and content rendering based on message type.
+
+## Overview
+
+The Message Bubble component provides a flexible architecture for rendering different message types while maintaining consistent styling and behavior:
+
+- **Message Type Routing**: Automatically renders appropriate bubble component based on message type (text, image, video, audio, file)
+- **Configurable View Slots**: Override any section (leading, header, content, footer, etc.) with custom templates
+- **Message Options Menu**: Context menu with hover/click behavior for message actions
+- **Group vs 1-on-1 Handling**: Automatically shows/hides avatar and sender name based on conversation type
+- **Alignment Variants**: Supports incoming (left), outgoing (right), and action (center) alignments
+- **Status Indicators**: Displays timestamps, read receipts, and edited labels
+- **Reply Preview**: Shows quoted message preview for replies
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+
+<Info>
+  **Live Preview** — Default message bubble preview.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-bubbles-message-bubble--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-bubbles-message-bubble--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "200px", border: "1px solid #e0e0e0"}}
+  title="CometChat Message Bubble — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Message Bubble Structure
+
+The Message Bubble is composed of several configurable view slots that can be customized independently:
+
+
+``` expandable
++----------------------------------------------------------------------------+
+|                        Message Bubble Structure                            |
++----------------------------------------------------------------------------+
+|                                                                            |
+|  +----------+  +--------------------------------------------------------+  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  | Leading  |  |  |              Header View                         |  |  |
+|  |  View    |  |  |           (Sender Name)                          |  |  |
+|  | (Avatar) |  |  +--------------------------------------------------+  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  |          |  |  |              Reply View                          |  |  |
+|  |          |  |  |           (Quoted Message)                       |  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  |          |  |  |              Content View                        |  |  |
+|  |          |  |  |           (Message Content)                      |  |  |
+|  |          |  |  |    Text / Image / Video / Audio / File           |  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  |          |  |  |           Status Info View                       |  |  |
+|  |          |  |  |      (Timestamp, Receipts, Edited)               |  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  |          |  |  |              Bottom View                         |  |  |
+|  |          |  |  |           (Link Preview, etc.)                   |  |  |
+|  |          |  |  +--------------------------------------------------+  |  |
+|  +----------+  +--------------------------------------------------------+  |
+|                +----------------------------------------------------------+ |
+|                |              Footer View                                 | |
+|                |            (Reactions)                                   | |
+|                +----------------------------------------------------------+ |
+|                +----------------------------------------------------------+ |
+|                |              Thread View                                 | |
+|                |         (Reply Count, Thread Icon)                       | |
+|                +----------------------------------------------------------+ |
+|                                                                            |
++----------------------------------------------------------------------------+
+```
+
+### View Slot Descriptions
+
+| View Slot | Description | Default Content |
+|-----------|-------------|-----------------|
+| **bubbleView** | Complete bubble override - replaces entire message bubble | Header + Reply + Content + StatusInfo + Bottom + Footer |
+| **leadingView** | Avatar section on the left side of incoming messages | User avatar with online status |
+| **headerView** | Sender information above the message content | Sender name (shown in group chats) |
+| **replyView** | Quoted message preview for reply messages | Message preview component |
+| **contentView** | Main message content area | Text/Image/Video/Audio/File bubble |
+| **statusInfoView** | Timestamp and delivery status | Time, receipts, edited label |
+| **bottomView** | Additional content below the message | Link previews, load more button |
+| **footerView** | Reactions and footer content | Reaction emojis |
+| **threadView** | Thread reply indicators | Reply count and thread icon |
+
+## Basic Usage
+
+### Simple Message Bubble
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="textMessage"
+      [alignment]="MessageBubbleAlignment.left">
+    </cometchat-message-bubble>
+  `
+})
+export class MessageComponent {
+  textMessage!: CometChat.TextMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### Incoming vs Outgoing Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-list',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-message-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.left">
+    </cometchat-message-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-message-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.right">
+    </cometchat-message-bubble>
+
+    <!-- Action message (center-aligned) -->
+    <cometchat-message-bubble
+      [message]="actionMessage"
+      [alignment]="MessageBubbleAlignment.center">
+    </cometchat-message-bubble>
+  `
+})
+export class MessageListComponent {
+  incomingMessage!: CometChat.BaseMessage;
+  outgoingMessage!: CometChat.BaseMessage;
+  actionMessage!: CometChat.Action;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+### With Message Options
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  CometChatActionsIcon,
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-interactive-message',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [options]="messageOptions"
+      (optionClick)="onOptionClick($event)">
+    </cometchat-message-bubble>
+  `
+})
+export class InteractiveMessageComponent {
+  message!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  messageOptions: CometChatActionsIcon[] = [
+    new CometChatActionsIcon({ id: 'reply', title: 'Reply', iconURL: 'assets/reply.svg' }),
+    new CometChatActionsIcon({ id: 'copy', title: 'Copy', iconURL: 'assets/copy.svg' }),
+    new CometChatActionsIcon({ id: 'delete', title: 'Delete', iconURL: 'assets/delete.svg' }),
+  ];
+
+  onOptionClick(option: any): void {
+    console.log('Option clicked:', option.id);
+  }
+}
+```
+
+## API Reference
+
+### Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.BaseMessage` | **required** | The CometChat message object to render |
+| `alignment` | `MessageBubbleAlignment` | `right` | Alignment of the bubble: `left` (incoming), `right` (outgoing), `center` (action) |
+| `group` | `CometChat.Group \| null` | `null` | Group context for group conversations. Enables avatar and sender name display |
+| `options` | `Array<CometChatActionsIcon \| CometChatActionsView>` | `[]` | Message options to display in context menu |
+| `quickOptionsCount` | `number` | `2` | Number of options to show directly on bubble before overflow |
+| `textFormatters` | `CometChatTextFormatter[]` | `[]` | Text formatters for text message content |
+| `dateFormat` | `CalendarObject` | `undefined` | Custom date format for timestamp display |
+| `translatedText` | `string` | `undefined` | Translated text to display for text messages |
+| `reactionsRequestBuilder` | `CometChat.ReactionsRequestBuilder` | `undefined` | Custom request builder for fetching reactions |
+| `isSelected` | `boolean` | `false` | Whether the message bubble is currently selected |
+| `ariaPosinset` | `number` | `undefined` | ARIA position-in-set attribute for the message in the list |
+| `ariaSetsize` | `number` | `undefined` | ARIA set-size attribute for the total message count |
+
+### View Override Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `bubbleView` | `TemplateRef<any>` | `undefined` | Complete bubble override - replaces entire message bubble |
+| `leadingView` | `TemplateRef<any>` | `undefined` | Custom template for leading view (avatar section) |
+| `headerView` | `TemplateRef<any>` | `undefined` | Custom template for header view (sender name section) |
+| `replyView` | `TemplateRef<any>` | `undefined` | Custom template for reply view (quoted message preview) |
+| `contentView` | `TemplateRef<any>` | `undefined` | Custom template for content view (main message content) |
+| `bottomView` | `TemplateRef<any>` | `undefined` | Custom template for bottom view |
+| `footerView` | `TemplateRef<any>` | `undefined` | Custom template for footer view (reactions) |
+| `statusInfoView` | `TemplateRef<any>` | `undefined` | Custom template for status info view (timestamp, receipts) |
+| `threadView` | `TemplateRef<any>` | `undefined` | Custom template for thread view |
+
+### Display Control Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideAvatar` | `boolean` | `false` | Whether to hide the avatar |
+| `hideSenderName` | `boolean` | `false` | Whether to hide the sender name |
+| `hideReceipts` | `boolean` | `false` | Whether to hide read receipts |
+| `hideTimestamp` | `boolean` | `false` | Whether to hide the timestamp |
+| `showError` | `boolean` | `false` | Whether to show error state indicator |
+| `hideModerationView` | `boolean` | `false` | Whether to hide moderation status indicators |
+| `disableInteraction` | `boolean` | `false` | When true, disables all interactive elements within the bubble (context menu, reactions, etc.) |
+
+### Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `optionClick` | `ContextMenuItem` | Emitted when a message option is clicked |
+| `avatarClick` | `CometChat.User` | Emitted when the avatar is clicked |
+| `replyPreviewClick` | `CometChat.BaseMessage` | Emitted when the reply preview is clicked |
+| `threadRepliesClick` | `CometChat.BaseMessage` | Emitted when the thread replies view is clicked |
+| `reactionClick` | `{ reaction: CometChat.ReactionCount, message: CometChat.BaseMessage }` | Emitted when a reaction is clicked |
+| `reactionListItemClick` | `{ reaction: CometChat.Reaction, message: CometChat.BaseMessage }` | Emitted when a reaction list item (user) is clicked |
+| `mediaToggle` | `CometChat.BaseMessage` | Emitted when Space key toggles media playback on audio/video bubbles |
+| `messageActionsOpen` | `CometChat.BaseMessage` | Emitted when message actions are triggered via keyboard |
+
+
+## Bubble Parts Customization
+
+Each bubble part can be customized independently using Angular `TemplateRef`. The customization follows a priority system:
+
+1. **Input template ref** (passed directly to component) - Highest priority
+2. **Service configured view** (via `MessageBubbleConfigService`) - Medium priority
+3. **Default rendering** - Lowest priority
+
+### bubbleView
+
+The `bubbleView` provides complete control over the entire message bubble. When set, it replaces all other views (header, content, footer, etc.).
+
+**Use Case**: When you need a completely custom message layout that doesn't follow the standard structure.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+import { DatePipe } from '@angular/common';
+
+@Component({
+  selector: 'app-custom-bubble',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent, DatePipe],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [bubbleView]="customBubble">
+    </cometchat-message-bubble>
+
+    <ng-template #customBubble let-message>
+      <div class="custom-bubble">
+        <div class="custom-bubble__avatar">
+          <img [src]="message.getSender()?.getAvatar()" alt="Avatar" />
+        </div>
+        <div class="custom-bubble__content">
+          <span class="custom-bubble__sender">{{ message.getSender()?.getName() }}</span>
+          <p class="custom-bubble__text">{{ getMessageText(message) }}</p>
+          <span class="custom-bubble__time">{{ message.getSentAt() * 1000 | date:'shortTime' }}</span>
+        </div>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .custom-bubble {
+      display: flex;
+      gap: var(--cometchat-spacing-3);
+      padding: var(--cometchat-spacing-3);
+      background: var(--cometchat-background-color-02);
+      border-radius: var(--cometchat-radius-3);
+    }
+    .custom-bubble__avatar img {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--cometchat-radius-max);
+    }
+    .custom-bubble__content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--cometchat-spacing-1);
+    }
+    .custom-bubble__sender {
+      font: var(--cometchat-font-caption1-bold);
+      color: var(--cometchat-text-color-primary);
+    }
+    .custom-bubble__text {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-primary);
+      margin: 0;
+    }
+    .custom-bubble__time {
+      font: var(--cometchat-font-caption2-regular);
+      color: var(--cometchat-text-color-tertiary);
+    }
+  `]
+})
+export class CustomBubbleComponent {
+  message!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  getMessageText(message: CometChat.BaseMessage): string {
+    if (message instanceof CometChat.TextMessage) {
+      return message.getText();
+    }
+    return '';
+  }
+}
+```
+
+### leadingView
+
+The `leadingView` customizes the avatar section that appears on the left side of incoming messages in group conversations.
+
+**Use Case**: Custom avatar styling, adding status badges, or showing additional user information.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-leading',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [group]="group"
+      [leadingView]="customLeading"
+      (avatarClick)="onAvatarClick($event)">
+    </cometchat-message-bubble>
+
+    <ng-template #customLeading let-message>
+      <div class="custom-leading" 
+           tabindex="0"
+           role="button"
+           [attr.aria-label]="'View profile of ' + message.getSender()?.getName()">
+        <img 
+          class="custom-leading__avatar"
+          [src]="message.getSender()?.getAvatar() || 'assets/default-avatar.png'" 
+          [alt]="message.getSender()?.getName()" />
+        <span class="custom-leading__badge" 
+              [class.custom-leading__badge--online]="message.getSender()?.getStatus() === 'online'">
+        </span>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .custom-leading {
+      position: relative;
+      cursor: pointer;
+    }
+    .custom-leading__avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--cometchat-radius-max);
+      border: 2px solid var(--cometchat-border-color-light);
+    }
+    .custom-leading__badge {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: var(--cometchat-radius-max);
+      background: var(--cometchat-neutral-color-400);
+      border: 2px solid var(--cometchat-background-color-01);
+    }
+    .custom-leading__badge--online {
+      background: var(--cometchat-success-color);
+    }
+  `]
+})
+export class CustomLeadingComponent {
+  message!: CometChat.BaseMessage;
+  group!: CometChat.Group;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  onAvatarClick(user: CometChat.User): void {
+    console.log('Avatar clicked:', user.getName());
+  }
+}
+```
+
+### headerView
+
+The `headerView` customizes the sender name section that appears above the message content in group conversations.
+
+**Use Case**: Adding user roles, custom badges, or additional sender information.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-header',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [group]="group"
+      [headerView]="customHeader">
+    </cometchat-message-bubble>
+
+    <ng-template #customHeader let-message>
+      <div class="custom-header">
+        <span class="custom-header__name">{{ message.getSender()?.getName() }}</span>
+        @if (isAdmin(message.getSender())) {
+          <span class="custom-header__badge">Admin</span>
+        }
+        <span class="custom-header__status">• In meeting</span>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .custom-header {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-2);
+      padding-bottom: var(--cometchat-spacing-1);
+    }
+    .custom-header__name {
+      font: var(--cometchat-font-caption1-bold);
+      color: var(--cometchat-text-color-primary);
+    }
+    .custom-header__badge {
+      font: var(--cometchat-font-caption2-medium);
+      color: var(--cometchat-static-white);
+      background: var(--cometchat-primary-color);
+      padding: 2px var(--cometchat-spacing-2);
+      border-radius: var(--cometchat-radius-1);
+    }
+    .custom-header__status {
+      font: var(--cometchat-font-caption2-regular);
+      color: var(--cometchat-text-color-tertiary);
+    }
+  `]
+})
+export class CustomHeaderComponent {
+  message!: CometChat.BaseMessage;
+  group!: CometChat.Group;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  isAdmin(user: CometChat.User | undefined): boolean {
+    // Check if user is admin - implement your logic
+    return user?.getRole() === 'admin';
+  }
+}
+```
+
+### replyView
+
+The `replyView` customizes the quoted message preview that appears when a message is a reply to another message.
+
+**Use Case**: Custom reply preview styling, showing additional context, or different preview formats.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-reply',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="replyMessage"
+      [alignment]="MessageBubbleAlignment.left"
+      [replyView]="customReply"
+      (replyPreviewClick)="onReplyClick($event)">
+    </cometchat-message-bubble>
+
+    <ng-template #customReply let-message>
+      @if (getQuotedMessage(message); as quotedMessage) {
+        <div class="custom-reply"
+             tabindex="0"
+             role="button"
+             aria-label="Jump to original message"
+             (click)="onReplyClick(quotedMessage)"
+             (keydown.enter)="onReplyClick(quotedMessage)"
+             (keydown.space)="onReplyClick(quotedMessage)">
+          <div class="custom-reply__indicator"></div>
+          <div class="custom-reply__content">
+            <span class="custom-reply__sender">{{ quotedMessage.getSender()?.getName() }}</span>
+            <span class="custom-reply__text">{{ getPreviewText(quotedMessage) }}</span>
+          </div>
+        </div>
+      }
+    </ng-template>
+  `,
+  styles: [`
+    .custom-reply {
+      display: flex;
+      gap: var(--cometchat-spacing-2);
+      padding: var(--cometchat-spacing-2);
+      background: var(--cometchat-background-color-03);
+      border-radius: var(--cometchat-radius-2);
+      margin-bottom: var(--cometchat-spacing-2);
+      cursor: pointer;
+    }
+    .custom-reply:hover {
+      background: var(--cometchat-background-color-04);
+    }
+    .custom-reply:focus {
+      outline: 2px solid var(--cometchat-primary-color);
+      outline-offset: 2px;
+    }
+    .custom-reply__indicator {
+      width: 3px;
+      background: var(--cometchat-primary-color);
+      border-radius: var(--cometchat-radius-max);
+    }
+    .custom-reply__content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--cometchat-spacing-1);
+      overflow: hidden;
+    }
+    .custom-reply__sender {
+      font: var(--cometchat-font-caption1-bold);
+      color: var(--cometchat-primary-color);
+    }
+    .custom-reply__text {
+      font: var(--cometchat-font-caption1-regular);
+      color: var(--cometchat-text-color-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  `]
+})
+export class CustomReplyComponent {
+  replyMessage!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  getQuotedMessage(message: CometChat.BaseMessage): CometChat.BaseMessage | null {
+    if (typeof (message as any).getQuotedMessage === 'function') {
+      return (message as any).getQuotedMessage() || null;
+    }
+    return null;
+  }
+
+  getPreviewText(message: CometChat.BaseMessage): string {
+    if (message instanceof CometChat.TextMessage) {
+      return message.getText().substring(0, 50) + (message.getText().length > 50 ? '...' : '');
+    }
+    return `[${message.getType()}]`;
+  }
+
+  onReplyClick(message: CometChat.BaseMessage): void {
+    console.log('Navigate to message:', message.getId());
+  }
+}
+```
+
+
+### contentView
+
+The `contentView` customizes the main message content area. This is where the actual message (text, image, video, etc.) is displayed.
+
+**Use Case**: Custom message rendering, adding interactive elements, or completely different content layouts.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-content',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [contentView]="customContent">
+    </cometchat-message-bubble>
+
+    <ng-template #customContent let-message>
+      <div class="custom-content">
+        @if (isTextMessage(message)) {
+          <p class="custom-content__text">{{ message.getText() }}</p>
+        } @else if (isImageMessage(message)) {
+          <div class="custom-content__image-wrapper">
+            <img 
+              class="custom-content__image"
+              [src]="getImageUrl(message)" 
+              [alt]="'Image from ' + message.getSender()?.getName()"
+              loading="lazy" />
+          </div>
+        } @else {
+          <p class="custom-content__fallback">{{ message.getType() }} message</p>
+        }
+        <button class="custom-content__action" (click)="onCustomAction(message)">
+          Custom Action
+        </button>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .custom-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--cometchat-spacing-2);
+    }
+    .custom-content__text {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-primary);
+      margin: 0;
+      word-wrap: break-word;
+    }
+    .custom-content__image-wrapper {
+      max-width: 250px;
+      border-radius: var(--cometchat-radius-2);
+      overflow: hidden;
+    }
+    .custom-content__image {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .custom-content__fallback {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-secondary);
+      font-style: italic;
+    }
+    .custom-content__action {
+      font: var(--cometchat-font-button-medium);
+      color: var(--cometchat-primary-color);
+      background: transparent;
+      border: 1px solid var(--cometchat-primary-color);
+      border-radius: var(--cometchat-radius-2);
+      padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+      cursor: pointer;
+    }
+    .custom-content__action:hover {
+      background: var(--cometchat-extended-primary-color-50);
+    }
+  `]
+})
+export class CustomContentComponent {
+  message!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  isTextMessage(message: CometChat.BaseMessage): message is CometChat.TextMessage {
+    return message instanceof CometChat.TextMessage;
+  }
+
+  isImageMessage(message: CometChat.BaseMessage): message is CometChat.MediaMessage {
+    return message instanceof CometChat.MediaMessage && message.getType() === 'image';
+  }
+
+  getImageUrl(message: CometChat.BaseMessage): string {
+    if (message instanceof CometChat.MediaMessage) {
+      return message.getAttachment()?.getUrl() || '';
+    }
+    return '';
+  }
+
+  onCustomAction(message: CometChat.BaseMessage): void {
+    console.log('Custom action on message:', message.getId());
+  }
+}
+```
+
+### statusInfoView
+
+The `statusInfoView` customizes the timestamp and delivery status section that appears inside the message bubble.
+
+**Use Case**: Custom timestamp formats, additional status indicators, or different receipt icons.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+import { DatePipe } from '@angular/common';
+
+@Component({
+  selector: 'app-custom-status',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent, DatePipe],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.right"
+      [statusInfoView]="customStatus">
+    </cometchat-message-bubble>
+
+    <ng-template #customStatus let-message>
+      <div class="custom-status" role="status" aria-live="polite">
+        @if (message.getEditedAt()) {
+          <span class="custom-status__edited">edited</span>
+        }
+        <span class="custom-status__time">
+          {{ message.getSentAt() * 1000 | date:'shortTime' }}
+        </span>
+        @if (isOutgoing(message)) {
+          <span class="custom-status__receipt" [attr.aria-label]="getReceiptLabel(message)">
+            @if (message.getReadAt()) {
+              <span class="custom-status__icon custom-status__icon--read">✓✓</span>
+            } @else if (message.getDeliveredAt()) {
+              <span class="custom-status__icon custom-status__icon--delivered">✓✓</span>
+            } @else if (message.getSentAt()) {
+              <span class="custom-status__icon custom-status__icon--sent">✓</span>
+            } @else {
+              <span class="custom-status__icon custom-status__icon--pending">○</span>
+            }
+          </span>
+        }
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .custom-status {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-1);
+      justify-content: flex-end;
+    }
+    .custom-status__edited {
+      font: var(--cometchat-font-caption2-regular);
+      color: var(--cometchat-text-color-tertiary);
+      font-style: italic;
+    }
+    .custom-status__time {
+      font: var(--cometchat-font-caption2-regular);
+      color: var(--cometchat-text-color-tertiary);
+    }
+    .custom-status__icon {
+      font-size: 12px;
+    }
+    .custom-status__icon--read {
+      color: var(--cometchat-info-color);
+    }
+    .custom-status__icon--delivered {
+      color: var(--cometchat-text-color-secondary);
+    }
+    .custom-status__icon--sent {
+      color: var(--cometchat-text-color-tertiary);
+    }
+    .custom-status__icon--pending {
+      color: var(--cometchat-text-color-tertiary);
+    }
+  `]
+})
+export class CustomStatusComponent {
+  message!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+  private loggedInUser = CometChat.getLoggedinUser();
+
+  isOutgoing(message: CometChat.BaseMessage): boolean {
+    return message.getSender()?.getUid() === this.loggedInUser?.getUid();
+  }
+
+  getReceiptLabel(message: CometChat.BaseMessage): string {
+    if (message.getReadAt()) return 'Read';
+    if (message.getDeliveredAt()) return 'Delivered';
+    if (message.getSentAt()) return 'Sent';
+    return 'Sending';
+  }
+}
+```
+
+### bottomView
+
+The `bottomView` customizes the section below the main content, typically used for link previews, warnings, or additional information.
+
+**Use Case**: Link previews, content warnings, or expandable content sections.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-bottom',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [bottomView]="customBottom">
+    </cometchat-message-bubble>
+
+    <ng-template #customBottom let-message>
+      @if (hasLinkPreview(message)) {
+        <div class="custom-bottom">
+          <a class="custom-bottom__link" 
+             [href]="getLinkUrl(message)" 
+             target="_blank"
+             rel="noopener noreferrer">
+            <div class="custom-bottom__preview">
+              <img class="custom-bottom__image" 
+                   [src]="getLinkImage(message)" 
+                   alt="Link preview" />
+              <div class="custom-bottom__info">
+                <span class="custom-bottom__title">{{ getLinkTitle(message) }}</span>
+                <span class="custom-bottom__domain">{{ getLinkDomain(message) }}</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      }
+      @if (hasWarning(message)) {
+        <div class="custom-bottom__warning">
+          <span class="custom-bottom__warning-icon">⚠️</span>
+          <span class="custom-bottom__warning-text">This message may contain sensitive content</span>
+        </div>
+      }
+    </ng-template>
+  `,
+  styles: [`
+    .custom-bottom {
+      margin-top: var(--cometchat-spacing-2);
+    }
+    .custom-bottom__link {
+      text-decoration: none;
+      color: inherit;
+    }
+    .custom-bottom__preview {
+      display: flex;
+      gap: var(--cometchat-spacing-2);
+      padding: var(--cometchat-spacing-2);
+      background: var(--cometchat-background-color-03);
+      border-radius: var(--cometchat-radius-2);
+      border: 1px solid var(--cometchat-border-color-light);
+    }
+    .custom-bottom__preview:hover {
+      background: var(--cometchat-background-color-04);
+    }
+    .custom-bottom__image {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: var(--cometchat-radius-1);
+    }
+    .custom-bottom__info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--cometchat-spacing-1);
+    }
+    .custom-bottom__title {
+      font: var(--cometchat-font-caption1-medium);
+      color: var(--cometchat-text-color-primary);
+    }
+    .custom-bottom__domain {
+      font: var(--cometchat-font-caption2-regular);
+      color: var(--cometchat-text-color-tertiary);
+    }
+    .custom-bottom__warning {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-2);
+      padding: var(--cometchat-spacing-2);
+      background: var(--cometchat-warning-color);
+      background: rgba(255, 171, 0, 0.1);
+      border-radius: var(--cometchat-radius-2);
+      margin-top: var(--cometchat-spacing-2);
+    }
+    .custom-bottom__warning-text {
+      font: var(--cometchat-font-caption1-regular);
+      color: var(--cometchat-warning-color);
+    }
+  `]
+})
+export class CustomBottomComponent {
+  message!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  hasLinkPreview(message: CometChat.BaseMessage): boolean {
+    // Check if message has link preview metadata
+    return false; // Implement your logic
+  }
+
+  hasWarning(message: CometChat.BaseMessage): boolean {
+    // Check if message should show warning
+    return false; // Implement your logic
+  }
+
+  getLinkUrl(message: CometChat.BaseMessage): string { return ''; }
+  getLinkImage(message: CometChat.BaseMessage): string { return ''; }
+  getLinkTitle(message: CometChat.BaseMessage): string { return ''; }
+  getLinkDomain(message: CometChat.BaseMessage): string { return ''; }
+}
+```
+
+
+### footerView
+
+The `footerView` customizes the reactions section that appears below the message content.
+
+**Use Case**: Custom reaction display, adding additional footer actions, or different reaction layouts.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-footer',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [footerView]="customFooter"
+      (reactionClick)="onReactionClick($event)">
+    </cometchat-message-bubble>
+
+    <ng-template #customFooter let-message>
+      @if (getReactions(message).length > 0) {
+        <div class="custom-footer">
+          <div class="custom-footer__reactions" role="group" aria-label="Message reactions">
+            @for (reaction of getReactions(message); track reaction.getReaction()) {
+              <button 
+                class="custom-footer__reaction"
+                [class.custom-footer__reaction--reacted]="hasUserReacted(reaction)"
+                (click)="onReactionClick({ reaction, message })"
+                [attr.aria-label]="reaction.getReaction() + ' reaction, ' + reaction.getCount() + ' users'"
+                [attr.aria-pressed]="hasUserReacted(reaction)">
+                <span class="custom-footer__emoji">{{ reaction.getReaction() }}</span>
+                <span class="custom-footer__count">{{ reaction.getCount() }}</span>
+              </button>
+            }
+          </div>
+          <button class="custom-footer__add" aria-label="Add reaction">
+            <span>+</span>
+          </button>
+        </div>
+      }
+    </ng-template>
+  `,
+  styles: [`
+    .custom-footer {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-2);
+      margin-top: var(--cometchat-spacing-2);
+    }
+    .custom-footer__reactions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--cometchat-spacing-1);
+    }
+    .custom-footer__reaction {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-1);
+      padding: var(--cometchat-spacing-1) var(--cometchat-spacing-2);
+      background: var(--cometchat-background-color-02);
+      border: 1px solid var(--cometchat-border-color-light);
+      border-radius: var(--cometchat-radius-max);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .custom-footer__reaction:hover {
+      background: var(--cometchat-background-color-03);
+    }
+    .custom-footer__reaction:focus {
+      outline: 2px solid var(--cometchat-primary-color);
+      outline-offset: 2px;
+    }
+    .custom-footer__reaction--reacted {
+      background: var(--cometchat-extended-primary-color-50);
+      border-color: var(--cometchat-primary-color);
+    }
+    .custom-footer__emoji {
+      font-size: 14px;
+    }
+    .custom-footer__count {
+      font: var(--cometchat-font-caption2-medium);
+      color: var(--cometchat-text-color-secondary);
+    }
+    .custom-footer__add {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cometchat-background-color-02);
+      border: 1px dashed var(--cometchat-border-color-default);
+      border-radius: var(--cometchat-radius-max);
+      cursor: pointer;
+      font: var(--cometchat-font-body-medium);
+      color: var(--cometchat-text-color-secondary);
+    }
+    .custom-footer__add:hover {
+      background: var(--cometchat-background-color-03);
+      border-style: solid;
+    }
+  `]
+})
+export class CustomFooterComponent {
+  message!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+  private loggedInUser = CometChat.getLoggedinUser();
+
+  getReactions(message: CometChat.BaseMessage): CometChat.ReactionCount[] {
+    return message.getReactions() || [];
+  }
+
+  hasUserReacted(reaction: CometChat.ReactionCount): boolean {
+    return reaction.getReactedByMe() || false;
+  }
+
+  onReactionClick(event: { reaction: CometChat.ReactionCount; message: CometChat.BaseMessage }): void {
+    console.log('Reaction clicked:', event.reaction.getReaction());
+  }
+}
+```
+
+### threadView
+
+The `threadView` customizes the thread reply indicator that appears when a message has replies.
+
+**Use Case**: Custom thread indicators, showing reply previews, or different thread navigation styles.
+
+```typescript expandable
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-thread',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [threadView]="customThread"
+      (threadRepliesClick)="onThreadClick($event)">
+    </cometchat-message-bubble>
+
+    <ng-template #customThread let-message>
+      @if (message.getReplyCount() > 0) {
+        <button 
+          class="custom-thread"
+          (click)="onThreadClick(message)"
+          [attr.aria-label]="message.getReplyCount() + ' replies, click to view thread'">
+          <span class="custom-thread__icon">💬</span>
+          <span class="custom-thread__count">{{ message.getReplyCount() }}</span>
+          <span class="custom-thread__label">
+            {{ message.getReplyCount() === 1 ? 'reply' : 'replies' }}
+          </span>
+          @if (message.getUnreadRepliesCount() > 0) {
+            <span class="custom-thread__unread">
+              {{ message.getUnreadRepliesCount() }} new
+            </span>
+          }
+          <span class="custom-thread__arrow">→</span>
+        </button>
+      }
+    </ng-template>
+  `,
+  styles: [`
+    .custom-thread {
+      display: flex;
+      align-items: center;
+      gap: var(--cometchat-spacing-2);
+      padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      margin-top: var(--cometchat-spacing-2);
+      border-top: 1px solid var(--cometchat-border-color-light);
+      width: 100%;
+    }
+    .custom-thread:hover {
+      background: var(--cometchat-background-color-02);
+    }
+    .custom-thread:focus {
+      outline: 2px solid var(--cometchat-primary-color);
+      outline-offset: -2px;
+    }
+    .custom-thread__icon {
+      font-size: 14px;
+    }
+    .custom-thread__count {
+      font: var(--cometchat-font-caption1-bold);
+      color: var(--cometchat-primary-color);
+    }
+    .custom-thread__label {
+      font: var(--cometchat-font-caption1-regular);
+      color: var(--cometchat-primary-color);
+    }
+    .custom-thread__unread {
+      font: var(--cometchat-font-caption2-medium);
+      color: var(--cometchat-static-white);
+      background: var(--cometchat-primary-color);
+      padding: 2px var(--cometchat-spacing-2);
+      border-radius: var(--cometchat-radius-max);
+    }
+    .custom-thread__arrow {
+      margin-left: auto;
+      color: var(--cometchat-text-color-tertiary);
+    }
+  `]
+})
+export class CustomThreadComponent {
+  message!: CometChat.BaseMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  onThreadClick(message: CometChat.BaseMessage): void {
+    console.log('Open thread for message:', message.getId());
+  }
+}
+```
+
+## Service-Based Customization
+
+For global customization across all message bubbles, use the `MessageBubbleConfigService`. This allows you to set custom views that apply to all instances without passing templates to each component.
+
+### Using MessageBubbleConfigService
+
+```typescript expandable
+import { Component, OnInit, TemplateRef, ViewChild, AfterViewInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageListComponent,
+  MessageBubbleConfigService 
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-global-customization',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  template: `
+    <cometchat-message-list [user]="user"></cometchat-message-list>
+
+    <!-- Global custom status info view -->
+    <ng-template #globalStatusInfo let-message>
+      <div class="global-status">
+        <span>{{ message.getSentAt() * 1000 | date:'shortTime' }}</span>
+        @if (message.getEditedAt()) {
+          <span class="global-status__edited">(edited)</span>
+        }
+      </div>
+    </ng-template>
+
+    <!-- Custom content view for text messages -->
+    <ng-template #customTextContent let-message>
+      <div class="custom-text">
+        <p>{{ message.getText() }}</p>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .global-status {
+      display: flex;
+      gap: var(--cometchat-spacing-1);
+      font: var(--cometchat-font-caption2-regular);
+      color: var(--cometchat-text-color-tertiary);
+    }
+    .global-status__edited {
+      font-style: italic;
+    }
+    .custom-text p {
+      margin: 0;
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-primary);
+    }
+  `]
+})
+export class GlobalCustomizationComponent implements AfterViewInit {
+  @ViewChild('globalStatusInfo') globalStatusInfo!: TemplateRef<any>;
+  @ViewChild('customTextContent') customTextContent!: TemplateRef<any>;
+  
+  user?: CometChat.User;
+
+  constructor(private bubbleConfigService: MessageBubbleConfigService) {}
+
+  ngAfterViewInit(): void {
+    // Set global status info view for all message types
+    this.bubbleConfigService.setGlobalStatusInfoView(this.globalStatusInfo);
+
+    // Set custom content view for text messages only
+    this.bubbleConfigService.setBubbleView('text_message', {
+      contentView: this.customTextContent
+    });
+
+    // Set multiple message type customizations at once
+    this.bubbleConfigService.setMessageTemplates({
+      'text_message': { contentView: this.customTextContent },
+      'image_message': { statusInfoView: this.globalStatusInfo }
+    });
+  }
+}
+```
+
+### MessageBubbleConfigService API
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `setBubbleView` | `messageType: string, map: BubblePartMap` | Set custom views for a specific message type |
+| `setGlobalStatusInfoView` | `view: TemplateRef<any>` | Set status info view for all message types |
+| `setGlobalLeadingView` | `view: TemplateRef<any>` | Set leading view for all message types |
+| `setGlobalHeaderView` | `view: TemplateRef<any>` | Set header view for all message types |
+| `setMessageTemplates` | `maps: Record<string, BubblePartMap>` | Set multiple message type customizations |
+| `getView` | `messageType: string, part: BubblePart` | Get the configured view for a message type and part |
+| `clearAll` | none | Clear all configured views |
+
+### Scoping for Multiple Instances
+
+By default, `MessageBubbleConfigService` is a root-level singleton — all message bubbles share the same configuration. If you need different bubble customizations for different message lists (e.g., a main chat vs. a thread panel), create a wrapper component that provides its own instance:
+
+```typescript expandable
+@Component({
+  selector: 'app-thread-panel',
+  standalone: true,
+  imports: [CometChatMessageListComponent],
+  providers: [MessageBubbleConfigService], // Scoped instance
+  template: `<cometchat-message-list [user]="user" [parentMessageId]="parentMessageId"></cometchat-message-list>`
+})
+export class ThreadPanelComponent implements AfterViewInit {
+  @ViewChild('minimalStatus') minimalStatus!: TemplateRef<any>;
+
+  // This is the LOCAL instance, not the root singleton
+  private bubbleConfig = inject(MessageBubbleConfigService);
+
+  ngAfterViewInit(): void {
+    // Only affects bubbles inside this wrapper
+    this.bubbleConfig.setGlobalView('statusInfoView', this.minimalStatus);
+  }
+}
+```
+
+See [CometChatMessageList — Multiple Message Lists with Different Configurations](/components/cometchat-message-list#multiple-message-lists-with-different-configurations) for a complete example.
+
+### BubblePart Type
+
+```typescript expandable
+type BubblePart = 
+  | 'bubbleView' 
+  | 'contentView' 
+  | 'bottomView' 
+  | 'footerView' 
+  | 'leadingView' 
+  | 'headerView' 
+  | 'statusInfoView' 
+  | 'replyView'
+  | 'threadView';
+```
+
+
+## CSS Customization
+
+### Styling with CSS Variables
+
+The Message Bubble component uses CSS variables for consistent theming. Override these variables to customize the appearance:
+
+```css expandable
+/* Custom theme overrides */
+:root {
+  /* Spacing */
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+  --cometchat-spacing-3: 12px;
+  --cometchat-spacing-4: 16px;
+
+  /* Typography */
+  --cometchat-font-body-regular: 400 14px/1.4 'Roboto', sans-serif;
+  --cometchat-font-caption1-medium: 500 12px/1.2 'Roboto', sans-serif;
+  --cometchat-font-caption2-regular: 400 10px/1.2 'Roboto', sans-serif;
+
+  /* Colors */
+  --cometchat-background-color-02: #F5F5F5;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #666666;
+  --cometchat-text-color-tertiary: #999999;
+
+  /* Border */
+  --cometchat-border-color-light: #E0E0E0;
+  --cometchat-radius-3: 12px;
+}
+```
+
+### Dark Theme
+
+```css expandable
+/* Dark theme overrides */
+[data-theme="dark"] {
+  --cometchat-background-color-01: #1A1A1A;
+  --cometchat-background-color-02: #2C2C2C;
+  --cometchat-background-color-03: #3D3D3D;
+  --cometchat-text-color-primary: #FFFFFF;
+  --cometchat-text-color-secondary: #B0B0B0;
+  --cometchat-text-color-tertiary: #808080;
+  --cometchat-border-color-light: #404040;
+}
+```
+
+### Component-Specific Styling
+
+Target specific bubble elements using BEM class names:
+
+```css expandable
+/* Incoming message bubble */
+.cometchat-message-bubble-incoming {
+  /* Custom styles for incoming messages */
+}
+
+/* Outgoing message bubble */
+.cometchat-message-bubble-outgoing {
+  /* Custom styles for outgoing messages */
+}
+
+/* Action/system message bubble */
+.cometchat-message-bubble-action {
+  /* Custom styles for action messages */
+}
+
+/* Message type specific */
+.cometchat-message-bubble__text-message {
+  /* Custom styles for text messages */
+}
+
+.cometchat-message-bubble__image-message {
+  /* Custom styles for image messages */
+}
+
+/* Bubble body */
+.cometchat-message-bubble__body {
+  /* Custom styles for bubble body */
+}
+
+/* Status info section */
+.cometchat-message-bubble__status-info-view {
+  /* Custom styles for status info */
+}
+
+/* Reply preview */
+.cometchat-message-bubble__body-reply-view {
+  /* Custom styles for reply preview */
+}
+```
+
+## Advanced Usage
+
+### Group Conversation with Avatar and Sender Name
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-group-message',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [group]="currentGroup"
+      (avatarClick)="onAvatarClick($event)">
+    </cometchat-message-bubble>
+  `
+})
+export class GroupMessageComponent {
+  message!: CometChat.BaseMessage;
+  currentGroup!: CometChat.Group;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+
+  onAvatarClick(user: CometChat.User): void {
+    console.log('Avatar clicked:', user.getName());
+    // Navigate to user profile
+  }
+}
+```
+
+### With Text Formatters
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { 
+  CometChatMessageBubbleComponent, 
+  CometChatTextFormatter,
+  MessageBubbleAlignment 
+} from '@cometchat/chat-uikit-angular';
+
+// Custom hashtag formatter
+class HashtagFormatter extends CometChatTextFormatter {
+  readonly id = 'hashtag-formatter';
+  priority = 25;
+
+  format(text: string, message: CometChat.BaseMessage): string {
+    return text.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+  }
+}
+
+@Component({
+  selector: 'app-formatted-message',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [textFormatters]="formatters">
+    </cometchat-message-bubble>
+  `,
+  styles: [`
+    :host ::ng-deep .hashtag {
+      color: var(--cometchat-primary-color);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    :host ::ng-deep .hashtag:hover {
+      text-decoration: underline;
+    }
+  `]
+})
+export class FormattedMessageComponent {
+  message!: CometChat.TextMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+  formatters = [new HashtagFormatter()];
+}
+```
+
+### With Message Translation
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-translated-message',
+  standalone: true,
+  imports: [CometChatMessageBubbleComponent],
+  template: `
+    <cometchat-message-bubble
+      [message]="message"
+      [alignment]="MessageBubbleAlignment.left"
+      [translatedText]="translatedText">
+    </cometchat-message-bubble>
+  `
+})
+export class TranslatedMessageComponent {
+  message!: CometChat.TextMessage;
+  translatedText = 'This is the translated text';
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Accessibility
+
+The Message Bubble component is fully accessible and follows WCAG 2.1 Level AA guidelines:
+
+### Keyboard Support
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Navigate between interactive elements |
+| `Enter` / `Space` | Activate focused element (avatar, options menu, reactions) |
+| `Escape` | Close options menu and return focus to bubble |
+| `Arrow Keys` | Navigate within options menu when open |
+
+### ARIA Attributes
+
+| Attribute | Element | Purpose |
+|-----------|---------|---------|
+| `role="article"` | Wrapper | Identifies message as an article |
+| `aria-label` | Wrapper | Describes message sender and type |
+| `aria-describedby` | Wrapper | Links to message content |
+| `role="status"` | Status info | Identifies status area |
+| `aria-live="polite"` | Status info | Announces status changes |
+| `role="button"` | Interactive elements | Identifies clickable elements |
+| `aria-pressed` | Reactions | Indicates if user has reacted |
+| `role="group"` | Reactions container | Groups related reactions |
+
+### Screen Reader Announcements
+
+The component provides meaningful announcements for:
+- Message sender and type
+- Message status (sent, delivered, read)
+- Edited messages
+- Reactions and their counts
+- Thread reply counts
+
+## Best Practices
+
+<Tip>
+  Use the `group` property to enable avatar and sender name display in group conversations.
+</Tip>
+
+<Warning>
+  Always provide the complete CometChat message object to ensure proper rendering of all message types.
+</Warning>
+
+<Info>
+  The component automatically determines the appropriate bubble component based on message type. Use `contentView` only when you need custom rendering.
+</Info>
+
+<Tip>
+  Handle `optionClick` events to implement message actions like reply, copy, delete, etc.
+</Tip>
+
+<Warning>
+  When using custom templates, ensure you maintain accessibility by including proper ARIA attributes and keyboard navigation.
+</Warning>
+
+<Info>
+  Use CSS variables for styling to ensure your customizations work correctly with both light and dark themes.
+</Info>
+
+## Related Components
+
+- [CometChatMessageList](/components/cometchat-message-list) - Parent component that renders message bubbles
+- [CometChatTextBubble](/components/cometchat-text-bubble) - Text message content component
+- [CometChatImageBubble](/components/cometchat-image-bubble) - Image message content component
+- [CometChatVideoBubble](/components/cometchat-video-bubble) - Video message content component
+- [CometChatAudioBubble](/components/cometchat-audio-bubble) - Audio message content component
+- [CometChatFileBubble](/components/cometchat-file-bubble) - File message content component
+- [CometChatMessagePreview](/components/message-preview) - Reply preview component
+- [CometChatThreadHeader](/components/cometchat-thread-header) - Thread header component

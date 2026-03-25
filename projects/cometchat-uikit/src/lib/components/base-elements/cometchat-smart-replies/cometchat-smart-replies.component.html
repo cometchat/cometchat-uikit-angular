@@ -1,0 +1,76 @@
+@if (isVisible) {
+  <div
+    class="cometchat-smart-replies"
+    role="region"
+    [attr.aria-label]="ariaLabel"
+    aria-live="polite"
+  >
+    <!-- Header with title and close button -->
+    <div class="cometchat-smart-replies__header">
+      <span class="cometchat-smart-replies__title">
+        {{ 'ai_smart_replies_title' | translate }}
+      </span>
+      <button
+        class="cometchat-smart-replies__close"
+        type="button"
+        [attr.aria-label]="'close' | translate"
+        (click)="onCloseClick()"
+        (keydown.enter)="onCloseClick()"
+        (keydown.space)="$event.preventDefault(); onCloseClick()"
+      >
+        <span class="cometchat-smart-replies__close-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Loading state - shimmer bars -->
+    @if (isLoading()) {
+      <div class="cometchat-smart-replies__loading" role="status">
+        <div class="cometchat-smart-replies__shimmer-bar"></div>
+        <div class="cometchat-smart-replies__shimmer-bar"></div>
+        <div class="cometchat-smart-replies__shimmer-bar"></div>
+      </div>
+    }
+
+    <!-- Error state -->
+    @if (hasError() && !isLoading()) {
+      <div class="cometchat-smart-replies__error" role="alert">
+        <span class="cometchat-smart-replies__error-text">
+          {{ 'ai_smart_replies_error' | translate }}
+        </span>
+      </div>
+    }
+
+    <!-- Replies list -->
+    @if (hasReplies && !isLoading() && !hasError()) {
+      <div
+        class="cometchat-smart-replies__list"
+        role="group"
+        [attr.aria-label]="'accessibility_smart_replies' | translate"
+      >
+        @for (reply of replies(); track reply; let i = $index) {
+          <button
+            #replyButton
+            class="cometchat-smart-replies__item"
+            type="button"
+            [attr.aria-label]="reply"
+            [attr.tabindex]="getReplyTabIndex(i)"
+            (click)="onReplyClick(reply)"
+            (keydown)="onReplyKeydown($event, reply, i)"
+            (focus)="onReplyFocus(i)"
+          >
+            <span class="cometchat-smart-replies__item-text">{{ reply }}</span>
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (!hasReplies && !isLoading() && !hasError()) {
+      <div class="cometchat-smart-replies__empty">
+        <span class="cometchat-smart-replies__empty-text">
+          {{ 'ai_smart_replies_empty' | translate }}
+        </span>
+      </div>
+    }
+  </div>
+}

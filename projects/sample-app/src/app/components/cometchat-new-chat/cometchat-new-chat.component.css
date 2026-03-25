@@ -1,0 +1,137 @@
+/* ═══════════════════════════════════════════════════
+   CometChatNewChat — Center panel view for new conversation
+   ═══════════════════════════════════════════════════ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cometchat-new-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--cometchat-background-color-01);
+}
+
+/* ── Header ── */
+
+.cometchat-new-chat__header {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-2);
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+  border-bottom: 1px solid var(--cometchat-border-color-light);
+}
+
+.cometchat-new-chat__back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-spacing-8);
+  height: var(--cometchat-spacing-8);
+  border: none;
+  background: transparent;
+  color: var(--cometchat-icon-color-primary);
+  cursor: pointer;
+  border-radius: var(--cometchat-radius-max);
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-new-chat__back-button:hover {
+  background: var(--cometchat-background-color-02);
+}
+
+.cometchat-new-chat__back-button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+.cometchat-new-chat__back-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  background-color: currentColor;
+  -webkit-mask: url('../../../assets/arrow_back.svg') center center no-repeat;
+  mask: url('../../../assets/arrow_back.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-new-chat__title {
+  font: var(--cometchat-font-heading1-bold);
+  color: var(--cometchat-text-color-primary);
+}
+
+/* ── Tabs (pill toggle) ── */
+
+.cometchat-new-chat__tabs-wrapper {
+  padding: var(--cometchat-spacing-3) var(--cometchat-spacing-4);
+}
+
+.cometchat-new-chat__tabs {
+  display: flex;
+  align-items: center;
+  border-radius: var(--cometchat-radius-max);
+  border: 1px solid var(--cometchat-border-color-light);
+  background: var(--cometchat-background-color-03);
+}
+
+.cometchat-new-chat__tab {
+  display: flex;
+  height: 36px;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-4);
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  border: none;
+  border-radius: var(--cometchat-radius-max);
+  background: transparent;
+  font: var(--cometchat-font-heading4-medium);
+  color: var(--cometchat-text-color-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cometchat-new-chat__tab:hover:not(.cometchat-new-chat__tab--active) {
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-new-chat__tab--active {
+  border: 1px solid var(--cometchat-border-color-light);
+  background: var(--cometchat-background-color-01);
+  color: var(--cometchat-text-color-highlight);
+  cursor: default;
+}
+
+.cometchat-new-chat__tab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+/* ── Content ── */
+
+.cometchat-new-chat__content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cometchat-new-chat__content cometchat-users,
+.cometchat-new-chat__content cometchat-groups {
+  flex: 1;
+  overflow: auto;
+}
+
+/* ── Responsive Design ── */
+
+@media (max-width: 480px) {
+  .cometchat-new-chat__title {
+    font: var(--cometchat-font-heading4-bold);
+  }
+}

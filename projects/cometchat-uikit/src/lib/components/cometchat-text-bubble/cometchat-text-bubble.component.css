@@ -1,0 +1,1043 @@
+/**
+ * CometChatTextBubble Styles
+ *
+ * BEM CSS methodology with CSS variables for theming.
+ * All values use CSS variables from css-variables.css.
+ * Matches React UIKit reference styling.
+ *
+ * @see Requirements 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3
+ */
+
+/* ============================================
+   Block: cometchat-text-bubble
+   ============================================ */
+
+/**
+ * Container for the text bubble - matching React UIKit
+ * @see Requirements 1.1, 1.2, 1.3, 11.3, 2.4, 2.5, 2.6, 2.7, 2.8
+ */
+.cometchat-text-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: var(--cometchat-text-bubble-padding, var(--cometchat-padding-2));
+  align-self: flex-end;
+  width: auto;
+  border-radius: var(--cometchat-text-bubble-border-radius, var(--cometchat-radius-3));
+  max-width: var(--cometchat-text-bubble-max-width, 630px);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word; /* Requirement 11.3: Wrap long text appropriately */
+  /* Overflow containment - Requirements 2.4, 2.5, 2.6, 2.7, 2.8 */
+  overflow: hidden;
+  box-sizing: border-box;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* ============================================
+   Background Inheritance: Message Bubble Context
+   @see Requirements 2.1, 2.2, 2.3
+   
+   NOTE: Parent override is handled via CSS custom property
+   --cometchat-text-bubble-background which can be set by parent
+   components. The bubble uses this variable with a fallback to
+   the default theme background color.
+   ============================================ */
+
+/* Responsive breakpoints for text bubble max-width */
+@media (max-width: 1000px) {
+  .cometchat-text-bubble {
+    max-width: var(--cometchat-text-bubble-max-width-medium, 420px);
+  }
+}
+
+@media (max-width: 768px) {
+  .cometchat-text-bubble {
+    max-width: var(--cometchat-text-bubble-max-width-small, 280px);
+  }
+}
+
+/* ============================================
+   Modifiers: Alignment Variants
+   ============================================ */
+
+/**
+ * Incoming text bubble specific styles (left alignment)
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 1.1, 1.4
+ */
+.cometchat-text-bubble.cometchat-text-bubble-incoming,
+.cometchat-text-bubble-incoming {
+  background: var(--cometchat-text-bubble-background, var(--cometchat-neutral-color-300));
+}
+
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__body-text,
+.cometchat-text-bubble-incoming .cometchat-text-bubble__text {
+  color: var(--cometchat-neutral-color-900);
+  font: var(--cometchat-font-body-regular);
+  font-style: normal;
+}
+
+/**
+ * Outgoing text bubble specific styles (right alignment)
+ * Uses CSS variable for background to allow parent override
+ * @see Requirements 1.1, 1.4
+ */
+.cometchat-text-bubble.cometchat-text-bubble-outgoing,
+.cometchat-text-bubble-outgoing {
+  background: var(--cometchat-text-bubble-background, var(--cometchat-primary-color));
+}
+
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__body-text,
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__text {
+  color: var(--cometchat-static-white);
+  font: var(--cometchat-font-body-regular);
+  font-style: normal;
+}
+
+/* ============================================
+   Modifiers: Content State
+   ============================================ */
+
+/**
+ * Truncated content state
+ * @see Requirements 4.1
+ */
+.cometchat-text-bubble--truncated {
+  /* Applied when content exceeds 80px height */
+}
+
+/**
+ * Expanded content state
+ * @see Requirements 4.3, 4.5
+ */
+.cometchat-text-bubble--expanded {
+  /* Applied when read more is clicked */
+}
+
+/**
+ * When a link preview is present, constrain the entire bubble
+ * to match the link preview max-width so text doesn't expand it.
+ * 240px (link preview) + 8px padding left + 8px padding right = 256px
+ */
+.cometchat-text-bubble--has-link-preview {
+  max-width: 256px;
+}
+
+/* ============================================
+   Modifier: Single Emoji
+   ============================================ */
+
+/**
+ * Single emoji display with larger font
+ * Uses font shorthand only — no standalone font-size override.
+ * The emoji size is controlled via the font shorthand variable.
+ * line-height is not a font-size/font-weight/font-family property,
+ * so it's safe as a standalone override.
+ * @see Requirements 3.2
+ */
+.cometchat-text-bubble--single-emoji .cometchat-text-bubble__text {
+  font: var(--cometchat-font-title-regular);
+  line-height: var(--cometchat-text-bubble-emoji-line-height, 1.2);
+}
+
+/* ============================================
+   Element: Link Preview Container
+   ============================================ */
+
+.cometchat-text-bubble__link-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-text-bubble-link-preview-container-gap, var(--cometchat-spacing-2, 8px));
+  margin-bottom: var(--cometchat-text-bubble-link-preview-container-margin-bottom, var(--cometchat-margin-2, 8px));
+  max-width: 240px;
+}
+
+/* ============================================
+   Element: Link Preview Card
+   Matches React UIKit cometchat-link-bubble structure
+   ============================================ */
+
+.cometchat-text-bubble__link-preview {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--cometchat-radius-2);
+  overflow: hidden;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  max-width: 240px;
+}
+
+.cometchat-text-bubble__link-preview:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
+}
+
+/* Link Preview Image */
+.cometchat-text-bubble__link-preview-image-container {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cometchat-text-bubble__link-preview-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+}
+
+/* Link Preview Content - Body section with title, description, domain */
+.cometchat-text-bubble__link-preview-content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cometchat-text-bubble-link-preview-content-gap, var(--cometchat-spacing-2, 8px));
+  padding: var(--cometchat-text-bubble-link-preview-content-padding, var(--cometchat-padding-2, 8px));
+  border-radius: var(--cometchat-text-bubble-link-preview-content-border-radius, var(--cometchat-radius-2, 8px));
+}
+
+/* When there's an image, remove top border radius from content */
+.cometchat-text-bubble__link-preview-image-container + .cometchat-text-bubble__link-preview-content {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Text content wrapper */
+.cometchat-text-bubble__link-preview-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-text-bubble-link-preview-text-gap, var(--cometchat-spacing-1, 4px));
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.cometchat-text-bubble__link-preview-title {
+  font: var(--cometchat-font-body-bold);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cometchat-text-bubble__link-preview-description {
+  font: var(--cometchat-font-caption1-regular);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cometchat-text-bubble__link-preview-domain-container {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-text-bubble-link-preview-domain-container-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Favicon shown in domain container when there's an image */
+.cometchat-text-bubble__link-preview-favicon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Large favicon shown on the right when there's no image */
+.cometchat-text-bubble__link-preview-favicon-large {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: var(--cometchat-radius-1);
+}
+
+.cometchat-text-bubble__link-preview-domain {
+  font: var(--cometchat-font-caption1-regular);
+}
+
+/* ============================================
+   Link Preview - Incoming (Receiver) Styles
+   Matches React UIKit cometchat-link-bubble-incoming
+   ============================================ */
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview,
+.cometchat-message-bubble-incoming .cometchat-text-bubble__link-preview {
+  background: var(--cometchat-neutral-color-300);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-content,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-content,
+.cometchat-message-bubble-incoming .cometchat-text-bubble__link-preview-content {
+  background: var(--cometchat-neutral-color-400);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview:hover .cometchat-text-bubble__link-preview-content,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview:hover .cometchat-text-bubble__link-preview-content,
+.cometchat-message-bubble-incoming .cometchat-text-bubble__link-preview:hover .cometchat-text-bubble__link-preview-content {
+  background: var(--cometchat-neutral-color-500);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-title,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-title,
+.cometchat-message-bubble-incoming .cometchat-text-bubble__link-preview-title {
+  color: var(--cometchat-neutral-color-900);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-description,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-description,
+.cometchat-message-bubble-incoming .cometchat-text-bubble__link-preview-description {
+  color: var(--cometchat-neutral-color-900);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-domain,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__link-preview-domain,
+.cometchat-message-bubble-incoming .cometchat-text-bubble__link-preview-domain {
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* ============================================
+   Link Preview - Outgoing (Sender) Styles
+   Matches React UIKit cometchat-link-bubble-outgoing
+   ============================================ */
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview,
+.cometchat-message-bubble-outgoing .cometchat-text-bubble__link-preview {
+  background: var(--cometchat-primary-color);
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-content,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-content,
+.cometchat-message-bubble-outgoing .cometchat-text-bubble__link-preview-content {
+  background: var(--cometchat-extended-primary-color-900);
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview:hover .cometchat-text-bubble__link-preview-content,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview:hover .cometchat-text-bubble__link-preview-content,
+.cometchat-message-bubble-outgoing .cometchat-text-bubble__link-preview:hover .cometchat-text-bubble__link-preview-content {
+  background: var(--cometchat-extended-primary-color-800);
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-title,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-title,
+.cometchat-message-bubble-outgoing .cometchat-text-bubble__link-preview-title {
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-description,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-description,
+.cometchat-message-bubble-outgoing .cometchat-text-bubble__link-preview-description {
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-domain,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__link-preview-domain,
+.cometchat-message-bubble-outgoing .cometchat-text-bubble__link-preview-domain {
+  color: var(--cometchat-static-white);
+}
+
+/* ============================================
+   Element: Translation Section
+   ============================================ */
+
+.cometchat-text-bubble__translation-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-text-bubble-translation-container-gap, var(--cometchat-spacing-2, 8px));
+}
+
+.cometchat-text-bubble__translation-separator {
+  height: 1px;
+  background: var(--cometchat-text-bubble-translation-separator-background, var(--cometchat-border-color-light));
+  margin: var(--cometchat-text-bubble-translation-separator-margin, var(--cometchat-margin-1, 4px) 0);
+}
+
+.cometchat-text-bubble__translation-label {
+  font: var(--cometchat-text-bubble-translation-label-font, var(--cometchat-font-caption2-regular));
+  color: var(--cometchat-text-bubble-translation-label-color, var(--cometchat-text-color-tertiary));
+}
+
+.cometchat-text-bubble__translation-text {
+  font: var(--cometchat-text-bubble-translation-text-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-text-bubble-translation-text-color, var(--cometchat-text-color-primary));
+  white-space: pre-wrap;
+}
+
+/* ============================================
+   Element: Body
+   ============================================ */
+
+/**
+ * Container for the body content of the text bubble
+ * @see Requirements 1.4
+ */
+.cometchat-text-bubble__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   Element: Body Text
+   ============================================ */
+
+/**
+ * Styles for the text content inside the text bubble
+ * @see Requirements 1.2, 1.4
+ */
+.cometchat-text-bubble__body-text {
+  margin: 0;
+  word-break: break-word;
+  text-align: left;
+  white-space: pre-line;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  padding-top: var(--cometchat-padding-1);
+}
+
+/* Emoji variant for body text */
+.cometchat-text-bubble .cometchat-text-bubble__body-text.cometchat-text-bubble__body-text-emoji {
+  font: var(--cometchat-font-title-regular);
+}
+
+/* ============================================
+   Element: Content
+   ============================================ */
+
+.cometchat-text-bubble__content {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+/* ============================================
+   Element: Text
+   ============================================ */
+
+.cometchat-text-bubble__text {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/**
+ * Truncated text state
+ * @see Requirements 4.1
+ */
+.cometchat-text-bubble__text--truncated {
+  max-height: var(--cometchat-text-bubble-text-truncated-max-height, 80px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* .cometchat-text-bubble__text--truncated::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(transparent, var(--cometchat-background-color-01));
+} */
+
+/* ============================================
+   Element: Read More/Less
+   @see Requirements 8.1, 8.2, 8.3, 8.4
+   ============================================ */
+
+/**
+ * Read more container - positions button at bottom right
+ */
+.cometchat-text-bubble__read-more {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: var(--cometchat-text-bubble-read-more-margin-top, var(--cometchat-margin-1, 4px));
+}
+
+/**
+ * Base read more button styles
+ * @see Requirement 8.4: Consistent padding and font styling across both bubble types
+ */
+.cometchat-text-bubble__read-more-button {
+  font: var(--cometchat-font-caption1-medium);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+
+
+/* Hover state for read more button */
+.cometchat-text-bubble__read-more-button:hover {
+  opacity: 0.8;
+}
+
+/* Focus state for accessibility */
+.cometchat-text-bubble__read-more-button:focus {
+  outline: none;
+  text-decoration: underline;
+}
+
+/* Legacy class support - keeping for backwards compatibility */
+.cometchat-text-bubble__read-less {
+  font: var(--cometchat-font-caption1-medium);
+  cursor: pointer;
+  display: flex;
+  align-self: flex-end;
+  width: fit-content;
+  padding: var(--cometchat-text-bubble-read-less-padding, var(--cometchat-padding-1, 4px) 0);
+  background: transparent;
+  border: none;
+  transition: color 0.2s ease;
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__read-more-button{
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__read-more-button {
+  color: var(--cometchat-primary-color);
+}
+
+.cometchat-text-bubble__read-less:hover {
+  opacity: 0.8;
+}
+
+.cometchat-text-bubble__read-less:focus {
+  outline: none;
+  text-decoration: underline;
+}
+
+/* ============================================
+   Rich Text Element Styling
+   @see Requirements 1.2, 2.2, 3.2, 4.2
+   ============================================ */
+
+/**
+ * Base content styling for rich text
+ */
+.cometchat-text-bubble__content strong,
+.cometchat-text-bubble__content em,
+.cometchat-text-bubble__content u,
+.cometchat-text-bubble__content s,
+.cometchat-text-bubble__content code,
+.cometchat-text-bubble__content pre,
+.cometchat-text-bubble__content blockquote,
+.cometchat-text-bubble__content ul,
+.cometchat-text-bubble__content ol,
+.cometchat-text-bubble__content a {
+  word-break: break-word;
+}
+
+/**
+ * Bold text — uses font shorthand with bold variant
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content strong {
+  font: var(--cometchat-font-body-bold);
+}
+
+/**
+ * Italic text
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content em {
+  font-style: italic;
+}
+
+/**
+ * Underline text
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content u {
+  text-decoration: underline;
+}
+
+/**
+ * Strikethrough text
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content s {
+  text-decoration: line-through;
+}
+
+/**
+ * Inline code
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content code {
+  font: var(--cometchat-text-bubble-code-font, 0.9em/1.4 'Courier New', 'Consolas', monospace);
+  padding: var(--cometchat-text-bubble-code-padding, var(--cometchat-padding) var(--cometchat-padding-1));
+  border-radius: var(--cometchat-text-bubble-code-border-radius, var(--cometchat-radius-1));
+}
+
+/* Inline code in incoming messages */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content code,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content code {
+  background: var(--cometchat-background-color-02);
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* Inline code in outgoing messages */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content code,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content code {
+  background: var(--cometchat-outgoing-code-background);
+  color: var(--cometchat-static-white);
+}
+
+/**
+ * Code blocks
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content pre {
+  font: var(--cometchat-text-bubble-pre-font, 0.9em/1.4 'Courier New', 'Consolas', monospace);
+  padding: var(--cometchat-text-bubble-pre-padding, var(--cometchat-padding-2) var(--cometchat-padding-3));
+  border-radius: var(--cometchat-text-bubble-pre-border-radius, var(--cometchat-radius-2));
+  overflow-x: auto;
+  max-width: 100%;
+  margin: var(--cometchat-text-bubble-pre-margin, var(--cometchat-margin-1) 0);
+  white-space: pre;
+  display: block;
+  width: fit-content;
+  box-sizing: border-box;
+}
+
+/* Code blocks in incoming messages */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content pre,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content pre {
+  background: var(--cometchat-background-color-02);
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* Code blocks in outgoing messages */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content pre,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content pre {
+  background: var(--cometchat-outgoing-code-background);
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble__content pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/**
+ * Blockquote
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content blockquote {
+  margin: var(--cometchat-text-bubble-blockquote-margin, var(--cometchat-margin-2) 0);
+  padding-left: var(--cometchat-text-bubble-blockquote-padding-left, var(--cometchat-padding-3));
+  border-left: 3px solid;
+  font-style: italic;
+}
+
+/* Blockquote in incoming messages */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content blockquote,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content blockquote {
+  border-left-color: var(--cometchat-neutral-color-600);
+  color: var(--cometchat-neutral-color-700);
+}
+
+/* Blockquote in outgoing messages */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content blockquote,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content blockquote {
+  border-left-color: var(--cometchat-outgoing-border-translucent);
+  color: var(--cometchat-outgoing-text-translucent);
+}
+
+/**
+ * Unordered lists
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content ul {
+  margin: var(--cometchat-text-bubble-list-margin, var(--cometchat-margin-2) 0);
+  padding-left: var(--cometchat-text-bubble-list-padding-left, var(--cometchat-padding-5));
+  list-style-type: disc;
+}
+
+/**
+ * Ordered lists
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content ol {
+  margin: var(--cometchat-text-bubble-list-margin, var(--cometchat-margin-2) 0);
+  padding-left: var(--cometchat-text-bubble-list-padding-left, var(--cometchat-padding-5));
+  list-style-type: decimal;
+}
+
+/**
+ * Nested lists inside list items — remove extra margin
+ */
+.cometchat-text-bubble__content li ul,
+.cometchat-text-bubble__content li ol {
+  margin: 0;
+}
+
+/**
+ * List items
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content li {
+  margin: var(--cometchat-text-bubble-li-margin, var(--cometchat-margin-1) 0);
+  line-height: 1.5;
+}
+
+.cometchat-text-bubble__content li:first-child {
+  margin-top: 0;
+}
+
+.cometchat-text-bubble__content li:last-child {
+  margin-bottom: 0;
+}
+
+/**
+ * Links
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content a {
+  text-decoration: underline;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+/* Links in incoming messages */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content a,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content a {
+  color: var(--cometchat-info-color);
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:hover,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:hover {
+  opacity: 0.8;
+}
+
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:focus,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content a:focus {
+  outline: 2px solid var(--cometchat-info-color);
+  outline-offset: 2px;
+}
+
+/* Links in outgoing messages */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a {
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:hover,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:hover {
+  opacity: 0.8;
+}
+
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:focus,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content a:focus {
+  outline: 2px solid var(--cometchat-static-white);
+  outline-offset: 2px;
+}
+
+/**
+ * Headings
+ * @see Requirements 1.2, 2.2, 3.2, 4.2
+ */
+.cometchat-text-bubble__content h1 {
+  font: var(--cometchat-font-heading1-bold);
+  margin: var(--cometchat-text-bubble-h1-margin, var(--cometchat-margin-3) 0 var(--cometchat-margin-2));
+}
+
+.cometchat-text-bubble__content h2 {
+  font: var(--cometchat-font-heading2-bold);
+  margin: var(--cometchat-text-bubble-h2-margin, var(--cometchat-margin-3) 0 var(--cometchat-margin-2));
+}
+
+.cometchat-text-bubble__content h3 {
+  font: var(--cometchat-font-heading3-bold);
+  margin: var(--cometchat-text-bubble-h3-margin, var(--cometchat-margin-2) 0 var(--cometchat-margin-1));
+}
+
+.cometchat-text-bubble__content h4 {
+  font: var(--cometchat-font-heading4-bold);
+  margin: var(--cometchat-text-bubble-h4-margin, var(--cometchat-margin-2) 0 var(--cometchat-margin-1));
+}
+
+.cometchat-text-bubble__content h5,
+.cometchat-text-bubble__content h6 {
+  font: var(--cometchat-font-body-bold);
+  margin: var(--cometchat-text-bubble-h5-margin, var(--cometchat-margin-2) 0 var(--cometchat-margin-1));
+}
+
+/**
+ * Paragraphs
+ */
+.cometchat-text-bubble__content p {
+  margin: 0;
+}
+
+.cometchat-text-bubble__content p + p {
+  margin-top: var(--cometchat-text-bubble-paragraph-spacing, var(--cometchat-margin-2));
+}
+
+/* Legacy support for .cometchat-text-bubble__text selector */
+.cometchat-text-bubble__text strong {
+  font: var(--cometchat-font-body-bold);
+}
+
+.cometchat-text-bubble__text em {
+  font-style: italic;
+}
+
+.cometchat-text-bubble__text u {
+  text-decoration: underline;
+}
+
+.cometchat-text-bubble__text s {
+  text-decoration: line-through;
+}
+
+.cometchat-text-bubble__text code {
+  font: var(--cometchat-text-bubble-code-font, 0.9em/1.4 'Courier New', 'Consolas', monospace);
+  padding: var(--cometchat-text-bubble-code-padding, var(--cometchat-padding) var(--cometchat-padding-1));
+  border-radius: var(--cometchat-text-bubble-code-border-radius, var(--cometchat-radius-1));
+}
+
+/* Inline code in incoming messages (legacy __text selector) */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__text code,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__text code {
+  background: var(--cometchat-background-color-02);
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* Inline code in outgoing messages (legacy __text selector) */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__text code,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__text code {
+  background: var(--cometchat-outgoing-code-background);
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble__text pre {
+  font: var(--cometchat-text-bubble-pre-font, 0.9em/1.4 'Courier New', 'Consolas', monospace);
+  padding: var(--cometchat-text-bubble-pre-padding, var(--cometchat-padding-2) var(--cometchat-padding-3));
+  border-radius: var(--cometchat-text-bubble-pre-border-radius, var(--cometchat-radius-2));
+  overflow-x: auto;
+  max-width: 100%;
+  margin: var(--cometchat-text-bubble-pre-margin, var(--cometchat-margin-1) 0);
+  white-space: pre;
+  display: block;
+  width: fit-content;
+  box-sizing: border-box;
+}
+
+/* Code blocks in incoming messages (legacy __text selector) */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__text pre,
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__text pre {
+  background: var(--cometchat-background-color-02);
+  color: var(--cometchat-neutral-color-900);
+}
+
+/* Code blocks in outgoing messages (legacy __text selector) */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__text pre,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__text pre {
+  background: var(--cometchat-outgoing-code-background);
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble__text pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+.cometchat-text-bubble__text ul,
+.cometchat-text-bubble__text ol {
+  margin: var(--cometchat-text-bubble-list-margin, var(--cometchat-margin-2) 0);
+  padding-left: var(--cometchat-text-bubble-list-padding-left, var(--cometchat-padding-5));
+}
+
+.cometchat-text-bubble__text li ul,
+.cometchat-text-bubble__text li ol {
+  margin: 0;
+}
+
+.cometchat-text-bubble__text li {
+  margin: var(--cometchat-text-bubble-li-margin, var(--cometchat-margin-1) 0);
+}
+
+.cometchat-text-bubble__text h1 {
+  font: var(--cometchat-font-heading1-bold);
+  margin: var(--cometchat-text-bubble-h1-margin, var(--cometchat-margin-3) 0 var(--cometchat-margin-2));
+}
+
+.cometchat-text-bubble__text h2 {
+  font: var(--cometchat-font-heading2-bold);
+  margin: var(--cometchat-text-bubble-h2-margin, var(--cometchat-margin-3) 0 var(--cometchat-margin-2));
+}
+
+.cometchat-text-bubble__text h3 {
+  font: var(--cometchat-font-heading3-bold);
+  margin: var(--cometchat-text-bubble-h3-margin, var(--cometchat-margin-2) 0 var(--cometchat-margin-1));
+}
+
+.cometchat-text-bubble__text h4 {
+  font: var(--cometchat-font-heading4-bold);
+  margin: var(--cometchat-text-bubble-h4-margin, var(--cometchat-margin-2) 0 var(--cometchat-margin-1));
+}
+
+.cometchat-text-bubble__text h5,
+.cometchat-text-bubble__text h6 {
+  font: var(--cometchat-font-body-bold);
+  margin: var(--cometchat-text-bubble-h5-margin, var(--cometchat-margin-2) 0 var(--cometchat-margin-1));
+}
+
+.cometchat-text-bubble__text p {
+  margin: 0;
+}
+
+.cometchat-text-bubble__text p + p {
+  margin-top: var(--cometchat-text-bubble-paragraph-spacing, var(--cometchat-margin-2));
+}
+
+/* ============================================
+   Mention Styling
+   
+   Global mention classes (.cometchat-mentions, .cometchat-mentions-you,
+   .cometchat-mentions-other, .cometchat-mentions-incoming,
+   .cometchat-mentions-outgoing) are defined in mention-styles.css.
+   
+   These rules provide legacy support for the BEM-scoped mention
+   classes within the text bubble component.
+   ============================================ */
+
+/**
+ * Legacy base mention styling (BEM scoped)
+ * Uses font shorthand with medium variant for mention weight
+ * @see Requirements 5.1
+ */
+.cometchat-text-bubble__mention {
+  font: var(--cometchat-font-body-medium);
+  cursor: pointer;
+  border-radius: var(--cometchat-radius);
+  padding: 0 var(--cometchat-padding);
+}
+
+/**
+ * Legacy self mention (current user) — BEM scoped
+ * @see Requirements 5.2
+ */
+.cometchat-text-bubble__mention--self {
+  background: var(--cometchat-mention-self-background);
+  color: var(--cometchat-warning-color);
+}
+
+/**
+ * Legacy other user mention — BEM scoped
+ * @see Requirements 5.3
+ */
+.cometchat-text-bubble__mention--other {
+  background: var(--cometchat-mention-other-background);
+  color: var(--cometchat-text-color-highlight);
+}
+
+/**
+ * Legacy channel mention (@all) — BEM scoped
+ * @see Requirements 5.4
+ */
+.cometchat-text-bubble__mention--channel {
+  background: var(--cometchat-mention-self-background);
+  color: var(--cometchat-warning-color);
+}
+
+/* ============================================
+   URL Link Styling
+   ============================================ */
+
+/**
+ * URL links
+ * @see Requirements 6.4
+ */
+/* ============================================
+   Selection Highlight Styles
+   Ensure text selection is visible on both
+   incoming and outgoing bubbles.
+   
+   NOTE: Rich text content injected via [innerHTML]
+   does not receive Angular's _ngcontent attribute,
+   so we target specific rich-text elements explicitly
+   to guarantee the ::selection pseudo-element applies
+   regardless of view encapsulation.
+   ============================================ */
+
+.cometchat-text-bubble-outgoing ::selection,
+.cometchat-text-bubble.cometchat-text-bubble-outgoing ::selection {
+  background: var(--cometchat-outgoing-selection-background);
+  color: var(--cometchat-static-white);
+}
+
+.cometchat-text-bubble-incoming ::selection,
+.cometchat-text-bubble.cometchat-text-bubble-incoming ::selection {
+  background: var(--cometchat-primary-color);
+  color: var(--cometchat-static-white);
+}
+
+/* ============================================
+   Rich Text Selection Highlight
+   
+   Angular's emulated ViewEncapsulation scopes CSS
+   selectors with _ngcontent attributes. Content
+   injected via [innerHTML] (rich text: bold, italic,
+   code, lists, etc.) does NOT receive these attributes.
+   
+   The ::selection pseudo-element on the parent div
+   covers the div's own text nodes, but child elements
+   rendered via innerHTML need their own ::selection
+   rules applied through :host ::ng-deep to pierce
+   the encapsulation boundary.
+   ============================================ */
+
+:host ::ng-deep .cometchat-text-bubble-outgoing .cometchat-text-bubble__text ::selection,
+:host ::ng-deep .cometchat-text-bubble-outgoing .cometchat-text-bubble__content ::selection {
+  background: var(--cometchat-outgoing-selection-background) !important;
+  color: var(--cometchat-static-white) !important;
+}
+
+:host ::ng-deep .cometchat-text-bubble-incoming .cometchat-text-bubble__text ::selection,
+:host ::ng-deep .cometchat-text-bubble-incoming .cometchat-text-bubble__content ::selection {
+  background: var(--cometchat-primary-color) !important;
+  color: var(--cometchat-static-white) !important;
+}
+
+.cometchat-text-bubble__link,
+.cometchat-text-bubble__text a {
+  color: var(--cometchat-info-color);
+  text-decoration: none;
+  cursor: pointer;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.cometchat-text-bubble__link:hover,
+.cometchat-text-bubble__text a:hover {
+  text-decoration: underline;
+}
+
+.cometchat-text-bubble__link:focus,
+.cometchat-text-bubble__text a:focus {
+  outline: none;
+  text-decoration: underline;
+}
+

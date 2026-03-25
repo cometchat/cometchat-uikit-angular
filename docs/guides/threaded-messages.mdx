@@ -1,0 +1,255 @@
+---
+title: "Threaded Messages"
+sidebarTitle: "Threaded Messages"
+description: "Implement threaded message replies with parent context, reply list, and focused thread composer in CometChat Angular UIKit."
+---
+
+<Accordion title="AI Integration Quick Reference">
+
+| Field | Value |
+| --- | --- |
+| Package | `@cometchat/chat-uikit-angular` |
+| Key components | `cometchat-thread-header`, `cometchat-message-list`, `cometchat-message-composer` |
+| Init | `CometChatUIKit.init(uiKitSettings)` then `CometChatUIKit.login("UID")` |
+| Entry point | `cometchat-message-list` `threadRepliesClick` output opens thread view from group messages |
+| Sample app | [GitHub](https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app) |
+| Related | [All Guides](/guides/overview) |
+
+</Accordion>
+
+Threaded messages let users create sub-conversations by replying to specific messages in group chats. This reduces clutter and keeps discussions focused.
+
+Before starting, complete the [Integration Guide](/integration).
+
+---
+
+## Components
+
+| Component / Selector | Role |
+|:---|:---|
+| `cometchat-threaded-messages` | Main container for threaded messages |
+| `cometchat-thread-header` | Displays parent message and controls |
+| `cometchat-message-list` | Shows messages filtered by `parentMessageId` |
+| `cometchat-message-composer` | Input for composing threaded replies |
+
+---
+
+## Implementation Steps
+
+### 1. Thread State Management
+
+Create a component that tracks the parent message the user clicked "Reply in Thread" on. When set, show the threaded messages side panel.
+
+```typescript expandable
+import { Component, OnDestroy } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-chat-home',
+  standalone: true,
+  imports: [],
+  template: `<!-- see steps below -->`
+})
+export class ChatHomeComponent implements OnDestroy {
+  threadedMessage: CometChat.BaseMessage | undefined;
+  showThreadPanel = false;
+
+  private subscriptions: Subscription[] = [];
+
+  onThreadRepliesClick(message: CometChat.BaseMessage): void {
+    this.threadedMessage = message;
+    this.showThreadPanel = true;
+  }
+
+  closeThread(): void {
+    this.threadedMessage = undefined;
+    this.showThreadPanel = false;
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+}
+```
+
+---
+
+### 2. Thread Trigger from Group Messages
+
+Wire the `threadRepliesClick` output on `cometchat-message-list`. When a user clicks the thread reply icon on any message, this fires with the parent message object.
+
+```html
+<cometchat-message-list
+  [group]="selectedGroup"
+  (threadRepliesClick)="onThreadRepliesClick($event)">
+</cometchat-message-list>
+```
+
+---
+
+### 3. Threaded Messages Component
+
+Render the thread panel with the parent message context, reply list filtered by `parentMessageId`, and a composer scoped to the thread.
+
+```html expandable
+@if (showThreadPanel && threadedMessage) {
+  <div class="cometchat-thread-panel">
+    <cometchat-thread-header
+      [message]="threadedMessage"
+      (closeClick)="closeThread()">
+    </cometchat-thread-header>
+
+    <cometchat-message-list
+      [group]="selectedGroup"
+      [parentMessageId]="threadedMessage.getId()">
+    </cometchat-message-list>
+
+    <cometchat-message-composer
+      [group]="selectedGroup"
+      [parentMessageId]="threadedMessage.getId()">
+    </cometchat-message-composer>
+  </div>
+}
+```
+
+---
+
+### 4. Thread Panel with Blocked Composer Fallback
+
+When the composer is blocked (e.g., permissions), show a fallback message instead.
+
+```html expandable
+@if (showThreadPanel && threadedMessage) {
+  <div class="cometchat-thread-panel">
+    <cometchat-thread-header
+      [message]="threadedMessage"
+      (closeClick)="closeThread()">
+    </cometchat-thread-header>
+
+    <cometchat-message-list
+      [group]="selectedGroup"
+      [parentMessageId]="threadedMessage.getId()">
+    </cometchat-message-list>
+
+    @if (showComposer) {
+      <cometchat-message-composer
+        [group]="selectedGroup"
+        [parentMessageId]="threadedMessage.getId()">
+      </cometchat-message-composer>
+    } @else {
+      <div class="message-composer-blocked">
+        <div class="message-composer-blocked__text">
+          Cannot send messages to this group.
+          <a>Check permissions</a>
+        </div>
+      </div>
+    }
+  </div>
+}
+```
+
+---
+
+### 5. Full Component Example
+
+A complete standalone component wiring thread state, the trigger, and the panel together.
+
+```typescript expandable
+import { Component, Input, OnDestroy } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatMessageListComponent,
+  CometChatMessageComposerComponent,
+  CometChatThreadHeaderComponent
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-threaded-chat',
+  standalone: true,
+  imports: [
+    CometChatMessageListComponent,
+    CometChatMessageComposerComponent,
+    CometChatThreadHeaderComponent
+  ],
+  template: `
+    <!-- Main message list with thread trigger -->
+    <cometchat-message-list
+      [group]="group"
+      (threadRepliesClick)="onThreadRepliesClick($event)">
+    </cometchat-message-list>
+
+    <!-- Thread side panel -->
+    @if (showThreadPanel && threadedMessage) {
+      <div class="cometchat-thread-panel">
+        <cometchat-thread-header
+          [message]="threadedMessage"
+          (closeClick)="closeThread()">
+        </cometchat-thread-header>
+
+        <cometchat-message-list
+          [group]="group"
+          [parentMessageId]="threadedMessage.getId()">
+        </cometchat-message-list>
+
+        <cometchat-message-composer
+          [group]="group"
+          [parentMessageId]="threadedMessage.getId()">
+        </cometchat-message-composer>
+      </div>
+    }
+  `
+})
+export class ThreadedChatComponent implements OnDestroy {
+  @Input() group!: CometChat.Group;
+
+  threadedMessage: CometChat.BaseMessage | undefined;
+  showThreadPanel = false;
+
+  onThreadRepliesClick(message: CometChat.BaseMessage): void {
+    this.threadedMessage = message;
+    this.showThreadPanel = true;
+  }
+
+  closeThread(): void {
+    this.threadedMessage = undefined;
+    this.showThreadPanel = false;
+  }
+
+  ngOnDestroy(): void {
+    this.threadedMessage = undefined;
+  }
+}
+```
+
+---
+
+## Feature Matrix
+
+| Feature | Component / Binding | Description |
+|:---|:---|:---|
+| Show thread option | `(threadRepliesClick)` on `cometchat-message-list` | Fires when user clicks thread reply icon |
+| Display thread messages | `cometchat-message-list` with `[parentMessageId]` | Filters messages to thread replies |
+| Compose reply | `cometchat-message-composer` with `[parentMessageId]` | Scopes new messages to the thread |
+| Thread header | `cometchat-thread-header` with `[message]` | Shows parent message context |
+| Close thread | `(closeClick)` on `cometchat-thread-header` | Closes the thread side panel |
+| Thread state | Component property `threadedMessage` | Tracks the active parent message |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Message List" href="/components/cometchat-message-list">
+    Render real-time message threads.
+  </Card>
+  <Card title="Thread Header" href="/components/cometchat-thread-header">
+    Customize the thread header component.
+  </Card>
+  <Card title="All Guides" href="/guides/overview">
+    Browse all feature and formatter guides.
+  </Card>
+  <Card title="Sample App" href="https://github.com/cometchat/cometchat-uikit-angular/tree/v5/sample-app">
+    Full working sample application on GitHub.
+  </Card>
+</CardGroup>

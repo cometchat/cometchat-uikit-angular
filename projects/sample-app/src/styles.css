@@ -1,0 +1,170 @@
+/* Import CometChat UIKit CSS variables */
+@import '../../cometchat-uikit/src/lib/styles/css-variables.css';
+
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--cometchat-font-family);
+  background: var(--cometchat-background-color-01);
+  color: var(--cometchat-text-color-primary);
+  height: 100%;
+  box-sizing: border-box;
+  /* Safe area: prevent content from going behind notch/status bar/home indicator */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ═══════════════════════════════════════════════════
+   UIKit Host Element Layout Fixes
+   Angular custom elements are inline by default and don't
+   participate in flex layout. These rules make UIKit
+   components stretch to fill their flex containers.
+   ═══════════════════════════════════════════════════ */
+
+cometchat-selector,
+cometchat-tabs,
+cometchat-messages,
+cometchat-threaded-messages,
+cometchat-user-details,
+cometchat-group-details,
+cometchat-empty-state {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Selector and messages fill available space in their panels */
+cometchat-selector {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Tabs stay pinned at the bottom */
+cometchat-tabs {
+  flex-shrink: 0;
+}
+
+/* Messages and threaded messages fill center/right panels */
+cometchat-messages,
+cometchat-threaded-messages {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Side panel components fill the right panel */
+cometchat-user-details,
+cometchat-group-details,
+cometchat-search-view {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Empty state fills center panel */
+cometchat-empty-state {
+  flex: 1;
+}
+
+/* UIKit component host elements inside flex wrappers */
+cometchat-conversations,
+cometchat-users,
+cometchat-groups,
+cometchat-call-logs,
+cometchat-message-list,
+cometchat-message-composer,
+cometchat-message-header,
+cometchat-thread-header {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* List components fill their panel */
+cometchat-conversations,
+cometchat-users,
+cometchat-groups,
+cometchat-call-logs,
+cometchat-message-list {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Header and composer stay fixed size */
+cometchat-message-header,
+cometchat-thread-header,
+cometchat-message-composer {
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   Thread panel: white background on the message list
+   to visually separate it from the main messages.
+   Must be global — Angular emulated encapsulation
+   prevents component CSS from reaching UIKit internals.
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-threaded-messages {
+  --cometchat-message-list-background: var(--cometchat-background-color-01);
+}
+
+/* ═══════════════════════════════════════════════════
+   Skip Navigation Link
+   Visually hidden by default, visible on keyboard focus.
+   ═══════════════════════════════════════════════════ */
+
+.cometchat-skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  z-index: 9999;
+}
+
+.cometchat-skip-link:focus {
+  position: fixed;
+  top: var(--cometchat-spacing-2);
+  left: var(--cometchat-spacing-2);
+  width: auto;
+  height: auto;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: nowrap;
+  background: var(--cometchat-primary-color);
+  color: var(--cometchat-static-white);
+  font: var(--cometchat-font-body-medium);
+  border-radius: var(--cometchat-radius-2);
+  text-decoration: none;
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   Global Focus-Visible Ring
+   Consistent keyboard focus indicator for all
+   interactive elements across the sample app.
+   ═══════════════════════════════════════════════════ */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible,
+[role="radio"]:focus-visible,
+[role="link"]:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}

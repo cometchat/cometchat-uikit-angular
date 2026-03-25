@@ -1,0 +1,75 @@
+<!--
+  CometChatThreadHeader Component Template
+  
+  Displays the header for threaded message views with:
+  - Close button to return to main chat
+  - Thread title and reply count
+  - Parent message rendered as a full message bubble with sender/receiver alignment
+  
+  Accessibility Features:
+  - role="banner" for semantic structure
+  - aria-label with preview and reply count
+  - Close button with aria-label="Close thread"
+  - Keyboard support: Enter/Space on close button, Escape on header
+  
+  Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 14.1-14.6
+-->
+
+<div 
+  class="cometchat cometchat-thread-header"
+  role="banner"
+  [attr.aria-label]="ariaLabel">
+
+  <!-- ==================== Top Bar: Title + Sender + Close Button ==================== -->
+  <div class="cometchat-thread-header__top-bar">
+    <div class="cometchat-thread-header__content">
+      <span class="cometchat-thread-header__title">
+        {{ 'thread_title' | translate }}
+      </span>
+      @if (senderName) {
+        <span class="cometchat-thread-header__sender-name">
+          {{ senderName }}
+        </span>
+      }
+    </div>
+
+    <div class="cometchat-thread-header__close-button-wrapper">
+      <button
+        type="button"
+        class="cometchat-thread-header__close-button"
+        [attr.aria-label]="closeButtonAriaLabel"
+        tabindex="0"
+        (click)="onCloseClick()"
+        (keydown)="onCloseKeydown($event)">
+        <span 
+          class="cometchat-thread-header__close-button-icon"
+          aria-hidden="true">
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== Parent Message Bubble ==================== -->
+  @if (parentMessage) {
+    <div class="cometchat-thread-header__bubble-wrapper">
+      <cometchat-message-bubble
+        [message]="parentMessage"
+        [alignment]="parentMessageAlignment"
+        [threadView]="emptyThreadView"
+        [options]="[]"
+        [disableInteraction]="true">
+      </cometchat-message-bubble>
+    </div>
+  }
+
+  <!-- ==================== Reply Count with Divider ==================== -->
+  <div class="cometchat-thread-header__reply-count">
+    <span class="cometchat-thread-header__reply-count-text">
+      {{ replyCountText }}
+    </span>
+    <span class="cometchat-thread-header__reply-count-divider"></span>
+  </div>
+
+  <ng-template #emptyThreadView></ng-template>
+
+</div>
