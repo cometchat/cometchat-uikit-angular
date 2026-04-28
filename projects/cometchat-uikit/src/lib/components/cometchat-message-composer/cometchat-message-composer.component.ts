@@ -1625,7 +1625,7 @@ export class CometChatMessageComposerComponent
           this.mentionAllLabel
         );
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Effect 2: Focused mention index scrolling
     // Ensures the focused item is visible when outside the viewport
@@ -1635,7 +1635,7 @@ export class CometChatMessageComposerComponent
       if (this.isMentionSuggestionsOpen()) {
         this.scrollMentionIntoView(index);
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Effect 3: Service signal fallback (hybrid approach)
     // Reacts to service state changes when no props are provided
@@ -1691,7 +1691,7 @@ export class CometChatMessageComposerComponent
           setTimeout(() => this.liveRegionPoliteText.set(''), 100);
         }, 0);
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Effect 5: Mention suggestions count announcement for screen readers
     // Announces the number of suggestions when the mentions panel opens
@@ -1705,7 +1705,7 @@ export class CometChatMessageComposerComponent
       if (isOpen && !isLoading && suggestions.length > 0) {
         this.announceMentionSuggestionsCount(suggestions.length);
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   // ==================== Lifecycle Hooks ====================

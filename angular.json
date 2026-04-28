@@ -43,6 +43,9 @@
           "options": {
             "browser": "projects/sample-app/src/main.ts",
             "tsConfig": "projects/sample-app/tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "@cometchat/calls-sdk-javascript"
+            ],
             "assets": [
               {
                 "glob": "**/*",

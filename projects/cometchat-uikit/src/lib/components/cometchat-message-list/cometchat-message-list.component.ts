@@ -1211,7 +1211,7 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
       // Explicitly mark for check to ensure OnPush component re-renders
       // when messages signal changes (e.g., receipt updates from SDK listeners)
       this.cdr.markForCheck();
-    });
+    }, { allowSignalWrites: true });
 
     // Effect for error handling
     effect(() => {
@@ -1219,12 +1219,12 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
       if (error && !this.effectiveHideError()) {
         this.handleServiceError(error);
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Effect for updating list state
     effect(() => {
       this.updateListState();
-    });
+    }, { allowSignalWrites: true });
   }
     private setupMessageListener(): void {
     CometChat.addMessageListener(

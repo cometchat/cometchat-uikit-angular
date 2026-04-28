@@ -601,7 +601,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
       this.detectAndAnnounceNewConversation(conversations, this.previousConversations);
 
       this.previousConversations = [...conversations];
-    });
+    }, { allowSignalWrites: true });
 
     // Typing indicator announcement effect (Requirement 18.5)
     effect(() => {
@@ -617,7 +617,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
           }
         }
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Error handling effect
     effect(() => {
@@ -625,7 +625,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
       if (error && !this.effectiveHideError()) {
         this.error.emit(error as CometChat.CometChatException);
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Dialog focus management effect
     effect(() => {
@@ -635,7 +635,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
           this.dialogOverlay?.nativeElement?.focus();
         }, 0);
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   // ==================== Lifecycle Hooks ====================

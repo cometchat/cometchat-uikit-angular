@@ -579,7 +579,7 @@
               <!-- Avatar -->
               @if (suggestion.isAllMention) {
                 <div class="cometchat-message-composer__mention-option-avatar cometchat-message-composer__mention-option-avatar--all">
-                  <span class="cometchat-message-composer__mention-all-icon">@</span>
+                  <span class="cometchat-message-composer__mention-all-icon">&#64;</span>
                 </div>
               } @else {
                 <cometchat-avatar
@@ -591,7 +591,7 @@
               <!-- Name & Subtitle -->
               <span class="cometchat-message-composer__mention-option-name">
                 @if (suggestion.isAllMention) {
-                  @{{ suggestion.name }}
+                  &#64;{{ suggestion.name }}
                 } @else {
                   {{ suggestion.name }}
                 }

@@ -10,6 +10,9 @@
     "sourceMap": true,
     "types": []
   },
+  "angularCompilerOptions": {
+    "strictTemplates": false
+  },
   "include": [
     "src/**/*.ts"
   ],

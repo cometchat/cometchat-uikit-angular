@@ -1,6 +1,6 @@
 {
   "name": "uikit-angular",
-  "version": "5.0.0-beta.1",
+  "version": "5.0.0-beta.3",
   "scripts": {
     "ng": "ng",
     "start": "ng serve sample-app",
@@ -28,6 +28,10 @@
     "css:audit": "npx ts-node projects/cometchat-uikit/scripts/css-audit.ts"
   },
   "private": true,
+  "browser": {
+    "path": false,
+    "fs": false
+  },
   "packageManager": "npm@10.9.3",
   "dependencies": {
     "@angular/common": "^21.0.0",

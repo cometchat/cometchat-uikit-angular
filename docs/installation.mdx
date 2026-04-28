@@ -13,6 +13,14 @@ This is a beta release. Install the exact beta version as shown below.
 npm install @cometchat/chat-uikit-angular@5.0.0-beta.2 @cometchat/chat-sdk-javascript
 ```
 
+<Info>
+  `@cometchat/chat-sdk-javascript` and `dompurify` are peer dependencies of the UIKit. npm may install them automatically, but if your project doesn't already have them, install them explicitly:
+
+  ```bash
+  npm install @cometchat/chat-sdk-javascript dompurify
+  ```
+</Info>
+
 Then import the CSS variables in your `angular.json` styles array or global stylesheet:
 
 ```css

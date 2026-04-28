@@ -694,7 +694,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
 
       // Update previous status
       this.previousUserStatus = currentStatus;
-    });
+    }, { allowSignalWrites: true });
 
     // Effect 2: Service signal fallback (hybrid approach)
     // Reacts to service state changes when no props are provided

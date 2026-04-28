@@ -2,14 +2,14 @@
   <div 
     class="cometchat-reaction-list"
     role="dialog"
-    aria-label="{{ 'message_bubble_reactions' | translate }}">
+    [attr.aria-label]="'message_bubble_reactions' | translate">
     
     <!-- Emoji Tabs (shown during loaded and loading states) -->
     @if (!hasError() || filteredReactions().length > 0) {
       <div 
         class="cometchat-reaction-list__tabs"
         role="tablist"
-        aria-label="{{ 'message_bubble_reactions' | translate }}">
+        [attr.aria-label]="'message_bubble_reactions' | translate">
         
         <!-- All Tab -->
         <button
@@ -63,7 +63,7 @@
         class="cometchat-reaction-list__shimmer"
         role="status"
         aria-live="polite"
-        aria-label="{{ 'message_bubble_reactions' | translate }}">
+        [attr.aria-label]="'message_bubble_reactions' | translate">
         @for (item of [1, 2, 3, 4]; track item) {
           <div class="cometchat-reaction-list__shimmer-item">
             <div class="cometchat-reaction-list__shimmer-item-icon"></div>
@@ -99,7 +99,7 @@
           <div 
             class="cometchat-reaction-list__list"
             role="list"
-            aria-label="{{ 'message_bubble_reactions' | translate }}"
+            [attr.aria-label]="'message_bubble_reactions' | translate"
             (scroll)="onScroll($event)">
             
             @for (reaction of filteredReactions(); track trackByReaction($index, reaction)) {

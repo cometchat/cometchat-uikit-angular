@@ -5,7 +5,7 @@
   [class.cometchat-message-list--thread]="!!parentMessageId"
   (keydown)="handleKeydown($event)"
   role="log"
-  aria-label="{{ 'message_list_aria_label' | translate }}"
+  [attr.aria-label]="'message_list_aria_label' | translate"
   aria-live="polite"
   [attr.aria-busy]="isFetchingPrevious() || isFetchingNext() || listState() === States.loading"
 >

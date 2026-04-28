@@ -50,7 +50,7 @@ function createBuffer(
     length: channelData[0].length,
     sampleRate: channelData[0].length / duration,
     numberOfChannels: channelData.length,
-    getChannelData: (i: number) => channelData?.[i] as Float32Array<ArrayBuffer>,
+    getChannelData: (i: number) => channelData?.[i] as unknown as Float32Array<ArrayBuffer>,
     copyFromChannel: AudioBuffer.prototype.copyFromChannel,
     copyToChannel: AudioBuffer.prototype.copyToChannel,
   };

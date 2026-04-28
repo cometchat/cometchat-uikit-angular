@@ -1,6 +1,6 @@
 {
   "name": "@cometchat/chat-uikit-angular",
-  "version": "5.0.0-beta.2",
+  "version": "5.0.0-beta.3",
   "license": "https://www.cometchat.com/legal-terms-of-service",
   "homepage": "https://www.cometchat.com",
   "repository": "https://github.com/cometchat/cometchat-uikit-angular",
@@ -26,7 +26,14 @@
   "peerDependencies": {
     "@angular/common": ">=17.0.0 <22.0.0",
     "@angular/core": ">=17.0.0 <22.0.0",
-    "@cometchat/chat-sdk-javascript": "^4.1.8"
+    "@cometchat/chat-sdk-javascript": "^4.1.8",
+    "@cometchat/calls-sdk-javascript": "^5.0.0-beta.1",
+    "dompurify": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@cometchat/calls-sdk-javascript": {
+      "optional": true
+    }
   },
   "dependencies": {
     "tslib": "^2.3.0"

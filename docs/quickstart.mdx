@@ -16,6 +16,14 @@ Follow these steps to integrate CometChat UIKit into your Angular application.
 npm install @cometchat/chat-uikit-angular
 ```
 
+<Warning>
+  `@cometchat/chat-sdk-javascript` and `dompurify` are required peer dependencies. npm may install them automatically alongside the UIKit, but this is not guaranteed — it depends on your npm version and whether there are version conflicts. If you see errors related to missing `CometChat` or `DOMPurify` at runtime, install them explicitly:
+
+  ```bash
+  npm install @cometchat/chat-sdk-javascript dompurify
+  ```
+</Warning>
+
 ## Step 2: Import Styles
 
 Add the CSS variables to your `angular.json`:

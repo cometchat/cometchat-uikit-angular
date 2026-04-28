@@ -11,7 +11,7 @@ import { CometChatMessageEvents } from './events/CometChatMessageEvents';
 import { MessageStatus } from './Enums/Enums';
 import { InitResult, LogoutResult } from './modals/CometChatUIKitInterfaces';
 import { CometChatLogger, LogLevel } from './utils/CometChatLogger';
-import { CometChatUIKitCalls } from './CometChatCalls';
+import { CometChatUIKitCalls, getCometChatCalls } from './CometChatCalls';
 
 /**
  * Interface for CometChat UIKit window object.
@@ -324,7 +324,7 @@ export class CometChatUIKit {
     return new Promise((resolve, reject) => {
       window.CometChatUiKit = {
         name: '@cometchat/chat-uikit-angular',
-        version: '5.0.0-beta.2',
+        version: '5.0.0-beta.3',
       };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
@@ -501,14 +501,14 @@ export class CometChatUIKit {
    */
   private static async initCalling(): Promise<void> {
     try {
-      const callsSDK = CometChatUIKitCalls;
+      const callsSDK = await getCometChatCalls();
       if (callsSDK) {
         const callAppSetting = CometChatUIKit._uiKitSettings?.getCallAppSettings()
-          ?? new CometChatUIKitCalls.CallAppSettingsBuilder()
+          ?? new callsSDK.CallAppSettingsBuilder()
             .setAppId(CometChatUIKit._uiKitSettings?.appId!)
             .setRegion(CometChatUIKit._uiKitSettings?.region!)
             .build();
-        return CometChatUIKitCalls.init(callAppSetting).then(
+        return callsSDK.init(callAppSetting).then(
           () => {
             // Calls SDK initialized successfully
           },
