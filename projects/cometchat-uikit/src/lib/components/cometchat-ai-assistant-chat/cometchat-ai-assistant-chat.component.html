@@ -1,0 +1,200 @@
+<cometchat-error-boundary style="display:contents" [componentName]="'AIAssistantChat'">
+<div class="cometchat-ai-assistant-chat">
+
+  <!-- Message Header -->
+  <div class="cometchat-ai-assistant-chat__header">
+    <cometchat-message-header
+      [user]="user()"
+      [showBackButton]="showBackButton()"
+      [hideVoiceCallButton]="true"
+      [hideVideoCallButton]="true"
+      [auxiliaryButtonView]="headerView"
+      (backClick)="onBackClick()"
+    >
+    </cometchat-message-header>
+
+    <!-- Header action buttons -->
+  <ng-template #headerView>
+      <div class="cometchat-ai-assistant-chat__header-actions">
+      <button
+        class="cometchat-ai-assistant-chat__header-icon-btn"
+        type="button"
+        [attr.aria-label]="'ai_assistant_chat_new_chat' | translate"
+        (click)="onNewChat()"
+      >
+        <span class="cometchat-ai-assistant-chat__header-icon cometchat-ai-assistant-chat__header-icon--new-chat" aria-hidden="true"></span>
+      </button>
+
+      <button
+        #historyToggleBtn
+        class="cometchat-ai-assistant-chat__header-icon-btn"
+        type="button"
+        [attr.aria-label]="'ai_assistant_chat_history' | translate"
+        [attr.aria-expanded]="isSidebarOpen()"
+        [attr.aria-controls]="'ai-assistant-chat-sidebar'"
+        (click)="onToggleSidebar(historyToggleBtn)"
+      >
+        <span class="cometchat-ai-assistant-chat__header-icon cometchat-ai-assistant-chat__header-icon--history" aria-hidden="true"></span>
+      </button>
+    </div>
+  </ng-template>
+  </div>
+
+  <!-- Main content area -->
+  <div class="cometchat-ai-assistant-chat__body">
+
+    <!-- Message List — always rendered; isAgentChat controls fetch behavior -->
+    <!-- When parentMessageId is null: shows emptyView (greeting + suggestions) -->
+    <!-- When parentMessageId is set: fetches and shows that thread's messages -->
+    <div class="cometchat-ai-assistant-chat__message-list-wrapper">
+      @for (key of [newChatKey()]; track key) {
+      <cometchat-message-list
+        [user]="user()"
+        [parentMessageId]="messageListParentId() ?? undefined"
+        [isAgentChat]="true"
+        [emptyView]="agentEmptyState"
+        [appendView]="isStreaming() ? streamBubbleFooter : undefined"
+        [bubbleFooterView]="agentBubbleFooter ?? null"
+        [hideReplyInThreadOption]="messageListConfig().hideReplyInThreadOption"
+        [hideCopyMessageOption]="messageListConfig().hideCopyMessageOption"
+        [hideDeleteMessageOption]="messageListConfig().hideDeleteMessageOption"
+        [hideEditMessageOption]="messageListConfig().hideEditMessageOption"
+        [hideReactionOption]="messageListConfig().hideReactionOption"
+        [disableInteraction]="messageListConfig().disableInteraction"
+        [hideDateSeparator]="true"
+        [hideStickyDate]="true"
+        [hideGroupActionMessages]="true"
+        [disableSoundForMessages]="true"
+      >
+      </cometchat-message-list>
+      }
+    </div>
+
+    <!-- Composer area — send button view handles stop/send inside the composer -->
+    <div
+      class="cometchat-ai-assistant-chat__composer-area"
+      [class.cometchat-ai-assistant-chat__composer-area--streaming]="isStreaming()"
+    >
+      <cometchat-message-composer
+        [user]="user()"
+        [parentMessageId]="activeParentMessageId() ?? undefined"
+        [placeholderText]="'ai_assistant_chat_composer_placeholder'"
+        [hideAttachmentButton]="true"
+        [hideVoiceRecordingButton]="true"
+        [hideStickersButton]="true"
+        [hideLiveReaction]="true"
+        [hideEmojiKeyboardButton]="true"
+        [disableMentions]="true"
+        [sendButtonView]="sendButtonTemplate"
+        (textChange)="onComposerTextChange($event)"
+      >
+      </cometchat-message-composer>
+    </div>
+  </div>
+
+  <!-- Chat History Sidebar -->
+  @if (isSidebarOpen()) {
+    <div
+      #sidebarContainer
+      id="ai-assistant-chat-sidebar"
+      class="cometchat-ai-assistant-chat__sidebar"
+      role="complementary"
+      [attr.aria-label]="'ai_assistant_chat_history_title' | translate"
+    >
+      <cometchat-ai-assistant-chat-history
+        [user]="user()"
+        [loadLastAgentConversation]="loadLastAgentConversation()"
+        (messageClick)="onHistoryMessageClick($event)"
+        (newChatClick)="onHistoryNewChatClick($event)"
+        (closeClick)="onHistoryCloseClick()"
+      >
+      </cometchat-ai-assistant-chat-history>
+    </div>
+  }
+
+</div>
+</cometchat-error-boundary>
+
+<!-- Send / Stop button rendered inside the composer -->
+<ng-template #sendButtonTemplate>
+  <div
+    class="cometchat-ai-assistant-chat__send-button-view"
+    [class.cometchat-ai-assistant-chat__send-button-view--streaming]="isStreaming()"
+    [class.cometchat-ai-assistant-chat__send-button-view--active]="hasComposerText() && !isStreaming()"
+    [attr.aria-label]="isStreaming() ? ('ai_assistant_chat_stop_streaming' | translate) : ('send_message' | translate)"
+    role="button"
+    tabindex="0"
+    (click)="isStreaming() ? onStopStreaming() : onSendClick()"
+    (keydown.enter)="isStreaming() ? onStopStreaming() : onSendClick()"
+    (keydown.space)="isStreaming() ? onStopStreaming() : onSendClick()"
+  >
+    <span class="cometchat-ai-assistant-chat__send-button-icon" aria-hidden="true"></span>
+  </div>
+</ng-template>
+
+<!-- Agent bubble footer: copy button shown below each AI response -->
+<ng-template #agentBubbleFooterTpl let-message>
+  <div class="cometchat-ai-assistant-chat__bubble-footer">
+    <button
+      class="cometchat-ai-assistant-chat__bubble-copy-btn"
+      type="button"
+      [attr.aria-label]="'copy_message' | translate"
+      (click)="onCopyMessage(message)"
+    >
+      <span class="cometchat-ai-assistant-chat__bubble-copy-icon" aria-hidden="true"></span>
+    </button>
+  </div>
+</ng-template>
+
+<!-- Stream bubble footer: thinking/streaming state rendered as a message bubble in the list -->
+<ng-template #streamBubbleFooter>
+  <div class="cometchat-ai-assistant-chat__stream-bubble-wrapper">
+    <div class="cometchat-ai-assistant-chat__stream-bubble-avatar">
+      <cometchat-avatar [image]="user().getAvatar()" [name]="user().getName()"></cometchat-avatar>
+    </div>
+    <cometchat-stream-message-bubble [chatId]="user().getUid()" />
+  </div>
+</ng-template>
+
+<!-- Empty state: greeting + intro + suggestion pills -->
+<ng-template #agentEmptyState>
+  <div class="cometchat-ai-assistant-chat__empty-state">
+    <div class="cometchat-ai-assistant-chat__empty-state-content">
+
+      <div class="cometchat-ai-assistant-chat__empty-state-icon">
+        <img src="assets/Profile.png" [attr.alt]="'ai_assistant_chat_title' | translate" />
+      </div>
+
+      @if (greetingTemplate()) {
+        <ng-container
+          [ngTemplateOutlet]="greetingTemplate()!"
+          [ngTemplateOutletContext]="{ $implicit: user() }"
+        />
+      } @else {
+        <div class="cometchat-ai-assistant-chat__empty-state-greeting-message">
+          {{ greetingMessage() }}
+        </div>
+        <div class="cometchat-ai-assistant-chat__empty-state-intro-message">
+          {{ introMessage() }}
+        </div>
+      }
+
+      @if (showSuggestedMessages() && availableSuggestions().length > 0) {
+        <div class="cometchat-ai-assistant-chat__empty-state-suggested-messages">
+          @for (suggestion of availableSuggestions(); track suggestion) {
+            <button
+              class="cometchat-ai-assistant-chat__suggested-message-pill"
+              type="button"
+              [attr.aria-label]="suggestion"
+              (click)="onSuggestionClick(suggestion)"
+            >
+              {{ suggestion }}
+              <span class="cometchat-ai-assistant-chat__suggested-message-icon" aria-hidden="true"></span>
+            </button>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+</ng-template>

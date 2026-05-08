@@ -49,22 +49,31 @@ const REPORT_PATH = path.join(
 
 /**
  * Returns the set of @Input() property names declared in a TypeScript source.
- * Handles both:
+ * Handles:
  *   @Input() propName: Type
  *   @Input() propName = value
  *   @Input('alias') propName
+ *   Multiple @Input() declarations on the same line (semicolon-separated)
  */
 function extractInputNames(source: string): Set<string> {
   const names = new Set<string>();
+
+  // Strategy 1: global regex scan — finds ALL @Input() occurrences regardless of line layout.
+  // Matches: @Input(...)  <optional whitespace>  <identifier>
+  const globalPattern = /@Input\s*\([^)]*\)\s+(\w+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = globalPattern.exec(source)) !== null) {
+    names.add(m[1]);
+  }
+
+  // Strategy 2: line-by-line fallback for decorator-on-own-line style:
+  //   @Input()
+  //   propName: Type
   const lines = source.split('\n');
   for (let i = 0; i < lines.length; i++) {
     if (/@Input\s*\(/.test(lines[i])) {
-      // Try same line
-      const sameLine = lines[i].match(/@Input[^)]*\)\s+(\w+)/);
-      if (sameLine) {
-        names.add(sameLine[1]);
-        continue;
-      }
+      // If strategy 1 already captured something on this line, skip
+      if (/@Input\s*\([^)]*\)\s+\w+/.test(lines[i])) continue;
       // Try next non-empty line
       for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
         const nextLine = lines[j].match(/^\s*(\w+)\s*[=:?!]/);
@@ -75,6 +84,7 @@ function extractInputNames(source: string): Set<string> {
       }
     }
   }
+
   return names;
 }
 

@@ -4,7 +4,8 @@
     <div class="cometchat-selector__panel">
       <cometchat-conversations
         [menuView]="conversationsMenu"
-        [showSearchBar]="false"
+        [showSearchBar]="true"
+        (searchBarClick)="onSearchBarClick()"
         (itemClick)="onConversationClick($event)"
       ></cometchat-conversations>
     </div>

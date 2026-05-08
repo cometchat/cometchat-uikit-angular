@@ -1,0 +1,49 @@
+---
+title: "CometChatAIAssistantMessageBubble"
+description: "Renders a completed AI assistant message with rich markdown formatting including code blocks, tables, lists, and links"
+---
+
+The `CometChatAIAssistantMessageBubble` component renders a completed AI assistant response with full markdown support. It is used inside `CometChatMessageBubble` when the message type is `assistant` (agentic category).
+
+## Overview
+
+- **Markdown rendering**: Full markdown via `CometChatMarkdownRenderer` — headings, bold/italic, code blocks with copy button, tables, lists, blockquotes, links
+- **Image viewer**: Clicking images in the response opens a fullscreen dialog
+- **Dark mode**: Automatically adapts to the system color scheme
+- **Performance**: `content-visibility: auto` for efficient rendering in long lists
+
+## Basic Usage
+
+```typescript
+import { CometChatAIAssistantMessageBubble } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  standalone: true,
+  imports: [CometChatAIAssistantMessageBubble],
+  template: `
+    <cometchat-ai-assistant-message-bubble
+      [message]="aiMessage">
+    </cometchat-ai-assistant-message-bubble>
+  `
+})
+export class MyComponent {
+  aiMessage!: CometChat.AIAssistantMessage;
+}
+```
+
+## Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `message` | `CometChat.AIAssistantMessage` | ✅ Yes | The completed AI assistant message to render |
+
+## Events
+
+This component has no output events. Image clicks are handled internally via `CometChatUIEvents.ccShowDialog`.
+
+## Related Components
+
+- **CometChatStreamMessageBubble** — for live-streaming AI responses
+- **CometChatMarkdownRenderer** — the underlying markdown renderer
+- **CometChatMessageBubble** — the parent bubble container
+- **CometChatAIAssistantChat** — the full AI chat interface

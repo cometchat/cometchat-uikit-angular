@@ -62,7 +62,7 @@
       }
       
       <!-- Body Section -->
-      <div>
+      <div class="cometchat-message-bubble__content">
         <div 
           class="cometchat-message-bubble__body-container"
           (mouseleave)="onMouseLeave()">
@@ -217,6 +217,24 @@
                           [disableInteraction]="disableInteraction"
                           (buttonClick)="onCallBubbleJoinClick($event)">
                         </cometchat-call-bubble>
+                      }
+                      @case ('ai-assistant') {
+                        <!-- AI Assistant Message Bubble (category: agentic, type: assistant) -->
+                        <cometchat-ai-assistant-message-bubble
+                          [message]="$any(message)">
+                        </cometchat-ai-assistant-message-bubble>
+                      }
+                      @case ('tool-arguments') {
+                        <!-- Tool Call Argument Bubble (category: agentic, type: tool_arguments) -->
+                        <cometchat-toolcall-argument-bubble
+                          [message]="$any(message)">
+                        </cometchat-toolcall-argument-bubble>
+                      }
+                      @case ('tool-result') {
+                        <!-- Tool Call Result Bubble (category: agentic, type: tool_result) -->
+                        <cometchat-toolcall-result-bubble
+                          [message]="$any(message)">
+                        </cometchat-toolcall-result-bubble>
                       }
                       @default {
                         <!-- Fallback for unsupported message types - Requirement 3.6 -->

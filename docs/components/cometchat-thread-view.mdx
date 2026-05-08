@@ -1,0 +1,162 @@
+---
+title: "CometChatThreadView"
+description: "A component for displaying thread reply indicators on messages and serving as an accessible thread panel container"
+---
+
+## Overview
+
+The CometChatThreadView component displays thread reply indicators on messages and can also serve as an accessible container for thread content. It supports two modes of operation.
+
+### Key Features
+
+- **Indicator Mode**: Shows reply count with thread icon on messages that have replies
+- **Panel Mode**: Serves as an accessible container for thread content with focus management
+- **Unread Indicator**: Visual indicator when there are unread replies in the thread
+- **Keyboard Navigation**: Enter/Space to open thread, Escape to close (panel mode)
+- **Screen Reader Support**: Announces thread opened with reply count
+- **Localization**: Singular/plural reply count text with localization support
+- **Overflow Handling**: Shows "999+" for threads with more than 999 replies
+
+## Basic Usage
+
+### Indicator Mode (Default)
+
+Shows a clickable reply count indicator on messages with thread replies:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatThreadViewComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-indicator',
+  standalone: true,
+  imports: [CometChatThreadViewComponent],
+  template: `
+    <cometchat-thread-view
+      [replyCount]="5"
+      [unreadReplyCount]="2"
+      [parentMessage]="message"
+      (threadClick)="onThreadClick($event)">
+    </cometchat-thread-view>
+  `
+})
+export class ThreadIndicatorComponent {
+  message!: CometChat.BaseMessage;
+
+  onThreadClick(parentMessage: CometChat.BaseMessage): void {
+    console.log('Open thread for message:', parentMessage.getId());
+  }
+}
+```
+
+### Panel Mode
+
+Serves as an accessible container for thread content with focus trapping and Escape-to-close:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatThreadViewComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-thread-panel',
+  standalone: true,
+  imports: [CometChatThreadViewComponent],
+  template: `
+    <cometchat-thread-view
+      mode="panel"
+      [replyCount]="replyCount"
+      [parentMessage]="parentMessage"
+      (closeClick)="onCloseThread()">
+      <!-- Thread content goes here via ng-content -->
+    </cometchat-thread-view>
+  `
+})
+export class ThreadPanelComponent {
+  parentMessage!: CometChat.BaseMessage;
+  replyCount = 12;
+
+  onCloseThread(): void {
+    // Close the thread panel
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `mode` | `'indicator' \| 'panel'` | `'indicator'` | The display mode. `indicator` shows reply count on messages; `panel` serves as an accessible thread container. |
+| `replyCount` | `number` | `0` | The number of replies in the thread. Component only displays when `replyCount > 0` in indicator mode. |
+| `unreadReplyCount` | `number` | `0` | The number of unread replies. Shows an unread indicator dot when greater than 0. |
+| `parentMessage` | `CometChat.BaseMessage` | `undefined` | The parent message for the thread. Emitted with `threadClick` event. |
+| `announceOnOpen` | `boolean` | `true` | Whether to announce "Thread opened with X replies" via screen reader when panel mode initializes. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `threadClick` | `CometChat.BaseMessage` | Emitted when the thread indicator is clicked (indicator mode only). Payload is the parent message. |
+| `closeClick` | `void` | Emitted when the thread should be closed (panel mode). Triggered by Escape key. |
+
+## Keyboard Accessibility
+
+### Indicator Mode
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Focus the thread indicator |
+| `Enter` / `Space` | Open the thread (emits `threadClick`) |
+
+### Panel Mode
+
+| Key | Action |
+|-----|--------|
+| `Escape` | Close the thread panel (emits `closeClick`) and restore focus |
+
+### Accessibility Features
+
+- **Indicator mode**: `role="button"`, `tabindex="0"`, descriptive `aria-label` with reply count and unread status
+- **Panel mode**: `role="complementary"`, `aria-label="Thread replies"`
+- Focus is restored to the previously focused element when panel closes
+- Thread opened announcement via `aria-live` region (configurable via `announceOnOpen`)
+
+## Display Logic
+
+| Condition | Behavior |
+|-----------|----------|
+| `replyCount === 0` | Component is hidden (indicator mode) |
+| `replyCount === 1` | Shows "1 Reply" |
+| `replyCount > 1` | Shows "{count} Replies" |
+| `replyCount > 999` | Shows "999+ Replies" |
+| `unreadReplyCount > 0` | Shows unread indicator dot |
+
+## Localization Keys
+
+| Key | Default (en-us) |
+|-----|-----------------|
+| `thread_reply` | "Reply" |
+| `thread_replies` | "Replies" |
+| `accessibility_thread_replies` | "Thread replies" |
+| `accessibility_thread_opened` | "Thread opened with {count} replies" |
+
+## CSS Variables
+
+```css
+cometchat-thread-view {
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-icon-color-secondary: #a1a1a1;
+  --cometchat-font-caption1-medium: 500 12px/16px sans-serif;
+  --cometchat-spacing-1: 4px;
+  --cometchat-spacing-2: 8px;
+}
+```
+
+## Related Components
+
+- [CometChatMessageBubble](/components/cometchat-message-bubble) — Renders the thread view indicator within message bubbles
+- [CometChatThreadHeader](/components/cometchat-thread-header) — Header component for the thread panel
+- [CometChatMessageList](/components/cometchat-message-list) — Displays messages within the thread panel

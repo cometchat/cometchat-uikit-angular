@@ -403,6 +403,12 @@ This section provides a complete reference of all @Input properties, @Output eve
 | `hideMessagePrivatelyOption` | `boolean` | `false` | Hides the "Message Privately" option (only available in group chats for other users' messages). |
 | `hideCopyMessageOption` | `boolean` | `false` | Hides the "Copy" option from message context menu (only shown for text messages). |
 | `hideMessageInfoOption` | `boolean` | `false` | Hides the "Message Info" option from message context menu. |
+| `hideFlagMessageOption` | `boolean` | `false` | Hides the "Flag/Report" option from message context menu. |
+| `hideFlagRemarkField` | `boolean` | `false` | Hides the optional remark text area in the flag message dialog. |
+| `showMarkAsUnreadOption` | `boolean` | `true` | Shows the "Mark as Unread" option in the message context menu. Set to `false` to hide it. |
+| `hideReplyOption` | `boolean` | `false` | Hides the "Reply" option from message context menu. |
+| `startFromUnreadMessages` | `boolean` | `true` | When `true`, the message list scrolls to the first unread message on load instead of the bottom. |
+| `isAgentChat` | `boolean` | `false` | When `true`, configures the message list for AI agent chat mode. Accepts messages with `parentMessageId` without filtering, enabling threaded AI conversations. |
 | `hideModerationView` | `boolean` | `false` | Hides moderation status indicators on messages. |
 
 #### Custom View Properties (Templates)

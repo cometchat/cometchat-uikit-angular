@@ -274,6 +274,10 @@ function createComponentWithService(svc: IncomingCallService): CometChatIncoming
   (comp as any)._incomingCallIsAudioOnly = signal(false);
   (comp as any).callEndedSub = null;
   (comp as any).defaultCallingWorkflow = 0; // CallWorkflow.defaultCalling
+  // Provide a mock DestroyRef so takeUntilDestroyed works outside injection context
+  (comp as any).destroyRef = {
+    onDestroy: (cb: () => void) => { /* no-op for tests */ },
+  };
   return comp;
 }
 

@@ -1,6 +1,5 @@
 import { InjectionToken } from '@angular/core';
 import { CometChatTextFormatter } from '../formatters';
-import { CometChatUIKitCalls } from '../CometChatCalls';
 
 /**
  * Interface defining all global configuration properties.
@@ -58,8 +57,13 @@ export interface GlobalConfig {
   customSoundForMessages?: string;
   /** Hide avatar across components */
   hideAvatar?: boolean;
-  /** Custom CallSettingsBuilder for call components (call buttons, call logs, etc.) */
-  callSettingsBuilder?: typeof CometChatUIKitCalls.CallSettingsBuilder;
+  /**
+   * Custom session settings object for call components (call buttons, call logs, etc.).
+   * Pass a plain v5 SessionSettings object — the v4 CallSettingsBuilder is no longer used.
+   * @example
+   * { sessionType: 'VIDEO', layout: 'TILE', startAudioMuted: false }
+   */
+  callSettingsBuilder?: Record<string, any>;
 }
 
 /**

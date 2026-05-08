@@ -1,0 +1,17 @@
+<div class="cometchat-toolcall-argument-bubble">
+  @for (tc of toolCalls(); track tc.getId()) {
+    <div class="cometchat-toolcall-argument-bubble__item">
+      @if (tc.displayName) {
+        <span class="cometchat-toolcall-argument-bubble__name">
+          {{ tc.displayName }}
+        </span>
+      }
+      @if (tc.executionText) {
+        <span class="cometchat-toolcall-argument-bubble__execution-text">
+          {{ tc.executionText }}
+        </span>
+      }
+      <pre class="cometchat-toolcall-argument-bubble__arguments">{{ formattedArgs()[$index] }}</pre>
+    </div>
+  }
+</div>

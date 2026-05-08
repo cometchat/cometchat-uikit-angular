@@ -4,13 +4,23 @@
    Requirements: 4.3, 9.2, 9.3
    ============================================================ */
 
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+}
+
 /* Full-screen overlay container for the CometChat Calls SDK to render into */
 .cometchat-ongoing-call {
-  width: var(--cometchat-ongoing-call-width, 100%);
-  height: var(--cometchat-ongoing-call-height, 100%);
-  position: var(--cometchat-ongoing-call-position, absolute);
-  left: var(--cometchat-ongoing-call-left, 0);
-  top: var(--cometchat-ongoing-call-top, 0);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
   z-index: var(--cometchat-ongoing-call-z-index, 1000);
   border: var(--cometchat-ongoing-call-border, none);
   border-radius: var(--cometchat-ongoing-call-border-radius, 0);

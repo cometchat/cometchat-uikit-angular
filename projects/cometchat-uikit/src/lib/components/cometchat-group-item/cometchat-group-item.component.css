@@ -128,14 +128,14 @@
   position: absolute;
   bottom: var(--cometchat-group-item-type-position-bottom, 0px);
   right: var(--cometchat-group-item-type-position-right, 2px);
-  width: var(--cometchat-group-item-type-size, 12px);
-  height: var(--cometchat-group-item-type-size, 12px);
+  width: var(--cometchat-group-item-type-size, 14px);
+  height: var(--cometchat-group-item-type-size, 14px);
   border-radius: var(--cometchat-radius-max);
-  border: var(--cometchat-group-item-type-border, none);
+  border: var(--cometchat-group-item-type-border, 2px solid var(--cometchat-neutral-color-50));
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: 0;
 }
 
 .cometchat-group-item__type-indicator--public {
@@ -148,8 +148,8 @@
 
 .cometchat-group-item__type-indicator--private::after {
   content: '';
-  width: var(--cometchat-group-item-type-icon-width, 10px);
-  height: var(--cometchat-group-item-type-icon-height, 10px);
+  width: var(--cometchat-group-item-type-icon-width, 12px);
+  height: var(--cometchat-group-item-type-icon-height, 12px);
   background: var(--cometchat-group-item-type-icon-background, var(--cometchat-static-white));
   -webkit-mask: url('../../assets/shield.svg') center center no-repeat;
   mask: url('../../assets/shield.svg') center center no-repeat;
@@ -163,8 +163,8 @@
 
 .cometchat-group-item__type-indicator--password::after {
   content: '';
-  width: var(--cometchat-group-item-type-icon-width, 10px);
-  height: var(--cometchat-group-item-type-icon-height, 10px);
+  width: var(--cometchat-group-item-type-icon-width, 12px);
+  height: var(--cometchat-group-item-type-icon-height, 12px);
   background: var(--cometchat-group-item-type-icon-background, var(--cometchat-static-white));
   -webkit-mask: url('../../assets/lock.svg') center center no-repeat;
   mask: url('../../assets/lock.svg') center center no-repeat;
@@ -322,14 +322,14 @@
   }
 
   .cometchat-group-item__type-indicator {
-    width: var(--cometchat-group-item-type-size-tablet, 10px);
-    height: var(--cometchat-group-item-type-size-tablet, 10px);
+    width: var(--cometchat-group-item-type-size-tablet, 14px);
+    height: var(--cometchat-group-item-type-size-tablet, 14px);
   }
 
   .cometchat-group-item__type-indicator--password::after,
   .cometchat-group-item__type-indicator--private::after {
-    width: var(--cometchat-group-item-type-icon-size-tablet, 8px);
-    height: var(--cometchat-group-item-type-icon-size-tablet, 8px);
+    width: var(--cometchat-group-item-type-icon-size-tablet, 10px);
+    height: var(--cometchat-group-item-type-icon-size-tablet, 10px);
   }
 
   .cometchat-group-item__title-text {
@@ -364,14 +364,14 @@
   }
 
   .cometchat-group-item__type-indicator {
-    width: var(--cometchat-group-item-type-size-mobile, 10px);
-    height: var(--cometchat-group-item-type-size-mobile, 10px);
+    width: var(--cometchat-group-item-type-size-mobile, 12px);
+    height: var(--cometchat-group-item-type-size-mobile, 12px);
   }
 
   .cometchat-group-item__type-indicator--password::after,
   .cometchat-group-item__type-indicator--private::after {
-    width: var(--cometchat-group-item-type-icon-size-mobile, 8px);
-    height: var(--cometchat-group-item-type-icon-size-mobile, 8px);
+    width: var(--cometchat-group-item-type-icon-size-mobile, 10px);
+    height: var(--cometchat-group-item-type-icon-size-mobile, 10px);
   }
 
   .cometchat-group-item__title-text {

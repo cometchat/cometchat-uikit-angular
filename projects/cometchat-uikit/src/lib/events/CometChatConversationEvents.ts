@@ -9,6 +9,12 @@ import { subscribeWithOptionalCleanup } from './event-utils';
 export class CometChatConversationEvents {
   static ccConversationDeleted = new Subject<CometChat.Conversation>();
 
+  /**
+   * Emitted when a conversation is updated (e.g., after marking a message as unread).
+   * Subscribers (e.g., CometChatConversations) should refresh the conversation's unread badge.
+   */
+  static ccUpdateConversation = new Subject<CometChat.Conversation>();
+
   // ── Deprecated generic method ──
 
   /**

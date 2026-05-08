@@ -14,9 +14,10 @@ import {
   ChangeDetectionStrategy,
   inject,
   booleanAttribute,
+  DestroyRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
@@ -114,10 +115,8 @@ export class CometChatOngoingCallComponent implements OnInit, AfterViewInit, OnC
 
   // ==================== Private State ====================
 
-  /** Subscription to CometChatCallEvents.ccCallEnded for emitting callEnded output. */
-  private callEndedSub: Subscription | null = null;
-
   /** Guard to prevent double-starting the call session. */
+  private readonly destroyRef = inject(DestroyRef);
   private callSessionStarted = false;
 
   // ==================== Lifecycle ====================
@@ -131,7 +130,7 @@ export class CometChatOngoingCallComponent implements OnInit, AfterViewInit, OnC
   ngOnInit(): void {
     this.syncInputsToService();
 
-    this.callEndedSub = CometChatCallEvents.ccCallEnded.subscribe(() => {
+    CometChatCallEvents.ccCallEnded.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       // Announce call ended for screen readers
       this.callAnnouncer.announceCallEnded();
       this.callEnded.emit();
@@ -190,11 +189,6 @@ export class CometChatOngoingCallComponent implements OnInit, AfterViewInit, OnC
     this.pendingTimers = [];
     this.callSessionStarted = false;
     this.ongoingCallService.endSession();
-
-    if (this.callEndedSub) {
-      this.callEndedSub.unsubscribe();
-      this.callEndedSub = null;
-    }
   }
 
   // ==================== Private: Input Sync ====================

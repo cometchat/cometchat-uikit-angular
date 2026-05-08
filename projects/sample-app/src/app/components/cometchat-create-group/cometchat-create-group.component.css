@@ -204,7 +204,7 @@
 .cometchat-create-group__type-button--active {
   background: var(--cometchat-background-color-01);
   color: var(--cometchat-primary-color);
-  font: var(--cometchat-font-heading4-bold);
+  font: var(--cometchat-font-heading4-medium);
   /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); */
 }
 

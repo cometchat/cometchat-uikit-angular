@@ -26,6 +26,9 @@ export class CometChatAvatarComponent implements OnChanges {
   /** Name used for displaying initials in the avatar */
   @Input() name = '';
 
+  /** Controls image loading strategy. Use 'eager' for above-the-fold avatars. */
+  @Input() loading: 'lazy' | 'eager' = 'lazy';
+
   /** Internal state to track if image failed to load */
   imageError = false;
 

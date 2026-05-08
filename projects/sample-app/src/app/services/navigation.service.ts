@@ -31,6 +31,7 @@ export class NavigationService implements OnDestroy {
   mobilePanel = signal<'selector' | 'messages' | 'side-panel'>('selector');
 
   // ── Go-to-message support ──
+  /** The raw message ID signal (used by goToMessageId input binding) */
   goToMessageId = signal<number | null>(null);
 
   /** Media query listener cleanup reference */
@@ -49,6 +50,10 @@ export class NavigationService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.mediaQuery.removeEventListener('change', this.mediaQueryHandler);
+  }
+
+  setGotoMessageId(id: number | null): void {
+    this.goToMessageId.set(id);
   }
 
   // ── Side panel methods ──

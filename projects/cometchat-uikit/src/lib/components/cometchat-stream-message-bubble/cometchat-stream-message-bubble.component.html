@@ -1,0 +1,31 @@
+<div
+  class="cometchat-stream-message-bubble"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  @if (hasError()) {
+    <span class="cometchat-stream-message-bubble__error">
+      {{ 'ai_assistant_chat_no_internet' | translate }}
+    </span>
+  } @else {
+    @if (isThinking() && !hasStreamedContent()) {
+      <span class="cometchat-stream-message-bubble__thinking">
+        {{ 'ai_assistant_chat_thinking' | translate }}
+      </span>
+    }
+
+    @if (isExecutingTool()) {
+      <span class="cometchat-stream-message-bubble__tool-execution">
+        {{ toolExecutionText() || ('ai_assistant_chat_executing_tool' | translate) }}
+      </span>
+    }
+
+    @if (hasStreamedContent()) {
+      <cometchat-markdown-renderer
+        class="cometchat-stream-message-bubble__renderer"
+        [text]="streamedText()"
+        [streaming]="true"
+      />
+    }
+  }
+</div>

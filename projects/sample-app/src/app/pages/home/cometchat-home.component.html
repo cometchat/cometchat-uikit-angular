@@ -16,9 +16,20 @@
     [style.min-width]="!isMobile() && leftPanelWidth() ? leftPanelWidth() + 'px' : null"
     [style.max-width]="!isMobile() && leftPanelWidth() ? 'none' : null"
   >
-    <cometchat-selector></cometchat-selector>
+    <cometchat-selector (searchBarClick)="openSearch()"></cometchat-selector>
 
     <cometchat-tabs></cometchat-tabs>
+
+    <!-- ═══ Search Overlay (left panel only) ═══ -->
+    @if (showSearchOverlay()) {
+      <div class="cometchat-home__search-overlay">
+        <cometchat-search
+          (backClick)="closeSearch()"
+          (conversationClick)="onSearchConversationClick($event)"
+          (messageClick)="onSearchMessageClick($event)">
+        </cometchat-search>
+      </div>
+    }
   </nav>
 
   <!-- ═══ Resize Handle: Left ↔ Center ═══ -->
@@ -96,6 +107,16 @@
           @case ('call-log-details') {
             <cometchat-call-log-details></cometchat-call-log-details>
           }
+          @case ('search') {
+            <cometchat-search
+              [uid]="activeUid()"
+              [guid]="activeGuid()"
+              [searchIn]="scopedSearchIn"
+              [searchFilters]="scopedSearchFilters"
+              (backClick)="closeScopedSearch()"
+              (messageClick)="onScopedSearchMessageClick($event)">
+            </cometchat-search>
+          }
         }
       }
     </aside>
@@ -149,16 +170,10 @@
     </div>
   }
 
-  <!-- ═══ Ongoing Call Overlay ═══ -->
-  <!-- @if (appStateService.ongoingCallContent(); as ongoingCall) {
-    <div class="cometchat-home__ongoing-call-overlay">
-      <ng-container *ngTemplateOutlet="ongoingCall.child"></ng-container>
-    </div>
-  } -->
-
   <!-- ═══ Incoming Call Overlay (UIKit) ═══ -->
   <cometchat-incoming-call></cometchat-incoming-call>
 
   <!-- ═══ Toast Notifications ═══ -->
   <cometchat-toast-container></cometchat-toast-container>
+
 </div>

@@ -1,0 +1,131 @@
+---
+title: Search Messages Service
+description: Signal-based service for message search state, SDK queries, attachment-type filtering, and pagination.
+---
+
+The `SearchMessagesService` manages message search state using Angular signals. It handles SDK query building with keyword, attachment-type, and user/group scoping, plus pagination for loading more results.
+
+## Import
+
+```typescript
+import { SearchMessagesService } from '@cometchat/chat-uikit-angular';
+```
+
+## Signals (Reactive State)
+
+| Signal | Type | Default | Description |
+|--------|------|---------|-------------|
+| `messages` | `WritableSignal<CometChat.BaseMessage[]>` | `[]` | Current message search results (newest first after reversal) |
+| `fetchState` | `WritableSignal<States>` | `States.loaded` | Current fetch state: `loading`, `loaded`, `empty`, or `error` |
+| `hasMoreResults` | `WritableSignal<boolean>` | `false` | Whether more pages of results are available |
+
+## Methods
+
+### search()
+
+Initiates a message search. Resets state, validates criteria, builds the SDK request, and fetches the first page.
+
+```typescript
+async search(
+  keyword: string,
+  filters: CometChatSearchFilter[],
+  uid?: string,
+  guid?: string,
+  customBuilder?: CometChat.MessagesRequestBuilder,
+  alwaysShowSeeMore?: boolean
+): Promise<void>
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `keyword` | `string` | Search keyword |
+| `filters` | `CometChatSearchFilter[]` | Active filters that determine attachment type filtering |
+| `uid` | `string` | Optional user UID to scope search to a specific user's messages |
+| `guid` | `string` | Optional group GUID to scope search to a specific group's messages |
+| `customBuilder` | `MessagesRequestBuilder` | Optional custom builder that overrides the default |
+| `alwaysShowSeeMore` | `boolean` | When true, limits initial results to 3 (preview mode with "See more" button) |
+
+Validation: search requires at least one of: non-empty keyword, active message filter, uid, or guid. Otherwise `fetchState` is set to `States.empty`.
+
+### loadMore()
+
+Fetches the next page of results and appends to the existing list.
+
+```typescript
+async loadMore(): Promise<void>
+```
+
+### reset()
+
+Resets all signals to their default values and clears the internal request reference.
+
+```typescript
+reset(): void
+```
+
+## Request Building
+
+The service builds a `CometChat.MessagesRequest` based on the search criteria:
+
+- `hideDeletedMessages(true)` — always excludes deleted messages
+- `setSearchKeyword()` — when keyword is non-empty
+- `setUID()` — when uid is provided (scoped to user)
+- `setGUID()` — when guid is provided (scoped to group)
+- `hasLinks(true)` — when the `Links` filter is active
+- `setAttachmentTypes()` — maps filters to SDK attachment types:
+
+| Filter | SDK Attachment Type |
+|--------|-------------------|
+| `Photos` | `CometChat.AttachmentType.IMAGE` |
+| `Videos` | `CometChat.AttachmentType.VIDEO` |
+| `Documents` | `CometChat.AttachmentType.FILE` |
+| `Audio` | `CometChat.AttachmentType.AUDIO` |
+
+- Limit is 3 when `alwaysShowSeeMore` is true (preview mode), 30 otherwise
+- Results are reversed after fetch to show newest first
+
+## Usage
+
+The service is typically used internally by `CometChatSearchMessagesListComponent`, but can be injected directly:
+
+```typescript expandable
+import { Component, inject } from '@angular/core';
+import { SearchMessagesService } from '@cometchat/chat-uikit-angular';
+import { CometChatSearchFilter, States } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-message-search',
+  template: `
+    @if (service.fetchState() === States.loaded) {
+      @for (msg of service.messages(); track msg.getId()) {
+        <div>{{ msg.getSender()?.getName() }}: {{ msg.getType() }}</div>
+      }
+      @if (service.hasMoreResults()) {
+        <button (click)="service.loadMore()">Load more</button>
+      }
+    }
+  `
+})
+export class MessageSearchComponent {
+  readonly service = inject(SearchMessagesService);
+  readonly States = States;
+
+  searchPhotos(keyword: string): void {
+    this.service.search(keyword, [CometChatSearchFilter.Photos]);
+  }
+
+  searchInGroup(keyword: string, guid: string): void {
+    this.service.search(keyword, [], undefined, guid);
+  }
+}
+```
+
+## Differences from SearchConversationsService
+
+| Aspect | SearchConversationsService | SearchMessagesService |
+|--------|--------------------------|---------------------|
+| Real-time listeners | Yes (message, user, group, call, typing, receipt) | No |
+| Scoping | Keyword + filters only | Keyword + filters + uid/guid |
+| Attachment filtering | N/A | Photos, Videos, Documents, Audio, Links |
+| Typing indicators | Yes (`typingIndicatorMap` signal) | No |
+| Preview mode | 3 results when no filters | 3 results when `alwaysShowSeeMore` is true |

@@ -289,9 +289,10 @@ export class IncomingCallService implements OnDestroy {
       })
     );
 
-    // Handle call rejection events
+    // Handle call rejection events — clear both active and incoming state
     this.subscriptions.push(
       CometChatCallEvents.ccCallRejected.subscribe((_call: CometChat.Call) => {
+        this._activeCall.set(null);
         this._incomingCall.set(null);
         this.stopIncomingSound();
       })

@@ -7,10 +7,7 @@ import {
   CometChatDateComponent,
   CometChatLocalize,
   CometChatUIKitConstants,
-  CometChatCallEvents,
-  CometChatMessageEvents,
-  MessageStatus,
-  CometChatOutgoingCallComponent,
+  CometChatCallButtonsComponent,
   CalendarObject,
   CometChatUIKitCalls,
 } from '@cometchat/chat-uikit-angular';
@@ -46,7 +43,7 @@ function callVerifyUser(call: any, loggedInUser: { getUid(): string }): any {
 @Component({
   selector: 'cometchat-call-log-details',
   standalone: true,
-  imports: [TranslatePipe, NgClass, CometChatAvatarComponent, CometChatDateComponent, CometChatOutgoingCallComponent],
+  imports: [TranslatePipe, NgClass, CometChatAvatarComponent, CometChatDateComponent, CometChatCallButtonsComponent],
   templateUrl: './cometchat-call-log-details.component.html',
   styleUrls: ['./cometchat-call-log-details.component.css'],
 })
@@ -68,10 +65,6 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
   protected callHistoryLoading = signal(false);
   private historyRequestBuilder: any = null;
   private historyFetched = false;
-
-  /** Outgoing call state */
-  protected showOutgoingCallScreen = signal(false);
-  protected activeCallObject = signal<CometChat.Call | null>(null);
 
   /** React to callLog signal changes (when user picks a different call log) */
   private callLogEffect = effect(() => {
@@ -364,12 +357,6 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Handle outgoing call canceled */
-  onOutgoingCallCanceled(): void {
-    this.showOutgoingCallScreen.set(false);
-    this.activeCallObject.set(null);
-  }
-
   onTabChange(tab: 'participants' | 'recording' | 'history'): void {
     this.activeTab.set(tab);
     if (tab === 'history' && !this.historyFetched && !this.callHistoryLoading()) {
@@ -378,39 +365,4 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Initiate a voice call to the other user */
-  onVoiceCall(): void {
-    const user = this.otherUser();
-    if (!user) return;
-    this.initiateCall(CometChatUIKitConstants.MessageTypes.audio, user.getUid());
-  }
-
-  /** Initiate a video call to the other user */
-  onVideoCall(): void {
-    const user = this.otherUser();
-    if (!user) return;
-    this.initiateCall(CometChatUIKitConstants.MessageTypes.video, user.getUid());
-  }
-
-  private initiateCall(type: string, receiverId: string): void {
-    const call = new CometChat.Call(
-      receiverId,
-      type,
-      CometChatUIKitConstants.MessageReceiverType.user
-    );
-    CometChat.initiateCall(call).then(
-      (outgoingCall: CometChat.Call) => {
-        this.activeCallObject.set(outgoingCall);
-        this.showOutgoingCallScreen.set(true);
-        CometChatCallEvents.ccOutgoingCall.next(outgoingCall);
-        CometChatMessageEvents.ccMessageSent.next({
-          message: outgoingCall,
-          status: MessageStatus.inprogress,
-        });
-      },
-      (err: any) => {
-        console.error('Error initiating call', err);
-      }
-    );
-  }
 }

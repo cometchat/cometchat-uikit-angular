@@ -5,7 +5,21 @@
   <title>CometChat Sample App</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#6852D6">
+  <meta name="description" content="CometChat Angular V5 UIKit Sample Application">
+
+  <!-- Preconnect to CometChat API domains for faster SDK initialization -->
+  <link rel="preconnect" href="https://api.cometchat.com" crossorigin>
+  <link rel="preconnect" href="https://assets.cometchat.io" crossorigin>
+
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- Prevent FOUC: inline critical CSS for app-root placeholder -->
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; background: #fff; }
+    app-root { display: block; height: 100%; }
+  </style>
 </head>
 <body>
   <app-root></app-root>

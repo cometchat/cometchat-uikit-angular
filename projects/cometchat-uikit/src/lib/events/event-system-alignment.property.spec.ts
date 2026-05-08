@@ -147,10 +147,16 @@ describe('Property 1: Event subject parity across all event classes', () => {
   });
 
   it('Angular event classes do not contain extra subjects beyond React', () => {
+    // Angular-only subjects that are intentional additions (not in React)
+    const ANGULAR_ONLY_SUBJECTS: Record<string, string[]> = {
+      CometChatConversationEvents: ['ccUpdateConversation'],
+    };
+
     for (const [className, reactSubjects] of Object.entries(REACT_SUBJECTS)) {
       const angularClass = ANGULAR_EVENT_CLASSES[className];
       const angularSubjects = getSubjectNames(angularClass);
-      const extraSubjects = angularSubjects.filter(s => !reactSubjects.includes(s));
+      const allowedExtras = ANGULAR_ONLY_SUBJECTS[className] ?? [];
+      const extraSubjects = angularSubjects.filter(s => !reactSubjects.includes(s) && !allowedExtras.includes(s));
       expect(extraSubjects).toEqual([]);
     }
   });

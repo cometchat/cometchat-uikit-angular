@@ -1,8 +1,9 @@
 /**
  * CometChatStickersKeyboard Storybook Stories
  *
- * Stories use the [stickerData] input to provide mock sticker sets directly,
- * bypassing the CometChat SDK callExtension call entirely.
+ * Stories use a local wrapper component to inject mock sticker sets and force
+ * component states without hitting the CometChat SDK. This keeps the library
+ * component's public API free of test-only inputs.
  *
  * @module components/cometchat-stickers-keyboard
  */
@@ -10,8 +11,18 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+  ViewChild,
+} from '@angular/core';
 import { CometChatStickersKeyboardComponent } from './cometchat-stickers-keyboard.component';
-import type { StickerSet } from './cometchat-stickers-keyboard.component';
+import type { StickerClickEvent, StickerSet } from './cometchat-stickers-keyboard.component';
 
 // ============================================
 // Mock Data
@@ -41,18 +52,92 @@ const MOCK_STICKER_DATA: StickerSet = {
   ],
 };
 
+// ============================================
+// Story Wrapper — keeps mock injection out of the library API
+// ============================================
+
+/**
+ * Wrapper used exclusively by Storybook stories.
+ *
+ * Injects mock sticker data and/or overrides the component state via the
+ * public `loadStickerData` / `setComponentState` test hooks, so stories can
+ * render without an SDK session.
+ */
+@Component({
+  selector: 'cometchat-stickers-keyboard-story-wrapper',
+  standalone: true,
+  imports: [CommonModule, CometChatStickersKeyboardComponent],
+  template: `
+    <cometchat-stickers-keyboard
+      #stickersComponent
+      [errorStateText]="errorStateText"
+      [emptyStateText]="emptyStateText"
+      [autoFocus]="autoFocus"
+      [trapFocus]="trapFocus"
+      (stickerClick)="stickerClick.emit($event)"
+      (closeKeyboard)="closeKeyboard.emit()">
+    </cometchat-stickers-keyboard>
+  `,
+})
+class CometChatStickersKeyboardStoryWrapperComponent implements AfterViewInit, OnChanges {
+  @ViewChild('stickersComponent') stickersComponent!: CometChatStickersKeyboardComponent;
+
+  @Input() errorStateText?: string;
+  @Input() emptyStateText?: string;
+  @Input() autoFocus = false;
+  @Input() trapFocus = true;
+  @Input() stickerData?: StickerSet;
+  @Input() initialState?: 'loading' | 'error' | 'empty';
+
+  @Output() stickerClick = new EventEmitter<StickerClickEvent>();
+  @Output() closeKeyboard = new EventEmitter<void>();
+
+  ngAfterViewInit(): void {
+    this.applyMocks();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ((changes['stickerData'] || changes['initialState']) && this.stickersComponent) {
+      this.applyMocks();
+    }
+  }
+
+  private applyMocks(): void {
+    if (!this.stickersComponent) return;
+
+    queueMicrotask(() => {
+      if (this.initialState) {
+        this.stickersComponent.setComponentState(this.initialState);
+        return;
+      }
+      if (this.stickerData && Object.keys(this.stickerData).length > 0) {
+        this.stickersComponent.loadStickerData(this.stickerData);
+      }
+    });
+  }
+}
 
 // ============================================
 // Meta Configuration
 // ============================================
 
-const meta: Meta<CometChatStickersKeyboardComponent> = {
+type StoryArgs = Pick<
+  CometChatStickersKeyboardComponent,
+  'errorStateText' | 'emptyStateText' | 'autoFocus' | 'trapFocus'
+> & {
+  stickerData?: StickerSet;
+  initialState?: 'loading' | 'error' | 'empty';
+  stickerClick?: (event: StickerClickEvent) => void;
+  closeKeyboard?: () => void;
+};
+
+const meta: Meta<StoryArgs> = {
   title: 'Components/Misc/Stickers Keyboard',
   component: CometChatStickersKeyboardComponent,
   tags: ['autodocs'],
   decorators: [
     moduleMetadata({
-      imports: [CommonModule],
+      imports: [CommonModule, CometChatStickersKeyboardStoryWrapperComponent],
     }),
   ],
   args: {
@@ -93,14 +178,6 @@ const meta: Meta<CometChatStickersKeyboardComponent> = {
         defaultValue: { summary: 'true' },
       },
     },
-    stickerData: {
-      control: false,
-      description: 'Pre-loaded sticker data (bypasses SDK fetch). Used for Storybook and testing.',
-      table: {
-        type: { summary: 'StickerSet' },
-        defaultValue: { summary: 'undefined' },
-      },
-    },
     stickerClick: {
       action: 'stickerClick',
       description: 'Emitted when a sticker is clicked with the sticker URL and name',
@@ -129,7 +206,7 @@ const meta: Meta<CometChatStickersKeyboardComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CometChatStickersKeyboardComponent>;
+type Story = StoryObj<StoryArgs>;
 
 // ============================================
 // Stories
@@ -137,14 +214,16 @@ type Story = StoryObj<CometChatStickersKeyboardComponent>;
 
 const stickerTemplate = `
   <div style="width: 320px; height: 360px;">
-    <cometchat-stickers-keyboard
+    <cometchat-stickers-keyboard-story-wrapper
       [stickerData]="stickerData"
       [initialState]="initialState"
+      [errorStateText]="errorStateText"
+      [emptyStateText]="emptyStateText"
       [autoFocus]="false"
       [trapFocus]="trapFocus"
       (stickerClick)="stickerClick($event)"
       (closeKeyboard)="closeKeyboard($event)"
-    ></cometchat-stickers-keyboard>
+    ></cometchat-stickers-keyboard-story-wrapper>
   </div>
 `;
 
@@ -170,14 +249,16 @@ export const KeyboardDisplay: Story = {
     props: args,
     template: `
       <div style="width: 360px; height: 400px;">
-        <cometchat-stickers-keyboard
+        <cometchat-stickers-keyboard-story-wrapper
           [stickerData]="stickerData"
           [initialState]="initialState"
+          [errorStateText]="errorStateText"
+          [emptyStateText]="emptyStateText"
           [autoFocus]="false"
           [trapFocus]="trapFocus"
           (stickerClick)="stickerClick($event)"
           (closeKeyboard)="closeKeyboard($event)"
-        ></cometchat-stickers-keyboard>
+        ></cometchat-stickers-keyboard-story-wrapper>
       </div>
     `,
   }),

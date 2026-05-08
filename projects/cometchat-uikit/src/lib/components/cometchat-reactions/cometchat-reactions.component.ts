@@ -24,110 +24,37 @@ import { TranslatePipe } from '../../resources/CometChatLocalize';
 import { MessageBubbleAlignment, Placement } from '../../Enums/Enums';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { getMaxVisibleEmojis } from './cometchat-reactions.utils';
+
+export { getMaxVisibleEmojis };
 
 /**
- * Pure function that calculates the maximum number of visible emojis
- * based on the available width of the parent container.
- *
- * Each emoji pill occupies approximately 46px of width.
- * The result is clamped between 1 and 100.
- *
- * @param availableWidth - The available width in pixels.
- * @returns The maximum number of visible emojis (1–100).
- */
-export function getMaxVisibleEmojis(availableWidth: number): number {
-  return Math.min(100, Math.max(1, Math.floor(availableWidth / 46)));
-}
-
-/**
- * CometChatReactionsComponent renders emoji reaction pills on a message bubble's
- * footer area. It dynamically calculates how many pills to show based on the
- * parent container width, and provides overflow handling via a "+N" button.
- *
- * @example
- * ```html
- * <cometchat-reactions
- *   [message]="message"
- *   [alignment]="alignment"
- *   (reactionClick)="onReactionClick($event)">
- * </cometchat-reactions>
- * ```
+ * CometChatReactionsComponent renders emoji reaction pills on a message bubble's footer.
+ * Dynamically calculates visible pills based on container width with overflow handling.
  */
 @Component({
   selector: 'cometchat-reactions',
   standalone: true,
-  imports: [
-    CommonModule,
-    CometChatPopoverComponent,
-    CometChatReactionInfoComponent,
-    CometChatReactionListComponent,
-    TranslatePipe,
-  ],
+  imports: [CommonModule, CometChatPopoverComponent, CometChatReactionInfoComponent, CometChatReactionListComponent, TranslatePipe],
   templateUrl: './cometchat-reactions.component.html',
   styleUrls: ['./cometchat-reactions.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CometChatReactionsComponent implements AfterViewInit, OnDestroy, OnChanges, DoCheck {
-  /**
-   * The message object containing reactions to display.
-   */
   @Input({ required: true }) message!: CometChat.BaseMessage;
-
-  /**
-   * Alignment of the message bubble (left or right).
-   * Used to determine popover placement for the overflow list.
-   */
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
-
-  /**
-   * Optional custom reactions request builder for fetching reaction details.
-   */
   @Input() reactionsRequestBuilder?: CometChat.ReactionsRequestBuilder;
-
-  /**
-   * Debounce time in milliseconds for hover tooltips.
-   */
   @Input() hoverDebounceTime = 500;
 
-  /**
-   * Emitted when a reaction pill is clicked.
-   */
-  @Output() reactionClick = new EventEmitter<{
-    reaction: CometChat.ReactionCount;
-    message: CometChat.BaseMessage;
-  }>();
+  @Output() reactionClick = new EventEmitter<{ reaction: CometChat.ReactionCount; message: CometChat.BaseMessage; }>();
+  @Output() reactionListItemClick = new EventEmitter<{ reaction: CometChat.Reaction; message: CometChat.BaseMessage; }>();
 
-  /**
-   * Emitted when a reaction list item is clicked (from the overflow popover).
-   */
-  @Output() reactionListItemClick = new EventEmitter<{
-    reaction: CometChat.Reaction;
-    message: CometChat.BaseMessage;
-  }>();
-
-  /**
-   * Maximum number of emoji pills that can be displayed based on available width.
-   */
   maxVisibleEmojis = signal<number>(5);
 
-  /**
-   * Placement for the "more" reaction list popover.
-   */
   moreListPlacement = signal<Placement>(Placement.right);
-
-  /**
-   * Version counter that gets bumped when reactions change on the same message object.
-   * Used as a dependency in computed signals to force recomputation when the message
-   * object is mutated in-place (e.g., via setReactions) without changing reference.
-   */
   private reactionsVersion = signal(0);
 
-  /**
-   * Computed list of reactions to display as pills.
-   * When overflow exists, shows maxVisibleEmojis - 1 pills to leave room for the "+N" button.
-   */
   visibleReactions = computed<CometChat.ReactionCount[]>(() => {
-    // Depend on reactionsVersion to recompute when reactions are mutated in-place
     this.reactionsVersion();
     const reactions = this.getReactions();
     const max = this.maxVisibleEmojis();
@@ -137,11 +64,7 @@ export class CometChatReactionsComponent implements AfterViewInit, OnDestroy, On
     return reactions.slice(0, visibleCount);
   });
 
-  /**
-   * Computed count of hidden reactions for the overflow button.
-   */
   moreCount = computed<number>(() => {
-    // Depend on reactionsVersion to recompute when reactions are mutated in-place
     this.reactionsVersion();
     const reactions = this.getReactions();
     const total = reactions.length;
@@ -151,86 +74,36 @@ export class CometChatReactionsComponent implements AfterViewInit, OnDestroy, On
     return total > visibleCount ? total - visibleCount : 0;
   });
 
-  /** Expose Placement enum to template. */
   Placement = Placement;
 
-  /**
-   * Inline styles for the reaction info tooltip popover content.
-   * Removes default popover background/shadow so the tooltip renders cleanly.
-   */
-  reactionInfoPopoverStyle: Record<string, string> = {
-    background: 'transparent',
-    boxShadow: 'none',
-    border: 'none',
-    padding: '0',
-  };
+  reactionInfoPopoverStyle: Record<string, string> = { background: 'transparent', boxShadow: 'none', border: 'none', padding: '0' };
+  reactionListPopoverStyle: Record<string, string> = { background: 'transparent', boxShadow: 'none', padding: '0', maxWidth: 'none', borderRadius: '0', border: 'none', overflow: 'visible' };
 
-  /**
-   * Inline styles for the reaction list popover content.
-   * Removes default popover chrome so the reaction-list component's own
-   * background, border-radius, and shadow are fully visible.
-   */
-  reactionListPopoverStyle: Record<string, string> = {
-    background: 'transparent',
-    boxShadow: 'none',
-    padding: '0',
-    maxWidth: 'none',
-    borderRadius: '0',
-    border: 'none',
-    overflow: 'visible',
-  };
-
-  /**
-   * Whether the reaction list popover should remain visible even when moreCount drops to 0.
-   * Set to true when the popover is opened, reset when the reaction list emits `empty`
-   * or the popover is closed.
-   * @see Requirement 9.1, 9.2
-   */
   forceShowReactionList = signal<boolean>(false);
 
-  /**
-   * Reference to the reaction list popover for programmatic close.
-   */
   @ViewChild('moreListPopover') moreListPopover?: CometChatPopoverComponent;
 
-  /**
-   * Whether the reaction list popover should be shown.
-   * Stays true while forceShowReactionList is set, even if moreCount drops to 0.
-   */
-  showReactionListPopover = computed<boolean>(() => {
-    return this.moreCount() > 0 || this.forceShowReactionList();
-  });
+  showReactionListPopover = computed<boolean>(() => this.moreCount() > 0 || this.forceShowReactionList());
 
   private resizeObserver: ResizeObserver | null = null;
   private previousWidth = 0;
   private liveAnnouncer = inject(LiveAnnouncerService);
-  /** Cached reaction fingerprint for detecting in-place mutations via DoCheck. */
   private previousReactionFingerprint = '';
 
   constructor(private elementRef: ElementRef) {}
 
-  ngAfterViewInit(): void {
-    this.attachResizeObserver();
-  }
+  ngAfterViewInit(): void { this.attachResizeObserver(); }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['message']) {
-      // Bump version when message reference changes to force computed recomputation
       this.previousReactionFingerprint = this.getReactionFingerprint();
       this.reactionsVersion.update(v => v + 1);
       this.updateMoreListPlacement();
     }
-    if (changes['alignment']) {
-      this.updateMoreListPlacement();
-    }
+    if (changes['alignment']) this.updateMoreListPlacement();
   }
 
-  /**
-   * Detects in-place mutations to the message's reactions array.
-   * When the message object is mutated (e.g., via setReactions) without changing
-   * its reference, ngOnChanges won't fire. DoCheck catches these mutations by
-   * comparing a lightweight fingerprint of the reactions.
-   */
+  /** Detects in-place mutations to the message's reactions array via DoCheck. */
   ngDoCheck(): void {
     const currentFingerprint = this.getReactionFingerprint();
     if (currentFingerprint !== this.previousReactionFingerprint) {

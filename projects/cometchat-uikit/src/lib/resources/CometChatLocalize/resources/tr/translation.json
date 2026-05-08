@@ -360,7 +360,8 @@
     "ai_assistant_chat_composer_placeholder": "Bir soru sorun...",
     "ai_assistant_chat_new_chat": "Yeni Sohbet",
     "ai_assistant_chat_history": "sohbet geçmişi",
-    "ai_assistant_chat_history_title": "Sohbet Geçmişi",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Düşünüyor...",
     "ai_assistant_chat_executing_tool": "İşlem yürütülüyor...",
     "ai_assistant_chat_no_internet": "İnternet bağlantısı yok. Lütfen ağınızı kontrol edin.",
@@ -368,6 +369,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Burada görmek için yeni bir konuşma başlatın.",
     "ai_assistant_chat_history_error_title": "Bir Şeyler Ters Gitti",
     "ai_assistant_chat_history_error_subtitle": "Sohbet geçmişinizi yüklerken sorun yaşıyoruz.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Üye ekle",
     "add_member": "Üye ekle",
     "add_n_members": "{n} üye ekle",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "Mesaj gönderilemedi",
     "accessibility_message_deleted": "Mesaj silindi",
     "accessibility_message_edited": "Mesaj düzenlendi",
-    "accessibility_loading_older_messages": "Eski mesajlar yükleniyor"
+    "accessibility_loading_older_messages": "Eski mesajlar yükleniyor",
+    "message_list_option_mark_as_unread": "Okunmadı olarak işaretle",
+    "message_list_unread_messages": "Okunmamış mesajlar",
+    "message_list_unread_divider": "Okunmamış mesajlar ayırıcısı"
 }

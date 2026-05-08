@@ -32,43 +32,43 @@ function createMockAction(
   return new CometChatMessageComposerAction({
     id,
     title,
-    iconURL: iconURL || 'https://placehold.co/24x24/6852D6/FFFFFF/png?text=%E2%9C%93',
+    iconURL: iconURL || 'assets/photo_camera.svg',
   });
 }
 
 /** Predefined action sets for stories. */
 const ACTIONS = {
   default: [
-    createMockAction('photo', 'Take Photo', 'https://placehold.co/24x24/6852D6/FFFFFF/png?text=P'),
+    createMockAction('photo', 'Take Photo', 'assets/photo_camera.svg'),
     createMockAction(
       'gallery',
       'Choose from Gallery',
-      'https://placehold.co/24x24/0B7BEA/FFFFFF/png?text=G'
+      'assets/conversations_image-message.svg'
     ),
     createMockAction(
       'document',
       'Send Document',
-      'https://placehold.co/24x24/09C26F/FFFFFF/png?text=D'
+      'assets/collabrative_document.svg'
     ),
   ],
   extended: [
-    createMockAction('photo', 'Take Photo', 'https://placehold.co/24x24/6852D6/FFFFFF/png?text=P'),
+    createMockAction('photo', 'Take Photo', 'assets/photo_camera.svg'),
     createMockAction(
       'gallery',
       'Choose from Gallery',
-      'https://placehold.co/24x24/0B7BEA/FFFFFF/png?text=G'
+      'assets/conversations_image-message.svg'
     ),
     createMockAction(
       'document',
       'Send Document',
-      'https://placehold.co/24x24/09C26F/FFFFFF/png?text=D'
+      'assets/collabrative_document.svg'
     ),
     createMockAction(
       'location',
       'Send Location',
-      'https://placehold.co/24x24/FFAB00/FFFFFF/png?text=L'
+      'assets/location_on.svg'
     ),
-    createMockAction('poll', 'Create Poll', 'https://placehold.co/24x24/FF6B6B/FFFFFF/png?text=Q'),
+    createMockAction('poll', 'Create Poll', 'assets/poll.svg'),
   ],
 };
 
@@ -215,7 +215,7 @@ export const WithCancelButton: Story = {
   args: {
     actions: [
       ...ACTIONS.default,
-      createMockAction('cancel', 'Cancel', 'https://placehold.co/24x24/FF6B6B/FFFFFF/png?text=X'),
+      createMockAction('cancel', 'Cancel', 'assets/close.svg'),
     ],
   },
   render: args => ({

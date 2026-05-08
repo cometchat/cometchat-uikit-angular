@@ -185,6 +185,10 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CallButtonsService } from '../../services/call-buttons.service';
 import { CometChatCallButtonsComponent } from './cometchat-call-buttons.component';
 import { CallWorkflow } from '../../Enums/Enums';
+import { CometChatUIKit } from '../../cometchat-uikit';
+
+// Mock CometChatUIKit.isCallingEnabled to return true for tests
+vi.spyOn(CometChatUIKit, 'isCallingEnabled').mockReturnValue(true);
 
 // ==================== Helpers & Generators ====================
 

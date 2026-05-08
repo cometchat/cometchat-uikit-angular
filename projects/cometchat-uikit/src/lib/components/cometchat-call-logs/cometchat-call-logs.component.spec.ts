@@ -77,6 +77,10 @@ import { CometChatCallLogsComponent } from './cometchat-call-logs.component';
 import { States } from '../../Enums/Enums';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatUIKit } from '../../cometchat-uikit';
+
+// Mock CometChatUIKit.isCallingEnabled to return true for tests
+vi.spyOn(CometChatUIKit, 'isCallingEnabled').mockReturnValue(true);
 
 // ---------------------------------------------------------------------------
 // Mock call log factory — creates objects that mimic the Calls SDK CallLog shape

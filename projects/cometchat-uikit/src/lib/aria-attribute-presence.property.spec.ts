@@ -29,11 +29,11 @@ import * as fc from 'fast-check';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from './test-setup';
 
-import { CometChatButtonComponent } from './components/cometchat-button/cometchat-button.component';
+import { CometChatButtonComponent } from './components/base-elements/cometchat-button/cometchat-button.component';
 import { CometChatListItemComponent } from './components/base-elements/cometchat-list-item/cometchat-list-item.component';
 import { CometChatCheckboxComponent } from './components/base-elements/cometchat-checkbox/cometchat-checkbox.component';
-import { CometChatAvatarComponent } from './components/cometchat-avatar/cometchat-avatar.component';
-import { CometChatActionSheetComponent } from './components/cometchat-action-sheet/cometchat-action-sheet.component';
+import { CometChatAvatarComponent } from './components/base-elements/cometchat-avatar/cometchat-avatar.component';
+import { CometChatActionSheetComponent } from './components/base-elements/cometchat-action-sheet/cometchat-action-sheet.component';
 import { CometChatSearchBarComponent } from './components/base-elements/cometchat-search-bar/cometchat-search-bar.component';
 import { CometChatRadioButtonComponent } from './components/base-elements/cometchat-radio-button/cometchat-radio-button.component';
 import { CometChatToastComponent } from './components/base-elements/cometchat-toast/cometchat-toast.component';

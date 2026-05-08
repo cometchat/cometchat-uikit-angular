@@ -583,4 +583,89 @@ describe('CometChatTemplatesService', () => {
       ).not.toThrow();
     });
   });
+
+  // ── Memory Leak: BehaviorSubject completion on destroy (ENG-34638) ─────────
+
+  describe('BehaviorSubject cleanup on service destroy', () => {
+    it('should complete sharedTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.sharedTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete conversationTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.conversationTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete userTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.userTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete groupTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.groupTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete groupMemberTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.groupMemberTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete callLogTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.callLogTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete messageListTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.messageListTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete searchTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.searchTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+
+    it('should complete listTemplates$ when service is destroyed', () => {
+      let completed = false;
+      service.listTemplates$.subscribe({ complete: () => (completed = true) });
+
+      TestBed.resetTestingModule();
+
+      expect(completed).toBe(true);
+    });
+  });
 });

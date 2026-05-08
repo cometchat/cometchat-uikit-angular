@@ -1,0 +1,142 @@
+---
+title: Search Conversations Service
+description: Signal-based service for conversation search state, SDK queries, pagination, and real-time listener management.
+---
+
+The `SearchConversationsService` manages conversation search state using Angular signals. It handles SDK query building, pagination, and attaches real-time listeners for message, user status, group, call, typing, and receipt events to keep results up to date.
+
+## Import
+
+```typescript
+import { SearchConversationsService } from '@cometchat/chat-uikit-angular';
+```
+
+## Signals (Reactive State)
+
+All state is exposed as Angular `WritableSignal` values. Components read these in templates or computed signals for automatic change detection.
+
+| Signal | Type | Default | Description |
+|--------|------|---------|-------------|
+| `conversations` | `WritableSignal<CometChat.Conversation[]>` | `[]` | Current conversation search results |
+| `fetchState` | `WritableSignal<States>` | `States.loaded` | Current fetch state: `loading`, `loaded`, `empty`, or `error` |
+| `hasMoreResults` | `WritableSignal<boolean>` | `false` | Whether more pages of results are available |
+| `typingIndicatorMap` | `WritableSignal<Map<string, CometChat.TypingIndicator>>` | `new Map()` | Active typing indicators keyed by user UID or group GUID |
+
+## Methods
+
+### search()
+
+Initiates a conversation search. Resets state, validates criteria, builds the SDK request, and fetches the first page.
+
+```typescript
+async search(
+  keyword: string,
+  filters: CometChatSearchFilter[],
+  customBuilder?: CometChat.ConversationsRequestBuilder
+): Promise<void>
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `keyword` | `string` | Search keyword. Empty string with no conversation filters results in `States.empty` |
+| `filters` | `CometChatSearchFilter[]` | Active filters. `Unread` sets unread-only, `Groups` sets group conversation type |
+| `customBuilder` | `ConversationsRequestBuilder` | Optional custom builder that overrides the default |
+
+The method sets `fetchState` to `loading` immediately, then to `loaded` (with results), `empty` (no results), or `error` (SDK failure).
+
+### loadMore()
+
+Fetches the next page of results and appends to the existing list. Deduplicates by conversation ID.
+
+```typescript
+async loadMore(): Promise<void>
+```
+
+### attachListeners()
+
+Attaches all real-time SDK listeners (message, user, group, call, typing, receipt). Call this after obtaining the logged-in user.
+
+```typescript
+attachListeners(loggedInUser: CometChat.User): void
+```
+
+Listeners attached:
+- **Message listener**: new text/media/custom messages, edits, deletes
+- **User listener**: online/offline status changes
+- **Group listener**: member joined/left/kicked/banned/added, scope changes
+- **Call listener**: incoming/outgoing/accepted/rejected/cancelled calls
+- **Typing listener**: typing started/ended indicators
+- **Receipt listener**: delivered/read receipts (via `CometChatMessageEvents`)
+
+### detachListeners()
+
+Removes all SDK listeners and unsubscribes from receipt observables.
+
+```typescript
+detachListeners(): void
+```
+
+### reset()
+
+Detaches listeners and resets all signals to their default values.
+
+```typescript
+reset(): void
+```
+
+## Request Building
+
+The service builds a `CometChat.ConversationsRequest` based on the keyword and active filters:
+
+- Sets `setSearchKeyword()` when keyword is non-empty
+- Sets `setUnread(true)` when the `Unread` filter is active
+- Sets `setConversationType('group')` when the `Groups` filter is active
+- Limit is 3 when no filters are active (preview mode), 30 when filters are active (full list mode)
+- Custom builder overrides the default when provided
+
+## Real-Time Event Handling
+
+| Event | Behavior |
+|-------|----------|
+| New message received | Updates last message, increments unread count (if not from logged-in user), moves conversation to top |
+| Message edited/deleted | Updates last message in the matching conversation |
+| User online/offline | Updates the `conversationWith` user status |
+| Typing started | Adds entry to `typingIndicatorMap` |
+| Typing ended | Removes entry from `typingIndicatorMap` |
+| Message delivered | Updates `deliveredAt` on the last message |
+| Message read | Updates `readAt` on the last message, resets unread count to 0 |
+| Group member left/kicked/banned (self) | Removes the conversation from results |
+| Group member left/kicked/banned (other) | Treats as a new message (action message) |
+
+## Usage
+
+The service is typically used internally by `CometChatSearchConversationsListComponent`, but can be injected directly for custom implementations:
+
+```typescript expandable
+import { Component, inject, effect } from '@angular/core';
+import { SearchConversationsService } from '@cometchat/chat-uikit-angular';
+import { CometChatSearchFilter, States } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-search',
+  template: `
+    @switch (service.fetchState()) {
+      @case (States.loading) { <p>Searching...</p> }
+      @case (States.empty) { <p>No conversations found</p> }
+      @case (States.loaded) {
+        @for (conv of service.conversations(); track conv.getConversationId()) {
+          <div>{{ conv.getConversationWith().getName() }}</div>
+        }
+      }
+    }
+  `
+})
+export class CustomSearchComponent {
+  readonly service = inject(SearchConversationsService);
+  readonly States = States;
+
+  search(keyword: string): void {
+    this.service.search(keyword, [CometChatSearchFilter.Unread]);
+  }
+}
+```

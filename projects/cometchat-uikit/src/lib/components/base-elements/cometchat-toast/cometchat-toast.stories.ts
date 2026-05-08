@@ -45,7 +45,7 @@ const toastOverrideStyle = `
 const meta: Meta<CometChatToastComponent> = {
   title: 'Base Elements/Toast',
   component: CometChatToastComponent,
-  tags: ['autodocs'],
+  tags: ['!autodocs', '!dev'],
   decorators: [
     moduleMetadata({
       imports: [CommonModule],

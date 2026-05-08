@@ -1,0 +1,54 @@
+---
+title: "CometChatToolCallArgumentBubble"
+description: "Displays the arguments passed to an AI tool call as formatted JSON"
+---
+
+The `CometChatToolCallArgumentBubble` component renders the arguments sent to one or more AI tool calls. It is shown in the message list when the AI assistant invokes a tool (e.g., a knowledge base search or API call) before returning a response.
+
+## Overview
+
+- **JSON formatting**: Valid JSON arguments are pretty-printed with 2-space indentation
+- **Multiple tool calls**: Renders each tool call in the message as a separate block
+- **Fallback**: Invalid JSON is displayed as raw text
+- **Agentic messages**: Used for messages with category `agentic` and type `tool_arguments`
+
+## Basic Usage
+
+```typescript
+import { CometChatToolCallArgumentBubble } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  standalone: true,
+  imports: [CometChatToolCallArgumentBubble],
+  template: `
+    <cometchat-toolcall-argument-bubble
+      [message]="toolArgumentMessage">
+    </cometchat-toolcall-argument-bubble>
+  `
+})
+export class MyComponent {
+  toolArgumentMessage!: CometChat.AIToolArgumentMessage;
+}
+```
+
+## Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `message` | `CometChat.AIToolArgumentMessage` | ✅ Yes | The AI tool argument message containing one or more tool calls with their arguments |
+
+## Message Structure
+
+The component reads tool calls from `message.getToolArgumentMessageData().getToolCalls()`. Each tool call has:
+
+| Field | Description |
+|-------|-------------|
+| `function.name` | The name of the tool being called |
+| `function.arguments` | JSON string of the arguments passed to the tool |
+
+## Related Components
+
+- **CometChatToolCallResultBubble** — displays the result returned by the tool
+- **CometChatAIAssistantMessageBubble** — displays the final AI response
+- **CometChatStreamMessageBubble** — shows the live streaming state during tool execution
+- **CometChatMessageBubble** — the parent bubble container

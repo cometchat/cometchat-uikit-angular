@@ -12,6 +12,7 @@
   
   @see Requirements 1.1, 1.5, 28.1
 -->
+<cometchat-error-boundary style="display:contents" [componentName]="'MessageComposer'">
 
 <!-- Error State -->
 <!-- @see Requirements 3.1, 3.2, 3.3, 3.5 -->
@@ -249,9 +250,9 @@
   <!-- Reply Preview Title Template -->
   <ng-template #replyPreviewTitleTemplate>
     <div class="cometchat-message-composer__reply-preview-title">
-      <span class="cometchat-message-composer__reply-preview-label">
+      <!-- <span class="cometchat-message-composer__reply-preview-label">
         {{ 'message_composer_replying_to' | translate }}
-      </span>
+      </span> -->
       <span class="cometchat-message-composer__reply-preview-sender">
         {{ getReplyPreviewTitle() }}
       </span>
@@ -687,8 +688,12 @@
                 </div>
               }
               <ng-template #emojiKeyboardContent>
-                <cometchat-emoji-keyboard (emojiClick)="handleEmojiSelect($event)" (closeKeyboard)="handleEmojiKeyboardClose()">
-                </cometchat-emoji-keyboard>
+                @defer (when contentToDisplay() === 'emojiKeyboard') {
+                  <cometchat-emoji-keyboard (emojiClick)="handleEmojiSelect($event)" (closeKeyboard)="handleEmojiKeyboardClose()">
+                  </cometchat-emoji-keyboard>
+                } @placeholder {
+                  <div class="cometchat-message-composer__emoji-placeholder" style="min-height:300px;min-width:300px;"></div>
+                }
               </ng-template>
               @if (!hideStickersButton) {
                 <div class="cometchat-message-composer__sticker-button-wrapper">
@@ -714,12 +719,16 @@
         } @else {
           <!-- Recording state: recorder in button row next to send -->
           <div class="cometchat-message-composer__inline-recorder-wrapper">
-            <cometchat-media-recorder
-              [autoRecording]="true"
-              (submitRecording)="handleRecordingComplete($event)"
-              (closeRecording)="handleRecordingCancel()"
-              (recordingError)="handleRecordingError($event)">
-            </cometchat-media-recorder>
+            @defer (when isRecording()) {
+              <cometchat-media-recorder
+                [autoRecording]="true"
+                (submitRecording)="handleRecordingComplete($event)"
+                (closeRecording)="handleRecordingCancel()"
+                (recordingError)="handleRecordingError($event)">
+              </cometchat-media-recorder>
+            } @placeholder {
+              <div class="cometchat-message-composer__recorder-placeholder"></div>
+            }
           </div>
         }
 
@@ -770,8 +779,12 @@
               </div>
             }
             <ng-template #emojiKeyboardContent>
-              <cometchat-emoji-keyboard (emojiClick)="handleEmojiSelect($event)" (closeKeyboard)="handleEmojiKeyboardClose()">
-              </cometchat-emoji-keyboard>
+              @defer (when contentToDisplay() === 'emojiKeyboard') {
+                <cometchat-emoji-keyboard (emojiClick)="handleEmojiSelect($event)" (closeKeyboard)="handleEmojiKeyboardClose()">
+                </cometchat-emoji-keyboard>
+              } @placeholder {
+                <div class="cometchat-message-composer__emoji-placeholder" style="min-height:300px;min-width:300px;"></div>
+              }
             </ng-template>
             @if (!hideStickersButton) {
               <div class="cometchat-message-composer__sticker-button-wrapper">
@@ -812,12 +825,16 @@
       } @else {
         <!-- Recording state: recorder next to send button -->
         <div class="cometchat-message-composer__inline-recorder-wrapper">
-          <cometchat-media-recorder
-            [autoRecording]="true"
-            (submitRecording)="handleRecordingComplete($event)"
-            (closeRecording)="handleRecordingCancel()"
-            (recordingError)="handleRecordingError($event)">
-          </cometchat-media-recorder>
+          @defer (when isRecording()) {
+            <cometchat-media-recorder
+              [autoRecording]="true"
+              (submitRecording)="handleRecordingComplete($event)"
+              (closeRecording)="handleRecordingCancel()"
+              (recordingError)="handleRecordingError($event)">
+            </cometchat-media-recorder>
+          } @placeholder {
+            <div class="cometchat-message-composer__recorder-placeholder"></div>
+          }
         </div>
       }
 
@@ -951,3 +968,4 @@
   </div>
 </div>
 }
+</cometchat-error-boundary>

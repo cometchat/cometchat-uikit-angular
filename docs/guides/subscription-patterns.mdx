@@ -1,0 +1,254 @@
+---
+title: "RxJS Subscription Patterns"
+description: "Approved patterns for managing RxJS subscriptions in the CometChat Angular V5 UIKit to prevent memory leaks."
+---
+
+## Overview
+
+This guide documents the approved patterns for managing RxJS subscriptions in the CometChat Angular V5 UIKit. Following these patterns ensures that subscriptions are automatically cleaned up when components and services are destroyed, preventing memory leaks in long-running sessions.
+
+---
+
+## ✅ Approved Patterns
+
+### 1. `takeUntilDestroyed()` — Primary Pattern
+
+The preferred pattern for all new subscriptions. Uses Angular's `DestroyRef` to automatically unsubscribe when the component or service is destroyed.
+
+```typescript
+import { Component, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CometChatMessageEvents } from '../events/CometChatMessageEvents';
+
+@Component({ ... })
+export class MyComponent {
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    CometChatMessageEvents.ccMessageRead
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(message => {
+        // handle message read
+      });
+  }
+}
+```
+
+**Why this is preferred:**
+- No boilerplate `ngOnDestroy` needed for subscription cleanup
+- Works in both components and services
+- Angular manages the lifecycle automatically via `DestroyRef`
+- Composable with other RxJS operators
+
+---
+
+### 2. `toSignal()` — For Service Observables
+
+Use `toSignal()` when you need to consume a service observable as an Angular Signal in a component. The subscription is automatically cleaned up when the component is destroyed.
+
+```typescript
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ConversationsService } from '../services/conversations.service';
+
+@Component({ ... })
+export class MyComponent {
+  private conversationsService = inject(ConversationsService);
+
+  // Automatically subscribes and unsubscribes — no manual cleanup needed
+  conversations = toSignal(this.conversationsService.conversations$, {
+    initialValue: [] as CometChat.Conversation[],
+  });
+}
+```
+
+**Why this is preferred for service state:**
+- Zero subscription management code
+- Integrates with Angular's change detection (OnPush compatible)
+- Automatically handles initial value and completion
+
+---
+
+### 3. CometChat SDK Listeners — Service-Managed Pattern
+
+CometChat SDK listeners (`addMessageListener`, `addUserListener`, etc.) must be registered and removed via the service layer, not directly in components.
+
+```typescript
+// ✅ CORRECT — service manages SDK listener lifecycle
+@Injectable({ providedIn: 'root' })
+export class ConversationsService {
+  private readonly listenerId = `conversations_${Date.now()}`;
+
+  private setupMessageListener(): void {
+    CometChat.addMessageListener(
+      this.listenerId,
+      new CometChat.MessageListener({
+        onTextMessageReceived: (message) => { /* handle */ },
+        onMediaMessageReceived: (message) => { /* handle */ },
+      })
+    );
+  }
+
+  private removeMessageListener(): void {
+    try {
+      CometChat.removeMessageListener(this.listenerId);
+    } catch (error) {
+      // log but don't throw — cleanup errors are non-critical
+    }
+  }
+
+  cleanup(): void {
+    this.removeMessageListener();
+    // ... remove other listeners
+  }
+}
+```
+
+**Why services manage SDK listeners:**
+- SDK listeners are singleton-scoped — they must persist across component destroy/recreate cycles (e.g., tab switching)
+- Components should never call `cleanup()` in `ngOnDestroy` — this would tear down listeners on every navigation
+- Call `cleanup()` only for application-level events: user logout, account switching
+
+---
+
+## ❌ Anti-Patterns to Avoid
+
+### ❌ Manual `destroy$` Subject
+
+```typescript
+// ❌ DO NOT USE — verbose boilerplate, error-prone
+@Component({ ... })
+export class MyComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  constructor() {
+    someObservable$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => { /* handle */ });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();    // easy to forget
+    this.destroy$.complete(); // easy to forget
+  }
+}
+```
+
+**Problem:** Requires manual `ngOnDestroy` implementation. If `next()` or `complete()` is forgotten, subscriptions leak.
+
+**Fix:** Use `takeUntilDestroyed(this.destroyRef)` instead.
+
+---
+
+### ❌ Manual `Subscription.unsubscribe()`
+
+```typescript
+// ❌ DO NOT USE — manual tracking is error-prone
+@Component({ ... })
+export class MyComponent implements OnDestroy {
+  private subscription: Subscription | null = null;
+
+  constructor() {
+    this.subscription = someObservable$.subscribe(value => { /* handle */ });
+  }
+
+  ngOnDestroy(): void {
+    this.subscription?.unsubscribe(); // easy to miss for multiple subscriptions
+  }
+}
+```
+
+**Problem:** Each subscription requires a separate property and manual cleanup. Scales poorly.
+
+**Fix:** Use `takeUntilDestroyed(this.destroyRef)` — no property or `ngOnDestroy` needed.
+
+---
+
+### ❌ Subscribing Without Any Cleanup
+
+```typescript
+// ❌ MEMORY LEAK — subscription never cleaned up
+@Component({ ... })
+export class MyComponent {
+  constructor() {
+    someObservable$.subscribe(value => {
+      // This subscription lives forever!
+    });
+  }
+}
+```
+
+**Problem:** The subscription persists after the component is destroyed, accumulating over time.
+
+**Fix:** Always use `takeUntilDestroyed(this.destroyRef)` or `toSignal()`.
+
+---
+
+## Migration Guide
+
+If you encounter the old `takeUntil(this.destroy$)` pattern, here is how to migrate:
+
+### Before
+
+```typescript
+import { Component, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+@Component({ ... })
+export class MyComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  constructor() {
+    someObservable$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => { /* handle */ });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+### After
+
+```typescript
+import { Component, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+@Component({ ... })
+export class MyComponent {
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    someObservable$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(value => { /* handle */ });
+  }
+  // No ngOnDestroy needed!
+}
+```
+
+**Steps:**
+1. Add `DestroyRef` to `@angular/core` imports
+2. Add `takeUntilDestroyed` to `@angular/core/rxjs-interop` imports
+3. Add `private readonly destroyRef = inject(DestroyRef)` field
+4. Replace `.pipe(takeUntil(this.destroy$))` with `.pipe(takeUntilDestroyed(this.destroyRef))`
+5. Remove `private destroy$ = new Subject<void>()`
+6. Remove `this.destroy$.next()` and `this.destroy$.complete()` from `ngOnDestroy`
+7. Remove `OnDestroy` interface if no other cleanup is needed
+8. Remove unused `Subject` and `takeUntil` imports
+
+---
+
+## Summary
+
+| Pattern | Use Case | Cleanup |
+|---------|----------|---------|
+| `takeUntilDestroyed(destroyRef)` | Any RxJS subscription in component/service | Automatic via DestroyRef |
+| `toSignal(obs$)` | Service observable → Signal in component | Automatic via DestroyRef |
+| Service-managed SDK listeners | CometChat SDK `addXxxListener` | Manual via `cleanup()` on logout |
+| ~~`takeUntil(destroy$)`~~ | ❌ Deprecated | Manual — avoid |
+| ~~`subscription.unsubscribe()`~~ | ❌ Deprecated | Manual — avoid |

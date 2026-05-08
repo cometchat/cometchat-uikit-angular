@@ -1130,4 +1130,60 @@ describe('CometChatMessageListComponent', () => {
       expect(component.listState()).toBe(initialState);
     });
   });
+
+  // ── Memory Leak: pendingReadReceipts cleanup (ENG-34640) ──────────────────
+
+  describe('pendingReadReceipts cleanup', () => {
+    it('should not throw when component is destroyed', () => {
+      fixture.detectChanges();
+      expect(() => fixture.destroy()).not.toThrow();
+    });
+
+    it('should clear pendingReadReceipts on component destroy', () => {
+      fixture.detectChanges();
+
+      // Access the private pendingReadReceipts Set via type cast
+      const comp = component as unknown as { pendingReadReceipts: Set<number> };
+
+      // Simulate some pending receipts
+      comp.pendingReadReceipts.add(1001);
+      comp.pendingReadReceipts.add(1002);
+      comp.pendingReadReceipts.add(1003);
+      expect(comp.pendingReadReceipts.size).toBe(3);
+
+      // Destroy the component
+      fixture.destroy();
+
+      // Set should be cleared
+      expect(comp.pendingReadReceipts.size).toBe(0);
+    });
+
+    it('should clear pendingReadReceipts when conversation changes', () => {
+      fixture.detectChanges();
+
+      const comp = component as unknown as { pendingReadReceipts: Set<number>; handleConversationChange: () => void };
+
+      // Simulate some pending receipts
+      comp.pendingReadReceipts.add(2001);
+      comp.pendingReadReceipts.add(2002);
+      expect(comp.pendingReadReceipts.size).toBe(2);
+
+      // Trigger conversation change
+      comp.handleConversationChange();
+
+      // Set should be cleared at start of conversation change
+      expect(comp.pendingReadReceipts.size).toBe(0);
+    });
+
+    it('should allow re-creation after destroy without errors', () => {
+      fixture.detectChanges();
+      fixture.destroy();
+
+      expect(() => {
+        const newFixture = TestBed.createComponent(CometChatMessageListComponent);
+        newFixture.detectChanges();
+        newFixture.destroy();
+      }).not.toThrow();
+    });
+  });
 });

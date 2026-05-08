@@ -50,8 +50,16 @@
   display: flex;
   flex-direction: column;
   max-width: var(--cometchat-message-bubble-max-width, 65%);
-  min-width: var(--cometchat-message-bubble-min-width, fit-content); /* Never shrink below content width (e.g. date line) */
+  min-width: var(--cometchat-message-bubble-min-width, 0);
+  overflow: hidden;
   /* --cometchat-delete-bubble-padding:var(--cometchat-padding-2) var(--cometchat-padding-2) 0 var(--cometchat-padding-2) */
+}
+
+/* Content wrapper: prevents child content from overflowing the bubble */
+.cometchat-message-bubble__content {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Alignment modifiers */
@@ -160,6 +168,8 @@
   border-radius: var(--cometchat-message-bubble-body-border-radius, var(--cometchat-radius-3));
   overflow: hidden; /* Prevent content overflow */
   max-width: var(--cometchat-message-bubble-body-max-width, 100%);
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Remove bottom border-radius when moderation indicator is shown */
@@ -340,7 +350,10 @@
   display: flex;
   flex-direction: column;
   max-width: var(--cometchat-message-bubble-content-max-width, 100%);
+  min-width: 0;
+  align-self: stretch;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* Status info view */

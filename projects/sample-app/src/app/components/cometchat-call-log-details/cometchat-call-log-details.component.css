@@ -16,12 +16,12 @@
 
 .cometchat-call-log-details__outgoing-call {
   background: rgba(0, 0, 0, 0.5);
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
-  z-index: 10;
+  z-index: 9998;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,6 +144,16 @@
 .cometchat-call-log-details__call-buttons {
   display: flex;
   gap: var(--cometchat-spacing-2);
+  --cometchat-call-buttons-button-icon-background: var(--cometchat-primary-color);
+  --cometchat-call-buttons-button-icon-background-hover: var(--cometchat-primary-color);
+  --cometchat-call-buttons-button-background: transparent;
+  --cometchat-call-buttons-button-background-hover: transparent;
+  --cometchat-call-buttons-button-background-active: transparent;
+  --cometchat-call-buttons-button-padding: var(--cometchat-spacing-2) var(--cometchat-spacing-5);
+  --cometchat-call-buttons-button-hover-padding: var(--cometchat-spacing-2) var(--cometchat-spacing-5);
+  --cometchat-call-buttons-button-hover-border-radius: var(--cometchat-radius-2);
+  --cometchat-button-border: 1px solid var(--cometchat-border-color-default, var(--cometchat-border-color-light));
+  --cometchat-button-border-radius: var(--cometchat-radius-2);
 }
 
 .cometchat-call-log-details__call-btn {

@@ -17,22 +17,9 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 import { CometChatTextFormatter } from '../../../formatters/cometchat-text-formatter';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../../services/global-config.service';
+import { MessagePreviewMode, MESSAGE_TYPES } from './cometchat-message-preview.types';
 
-/**
- * Preview mode type for message preview context
- */
-export type MessagePreviewMode = 'reply' | 'edit';
-
-/**
- * Message type constants for type checking
- */
-const MESSAGE_TYPES = {
-  TEXT: 'text',
-  IMAGE: 'image',
-  VIDEO: 'video',
-  AUDIO: 'audio',
-  FILE: 'file',
-} as const;
+export type { MessagePreviewMode };
 
 /**
  * CometChatMessagePreview is a component that displays a preview of a message

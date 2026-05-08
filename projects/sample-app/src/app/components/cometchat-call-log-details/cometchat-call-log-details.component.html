@@ -1,14 +1,6 @@
 @if (callLog(); as call) {
   <div class="cometchat-call-log-details">
-    <!-- Outgoing Call Overlay -->
-    @if (showOutgoingCallScreen()) {
-      <div class="cometchat-call-log-details__outgoing-call">
-        <cometchat-outgoing-call
-          [call]="activeCallObject()"
-          (callCanceled)="onOutgoingCallCanceled()">
-        </cometchat-outgoing-call>
-      </div>
-    }
+    <!-- Outgoing Call + Ongoing Call handled by cometchat-call-buttons -->
 
     <!-- Header -->
     <div class="cometchat-call-log-details__header">
@@ -42,22 +34,9 @@
         </div>
       </div>
       <div class="cometchat-call-log-details__call-buttons">
-        <button
-          class="cometchat-call-log-details__call-btn"
-          (click)="onVoiceCall()"
-          type="button"
-          [attr.aria-label]="'call_button_voice_hover' | translate"
-        >
-          <div class="cometchat-call-log-details__call-btn-icon cometchat-call-log-details__call-btn-icon--voice"></div>
-        </button>
-        <button
-          class="cometchat-call-log-details__call-btn"
-          (click)="onVideoCall()"
-          type="button"
-          [attr.aria-label]="'call_button_video_hover' | translate"
-        >
-          <div class="cometchat-call-log-details__call-btn-icon cometchat-call-log-details__call-btn-icon--video"></div>
-        </button>
+        <cometchat-call-buttons
+          [user]="otherUser() ?? null"
+        ></cometchat-call-buttons>
       </div>
     </div>
 

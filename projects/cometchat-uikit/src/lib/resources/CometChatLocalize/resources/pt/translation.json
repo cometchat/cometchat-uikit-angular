@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "Faça uma pergunta...",
     "ai_assistant_chat_new_chat": "Novo Chat",
     "ai_assistant_chat_history": "histórico de chat",
-    "ai_assistant_chat_history_title": "Histórico de Chat",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Pensando...",
     "ai_assistant_chat_executing_tool": "Executando ação...",
     "ai_assistant_chat_no_internet": "Sem conexão com a internet. Verifique sua rede.",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Inicie uma nova conversa para vê-la aqui.",
     "ai_assistant_chat_history_error_title": "Algo Deu Errado",
     "ai_assistant_chat_history_error_subtitle": "Estamos com problemas para carregar seu histórico de chat.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Adicionar membros",
     "add_member": "Adicionar membro",
     "add_n_members": "Adicionar {n} membros",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "Falha ao enviar mensagem",
     "accessibility_message_deleted": "Mensagem excluída",
     "accessibility_message_edited": "Mensagem editada",
-    "accessibility_loading_older_messages": "Carregando mensagens anteriores"
+    "accessibility_loading_older_messages": "Carregando mensagens anteriores",
+    "message_list_option_mark_as_unread": "Marcar como não lida",
+    "message_list_unread_messages": "Mensagens não lidas",
+    "message_list_unread_divider": "Divisor de mensagens não lidas"
 }

@@ -138,7 +138,7 @@ export class GroupChatComponent {
 | `hideVideoCallButton` | `boolean` | `true` | Hide the video call button. Defaults to `true` (hidden). When calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`, the resolved default becomes `false` (visible). Set to `true` explicitly to hide even when calling is enabled. |
 | `showSearchOption` | `boolean` | `false` | Show the search option in the header |
 | `showConversationSummaryButton` | `boolean` | `false` | Show the AI conversation summary button |
-| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` forwarded to the call buttons and ongoing call screen. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
+| `callSettingsBuilder` | `SessionSettings` | `undefined` | Custom [v5 SessionSettings object](https://www.cometchat.com/docs/calls/javascript/session-settings) forwarded to the call buttons and ongoing call screen. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
 
 ### AI Configuration Properties
 
@@ -331,12 +331,11 @@ When both search and summary options are enabled, they appear in an overflow men
 
 ### Custom Call Settings
 
-Override the default `CallSettingsBuilder` used when calls are initiated from the message header:
+Override the default session settings used when calls are initiated from the message header:
 
 ```typescript expandable
 import { Component, OnInit } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
 import { CometChatMessageHeaderComponent } from '@cometchat/chat-uikit-angular';
 
 @Component({
@@ -355,9 +354,15 @@ export class CustomCallHeaderComponent implements OnInit {
   customCallSettings: any;
 
   ngOnInit(): void {
-    this.customCallSettings = new CometChatCalls.CallSettingsBuilder()
-      .enableDefaultLayout(true)
-      .setIsAudioOnlyCall(false);
+    // v5: pass a plain SessionSettings object instead of using CallSettingsBuilder
+    this.customCallSettings = {
+      sessionType: 'VIDEO',
+      layout: 'TILE',
+      startAudioMuted: false,
+      startVideoPaused: false,
+      hideRecordingButton: true,
+      hideScreenSharingButton: false,
+    };
   }
 }
 ```

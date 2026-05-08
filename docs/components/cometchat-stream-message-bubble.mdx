@@ -1,0 +1,71 @@
+---
+title: "CometChatStreamMessageBubble"
+description: "Renders a live-streaming AI response with real-time text accumulation, thinking indicator, and tool execution state"
+---
+
+The `CometChatStreamMessageBubble` component renders a live-streaming AI assistant response. It subscribes to `CometChatAIStreamingService` and updates in real time as text chunks arrive from the AI backend.
+
+## Overview
+
+- **Live streaming**: Accumulates text deltas and re-renders on every chunk
+- **Thinking state**: Shows a pulsing indicator while the AI is processing
+- **Tool execution**: Shows a status message while a tool call is in progress
+- **Error handling**: Detects network offline events and shows an error state
+- **Markdown**: Renders accumulated text via `CometChatMarkdownRenderer` in streaming mode
+
+## Basic Usage
+
+```typescript
+import { CometChatStreamMessageBubble } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  standalone: true,
+  imports: [CometChatStreamMessageBubble],
+  template: `
+    <cometchat-stream-message-bubble
+      [chatId]="activeChatId">
+    </cometchat-stream-message-bubble>
+  `
+})
+export class MyComponent {
+  activeChatId = 'user-uid-123'; // UID of the user or GUID of the group
+}
+```
+
+## Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `chatId` | `string` | ✅ Yes | The UID (user chat) or GUID (group chat) used to scope streaming events to this conversation |
+
+## States
+
+The component cycles through these states during a streaming session:
+
+| State | Visual | Description |
+|-------|--------|-------------|
+| Thinking | Pulsing dots | AI is processing the request |
+| Tool executing | Status text | A tool call is in progress |
+| Streaming | Live markdown | Text chunks are being rendered |
+| Error | Error message | Network went offline during streaming |
+
+## Integration with CometChatAIStreamingService
+
+The component subscribes to `CometChatAIStreamingService.messageStream$` automatically. You need to wire the SDK WebSocket AI events to the service in your app:
+
+```typescript
+import { CometChatAIStreamingService } from '@cometchat/chat-uikit-angular';
+
+// In your component or service that handles SDK events:
+CometChat.addMessageListener('my-listener', new CometChat.MessageListener({
+  onAIAssistantMessageReceived: (message) => {
+    streamingService.handleWebsocketMessage(chatId, message);
+  }
+}));
+```
+
+## Related Components
+
+- **CometChatAIAssistantMessageBubble** — for completed (non-streaming) AI responses
+- **CometChatMarkdownRenderer** — the underlying markdown renderer
+- **CometChatAIAssistantChat** — the full AI chat interface that manages streaming lifecycle

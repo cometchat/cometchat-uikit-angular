@@ -359,7 +359,8 @@
     "ai_assistant_chat_composer_placeholder": "Tegyen fel egy kérdést...",
     "ai_assistant_chat_new_chat": "Új csevegés",
     "ai_assistant_chat_history": "chat előzményei",
-    "ai_assistant_chat_history_title": "Csevegési előzmények",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Gondolkodás...",
     "ai_assistant_chat_executing_tool": "Művelet végrehajtása...",
     "ai_assistant_chat_no_internet": "Nincs internetkapcsolat. Kérjük, ellenőrizze a hálózatot.",
@@ -367,6 +368,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Indítson új beszélgetést, hogy itt megjelenjen.",
     "ai_assistant_chat_history_error_title": "Valami hiba történt",
     "ai_assistant_chat_history_error_subtitle": "Problémába ütköztünk a csevegési előzmények betöltésekor.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Tagok hozzáadása",
     "add_member": "Tag hozzáadása",
     "add_n_members": "{n} tag hozzáadása",
@@ -643,5 +645,8 @@
     "button_loading_text": "Betöltés...",
     "group_members_custom_options_error": "Hiba az egyéni beállítások funkcióban",
     "accessibility_recording_paused": "Felvétel szüneteltetve: {duration}",
-    "accessibility_recording_resumed": "Felvétel folytatva"
+    "accessibility_recording_resumed": "Felvétel folytatva",
+    "message_list_option_mark_as_unread": "Megjelölés olvasatlanként",
+    "message_list_unread_messages": "Olvasatlan üzenetek",
+    "message_list_unread_divider": "Olvasatlan üzenetek elválasztója"
 }

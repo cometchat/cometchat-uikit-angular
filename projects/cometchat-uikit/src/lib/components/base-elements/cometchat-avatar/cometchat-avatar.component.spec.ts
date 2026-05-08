@@ -380,7 +380,7 @@ describe('CometChatAvatarComponent', () => {
       component.image = 'https://example.com/avatar.png';
       fixture.detectChanges();
       const img = el.querySelector('.cometchat-avatar__image') as HTMLImageElement;
-      expect(img?.getAttribute('loading')).toBe('lazy');
+      expect(img?.loading).toBe('lazy');
     });
 
     it('should display correct text content for initials', () => {

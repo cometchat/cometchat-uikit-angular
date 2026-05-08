@@ -1,0 +1,275 @@
+---
+title: "CometChatAIAssistantChat"
+description: "Top-level orchestrator component for the AI assistant chat experience with real-time streaming, tool call dispatch, chat history, and suggestion pills."
+---
+
+## Overview
+
+`CometChatAIAssistantChat` is the top-level orchestrator for the AI assistant chat experience. It wires together `CometChatMessageHeader`, `CometChatMessageList`, `CometChatMessageComposer`, and the `CometChatAIAssistantChatHistory` sidebar into a single cohesive interface.
+
+Key capabilities:
+
+- **Real-time streaming** — integrates with `CometChatAIStreamingService` to display live AI responses token-by-token
+- **Tool call dispatch** — registers `CometChatAIAssistantTools` handlers that the streaming service invokes automatically
+- **Chat history sidebar** — browse and resume past AI conversations without losing context
+- **Suggestion pills** — configurable quick-reply prompts sourced from explicit input or user metadata
+- **Concurrent run support** — multiple AI responses can stream simultaneously without state corruption
+- **Keyboard accessible** — full focus management including sidebar open/close focus trapping and restoration
+
+## Basic Usage
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatAIAssistantChat,
+  CometChatAIStreamingService,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-ai-chat',
+  standalone: true,
+  imports: [CometChatAIAssistantChat],
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat
+        [user]="agentUser"
+      ></cometchat-ai-assistant-chat>
+    }
+  `,
+})
+export class AiChatComponent implements OnInit {
+  agentUser: CometChat.User | null = null;
+
+  constructor(private streamingService: CometChatAIStreamingService) {}
+
+  ngOnInit(): void {
+    CometChat.getUser('ai-agent-uid').then((user) => {
+      this.agentUser = user;
+    });
+
+    // Wire the CometChat SDK WebSocket to the streaming service
+    CometChat.addMessageListener(
+      'ai-listener',
+      new CometChat.MessageListener({
+        onAIAssistantMessageReceived: (event: CometChat.AIAssistantBaseEvent) => {
+          this.streamingService.handleWebsocketMessage(event, 'ai-agent-uid');
+        },
+      })
+    );
+  }
+}
+```
+
+## Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `user` | `CometChat.User` | required | The AI agent user to chat with |
+| `streamingSpeed` | `number` | `30` | Per-token delay in milliseconds for the streaming animation |
+| `aiAssistantTools` | `CometChatAIAssistantTools` | `undefined` | Tool handlers the AI can invoke during a conversation |
+| `loadLastAgentConversation` | `boolean` | `false` | When `true`, automatically resumes the most recent conversation on load |
+| `showSuggestedMessages` | `boolean` | `true` | Whether to show suggestion pills above the composer |
+| `suggestedMessages` | `string[]` | `[]` | Explicit suggestion pill labels; falls back to `user.getMetadata().suggestedMessages` |
+| `greetingTemplate` | `TemplateRef<{ $implicit: CometChat.User }>` | `undefined` | Custom greeting template rendered before the first message |
+
+## Events
+
+This component does not emit outputs directly — it manages all state internally and communicates with child components via signals and the `CometChatAIStreamingService`.
+
+## Advanced Usage
+
+### Registering Tool Handlers
+
+Use `CometChatAIAssistantTools` to register client-side functions the AI can call during a conversation. The streaming service dispatches them automatically when a `tool_call_end` event is received.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatAIAssistantChat,
+  CometChatAIAssistantTools,
+  CometChatAIStreamingService,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-ai-chat-with-tools',
+  standalone: true,
+  imports: [CometChatAIAssistantChat],
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat
+        [user]="agentUser"
+        [aiAssistantTools]="tools"
+      ></cometchat-ai-assistant-chat>
+    }
+  `,
+})
+export class AiChatWithToolsComponent implements OnInit {
+  agentUser: CometChat.User | null = null;
+
+  tools = new CometChatAIAssistantTools({
+    get_weather: async (args: { city: string }) => {
+      const response = await fetch(`/api/weather?city=${args.city}`);
+      return response.json();
+    },
+    search_products: async (args: { query: string; limit?: number }) => {
+      const response = await fetch(`/api/products?q=${args.query}&limit=${args.limit ?? 5}`);
+      return response.json();
+    },
+  });
+
+  constructor(private streamingService: CometChatAIStreamingService) {}
+
+  ngOnInit(): void {
+    CometChat.getUser('ai-agent-uid').then((user) => {
+      this.agentUser = user;
+    });
+
+    CometChat.addMessageListener(
+      'ai-listener',
+      new CometChat.MessageListener({
+        onAIAssistantMessageReceived: (event: CometChat.AIAssistantBaseEvent) => {
+          this.streamingService.handleWebsocketMessage(event, 'ai-agent-uid');
+        },
+      })
+    );
+  }
+}
+```
+
+### Suggestion Pills
+
+Provide quick-reply prompts to guide users. If `suggestedMessages` is empty, the component falls back to `user.getMetadata().suggestedMessages`.
+
+```typescript
+@Component({
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat
+        [user]="agentUser"
+        [suggestedMessages]="suggestions"
+        [showSuggestedMessages]="true"
+      ></cometchat-ai-assistant-chat>
+    }
+  `,
+})
+export class AiChatSuggestionsComponent {
+  agentUser: CometChat.User | null = null;
+
+  suggestions = [
+    'What can you help me with?',
+    'Show me recent orders',
+    'How do I reset my password?',
+  ];
+}
+```
+
+### Custom Greeting Template
+
+Render a personalized greeting before the first message using the `greetingTemplate` input. The template context exposes the agent user as `$implicit`.
+
+```typescript
+@Component({
+  standalone: true,
+  imports: [CometChatAIAssistantChat],
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat
+        [user]="agentUser"
+        [greetingTemplate]="greeting"
+      ></cometchat-ai-assistant-chat>
+    }
+
+    <ng-template #greeting let-user>
+      <div class="greeting">
+        <h2>Hi, I'm {{ user.getName() }}</h2>
+        <p>Ask me anything about your account or our products.</p>
+      </div>
+    </ng-template>
+  `,
+})
+export class AiChatGreetingComponent {
+  agentUser: CometChat.User | null = null;
+}
+```
+
+### Concurrent Runs
+
+The component supports multiple simultaneous AI responses. Each run streams independently — a slow tool call in one run does not block text streaming in another. This is handled automatically by `CometChatAIStreamingService` using per-run `concatMap` pipelines merged via `mergeMap`.
+
+```typescript
+// Wire multiple agent users — each gets its own isolated streaming state
+CometChat.addMessageListener(
+  'ai-listener',
+  new CometChat.MessageListener({
+    onAIAssistantMessageReceived: (event: CometChat.AIAssistantBaseEvent) => {
+      // chatId scopes the streaming state — use the agent's UID
+      const chatId = event.getReceiverId();
+      this.streamingService.handleWebsocketMessage(event, chatId);
+    },
+  })
+);
+```
+
+### Controlling Streaming Speed
+
+Adjust the per-token animation delay at runtime. The `streamingSpeed` input is synced to the service via an `effect()` — changes take effect immediately for all active and future runs.
+
+```typescript
+@Component({
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat
+        [user]="agentUser"
+        [streamingSpeed]="speedMs"
+      ></cometchat-ai-assistant-chat>
+    }
+    <label>
+      Speed (ms): <input type="range" min="0" max="100" [(ngModel)]="speedMs" />
+    </label>
+  `,
+})
+export class AiChatSpeedComponent {
+  agentUser: CometChat.User | null = null;
+  speedMs = 30;
+}
+```
+
+## Customization
+
+### CSS Variables
+
+All visual properties are controlled via CSS variables. Override them in your global stylesheet or a scoped component style:
+
+```css
+cometchat-ai-assistant-chat {
+  --cometchat-primary-color: #7c3aed;
+  --cometchat-background-color-01: #f9fafb;
+  --cometchat-text-color-primary: #111827;
+  --cometchat-radius-2: 12px;
+}
+```
+
+### Localization Keys
+
+| Key | Default (en-us) |
+|-----|-----------------|
+| `ai_assistant_chat_intro_message` | "How can I help you today?" |
+| `ai_assistant_chat_composer_placeholder` | "Ask me anything..." |
+| `ai_assistant_chat_new_chat` | "New Chat" |
+| `ai_assistant_chat_history_title` | "AI Assistant" |
+| `ai_assistant_chat_thinking` | "Thinking..." |
+| `ai_assistant_chat_executing_tool` | "Executing..." |
+| `ai_assistant_chat_no_internet` | "No internet connection" |
+
+Override any key via `CometChatLocalize.updateKeys()`:
+
+```typescript
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+CometChatLocalize.updateKeys('en', {
+  ai_assistant_chat_intro_message: 'Hello! How can I assist you today?',
+  ai_assistant_chat_composer_placeholder: 'Type your question...',
+});
+```

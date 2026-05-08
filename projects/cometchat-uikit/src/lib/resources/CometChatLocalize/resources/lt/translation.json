@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "Užduokite klausimą...",
     "ai_assistant_chat_new_chat": "Naujas pokalbis",
     "ai_assistant_chat_history": "pokalbių istorija",
-    "ai_assistant_chat_history_title": "Pokalbių istorija",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Galvoju...",
     "ai_assistant_chat_executing_tool": "Vykdomas veiksmas...",
     "ai_assistant_chat_no_internet": "Nėra interneto ryšio. Patikrinkite tinklą.",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Pradėkite naują pokalbį, kad jis būtų rodomas čia.",
     "ai_assistant_chat_history_error_title": "Kažkas nutiko",
     "ai_assistant_chat_history_error_subtitle": "Kilo problemų įkeliant pokalbių istoriją.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Pridėti narius",
     "add_member": "Pridėti narį",
     "add_n_members": "Pridėti {n} narius",
@@ -643,5 +645,8 @@
     "button_loading_text": "Kraunama...",
     "group_members_custom_options_error": "Klaida pasirinktinių parinkčių funkcijoje",
     "accessibility_recording_paused": "Įrašymas pristabdytas ties {duration}",
-    "accessibility_recording_resumed": "Įrašymas tęsiamas"
+    "accessibility_recording_resumed": "Įrašymas tęsiamas",
+    "message_list_option_mark_as_unread": "Pažymėti kaip neperskaitytą",
+    "message_list_unread_messages": "Neskaityti pranešimai",
+    "message_list_unread_divider": "Neskaitytų pranešimų skyriklis"
 }

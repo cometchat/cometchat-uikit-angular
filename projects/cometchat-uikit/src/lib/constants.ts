@@ -67,6 +67,7 @@ export class CometChatUIKitConstants {
     forwardMessage: 'forward',
     sendMessagePrivately: 'sendMessagePrivately',
     replyMessagePrivately: 'replyMessagePrivately',
+    markAsUnread: 'markAsUnread',
   });
 
   static GroupOptions = Object.freeze({

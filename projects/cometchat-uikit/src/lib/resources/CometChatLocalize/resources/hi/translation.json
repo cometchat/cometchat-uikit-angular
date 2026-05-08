@@ -359,7 +359,8 @@
     "ai_assistant_chat_composer_placeholder": "एक प्रश्न पूछें...",
     "ai_assistant_chat_new_chat": "नई चैट",
     "ai_assistant_chat_history": "चैट इतिहास",
-    "ai_assistant_chat_history_title": "चैट इतिहास",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "सोच रहा हूँ...",
     "ai_assistant_chat_executing_tool": "कार्रवाई निष्पादित हो रही है...",
     "ai_assistant_chat_no_internet": "इंटरनेट कनेक्शन नहीं है। कृपया अपना नेटवर्क जाँचें।",
@@ -367,6 +368,7 @@
     "ai_assistant_chat_history_empty_subtitle": "इसे यहाँ देखने के लिए एक नई बातचीत शुरू करें।",
     "ai_assistant_chat_history_error_title": "कुछ गलत हो गया",
     "ai_assistant_chat_history_error_subtitle": "आपका चैट इतिहास लोड करने में समस्या हो रही है।",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "सदस्य जोड़ें",
     "add_member": "सदस्य जोड़ें",
     "add_n_members": "{n} सदस्य जोड़ें",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "संदेश भेजने में विफल",
     "accessibility_message_deleted": "संदेश हटाया गया",
     "accessibility_message_edited": "संदेश संपादित किया गया",
-    "accessibility_loading_older_messages": "पुराने संदेश लोड हो रहे हैं"
+    "accessibility_loading_older_messages": "पुराने संदेश लोड हो रहे हैं",
+    "message_list_option_mark_as_unread": "अपठित के रूप में चिह्नित करें",
+    "message_list_unread_messages": "अपठित संदेश",
+    "message_list_unread_divider": "अपठित संदेश विभाजक"
 }

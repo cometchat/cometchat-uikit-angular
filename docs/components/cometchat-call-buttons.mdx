@@ -73,9 +73,10 @@ export class CallButtonsDemoComponent {
 | `onError` | `((error: CometChat.CometChatException) => void) \| null` | `null` | Error callback invoked for any error during call operations. |
 | `outgoingCallDisableSoundForCalls` | `boolean` | `false` | Disables sound for the outgoing call overlay. Supports global config override. |
 | `outgoingCallCustomSoundForCalls` | `string` | `''` | Custom sound URL for the outgoing call overlay. Supports global config override. |
-| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` to override the default call settings used in the ongoing call screen. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
+| `callSettingsBuilder` | `SessionSettings` | `undefined` | Custom [v5 SessionSettings object](https://www.cometchat.com/docs/calls/javascript/session-settings) to override the default call settings used in the ongoing call screen. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
 | `voiceCallButtonView` | `TemplateRef<any> \| null` | `null` | Replaces the default voice call button with a custom template. |
 | `videoCallButtonView` | `TemplateRef<any> \| null` | `null` | Replaces the default video call button with a custom template. |
+| `hideOverlays` | `boolean` | `false` | When `true`, hides the incoming/outgoing call overlays managed by this component. Useful when you handle call UI externally. |
 
 ## Events
 
@@ -115,12 +116,11 @@ cometchat-call-buttons {
 
 ### Custom Call Settings
 
-Override the default `CallSettingsBuilder` to customize the call UI:
+Override the default session settings to customize the call UI:
 
 ```typescript expandable
 import { Component, OnInit } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
 import { CometChatCallButtonsComponent } from '@cometchat/chat-uikit-angular';
 
 @Component({
@@ -139,9 +139,15 @@ export class CustomCallSettingsComponent implements OnInit {
   customCallSettings: any;
 
   ngOnInit(): void {
-    this.customCallSettings = new CometChatCalls.CallSettingsBuilder()
-      .enableDefaultLayout(true)
-      .setIsAudioOnlyCall(false);
+    // v5: pass a plain SessionSettings object instead of using CallSettingsBuilder
+    this.customCallSettings = {
+      sessionType: 'VIDEO',
+      layout: 'TILE',
+      startAudioMuted: false,
+      startVideoPaused: false,
+      hideRecordingButton: true,
+      hideScreenSharingButton: false,
+    };
   }
 }
 ```

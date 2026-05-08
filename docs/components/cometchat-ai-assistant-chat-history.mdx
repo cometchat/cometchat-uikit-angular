@@ -1,0 +1,212 @@
+---
+title: "CometChatAIAssistantChatHistory"
+description: "Sidebar component that lists past AI conversations with pagination, delete, roving tabindex keyboard navigation, and custom empty/error state templates."
+---
+
+## Overview
+
+`CometChatAIAssistantChatHistory` renders a scrollable sidebar list of past AI conversations for a given user or group. It is used internally by `CometChatAIAssistantChat` but can also be embedded standalone when you need a custom layout.
+
+Key capabilities:
+
+- **Paginated fetch** — loads 30 messages per page via `CometChat.MessagesRequestBuilder`; appends more on scroll-to-bottom
+- **Auto-resume** — when `loadLastAgentConversation` is `true`, automatically emits the most recent message on first load
+- **Real-time prepend** — listens to `ccMessageSent` and prepends new messages without a full refetch
+- **Delete** — calls `CometChat.deleteMessage()` and emits `newChatClick(null)` if the deleted message was the active conversation
+- **Date separators** — groups messages by calendar day using a `computed()` signal (no template method calls)
+- **Roving tabindex** — Arrow Up/Down keyboard navigation across the message list
+- **Custom states** — accepts `ng-template` inputs for empty and error states
+
+## Basic Usage
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAIAssistantChatHistory } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-history',
+  standalone: true,
+  imports: [CometChatAIAssistantChatHistory],
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat-history
+        [user]="agentUser"
+        (messageClick)="onMessageClick($event)"
+        (newChatClick)="onNewChat($event)"
+        (closeClick)="onClose()"
+      ></cometchat-ai-assistant-chat-history>
+    }
+  `,
+})
+export class ChatHistoryComponent {
+  agentUser: CometChat.User | null = null;
+
+  onMessageClick(message: CometChat.TextMessage): void {
+    console.log('Resume conversation from message:', message.getId());
+  }
+
+  onNewChat(message: CometChat.TextMessage | null): void {
+    console.log('Start new chat');
+  }
+
+  onClose(): void {
+    console.log('Sidebar closed');
+  }
+}
+```
+
+## Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `user` | `CometChat.User` | `undefined` | Fetch history for a 1-on-1 conversation with this user |
+| `group` | `CometChat.Group` | `undefined` | Fetch history for a group conversation |
+| `loadLastAgentConversation` | `boolean` | `false` | Auto-emit the most recent message via `messageClick` on first page load |
+| `showNewChat` | `boolean` | `true` | Show the "New Chat" button at the top of the sidebar |
+| `emptyStateTemplate` | `TemplateRef<void>` | `undefined` | Custom template rendered when no messages exist |
+| `errorStateTemplate` | `TemplateRef<void>` | `undefined` | Custom template rendered when the fetch fails |
+
+## Outputs
+
+| Output | Payload | Description |
+|--------|---------|-------------|
+| `messageClick` | `CometChat.TextMessage` | Emitted when a history item is clicked; use the message ID as the parent message ID to scope the message list |
+| `newChatClick` | `CometChat.TextMessage \| null` | Emitted when "New Chat" is clicked (`null`) or when the active conversation's message is deleted (`null`) |
+| `closeClick` | `void` | Emitted when the close button is clicked |
+| `empty` | `void` | Emitted when the first page loads with zero messages |
+
+## Keyboard Navigation
+
+The message list implements a roving tabindex pattern:
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Focus the list |
+| `↓` Arrow Down | Move focus to the next message item |
+| `↑` Arrow Up | Move focus to the previous message item |
+| `Enter` / `Space` | Select the focused message (emits `messageClick`) |
+
+## Customization
+
+### Custom Empty State
+
+```typescript
+@Component({
+  standalone: true,
+  imports: [CometChatAIAssistantChatHistory],
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat-history
+        [user]="agentUser"
+        [emptyStateTemplate]="emptyTpl"
+        (messageClick)="onMessageClick($event)"
+      ></cometchat-ai-assistant-chat-history>
+    }
+
+    <ng-template #emptyTpl>
+      <div class="empty-history">
+        <img src="assets/chat-bubble.svg" alt="" aria-hidden="true" />
+        <p>No past conversations yet.</p>
+        <p>Start chatting to see your history here.</p>
+      </div>
+    </ng-template>
+  `,
+  styles: [`
+    .empty-history {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 40px 16px;
+      text-align: center;
+      color: var(--cometchat-text-color-secondary);
+    }
+    .empty-history img {
+      width: 64px;
+      opacity: 0.5;
+      margin-bottom: 8px;
+    }
+  `],
+})
+export class CustomEmptyHistoryComponent {
+  agentUser: CometChat.User | null = null;
+
+  onMessageClick(message: CometChat.TextMessage): void {
+    console.log('Resume:', message.getId());
+  }
+}
+```
+
+### Custom Error State
+
+```typescript
+@Component({
+  standalone: true,
+  imports: [CometChatAIAssistantChatHistory],
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat-history
+        [user]="agentUser"
+        [errorStateTemplate]="errorTpl"
+        (messageClick)="onMessageClick($event)"
+      ></cometchat-ai-assistant-chat-history>
+    }
+
+    <ng-template #errorTpl>
+      <div class="error-history">
+        <p>Couldn't load your chat history.</p>
+        <button (click)="reload()">Retry</button>
+      </div>
+    </ng-template>
+  `,
+})
+export class CustomErrorHistoryComponent {
+  agentUser: CometChat.User | null = null;
+
+  onMessageClick(message: CometChat.TextMessage): void {}
+
+  reload(): void {
+    // Re-mount the component or trigger a manual refresh
+    window.location.reload();
+  }
+}
+```
+
+### Auto-Resume Last Conversation
+
+Set `loadLastAgentConversation` to `true` to automatically pick up where the user left off:
+
+```typescript
+@Component({
+  template: `
+    @if (agentUser) {
+      <cometchat-ai-assistant-chat-history
+        [user]="agentUser"
+        [loadLastAgentConversation]="true"
+        (messageClick)="onMessageClick($event)"
+      ></cometchat-ai-assistant-chat-history>
+    }
+  `,
+})
+export class AutoResumeComponent {
+  agentUser: CometChat.User | null = null;
+
+  onMessageClick(message: CometChat.TextMessage): void {
+    // This fires automatically on first load with the most recent message
+    console.log('Auto-resumed conversation:', message.getId());
+  }
+}
+```
+
+### Localization Keys
+
+| Key | Default (en-us) |
+|-----|-----------------|
+| `ai_assistant_chat_history_title` | "AI Assistant" |
+| `ai_assistant_chat_history_list_title` | "Chat History" |
+| `ai_assistant_chat_history_empty_title` | "No conversations yet" |
+| `ai_assistant_chat_history_empty_subtitle` | "Start a new chat to get going" |
+| `ai_assistant_chat_history_error_title` | "Couldn't load history" |
+| `ai_assistant_chat_history_error_subtitle` | "Please try again" |
+| `ai_assistant_chat_new_chat` | "New Chat" |

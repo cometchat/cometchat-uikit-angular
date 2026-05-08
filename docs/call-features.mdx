@@ -16,7 +16,7 @@ Ensure `CometChatUIKit.init()` has completed and the user is logged in before us
 Install the Calls SDK:
 
 ```bash
-npm install @cometchat/calls-sdk-javascript@5.0.0-beta.1
+npm install @cometchat/calls-sdk-javascript@5.0.0
 ```
 
 Then enable calling in your `UIKitSettingsBuilder`:
@@ -38,22 +38,17 @@ When enabled, [cometchat-call-buttons](/components/cometchat-call-buttons) rende
 
 ### Custom Call App Settings
 
-By default the UIKit builds `CallAppSettings` from your `appId` and `region`. If you need custom configuration (e.g. a different region for the Calls SDK or additional settings), pass your own `CallAppSettings`:
+By default the UIKit builds `CallAppSettings` from your `appId` and `region`. If you need custom configuration, pass your own settings object:
 
 ```typescript
-import { CometChatUIKitCalls } from '@cometchat/calls-sdk-javascript';
-
-const callAppSettings = new CometChatUIKitCalls.CallAppSettingsBuilder()
-  .setAppId('APP_ID')
-  .setRegion('REGION')
-  .build();
+import { UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
 
 const settings = new UIKitSettingsBuilder()
   .setAppId('APP_ID')
   .setRegion('REGION')
   .setAuthKey('AUTH_KEY')
   .setCallingEnabled(true)
-  .setCallAppSettings(callAppSettings)
+  .setCallAppSettings({ appId: 'APP_ID', region: 'REGION' })
   .build();
 ```
 

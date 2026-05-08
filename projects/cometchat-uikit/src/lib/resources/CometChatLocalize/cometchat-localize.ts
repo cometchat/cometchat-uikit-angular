@@ -1,4 +1,6 @@
 import { LocalizationSettings, CalendarObject } from './localization.interfaces';
+import { LANGUAGE_CALENDAR_DEFAULTS, DEFAULT_TIMEZONES } from './localize-data';
+import { formatDateFromPattern, formatDate as formatDateHelper, isYesterday } from './localize-helpers';
 
 // Import all translation files
 import translationDE from './resources/de/translation.json';
@@ -87,27 +89,7 @@ export class CometChatLocalize {
   private static customCalendarObjectSet = false;
 
   /** Language-specific default CalendarObjects */
-  private static languageCalendarDefaults: Record<string, CalendarObject> = {
-    'en-US': { today: 'hh:mm A', yesterday: '[Yesterday]', lastWeek: 'dddd', otherDays: 'MM/DD/YYYY' },
-    'en-GB': { today: 'HH:mm', yesterday: '[Yesterday]', lastWeek: 'dddd', otherDays: 'DD/MM/YYYY' },
-    de: { today: 'HH:mm', yesterday: '[Gestern]', lastWeek: 'dddd', otherDays: 'DD.MM.YYYY' },
-    fr: { today: 'HH:mm', yesterday: '[Hier]', lastWeek: 'dddd', otherDays: 'DD/MM/YYYY' },
-    es: { today: 'HH:mm', yesterday: '[Ayer]', lastWeek: 'dddd', otherDays: 'DD/MM/YYYY' },
-    ja: { today: 'HH:mm', yesterday: '[昨日]', lastWeek: 'dddd', otherDays: 'YYYY/MM/DD' },
-    ko: { today: 'HH:mm', yesterday: '[어제]', lastWeek: 'dddd', otherDays: 'YYYY/MM/DD' },
-    zh: { today: 'HH:mm', yesterday: '[昨天]', lastWeek: 'dddd', otherDays: 'YYYY/MM/DD' },
-    'zh-TW': { today: 'HH:mm', yesterday: '[昨天]', lastWeek: 'dddd', otherDays: 'YYYY/MM/DD' },
-    ru: { today: 'HH:mm', yesterday: '[Вчера]', lastWeek: 'dddd', otherDays: 'DD.MM.YYYY' },
-    hi: { today: 'hh:mm A', yesterday: '[कल]', lastWeek: 'dddd', otherDays: 'DD/MM/YYYY' },
-    ms: { today: 'HH:mm', yesterday: '[Semalam]', lastWeek: 'dddd', otherDays: 'DD/MM/YYYY' },
-    pt: { today: 'HH:mm', yesterday: '[Ontem]', lastWeek: 'dddd', otherDays: 'DD/MM/YYYY' },
-    sv: { today: 'HH:mm', yesterday: '[Igår]', lastWeek: 'dddd', otherDays: 'YYYY-MM-DD' },
-    lt: { today: 'HH:mm', yesterday: '[Vakar]', lastWeek: 'dddd', otherDays: 'YYYY-MM-DD' },
-    hu: { today: 'HH:mm', yesterday: '[Tegnap]', lastWeek: 'dddd', otherDays: 'YYYY.MM.DD' },
-    it: { today: 'HH:mm', yesterday: '[Ieri]', lastWeek: 'dddd', otherDays: 'DD/MM/YYYY' },
-    nl: { today: 'HH:mm', yesterday: '[Gisteren]', lastWeek: 'dddd', otherDays: 'DD-MM-YYYY' },
-    tr: { today: 'HH:mm', yesterday: '[Dün]', lastWeek: 'dddd', otherDays: 'DD.MM.YYYY' },
-  };
+  private static languageCalendarDefaults: Record<string, CalendarObject> = LANGUAGE_CALENDAR_DEFAULTS;
 
   /** Whether to disable automatic language detection */
   private static disableAutoDetection = false;
@@ -116,27 +98,7 @@ export class CometChatLocalize {
   private static disableDateTimeLocalization = false;
 
   /** Default timezones for each language */
-  private static defaultTimezones: Record<string, string> = {
-    'en-US': 'America/New_York',
-    'en-GB': 'Europe/London',
-    ru: 'Europe/Moscow',
-    fr: 'Europe/Paris',
-    de: 'Europe/Berlin',
-    zh: 'Asia/Shanghai',
-    'zh-TW': 'Asia/Taipei',
-    es: 'Europe/Madrid',
-    hi: 'Asia/Kolkata',
-    ms: 'Asia/Kuala_Lumpur',
-    pt: 'Europe/Lisbon',
-    sv: 'Europe/Stockholm',
-    lt: 'Europe/Vilnius',
-    hu: 'Europe/Budapest',
-    it: 'Europe/Rome',
-    ja: 'Asia/Tokyo',
-    ko: 'Asia/Seoul',
-    nl: 'Europe/Amsterdam',
-    tr: 'Europe/Istanbul',
-  };
+  private static defaultTimezones: Record<string, string> = DEFAULT_TIMEZONES;
 
   /**
    * Initializes the localization service with the provided settings.
@@ -347,154 +309,16 @@ export class CometChatLocalize {
 
   /**
    * Formats a date using a given pattern with localization support.
-   *
-   * @param date - The date to format
-   * @param format - The format pattern
-   * @returns The formatted date string
+   * Delegates to the standalone helper in localize-helpers.ts.
    */
   private static formatDateFromPattern(date: Date, format: string): string {
-    const options: Intl.DateTimeFormatOptions = {
-      day: format.includes('D') ? '2-digit' : undefined,
-      month:
-        format.includes('MMMM') ||
-        format.includes('MMM') ||
-        format.includes('MM') ||
-        format.includes('M')
-          ? '2-digit'
-          : undefined,
-      year: format.includes('YYYY') ? 'numeric' : format.includes('YY') ? '2-digit' : undefined,
-      hour: format.includes('hh') ? '2-digit' : format.includes('h') ? 'numeric' : undefined,
-      minute: format.includes('mm') ? '2-digit' : format.includes('m') ? 'numeric' : undefined,
-      hour12: format.includes('A'),
-      weekday: format.includes('dddd')
-        ? 'long'
-        : format.includes('ddd') || format.includes('dd')
-          ? 'short'
-          : undefined,
-      timeZone: this.timezone,
-    };
-
-    const monthNames = {
-      short: [
-        this.getLocalizedString('month_january_short'),
-        this.getLocalizedString('month_february_short'),
-        this.getLocalizedString('month_march_short'),
-        this.getLocalizedString('month_april_short'),
-        this.getLocalizedString('month_may_short'),
-        this.getLocalizedString('month_june_short'),
-        this.getLocalizedString('month_july_short'),
-        this.getLocalizedString('month_august_short'),
-        this.getLocalizedString('month_september_short'),
-        this.getLocalizedString('month_october_short'),
-        this.getLocalizedString('month_november_short'),
-        this.getLocalizedString('month_december_short'),
-      ],
-      long: [
-        this.getLocalizedString('month_january_full'),
-        this.getLocalizedString('month_february_full'),
-        this.getLocalizedString('month_march_full'),
-        this.getLocalizedString('month_april_full'),
-        this.getLocalizedString('month_may_full'),
-        this.getLocalizedString('month_june_full'),
-        this.getLocalizedString('month_july_full'),
-        this.getLocalizedString('month_august_full'),
-        this.getLocalizedString('month_september_full'),
-        this.getLocalizedString('month_october_full'),
-        this.getLocalizedString('month_november_full'),
-        this.getLocalizedString('month_december_full'),
-      ],
-    };
-
-    const weekdays = {
-      min: [
-        this.getLocalizedString('weekday_sunday_min'),
-        this.getLocalizedString('weekday_monday_min'),
-        this.getLocalizedString('weekday_tuesday_min'),
-        this.getLocalizedString('weekday_wednesday_min'),
-        this.getLocalizedString('weekday_thursday_min'),
-        this.getLocalizedString('weekday_friday_min'),
-        this.getLocalizedString('weekday_saturday_min'),
-      ],
-      short: [
-        this.getLocalizedString('weekday_sunday_short'),
-        this.getLocalizedString('weekday_monday_short'),
-        this.getLocalizedString('weekday_tuesday_short'),
-        this.getLocalizedString('weekday_wednesday_short'),
-        this.getLocalizedString('weekday_thursday_short'),
-        this.getLocalizedString('weekday_friday_short'),
-        this.getLocalizedString('weekday_saturday_short'),
-      ],
-      long: [
-        this.getLocalizedString('weekday_sunday_full'),
-        this.getLocalizedString('weekday_monday_full'),
-        this.getLocalizedString('weekday_tuesday_full'),
-        this.getLocalizedString('weekday_wednesday_full'),
-        this.getLocalizedString('weekday_thursday_full'),
-        this.getLocalizedString('weekday_friday_full'),
-        this.getLocalizedString('weekday_saturday_full'),
-      ],
-    };
-
-    const formatter = new Intl.DateTimeFormat(this.getDateLocaleLanguage(), options);
-    const parts = formatter.formatToParts(date);
-    const dayIndex = date.getDay();
-
-    const replacements: Record<string, string> = {};
-    parts.forEach(part => {
-      if (part.type === 'day') {
-        replacements['DD'] = part.value;
-        replacements['D'] = parseInt(part.value).toString();
-      }
-      if (part.type === 'month') {
-        const monthIndex = parseInt(part.value) - 1;
-        replacements['MM'] = part.value;
-        replacements['M'] = parseInt(part.value).toString();
-        replacements['MMM'] = monthNames.short[monthIndex] || part.value;
-        replacements['MMMM'] = monthNames.long[monthIndex] || part.value;
-      }
-      if (part.type === 'year') {
-        replacements['YYYY'] = part.value;
-        replacements['YY'] = part.value.slice(-2);
-      }
-      if (part.type === 'hour') {
-        replacements['hh'] = part.value;
-        replacements['h'] = parseInt(part.value).toString();
-      }
-      if (part.type === 'minute') {
-        replacements['mm'] = part.value;
-        replacements['m'] = parseInt(part.value).toString();
-      }
-      if (part.type === 'dayPeriod') {
-        replacements['A'] = part.value;
-      }
-      if (part.type === 'weekday') {
-        replacements['dddd'] = weekdays.long[dayIndex] || '';
-        replacements['ddd'] = weekdays.short[dayIndex] || '';
-        replacements['dd'] = weekdays.min[dayIndex] || '';
-      }
-    });
-
-    return format
-      .replace(/\[(.*?)\]/g, '$1')
-      .replace(/\bDD\b/g, replacements['DD'] || '')
-      .replace(/\bD\b/g, replacements['D'] || '')
-      .replace(/\bMMMM\b/g, replacements['MMMM'] || '')
-      .replace(/\bMMM\b/g, replacements['MMM'] || '')
-      .replace(/\bMM\b/g, replacements['MM'] || '')
-      .replace(/\bM\b/g, replacements['M'] || '')
-      .replace(/\bYYYY\b/g, replacements['YYYY'] || '')
-      .replace(/\bYY\b/g, replacements['YY'] || '')
-      .replace(/\bhh\b/g, replacements['hh'] || '')
-      .replace(/\bh\b/g, replacements['h'] || '')
-      .replace(/\bmm\b/g, replacements['mm'] || '')
-      .replace(/\bm\b/g, replacements['m'] || '')
-      .replace(/\bdddd\b/g, replacements['dddd'] || '')
-      .replace(/\bddd\b/g, replacements['ddd'] || '')
-      .replace(/\bdd\b/g, replacements['dd'] || '')
-      .replace(/\sA\s/g, ` ${replacements['A'] || 'A'} `)
-      .replace(/^A\s/g, `${replacements['A'] || 'A'} `)
-      .replace(/\sA$/, ` ${replacements['A'] || 'A'}`)
-      .replace(/^A$/, `${replacements['A'] || 'A'}`);
+    return formatDateFromPattern(
+      date,
+      format,
+      this.timezone,
+      this.getDateLocaleLanguage(),
+      (key: string) => this.getLocalizedString(key)
+    );
   }
 
   /**
@@ -513,103 +337,13 @@ export class CometChatLocalize {
    * });
    */
   static formatDate(timestamp: number, calendarObject: CalendarObject): string {
-    const timeZone = this.timezone;
-    const now = new Date();
-    const date = new Date(timestamp.toString().length <= 10 ? timestamp * 1000 : timestamp);
-
-    const nowFormatted = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(now);
-
-    const dateFormatted = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date);
-
-    const nowTime = now.getTime();
-    const dateTime = date.getTime();
-    const diffInSeconds = Math.floor((nowTime - dateTime) / 1000);
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-
-    // Handle relative time
-    if (calendarObject.relativeTime && Object.keys(calendarObject.relativeTime).length > 0) {
-      if (diffInSeconds < 60) {
-        if (calendarObject.relativeTime.minute) {
-          return calendarObject.relativeTime.minute.includes('%d')
-            ? calendarObject.relativeTime.minute.replace('%d', '1')
-            : calendarObject.relativeTime.minute;
-        } else if (calendarObject.today) {
-          return this.formatDateFromPattern(date, calendarObject.today);
-        }
-      }
-      if (diffInMinutes < 60) {
-        if (calendarObject.relativeTime.minutes) {
-          return calendarObject.relativeTime.minutes.includes('%d')
-            ? calendarObject.relativeTime.minutes.replace('%d', String(diffInMinutes))
-            : calendarObject.relativeTime.minutes;
-        } else if (calendarObject.today) {
-          return this.formatDateFromPattern(date, calendarObject.today);
-        }
-      }
-      if (diffInHours < 24) {
-        if (calendarObject.relativeTime.hour && diffInHours === 1) {
-          return calendarObject.relativeTime.hour.replace('%d', '1');
-        }
-        if (calendarObject.relativeTime.hours) {
-          return calendarObject.relativeTime.hours.replace('%d', String(diffInHours));
-        }
-      }
-    }
-
-    // Handle today
-    if (nowFormatted === dateFormatted && calendarObject.today) {
-      return this.formatDateFromPattern(date, calendarObject.today);
-    }
-
-    // Handle yesterday
-    if (this.isYesterday(timestamp, timeZone) && calendarObject.yesterday) {
-      return this.formatDateFromPattern(date, calendarObject.yesterday);
-    }
-
-    // Handle last week
-    if (diffInDays <= 7 && calendarObject.lastWeek) {
-      return this.formatDateFromPattern(date, calendarObject.lastWeek);
-    }
-
-    // Handle other days
-    return this.formatDateFromPattern(date, calendarObject.otherDays || 'DD/MM/YYYY');
-  }
-
-  /**
-   * Checks if a timestamp represents yesterday's date.
-   */
-  private static isYesterday(timestamp: number, timeZone: string): boolean {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    const timestampDate = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(new Date(timestamp * 1000));
-
-    const yesterdayDate = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(yesterday);
-
-    return timestampDate === yesterdayDate;
+    return formatDateHelper(
+      timestamp,
+      calendarObject,
+      this.timezone,
+      this.getDateLocaleLanguage(),
+      (key: string) => this.getLocalizedString(key)
+    );
   }
 
   /**

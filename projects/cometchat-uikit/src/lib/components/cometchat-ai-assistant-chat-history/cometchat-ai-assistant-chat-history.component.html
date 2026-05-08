@@ -1,0 +1,132 @@
+<div class="cometchat-ai-assistant-chat-history">
+
+  <!-- Header: title + close button only -->
+  <div class="cometchat-ai-assistant-chat-history__header">
+    <span class="cometchat-ai-assistant-chat-history__title">
+      {{ 'ai_assistant_chat_history_list_title' | translate }}
+    </span>
+    <button
+      class="cometchat-ai-assistant-chat-history__close-btn"
+      type="button"
+      [attr.aria-label]="'close' | translate"
+      (click)="onCloseClick()"
+    >
+      <span class="cometchat-ai-assistant-chat-history__close-icon" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <!-- New Chat row: below header, full width -->
+  @if (showNewChat()) {
+    <button
+      class="cometchat-ai-assistant-chat-history__new-chat-row"
+      type="button"
+      [attr.aria-label]="'ai_assistant_chat_new_chat' | translate"
+      (click)="onNewChatClick()"
+    >
+      <span class="cometchat-ai-assistant-chat-history__new-chat-icon" aria-hidden="true"></span>
+      <span class="cometchat-ai-assistant-chat-history__new-chat-label">
+        {{ 'ai_assistant_chat_new_chat' | translate }}
+      </span>
+    </button>
+  }
+
+  <!-- Loading shimmer -->
+  @if (isLoading() && messages().length === 0) {
+    <ul
+      class="cometchat-ai-assistant-chat-history__shimmer-list"
+      aria-busy="true"
+      [attr.aria-label]="'accessibility_loading' | translate"
+    >
+      @for (item of shimmerList; track item) {
+        <li class="cometchat-ai-assistant-chat-history__shimmer-item" aria-hidden="true">
+          <div class="cometchat-ai-assistant-chat-history__shimmer-line cometchat-ai-assistant-chat-history__shimmer-line--title"></div>
+          <div class="cometchat-ai-assistant-chat-history__shimmer-line cometchat-ai-assistant-chat-history__shimmer-line--subtitle"></div>
+        </li>
+      }
+    </ul>
+  }
+
+  <!-- Error state -->
+  @if (hasError()) {
+    <div class="cometchat-ai-assistant-chat-history__error-state" role="alert">
+      @if (errorStateTemplate()) {
+        <ng-container [ngTemplateOutlet]="errorStateTemplate()!" />
+      } @else {
+        <p class="cometchat-ai-assistant-chat-history__error-title">
+          {{ 'ai_assistant_chat_history_error_title' | translate }}
+        </p>
+        <p class="cometchat-ai-assistant-chat-history__error-subtitle">
+          {{ 'ai_assistant_chat_history_error_subtitle' | translate }}
+        </p>
+      }
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (isEmpty()) {
+    <div class="cometchat-ai-assistant-chat-history__empty-state">
+      @if (emptyStateTemplate()) {
+        <ng-container [ngTemplateOutlet]="emptyStateTemplate()!" />
+      } @else {
+        <p class="cometchat-ai-assistant-chat-history__empty-title">
+          {{ 'ai_assistant_chat_history_empty_title' | translate }}
+        </p>
+        <p class="cometchat-ai-assistant-chat-history__empty-subtitle">
+          {{ 'ai_assistant_chat_history_empty_subtitle' | translate }}
+        </p>
+      }
+    </div>
+  }
+
+  <!-- Message list -->
+  @if (!isLoading() || messages().length > 0) {
+    <ul
+      class="cometchat-ai-assistant-chat-history__list"
+      role="listbox"
+      [attr.aria-label]="'ai_assistant_chat_history_list_title' | translate"
+      (scroll)="onListScroll($event)"
+    >
+      @for (item of messageItems(); track item.message.getId()) {
+        @if (item.showSeparator) {
+          <li
+            class="cometchat-ai-assistant-chat-history__date-separator"
+            role="presentation"
+            aria-hidden="true"
+          >
+            <span class="cometchat-ai-assistant-chat-history__date-separator-text">
+              {{ formatDate(item.message.getSentAt()) }}
+            </span>
+          </li>
+        }
+        <li
+          class="cometchat-ai-assistant-chat-history__item"
+          role="option"
+          [attr.tabindex]="getTabIndex($index)"
+          [attr.aria-selected]="false"
+          (click)="onMessageClick(item.message)"
+          (keydown)="onKeyDown($event, $index)"
+        >
+          <span class="cometchat-ai-assistant-chat-history__item-text">
+            {{ item.message.getText() }}
+          </span>
+          <button
+            class="cometchat-ai-assistant-chat-history__delete-btn"
+            type="button"
+            [attr.aria-label]="'message_list_option_delete' | translate"
+            (click)="onDeleteMessage(item.message, $event)"
+          >
+            <span class="cometchat-ai-assistant-chat-history__delete-icon" aria-hidden="true"></span>
+          </button>
+        </li>
+      }
+
+      <!-- Pagination loading indicator (older messages load at bottom) -->
+      @if (isLoading() && messages().length > 0) {
+        <li class="cometchat-ai-assistant-chat-history__loading-more" aria-hidden="true">
+          <div class="cometchat-ai-assistant-chat-history__shimmer-line"></div>
+        </li>
+      }
+    </ul>
+  }
+
+</div>

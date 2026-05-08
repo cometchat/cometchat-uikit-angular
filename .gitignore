@@ -26,8 +26,9 @@ cleanup-reports/
 docs-audit-report.json
 scripts/storybook-audit-report.json
 storybook-static.zip
-old-kiro-specs/
-.kiro/
-
+.kiro/settings
+.kiro/hooks
 docs/node_modules/
 docs/.mintlify/
+v5-calls
+public-docs-v5

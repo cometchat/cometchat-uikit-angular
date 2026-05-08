@@ -10,25 +10,15 @@ console.log('[vitest.setup.ts] ===== SETUP FILE IS EXECUTING =====');
 // the Calls SDK inject their own mocks via _setCallsSDKForTesting().
 // ---------------------------------------------------------------------------
 vi.mock('@cometchat/calls-sdk-javascript', () => {
-  const CallSettingsBuilder = vi.fn().mockImplementation(function (this: any) {
-    this.enableDefaultLayout = vi.fn().mockReturnThis();
-    this.setIsAudioOnlyCall = vi.fn().mockReturnThis();
-    this.setCallListener = vi.fn().mockReturnThis();
-    this.build = vi.fn().mockReturnValue({});
-  });
-
-  const OngoingCallListener = vi.fn().mockImplementation(function (this: any, callbacks: any) {
-    this.callbacks = callbacks;
-  });
-
   return {
     CometChatCalls: {
       init: vi.fn().mockResolvedValue(undefined),
+      login: vi.fn().mockResolvedValue({ uid: 'mock-user' }),
       generateToken: vi.fn().mockResolvedValue({ token: 'mock-token' }),
-      startSession: vi.fn(),
-      endSession: vi.fn(),
-      CallSettingsBuilder,
-      OngoingCallListener,
+      joinSession: vi.fn().mockResolvedValue({ error: null }),
+      leaveSession: vi.fn(),
+      addEventListener: vi.fn().mockReturnValue(() => {}),
+      removeEventListener: vi.fn(),
     },
   };
 });

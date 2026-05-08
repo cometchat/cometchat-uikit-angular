@@ -11,269 +11,122 @@ import { MessageStatus } from '../Enums/Enums';
 import { CometChatLogger } from '../utils/CometChatLogger';
 
 /**
- * CallButtonsService
- *
- * Injectable service managing call state, call initiation, call listener
- * registration, event subscriptions, and button disabled state for the
- * call buttons component.
- *
- * ## Overview
- *
- * This service provides a single source of truth for call button state.
- * It handles:
- * - User calls via `CometChat.initiateCall()`
- * - Group calls via direct calling with custom "meeting" messages
- * - Call listener registration for real-time call events
- * - Event subscriptions for call lifecycle management
- * - Button disabled state based on active calls
- *
- * ## Architecture
- *
- * - **Signals**: Provide synchronous, fine-grained reactivity for call state
- * - **CallListener**: Receives real-time call events from CometChat SDK
- * - **CometChatCallEvents**: RxJS subjects for call lifecycle events
- * - **CometChatUIEvents**: RxJS subjects for UI events (ongoing call screen)
- * - **CometChatMessageEvents**: RxJS subjects for message lifecycle events
- *
+ * CallButtonsService manages call state, call initiation, call listener registration,
+ * event subscriptions, and button disabled state for the call buttons component.
  * @Injectable providedIn: 'root'
-
  */
 @Injectable({ providedIn: 'root' })
 export class CallButtonsService implements OnDestroy {
-  // ==================== State Signals ====================
-
-  /**
-   * The current active call object.
-   * Set when a user call is initiated via `CometChat.initiateCall()`.
-   * Cleared when the call ends, is rejected, or cancelled.
-   *
-   * @see Requirement 9.2 - Expose active call as a signal
-   */
   private _activeCall = signal<CometChat.Call | null>(null);
   readonly activeCall = this._activeCall.asReadonly();
 
-  /**
-   * The current call session ID.
-   * For user calls, set from the accepted call's session ID.
-   * For group calls, set to the group GUID.
-   *
-   * @see Requirement 9.2 - Expose session ID as a signal
-   */
   private _sessionId = signal<string>('');
   readonly sessionId = this._sessionId.asReadonly();
 
-  /**
-   * Whether the call buttons are disabled.
-   * Disabled during active outgoing/incoming calls.
-   *
-   * @see Requirement 4.1 - Disable buttons on outgoing call
-   * @see Requirement 4.2 - Disable buttons on incoming call
-   */
   private _buttonsDisabled = signal<boolean>(false);
   readonly buttonsDisabled = this._buttonsDisabled.asReadonly();
 
-  /**
-   * Whether to show the outgoing call screen overlay.
-   * Only true for user calls (not group calls).
-   *
-   * @see Requirement 5.1 - Show outgoing call screen for user calls
-   */
   private _showOutgoingCallScreen = signal<boolean>(false);
   readonly showOutgoingCallScreen = this._showOutgoingCallScreen.asReadonly();
 
-  /**
-   * Whether to show the ongoing call screen.
-   * True after outgoing call is accepted or group call is initiated.
-   */
   private _showOngoingCall = signal<boolean>(false);
   readonly showOngoingCall = this._showOngoingCall.asReadonly();
 
-  /**
-   * The currently logged-in user.
-   * Fetched during initialization, used for setting sender on custom messages
-   * and filtering `onOutgoingCallAccepted` events.
-   */
   private _loggedInUser = signal<CometChat.User | null>(null);
   readonly loggedInUser = this._loggedInUser.asReadonly();
 
-  /**
-   * The active user target for calls.
-   * Mutually exclusive with activeGroup.
-   *
-   * @see Requirement 6.3 - Mutual exclusivity
-   */
   private _activeUser = signal<CometChat.User | null>(null);
   readonly activeUser = this._activeUser.asReadonly();
 
-  /**
-   * The active group target for calls.
-   * Mutually exclusive with activeUser.
-   *
-   * @see Requirement 6.3 - Mutual exclusivity
-   */
   private _activeGroup = signal<CometChat.Group | null>(null);
   readonly activeGroup = this._activeGroup.asReadonly();
 
-  /**
-   * Whether the current group call is audio-only.
-   * Used to determine call settings for the ongoing call screen.
-   */
   private _isGroupAudioCall = signal<boolean>(false);
   readonly isGroupAudioCall = this._isGroupAudioCall.asReadonly();
 
-  /**
-   * Whether the current call uses direct calling workflow.
-   * True for group calls and meeting joins (no CometChat.endCall needed).
-   * False for user-to-user calls (requires CometChat.endCall).
-   */
   private _isDirectCalling = signal<boolean>(false);
   readonly isDirectCalling = this._isDirectCalling.asReadonly();
-
-  // ==================== Private State ====================
 
   private readonly listenerId = 'callbuttons_' + Date.now();
   private subscriptions: Subscription[] = [];
   private initialized = false;
 
-  // ==================== Public Methods ====================
-
-  /**
-   * Initializes the service by fetching the logged-in user,
-   * registering the call listener, and subscribing to call events.
-   *
-   * Should be called once when the component initializes.
-   * Multiple calls are safely ignored.
-   *
-   * @see Requirement 6.1 - Register listener and subscribe to events on init
-   */
+  /** Initializes the service. Should be called once when the component initializes. @see Requirement 6.1 */
   initialize(): void {
-    // Prevent multiple initializations
-    if (this.initialized) {
-      return;
-    }
+    if (this.initialized) return;
     this.initialized = true;
 
     CometChat.getLoggedinUser().then(
-      (user: CometChat.User | null) => {
-        this._loggedInUser.set(user);
-      },
-      (error: unknown) => {
-        CometChatLogger.error('CallButtonsService', 'Error fetching logged-in user:', error);
-      }
+      (user: CometChat.User | null) => { this._loggedInUser.set(user); },
+      (error: unknown) => { CometChatLogger.error('CallButtonsService', 'Error fetching logged-in user:', error); }
     );
 
     this.registerCallListener();
     this.subscribeToCallEvents();
   }
 
-  /**
-   * Sets the active user target for calls.
-   * Clears the active group to maintain mutual exclusivity.
-   *
-   * @param user - The user to call, or null to clear
-   * @see Requirement 6.3 - Mutual exclusivity
-   */
+  /** Sets the active user target. Clears active group. @see Requirement 6.3 */
   setActiveUser(user: CometChat.User | null): void {
     this._activeUser.set(user);
-    if (user) {
-      this._activeGroup.set(null);
-    }
+    if (user) this._activeGroup.set(null);
   }
 
-  /**
-   * Sets the active group target for calls.
-   * Clears the active user to maintain mutual exclusivity.
-   *
-   * @param group - The group to call, or null to clear
-   * @see Requirement 6.3 - Mutual exclusivity
-   */
+  /** Sets the active group target. Clears active user. @see Requirement 6.3 */
   setActiveGroup(group: CometChat.Group | null): void {
     this._activeGroup.set(group);
-    if (group) {
-      this._activeUser.set(null);
-    }
+    if (group) this._activeUser.set(null);
   }
 
-  /**
-   * Initiates an audio call.
-   * For user targets, initiates a direct user call.
-   * For group targets, sends a custom meeting message and shows the ongoing call screen.
-   *
-   * @see Requirement 2.1 - User audio call
-   * @see Requirement 3.1 - Group audio call
-   */
+  /** Initiates an audio call. @see Requirements 2.1, 3.1 */
   async initiateAudioCall(): Promise<void> {
     const user = this._activeUser();
     const group = this._activeGroup();
 
     if (user) {
-      this._isDirectCalling.set(false); // User calls use defaultCalling
+      this._isDirectCalling.set(false);
       await this.initiateUserCall(CometChatUIKitConstants.MessageTypes.audio);
     }
 
     if (group) {
-      this._isDirectCalling.set(true); // Group calls use directCalling
+      this._isDirectCalling.set(true);
       this._isGroupAudioCall.set(true);
       this._sessionId.set(group.getGuid());
       await this.sendCustomMeetingMessage(CometChatUIKitConstants.MessageTypes.audio);
       this._showOngoingCall.set(true);
-      CometChatUIEvents.ccShowOngoingCall.next({
-        child: group,
-      });
+      CometChatUIEvents.ccShowOngoingCall.next({ child: group });
     }
   }
 
-  /**
-   * Initiates a video call.
-   * For user targets, initiates a direct user call.
-   * For group targets, sends a custom meeting message and shows the ongoing call screen.
-   *
-   * @see Requirement 2.2 - User video call
-   * @see Requirement 3.2 - Group video call
-   */
+  /** Initiates a video call. @see Requirements 2.2, 3.2 */
   async initiateVideoCall(): Promise<void> {
     const user = this._activeUser();
     const group = this._activeGroup();
 
     if (user) {
-      this._isDirectCalling.set(false); // User calls use defaultCalling
+      this._isDirectCalling.set(false);
       await this.initiateUserCall(CometChatUIKitConstants.MessageTypes.video);
     }
 
     if (group) {
-      this._isDirectCalling.set(true); // Group calls use directCalling
+      this._isDirectCalling.set(true);
       this._isGroupAudioCall.set(false);
       this._sessionId.set(group.getGuid());
       await this.sendCustomMeetingMessage(CometChatUIKitConstants.MessageTypes.video);
       this._showOngoingCall.set(true);
-      CometChatUIEvents.ccShowOngoingCall.next({
-        child: group,
-      });
+      CometChatUIEvents.ccShowOngoingCall.next({ child: group });
     }
   }
 
-  /**
-   * Cancels the current outgoing user call.
-   * Pauses sound, rejects the call with "cancelled" status,
-   * emits ccCallRejected, and resets state.
-   *
-   * @see Requirement 5.2 - Cancel outgoing call
-   */
+  /** Cancels the current outgoing user call. @see Requirement 5.2 */
   async cancelOutgoingCall(): Promise<void> {
     const call = this._activeCall();
-    if (!call) {
-      return;
-    }
+    if (!call) return;
 
     CometChatSoundManager.pause();
 
     try {
       const sessionId = call.getSessionId();
-      const rejectedCall = await CometChat.rejectCall(
-        sessionId,
-        CometChatUIKitConstants.calls.cancelled
-      );
-
+      const rejectedCall = await CometChat.rejectCall(sessionId, CometChatUIKitConstants.calls.cancelled);
       CometChatCallEvents.ccCallRejected.next(rejectedCall);
     } catch (error) {
       CometChatLogger.error('CallButtonsService', 'Error cancelling outgoing call:', error);
@@ -281,12 +134,7 @@ export class CallButtonsService implements OnDestroy {
     this.resetCallState();
   }
 
-  /**
-   * Resets all call state to defaults.
-   * Enables buttons, clears active call, session ID, and hides screens.
-   *
-   * @see Requirement 4.5 - Reset state on call ended
-   */
+  /** Resets all call state to defaults. @see Requirement 4.5 */
   resetCallState(): void {
     this._buttonsDisabled.set(false);
     this._activeCall.set(null);
@@ -297,17 +145,9 @@ export class CallButtonsService implements OnDestroy {
     this._isGroupAudioCall.set(false);
   }
 
-  /**
-   * Joins an ongoing group meeting from a call bubble message.
-   * Sets the session ID, marks this as a direct calling workflow,
-   * and shows the ongoing call screen.
-   *
-   * @param sessionId - The session ID of the meeting to join
-   */
+  /** Joins an ongoing group meeting from a call bubble message. */
   joinMeeting(sessionId: string, isAudioOnly?: boolean): void {
-    if (!sessionId) {
-      return;
-    }
+    if (!sessionId) return;
     this._sessionId.set(sessionId);
     // Meeting joins are always direct calling (no CometChat.endCall needed)
     this._isDirectCalling.set(true);

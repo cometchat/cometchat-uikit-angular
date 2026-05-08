@@ -1,0 +1,163 @@
+<div class="cometchat cometchat-search" role="search" [attr.aria-label]="'search_title' | translate">
+  <!-- Header: back button + search input -->
+  <div class="cometchat-search__header">
+    @if (!hideBackButton) {
+      <button class="cometchat-search__back-button"
+              data-testid="search-back-button"
+              [attr.aria-label]="'accessibility_back' | translate"
+              (click)="handleBackClick()">
+        <span class="cometchat-search__back-button-icon"></span>
+      </button>
+    }
+    <div class="cometchat-search__search-bar">
+      <div class="cometchat-search__input">
+        <input #searchInput
+               type="text"
+               role="searchbox"
+               [value]="searchValue()"
+               (input)="handleSearchInput($event)"
+               [placeholder]="'search_placeholder' | translate"
+               [attr.aria-label]="'search_placeholder' | translate"
+               data-testid="search-input" />
+        @if (searchValue() || activeFilters().length > 0) {
+          <button class="cometchat-search__input-clear-button"
+                  data-testid="search-clear-button"
+                  [attr.aria-label]="'accessibility_clear_search' | translate"
+                  (click)="handleClearSearch()">
+            <span class="cometchat-search__input-clear-button-icon"></span>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="cometchat-search__body">
+    <div class="cometchat-search__body-filters" role="toolbar" [attr.aria-label]="'search_title' | translate">
+      @for (filterId of visibleFilters(); track filterId) {
+        <button class="cometchat-search__body-filter"
+                [class.cometchat-search__body-filter-active]="isFilterActive(filterId)"
+                [attr.aria-pressed]="isFilterActive(filterId)"
+                [attr.data-testid]="'search-filter-' + filterId"
+                (click)="handleFilterToggle(filterId)">
+          <span class="cometchat-search__body-filter-icon"
+                [ngClass]="'cometchat-search__body-filter-icon--' + filterId"></span>
+          {{ getFilterLabel(filterId) }}
+          @if (isFilterActive(filterId)) {
+            <span class="cometchat-search__body-filter-close-icon"></span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Results -->
+  @if (showInitialView()) {
+    @if (effectiveInitialView) {
+      <ng-container *ngTemplateOutlet="effectiveInitialView"></ng-container>
+    } @else {
+      <div class="cometchat-search__initial-view">
+        <div class="cometchat-search__initial-view-icon"></div>
+        <span class="cometchat-search__initial-view-title">{{ 'search_empty_title' | translate }}</span>
+        <span class="cometchat-search__initial-view-subtitle">{{ 'search_empty_subtitle' | translate }}</span>
+      </div>
+    }
+  } @else {
+    <div class="cometchat-search__results">
+      @if (showConversations()) {
+        @defer {
+          <cometchat-search-conversations-list
+            [searchKeyword]="searchText()"
+            [activeFilters]="activeFilters()"
+            [useScrollPagination]="!!guid || !!uid || activeFilters().length > 0"
+            [conversationsRequestBuilder]="conversationsRequestBuilder"
+            [hideUserStatus]="hideUserStatus"
+            [hideGroupType]="hideGroupType"
+            [hideReceipts]="hideReceipts"
+            [textFormatters]="effectiveTextFormatters"
+            [itemTemplate]="effectiveConversationItemView"
+            [leadingView]="effectiveConversationLeadingView"
+            [titleView]="effectiveConversationTitleView"
+            [subtitleView]="effectiveConversationSubtitleView"
+            [trailingView]="effectiveConversationTrailingView"
+            [loadingView]="effectiveLoadingView"
+            [emptyView]="effectiveEmptyView"
+            [errorView]="effectiveErrorView"
+            [conversationOptions]="conversationOptions"
+            [hideSection]="hideConversationsSection()"
+            [suppressEmptyErrorView]="bothScopesActive()"
+            (stateChange)="handleConversationsStateChange($event)"
+            (itemClick)="handleConversationClick($event)"
+            (searchError)="searchError.emit($event)">
+          </cometchat-search-conversations-list>
+        }
+      }
+
+      @if (showMessages()) {
+        @defer {
+          <cometchat-search-messages-list
+            [searchKeyword]="searchText()"
+            [activeFilters]="activeFilters()"
+            [uid]="uid"
+            [guid]="guid"
+            [alwaysShowSeeMore]="!guid && !uid && activeFilters().length === 0"
+            [messagesRequestBuilder]="messagesRequestBuilder"
+            [textFormatters]="effectiveTextFormatters"
+            [messageDateTimeFormat]="messageSentAtDateTimeFormat"
+            [itemTemplate]="effectiveMessageItemView"
+            [leadingView]="effectiveMessageLeadingView"
+            [titleView]="effectiveMessageTitleView"
+            [subtitleView]="effectiveMessageSubtitleView"
+            [trailingView]="effectiveMessageTrailingView"
+            [loadingView]="effectiveLoadingView"
+            [emptyView]="effectiveEmptyView"
+            [errorView]="effectiveErrorView"
+            [hideSection]="hideMessagesSection()"
+            [suppressEmptyErrorView]="bothScopesActive()"
+            (stateChange)="handleMessagesStateChange($event)"
+            (itemClick)="handleMessageClick($event)"
+            (searchError)="searchError.emit($event)">
+          </cometchat-search-messages-list>
+        }
+      }
+
+      <!-- Unified empty view (shown when both lists are empty) -->
+      @if (showUnifiedEmpty()) {
+        @if (effectiveEmptyView) {
+          <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
+        } @else {
+          <div class="cometchat-search__empty-view" aria-live="assertive">
+            <div class="cometchat-search__empty-view-icon"></div>
+            <div class="cometchat-search__empty-view-body">
+              <div class="cometchat-search__empty-view-body-title">
+                {{ 'search_no_result_title' | translate }}
+              </div>
+              <div class="cometchat-search__empty-view-body-description">
+                {{ 'search_no_result_subtitle' | translate }}
+              </div>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Unified error view (shown when either list errors and neither has data) -->
+      @if (showUnifiedError()) {
+        @if (effectiveErrorView) {
+          <ng-container *ngTemplateOutlet="effectiveErrorView"></ng-container>
+        } @else {
+          <div class="cometchat-search__error-view" aria-live="assertive">
+            <div class="cometchat-search__error-view-icon"></div>
+            <div class="cometchat-search__error-view-body">
+              <div class="cometchat-search__error-view-body-title">
+                {{ 'search_error_title' | translate }}
+              </div>
+              <div class="cometchat-search__error-view-body-description">
+                {{ 'search_error_subtitle' | translate }}
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

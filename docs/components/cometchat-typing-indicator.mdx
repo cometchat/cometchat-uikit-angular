@@ -1,0 +1,167 @@
+---
+title: "CometChatTypingIndicator"
+description: "A component that displays animated typing indicators when users are typing in a conversation"
+---
+
+## Overview
+
+The CometChatTypingIndicator component displays a typing indicator with animated dots when one or more users are typing in a conversation. It adapts its display text based on the chat context (1-on-1 vs group) and the number of users typing.
+
+### Key Features
+
+- **Context-Aware Text**: Different display formats for 1-on-1 and group chats
+- **Multi-User Support**: Handles single, dual, and multiple typing users
+- **Animated Dots**: CSS-animated dots indicating ongoing typing activity
+- **Localization**: All display text uses localization keys
+- **Screen Reader Support**: Descriptive `aria-label` for assistive technologies
+- **Signal-Based**: Uses Angular signals for reactive state management
+
+## Basic Usage
+
+### 1-on-1 Chat
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTypingIndicatorComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-typing',
+  standalone: true,
+  imports: [CometChatTypingIndicatorComponent],
+  template: `
+    @if (typingUsers.length > 0) {
+      <cometchat-typing-indicator
+        [typingUsers]="typingUsers"
+        [isGroupChat]="false">
+      </cometchat-typing-indicator>
+    }
+  `
+})
+export class TypingComponent {
+  typingUsers: CometChat.TypingIndicator[] = [];
+}
+```
+
+### Group Chat
+
+```typescript
+<cometchat-typing-indicator
+  [typingUsers]="typingUsers"
+  [isGroupChat]="true">
+</cometchat-typing-indicator>
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `typingUsers` | `CometChat.TypingIndicator[]` | `[]` | Array of typing indicator objects representing users currently typing. |
+| `isGroupChat` | `boolean` | `false` | Whether the conversation is a group chat. Affects how the typing text is displayed. |
+
+## Display Logic
+
+The component adapts its text based on the chat type and number of typing users:
+
+| Context | Users Typing | Display Text |
+|---------|-------------|--------------|
+| 1-on-1 chat | 1 | "typing..." |
+| Group chat | 1 | "{name} is typing..." |
+| Group chat | 2 | "{name1} and {name2} are typing..." |
+| Group chat | 3+ | "Multiple people are typing..." |
+| Any | 0 | Component is hidden |
+
+## Computed Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `displayText` | `string` | The localization key for the current typing state |
+| `firstTypingUserName` | `string` | Name of the first typing user |
+| `secondTypingUserName` | `string` | Name of the second typing user (for dual-user display) |
+| `hasTypingUsers` | `boolean` | Whether there are any typing users (use to show/hide component) |
+| `typingUsersCount` | `number` | Number of currently typing users |
+| `ariaLabel` | `string` | Accessible label describing who is typing |
+
+## Accessibility
+
+- `aria-live="polite"` region announces typing state changes
+- Descriptive `aria-label` with user names for screen readers
+- `role="status"` on the typing indicator container
+
+## Localization Keys
+
+| Key | Default (en-us) |
+|-----|-----------------|
+| `message_header_typing` | "typing..." |
+| `message_header_is_typing` | "is typing..." |
+| `message_header_are_typing` | "are typing..." |
+| `message_header_others_typing` | "Multiple people are typing..." |
+
+## CSS Variables
+
+```css
+cometchat-typing-indicator {
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-font-caption1-medium: 500 12px/16px sans-serif;
+  --cometchat-primary-color: #6852D6;
+}
+```
+
+## Integration Example
+
+Typically used within the message header or message list footer:
+
+```typescript expandable
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatTypingIndicatorComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-header',
+  standalone: true,
+  imports: [CometChatTypingIndicatorComponent],
+  template: `
+    <div class="chat-header">
+      <h3>{{ userName }}</h3>
+      @if (typingUsers.length > 0) {
+        <cometchat-typing-indicator
+          [typingUsers]="typingUsers"
+          [isGroupChat]="isGroup">
+        </cometchat-typing-indicator>
+      } @else {
+        <span class="status">{{ userStatus }}</span>
+      }
+    </div>
+  `
+})
+export class ChatHeaderComponent implements OnInit, OnDestroy {
+  userName = '';
+  userStatus = '';
+  isGroup = false;
+  typingUsers: CometChat.TypingIndicator[] = [];
+  private listenerId = 'typing-listener';
+
+  ngOnInit(): void {
+    CometChat.addMessageListener(this.listenerId, new CometChat.MessageListener({
+      onTypingStarted: (indicator: CometChat.TypingIndicator) => {
+        this.typingUsers = [...this.typingUsers, indicator];
+      },
+      onTypingEnded: (indicator: CometChat.TypingIndicator) => {
+        this.typingUsers = this.typingUsers.filter(
+          t => t.getSender().getUid() !== indicator.getSender().getUid()
+        );
+      },
+    }));
+  }
+
+  ngOnDestroy(): void {
+    CometChat.removeMessageListener(this.listenerId);
+  }
+}
+```
+
+## Related Components
+
+- [CometChatMessageHeader](/components/cometchat-message-header) — Uses typing indicator in the header subtitle
+- [CometChatConversationItem](/components/cometchat-conversation-item) — Shows typing indicator in conversation list
+- [CometChatMessageList](/components/cometchat-message-list) — Context where typing indicators are displayed

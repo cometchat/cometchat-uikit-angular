@@ -1,0 +1,830 @@
+---
+title: "CometChatSearch"
+description: "A unified Angular search component for cross-entity search across conversations and messages with filter chips, scoped search, and template customization"
+---
+
+## Overview
+
+The CometChatSearch component provides a unified search experience across conversations and messages. It combines a debounced search input, a filter chip bar, and two lazy-loaded result sections (conversations and messages) into a single, cohesive UI.
+
+The component follows a **service-driven architecture**:
+- **SearchConversationsService** handles conversation search queries, pagination, and real-time listener updates
+- **SearchMessagesService** handles message search queries, pagination, and attachment-type filtering
+- **CometChatTemplatesService** provides template resolution with a priority chain: `@Input` → service template → shared template → default
+- **Component @Input properties** allow per-instance overrides for scoping, filtering, and display
+
+### Key Features
+
+- **Cross-Entity Search**: Search across both conversations and messages simultaneously, or scope to one
+- **9 Filter Types**: Audio, Documents, Groups, Photos, Videos, Links, Unread, Conversations, Messages
+- **Scoped Search**: Narrow results to a specific user (`uid`) or group (`guid`)
+- **Debounced Input**: 500ms debounce prevents excessive SDK calls while typing
+- **Lazy-Loaded Sections**: Conversation and message result lists use `@defer` for optimal initial load
+- **Unified State Views**: Single empty/error view when both sections report the same state
+- **Template Customization**: Override any section of conversation or message result items
+- **Real-Time Updates**: Conversation results update with new messages, typing indicators, and user status changes
+- **Filter Chip Logic**: Intelligent mutual exclusivity — content filters (Photos, Videos, etc.) are mutually exclusive with Links; conversation filters (Unread, Groups) can coexist
+
+### Architecture
+
+```
+CometChatSearchComponent (parent)
+├── Search input + filter bar
+├── CometChatSearchConversationsListComponent (@defer)
+│   ├── Uses SearchConversationsService (signal-based state)
+│   └── Renders CometChatConversationItem per result
+└── CometChatSearchMessagesListComponent (@defer)
+    ├── Uses SearchMessagesService (signal-based state)
+    └── Renders message items with type-specific leading/trailing views
+```
+
+## Basic Usage
+
+### Simple Implementation
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatSearchComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-search',
+  standalone: true,
+  imports: [CometChatSearchComponent],
+  template: `
+    <cometchat-search
+      (conversationClick)="onConversationClick($event)"
+      (messageClick)="onMessageClick($event)"
+      (backClick)="onBack()">
+    </cometchat-search>
+  `
+})
+export class SearchComponent {
+  onConversationClick(event: any): void {
+    console.log('Conversation:', event.conversation, 'Keyword:', event.searchKeyword);
+  }
+
+  onMessageClick(event: any): void {
+    console.log('Message:', event.message, 'Keyword:', event.searchKeyword);
+  }
+
+  onBack(): void {
+    // Navigate back
+  }
+}
+```
+
+### Scoped Search (Within a User or Group)
+
+```typescript
+<!-- Search within a specific user's messages -->
+<cometchat-search
+  uid="user_123"
+  (messageClick)="navigateToMessage($event)">
+</cometchat-search>
+
+<!-- Search within a specific group's messages -->
+<cometchat-search
+  guid="group_456"
+  (messageClick)="navigateToMessage($event)">
+</cometchat-search>
+```
+
+<Info>
+  When `uid` or `guid` is set, conversation filters (Unread, Groups, Conversations) are hidden automatically and only message results are shown.
+</Info>
+
+### Scoped to One Entity Type
+
+```typescript
+import { CometChatSearchScope } from '@cometchat/chat-uikit-angular';
+
+<!-- Conversations only -->
+<cometchat-search
+  [searchIn]="[CometChatSearchScope.Conversations]"
+  (conversationClick)="onConversationClick($event)">
+</cometchat-search>
+
+<!-- Messages only -->
+<cometchat-search
+  [searchIn]="[CometChatSearchScope.Messages]"
+  (messageClick)="onMessageClick($event)">
+</cometchat-search>
+```
+
+
+## Properties
+
+### Configuration Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `searchIn` | `CometChatSearchScope[]` | `[]` (both) | Scopes to search in. Empty array means both Conversations and Messages |
+| `searchFilters` | `CometChatSearchFilter[]` | `[Audio, Documents, Groups, Photos, Videos, Links, Unread]` | Filter chips to display in the filter bar |
+| `initialSearchFilter` | `CometChatSearchFilter` | `undefined` | Filter that should be active by default when the component loads |
+| `defaultSearchText` | `string` | `undefined` | Pre-fill the search input and immediately trigger a search on load |
+| `conversationsRequestBuilder` | `ConversationsRequestBuilder` | `undefined` | Custom request builder for conversation search queries |
+| `messagesRequestBuilder` | `MessagesRequestBuilder` | `undefined` | Custom request builder for message search queries |
+| `conversationOptions` | `(conv: Conversation) => CometChatOption[]` | `undefined` | Function to provide custom context menu options for conversation results |
+| `textFormatters` | `CometChatTextFormatter[]` | `[]` | Custom text formatters for message content display |
+| `messageSentAtDateTimeFormat` | `CalendarObject` | `undefined` | Custom date/time format for message timestamps |
+
+### Display Control Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideBackButton` | `boolean` | `false` | Hide the back navigation button in the header |
+| `hideGroupType` | `boolean` | `false` | Hide group type icons (public, private, password) in conversation results |
+| `hideUserStatus` | `boolean` | `false` | Hide user online/offline status indicator in conversation results |
+| `hideReceipts` | `boolean` | `false` | Hide message read receipts (sent, delivered, read) in conversation results |
+
+### Scoping Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `uid` | `string` | `undefined` | Scope search to messages with a specific user. Hides conversation results and conversation filters |
+| `guid` | `string` | `undefined` | Scope search to messages within a specific group. Hides conversation results and conversation filters |
+
+### Template Properties
+
+#### Conversation Result Templates
+
+| Property | Type | Context | Description |
+|----------|------|---------|-------------|
+| `conversationItemView` | `TemplateRef` | `{ $implicit: Conversation }` | Custom template for the entire conversation result item |
+| `conversationLeadingView` | `TemplateRef` | `{ $implicit: Conversation }` | Custom template for the leading section (avatar area) |
+| `conversationTitleView` | `TemplateRef` | `{ $implicit: Conversation }` | Custom template for the title section |
+| `conversationSubtitleView` | `TemplateRef` | `{ $implicit: Conversation }` | Custom template for the subtitle section (last message preview) |
+| `conversationTrailingView` | `TemplateRef` | `{ $implicit: Conversation }` | Custom template for the trailing section (timestamp, badges) |
+
+#### Message Result Templates
+
+| Property | Type | Context | Description |
+|----------|------|---------|-------------|
+| `messageItemView` | `TemplateRef` | `{ $implicit: BaseMessage }` | Custom template for the entire message result item |
+| `messageLeadingView` | `TemplateRef` | `{ $implicit: BaseMessage }` | Custom template for the leading section (type-specific icon) |
+| `messageTitleView` | `TemplateRef` | `{ $implicit: BaseMessage }` | Custom template for the title section (conversation/sender name) |
+| `messageSubtitleView` | `TemplateRef` | `{ $implicit: BaseMessage }` | Custom template for the subtitle section (message content) |
+| `messageTrailingView` | `TemplateRef` | `{ $implicit: BaseMessage }` | Custom template for the trailing section (timestamp, image/video thumbnail) |
+
+#### State View Templates
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `initialView` | `TemplateRef` | Shown before any search is performed (no keyword, no filters) |
+| `loadingView` | `TemplateRef` | Shown while search results are being fetched (shimmer placeholders by default) |
+| `emptyView` | `TemplateRef` | Shown when search returns no results |
+| `errorView` | `TemplateRef` | Shown when a search operation fails |
+
+<Note>
+  Template resolution follows a priority chain: `@Input` template → `CometChatTemplatesService` search template → `CometChatTemplatesService` shared template → built-in default.
+</Note>
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `backClick` | `void` | Emitted when the back button is clicked |
+| `conversationClick` | `SearchConversationClickEvent` | Emitted when a conversation result is clicked. Payload includes `conversation` and `searchKeyword` |
+| `messageClick` | `SearchMessageClickEvent` | Emitted when a message result is clicked. Payload includes `message` and `searchKeyword` |
+| `searchError` | `CometChat.CometChatException` | Emitted when a search operation fails in either section |
+
+### Event Payload Types
+
+```typescript
+interface SearchConversationClickEvent {
+  conversation: CometChat.Conversation;
+  searchKeyword: string;
+}
+
+interface SearchMessageClickEvent {
+  message: CometChat.BaseMessage;
+  searchKeyword: string;
+}
+```
+
+
+## Filter System
+
+The search component includes a filter chip bar that allows users to narrow results by type. Filters are organized into two categories:
+
+### Conversation Filters
+
+These filters affect the conversation results section:
+
+| Filter | Enum Value | Behavior |
+|--------|-----------|----------|
+| Unread | `CometChatSearchFilter.Unread` | Shows only conversations with unread messages |
+| Groups | `CometChatSearchFilter.Groups` | Shows only group conversations |
+| Conversations | `CometChatSearchFilter.Conversations` | Shows all conversations (explicit scope) |
+
+### Message Filters
+
+These filters affect the message results section:
+
+| Filter | Enum Value | Behavior |
+|--------|-----------|----------|
+| Photos | `CometChatSearchFilter.Photos` | Shows only image messages |
+| Videos | `CometChatSearchFilter.Videos` | Shows only video messages |
+| Documents | `CometChatSearchFilter.Documents` | Shows only file/document messages |
+| Audio | `CometChatSearchFilter.Audio` | Shows only audio messages |
+| Links | `CometChatSearchFilter.Links` | Shows only messages containing links |
+| Messages | `CometChatSearchFilter.Messages` | Shows all message types (explicit scope) |
+
+### Filter Behavior Rules
+
+- When a conversation filter is active, only the conversations section renders
+- When a message filter is active, only the messages section renders
+- Content filters (Photos, Videos, Documents, Audio) are mutually exclusive with Links
+- Multiple conversation filters can coexist (e.g., Unread + Groups)
+- When no filters are active and a keyword is entered, both sections render
+- When `uid` or `guid` is set, conversation filters are hidden automatically
+
+### Limiting Available Filters
+
+```typescript
+import { CometChatSearchFilter } from '@cometchat/chat-uikit-angular';
+
+<!-- Only show media-related filters -->
+<cometchat-search
+  [searchFilters]="[
+    CometChatSearchFilter.Photos,
+    CometChatSearchFilter.Videos,
+    CometChatSearchFilter.Documents
+  ]">
+</cometchat-search>
+```
+
+### Pre-Selecting a Filter
+
+```typescript
+<cometchat-search
+  [initialSearchFilter]="CometChatSearchFilter.Unread">
+</cometchat-search>
+```
+
+## Unified State Management
+
+When both conversation and message sections are active, the component coordinates their empty/error states to avoid duplicate views:
+
+| Conversations State | Messages State | Result |
+|-------------------|---------------|--------|
+| Empty | Empty | Single unified empty view (no section headers) |
+| Empty | Loaded | Conversations section hidden entirely; messages shown normally |
+| Loaded | Empty | Messages section hidden entirely; conversations shown normally |
+| Error | Error | Single unified error view (no section headers) |
+| Error | Loaded | Conversations shows error with header; messages shown normally |
+| Loaded | Error | Conversations shown normally; messages shows error with header |
+
+When only one scope is active (via `searchIn`, `uid`, or `guid`), that section handles its own empty/error states independently.
+
+
+## Advanced Usage
+
+### Custom Request Builders
+
+Override the default SDK query builders for conversations and messages:
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatSearchComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-search',
+  standalone: true,
+  imports: [CometChatSearchComponent],
+  template: `
+    <cometchat-search
+      [conversationsRequestBuilder]="convBuilder"
+      [messagesRequestBuilder]="msgBuilder"
+      (conversationClick)="onConversationClick($event)"
+      (messageClick)="onMessageClick($event)">
+    </cometchat-search>
+  `
+})
+export class CustomSearchComponent implements OnInit {
+  convBuilder!: CometChat.ConversationsRequestBuilder;
+  msgBuilder!: CometChat.MessagesRequestBuilder;
+
+  ngOnInit(): void {
+    this.convBuilder = new CometChat.ConversationsRequestBuilder()
+      .setLimit(15)
+      .withTags(true);
+
+    this.msgBuilder = new CometChat.MessagesRequestBuilder()
+      .setLimit(20);
+  }
+
+  onConversationClick(event: any): void {
+    // Navigate to conversation
+  }
+
+  onMessageClick(event: any): void {
+    // Navigate to message in context
+  }
+}
+```
+
+### Custom Context Menu for Conversation Results
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatSearchComponent, CometChatOption } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-search-with-menu',
+  standalone: true,
+  imports: [CometChatSearchComponent],
+  template: `
+    <cometchat-search
+      [conversationOptions]="getOptions"
+      (conversationClick)="onConversationClick($event)">
+    </cometchat-search>
+  `
+})
+export class SearchWithMenuComponent {
+  getOptions = (conversation: CometChat.Conversation): CometChatOption[] => {
+    return [
+      {
+        id: 'pin',
+        title: 'Pin Conversation',
+        iconURL: 'assets/pin.svg',
+        onClick: () => console.log('Pin:', conversation)
+      },
+      {
+        id: 'delete',
+        title: 'Delete',
+        iconURL: 'assets/delete.svg',
+        onClick: () => console.log('Delete:', conversation)
+      }
+    ];
+  };
+
+  onConversationClick(event: any): void {
+    console.log('Selected:', event.conversation);
+  }
+}
+```
+
+### Handling Search Results for Navigation
+
+A common pattern is navigating to the matched message within its conversation when a message result is clicked:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatSearchComponent,
+  SearchConversationClickEvent,
+  SearchMessageClickEvent,
+  ChatStateService,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-search-navigation',
+  standalone: true,
+  imports: [CometChatSearchComponent],
+  template: `
+    <cometchat-search
+      (conversationClick)="onConversationClick($event)"
+      (messageClick)="onMessageClick($event)"
+      (backClick)="closeSearch()">
+    </cometchat-search>
+  `
+})
+export class SearchNavigationComponent {
+  constructor(private chatState: ChatStateService) {}
+
+  onConversationClick(event: SearchConversationClickEvent): void {
+    const conversationWith = event.conversation.getConversationWith();
+    if (conversationWith instanceof CometChat.User) {
+      this.chatState.setActiveUser(conversationWith);
+    } else if (conversationWith instanceof CometChat.Group) {
+      this.chatState.setActiveGroup(conversationWith as CometChat.Group);
+    }
+    this.closeSearch();
+  }
+
+  onMessageClick(event: SearchMessageClickEvent): void {
+    // Navigate to the message's conversation and scroll to the message
+    const message = event.message;
+    const receiverType = message.getReceiverType();
+
+    if (receiverType === 'user') {
+      this.chatState.setActiveUser(message.getSender());
+    } else {
+      this.chatState.setActiveGroup(message.getReceiver() as CometChat.Group);
+    }
+    // Your app can use message.getId() to scroll to the specific message
+    this.closeSearch();
+  }
+
+  closeSearch(): void {
+    // Navigate back to the main chat view
+  }
+}
+```
+
+## Customization with Templates
+
+### Custom Message Result Item
+
+Override the entire message result row:
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatSearchComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-message-results',
+  standalone: true,
+  imports: [CommonModule, CometChatSearchComponent],
+  template: `
+    <cometchat-search
+      [messageItemView]="customMessageItem"
+      (messageClick)="onMessageClick($event)">
+
+      <ng-template #customMessageItem let-message>
+        <div class="custom-message-row" (click)="onMessageClick({ message, searchKeyword: '' })">
+          <div class="message-type-badge">
+            {{ message.getType() | uppercase }}
+          </div>
+          <div class="message-body">
+            <span class="sender">{{ message.getSender()?.getName() }}</span>
+            <span class="content">{{ getPreview(message) }}</span>
+          </div>
+          <span class="time">{{ message.getSentAt() * 1000 | date:'shortTime' }}</span>
+        </div>
+      </ng-template>
+    </cometchat-search>
+  `,
+  styles: [`
+    .custom-message-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+    .custom-message-row:hover {
+      background: var(--cometchat-background-color-02);
+    }
+    .message-type-badge {
+      background: var(--cometchat-primary-color);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .message-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .sender {
+      font: var(--cometchat-font-body-medium);
+      color: var(--cometchat-text-color-primary);
+    }
+    .content {
+      font: var(--cometchat-font-body-regular);
+      color: var(--cometchat-text-color-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .time {
+      font: var(--cometchat-font-caption1-regular);
+      color: var(--cometchat-text-color-secondary);
+    }
+  `]
+})
+export class CustomMessageResultsComponent {
+  getPreview(message: CometChat.BaseMessage): string {
+    if (message.getType() === 'text') {
+      return (message as CometChat.TextMessage).getText();
+    }
+    return message.getType();
+  }
+
+  onMessageClick(event: any): void {
+    console.log('Message clicked:', event);
+  }
+}
+```
+
+### Custom Empty and Error States
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChatSearchComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-custom-states',
+  standalone: true,
+  imports: [CometChatSearchComponent],
+  template: `
+    <cometchat-search
+      [emptyView]="customEmpty"
+      [errorView]="customError">
+
+      <ng-template #customEmpty>
+        <div class="custom-empty">
+          <img src="assets/no-results.svg" alt="No results" />
+          <h3>Nothing found</h3>
+          <p>Try a different keyword or filter</p>
+        </div>
+      </ng-template>
+
+      <ng-template #customError>
+        <div class="custom-error">
+          <img src="assets/error.svg" alt="Error" />
+          <h3>Search failed</h3>
+          <p>Please check your connection and try again</p>
+        </div>
+      </ng-template>
+    </cometchat-search>
+  `
+})
+export class CustomStatesComponent {}
+```
+
+### Custom Initial View
+
+Replace the default "Search for messages, conversations..." placeholder:
+
+```typescript
+<cometchat-search [initialView]="customInitial">
+  <ng-template #customInitial>
+    <div class="search-prompt">
+      <h3>Find anything</h3>
+      <p>Search across all your conversations and messages</p>
+    </div>
+  </ng-template>
+</cometchat-search>
+```
+
+
+## Keyboard Accessibility
+
+CometChatSearch provides keyboard accessibility for the search input, filter bar, and result items.
+
+### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Navigate between search input, filter chips, and result items | Global |
+| `Shift + Tab` | Navigate backwards | Global |
+| `Enter` | Activate focused result item or filter chip | When focused |
+| `Space` | Toggle filter chip or activate result item | When focused |
+| `Escape` | Clear search text and active filters | When search input is focused |
+
+### Accessibility Features
+
+**ARIA Attributes:**
+- `role="search"` on the main container
+- `role="searchbox"` on the search input
+- `role="toolbar"` on the filter bar
+- `aria-pressed` on filter chips indicating active state
+- `aria-label` on back button, search input, and clear button
+- `aria-live="assertive"` on empty and error state regions
+- `role="list"` and `role="listitem"` on result sections
+
+**Screen Reader Support:**
+- Filter chip labels are localized via the translate pipe
+- State changes (empty, error) are announced via `aria-live` regions
+- Back button and clear button have descriptive `aria-label` attributes
+
+**Focus Management:**
+- Search input auto-focuses on component load
+- Clear button restores focus to search input after clearing
+- Result items are focusable with `tabindex="0"` (message results)
+- Visible focus indicators meeting WCAG contrast requirements
+
+## Styling with CSS Variables
+
+The component uses CometChat CSS variables for theming. Key variables:
+
+```css
+cometchat-search {
+  /* Background */
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-background-color-02: #f5f5f5;
+  --cometchat-background-color-03: #eeeeee;
+
+  /* Text */
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-text-color-tertiary: #a1a1a1;
+
+  /* Primary color (active filter, icons) */
+  --cometchat-primary-color: #6852D6;
+
+  /* Border */
+  --cometchat-border-color-dark: #dcdcdc;
+  --cometchat-border-color-light: #e8e8e8;
+
+  /* Icons */
+  --cometchat-icon-color-primary: #141414;
+  --cometchat-icon-color-secondary: #a1a1a1;
+
+  /* Typography */
+  --cometchat-font-heading4-regular: 400 16px/24px sans-serif;
+  --cometchat-font-body-regular: 400 14px/20px sans-serif;
+  --cometchat-font-body-medium: 500 14px/20px sans-serif;
+  --cometchat-font-caption1-regular: 400 12px/16px sans-serif;
+  --cometchat-font-caption1-medium: 500 12px/16px sans-serif;
+
+  /* Spacing */
+  --cometchat-padding-2: 8px;
+  --cometchat-padding-3: 12px;
+  --cometchat-padding-4: 16px;
+
+  /* Border radius */
+  --cometchat-radius-max: 1000px;
+  --cometchat-radius-2: 8px;
+}
+```
+
+### Filter Chip Styling
+
+Active filter chips use a dark pill style with white text and icons:
+
+```css
+/* Default filter chip */
+.cometchat-search__body-filter {
+  background: var(--cometchat-background-color-03);
+  color: var(--cometchat-text-color-secondary);
+  border-radius: var(--cometchat-radius-max);
+}
+
+/* Active filter chip */
+.cometchat-search__body-filter-active {
+  background: var(--cometchat-neutral-color-900);
+  color: var(--cometchat-neutral-color-50);
+  border: 1px solid var(--cometchat-neutral-color-800);
+}
+```
+
+## Error Handling
+
+### Built-in Error Handling
+
+The component handles errors from both conversation and message search services:
+
+```typescript
+<cometchat-search
+  (searchError)="handleSearchError($event)">
+</cometchat-search>
+```
+
+```typescript expandable
+handleSearchError(error: CometChat.CometChatException): void {
+  console.error('Search error:', error);
+
+  if (error.code === 'NETWORK_ERROR') {
+    this.showToast('Network error. Please check your connection.');
+  } else if (error.code === 'AUTH_ERROR') {
+    this.showToast('Authentication error. Please log in again.');
+  } else {
+    this.showToast('Search failed. Please try again.');
+  }
+}
+```
+
+### Error State Behavior
+
+- If only one section errors while the other has results, the errored section shows its own error view with its section header
+- If both sections error, a single unified error view is shown without section headers
+- Custom `errorView` templates are used when provided
+
+## Complete Example
+
+```typescript expandable
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import {
+  CometChatSearchComponent,
+  CometChatSearchFilter,
+  CometChatSearchScope,
+  SearchConversationClickEvent,
+  SearchMessageClickEvent,
+  ChatStateService,
+  CometChatOption,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-search-demo',
+  standalone: true,
+  imports: [CommonModule, CometChatSearchComponent],
+  template: `
+    <div class="search-container">
+      <cometchat-search
+        [searchFilters]="filters"
+        [conversationOptions]="getConversationOptions"
+        [hideReceipts]="false"
+        [hideUserStatus]="false"
+        [emptyView]="customEmpty"
+        (conversationClick)="onConversationClick($event)"
+        (messageClick)="onMessageClick($event)"
+        (backClick)="closeSearch()"
+        (searchError)="onError($event)">
+
+        <ng-template #customEmpty>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; text-align: center;">
+            <h3 style="margin: 0 0 4px; font: var(--cometchat-font-heading4-bold); color: var(--cometchat-text-color-primary);">No results</h3>
+            <p style="margin: 0; font: var(--cometchat-font-body-regular); color: var(--cometchat-text-color-secondary);">Try a different search term or filter</p>
+          </div>
+        </ng-template>
+      </cometchat-search>
+    </div>
+  `,
+  styles: [`
+    .search-container {
+      height: 100vh;
+      width: 400px;
+    }
+  `]
+})
+export class SearchDemoComponent implements OnInit {
+  filters = [
+    CometChatSearchFilter.Unread,
+    CometChatSearchFilter.Groups,
+    CometChatSearchFilter.Photos,
+    CometChatSearchFilter.Videos,
+    CometChatSearchFilter.Documents,
+    CometChatSearchFilter.Audio,
+    CometChatSearchFilter.Links,
+  ];
+
+  constructor(private chatState: ChatStateService) {}
+
+  ngOnInit(): void {}
+
+  getConversationOptions = (conv: CometChat.Conversation): CometChatOption[] => {
+    return [
+      { id: 'delete', title: 'Delete', iconURL: 'assets/delete.svg', onClick: () => console.log('Delete:', conv) },
+    ];
+  };
+
+  onConversationClick(event: SearchConversationClickEvent): void {
+    const entity = event.conversation.getConversationWith();
+    if (entity instanceof CometChat.User) {
+      this.chatState.setActiveUser(entity);
+    } else {
+      this.chatState.setActiveGroup(entity as CometChat.Group);
+    }
+    this.closeSearch();
+  }
+
+  onMessageClick(event: SearchMessageClickEvent): void {
+    const msg = event.message;
+    if (msg.getReceiverType() === 'user') {
+      this.chatState.setActiveUser(msg.getSender());
+    } else {
+      this.chatState.setActiveGroup(msg.getReceiver() as CometChat.Group);
+    }
+    this.closeSearch();
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Search error:', error);
+  }
+
+  closeSearch(): void {
+    // Navigate back to main chat view
+  }
+}
+```
+
+## Related Components
+
+- **CometChatConversations**: Full conversation list component (CometChatSearch uses `CometChatConversationItem` internally for conversation results)
+- **CometChatSearchBar**: Standalone search bar component (CometChatSearch has its own built-in search input)
+- **CometChatMessageList**: Message list component for displaying messages in a conversation
+- **CometChatMessageHeader**: Header component that pairs with search for navigation context
+
+## Technical Details
+
+- **Standalone Component**: Can be imported and used independently
+- **Change Detection**: Uses `OnPush` strategy for optimal performance
+- **Lazy Loading**: Child result components use `@defer` blocks for code splitting
+- **Signal-Based State**: Services use Angular signals for reactive state management
+- **Debounced Search**: 500ms debounce on the search input to reduce SDK calls
+- **BEM CSS**: Follows Block Element Modifier naming convention (`cometchat-search__*`)
+- **Localization**: All text uses the `translate` pipe for i18n support
+
+---
+
+## Related Documentation
+
+- [SearchConversationsService](/api-reference/search-conversations-service) — Conversation search state, SDK queries, real-time listeners
+- [SearchMessagesService](/api-reference/search-messages-service) — Message search state, attachment-type filtering, scoped queries
+- [CometChatTemplatesService](/api-reference/templates-service) — Template resolution priority chain and global template overrides
+- [Accessibility](/accessibility#search) — Cross-component keyboard accessibility reference
+- [Events](/events) — UIKit event bus for decoupled component communication

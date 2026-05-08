@@ -360,7 +360,8 @@
     "ai_assistant_chat_composer_placeholder": "Stel een vraag...",
     "ai_assistant_chat_new_chat": "Nieuw Gesprek",
     "ai_assistant_chat_history": "chatgeschiedenis",
-    "ai_assistant_chat_history_title": "Chatgeschiedenis",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Aan het nadenken...",
     "ai_assistant_chat_executing_tool": "Actie uitvoeren...",
     "ai_assistant_chat_no_internet": "Geen internetverbinding. Controleer je netwerk.",
@@ -368,6 +369,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Start een nieuw gesprek om het hier te zien.",
     "ai_assistant_chat_history_error_title": "Er Is Iets Misgegaan",
     "ai_assistant_chat_history_error_subtitle": "We hebben problemen met het laden van je chatgeschiedenis.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Leden toevoegen",
     "add_member": "Lid toevoegen",
     "add_n_members": "{n} leden toevoegen",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "Bericht verzenden mislukt",
     "accessibility_message_deleted": "Bericht verwijderd",
     "accessibility_message_edited": "Bericht bewerkt",
-    "accessibility_loading_older_messages": "Oudere berichten laden"
+    "accessibility_loading_older_messages": "Oudere berichten laden",
+    "message_list_option_mark_as_unread": "Markeren als ongelezen",
+    "message_list_unread_messages": "Ongelezen berichten",
+    "message_list_unread_divider": "Scheidingslijn ongelezen berichten"
 }

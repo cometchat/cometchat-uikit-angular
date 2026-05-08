@@ -15,9 +15,10 @@ import {
   ElementRef,
   HostBinding,
   booleanAttribute,
+  DestroyRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { CometChatListItemComponent } from '../base-elements/cometchat-list-item/cometchat-list-item.component';
@@ -25,6 +26,7 @@ import { CometChatAvatarComponent } from '../base-elements/cometchat-avatar/come
 import { CometChatButtonComponent } from '../base-elements/cometchat-button/cometchat-button.component';
 import { CometChatOngoingCallComponent } from '../cometchat-ongoing-call/cometchat-ongoing-call.component';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
+import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
 import { IncomingCallService } from '../../services/incoming-call.service';
 import { CometChatCallEvents } from '../../events/CometChatCallEvents';
 import { CallWorkflow } from '../../Enums/Enums';
@@ -32,16 +34,9 @@ import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { handleCallError } from '../../utils/call-error-handler';
 import { DialogFocusManager } from '../../services/dialog-focus-manager.service';
 import { GlobalConfig, COMETCHAT_GLOBAL_CONFIG } from '../../services/global-config.service';
+import { IncomingCallTemplateContext } from './cometchat-incoming-call.types';
 
-/**
- * Template context passed to all template overrides.
- */
-export interface IncomingCallTemplateContext {
-  call: CometChat.Call;
-  callerName: string;
-  callerAvatar: string;
-  callType: string;
-}
+export type { IncomingCallTemplateContext };
 
 /**
  * CometChatIncomingCallComponent displays an incoming call notification card
@@ -60,222 +55,82 @@ export interface IncomingCallTemplateContext {
  *   (callDeclined)="onCallDeclined($event)">
  * </cometchat-incoming-call>
  * ```
- *
-
  */
 @Component({
   selector: 'cometchat-incoming-call',
   standalone: true,
-  imports: [
-    CommonModule,
-    CometChatListItemComponent,
-    CometChatAvatarComponent,
-    CometChatButtonComponent,
-    CometChatOngoingCallComponent,
-    TranslatePipe,
-  ],
+  imports: [CommonModule, CometChatListItemComponent, CometChatAvatarComponent, CometChatButtonComponent, CometChatOngoingCallComponent, CometChatErrorBoundaryComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cometchat-incoming-call.component.html',
   styleUrls: ['./cometchat-incoming-call.component.css'],
 })
 export class CometChatIncomingCallComponent implements OnInit, OnDestroy, AfterViewInit {
-  // ==================== Host Bindings ====================
-
-  /**
-   * When the ongoing call screen is active, the host element must act as a
-   * full-screen positioned container so the child `cometchat-ongoing-call`
-   * (which uses `position: absolute; inset: 0`) renders correctly.
-   * Without this, the host element collapses to zero dimensions and the
-   * ongoing call UI is invisible.
-   */
   @HostBinding('class.cometchat-incoming-call--ongoing')
-  get isOngoingCallActive(): boolean {
-    return this.showOngoingCallScreen() && !!this.ongoingCallSessionId();
-  }
-
-  // ==================== Service Injection ====================
+  get isOngoingCallActive(): boolean { return this.showOngoingCallScreen() && !!this.ongoingCallSessionId(); }
 
   private incomingCallService = inject(IncomingCallService);
   private callAnnouncer = inject(CallAnnouncerService);
   private dialogFocusManager = inject(DialogFocusManager);
-  private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, {
-    optional: true,
-  });
+  private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, { optional: true });
 
-  // ==================== ExplicitlySet Flags & Backing Fields (GlobalConfig Priority System) ====================
   private disableSoundForCallsExplicitlySet = signal(false);
   private customSoundForCallsExplicitlySet = signal(false);
-
   private _disableSoundForCalls = signal(false);
   private _customSoundForCalls = signal('');
 
-  // ==================== View Children ====================
-
-  /** Reference to the dialog container for focus management */
   @ViewChild('dialogContainer') dialogContainer!: ElementRef<HTMLElement>;
-
-  /** Reference to the accept button for initial focus */
   @ViewChild('acceptButton') acceptButton!: ElementRef<HTMLElement>;
 
-  // ==================== Inputs ====================
-
-  /** The incoming call object. Overrides service state when provided. */
   @Input() call: CometChat.Call | null = null;
 
-  /** Disables the incoming call ringtone when true. */
   @Input({ transform: booleanAttribute })
-  set disableSoundForCalls(value: boolean) {
-    this._disableSoundForCalls.set(value);
-    this.disableSoundForCallsExplicitlySet.set(true);
-  }
-  get disableSoundForCalls(): boolean {
-    return this._disableSoundForCalls();
-  }
+  set disableSoundForCalls(value: boolean) { this._disableSoundForCalls.set(value); this.disableSoundForCallsExplicitlySet.set(true); }
+  get disableSoundForCalls(): boolean { return this._disableSoundForCalls(); }
 
-  /** Custom sound URL for the incoming call ringtone. */
   @Input()
-  set customSoundForCalls(value: string) {
-    this._customSoundForCalls.set(value);
-    this.customSoundForCallsExplicitlySet.set(true);
-  }
-  get customSoundForCalls(): string {
-    return this._customSoundForCalls();
-  }
+  set customSoundForCalls(value: string) { this._customSoundForCalls.set(value); this.customSoundForCallsExplicitlySet.set(true); }
+  get customSoundForCalls(): string { return this._customSoundForCalls(); }
 
-  /** Custom accept handler. Overrides default SDK `CometChat.acceptCall()`. */
   @Input() onAccept: ((call: CometChat.Call) => void) | null = null;
-
-  /** Custom decline handler. Overrides default SDK `CometChat.rejectCall()`. */
   @Input() onDecline: ((call: CometChat.Call) => void) | null = null;
-
-  /** Error callback invoked for any error during sound, accept, or decline. */
   @Input() onError: ((error: CometChat.CometChatException) => void) | null = null;
 
-  // ==================== Template Override Inputs ====================
-
-  /** Replaces the entire ListItem with a custom template. */
   @Input() itemView: TemplateRef<any> | null = null;
-
-  /** Replaces the default caller name title in the ListItem. */
   @Input() titleView: TemplateRef<any> | null = null;
-
-  /** Replaces the default call type icon + "Incoming Call" subtitle. */
   @Input() subtitleView: TemplateRef<any> | null = null;
-
-  /** Custom template for the leading position of the ListItem. */
   @Input() leadingView: TemplateRef<any> | null = null;
-
-  /** Replaces the default caller avatar in the trailing position. */
   @Input() trailingView: TemplateRef<any> | null = null;
-
-  /** Replaces the default Accept button. */
   @Input() acceptButtonView: TemplateRef<any> | null = null;
-
-  /** Replaces the default Decline button. */
   @Input() declineButtonView: TemplateRef<any> | null = null;
 
-  // ==================== Outputs ====================
-
-  /** Emitted when the user accepts the incoming call. */
   @Output() callAccepted = new EventEmitter<CometChat.Call>();
-
-  /** Emitted when the user declines the incoming call. */
   @Output() callDeclined = new EventEmitter<CometChat.Call>();
-
-  /** Emitted on any error during sound playback, accept, or decline. */
   @Output() error = new EventEmitter<CometChat.CometChatException>();
 
-  // ==================== Ongoing Call State ====================
-
-  /** Whether to show the ongoing call screen after accepting. */
   showOngoingCallScreen = signal<boolean>(false);
-
-  /** The session ID for the ongoing call. */
   ongoingCallSessionId = signal<string>('');
 
-  /** Subscription to ccCallEnded to hide the ongoing call screen. */
-  private callEndedSub: Subscription | null = null;
-
-  /** CallWorkflow enum value for the template binding. */
+  private readonly destroyRef = inject(DestroyRef);
   readonly defaultCallingWorkflow = CallWorkflow.defaultCalling;
-
-  /**
-   * Whether the accepted incoming call is audio-only.
-   * Captured before accepting the call (since the incoming call state
-   * is cleared after accept, the getter approach doesn't work).
-   */
   private _incomingCallIsAudioOnly = signal<boolean>(false);
+  get incomingCallIsAudioOnly(): boolean { return this._incomingCallIsAudioOnly(); }
 
-  get incomingCallIsAudioOnly(): boolean {
-    return this._incomingCallIsAudioOnly();
-  }
-
-  // ==================== Effective Values (GlobalConfig Priority System) ====================
-
-  /**
-   * Resolved disableSoundForCalls value using 3-tier priority:
-   * 1. Explicitly set @Input value
-   * 2. GlobalConfig value (if defined)
-   * 3. Component default (false)
-   */
   effectiveDisableSoundForCalls = computed(() => {
     if (this.disableSoundForCallsExplicitlySet()) return this._disableSoundForCalls();
-    if (this.globalConfig?.disableSoundForCalls !== undefined)
-      return this.globalConfig.disableSoundForCalls;
+    if (this.globalConfig?.disableSoundForCalls !== undefined) return this.globalConfig.disableSoundForCalls;
     return false;
   });
 
-  /**
-   * Resolved customSoundForCalls value using 3-tier priority:
-   * 1. Explicitly set @Input value
-   * 2. GlobalConfig value (if defined)
-   * 3. Component default ('')
-   */
   effectiveCustomSoundForCalls = computed(() => {
     if (this.customSoundForCallsExplicitlySet()) return this._customSoundForCalls();
-    if (this.globalConfig?.customSoundForCalls !== undefined)
-      return this.globalConfig.customSoundForCalls;
+    if (this.globalConfig?.customSoundForCalls !== undefined) return this.globalConfig.customSoundForCalls;
     return '';
   });
 
-  // ==================== Computed Getters ====================
+  get effectiveCall(): CometChat.Call | null { return this.call ?? this.incomingCallService.incomingCall(); }
+  get callerName(): string { const call = this.effectiveCall; if (!call) return ''; return call.getCallInitiator()?.getName?.() || ''; }
+  get callerAvatar(): string { const call = this.effectiveCall; if (!call) return ''; return call.getCallInitiator()?.getAvatar?.() || ''; }
 
-  /**
-   * Returns the effective call object.
-   * Component input takes priority over service state.
-   *
-   * @see Requirement 7.4 - Input priority over service state
-   */
-  get effectiveCall(): CometChat.Call | null {
-    return this.call ?? this.incomingCallService.incomingCall();
-  }
-
-  /**
-   * Returns the caller's display name from the call initiator.
-   */
-  get callerName(): string {
-    const call = this.effectiveCall;
-    if (!call) return '';
-    const initiator = call.getCallInitiator();
-    return initiator?.getName?.() || '';
-  }
-
-  /**
-   * Returns the caller's avatar URL from the call initiator.
-   */
-  get callerAvatar(): string {
-    const call = this.effectiveCall;
-    if (!call) return '';
-    const initiator = call.getCallInitiator();
-    return initiator?.getAvatar?.() || '';
-  }
-
-  /**
-   * Returns the appropriate icon URL based on call type (audio vs video).
-   *
-   * @see Requirement 1.2 - Audio call icon
-   * @see Requirement 1.3 - Video call icon
-   */
   get callTypeIconUrl(): string {
     const call = this.effectiveCall;
     if (!call) return '';
@@ -326,7 +181,7 @@ export class CometChatIncomingCallComponent implements OnInit, OnDestroy, AfterV
     }
 
     // Subscribe to call ended to hide ongoing call screen
-    this.callEndedSub = CometChatCallEvents.ccCallEnded.subscribe(() => {
+    CometChatCallEvents.ccCallEnded.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.showOngoingCallScreen.set(false);
       this.ongoingCallSessionId.set('');
     });
@@ -363,11 +218,6 @@ export class CometChatIncomingCallComponent implements OnInit, OnDestroy, AfterV
     // Close dialog focus management
     if (this.dialogContainer?.nativeElement) {
       this.dialogFocusManager.closeDialog(this.dialogContainer.nativeElement);
-    }
-
-    if (this.callEndedSub) {
-      this.callEndedSub.unsubscribe();
-      this.callEndedSub = null;
     }
   }
 
@@ -451,4 +301,7 @@ export class CometChatIncomingCallComponent implements OnInit, OnDestroy, AfterV
   private handleError(err: unknown): void {
     handleCallError(err, 'INCOMING_CALL_ERROR', 'CometChatIncomingCall', this.error, this.onError);
   }
+
+  /** No-op retry handler — incoming calls are transient and cannot be retried. */
+  handleRetryClick(): void {}
 }

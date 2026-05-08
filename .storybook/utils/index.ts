@@ -14,6 +14,10 @@ export {
   createMockGroupsServiceWith,
   createMockGroupMembersServiceWith,
   createMockMessageListServiceWith,
+  MockSearchConversationsService,
+  MockSearchMessagesService,
+  createMockSearchConversationsService,
+  createMockSearchMessagesService,
 } from './mock-services';
 
 export {

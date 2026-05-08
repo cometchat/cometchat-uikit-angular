@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, OnDestroy, signal, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, OnDestroy, signal, ViewChild, ViewEncapsulation } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
   ChatStateService,
@@ -13,6 +13,8 @@ import { Subscription } from 'rxjs';
 import { NavigationService } from '../../services/navigation.service';
 import { UserService } from '../../services/user.service';
 import { ToastService } from '../../services/toast.service';
+import { CometChatAIStreamingService } from '../../../../../cometchat-uikit/src/lib/services/cometchat-ai-streaming.service';
+import { CometChatAIAssistantChat } from '../../../../../cometchat-uikit/src/lib/components/cometchat-ai-assistant-chat/cometchat-ai-assistant-chat.component';
 
 /**
  * CometChatMessagesComponent
@@ -35,6 +37,7 @@ import { ToastService } from '../../services/toast.service';
     CometChatMessageHeaderComponent,
     CometChatMessageListComponent,
     CometChatMessageComposerComponent,
+    CometChatAIAssistantChat,
     TranslatePipe,
   ],
   templateUrl: './cometchat-messages.component.html',
@@ -46,8 +49,13 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
   protected navigationService = inject(NavigationService);
   private userService = inject(UserService);
   private toastService = inject(ToastService);
+  private streamingService = inject(CometChatAIStreamingService);
+  private destroyRef = inject(DestroyRef);
 
   private subscriptions: Subscription[] = [];
+
+  /** Unique listener ID for the SDK AI event listener */
+  private readonly aiListenerId = `messages-ai-listener-${Date.now()}`;
 
   /** Reference to the UIKit message header for manual change detection */
   @ViewChild('messageHeader') messageHeaderRef?: CometChatMessageHeaderComponent;
@@ -57,6 +65,9 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
 
   /** Active group from ChatStateService */
   protected activeGroup = this.chatStateService.activeGroup;
+
+  /** True when the active user has the @agentic role — renders AI assistant chat instead */
+  protected isAgenticUser = computed(() => this.activeUser()?.getRole() === '@agentic');
 
   /** Show back button on mobile */
   protected showBackButton = computed(() => this.navigationService.isMobile());
@@ -86,7 +97,8 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
   /** goToMessageId from NavigationService, converted to string for the UIKit input */
   protected goToMessageId = computed(() => {
     const id = this.navigationService.goToMessageId();
-    return id !== null ? String(id) : undefined;
+    const result = id !== null ? String(id) : undefined;
+    return result;
   });
 
   // ── Lifecycle ──
@@ -95,6 +107,8 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
     const u = this.activeUser();
     this.isBlockedByMe.set(u?.getBlockedByMe?.() ?? false);
     this.subscribeToUserEvents();
+    this._attachAIListener();
+    this.destroyRef.onDestroy(() => this._detachAIListener());
   }
 
   ngOnDestroy(): void {
@@ -117,6 +131,25 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
         }
       }),
     );
+  }
+
+  // ── AI streaming listener ──
+
+  private _attachAIListener(): void {
+    CometChat.addAIAssistantListener(
+      this.aiListenerId,
+      new CometChat.AIAssistantListener({
+        onAIAssistantEventReceived: (event: CometChat.AIAssistantBaseEvent) => {
+          const user = this.activeUser();
+          if (!user) return;
+          this.streamingService.handleWebsocketMessage(event, user.getUid());
+        },
+      })
+    );
+  }
+
+  private _detachAIListener(): void {
+    CometChat.removeAIAssistantListener(this.aiListenerId);
   }
 
   /** Unblock the active user — called from the blocked banner */

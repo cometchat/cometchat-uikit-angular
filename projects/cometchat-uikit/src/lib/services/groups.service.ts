@@ -3,61 +3,37 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { States } from '../Enums/Enums';
 import { CometChatUIKitUtility } from '../CometChatUIKitUtility';
 import { CometChatLogger } from '../utils/CometChatLogger';
+import { GroupsErrorCallback } from './groups.service.types';
+import { attachGroupListener } from './groups.service.utils';
+
+export type { GroupsErrorCallback };
 
 /**
- * Error callback type for propagating errors to the component.
- */
-export type GroupsErrorCallback = (error: CometChat.CometChatException) => void;
-
-/**
- * GroupsService
- *
- * Service responsible for managing group list state and SDK interactions.
- * NOT `providedIn: 'root'` — instantiated per component instance to avoid
- * shared state between multiple group lists.
- *
+ * GroupsService manages group list state and SDK interactions.
+ * NOT `providedIn: 'root'` — instantiated per component instance.
  * Uses Angular Signals for reactive state management.
- *
- * Replaces the plain-class `GroupsManager` with an Angular-native `@Injectable()`
- * service following the `GroupMembersService` / `CallLogsService` pattern.
- *
  * @see Requirements 2.1, 2.3, 2.5, 2.7
  */
 @Injectable()
 export class GroupsService {
-  // ==================== State Signals ====================
-
   private groupsSignal = signal<CometChat.Group[]>([]);
   private fetchStateSignal = signal<States>(States.loading);
   private hasMoreSignal = signal<boolean>(true);
 
-  /** Read-only signal for the current group list. */
   readonly groups = this.groupsSignal.asReadonly();
-
-  /** Read-only signal for the current fetch state. */
   readonly fetchState = this.fetchStateSignal.asReadonly();
-
-  /** Read-only signal indicating if more groups can be fetched. */
   readonly hasMore = this.hasMoreSignal.asReadonly();
-
-  // ==================== Private State ====================
 
   private groupsRequest: CometChat.GroupsRequest | null = null;
   private errorCallback: GroupsErrorCallback | null = null;
   private isFetching = false;
-
-  /** Cached logged-in user for hasJoined / isLoggedInUser detection in listeners. */
   private loggedInUser: CometChat.User | null = null;
 
   private groupListenerId = `groups_service_group_${CometChatUIKitUtility.ID()}`;
   private connectionListenerId = `groups_service_conn_${CometChatUIKitUtility.ID()}`;
 
-  // ==================== Configuration ====================
-
   private static readonly DEFAULT_LIMIT = 30;
   private static readonly MIN_SHIMMER_TIME = 1000;
-
-  // ==================== Public API ====================
 
   /**
    * Set the error callback for propagating errors to the component.
@@ -180,118 +156,15 @@ export class GroupsService {
 
   // ==================== Listener Management ====================
 
-  /**
-   * Attach SDK GroupListener for real-time group events.
-   * Ports GroupsManager.attachListeners() — directly updates service Signals
-   * instead of using a dispatch callback.
-   *
-   * Includes logged-in user caching for hasJoined / isLoggedInUser detection.
-   */
+  /** Attach SDK GroupListener for real-time group events. */
   attachListeners(): void {
-    // Cache logged-in user for isLoggedInUser checks
     this.cacheLoggedInUser();
-
-    try {
-      CometChat.addGroupListener(
-        this.groupListenerId,
-        new CometChat.GroupListener({
-          onGroupMemberJoined: (
-            _message: CometChat.Action,
-            joinedUser: CometChat.User,
-            joinedGroup: CometChat.Group
-          ) => {
-            const isLoggedIn = this.isLoggedInUser(joinedUser);
-            this.updateGroupForSDKEvents({
-              group: joinedGroup,
-              newCount: joinedGroup.getMembersCount(),
-              hasJoined: isLoggedIn ? true : undefined,
-              addGroup: isLoggedIn,
-            });
-          },
-
-          onGroupMemberLeft: (
-            _message: CometChat.Action,
-            leavingUser: CometChat.User,
-            groupLeft: CometChat.Group
-          ) => {
-            if (this.isLoggedInUser(leavingUser)) {
-              this.removeGroup(groupLeft.getGuid());
-            } else {
-              this.updateGroupForSDKEvents({
-                group: groupLeft,
-                newCount: groupLeft.getMembersCount(),
-              });
-            }
-          },
-
-          onGroupMemberKicked: (
-            _message: CometChat.Action,
-            kickedUser: CometChat.User,
-            _kickedBy: CometChat.User,
-            kickedFrom: CometChat.Group
-          ) => {
-            if (this.isLoggedInUser(kickedUser)) {
-              this.removeGroup(kickedFrom.getGuid());
-            } else {
-              this.updateGroupForSDKEvents({
-                group: kickedFrom,
-                newCount: kickedFrom.getMembersCount(),
-              });
-            }
-          },
-
-          onGroupMemberBanned: (
-            _message: CometChat.Action,
-            bannedUser: CometChat.User,
-            _bannedBy: CometChat.User,
-            bannedFrom: CometChat.Group
-          ) => {
-            if (this.isLoggedInUser(bannedUser)) {
-              this.removeGroup(bannedFrom.getGuid());
-            } else {
-              this.updateGroupForSDKEvents({
-                group: bannedFrom,
-                newCount: bannedFrom.getMembersCount(),
-              });
-            }
-          },
-
-          onGroupMemberScopeChanged: (
-            _message: CometChat.Action,
-            changedUser: CometChat.User,
-            newScope: string,
-            _oldScope: string,
-            changedGroup: CometChat.Group
-          ) => {
-            if (this.isLoggedInUser(changedUser)) {
-              this.updateGroupForSDKEvents({
-                group: changedGroup,
-                newScope,
-              });
-            } else {
-              this.updateGroup(changedGroup);
-            }
-          },
-
-          onMemberAddedToGroup: (
-            _message: CometChat.Action,
-            userAdded: CometChat.User,
-            _userAddedBy: CometChat.User,
-            userAddedIn: CometChat.Group
-          ) => {
-            const isLoggedIn = this.isLoggedInUser(userAdded);
-            this.updateGroupForSDKEvents({
-              group: userAddedIn,
-              newCount: userAddedIn.getMembersCount(),
-              hasJoined: isLoggedIn ? true : undefined,
-              addGroup: isLoggedIn,
-            });
-          },
-        })
-      );
-    } catch (error) {
-      CometChatLogger.error('GroupsService', 'Error attaching group listener:', error);
-    }
+    attachGroupListener(this.groupListenerId, {
+      isLoggedInUser: (user) => this.isLoggedInUser(user),
+      updateGroupForSDKEvents: (params) => this.updateGroupForSDKEvents(params),
+      removeGroup: (guid) => this.removeGroup(guid),
+      updateGroup: (group) => this.updateGroup(group),
+    });
   }
 
   /**
@@ -337,11 +210,7 @@ export class GroupsService {
 
   // ==================== List Mutation Methods ====================
 
-  /**
-   * Update a group in the list by replacing it at its current position.
-   *
-   * @param group - The updated group object
-   */
+  /** Update a group in the list by replacing it at its current position. */
   updateGroup(group: CometChat.Group): void {
     const current = this.groupsSignal();
     const index = current.findIndex(g => g.getGuid() === group.getGuid());
@@ -355,11 +224,7 @@ export class GroupsService {
     }
   }
 
-  /**
-   * Remove a group from the list by GUID.
-   *
-   * @param guid - The GUID of the group to remove
-   */
+  /** Remove a group from the list by GUID. */
   removeGroup(guid: string): void {
     const current = this.groupsSignal();
     const filtered = current.filter(g => g.getGuid() !== guid);
@@ -370,11 +235,7 @@ export class GroupsService {
     }
   }
 
-  /**
-   * Prepend a group to the beginning of the list (if not already present).
-   *
-   * @param group - The group to prepend
-   */
+  /** Prepend a group to the beginning of the list (if not already present). */
   prependGroup(group: CometChat.Group): void {
     const current = this.groupsSignal();
     if (current.some(g => g.getGuid() === group.getGuid())) {
@@ -387,13 +248,7 @@ export class GroupsService {
     }
   }
 
-  /**
-   * Update a group for SDK events with additional metadata.
-   * Handles: updating member count, hasJoined status, scope,
-   * and optionally adding the group to the list.
-   *
-   * @param params - SDK event update parameters
-   */
+  /** Update a group for SDK events with additional metadata. */
   updateGroupForSDKEvents(params: {
     group: CometChat.Group;
     newScope?: string;
@@ -417,11 +272,7 @@ export class GroupsService {
     this.updateGroup(group);
   }
 
-  /**
-   * Append multiple groups to the list without duplicates.
-   *
-   * @param groups - The groups to append
-   */
+  /** Append multiple groups to the list without duplicates. */
   appendGroupsWithoutDuplicates(groups: CometChat.Group[]): void {
     const current = this.groupsSignal();
     const existingGuids = new Set(current.map(g => g.getGuid()));

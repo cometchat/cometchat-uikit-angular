@@ -18,16 +18,8 @@ import { CometChatUIKitConstants } from '../../constants';
 import { CometChatLogger } from '../../utils/CometChatLogger';
 
 /**
- * CometChatReactionListComponent displays all users who reacted to a message.
- * It groups reactions by emoji type and allows filtering by specific emoji.
- *
- * @example
- * ```html
- * <cometchat-reaction-list
- *   [message]="selectedMessage"
- *   (itemClick)="onReactionItemClick($event)">
- * </cometchat-reaction-list>
- * ```
+ * CometChatReactionListComponent displays all users who reacted to a message,
+ * grouped by emoji type with filtering support.
  */
 @Component({
   selector: 'cometchat-reaction-list',
@@ -38,128 +30,46 @@ import { CometChatLogger } from '../../utils/CometChatLogger';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CometChatReactionListComponent implements OnInit, OnChanges {
-  /**
-   * The message to show reactions for.
-   */
   @Input() message!: CometChat.BaseMessage;
-
-  /**
-   * Custom reactions request builder for fetching reactions.
-   */
   @Input() reactionsRequestBuilder?: CometChat.ReactionsRequestBuilder;
 
-  /**
-   * Emitted when a reaction item (user) is clicked.
-   */
-  @Output() itemClick = new EventEmitter<{
-    reaction: CometChat.Reaction;
-    message: CometChat.BaseMessage;
-  }>();
-
-  /**
-   * Emitted when the reaction list becomes empty after a removal.
-   * The parent should use this to close the popover.
-   * @see Requirement 9.2
-   */
+  @Output() itemClick = new EventEmitter<{ reaction: CometChat.Reaction; message: CometChat.BaseMessage; }>();
   @Output() empty = new EventEmitter<void>();
 
-  /**
-   * Grouped reactions by emoji.
-   */
   groupedReactions = signal<Map<string, CometChat.Reaction[]>>(new Map());
-
-  /**
-   * Currently selected emoji filter (null = all).
-   */
   selectedEmoji = signal<string | null>(null);
-
-  /**
-   * Loading state signal.
-   */
   isLoading = signal<boolean>(false);
-
-  /**
-   * Error state signal.
-   */
   hasError = signal<boolean>(false);
-
-  /**
-   * All reactions fetched from the API.
-   */
   private allReactions = signal<CometChat.Reaction[]>([]);
-
-  /**
-   * Current logged-in user UID.
-   */
   private loggedInUserUid = '';
-
-  /**
-   * Pagination cursor for fetching more reactions.
-   */
   private reactionsRequest: CometChat.ReactionsRequest | null = null;
-
-  /**
-   * Whether there are more reactions to fetch.
-   */
   hasMoreReactions = signal<boolean>(true);
 
-  /**
-   * List of unique emojis for tabs.
-   */
-  emojiTabs = computed(() => {
-    const grouped = this.groupedReactions();
-    return Array.from(grouped.keys());
-  });
+  emojiTabs = computed(() => Array.from(this.groupedReactions().keys()));
 
-  /**
-   * Filtered reactions based on selected emoji.
-   */
   filteredReactions = computed(() => {
     const selected = this.selectedEmoji();
-    const grouped = this.groupedReactions();
-
-    if (selected === null) {
-      // Return all reactions
-      return this.allReactions();
-    }
-
-    return grouped.get(selected) || [];
+    if (selected === null) return this.allReactions();
+    return this.groupedReactions().get(selected) || [];
   });
 
-  /**
-   * Total reaction count for "All" tab.
-   */
-  totalReactionCount = computed(() => {
-    return this.allReactions().length;
-  });
+  totalReactionCount = computed(() => this.allReactions().length);
 
-  ngOnInit(): void {
-    this.initializeLoggedInUser();
-  }
+  ngOnInit(): void { this.initializeLoggedInUser(); }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['message'] && this.message) {
-      this.resetAndFetchReactions();
-    }
+    if (changes['message'] && this.message) this.resetAndFetchReactions();
   }
 
-  /**
-   * Initializes the logged-in user UID.
-   */
   private async initializeLoggedInUser(): Promise<void> {
     try {
       const user = await CometChat.getLoggedinUser();
-      if (user) {
-        this.loggedInUserUid = user.getUid();
-      }
+      if (user) this.loggedInUserUid = user.getUid();
     } catch (error) {
       CometChatLogger.error('CometChatReactionList', 'Error getting logged-in user:', error);
     }
   }
 
-  /**
-   * Resets state and fetches reactions for the message.
-   */
   private resetAndFetchReactions(): void {
     this.allReactions.set([]);
     this.groupedReactions.set(new Map());

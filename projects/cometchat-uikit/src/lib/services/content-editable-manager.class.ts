@@ -143,10 +143,10 @@ export class ContentEditableManager {
 
   /**
    * Recursively extract text from a node, converting block elements
-   * and <br> tags to newline characters
+   * and <br> tags to newline characters, and inline formatting to markdown.
    *
    * @param node - The DOM node to extract text from
-   * @returns Plain text with newlines
+   * @returns Plain text with newlines and markdown formatting
    * @private
    */
   private extractTextWithNewlines(node: Node): string {
@@ -170,6 +170,21 @@ export class ContentEditableManager {
             }
             result += content;
           }
+        } else if (tagName === 'strong' || tagName === 'b') {
+          const content = this.extractTextWithNewlines(el);
+          result += `**${content}**`;
+        } else if (tagName === 'em' || tagName === 'i') {
+          const content = this.extractTextWithNewlines(el);
+          result += `*${content}*`;
+        } else if (tagName === 'u') {
+          const content = this.extractTextWithNewlines(el);
+          result += `__${content}__`;
+        } else if (tagName === 's' || tagName === 'del' || tagName === 'strike') {
+          const content = this.extractTextWithNewlines(el);
+          result += `~~${content}~~`;
+        } else if (tagName === 'code') {
+          const content = this.extractTextWithNewlines(el);
+          result += `\`${content}\``;
         } else {
           result += this.extractTextWithNewlines(el);
         }

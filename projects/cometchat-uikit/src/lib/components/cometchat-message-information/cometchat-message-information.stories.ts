@@ -7,14 +7,30 @@
  *
  * All variants render centered in both docs preview and fullscreen story pages.
  *
+ * Mock receipts are injected via the local story wrapper component
+ * (`cometchat-message-information-story-wrapper`) so the library component's
+ * public API stays free of test-only inputs.
+ *
  * @module components/cometchat-message-information
  */
 
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+  ViewChild,
+} from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageInformationComponent, UserReceiptInfo } from './cometchat-message-information.component';
+import { CalendarObject } from '../../resources/CometChatLocalize/localization.interfaces';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { createMockMessage, createMockUser, createMockGroup } from '../../../../../../.storybook/utils/mock-data';
 
 // ============================================
@@ -26,7 +42,7 @@ function createGroupMessage(overrides?: {
   text?: string;
   sentAt?: number;
 }): CometChat.BaseMessage {
-  const group = createMockGroup({ guid: 'group-123', name: 'Design Team' });
+  createMockGroup({ guid: 'group-123', name: 'Design Team' });
   return createMockMessage('text', {
     id: overrides?.id || 100,
     text: overrides?.text || 'Hello team! This is a group message.',
@@ -64,6 +80,65 @@ function createMockUserReceipts(): UserReceiptInfo[] {
 }
 
 // ============================================
+// Story Wrapper — keeps mock injection out of the library API
+// ============================================
+
+/**
+ * Wrapper used exclusively by Storybook stories.
+ *
+ * Populates the real component's internal signals with mock receipts so
+ * stories can render without an SDK session. This replaces the previous
+ * `mockReceipts` @Input on the library component.
+ */
+@Component({
+  selector: 'cometchat-message-information-story-wrapper',
+  standalone: true,
+  imports: [CommonModule, CometChatMessageInformationComponent],
+  template: `
+    <cometchat-message-information
+      #infoComponent
+      [message]="message"
+      [dateTimeFormat]="dateTimeFormat"
+      [textFormatters]="textFormatters"
+      [showScrollbar]="showScrollbar"
+      (closeClick)="closeClick.emit()">
+    </cometchat-message-information>
+  `,
+})
+class CometChatMessageInformationStoryWrapperComponent implements AfterViewInit, OnChanges {
+  @ViewChild('infoComponent') infoComponent!: CometChatMessageInformationComponent;
+
+  @Input() message!: CometChat.BaseMessage;
+  @Input() dateTimeFormat?: CalendarObject;
+  @Input() textFormatters: CometChatTextFormatter[] = [];
+  @Input() showScrollbar = false;
+  @Input() mockReceipts: UserReceiptInfo[] = [];
+
+  @Output() closeClick = new EventEmitter<void>();
+
+  ngAfterViewInit(): void {
+    this.applyMockReceipts();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ((changes['mockReceipts'] || changes['message']) && this.infoComponent) {
+      this.applyMockReceipts();
+    }
+  }
+
+  private applyMockReceipts(): void {
+    if (!this.infoComponent) return;
+
+    queueMicrotask(() => {
+      this.infoComponent.userReceipts.set(this.mockReceipts);
+      this.infoComponent.hasMoreReceipts.set(false);
+      this.infoComponent.isLoading.set(false);
+      this.infoComponent.hasError.set(false);
+    });
+  }
+}
+
+// ============================================
 // Full-screen centered wrapper style
 // ============================================
 
@@ -90,13 +165,18 @@ const cardStyle = `
 // Meta Configuration
 // ============================================
 
-const meta: Meta<CometChatMessageInformationComponent> = {
+type StoryArgs = Omit<CometChatMessageInformationComponent, 'closeClick'> & {
+  mockReceipts?: UserReceiptInfo[];
+  closeClick?: (event: void) => void;
+};
+
+const meta: Meta<StoryArgs> = {
   title: 'Components/Messages/Message Information',
   component: CometChatMessageInformationComponent,
   tags: ['autodocs'],
   decorators: [
     moduleMetadata({
-      imports: [CommonModule],
+      imports: [CommonModule, CometChatMessageInformationStoryWrapperComponent],
     }),
   ],
   args: {
@@ -123,11 +203,6 @@ const meta: Meta<CometChatMessageInformationComponent> = {
       description: 'Text formatters for processing message text content in the message bubble preview',
       table: { type: { summary: 'CometChatTextFormatter[]' }, defaultValue: { summary: '[]' } },
     },
-    mockReceipts: {
-      control: false,
-      description: 'Mock receipts for Storybook/testing. When provided, these are used instead of fetching from SDK.',
-      table: { type: { summary: 'UserReceiptInfo[]' }, defaultValue: { summary: 'undefined' } },
-    },
     closeClick: {
       action: 'closeClick',
       description: 'Emitted when the panel close button is clicked',
@@ -146,7 +221,7 @@ const meta: Meta<CometChatMessageInformationComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CometChatMessageInformationComponent>;
+type Story = StoryObj<StoryArgs>;
 
 // ============================================
 // Stories
@@ -168,13 +243,13 @@ export const Default: Story = {
     template: `
       <div style="${fullScreenCenterStyle}">
         <div style="${cardStyle}">
-          <cometchat-message-information
+          <cometchat-message-information-story-wrapper
             [message]="message"
-            [mockReceipts]="mockReceipts"
+            [mockReceipts]="mockReceipts || []"
             [dateTimeFormat]="dateTimeFormat"
-            [textFormatters]="textFormatters"
+            [textFormatters]="textFormatters || []"
             (closeClick)="closeClick($event)">
-          </cometchat-message-information>
+          </cometchat-message-information-story-wrapper>
         </div>
       </div>
     `,
@@ -205,13 +280,13 @@ export const OneOnOneWithReceipts: Story = {
     template: `
       <div style="${fullScreenCenterStyle}">
         <div style="${cardStyle}">
-          <cometchat-message-information
+          <cometchat-message-information-story-wrapper
             [message]="message"
-            [mockReceipts]="mockReceipts"
+            [mockReceipts]="mockReceipts || []"
             [dateTimeFormat]="dateTimeFormat"
-            [textFormatters]="textFormatters"
+            [textFormatters]="textFormatters || []"
             (closeClick)="closeClick($event)">
-          </cometchat-message-information>
+          </cometchat-message-information-story-wrapper>
         </div>
       </div>
     `,
@@ -241,13 +316,13 @@ export const OneOnOneDeliveredOnly: Story = {
     template: `
       <div style="${fullScreenCenterStyle}">
         <div style="${cardStyle}">
-          <cometchat-message-information
+          <cometchat-message-information-story-wrapper
             [message]="message"
-            [mockReceipts]="mockReceipts"
+            [mockReceipts]="mockReceipts || []"
             [dateTimeFormat]="dateTimeFormat"
-            [textFormatters]="textFormatters"
+            [textFormatters]="textFormatters || []"
             (closeClick)="closeClick($event)">
-          </cometchat-message-information>
+          </cometchat-message-information-story-wrapper>
         </div>
       </div>
     `,
@@ -275,13 +350,13 @@ export const GroupMessageWithReceipts: Story = {
     template: `
       <div style="${fullScreenCenterStyle}">
         <div style="${cardStyle}">
-          <cometchat-message-information
+          <cometchat-message-information-story-wrapper
             [message]="message"
-            [mockReceipts]="mockReceipts"
+            [mockReceipts]="mockReceipts || []"
             [dateTimeFormat]="dateTimeFormat"
-            [textFormatters]="textFormatters"
+            [textFormatters]="textFormatters || []"
             (closeClick)="closeClick($event)">
-          </cometchat-message-information>
+          </cometchat-message-information-story-wrapper>
         </div>
       </div>
     `,
@@ -309,13 +384,13 @@ export const GroupMessageNoReceipts: Story = {
     template: `
       <div style="${fullScreenCenterStyle}">
         <div style="${cardStyle}">
-          <cometchat-message-information
+          <cometchat-message-information-story-wrapper
             [message]="message"
-            [mockReceipts]="mockReceipts"
+            [mockReceipts]="mockReceipts || []"
             [dateTimeFormat]="dateTimeFormat"
-            [textFormatters]="textFormatters"
+            [textFormatters]="textFormatters || []"
             (closeClick)="closeClick($event)">
-          </cometchat-message-information>
+          </cometchat-message-information-story-wrapper>
         </div>
       </div>
     `,

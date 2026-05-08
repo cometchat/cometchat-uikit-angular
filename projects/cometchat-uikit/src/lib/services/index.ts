@@ -9,6 +9,7 @@ export type {
   GroupMemberTemplates,
   CallLogTemplates,
   MessageListTemplates,
+  SearchTemplates,
   ListTemplates,
 } from './templates.service';
 export { MessageHeaderService } from './message-header.service';
@@ -63,3 +64,7 @@ export type { MentionSuggestion, MentionsNavigationCallbacks } from './mentions-
 export { ConversationSubtitleService } from './conversation-subtitle.service';
 export type { SubtitleFormatter } from './conversation-subtitle.service';
 export { ThemeService } from './theme.service';
+export { CometChatAIStreamingService } from './cometchat-ai-streaming.service';
+export type { IAIStreamEvent } from './cometchat-ai-streaming.service';
+export { SearchMessagesService } from './search-messages.service';
+export { SearchConversationsService } from './search-conversations.service';

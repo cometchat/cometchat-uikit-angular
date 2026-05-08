@@ -739,8 +739,10 @@ describe('CometChatPaginatedListComponent', () => {
   // ---------------------------------------------------------------------------
   describe('ARIA / Accessibility', () => {
     it('should have role="listbox" on the container', () => {
+      component.items = [{ id: '1' }, { id: '2' }];
       fixture.detectChanges();
-      expect(getListContainer()?.getAttribute('role')).toBe('listbox');
+      const itemsContainer = el.querySelector('.cometchat-paginated-list__items');
+      expect(itemsContainer?.getAttribute('role')).toBe('listbox');
     });
 
     it('should set aria-busy when loading', () => {

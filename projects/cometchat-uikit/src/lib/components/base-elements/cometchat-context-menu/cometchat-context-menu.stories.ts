@@ -29,7 +29,7 @@ function createMockOption(id: string, title: string, iconURL?: string): CometCha
   return new CometChatOption({
     id,
     title,
-    iconURL: iconURL || 'https://placehold.co/24x24/6852D6/FFFFFF/png?text=%E2%80%A2',
+    iconURL: iconURL || 'assets/info_icon.svg',
   });
 }
 

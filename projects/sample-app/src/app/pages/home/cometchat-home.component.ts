@@ -9,6 +9,7 @@ import {
   CometChatUserEvents,
   CometChatMessageEvents,
   CometChatConversationEvents,
+  CometChatCallEvents,
   CometChatUIEvents,
   CometChatUIKit,
   CometChatLocalize,
@@ -23,6 +24,10 @@ import {
   TranslatePipe,
   LiveAnnouncerService,
   DialogFocusManager,
+  CometChatSearchComponent,
+  CometChatSearchFilter,
+  CometChatSearchScope,
+  CallWorkflow,
 } from '@cometchat/chat-uikit-angular';
 import { NavigationService } from '../../services/navigation.service';
 import { AppStateService } from '../../services/app-state.service';
@@ -59,7 +64,7 @@ import { CometChatToastContainerComponent } from '../../components/cometchat-toa
 @Component({
   selector: 'cometchat-home',
   standalone: true,
-  imports: [CommonModule, CometChatIncomingCallComponent, CometChatTabsComponent, CometChatSelectorComponent, CometChatEmptyStateComponent, CometChatMessagesComponent, CometChatUserDetailsComponent, CometChatGroupDetailsComponent, CometChatThreadedMessagesComponent, CometChatCreateGroupComponent, CometChatJoinGroupComponent, CometChatNewChatComponent, CometChatAddMembersComponent, CometChatBannedMembersComponent, CometChatTransferOwnershipComponent, CometChatCallLogDetailsComponent, CometChatToastContainerComponent, TranslatePipe],
+  imports: [CommonModule, CometChatIncomingCallComponent, CometChatTabsComponent, CometChatSelectorComponent, CometChatEmptyStateComponent, CometChatMessagesComponent, CometChatUserDetailsComponent, CometChatGroupDetailsComponent, CometChatThreadedMessagesComponent, CometChatCreateGroupComponent, CometChatJoinGroupComponent, CometChatNewChatComponent, CometChatAddMembersComponent, CometChatBannedMembersComponent, CometChatTransferOwnershipComponent, CometChatCallLogDetailsComponent, CometChatToastContainerComponent, TranslatePipe, CometChatSearchComponent],
   templateUrl: './cometchat-home.component.html',
   styleUrls: ['./cometchat-home.component.css'],
 })
@@ -95,6 +100,110 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
   protected showCreateGroup = this.appStateService.showCreateGroup;
   protected showJoinGroup = this.appStateService.showJoinGroup;
 
+  /** Expose CallWorkflow enum for template binding */
+  protected readonly CallWorkflow = CallWorkflow;
+
+  /** Whether the search overlay is visible */
+  protected showSearchOverlay = signal(false);
+
+  /** Active uid for scoped search (right panel) */
+  protected activeUid = computed(() => this.chatStateService.activeUser()?.getUid() ?? '');
+
+  /** Active guid for scoped search (right panel) */
+  protected activeGuid = computed(() => this.chatStateService.activeGroup()?.getGuid() ?? '');
+
+  /** Scoped search: messages only */
+  readonly scopedSearchIn = [CometChatSearchScope.Messages];
+
+  /** Scoped search: no Unread/Groups filters */
+  readonly scopedSearchFilters = [
+    CometChatSearchFilter.Photos,
+    CometChatSearchFilter.Videos,
+    CometChatSearchFilter.Documents,
+    CometChatSearchFilter.Audio,
+    CometChatSearchFilter.Links,
+  ];
+
+  /** Open the search overlay */
+  protected openSearch(): void {
+    this.showSearchOverlay.set(true);
+  }
+
+  /** Close the search overlay */
+  protected closeSearch(): void {
+    this.showSearchOverlay.set(false);
+  }
+
+  /** Handle conversation click from search — navigate to conversation */
+  protected onSearchConversationClick(event: {
+    conversation: CometChat.Conversation;
+    searchKeyword: string;
+  }): void {
+    this.navigationService.setGotoMessageId(null);
+    this.chatStateService.setActiveConversation(event.conversation);
+  }
+
+  /** Handle message click from search — navigate to conversation and jump to message */
+  protected onSearchMessageClick(event: {
+    message: CometChat.BaseMessage;
+    searchKeyword: string;
+  }): void {
+    const message = event.message;
+    const messageId = message.getId();
+
+    // Determine the conversation target from the message
+    const receiverType = message.getReceiverType();
+
+    // Set goToMessageId FIRST (synchronously) so it's available when handleUserChange/handleGroupChange
+    // reads it after the ChatStateService subscription fires.
+    // Reset to null first, then set the new value — this ensures ngOnChanges fires
+
+    if (receiverType === CometChat.RECEIVER_TYPE.GROUP) {
+      const group = message.getReceiver() as CometChat.Group;
+      // Set goToMessageId in next microtask so the null propagates through Angular change detection first
+      Promise.resolve().then(() => {
+        this.navigationService.setGotoMessageId(messageId);
+        this.chatStateService.setActiveGroup(group);
+      });
+    } else {
+      const loggedInUser = CometChatUIKit.getLoggedInUser();
+      const sender = message.getSender();
+      const receiver = message.getReceiver() as CometChat.User;
+      const otherUser =
+        loggedInUser && sender.getUid() === loggedInUser.getUid() ? receiver : sender;
+      // Set goToMessageId in next microtask so the null propagates through Angular change detection first
+      Promise.resolve().then(() => {
+        this.navigationService.setGotoMessageId(messageId);
+        this.chatStateService.setActiveUser(otherUser);
+      });
+    }
+
+    // Navigate to mobile messages panel if needed
+    if (this.navigationService.isMobile()) {
+      this.navigationService.navigateToMessages();
+    }
+  }
+
+  /** Close the scoped search panel (right panel) */
+  protected closeScopedSearch(): void {
+    this.navigationService.closeSidePanel();
+  }
+
+  /** Handle message click from scoped search — jump to message in current conversation */
+  protected onScopedSearchMessageClick(event: {
+    message: CometChat.BaseMessage;
+    searchKeyword: string;
+  }): void {
+    const messageId = event.message.getId();
+
+    // Reset goToMessageId first to ensure ngOnChanges fires even if the same message is clicked again
+    this.navigationService.setGotoMessageId(null);
+    Promise.resolve().then(() => {
+      this.navigationService.setGotoMessageId(messageId);
+    });
+  }
+  
+
   /**
    * On mobile, use the visual viewport height so the layout
    * shrinks when the keyboard opens (Chrome Android doesn't
@@ -111,14 +220,10 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
   );
 
   /** Whether the right panel (side panel or thread) should be visible */
-  protected showRightPanel = computed(
-    () => this.sidePanelView() !== 'none' || this.showThread()
-  );
+  protected showRightPanel = computed(() => this.sidePanelView() !== 'none' || this.showThread());
 
   /** Whether call log details is the active side panel (hides center panel) */
-  protected isCallLogDetailsActive = computed(
-    () => this.sidePanelView() === 'call-log-details'
-  );
+  protected isCallLogDetailsActive = computed(() => this.sidePanelView() === 'call-log-details');
 
   /**
    * Reactively attach/detach the SDK MessageListener for delivery marking.
@@ -727,6 +832,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
   private subscribeToUIEvents(): void {
     this.subscriptions.push(
       CometChatUIEvents.ccActiveChatChanged.subscribe((data) => {
+        this.navigationService.setGotoMessageId(null);
         if (data.user) {
           this.chatStateService.setActiveUser(data.user);
         } else if (data.group) {
@@ -739,6 +845,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
 
     this.subscriptions.push(
       CometChatUIEvents.ccOpenChat.subscribe((data) => {
+        this.navigationService.setGotoMessageId(null);
         if (data.user) {
           this.openChatForUser(data.user);
         } else if (data.group) {
@@ -788,6 +895,9 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
       CometChatUIEvents.ccShowOngoingCall.subscribe((data: IShowOngoingCall) => {
         this.appStateService.ongoingCallContent.set(data);
       }),
+      CometChatCallEvents.ccCallEnded.subscribe(() => {
+        this.appStateService.ongoingCallContent.set(null);
+      }),
     );
 
     // ── No-op subscriptions — UIKit handles internally / future use ──
@@ -812,6 +922,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     const loggedInUser = CometChatUIKit.getLoggedInUser();
     if (loggedInUser && user.getUid() === loggedInUser.getUid()) return;
 
+    this.navigationService.setGotoMessageId(null);
     this.navigationService.closeThreadPanel();
     this.navigationService.closeSidePanel();
     this.appStateService.showNewChat.set(false);
@@ -984,6 +1095,26 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
    */
   protected onModalBackdropClick(): void {
     this.appStateService.modalContent.set(null);
+  }
+
+  /** Called when the ongoing call ends (from the ongoing-call component output). */
+  protected onOngoingCallEnded(): void {
+    this.appStateService.ongoingCallContent.set(null);
+  }
+
+  /** Extracts the session ID from the ongoing call event data. */
+  protected getOngoingCallSessionId(data: IShowOngoingCall): string {
+    const child = data?.child;
+    // For 1:1 calls: child is a CometChat.Call with getSessionId()
+    if (child && typeof (child as any).getSessionId === 'function') {
+      return (child as any).getSessionId() || '';
+    }
+    // For group calls initiated from call-buttons: child is a CometChat.Group with getGuid()
+    if (child && typeof (child as any).getGuid === 'function') {
+      return (child as any).getGuid() || '';
+    }
+    // For meeting joins: child is null — the call-buttons component handles this inline
+    return '';
   }
 
   /** Check if the given group is the currently active group. */

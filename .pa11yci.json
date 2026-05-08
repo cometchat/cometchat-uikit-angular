@@ -6,10 +6,7 @@
     "chromeLaunchConfig": {
       "args": ["--no-sandbox", "--disable-setuid-sandbox"]
     },
-    "runners": ["axe", "htmlcs"],
-    "ignore": [
-      "color-contrast"
-    ]
+    "runners": ["axe", "htmlcs"]
   },
   "urls": [
     "http://localhost:4200"

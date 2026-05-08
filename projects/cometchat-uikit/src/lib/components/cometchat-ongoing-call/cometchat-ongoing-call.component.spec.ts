@@ -172,6 +172,12 @@ function createComponentWithService(svc: OngoingCallService): CometChatOngoingCa
   (comp as any).ongoingCallService = svc;
   (comp as any).callAnnouncer = { announceCallEnded: vi.fn() };
   (comp as any).pendingTimers = [];
+  // Provide a mock DestroyRef for takeUntilDestroyed
+  const destroyCallbacks: (() => void)[] = [];
+  (comp as any).destroyRef = {
+    onDestroy: (fn: () => void) => { destroyCallbacks.push(fn); },
+    _destroyCallbacks: destroyCallbacks,
+  };
   comp.sessionID = '';
   comp.callSettingsBuilder = null;
   comp.callWorkflow = CallWorkflow.defaultCalling;
@@ -468,12 +474,13 @@ describe('CometChatOngoingCallComponent Unit Tests', () => {
 
     it('ngOnDestroy unsubscribes from callEndedSub', () => {
       component.ngOnInit();
-      expect((component as any).callEndedSub).not.toBeNull();
+      // takeUntilDestroyed handles cleanup automatically — no manual sub tracking needed
 
       vi.spyOn(service, 'endSession').mockImplementation(() => {});
       component.ngOnDestroy();
 
-      expect((component as any).callEndedSub).toBeNull();
+      // Verify endSession was called (cleanup happened)
+      expect(service.endSession).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -667,8 +674,7 @@ describe('CometChatOngoingCallComponent Unit Tests', () => {
     it('ngOnInit subscribes to CometChatCallEvents.ccCallEnded', () => {
       component.ngOnInit();
 
-      expect((component as any).callEndedSub).not.toBeNull();
-
+      // Verify the subscription works by emitting an event
       let emitted = false;
       const sub = component.callEnded.subscribe(() => {
         emitted = true;

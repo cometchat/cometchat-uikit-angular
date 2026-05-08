@@ -146,7 +146,7 @@ export const Default: Story = {
 export const Primary: Story = {
   args: {
     text: 'Send Message',
-    iconURL: 'https://placehold.co/24x24/png',
+    iconURL: 'assets/send.svg',
   },
   parameters: {
     docs: {
@@ -193,7 +193,7 @@ export const Disabled: Story = {
 /** Icon-only compact button without a text label. */
 export const IconOnly: Story = {
   args: {
-    iconURL: 'https://placehold.co/24x24/png',
+    iconURL: 'assets/send.svg',
     iconOnly: true,
     ariaLabel: 'Send',
     hoverText: 'Send message',
@@ -286,7 +286,7 @@ export const AllVariantsShowcase: Story = {
       </div>
     `,
     props: {
-      iconUrl: 'https://placehold.co/24x24/png',
+      iconUrl: 'assets/send.svg',
     },
   }),
   parameters: {

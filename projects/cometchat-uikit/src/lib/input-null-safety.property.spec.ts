@@ -20,6 +20,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
   CometChatCalls: {
     init: vi.fn().mockResolvedValue(true),
     endSession: vi.fn().mockResolvedValue(true),
+    leaveSession: vi.fn().mockResolvedValue(true),
     generateToken: vi.fn().mockResolvedValue('mock-token'),
     startSession: vi.fn().mockResolvedValue(true),
   },

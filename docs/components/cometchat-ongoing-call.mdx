@@ -12,7 +12,7 @@ The Ongoing Call component acts as a thin UI layer that delegates call logic to 
 - **Full-Screen Call UI**: Renders the Calls SDK interface in a dedicated container
 - **Default and Direct Calling Workflows**: Supports both `defaultCalling` and `directCalling` workflows
 - **Audio/Video Support**: Configurable for audio-only or video calls
-- **Custom Call Settings**: Accepts a custom `CallSettingsBuilder` for advanced configuration
+- **Custom Call Settings**: Accepts a custom v5 `SessionSettings` object for advanced configuration
 - **Template Override**: Supports replacing the entire call screen via `callScreenView` input
 - **Accessibility**: ARIA announcements for call state changes, keyboard event handling
 - **OnPush Change Detection**: Optimized rendering performance
@@ -34,7 +34,7 @@ The Ongoing Call component acts as a thin UI layer that delegates call logic to 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `sessionID` | `string` | `''` | Session ID for the call. Required for the call to render. |
-| `callSettingsBuilder` | `CallSettingsBuilder` | `null` | Custom call settings builder. Overrides the default builder. |
+| `callSettingsBuilder` | `SessionSettings` | `null` | Custom [v5 SessionSettings object](https://www.cometchat.com/docs/calls/javascript/session-settings). Overrides the default session settings. |
 | `callWorkflow` | `CallWorkflow` | `defaultCalling` | Call workflow type: `defaultCalling` or `directCalling`. |
 | `isAudioOnly` | `boolean` | `false` | Whether this is an audio-only call. |
 | `onError` | `(error: CometChatException) => void` | `null` | Error callback for call operation errors. |

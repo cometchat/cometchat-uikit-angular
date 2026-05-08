@@ -79,7 +79,6 @@
 }
 
 .cometchat-button:active {
-  background: var(--cometchat-button-background-active, var(--cometchat-extended-primary-color-900, #5D49BE));
   outline: none;
 }
 

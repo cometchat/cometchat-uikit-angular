@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "提出問題...",
     "ai_assistant_chat_new_chat": "新聊天",
     "ai_assistant_chat_history": "歷史記錄",
-    "ai_assistant_chat_history_title": "聊天記錄",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "思考中...",
     "ai_assistant_chat_executing_tool": "正在執行操作...",
     "ai_assistant_chat_no_internet": "無網路連線。請檢查您的網路。",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "開始新對話即可在此查看。",
     "ai_assistant_chat_history_error_title": "發生錯誤",
     "ai_assistant_chat_history_error_subtitle": "載入聊天記錄時遇到問題。",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "新增成員",
     "add_member": "新增成員",
     "add_n_members": "新增 {n} 位成員",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "訊息傳送失敗",
     "accessibility_message_deleted": "訊息已刪除",
     "accessibility_message_edited": "訊息已編輯",
-    "accessibility_loading_older_messages": "正在載入較早的訊息"
+    "accessibility_loading_older_messages": "正在載入較早的訊息",
+    "message_list_option_mark_as_unread": "標記為未讀",
+    "message_list_unread_messages": "未讀訊息",
+    "message_list_unread_divider": "未讀訊息分隔線"
 }

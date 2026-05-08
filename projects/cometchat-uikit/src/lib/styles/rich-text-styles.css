@@ -12,6 +12,30 @@ code.cometchat-rich-text__code {
   padding: var(--cometchat-spacing) var(--cometchat-spacing-1);
   border-radius: var(--cometchat-radius-1);
 }
+
+/* Reset rich text element spacing inside subtitle preview */
+.cometchat-message-composer__reply-preview p,
+.cometchat-message-composer__reply-preview blockquote,
+.cometchat-message-composer__reply-preview pre,
+.cometchat-message-composer__reply-preview code,
+.cometchat-message-composer__reply-preview ul,
+.cometchat-message-composer__reply-preview ol,
+.cometchat-message-composer__reply-preview li,
+.cometchat-message-composer__reply-preview h1,
+.cometchat-message-composer__reply-preview h2,
+.cometchat-message-composer__reply-preview h3,
+.cometchat-message-composer__reply-preview h4,
+.cometchat-message-composer__reply-preview h5,
+.cometchat-message-composer__reply-preview h6 {
+  margin: 0;
+  padding: 0;
+  display: inline;
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  white-space: nowrap;
+}
 .cometchat-conversation-item__subtitle-text ol , .cometchat-conversation-item__subtitle-text ul{
   margin: 0;
   padding: 0;

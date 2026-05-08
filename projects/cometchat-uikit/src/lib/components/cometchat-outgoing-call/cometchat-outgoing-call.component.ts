@@ -21,6 +21,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAvatarComponent } from '../base-elements/cometchat-avatar/cometchat-avatar.component';
 import { CometChatButtonComponent } from '../base-elements/cometchat-button/cometchat-button.component';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
+import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
 import { OutgoingCallService } from '../../services/outgoing-call.service';
 import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { DialogFocusManager } from '../../services/dialog-focus-manager.service';
@@ -58,7 +59,7 @@ export interface OutgoingCallTemplateContext {
 @Component({
   selector: 'cometchat-outgoing-call',
   standalone: true,
-  imports: [CommonModule, CometChatAvatarComponent, CometChatButtonComponent, TranslatePipe],
+  imports: [CommonModule, CometChatAvatarComponent, CometChatButtonComponent, CometChatErrorBoundaryComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cometchat-outgoing-call.component.html',
   styleUrls: ['./cometchat-outgoing-call.component.css'],
@@ -320,4 +321,7 @@ export class CometChatOutgoingCallComponent implements OnInit, OnDestroy, AfterV
   private handleError(err: unknown): void {
     handleCallError(err, 'OUTGOING_CALL_ERROR', 'CometChatOutgoingCall', this.error, this.onError);
   }
+
+  /** No-op retry handler — outgoing calls are transient and cannot be retried. */
+  handleRetryClick(): void {}
 }

@@ -49,7 +49,7 @@
   flex-shrink: 0;
   background: var(--cometchat-users-header-background, var(--cometchat-background-color-01, #FFFFFF));
   position: relative;
-  z-index: 2;
+  /* z-index: 2; */
 }
 
 .cometchat-users__header-default {

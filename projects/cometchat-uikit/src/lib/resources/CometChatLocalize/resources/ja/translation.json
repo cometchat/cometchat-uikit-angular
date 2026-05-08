@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "質問してください...",
     "ai_assistant_chat_new_chat": "新しいチャット",
     "ai_assistant_chat_history": "チャット履歴",
-    "ai_assistant_chat_history_title": "チャット履歴",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "考え中...",
     "ai_assistant_chat_executing_tool": "アクション実行中...",
     "ai_assistant_chat_no_internet": "インターネット接続がありません。ネットワークを確認してください。",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "新しい会話を始めるとここに表示されます。",
     "ai_assistant_chat_history_error_title": "エラーが発生しました",
     "ai_assistant_chat_history_error_subtitle": "チャット履歴の読み込みに問題が発生しています。",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "メンバーを追加",
     "add_member": "メンバーを追加",
     "add_n_members": "{n}人のメンバーを追加",
@@ -643,5 +645,8 @@
     "button_loading_text": "読み込み中...",
     "group_members_custom_options_error": "カスタムオプション関数でエラーが発生しました",
     "accessibility_recording_paused": "録音一時停止: {duration}",
-    "accessibility_recording_resumed": "録音再開"
+    "accessibility_recording_resumed": "録音再開",
+    "message_list_option_mark_as_unread": "未読としてマーク",
+    "message_list_unread_messages": "未読メッセージ",
+    "message_list_unread_divider": "未読メッセージの区切り線"
 }

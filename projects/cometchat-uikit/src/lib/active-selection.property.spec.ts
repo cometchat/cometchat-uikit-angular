@@ -29,8 +29,8 @@ import * as fc from 'fast-check';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from './test-setup';
 
-import { CometChatAvatarComponent } from './components/cometchat-avatar/cometchat-avatar.component';
-import { CometChatButtonComponent } from './components/cometchat-button/cometchat-button.component';
+import { CometChatAvatarComponent } from './components/base-elements/cometchat-avatar/cometchat-avatar.component';
+import { CometChatButtonComponent } from './components/base-elements/cometchat-button/cometchat-button.component';
 import { CometChatDeleteBubbleComponent } from './components/cometchat-delete-bubble/cometchat-delete-bubble.component';
 import { CometChatActionBubbleComponent } from './components/cometchat-action-bubble/cometchat-action-bubble.component';
 import { CometChatDateComponent } from './components/base-elements/cometchat-date/cometchat-date.component';

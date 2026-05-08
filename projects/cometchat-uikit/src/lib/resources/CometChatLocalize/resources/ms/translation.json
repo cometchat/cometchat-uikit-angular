@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "Tanya soalan...",
     "ai_assistant_chat_new_chat": "Sembang Baharu",
     "ai_assistant_chat_history": "sejarah sembang",
-    "ai_assistant_chat_history_title": "Sejarah Sembang",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Sedang berfikir...",
     "ai_assistant_chat_executing_tool": "Melaksanakan tindakan...",
     "ai_assistant_chat_no_internet": "Tiada sambungan internet. Sila semak rangkaian anda.",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Mulakan perbualan baharu untuk melihatnya di sini.",
     "ai_assistant_chat_history_error_title": "Sesuatu Telah Berlaku",
     "ai_assistant_chat_history_error_subtitle": "Kami menghadapi masalah memuatkan sejarah sembang anda.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Tambah Ahli",
     "add_member": "Tambah Ahli",
     "add_n_members": "Tambah {n} Ahli",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "Mesej gagal dihantar",
     "accessibility_message_deleted": "Mesej dipadam",
     "accessibility_message_edited": "Mesej disunting",
-    "accessibility_loading_older_messages": "Memuatkan mesej lama"
+    "accessibility_loading_older_messages": "Memuatkan mesej lama",
+    "message_list_option_mark_as_unread": "Tandai sebagai belum dibaca",
+    "message_list_unread_messages": "Mesej belum dibaca",
+    "message_list_unread_divider": "Pemisah mesej belum dibaca"
 }

@@ -1,0 +1,148 @@
+---
+title: "CometChatFlagMessageDialog"
+description: "A dialog component for flagging/reporting inappropriate messages with reason selection and optional remark"
+---
+
+## Overview
+
+The CometChatFlagMessageDialog component provides a modal dialog for users to report inappropriate messages. It fetches available flag reasons from the CometChat SDK, allows the user to select a reason, and optionally add a remark before submitting.
+
+### Key Features
+
+- **SDK-Driven Reasons**: Fetches flag reasons dynamically from `CometChat.getFlagReasons()`
+- **Optional Remark**: Configurable text area for additional context (max 500 characters)
+- **Focus Trapping**: Full focus trap within the dialog for accessibility
+- **Keyboard Navigation**: Escape to close, Tab to navigate, Enter/Space to select
+- **Screen Reader Support**: ARIA roles, labels, and live announcements
+- **Loading State**: Visual feedback during submission
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFlagMessageDialogComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-flag-dialog',
+  standalone: true,
+  imports: [CometChatFlagMessageDialogComponent],
+  template: `
+    @if (showDialog && messageToFlag) {
+      <cometchat-flag-message-dialog
+        [message]="messageToFlag"
+        (confirm)="onConfirm($event)"
+        (cancel)="onCancel()">
+      </cometchat-flag-message-dialog>
+    }
+  `
+})
+export class FlagDialogComponent {
+  showDialog = false;
+  messageToFlag: CometChat.BaseMessage | null = null;
+
+  openDialog(message: CometChat.BaseMessage): void {
+    this.messageToFlag = message;
+    this.showDialog = true;
+  }
+
+  onConfirm(event: { message: CometChat.BaseMessage; reasonId: string; remark: string }): void {
+    CometChat.flagMessage(event.message.getId(), event.reasonId, event.remark).then(
+      () => { this.showDialog = false; },
+      (error) => { console.error('Flag failed:', error); }
+    );
+  }
+
+  onCancel(): void {
+    this.showDialog = false;
+  }
+}
+```
+
+### Hiding the Remark Field
+
+```typescript
+<cometchat-flag-message-dialog
+  [message]="messageToFlag"
+  [hideRemarkField]="true"
+  (confirm)="onConfirm($event)"
+  (cancel)="onCancel()">
+</cometchat-flag-message-dialog>
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.BaseMessage` | required | The message being flagged/reported. |
+| `hideRemarkField` | `boolean` | `false` | When `true`, hides the optional remark text area. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `confirm` | `{ message: CometChat.BaseMessage; reasonId: string; remark: string }` | Emitted when the user confirms the flag. Contains the message, selected reason ID, and optional remark text. |
+| `cancel` | `void` | Emitted when the user cancels the dialog (via Cancel button or Escape key). |
+
+## Public Methods
+
+These methods can be called on the component instance (via `@ViewChild`):
+
+| Method | Description |
+|--------|-------------|
+| `setSuccess()` | Call after a successful flag API call to reset loading/error states. |
+| `setError()` | Call after a failed flag API call to show the error state. |
+
+## Keyboard Accessibility
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Navigate between focusable elements within the dialog |
+| `Shift + Tab` | Navigate backwards |
+| `Escape` | Close the dialog (emits `cancel`) |
+| `Enter` / `Space` | Select a reason or activate a button |
+
+### Accessibility Features
+
+- `role="dialog"` with `aria-modal="true"` on the container
+- `aria-labelledby` pointing to the dialog title
+- `aria-describedby` pointing to the dialog description
+- Focus is trapped within the dialog while open
+- Focus is restored to the previously focused element on close
+- Character limit reached is announced via `aria-live` region
+
+## Localization Keys
+
+| Key | Default (en-us) |
+|-----|-----------------|
+| `flag_message_title` | "Report Message" |
+| `flag_message_subtitle` | "Why are you reporting this message?" |
+| `flag_message_remark_label` | "Additional details" |
+| `flag_message_remark_optional` | "(optional)" |
+| `flag_message_remark_placeholder` | "Add more context..." |
+| `flag_message_confirm_yes` | "Report" |
+| `flag_message_confirm_no` | "Cancel" |
+| `flag_message_error` | "Something went wrong. Please try again." |
+| `flag_message_character_limit_reached` | "Character limit reached" |
+| `flag_message_reason_id_{id}` | Falls back to reason name from SDK |
+
+## CSS Variables
+
+```css
+cometchat-flag-message-dialog {
+  --cometchat-background-color-01: #ffffff;
+  --cometchat-text-color-primary: #141414;
+  --cometchat-text-color-secondary: #727272;
+  --cometchat-border-color-light: #e8e8e8;
+  --cometchat-primary-color: #6852D6;
+  --cometchat-error-color: #F44336;
+  --cometchat-radius-2: 8px;
+  --cometchat-radius-3: 12px;
+}
+```
+
+## Related Components
+
+- [CometChatMessageList](/components/cometchat-message-list) — Triggers the flag dialog via message options
+- [CometChatMessageBubble](/components/cometchat-message-bubble) — Individual message that can be flagged
+- [CometChatConfirmDialog](/components/confirm-dialog) — Similar dialog pattern for confirmations

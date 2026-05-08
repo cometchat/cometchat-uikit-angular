@@ -1,8 +1,10 @@
 <!-- CometChatMessageList Component Template -->
+<cometchat-error-boundary style="display:contents" [componentName]="'MessageList'">
 <div
   class="cometchat-message-list"
   [class.cometchat-message-list--show-scrollbar]="effectiveShowScrollbar()"
   [class.cometchat-message-list--thread]="!!parentMessageId"
+  [class.cometchat-message-list--agent-chat]="isAgentChat"
   (keydown)="handleKeydown($event)"
   role="log"
   [attr.aria-label]="'message_list_aria_label' | translate"
@@ -141,6 +143,14 @@
               <div class="cometchat-message-list__date-separator-line"></div>
             </div>
           } @else if (item.message) {
+            <!-- Unread Divider - shown above the message that was marked as unread -->
+            @if (unreadDividerMessageId() !== null && item.message.getId() === unreadDividerMessageId()) {
+              <div class="cometchat-message-list__unread-divider" role="separator" aria-label="{{ 'message_list_unread_divider' | translate }}">
+                <div class="cometchat-message-list__unread-divider-line"></div>
+                <span class="cometchat-message-list__unread-divider-text">{{ 'message_list_unread_messages' | translate }}</span>
+                <div class="cometchat-message-list__unread-divider-line"></div>
+              </div>
+            }
             <!-- Message Bubble -->
             <div
               class="cometchat-message-list__message"
@@ -162,18 +172,24 @@
                   [alignment]="getMessageAlignment(item.message)"
                   [hideReceipts]="effectiveHideReceipts()"
                   [hideAvatar]="effectiveHideAvatar()"
+                  [hideTimestamp]="hideTimestamp || (isAgentChat && getMessageAlignment(item.message) !== MessageBubbleAlignment.right)"
+                  [hideStatusInfoView]="isAgentChat && getMessageAlignment(item.message) !== MessageBubbleAlignment.right"
+                  [hideSenderName]="isAgentChat"
                   [hideModerationView]="effectiveHideModerationView()"
                   [textFormatters]="activeFormatters"
                   [dateFormat]="getEffectiveMessageDateFormat()"
-                  [options]="getMessageOptions(item.message)"
+                  [options]="isAgentChat ? [] : getMessageOptions(item.message)"
                   [quickOptionsCount]="quickOptionsCount"
                   [group]="group || null"
                   [translatedText]="getTranslatedText(item.message.getId())"
                   [reactionsRequestBuilder]="reactionsRequestBuilder"
                   [disableInteraction]="disableInteraction"
+                  [hideThreadView]="isAgentChat"
+                  [footerView]="getMessageAlignment(item.message) !== MessageBubbleAlignment.right ? bubbleFooterView : null"
                   (optionClick)="handleOptionClick($event, item.message)"
                   (reactionClick)="onBubbleReactionClick($event)"
                   (reactionListItemClick)="onBubbleReactionListItemClick($event)"
+                  (replyPreviewClick)="onReplyPreviewClick($event)"
                   (threadRepliesClick)="threadRepliesClick.emit($event)">
                 </cometchat-message-bubble>
               </cometchat-error-boundary>
@@ -191,6 +207,11 @@
 
       <!-- Scroll Bottom Anchor for IntersectionObserver -->
       <div #scrollBottomAnchor class="cometchat-message-list__scroll-anchor"></div>
+
+      <!-- Append View: custom content rendered inside the scroll container after messages -->
+      @if (appendView) {
+        <ng-container *ngTemplateOutlet="appendView"></ng-container>
+      }
     }
   </div>
 
@@ -231,13 +252,13 @@
   <!-- Scroll to Bottom Button with Unread Badge -->
   @if (showScrollToBottom()) {
     <div class="cometchat-message-list__scroll-to-bottom">
-      <!-- Unread Count Badge - positioned above arrow inside button -->
-      @if (newMessagesCount() > 0 || unreadCount() > 0) {
+      <!-- Unread Count Badge - shows markedAsUnreadCount (from markAsUnread) or newMessagesCount -->
+      @if (markedAsUnreadCount() > 0 || newMessagesCount() > 0 || unreadCount() > 0) {
         <div class="cometchat-message-list__unread-badge"
              role="status"
              aria-live="polite"
-             [attr.aria-label]="(newMessagesCount() || unreadCount()) + ' unread messages'">
-          {{ newMessagesCount() || unreadCount() }}
+             [attr.aria-label]="(markedAsUnreadCount() || newMessagesCount() || unreadCount()) + ' unread messages'">
+          {{ markedAsUnreadCount() || newMessagesCount() || unreadCount() }}
         </div>
       }
       <cometchat-button
@@ -328,6 +349,7 @@
     </div>
   }
 </div>
+</cometchat-error-boundary>
 
 <!-- Bubble Error Fallback Template -->
 <ng-template #bubbleFallback let-ctx>

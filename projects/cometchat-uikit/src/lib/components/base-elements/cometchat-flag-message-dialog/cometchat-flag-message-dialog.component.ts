@@ -11,29 +11,20 @@ import {
   signal,
   ChangeDetectionStrategy,
   inject,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CometChat, FlagReason } from '@cometchat/chat-sdk-javascript';
 import { CometChatButtonComponent } from '../cometchat-button/cometchat-button.component';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 import { LiveAnnouncerService } from '../../../services/live-announcer.service';
+import { CometChatLogger } from '../../../utils/CometChatLogger';
 
 /**
- * CometChatFlagMessageDialog is a dialog component for flagging/reporting inappropriate messages.
- * It includes a title, description, optional remark text field, and action buttons (confirm/cancel).
- *
- * @example
- * ```html
- * <cometchat-flag-message-dialog
- *   [message]="messageToFlag"
- *   [hideRemarkField]="false"
- *   (confirm)="onFlagConfirm($event)"
- *   (cancel)="onFlagCancel()"
- * ></cometchat-flag-message-dialog>
- * ```
- *
- * @see Requirement 9.2 - THE Flag_Message_Dialog SHALL display a confirmation prompt
- * @see Requirement 9.3 - WHEN `hideFlagRemarkField` is false, THE Flag_Message_Dialog SHALL include a remark text field
+ * CometChatFlagMessageDialog is a dialog for flagging/reporting inappropriate messages.
+ * Fetches flag reasons from the SDK, allows reason selection and optional remark.
+ * @see Requirements 9.2, 9.3
  */
 @Component({
   selector: 'cometchat-flag-message-dialog',
@@ -44,123 +35,61 @@ import { LiveAnnouncerService } from '../../../services/live-announcer.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CometChatFlagMessageDialogComponent implements OnInit, AfterViewInit, OnDestroy {
-  /** @internal Timer references for cleanup */
   private pendingTimers: ReturnType<typeof setTimeout>[] = [];
 
-  /**
-   * The message to flag/report.
-   * @see Requirement 9.2
-   */
   @Input() message!: CometChat.BaseMessage;
-
-  /**
-   * Whether to hide the remark text field.
-   * When false, users can provide additional context about why they're flagging the message.
-   * @see Requirement 9.3
-   */
   @Input() hideRemarkField = false;
 
-  /**
-   * Emitted when the flag is confirmed.
-   * Contains the message and optional remark.
-   * @see Requirement 9.4
-   */
-  @Output() confirm = new EventEmitter<{ message: CometChat.BaseMessage; remark: string }>();
+  @Output() confirm = new EventEmitter<{ message: CometChat.BaseMessage; reasonId: string; remark: string; }>();
 
-  /**
-   * Emitted when the dialog is cancelled.
-   */
+  /** Emitted when the dialog is cancelled. */
   @Output() cancel = new EventEmitter<void>();
 
-  /** Reference to the dialog container element */
   @ViewChild('dialogContainer', { static: false }) dialogContainer!: ElementRef<HTMLDivElement>;
 
-  /** Inject LiveAnnouncerService for accessibility announcements */
   private liveAnnouncer = inject(LiveAnnouncerService);
+  private cdr = inject(ChangeDetectorRef);
 
-  /** Unique ID for the title element for aria-labelledby */
   titleId = `cometchat-flag-message-dialog-title-${Math.random().toString(36).substr(2, 9)}`;
-
-  /** Unique ID for the description element for aria-describedby */
   descriptionId = `cometchat-flag-message-dialog-desc-${Math.random().toString(36).substr(2, 9)}`;
 
-  /** Track if character limit announcement has been made */
   private hasAnnouncedCharacterLimit = false;
-
-  /** Internal loading state - shows loading animation on confirm button */
   isLoading = signal(false);
-
-  /** Internal error state - shows error message when true */
   isError = signal(false);
-
-  /** The remark text entered by the user */
   remarkText = signal('');
-
-  /** Maximum character limit for remark */
+  flagReasons = signal<FlagReason[]>([]);
+  selectedReason = signal<FlagReason | null>(null);
+  isLoadingReasons = signal(true);
   readonly MAX_REMARK_LENGTH = 500;
-
-  /** Store the previously focused element for restoration */
   private previouslyFocusedElement: HTMLElement | null = null;
-
-  /** Store all focusable elements within the dialog */
   private focusableElements: HTMLElement[] = [];
-
-  /** Keyboard event listener reference for cleanup */
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
 
-  /** Error message from localization */
-  get errorMessage(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_error');
+  get errorMessage(): string { return CometChatLocalize.getLocalizedString('flag_message_error'); }
+  get dialogTitle(): string { return CometChatLocalize.getLocalizedString('flag_message_title'); }
+  get dialogSubtitle(): string { return CometChatLocalize.getLocalizedString('flag_message_subtitle'); }
+  get remarkLabel(): string { return CometChatLocalize.getLocalizedString('flag_message_remark_label'); }
+  get remarkOptional(): string { return CometChatLocalize.getLocalizedString('flag_message_remark_optional'); }
+  get remarkPlaceholder(): string { return CometChatLocalize.getLocalizedString('flag_message_remark_placeholder'); }
+  get confirmButtonText(): string { return CometChatLocalize.getLocalizedString('flag_message_confirm_yes'); }
+  get cancelButtonText(): string { return CometChatLocalize.getLocalizedString('flag_message_confirm_no'); }
+  get characterLimitMessage(): string { return CometChatLocalize.getLocalizedString('flag_message_character_limit_reached'); }
+  get remainingCharacters(): number { return this.MAX_REMARK_LENGTH - this.remarkText().length; }
+  get isCharacterLimitReached(): boolean { return this.remarkText().length >= this.MAX_REMARK_LENGTH; }
+
+  get isSubmitDisabled(): boolean {
+    return !this.selectedReason() || this.isLoading();
   }
 
-  /** Dialog title from localization */
-  get dialogTitle(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_title');
-  }
-
-  /** Dialog subtitle from localization */
-  get dialogSubtitle(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_subtitle');
-  }
-
-  /** Remark label from localization */
-  get remarkLabel(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_remark_label');
-  }
-
-  /** Remark optional text from localization */
-  get remarkOptional(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_remark_optional');
-  }
-
-  /** Remark placeholder from localization */
-  get remarkPlaceholder(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_remark_placeholder');
-  }
-
-  /** Confirm button text from localization */
-  get confirmButtonText(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_confirm_yes');
-  }
-
-  /** Cancel button text from localization */
-  get cancelButtonText(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_confirm_no');
-  }
-
-  /** Character limit reached message from localization */
-  get characterLimitMessage(): string {
-    return CometChatLocalize.getLocalizedString('flag_message_character_limit_reached');
-  }
-
-  /** Remaining characters count */
-  get remainingCharacters(): number {
-    return this.MAX_REMARK_LENGTH - this.remarkText().length;
-  }
-
-  /** Whether character limit is reached */
-  get isCharacterLimitReached(): boolean {
-    return this.remarkText().length >= this.MAX_REMARK_LENGTH;
+  /**
+   * Gets the localized label for a flag reason.
+   * Falls back to the reason's name if no localization key exists.
+   */
+  getReasonLabel(reason: FlagReason): string {
+    const key = `flag_message_reason_id_${reason.id}`;
+    const localized = CometChatLocalize.getLocalizedString(key);
+    // If the key returns the key itself (not found), fall back to reason.name
+    return localized && localized !== key ? localized : reason.name;
   }
 
   ngOnInit(): void {
@@ -170,6 +99,9 @@ export class CometChatFlagMessageDialogComponent implements OnInit, AfterViewIni
     // Add keyboard event listener for Escape key
     this.keydownListener = this.handleKeydown.bind(this);
     document.addEventListener('keydown', this.keydownListener);
+
+    // Fetch flag reasons from the SDK
+    this.fetchFlagReasons();
   }
 
   ngAfterViewInit(): void {
@@ -194,6 +126,36 @@ export class CometChatFlagMessageDialogComponent implements OnInit, AfterViewIni
 
     // Restore focus to the previously focused element
     this.restoreFocus();
+  }
+
+  /**
+   * Fetches available flag reasons from the CometChat SDK.
+   * @see React UIKit: CometChat.getFlagReasons()
+   */
+  private async fetchFlagReasons(): Promise<void> {
+    try {
+      const reasons = await CometChat.getFlagReasons();
+      this.flagReasons.set(reasons);
+    } catch (error) {
+      CometChatLogger.error('CometChatFlagMessageDialog', 'fetchFlagReasons: Failed to fetch flag reasons', error);
+      // Don't block the dialog — user can still submit without a reason selection
+    } finally {
+      this.isLoadingReasons.set(false);
+      this.cdr.markForCheck();
+    }
+  }
+
+  /**
+   * Toggles the selected flag reason.
+   * Clicking the same reason again deselects it.
+   */
+  toggleReason(reason: FlagReason): void {
+    if (this.selectedReason()?.id === reason.id) {
+      this.selectedReason.set(null);
+    } else {
+      this.selectedReason.set(reason);
+      this.isError.set(false);
+    }
   }
 
   /**
@@ -299,14 +261,19 @@ export class CometChatFlagMessageDialogComponent implements OnInit, AfterViewIni
 
   /**
    * Handles confirm button click.
-   * Sets loading state and emits confirm event.
+   * Validates that a reason is selected, sets loading state, and emits confirm event.
    * @see Requirement 9.4
    */
   handleSubmitClick(): void {
+    const reason = this.selectedReason();
+    if (!reason) {
+      return;
+    }
     this.isLoading.set(true);
     this.isError.set(false);
     this.confirm.emit({
       message: this.message,
+      reasonId: reason.id,
       remark: this.remarkText(),
     });
   }

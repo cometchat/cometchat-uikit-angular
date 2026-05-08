@@ -74,3 +74,14 @@ export * from './cometchat-call-logs';
 
 // AI Features
 export * from './base-elements/cometchat-conversation-summary';
+export * from './cometchat-markdown-renderer/cometchat-markdown-parser';
+export * from './cometchat-markdown-renderer/cometchat-markdown-renderer.component';
+export * from './cometchat-ai-assistant-message-bubble';
+export * from './cometchat-stream-message-bubble';
+export * from './cometchat-toolcall-argument-bubble';
+export * from './cometchat-toolcall-result-bubble';
+export * from './cometchat-ai-assistant-chat-history';
+export * from './cometchat-ai-assistant-chat';
+
+// Search
+export * from './cometchat-search';

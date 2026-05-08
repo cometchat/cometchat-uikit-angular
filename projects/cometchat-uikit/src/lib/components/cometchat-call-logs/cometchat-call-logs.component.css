@@ -50,14 +50,15 @@ cometchat-paginated-list{
 
 .cometchat-call-logs__outgoing-call {
   background: var(--cometchat-call-logs-outgoing-call-background, rgba(0, 0, 0, 0.5));
-  position: absolute;
-  top: var(--cometchat-call-logs-outgoing-call-top, 0);
-  left: var(--cometchat-call-logs-outgoing-call-left, 0);
-  height: var(--cometchat-call-logs-outgoing-call-height, 100%);
-  width: var(--cometchat-call-logs-outgoing-call-width, 100%);
-  z-index: var(--cometchat-call-logs-outgoing-call-z-index, 10);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: var(--cometchat-call-logs-outgoing-call-z-index, 9998);
   display: flex;
   align-items: center;
+  justify-content: center;
   justify-content: center;
 }
 

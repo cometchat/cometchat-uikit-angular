@@ -30,6 +30,7 @@
   overflow-x: hidden;
   position: relative;
   background: var(--cometchat-paginated-list-background, var(--cometchat-conversations-background, var(--cometchat-background-color-01, #FFFFFF)));
+  contain: layout style;
   
   /* Remove browser default focus outline on the listbox container */
   outline: none;

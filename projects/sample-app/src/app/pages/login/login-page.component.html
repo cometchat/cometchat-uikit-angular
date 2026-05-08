@@ -5,10 +5,10 @@
 
   <div class="cometchat-login__content">
     <div class="cometchat-login__header">
-      <div class="cometchat-login__title">Sign in to cometchat</div>
+      <div class="cometchat-login__title">Sign in to CometChat</div>
 
       <div class="cometchat-login__sample-users">
-        <div class="cometchat-login__sample-users-title">Using our sample users</div>
+        <div class="cometchat-login__sample-users-title">Choose a Sample User</div>
         <div class="cometchat-login__user-list">
           @for (user of sampleUsers(); track user.uid) {
             <div
@@ -50,12 +50,12 @@
     <div class="cometchat-login__custom-login">
       <form class="cometchat-login__form" (ngSubmit)="loginWithCustomUid()">
         <div class="cometchat-login__input-group">
-          <label class="cometchat-login__input-label" for="customUid">Your UID</label>
+          <label class="cometchat-login__input-label" for="customUid">Enter Your UID</label>
           <input
             id="customUid"
             type="text"
             class="cometchat-login__input"
-            placeholder="Enter your UID"
+            placeholder="Enter UID"
             [(ngModel)]="customUid"
             name="customUid"
             autocomplete="off"
@@ -63,7 +63,7 @@
           />
         </div>
         <button type="submit" class="cometchat-login__submit-button" [disabled]="loggingIn()">
-          Login
+          Continue
         </button>
         @if (errorMessage()) {
           <div class="cometchat-login__error" role="alert">{{ errorMessage() }}</div>

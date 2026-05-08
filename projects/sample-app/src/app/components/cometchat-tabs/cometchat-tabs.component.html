@@ -13,8 +13,8 @@
     >
       <span
         class="cometchat-tabs__tab-icon"
-        [style.-webkit-mask-image]="tab.iconDataUri"
-        [style.mask-image]="tab.iconDataUri"
+        [style.-webkit-mask-image]="activeTab() === tab.id ? tab.activeIconDataUri : tab.iconDataUri"
+        [style.mask-image]="activeTab() === tab.id ? tab.activeIconDataUri : tab.iconDataUri"
         aria-hidden="true"
       ></span>
       <span class="cometchat-tabs__tab-text">{{ getLabel(tab) }}</span>

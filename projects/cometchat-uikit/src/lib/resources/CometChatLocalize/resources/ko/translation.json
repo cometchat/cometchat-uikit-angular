@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "질문하기...",
     "ai_assistant_chat_new_chat": "새 채팅",
     "ai_assistant_chat_history": "채팅 기록",
-    "ai_assistant_chat_history_title": "채팅 기록",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "생각 중...",
     "ai_assistant_chat_executing_tool": "작업 실행 중...",
     "ai_assistant_chat_no_internet": "인터넷 연결이 없습니다. 네트워크를 확인해 주세요.",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "새 대화를 시작하면 여기에 표시됩니다.",
     "ai_assistant_chat_history_error_title": "문제가 발생했습니다",
     "ai_assistant_chat_history_error_subtitle": "채팅 기록을 불러오는 데 문제가 있습니다.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "멤버 추가",
     "add_member": "멤버 추가",
     "add_n_members": "멤버 {n}명 추가",
@@ -643,5 +645,8 @@
     "button_loading_text": "로딩 중...",
     "group_members_custom_options_error": "사용자 정의 옵션 함수 오류",
     "accessibility_recording_paused": "녹음 일시정지: {duration}",
-    "accessibility_recording_resumed": "녹음 재개됨"
+    "accessibility_recording_resumed": "녹음 재개됨",
+    "message_list_option_mark_as_unread": "읽지 않음으로 표시",
+    "message_list_unread_messages": "읽지 않은 메시지",
+    "message_list_unread_divider": "읽지 않은 메시지 구분선"
 }

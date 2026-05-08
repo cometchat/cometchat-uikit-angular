@@ -55,7 +55,12 @@ vi.mock('../CometChatCalls', () => {
         }
       },
       init: vi.fn().mockResolvedValue(true),
+      login: vi.fn().mockResolvedValue({ uid: 'mock-user' }),
       generateToken: vi.fn().mockResolvedValue({ token: 'mock-token' }),
+      joinSession: vi.fn().mockResolvedValue({ error: null }),
+      leaveSession: vi.fn(),
+      addEventListener: vi.fn().mockReturnValue(() => {}),
+      removeEventListener: vi.fn(),
     },
   };
 });

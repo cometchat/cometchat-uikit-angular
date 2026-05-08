@@ -128,7 +128,7 @@ describe('CometChatAudioBubbleComponent - Property-Based Tests', () => {
           component.message = mockMessage;
 
           // Act
-          component['extractAttachments']();
+          component['processMessage']();
           const result = component['attachments'];
 
           // Assert: All results should have valid URLs
@@ -155,7 +155,7 @@ describe('CometChatAudioBubbleComponent - Property-Based Tests', () => {
             component.message = mockMessage;
 
             // Act
-            component['extractAttachments']();
+            component['processMessage']();
             const result = component['attachments'];
 
             // Assert: All valid attachments should be preserved
@@ -194,7 +194,7 @@ describe('CometChatAudioBubbleComponent - Property-Based Tests', () => {
             component.message = mockMessage;
 
             // Act
-            component['extractAttachments']();
+            component['processMessage']();
             const result = component['attachments'];
 
             // Assert: Only valid attachments should be in result
@@ -223,7 +223,7 @@ describe('CometChatAudioBubbleComponent - Property-Based Tests', () => {
           component.message = mockMessage as any;
 
           // Act
-          component['extractAttachments']();
+          component['processMessage']();
           const result = component['attachments'];
 
           // Assert: Should return empty array
@@ -241,7 +241,7 @@ describe('CometChatAudioBubbleComponent - Property-Based Tests', () => {
           component.message = mockMessage;
 
           // Act
-          component['extractAttachments']();
+          component['processMessage']();
           const result = component['attachments'][0];
 
           // Assert: All required properties should be present

@@ -357,7 +357,8 @@
     "ai_assistant_chat_composer_placeholder": "Stelle eine Frage...",
     "ai_assistant_chat_new_chat": "Neuer Chat",
     "ai_assistant_chat_history": "Chat-Verlauf",
-    "ai_assistant_chat_history_title": "Chatverlauf",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Denke nach...",
     "ai_assistant_chat_executing_tool": "Aktion wird ausgeführt...",
     "ai_assistant_chat_no_internet": "Keine Internetverbindung. Bitte überprüfe dein Netzwerk.",
@@ -365,6 +366,7 @@
     "ai_assistant_chat_history_empty_title": "Kein Chatverlauf",
     "ai_assistant_chat_history_error_title": "Etwas ist schiefgelaufen",
     "ai_assistant_chat_history_error_subtitle": "Wir haben Probleme beim Laden deines Chatverlaufs.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Mitglieder hinzufügen",
     "add_member": "Mitglied hinzufügen",
     "add_n_members": "{n} Mitglieder hinzufügen",
@@ -658,5 +660,8 @@
     "accessibility_message_failed": "Nachricht konnte nicht gesendet werden",
     "accessibility_message_deleted": "Nachricht gelöscht",
     "accessibility_message_edited": "Nachricht bearbeitet",
-    "accessibility_loading_older_messages": "Ältere Nachrichten werden geladen"
+    "accessibility_loading_older_messages": "Ältere Nachrichten werden geladen",
+    "message_list_option_mark_as_unread": "Als ungelesen markieren",
+    "message_list_unread_messages": "Ungelesene Nachrichten",
+    "message_list_unread_divider": "Trennlinie für ungelesene Nachrichten"
 }

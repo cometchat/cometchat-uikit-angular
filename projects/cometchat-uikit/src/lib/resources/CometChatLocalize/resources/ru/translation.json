@@ -360,7 +360,8 @@
     "ai_assistant_chat_composer_placeholder": "Задайте вопрос...",
     "ai_assistant_chat_new_chat": "Новый чат",
     "ai_assistant_chat_history": "История",
-    "ai_assistant_chat_history_title": "История чата",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Думаю...",
     "ai_assistant_chat_executing_tool": "Выполнение действия...",
     "ai_assistant_chat_no_internet": "Нет подключения к интернету. Проверьте сеть.",
@@ -368,6 +369,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Начните новый разговор, чтобы увидеть его здесь.",
     "ai_assistant_chat_history_error_title": "Что-то пошло не так",
     "ai_assistant_chat_history_error_subtitle": "Возникли проблемы с загрузкой истории чата.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Добавить участников",
     "add_member": "Добавить участника",
     "add_n_members": "Добавить {n} участников",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "Не удалось отправить сообщение",
     "accessibility_message_deleted": "Сообщение удалено",
     "accessibility_message_edited": "Сообщение отредактировано",
-    "accessibility_loading_older_messages": "Загрузка старых сообщений"
+    "accessibility_loading_older_messages": "Загрузка старых сообщений",
+    "message_list_option_mark_as_unread": "Отметить как непрочитанное",
+    "message_list_unread_messages": "Непрочитанные сообщения",
+    "message_list_unread_divider": "Разделитель непрочитанных сообщений"
 }

@@ -1,213 +1,32 @@
 import { Injectable, TemplateRef, signal } from '@angular/core';
 import { Subject } from 'rxjs';
+import { BubblePart, MessageTypeKey, BubblePartMap } from './message-bubble-config.types';
 
-/**
- * Type representing the different parts of a message bubble that can be customized.
- *
- * Each part corresponds to a specific section of the message bubble UI:
- * - `bubbleView`: The entire bubble wrapper view
- * - `contentView`: The main message content area
- * - `bottomView`: Area below the content (e.g., reactions)
- * - `footerView`: Footer area of the bubble
- * - `leadingView`: Leading area (e.g., avatar for incoming messages)
- * - `headerView`: Header area (e.g., sender name)
- * - `statusInfoView`: Status information area (e.g., timestamp, receipts)
- * - `replyView`: Reply preview area for quoted messages
- * - `threadView`: Thread indicator area for messages with replies
- */
-export type BubblePart =
-  | 'bubbleView'
-  | 'contentView'
-  | 'bottomView'
-  | 'footerView'
-  | 'leadingView'
-  | 'headerView'
-  | 'statusInfoView'
-  | 'replyView'
-  | 'threadView';
-
-/**
- * Type for message type key combining type and category.
- *
- * Format: "{type}_{category}" e.g., "text_message", "image_message"
- *
- * Standard message type keys:
- * - `text_message`: Text messages
- * - `image_message`: Image messages
- * - `video_message`: Video messages
- * - `audio_message`: Audio messages
- * - `file_message`: File messages
- * - `delete_action`: Deleted messages
- * - `groupMember_action`: Group member action messages
- * - `audio_call`: Audio call messages
- * - `video_call`: Video call messages
- * - `extension_poll_custom`: Poll messages
- * - `extension_sticker_custom`: Sticker messages
- * - `extension_document_custom`: Document messages
- * - `extension_whiteboard_custom`: Whiteboard messages
- * - `meeting_custom`: Meeting messages
- */
-export type MessageTypeKey = string;
-
-/**
- * Map of bubble parts to their view templates.
- *
- * Each property corresponds to a customizable section of the message bubble.
- * Set a property to a TemplateRef to customize that section, or null to clear it.
- *
- * @example
- * ```typescript
- * const partMap: BubblePartMap = {
- *   contentView: myCustomContentTemplate,
- *   footerView: myCustomFooterTemplate,
- * };
- * ```
- */
-export interface BubblePartMap {
-  /** Custom template for the entire bubble wrapper */
-  bubbleView?: TemplateRef<any> | null;
-  /** Custom template for the main content area */
-  contentView?: TemplateRef<any> | null;
-  /** Custom template for the bottom area (e.g., reactions) */
-  bottomView?: TemplateRef<any> | null;
-  /** Custom template for the footer area */
-  footerView?: TemplateRef<any> | null;
-  /** Custom template for the leading area (e.g., avatar) */
-  leadingView?: TemplateRef<any> | null;
-  /** Custom template for the header area (e.g., sender name) */
-  headerView?: TemplateRef<any> | null;
-  /** Custom template for status info (e.g., timestamp, receipts) */
-  statusInfoView?: TemplateRef<any> | null;
-  /** Custom template for reply preview */
-  replyView?: TemplateRef<any> | null;
-  /** Custom template for thread indicator */
-  threadView?: TemplateRef<any> | null;
-}
+export type { BubblePart, MessageTypeKey, BubblePartMap };
 
 /**
  * MessageBubbleConfigService
  *
  * Centralized service for configuring message bubble views globally or per message type.
- *
- * ## Overview
- *
- * This service provides a single source of truth for message bubble view configurations
- * in the CometChat Angular UIKit. It allows developers to customize how different parts
- * of message bubbles are rendered, either globally (for all message types) or for specific
- * message types.
- *
- * ## Architecture
- *
- * The service maintains two configuration maps:
- * - **typeViewMap**: Stores type-specific view configurations (e.g., custom content view for text messages)
- * - **globalViewMap**: Stores global view configurations that apply to all message types
- *
- * ### Priority Logic
- *
- * When retrieving a view for a specific message type and bubble part:
- * 1. First, check if a type-specific view is configured
- * 2. If not found, fall back to the global view
- * 3. If neither is configured, return null (use default rendering)
- *
- * ## Usage Patterns
- *
- * ### Pattern 1: Set type-specific view
- *
- * ```typescript
- * // Customize content view for text messages only
- * this.bubbleConfigService.setBubbleView('text_message', {
- *   contentView: this.customTextContentTemplate
- * });
- * ```
- *
- * ### Pattern 2: Set global view
- *
- * ```typescript
- * // Customize footer view for all message types
- * this.bubbleConfigService.setGlobalView('footerView', this.customFooterTemplate);
- * ```
- *
- * ### Pattern 3: Batch configuration
- *
- * ```typescript
- * // Configure multiple message types at once
- * this.bubbleConfigService.setMessageTemplates({
- *   'text_message': { contentView: this.textContentTemplate },
- *   'image_message': { contentView: this.imageContentTemplate },
- * });
- * ```
- *
- * ### Pattern 4: Get configured view
- *
- * ```typescript
- * // Get the configured view (type-specific or global fallback)
- * const contentView = this.bubbleConfigService.getView('text_message', 'contentView');
- * ```
- *
- * ## Multiple Instances (Scoping)
- *
- * This service is `providedIn: 'root'` (singleton by default). All message lists share
- * the same configuration. If you need different bubble customizations for different
- * message lists (e.g., main chat vs. thread panel), create a wrapper component that
- * provides its own instance:
- *
- * ```typescript
- * @Component({
- *   selector: 'app-thread-panel',
- *   providers: [MessageBubbleConfigService], // Scoped instance
- *   template: `<cometchat-message-list ...></cometchat-message-list>`
- * })
- * export class ThreadPanelComponent {
- *   private bubbleConfig = inject(MessageBubbleConfigService); // Local instance
- * }
- * ```
+ * Maintains two maps: typeViewMap (type-specific) and globalViewMap (global fallback).
+ * Priority: type-specific > global > null (default rendering).
  *
  * @Injectable providedIn: 'root'
-
  */
 @Injectable({
   providedIn: 'root',
 })
 export class MessageBubbleConfigService {
-  // ==================== Private State ====================
-
-  /**
-   * Map storing type-specific view configurations.
-   *
-   * Key: MessageTypeKey (e.g., "text_message", "image_message")
-   * Value: BubblePartMap containing templates for each bubble part
-   *
-   * @private
-   * @internal
-   */
+  /** Type-specific view configurations. Key: MessageTypeKey, Value: BubblePartMap */
   private typeViewMap = new Map<MessageTypeKey, BubblePartMap>();
 
-  /**
-   * Object storing global view configurations that apply to all message types.
-   *
-   * These views are used as fallbacks when no type-specific view is configured.
-   *
-   * @private
-   * @internal
-   */
+  /** Global view configurations used as fallbacks. */
   private globalViewMap: BubblePartMap = {};
 
-  /**
-   * Reactive signal that increments whenever any configuration changes.
-   * Components can read this signal to trigger re-renders when the service is updated.
-   *
-   * @public
-  
-   */
+  /** Reactive signal that increments whenever any configuration changes. */
   readonly configVersion = signal(0);
 
-  /**
-   * Observable that emits whenever any configuration changes.
-   * OnPush components should subscribe and call markForCheck() on emission.
-   *
-   * @public
-  
-   */
+  /** Observable that emits whenever any configuration changes. */
   readonly configChanged$ = new Subject<void>();
 
   constructor() {

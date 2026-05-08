@@ -10,7 +10,6 @@ The CometChat Angular UI Kit provides pre-built Angular components to quickly in
    <img src="https://raw.githubusercontent.com/cometchat/cometchat-uikit-react/HEAD/screenshots/sample_app_overview.png" />
 </div>
 
-> **Note:** This package is currently in beta (`5.0.0-beta.2`). APIs may change before the stable release.
 
 ## Prerequisites
 
@@ -24,7 +23,7 @@ The CometChat Angular UI Kit provides pre-built Angular components to quickly in
 1. Register at the [CometChat Dashboard](https://app.cometchat.com/) to create an account.
 2. After registering, log in and create a new app. CometChat will generate an _`App ID`_, _`Region`_, and _`Auth Key`_ for you. Keep these credentials secure.
 3. Check the [Key Concepts](https://www.cometchat.com/docs/fundamentals/key-concepts) to understand the basic components of CometChat.
-4. Refer to the [Integration Steps](https://www.cometchat.com/docs/ui-kit/angular/v5/integration) to integrate the UI Kit into your Angular app.
+4. Refer to the [Integration Steps](https://www.cometchat.com/docs/ui-kit/angular/integration) to integrate the UI Kit into your Angular app.
 
 ## Installation
 
@@ -44,11 +43,11 @@ npm install @cometchat/chat-uikit-angular @cometchat/chat-sdk-javascript
 
 ## Documentation
 
-For full documentation, visit the [CometChat Angular UI Kit Docs](https://www.cometchat.com/docs/ui-kit/angular/v5/integration).
+For full documentation, visit the [CometChat Angular UI Kit Docs](https://www.cometchat.com/docs/ui-kit/angular/integration).
 
 ## Help and Support
 
-- [Documentation](https://www.cometchat.com/docs/ui-kit/angular/v5/integration)
+- [Documentation](https://www.cometchat.com/docs/ui-kit/angular/integration)
 - [GitHub Issues](https://github.com/cometchat/cometchat-uikit-angular/issues)
 - [Support Tickets](https://help.cometchat.com/hc/en-us)
 - [CometChat Dashboard](https://app.cometchat.com/)

@@ -23,22 +23,6 @@
  * - `setCallLogTemplates()` — CometChatCallLogs
  * - `setMessageListTemplates()` — CometChatMessageList
  *
- * ### Multiple Instances (Scoping)
- *
- * This service is `providedIn: 'root'` (singleton by default). If you need different
- * templates for different instances, create a wrapper component with its own provider:
- *
- * ```typescript
- * @Component({
- *   selector: 'app-secondary-list',
- *   providers: [CometChatTemplatesService],
- *   template: `<cometchat-users ...></cometchat-users>`
- * })
- * export class SecondaryListComponent {
- *   private templates = inject(CometChatTemplatesService);
- * }
- * ```
- *
  * @example
  * ```typescript
  * // Set a branded loading spinner for ALL lists
@@ -46,182 +30,40 @@
  *
  * // Override just the users list empty state
  * templatesService.setUserTemplates({ emptyView: myUsersEmpty });
- *
- * // Set conversation-specific templates
- * templatesService.setConversationTemplates({
- *   conversationItem: myItemTemplate,
- *   subtitleView: mySubtitle
- * });
  * ```
  */
-import { Injectable, TemplateRef, signal } from '@angular/core';
+import { Injectable, TemplateRef, DestroyRef, signal, inject } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
 
-// ============================================
-// Shared Templates (cross-cutting, all lists)
-// ============================================
+// Re-export all types for backward compatibility
+export type {
+  SharedListTemplates,
+  ConversationTemplates,
+  UserTemplates,
+  GroupTemplates,
+  GroupMemberTemplates,
+  CallLogTemplates,
+  MessageListTemplates,
+  SearchTemplates,
+  ListTemplates,
+} from './templates.types';
 
-/**
- * Templates that apply to ALL list components as a fallback.
- * Component-specific templates take priority over shared templates.
- */
-export interface SharedListTemplates {
-  /** Custom loading state template for all lists */
-  loadingView?: TemplateRef<void>;
-  /** Custom empty state template for all lists */
-  emptyView?: TemplateRef<void>;
-  /** Custom error state template for all lists */
-  errorView?: TemplateRef<{ $implicit: Error }>;
-}
-
-// ============================================
-// Component-Specific Template Interfaces
-// ============================================
-
-/**
- * Templates for CometChatConversations.
- * Includes item-level slots (leading, title, subtitle, trailing) plus state slots.
- */
-export interface ConversationTemplates {
-  /** Custom template for the entire conversation item */
-  itemView?: TemplateRef<any>;
-  /** Custom template for the leading section (avatar, status indicator) */
-  leadingView?: TemplateRef<any>;
-  /** Custom template for the title section */
-  titleView?: TemplateRef<any>;
-  /** Custom template for the subtitle section */
-  subtitleView?: TemplateRef<any>;
-  /** Custom template for the trailing section (timestamp, badge) */
-  trailingView?: TemplateRef<any>;
-  /** Custom template for the loading state */
-  loadingView?: TemplateRef<void>;
-  /** Custom template for the empty state */
-  emptyView?: TemplateRef<void>;
-  /** Custom template for the error state */
-  errorView?: TemplateRef<{ $implicit: Error }>;
-}
-
-/**
- * Templates for CometChatUsers.
- */
-export interface UserTemplates {
-  /** Custom template for the entire user item */
-  itemView?: TemplateRef<any>;
-  /** Custom template for the leading section (avatar) */
-  leadingView?: TemplateRef<any>;
-  /** Custom template for the title section */
-  titleView?: TemplateRef<any>;
-  /** Custom template for the subtitle section */
-  subtitleView?: TemplateRef<any>;
-  /** Custom template for the trailing section */
-  trailingView?: TemplateRef<any>;
-  /** Custom template for the loading state */
-  loadingView?: TemplateRef<void>;
-  /** Custom template for the empty state */
-  emptyView?: TemplateRef<void>;
-  /** Custom template for the error state */
-  errorView?: TemplateRef<{ $implicit: Error }>;
-}
-
-/**
- * Templates for CometChatGroups.
- */
-export interface GroupTemplates {
-  /** Custom template for the entire group item */
-  itemView?: TemplateRef<any>;
-  /** Custom template for the leading section (avatar) */
-  leadingView?: TemplateRef<any>;
-  /** Custom template for the title section */
-  titleView?: TemplateRef<any>;
-  /** Custom template for the subtitle section */
-  subtitleView?: TemplateRef<any>;
-  /** Custom template for the trailing section */
-  trailingView?: TemplateRef<any>;
-  /** Custom template for the loading state */
-  loadingView?: TemplateRef<void>;
-  /** Custom template for the empty state */
-  emptyView?: TemplateRef<void>;
-  /** Custom template for the error state */
-  errorView?: TemplateRef<{ $implicit: Error }>;
-}
-
-/**
- * Templates for CometChatGroupMembers.
- */
-export interface GroupMemberTemplates {
-  /** Custom template for the entire member item */
-  itemView?: TemplateRef<any>;
-  /** Custom template for the leading section (avatar) */
-  leadingView?: TemplateRef<any>;
-  /** Custom template for the title section */
-  titleView?: TemplateRef<any>;
-  /** Custom template for the subtitle section */
-  subtitleView?: TemplateRef<any>;
-  /** Custom template for the trailing section */
-  trailingView?: TemplateRef<any>;
-  /** Custom template for the loading state */
-  loadingView?: TemplateRef<void>;
-  /** Custom template for the empty state */
-  emptyView?: TemplateRef<void>;
-  /** Custom template for the error state */
-  errorView?: TemplateRef<{ $implicit: Error }>;
-}
-
-/**
- * Templates for CometChatCallLogs.
- */
-export interface CallLogTemplates {
-  /** Custom template for the entire call log item */
-  itemView?: TemplateRef<any>;
-  /** Custom template for the leading section */
-  leadingView?: TemplateRef<any>;
-  /** Custom template for the title section */
-  titleView?: TemplateRef<any>;
-  /** Custom template for the subtitle section */
-  subtitleView?: TemplateRef<any>;
-  /** Custom template for the trailing section */
-  trailingView?: TemplateRef<any>;
-  /** Custom template for the loading state */
-  loadingView?: TemplateRef<void>;
-  /** Custom template for the empty state */
-  emptyView?: TemplateRef<void>;
-  /** Custom template for the error state */
-  errorView?: TemplateRef<{ $implicit: Error }>;
-}
-
-/**
- * Templates for CometChatMessageList.
- * Message list has header/footer instead of leading/title/subtitle/trailing.
- */
-export interface MessageListTemplates {
-  /** Custom template for the loading state */
-  loadingView?: TemplateRef<void>;
-  /** Custom template for the empty state */
-  emptyView?: TemplateRef<void>;
-  /** Custom template for the error state */
-  errorView?: TemplateRef<{ $implicit: Error }>;
-  /** Custom template for the header section */
-  headerView?: TemplateRef<any>;
-  /** Custom template for the footer section */
-  footerView?: TemplateRef<any>;
-}
-
-/**
- * Legacy generic interface kept for backward compatibility.
- * Prefer the typed interfaces above for new code.
- */
-export interface ListTemplates<T> {
-  itemTemplate?: TemplateRef<{ $implicit: T; index: number }>;
-  loadingTemplate?: TemplateRef<void>;
-  emptyTemplate?: TemplateRef<void>;
-  errorTemplate?: TemplateRef<{ $implicit: Error }>;
-  headerTemplate?: TemplateRef<void>;
-  footerTemplate?: TemplateRef<void>;
-}
-
+import {
+  SharedListTemplates,
+  ConversationTemplates,
+  UserTemplates,
+  GroupTemplates,
+  GroupMemberTemplates,
+  CallLogTemplates,
+  MessageListTemplates,
+  SearchTemplates,
+  ListTemplates,
+} from './templates.types';
 
 @Injectable({ providedIn: 'root' })
 export class CometChatTemplatesService {
+  private readonly _destroyRef = inject(DestroyRef);
+
   // ============================================
   // Shared Templates (apply to ALL lists as fallback)
   // ============================================
@@ -286,6 +128,15 @@ export class CometChatTemplatesService {
     this.messageListTemplatesSubject.asObservable();
 
   // ============================================
+  // Search Templates
+  // ============================================
+  private searchTemplatesSignal = signal<SearchTemplates>({});
+  private searchTemplatesSubject = new BehaviorSubject<SearchTemplates>({});
+  readonly searchTemplates = this.searchTemplatesSignal.asReadonly();
+  readonly searchTemplates$: Observable<SearchTemplates> =
+    this.searchTemplatesSubject.asObservable();
+
+  // ============================================
   // Legacy Generic List Templates (backward compat)
   // ============================================
   private listTemplatesSignal = signal<ListTemplates<unknown>>({});
@@ -294,6 +145,10 @@ export class CometChatTemplatesService {
   readonly listTemplates$: Observable<ListTemplates<unknown>> =
     this.listTemplatesSubject.asObservable();
 
+  constructor() {
+    this._destroyRef.onDestroy(() => this._completeAllSubjects());
+  }
+
   // ============================================
   // Shared Template Methods
   // ============================================
@@ -301,15 +156,6 @@ export class CometChatTemplatesService {
   /**
    * Sets templates that apply to ALL list components as a fallback.
    * Component-specific templates take priority over shared templates.
-   *
-   * @example
-   * ```typescript
-   * // Branded loading spinner for every list
-   * templatesService.setSharedTemplates({
-   *   loadingView: myBrandedSpinner,
-   *   errorView: myBrandedError
-   * });
-   * ```
    */
   setSharedTemplates(templates: Partial<SharedListTemplates>): void {
     const current = this.sharedTemplatesSignal();
@@ -333,45 +179,14 @@ export class CometChatTemplatesService {
   // Conversation Template Methods
   // ============================================
 
-  /** Sets the custom template for the entire conversation item. */
-  setConversationItemTemplate(template: TemplateRef<any>): void {
-    this.updateConversationTemplates({ itemView: template });
-  }
-
-  /** Sets the custom template for the leading section (avatar, status indicator). */
-  setConversationLeadingTemplate(template: TemplateRef<any>): void {
-    this.updateConversationTemplates({ leadingView: template });
-  }
-
-  /** Sets the custom template for the title section. */
-  setConversationTitleTemplate(template: TemplateRef<any>): void {
-    this.updateConversationTemplates({ titleView: template });
-  }
-
-  /** Sets the custom template for the subtitle section. */
-  setConversationSubtitleTemplate(template: TemplateRef<any>): void {
-    this.updateConversationTemplates({ subtitleView: template });
-  }
-
-  /** Sets the custom template for the trailing section (timestamp, badge). */
-  setConversationTrailingTemplate(template: TemplateRef<any>): void {
-    this.updateConversationTemplates({ trailingView: template });
-  }
-
-  /** Sets the custom template for the conversation loading state. */
-  setConversationLoadingTemplate(template: TemplateRef<void>): void {
-    this.updateConversationTemplates({ loadingView: template });
-  }
-
-  /** Sets the custom template for the conversation empty state. */
-  setConversationEmptyTemplate(template: TemplateRef<void>): void {
-    this.updateConversationTemplates({ emptyView: template });
-  }
-
-  /** Sets the custom template for the conversation error state. */
-  setConversationErrorTemplate(template: TemplateRef<{ $implicit: Error }>): void {
-    this.updateConversationTemplates({ errorView: template });
-  }
+  setConversationItemTemplate(template: TemplateRef<any>): void { this.updateConversationTemplates({ itemView: template }); }
+  setConversationLeadingTemplate(template: TemplateRef<any>): void { this.updateConversationTemplates({ leadingView: template }); }
+  setConversationTitleTemplate(template: TemplateRef<any>): void { this.updateConversationTemplates({ titleView: template }); }
+  setConversationSubtitleTemplate(template: TemplateRef<any>): void { this.updateConversationTemplates({ subtitleView: template }); }
+  setConversationTrailingTemplate(template: TemplateRef<any>): void { this.updateConversationTemplates({ trailingView: template }); }
+  setConversationLoadingTemplate(template: TemplateRef<void>): void { this.updateConversationTemplates({ loadingView: template }); }
+  setConversationEmptyTemplate(template: TemplateRef<void>): void { this.updateConversationTemplates({ emptyView: template }); }
+  setConversationErrorTemplate(template: TemplateRef<{ $implicit: Error }>): void { this.updateConversationTemplates({ errorView: template }); }
 
   /** Sets multiple conversation templates at once. */
   setConversationTemplates(templates: Partial<ConversationTemplates>): void {
@@ -393,147 +208,96 @@ export class CometChatTemplatesService {
   // User Template Methods
   // ============================================
 
-  /** Sets multiple user templates at once. */
   setUserTemplates(templates: Partial<UserTemplates>): void {
-    const current = this.userTemplatesSignal();
-    const updated = { ...current, ...templates };
+    const updated = { ...this.userTemplatesSignal(), ...templates };
     this.userTemplatesSignal.set(updated);
     this.userTemplatesSubject.next(updated);
   }
-
-  /** Gets the current user templates synchronously. */
-  getUserTemplates(): UserTemplates {
-    return this.userTemplatesSignal();
-  }
-
-  /** Clears all user templates, resetting to defaults. */
-  clearUserTemplates(): void {
-    this.userTemplatesSignal.set({});
-    this.userTemplatesSubject.next({});
-  }
+  getUserTemplates(): UserTemplates { return this.userTemplatesSignal(); }
+  clearUserTemplates(): void { this.userTemplatesSignal.set({}); this.userTemplatesSubject.next({}); }
 
   // ============================================
   // Group Template Methods
   // ============================================
 
-  /** Sets multiple group templates at once. */
   setGroupTemplates(templates: Partial<GroupTemplates>): void {
-    const current = this.groupTemplatesSignal();
-    const updated = { ...current, ...templates };
+    const updated = { ...this.groupTemplatesSignal(), ...templates };
     this.groupTemplatesSignal.set(updated);
     this.groupTemplatesSubject.next(updated);
   }
-
-  /** Gets the current group templates synchronously. */
-  getGroupTemplates(): GroupTemplates {
-    return this.groupTemplatesSignal();
-  }
-
-  /** Clears all group templates, resetting to defaults. */
-  clearGroupTemplates(): void {
-    this.groupTemplatesSignal.set({});
-    this.groupTemplatesSubject.next({});
-  }
+  getGroupTemplates(): GroupTemplates { return this.groupTemplatesSignal(); }
+  clearGroupTemplates(): void { this.groupTemplatesSignal.set({}); this.groupTemplatesSubject.next({}); }
 
   // ============================================
   // Group Member Template Methods
   // ============================================
 
-  /** Sets multiple group member templates at once. */
   setGroupMemberTemplates(templates: Partial<GroupMemberTemplates>): void {
-    const current = this.groupMemberTemplatesSignal();
-    const updated = { ...current, ...templates };
+    const updated = { ...this.groupMemberTemplatesSignal(), ...templates };
     this.groupMemberTemplatesSignal.set(updated);
     this.groupMemberTemplatesSubject.next(updated);
   }
-
-  /** Gets the current group member templates synchronously. */
-  getGroupMemberTemplates(): GroupMemberTemplates {
-    return this.groupMemberTemplatesSignal();
-  }
-
-  /** Clears all group member templates, resetting to defaults. */
-  clearGroupMemberTemplates(): void {
-    this.groupMemberTemplatesSignal.set({});
-    this.groupMemberTemplatesSubject.next({});
-  }
+  getGroupMemberTemplates(): GroupMemberTemplates { return this.groupMemberTemplatesSignal(); }
+  clearGroupMemberTemplates(): void { this.groupMemberTemplatesSignal.set({}); this.groupMemberTemplatesSubject.next({}); }
 
   // ============================================
   // Call Log Template Methods
   // ============================================
 
-  /** Sets multiple call log templates at once. */
   setCallLogTemplates(templates: Partial<CallLogTemplates>): void {
-    const current = this.callLogTemplatesSignal();
-    const updated = { ...current, ...templates };
+    const updated = { ...this.callLogTemplatesSignal(), ...templates };
     this.callLogTemplatesSignal.set(updated);
     this.callLogTemplatesSubject.next(updated);
   }
-
-  /** Gets the current call log templates synchronously. */
-  getCallLogTemplates(): CallLogTemplates {
-    return this.callLogTemplatesSignal();
-  }
-
-  /** Clears all call log templates, resetting to defaults. */
-  clearCallLogTemplates(): void {
-    this.callLogTemplatesSignal.set({});
-    this.callLogTemplatesSubject.next({});
-  }
+  getCallLogTemplates(): CallLogTemplates { return this.callLogTemplatesSignal(); }
+  clearCallLogTemplates(): void { this.callLogTemplatesSignal.set({}); this.callLogTemplatesSubject.next({}); }
 
   // ============================================
   // Message List Template Methods
   // ============================================
 
-  /** Sets multiple message list templates at once. */
   setMessageListTemplates(templates: Partial<MessageListTemplates>): void {
-    const current = this.messageListTemplatesSignal();
-    const updated = { ...current, ...templates };
+    const updated = { ...this.messageListTemplatesSignal(), ...templates };
     this.messageListTemplatesSignal.set(updated);
     this.messageListTemplatesSubject.next(updated);
   }
+  getMessageListTemplates(): MessageListTemplates { return this.messageListTemplatesSignal(); }
+  clearMessageListTemplates(): void { this.messageListTemplatesSignal.set({}); this.messageListTemplatesSubject.next({}); }
 
-  /** Gets the current message list templates synchronously. */
-  getMessageListTemplates(): MessageListTemplates {
-    return this.messageListTemplatesSignal();
-  }
+  // ============================================
+  // Search Template Methods
+  // ============================================
 
-  /** Clears all message list templates, resetting to defaults. */
-  clearMessageListTemplates(): void {
-    this.messageListTemplatesSignal.set({});
-    this.messageListTemplatesSubject.next({});
+  setSearchTemplates(templates: Partial<SearchTemplates>): void {
+    const updated = { ...this.searchTemplatesSignal(), ...templates };
+    this.searchTemplatesSignal.set(updated);
+    this.searchTemplatesSubject.next(updated);
   }
+  getSearchTemplates(): SearchTemplates { return this.searchTemplatesSignal(); }
+  clearSearchTemplates(): void { this.searchTemplatesSignal.set({}); this.searchTemplatesSubject.next({}); }
 
   // ============================================
   // Legacy Generic List Template Methods
   // ============================================
 
   /** @deprecated Use typed methods (setUserTemplates, setGroupTemplates, etc.) instead. */
-  getListTemplates(): ListTemplates<unknown> {
-    return this.listTemplatesSignal();
-  }
+  getListTemplates(): ListTemplates<unknown> { return this.listTemplatesSignal(); }
 
   /** @deprecated Use typed methods instead. */
   setListTemplates<T>(templates: Partial<ListTemplates<T>>): void {
-    const current = this.listTemplatesSignal();
-    const updated = { ...current, ...templates } as ListTemplates<unknown>;
+    const updated = { ...this.listTemplatesSignal(), ...templates } as ListTemplates<unknown>;
     this.listTemplatesSignal.set(updated);
     this.listTemplatesSubject.next(updated);
   }
 
   /** @deprecated Use typed clear methods instead. */
-  clearListTemplates(): void {
-    this.listTemplatesSignal.set({});
-    this.listTemplatesSubject.next({});
-  }
+  clearListTemplates(): void { this.listTemplatesSignal.set({}); this.listTemplatesSubject.next({}); }
 
   // ============================================
   // Bulk Operations
   // ============================================
 
-  /**
-   * Clears ALL templates (shared + all component-specific), resetting everything to defaults.
-   */
+  /** Clears ALL templates (shared + all component-specific), resetting everything to defaults. */
   clearAllTemplates(): void {
     this.clearSharedTemplates();
     this.clearConversationTemplates();
@@ -542,6 +306,7 @@ export class CometChatTemplatesService {
     this.clearGroupMemberTemplates();
     this.clearCallLogTemplates();
     this.clearMessageListTemplates();
+    this.clearSearchTemplates();
     this.clearListTemplates();
   }
 
@@ -552,8 +317,6 @@ export class CometChatTemplatesService {
   /**
    * Resolves a template for a specific slot using the priority chain:
    * Component-specific > Shared > undefined (component uses its default).
-   *
-   * Used internally by components in their effectiveXxxView getters.
    *
    * @param componentTemplates - The component-specific templates object
    * @param slot - The template slot name (e.g. 'loadingView', 'emptyView', 'errorView')
@@ -575,5 +338,17 @@ export class CometChatTemplatesService {
     const updated = { ...current, ...updates };
     this.conversationTemplatesSignal.set(updated);
     this.conversationTemplatesSubject.next(updated);
+  }
+
+  private _completeAllSubjects(): void {
+    this.sharedTemplatesSubject.complete();
+    this.conversationTemplatesSubject.complete();
+    this.userTemplatesSubject.complete();
+    this.groupTemplatesSubject.complete();
+    this.groupMemberTemplatesSubject.complete();
+    this.callLogTemplatesSubject.complete();
+    this.messageListTemplatesSubject.complete();
+    this.searchTemplatesSubject.complete();
+    this.listTemplatesSubject.complete();
   }
 }

@@ -3,6 +3,9 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { MessageStatus } from '../Enums/Enums';
 import { Subject, Subscription } from 'rxjs';
 import { subscribeWithOptionalCleanup } from './event-utils';
+import { IMessages } from './CometChatMessageEvents.types';
+
+export type { IMessages };
 
 /**
  * Message event subjects for handling actions related to messages (e.g., message sent, edited, deleted, etc.)
@@ -216,37 +219,18 @@ export class CometChatMessageEvents {
 
   // ── Typed Subscribe Helpers (SDK-wrapper) ──
 
-  static subscribeOnTextMessageReceived(
-    cb: (data: CometChat.TextMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onTextMessageReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnTextMessageReceived(cb: (data: CometChat.TextMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onTextMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnMediaMessageReceived(
-    cb: (data: CometChat.MediaMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onMediaMessageReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnMediaMessageReceived(cb: (data: CometChat.MediaMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onMediaMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnCustomMessageReceived(
-    cb: (data: CometChat.CustomMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onCustomMessageReceived,
-      cb,
+  static subscribeOnCustomMessageReceived(cb: (data: CometChat.CustomMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onCustomMessageReceived, cb, destroyRef);
       destroyRef
-    );
+    
   }
 
   static subscribeOnTypingStarted(
@@ -256,178 +240,71 @@ export class CometChatMessageEvents {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onTypingStarted, cb, destroyRef);
   }
 
-  static subscribeOnTypingEnded(
-    cb: (data: CometChat.TypingIndicator) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
+  static subscribeOnTypingEnded(cb: (data: CometChat.TypingIndicator) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onTypingEnded, cb, destroyRef);
   }
 
-  static subscribeOnMessagesDelivered(
-    cb: (data: CometChat.MessageReceipt) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
+  static subscribeOnMessagesDelivered(cb: (data: CometChat.MessageReceipt) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessagesDelivered, cb, destroyRef);
   }
 
-  static subscribeOnMessagesRead(
-    cb: (data: CometChat.MessageReceipt) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
+  static subscribeOnMessagesRead(cb: (data: CometChat.MessageReceipt) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessagesRead, cb, destroyRef);
   }
 
-  static subscribeOnMessagesDeliveredToAll(
-    cb: (data: CometChat.MessageReceipt) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onMessagesDeliveredToAll,
-      cb,
-      destroyRef
-    );
+  static subscribeOnMessagesDeliveredToAll(cb: (data: CometChat.MessageReceipt) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessagesDeliveredToAll, cb, destroyRef);
   }
 
-  static subscribeOnMessagesReadByAll(
-    cb: (data: CometChat.MessageReceipt) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
+  static subscribeOnMessagesReadByAll(cb: (data: CometChat.MessageReceipt) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessagesReadByAll, cb, destroyRef);
   }
 
-  static subscribeOnMessageModerated(
-    cb: (data: CometChat.BaseMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
+  static subscribeOnMessageModerated(cb: (data: CometChat.BaseMessage) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessageModerated, cb, destroyRef);
   }
 
-  static subscribeOnMessageEdited(
-    cb: (data: CometChat.BaseMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
+  static subscribeOnMessageEdited(cb: (data: CometChat.BaseMessage) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessageEdited, cb, destroyRef);
   }
 
-  static subscribeOnMessageDeleted(
-    cb: (data: CometChat.BaseMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
+  static subscribeOnMessageDeleted(cb: (data: CometChat.BaseMessage) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessageDeleted, cb, destroyRef);
   }
 
-  static subscribeOnMessageReactionAdded(
-    cb: (data: CometChat.ReactionEvent) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onMessageReactionAdded,
-      cb,
-      destroyRef
-    );
+  static subscribeOnMessageReactionAdded(cb: (data: CometChat.ReactionEvent) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessageReactionAdded, cb, destroyRef);
   }
 
-  static subscribeOnMessageReactionRemoved(
-    cb: (data: CometChat.ReactionEvent) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onMessageReactionRemoved,
-      cb,
-      destroyRef
-    );
+  static subscribeOnMessageReactionRemoved(cb: (data: CometChat.ReactionEvent) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onMessageReactionRemoved, cb, destroyRef);
   }
 
-  static subscribeOnCustomInteractiveMessageReceived(
-    cb: (data: CometChat.InteractiveMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onCustomInteractiveMessageReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnCustomInteractiveMessageReceived(cb: (data: CometChat.InteractiveMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onCustomInteractiveMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnFormMessageReceived(
-    cb: (data: CometChat.InteractiveMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onFormMessageReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnFormMessageReceived(cb: (data: CometChat.InteractiveMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onFormMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnCardMessageReceived(
-    cb: (data: CometChat.InteractiveMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onCardMessageReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnCardMessageReceived(cb: (data: CometChat.InteractiveMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onCardMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnSchedulerMessageReceived(
-    cb: (data: CometChat.InteractiveMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onSchedulerMessageReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnSchedulerMessageReceived(cb: (data: CometChat.InteractiveMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onSchedulerMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnAIAssistantMessageReceived(
-    cb: (data: CometChat.AIAssistantMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onAIAssistantMessageReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnAIAssistantMessageReceived(cb: (data: CometChat.AIAssistantMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onAIAssistantMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnAIToolResultReceived(
-    cb: (data: CometChat.AIToolResultMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onAIToolResultReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnAIToolResultReceived(cb: (data: CometChat.AIToolResultMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onAIToolResultReceived, cb, destroyRef);
   }
 
-  static subscribeOnAIToolArgumentsReceived(
-    cb: (data: CometChat.AIToolArgumentMessage) => void,
-    destroyRef?: DestroyRef
-  ): Subscription {
-    return subscribeWithOptionalCleanup(
-      CometChatMessageEvents.onAIToolArgumentsReceived,
-      cb,
-      destroyRef
-    );
+  static subscribeOnAIToolArgumentsReceived(cb: (data: CometChat.AIToolArgumentMessage) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.onAIToolArgumentsReceived, cb, destroyRef);
   }
-}
-
-/**
- * Interface for message-related events
- */
-export interface IMessages {
-  message: CometChat.BaseMessage;
-  status: MessageStatus;
-  /**
-   * Optional parent message ID to scope edit events to a specific thread context.
-   * - When set (non-null/non-zero): the event originated from a thread composer/list
-   * - When absent/null/0: the event originated from the main conversation composer/list
-   * Used by message composers to filter edit events so that thread edits don't
-   * leak into the main composer and vice versa.
-   */
-  parentMessageId?: number | null;
 }

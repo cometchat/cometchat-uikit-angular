@@ -502,3 +502,242 @@ export function createMockMessageListServiceWith(
   }
   return svc;
 }
+
+
+// ── Search service mocks (signal-based) ────────────────────────────────────
+
+import {
+  createMockConversation,
+  createMockConversations,
+  createMockMessage,
+  createMockMessages,
+  createMockUser,
+  MOCK_AVATARS,
+} from './mock-data';
+
+/** Sender pool reused across mock search results */
+const MOCK_SENDERS = [
+  { uid: 'sender-0', name: 'Andrew Joseph', avatar: MOCK_AVATARS.andrewJoseph },
+  { uid: 'sender-1', name: 'Nancy Grace', avatar: MOCK_AVATARS.nancyGrace },
+  { uid: 'sender-2', name: 'George Alan', avatar: MOCK_AVATARS.georgeAlan },
+];
+
+/** Receiver pool for message results (shown as title in non-scoped search) */
+const MOCK_RECEIVERS = [
+  { uid: 'recv-0', name: 'Andrew Joseph', avatar: MOCK_AVATARS.andrewJoseph },
+  { uid: 'recv-1', name: 'Nancy Grace', avatar: MOCK_AVATARS.nancyGrace },
+  { uid: 'recv-2', name: 'George Alan', avatar: MOCK_AVATARS.georgeAlan },
+  { uid: 'recv-3', name: 'Design Team' },
+  { uid: 'recv-4', name: 'Engineering' },
+];
+
+/**
+ * Mock SearchConversationsService for Storybook stories.
+ *
+ * The `search()` method dynamically generates conversations whose last
+ * message text contains the search keyword, and respects active filters
+ * (Groups → only group conversations, Unread → only unread conversations).
+ */
+@Injectable()
+export class MockSearchConversationsService {
+  readonly conversations = signal<CometChat.Conversation[]>([]);
+  readonly fetchState = signal<number>(3); // States.loaded = 3
+  readonly hasMoreResults = signal<boolean>(false);
+  readonly typingIndicatorMap = signal<Map<string, CometChat.TypingIndicator>>(new Map());
+
+  /** Override in factory to force a specific state (loading / error / empty). */
+  private _forceState: 'loading' | 'error' | 'empty' | null = null;
+
+  search = (keyword: string, filters?: any[]): Promise<void> => {
+    if (this._forceState === 'loading') {
+      this.fetchState.set(0);
+      return Promise.resolve();
+    }
+    if (this._forceState === 'error') {
+      this.fetchState.set(2);
+      return Promise.resolve();
+    }
+    if (this._forceState === 'empty') {
+      this.conversations.set([]);
+      this.fetchState.set(1);
+      return Promise.resolve();
+    }
+
+    const kw = keyword || 'hello';
+    const activeFilters: string[] = (filters || []) as string[];
+    const groupsOnly = activeFilters.includes('groups');
+    const unreadOnly = activeFilters.includes('unread');
+
+    const templates = [
+      `Hey, ${kw} — are you free for a call?`,
+      `I was just thinking about ${kw}`,
+      `Did you see the ${kw} update?`,
+      `Re: ${kw} — looks good to me`,
+      `Quick question about ${kw}`,
+    ];
+    const names = ['Andrew Joseph', 'Nancy Grace', 'George Alan', 'Design Team', 'Engineering'];
+    const avatars = [MOCK_AVATARS.andrewJoseph, MOCK_AVATARS.nancyGrace, MOCK_AVATARS.georgeAlan, undefined, undefined];
+
+    const convs = createMockConversations(5, i => {
+      const isGroup = groupsOnly ? true : i >= 3;
+      const unread = unreadOnly ? (i + 1) * 2 : (i === 0 ? 3 : i === 2 ? 1 : 0);
+      return {
+        type: isGroup ? 'group' as const : 'user' as const,
+        conversationWith: isGroup
+          ? undefined
+          : createMockUser({ uid: `user-${i}`, name: names[i], avatar: avatars[i], status: i % 2 === 0 ? 'online' : 'offline' }),
+        lastMessage: createMockMessage('text', { text: templates[i], sentAt: (Date.now() / 1000) - (i * 3600) }),
+        unreadMessageCount: unread,
+      };
+    });
+
+    this.conversations.set(convs);
+    this.fetchState.set(3);
+    return Promise.resolve();
+  };
+
+  loadMore = (): Promise<void> => Promise.resolve();
+  attachListeners = (): void => {};
+  detachListeners = (): void => {};
+  reset = (): void => {};
+}
+
+/**
+ * Mock SearchMessagesService for Storybook stories.
+ *
+ * The `search()` method dynamically generates messages that embed the
+ * search keyword in text content and respects active filters
+ * (Photos → only images, Videos → only videos, etc.).
+ */
+@Injectable()
+export class MockSearchMessagesService {
+  readonly messages = signal<CometChat.BaseMessage[]>([]);
+  readonly fetchState = signal<number>(3); // States.loaded = 3
+  readonly hasMoreResults = signal<boolean>(false);
+
+  /** Override in factory to force a specific state (loading / error / empty). */
+  private _forceState: 'loading' | 'error' | 'empty' | null = null;
+
+  search = (keyword: string, filters?: any[]): Promise<void> => {
+    if (this._forceState === 'loading') {
+      this.fetchState.set(0);
+      return Promise.resolve();
+    }
+    if (this._forceState === 'error') {
+      this.fetchState.set(2);
+      return Promise.resolve();
+    }
+    if (this._forceState === 'empty') {
+      this.messages.set([]);
+      this.fetchState.set(1);
+      return Promise.resolve();
+    }
+
+    const kw = keyword || 'hello';
+    const activeFilters: string[] = (filters || []) as string[];
+
+    // Determine which message type to generate based on active filter
+    // No filter / plain keyword → text only (realistic search behavior)
+    // Specific media filter → that type only
+    // 'messages' filter → mixed types
+    // 'links' filter → text messages containing URLs
+    let msgType: 'text' | 'image' | 'file' | 'audio' | 'video' | 'link' | 'mixed' = 'text';
+    if (activeFilters.includes('messages')) msgType = 'mixed';
+    else if (activeFilters.includes('photos')) msgType = 'image';
+    else if (activeFilters.includes('videos')) msgType = 'video';
+    else if (activeFilters.includes('files')) msgType = 'file';
+    else if (activeFilters.includes('audio')) msgType = 'audio';
+    else if (activeFilters.includes('links')) msgType = 'link';
+
+    const count = msgType === 'mixed' ? 8 : 5;
+    const mixedTypes: Array<'text' | 'image' | 'file' | 'audio' | 'video'> = [
+      'text', 'text', 'image', 'text', 'file', 'audio', 'text', 'video',
+    ];
+    const textTemplates = [
+      `Hey, ${kw} — are you available for a quick call?`,
+      `I just pushed the ${kw} changes to the repo`,
+      `${kw} screenshot attached`,
+      `Let me know when you review the ${kw} PR`,
+      `${kw} document shared`,
+      `${kw} voice note`,
+      `The ${kw} design looks great, shipping it tomorrow`,
+      `${kw} recording`,
+    ];
+    const linkTemplates = [
+      `Check out this ${kw} link: https://example.com/${kw}`,
+      `Here's the ${kw} docs: https://docs.example.com/${kw}`,
+      `Found this about ${kw}: https://blog.example.com/${kw}-guide`,
+      `${kw} reference: https://wiki.example.com/${kw}`,
+      `See https://example.com/${kw}-overview for details`,
+    ];
+
+    const msgs = createMockMessages(count, i => {
+      const type = msgType === 'mixed' ? mixedTypes[i]
+        : msgType === 'link' ? 'text' as const
+        : msgType;
+      const sender = createMockUser(MOCK_SENDERS[i % MOCK_SENDERS.length]);
+      const receiver = createMockUser(MOCK_RECEIVERS[(i + 1) % MOCK_RECEIVERS.length]);
+      const base: any = {
+        type,
+        sender,
+        sentAt: (Date.now() / 1000) - (i * 3600),
+        receiverId: receiver.getUid(),
+      };
+      if (type === 'text') {
+        base.text = msgType === 'link'
+          ? linkTemplates[i % linkTemplates.length]
+          : textTemplates[i % textTemplates.length];
+      }
+      return base;
+    });
+
+    // Set receiver on each message so getMessageTitle() works
+    msgs.forEach((msg, i) => {
+      const recv = createMockUser(MOCK_RECEIVERS[(i + 1) % MOCK_RECEIVERS.length]);
+      try { (msg as any).setReceiver(recv); } catch { /* some SDK versions may not support this */ }
+    });
+
+    this.messages.set(msgs);
+    this.fetchState.set(3);
+    this.hasMoreResults.set(true);
+    return Promise.resolve();
+  };
+
+  loadMore = (): Promise<void> => Promise.resolve();
+  reset = (): void => {};
+}
+
+/**
+ * Creates a MockSearchConversationsService.
+ * Pass `forceState` to lock it into loading / error / empty regardless of search().
+ */
+export function createMockSearchConversationsService(
+  opts?: { forceState?: 'loading' | 'error' | 'empty' }
+): MockSearchConversationsService {
+  const svc = new MockSearchConversationsService();
+  if (opts?.forceState) {
+    (svc as any)._forceState = opts.forceState;
+    // Set initial signal state so it renders correctly before search() is called
+    if (opts.forceState === 'loading') svc.fetchState.set(0);
+    else if (opts.forceState === 'error') svc.fetchState.set(2);
+    else if (opts.forceState === 'empty') svc.fetchState.set(1);
+  }
+  return svc;
+}
+
+/**
+ * Creates a MockSearchMessagesService.
+ * Pass `forceState` to lock it into loading / error / empty regardless of search().
+ */
+export function createMockSearchMessagesService(
+  opts?: { forceState?: 'loading' | 'error' | 'empty' }
+): MockSearchMessagesService {
+  const svc = new MockSearchMessagesService();
+  if (opts?.forceState) {
+    (svc as any)._forceState = opts.forceState;
+    if (opts.forceState === 'loading') svc.fetchState.set(0);
+    else if (opts.forceState === 'error') svc.fetchState.set(2);
+    else if (opts.forceState === 'empty') svc.fetchState.set(1);
+  }
+  return svc;
+}

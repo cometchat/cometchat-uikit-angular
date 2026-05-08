@@ -27,9 +27,9 @@ import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-con
 import { handleCallError } from '../../utils/call-error-handler';
 import { CallWorkflow } from '../../Enums/Enums';
 import { CometChatUIKitConstants } from '../../constants';
-import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
 import { CometChatUIKitCalls } from '../../CometChatCalls';
 import { CometChatUIKit } from '../../cometchat-uikit';
+import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
 
 /**
  * CometChatCallButtonsComponent provides voice and video call initiation
@@ -47,33 +47,20 @@ import { CometChatUIKit } from '../../cometchat-uikit';
  *   (error)="onError($event)">
  * </cometchat-call-buttons>
  * ```
- *
-
  */
 @Component({
   selector: 'cometchat-call-buttons',
   standalone: true,
-  imports: [
-    CommonModule,
-    CometChatButtonComponent,
-    CometChatOutgoingCallComponent,
-    CometChatOngoingCallComponent,
-    TranslatePipe,
-  ],
+  imports: [CommonModule, CometChatButtonComponent, CometChatOutgoingCallComponent, CometChatOngoingCallComponent, CometChatErrorBoundaryComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cometchat-call-buttons.component.html',
   styleUrls: ['./cometchat-call-buttons.component.css'],
 })
 export class CometChatCallButtonsComponent implements OnInit, OnChanges, OnDestroy {
-  // ==================== Service Injection ====================
-
   private callButtonsService = inject(CallButtonsService);
   private callAnnouncer = inject(CallAnnouncerService);
-  private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, {
-    optional: true,
-  });
+  private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, { optional: true });
 
-  // ==================== ExplicitlySet Flags & Backing Fields (GlobalConfig Priority System) ====================
   private hideVoiceCallButtonExplicitlySet = signal(false);
   private hideVideoCallButtonExplicitlySet = signal(false);
   private outgoingCallDisableSoundForCallsExplicitlySet = signal(false);
@@ -84,15 +71,9 @@ export class CometChatCallButtonsComponent implements OnInit, OnChanges, OnDestr
   private _outgoingCallDisableSoundForCalls = signal(false);
   private _outgoingCallCustomSoundForCalls = signal('');
 
-  // ==================== Inputs ====================
-
-  /** The user to call. Mutually exclusive with group. */
   @Input() user: CometChat.User | null = null;
-
-  /** The group to call. Mutually exclusive with user. */
   @Input() group: CometChat.Group | null = null;
 
-  /** Hides the voice call button when true. */
   @Input({ transform: booleanAttribute })
   set hideVoiceCallButton(value: boolean) {
     this._hideVoiceCallButton.set(value);
@@ -112,189 +93,57 @@ export class CometChatCallButtonsComponent implements OnInit, OnChanges, OnDestr
     return this._hideVideoCallButton();
   }
 
-  /** Custom voice call click handler. Overrides default call initiation. */
   @Input() onVoiceCallClick: (() => void) | null = null;
-
-  /** Custom video call click handler. Overrides default call initiation. */
   @Input() onVideoCallClick: (() => void) | null = null;
-
-  /** Error callback invoked for any error during call operations. */
   @Input() onError: ((error: CometChat.CometChatException) => void) | null = null;
 
-  // ==================== Outgoing Call Configuration Inputs ====================
-
-  /** Disables sound for the outgoing call overlay. */
   @Input({ transform: booleanAttribute })
-  set outgoingCallDisableSoundForCalls(value: boolean) {
-    this._outgoingCallDisableSoundForCalls.set(value);
-    this.outgoingCallDisableSoundForCallsExplicitlySet.set(true);
-  }
-  get outgoingCallDisableSoundForCalls(): boolean {
-    return this._outgoingCallDisableSoundForCalls();
-  }
+  set outgoingCallDisableSoundForCalls(value: boolean) { this._outgoingCallDisableSoundForCalls.set(value); this.outgoingCallDisableSoundForCallsExplicitlySet.set(true); }
+  get outgoingCallDisableSoundForCalls(): boolean { return this._outgoingCallDisableSoundForCalls(); }
 
-  /** Custom sound URL for the outgoing call overlay. */
   @Input()
-  set outgoingCallCustomSoundForCalls(value: string) {
-    this._outgoingCallCustomSoundForCalls.set(value);
-    this.outgoingCallCustomSoundForCallsExplicitlySet.set(true);
-  }
-  get outgoingCallCustomSoundForCalls(): string {
-    return this._outgoingCallCustomSoundForCalls();
-  }
+  set outgoingCallCustomSoundForCalls(value: string) { this._outgoingCallCustomSoundForCalls.set(value); this.outgoingCallCustomSoundForCallsExplicitlySet.set(true); }
+  get outgoingCallCustomSoundForCalls(): string { return this._outgoingCallCustomSoundForCalls(); }
 
-  // ==================== Template Override Inputs ====================
-
-  /** Replaces the default voice call button with a custom template. */
   @Input() voiceCallButtonView: TemplateRef<any> | null = null;
-
-  /** Replaces the default video call button with a custom template. */
   @Input() videoCallButtonView: TemplateRef<any> | null = null;
-
-  /**
-   * Custom CallSettingsBuilder to override the default call settings.
-   * When provided, this builder is forwarded to the ongoing-call component.
-   * Priority: @Input > GlobalConfig > default (built internally by OngoingCallService).
-   */
   @Input() callSettingsBuilder!: typeof CometChatUIKitCalls.CallSettingsBuilder;
-
-  /**
-   * When true, suppresses rendering of the outgoing-call and ongoing-call overlays.
-   * Use this when another instance of CometChatCallButtons already renders overlays
-   * (e.g. the message header instance defers to the messages-level instance).
-   */
   @Input({ transform: booleanAttribute }) hideOverlays = false;
 
-  // ==================== Outputs ====================
-
-  /** Emitted on any error during call operations. */
   @Output() error = new EventEmitter<CometChat.CometChatException>();
 
-  // ==================== Public Properties ====================
-
-  /** Icon URL for the voice call button. */
   readonly voiceCallIconUrl = 'assets/call.svg';
-
-  /** Icon URL for the video call button. */
   readonly videoCallIconUrl = 'assets/video_call_button.svg';
 
-  // ==================== Effective Values (GlobalConfig Priority System) ====================
-
-  /**
-   * Resolved hideVoiceCallButton value using priority:
-   * 1. Explicitly set @Input value
-   * 2. GlobalConfig value (if defined)
-   * 3. `true` when calling is not enabled via `CometChatUIKit.isCallingEnabled()`
-   * 4. Component default (`false` — visible when calling is enabled)
-   */
   effectiveHideVoiceCallButton = computed(() => {
     if (this.hideVoiceCallButtonExplicitlySet()) return this._hideVoiceCallButton();
     return !CometChatUIKit.isCallingEnabled();
   });
 
-  /**
-   * Resolved hideVideoCallButton value using priority:
-   * 1. Explicitly set @Input value
-   * 2. GlobalConfig value (if defined)
-   * 3. `true` when calling is not enabled via `CometChatUIKit.isCallingEnabled()`
-   * 4. Component default (`false` — visible when calling is enabled)
-   */
   effectiveHideVideoCallButton = computed(() => {
     if (this.hideVideoCallButtonExplicitlySet()) return this._hideVideoCallButton();
     return !CometChatUIKit.isCallingEnabled();
   });
 
-  /**
-   * Resolved outgoingCallDisableSoundForCalls value using 3-tier priority:
-   * 1. Explicitly set @Input value
-   * 2. GlobalConfig.disableSoundForCalls value (if defined) — name mapping
-   * 3. Component default (false)
-   */
   effectiveOutgoingCallDisableSoundForCalls = computed(() => {
-    if (this.outgoingCallDisableSoundForCallsExplicitlySet())
-      return this._outgoingCallDisableSoundForCalls();
-    if (this.globalConfig?.disableSoundForCalls !== undefined)
-      return this.globalConfig.disableSoundForCalls;
+    if (this.outgoingCallDisableSoundForCallsExplicitlySet()) return this._outgoingCallDisableSoundForCalls();
+    if (this.globalConfig?.disableSoundForCalls !== undefined) return this.globalConfig.disableSoundForCalls;
     return false;
   });
 
-  /**
-   * Resolved outgoingCallCustomSoundForCalls value using 3-tier priority:
-   * 1. Explicitly set @Input value
-   * 2. GlobalConfig.customSoundForCalls value (if defined) — name mapping
-   * 3. Component default ('')
-   */
   effectiveOutgoingCallCustomSoundForCalls = computed(() => {
-    if (this.outgoingCallCustomSoundForCallsExplicitlySet())
-      return this._outgoingCallCustomSoundForCalls();
-    if (this.globalConfig?.customSoundForCalls !== undefined)
-      return this.globalConfig.customSoundForCalls;
+    if (this.outgoingCallCustomSoundForCallsExplicitlySet()) return this._outgoingCallCustomSoundForCalls();
+    if (this.globalConfig?.customSoundForCalls !== undefined) return this.globalConfig.customSoundForCalls;
     return '';
   });
 
-  // ==================== Computed Signals ====================
-
-  /**
-   * Whether a user or group target is set.
-   * The component renders nothing when no target is provided.
-   * Note: user/group are plain @Input properties, not signals, so this
-   * getter is fine — it's only evaluated when change detection runs.
-   *
-   * @see Requirement 1.1, 1.2
-   */
-  get hasTarget(): boolean {
-    return !!this.user || !!this.group;
-  }
-
-  /**
-   * Whether the call buttons are disabled.
-   * Reads from the service's buttonsDisabled signal.
-   *
-   * @see Requirement 4.6
-   */
+  get hasTarget(): boolean { return !!this.user || !!this.group; }
   readonly isDisabled = computed(() => this.callButtonsService.buttonsDisabled());
-
-  /**
-   * Whether to show the outgoing call overlay (user calls only).
-   * True when the service indicates the outgoing call screen should be shown
-   * and there is an active call object.
-   *
-   * @see Requirement 5.1
-   */
-  readonly showOutgoingCall = computed(
-    () => this.callButtonsService.showOutgoingCallScreen() && !!this.callButtonsService.activeCall()
-  );
-
-  /**
-   * The active call object from the service.
-   *
-   * @see Requirement 2.3
-   */
+  readonly showOutgoingCall = computed(() => this.callButtonsService.showOutgoingCallScreen() && !!this.callButtonsService.activeCall());
   readonly activeCallObject = computed(() => this.callButtonsService.activeCall());
-
-  /**
-   * Whether to show the ongoing call screen.
-   * True after outgoing call is accepted or group call is initiated.
-   */
-  readonly showOngoingCall = computed(
-    () => this.callButtonsService.showOngoingCall() && !!this.callButtonsService.sessionId()
-  );
-
-  /**
-   * The current session ID for the ongoing call.
-   */
+  readonly showOngoingCall = computed(() => this.callButtonsService.showOngoingCall() && !!this.callButtonsService.sessionId());
   readonly ongoingCallSessionId = computed(() => this.callButtonsService.sessionId());
-
-  /**
-   * The call workflow for the ongoing call.
-   * Reads from the service's isDirectCalling signal.
-   * Group calls and meeting joins use directCalling, user calls use defaultCalling.
-   */
-  readonly ongoingCallWorkflow = computed(() =>
-    this.callButtonsService.isDirectCalling()
-      ? CallWorkflow.directCalling
-      : CallWorkflow.defaultCalling
-  );
+  readonly ongoingCallWorkflow = computed(() => this.callButtonsService.isDirectCalling() ? CallWorkflow.directCalling : CallWorkflow.defaultCalling);
 
   /**
    * Resolved callSettingsBuilder using 3-tier priority:
@@ -360,6 +209,10 @@ export class CometChatCallButtonsComponent implements OnInit, OnChanges, OnDestr
   ngOnDestroy(): void {
     // Service is a singleton - don't call its ngOnDestroy here
     // as other components may still be using it
+  }
+
+  handleRetryClick(): void {
+    this.ngOnInit();
   }
 
   // ==================== Actions ====================

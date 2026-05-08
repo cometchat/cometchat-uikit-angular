@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "Posez une question...",
     "ai_assistant_chat_new_chat": "Nouveau chat",
     "ai_assistant_chat_history": "historique des chats",
-    "ai_assistant_chat_history_title": "Historique des chats",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Réflexion en cours...",
     "ai_assistant_chat_executing_tool": "Exécution de l'action...",
     "ai_assistant_chat_no_internet": "Pas de connexion internet. Veuillez vérifier votre réseau.",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Démarrez une nouvelle conversation pour la voir ici.",
     "ai_assistant_chat_history_error_title": "Une erreur s'est produite",
     "ai_assistant_chat_history_error_subtitle": "Nous avons des difficultés à charger votre historique de chat.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Ajouter des membres",
     "add_member": "Ajouter un membre",
     "add_n_members": "Ajouter {n} membres",
@@ -651,5 +653,8 @@
     "accessibility_message_failed": "Échec de l'envoi du message",
     "accessibility_message_deleted": "Message supprimé",
     "accessibility_message_edited": "Message modifié",
-    "accessibility_loading_older_messages": "Chargement des messages plus anciens"
+    "accessibility_loading_older_messages": "Chargement des messages plus anciens",
+    "message_list_option_mark_as_unread": "Marquer comme non lu",
+    "message_list_unread_messages": "Messages non lus",
+    "message_list_unread_divider": "Séparateur de messages non lus"
 }

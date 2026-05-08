@@ -17,18 +17,12 @@
 // ==================== Calls SDK Mock (JitsiMeetJS workaround) ====================
 
 const mockCallsSDK = {
+  login: vi.fn().mockResolvedValue({ uid: 'mock-user' }),
   generateToken: vi.fn().mockResolvedValue({ token: 'call-token-abc' }),
-  startSession: vi.fn(),
-  endSession: vi.fn(),
-  CallSettingsBuilder: vi.fn().mockImplementation(function (this: any) {
-    this.enableDefaultLayout = vi.fn().mockReturnThis();
-    this.setIsAudioOnlyCall = vi.fn().mockReturnThis();
-    this.setCallListener = vi.fn().mockReturnThis();
-    this.build = vi.fn().mockReturnValue({ settings: true });
-  }),
-  OngoingCallListener: class {
-    constructor(public callbacks: any) {}
-  },
+  joinSession: vi.fn().mockResolvedValue({ error: null }),
+  leaveSession: vi.fn(),
+  addEventListener: vi.fn().mockReturnValue(() => {}),
+  removeEventListener: vi.fn(),
 };
 
 vi.mock('../CometChatCalls', () => ({
@@ -73,23 +67,26 @@ function createMockCall(sessionId = 'session-123'): CometChat.Call {
 }
 
 /**
- * Extracts the listener callbacks from getCallSettings by
- * intercepting the OngoingCallListener constructor.
+ * Extracts the event listener callbacks registered via addEventListener
+ * by intercepting the mock and capturing what was registered.
+ *
+ * In v5, events are registered via CometChatUIKitCalls.addEventListener()
+ * rather than via OngoingCallListener constructor.
  */
-function extractListenerCallbacks(service: any, sessionID: string, onError?: Function) {
-  let capturedCallbacks: any = null;
-  const origListener = mockCallsSDK.OngoingCallListener;
+function extractRegisteredListeners(service: any, sessionID: string, onError?: Function) {
+  const listeners: Record<string, Function> = {};
 
-  mockCallsSDK.OngoingCallListener = class {
-    constructor(callbacks: any) {
-      capturedCallbacks = callbacks;
-    }
-  } as any;
+  // Intercept addEventListener to capture registered callbacks
+  mockCallsSDK.addEventListener = vi.fn().mockImplementation((eventName: string, cb: Function) => {
+    listeners[eventName] = cb;
+    return () => {}; // unsubscribe fn
+  });
 
-  service.getCallSettings(sessionID, onError);
+  // Trigger listener registration by calling startCall internals
+  // We call registerSessionEventListeners directly via the private method
+  (service as any).registerSessionEventListeners(sessionID, onError);
 
-  mockCallsSDK.OngoingCallListener = origListener;
-  return capturedCallbacks;
+  return listeners;
 }
 
 // ==================== Test Suite ====================
@@ -122,18 +119,12 @@ describe('OngoingCallService', () => {
     CometChatCallEvents.ccCallEnded = new Subject<CometChat.Call>();
 
     // Reset all mock implementations to defaults
+    mockCallsSDK.login = vi.fn().mockResolvedValue({ uid: 'mock-user' });
     mockCallsSDK.generateToken = vi.fn().mockResolvedValue({ token: 'call-token-abc' });
-    mockCallsSDK.startSession = vi.fn();
-    mockCallsSDK.endSession = vi.fn();
-    mockCallsSDK.CallSettingsBuilder = vi.fn().mockImplementation(function (this: any) {
-      this.enableDefaultLayout = vi.fn().mockReturnThis();
-      this.setIsAudioOnlyCall = vi.fn().mockReturnThis();
-      this.setCallListener = vi.fn().mockReturnThis();
-      this.build = vi.fn().mockReturnValue({ settings: true });
-    });
-    mockCallsSDK.OngoingCallListener = class {
-      constructor(public callbacks: any) {}
-    };
+    mockCallsSDK.joinSession = vi.fn().mockResolvedValue({ error: null });
+    mockCallsSDK.leaveSession = vi.fn();
+    mockCallsSDK.addEventListener = vi.fn().mockReturnValue(() => {});
+    mockCallsSDK.removeEventListener = vi.fn();
 
     // Clear accumulated calls from global mocks before creating spies
     vi.mocked(CometChat.getLoggedinUser).mockClear();
@@ -252,69 +243,54 @@ describe('OngoingCallService', () => {
   // ==================== getCallSettings() ====================
 
   describe('getCallSettings()', () => {
-    it('should create default builder when no custom builder is set', () => {
+    it('should return a plain SessionSettings object when no custom settings set', () => {
       service.setCallSettingsBuilder(null);
       const result = service.getCallSettings('sess-1');
-      expect(mockCallsSDK.CallSettingsBuilder).toHaveBeenCalled();
-      expect(result).toEqual({ settings: true });
+      expect(result).toBeTypeOf('object');
+      expect(result).toHaveProperty('sessionType');
+      expect(result).toHaveProperty('layout');
     });
 
-    it('should use custom builder when set', () => {
-      const customBuilder = {
-        setCallListener: vi.fn().mockReturnThis(),
-        build: vi.fn().mockReturnValue({ custom: true }),
-      };
-      service.setCallSettingsBuilder(customBuilder);
+    it('should return sessionType VIDEO by default (not audio-only)', () => {
+      service.setCallSettingsBuilder(null);
+      service.setIsAudioOnly(false);
+      const result = service.getCallSettings('sess-video');
+      expect(result.sessionType).toBe('VIDEO');
+    });
+
+    it('should return sessionType VOICE when isAudioOnly is true', () => {
+      service.setCallSettingsBuilder(null);
+      service.setIsAudioOnly(true);
+      const result = service.getCallSettings('sess-voice');
+      expect(result.sessionType).toBe('VOICE');
+    });
+
+    it('should return custom settings object when set', () => {
+      const customSettings = { sessionType: 'VOICE', layout: 'SIDEBAR', custom: true };
+      service.setCallSettingsBuilder(customSettings);
       const result = service.getCallSettings('sess-custom');
-      expect(customBuilder.setCallListener).toHaveBeenCalled();
-      expect(customBuilder.build).toHaveBeenCalled();
-      expect(result).toEqual({ custom: true });
+      expect(result).toBe(customSettings);
     });
 
-    it('should attach OngoingCallListener to the builder', () => {
-      const customBuilder = {
-        setCallListener: vi.fn().mockReturnThis(),
-        build: vi.fn().mockReturnValue({}),
-      };
-      service.setCallSettingsBuilder(customBuilder);
-      service.getCallSettings('sess-listener');
-      expect(customBuilder.setCallListener).toHaveBeenCalledOnce();
-      const listener = customBuilder.setCallListener.mock.calls[0][0];
-      expect(listener).toBeDefined();
-    });
-
-    it('should call enableDefaultLayout(true) on default builder', () => {
+    it('should not call addEventListener when getCallSettings is called', () => {
       service.setCallSettingsBuilder(null);
-      service.getCallSettings('sess-default-layout');
-      const builderInstance = mockCallsSDK.CallSettingsBuilder.mock.instances[0] as any;
-      expect(builderInstance.enableDefaultLayout).toHaveBeenCalledWith(true);
-    });
-
-    it('should call setIsAudioOnlyCall(false) on default builder', () => {
-      service.setCallSettingsBuilder(null);
-      service.getCallSettings('sess-audio-only');
-      const builderInstance = mockCallsSDK.CallSettingsBuilder.mock.instances[0] as any;
-      expect(builderInstance.setIsAudioOnlyCall).toHaveBeenCalledWith(false);
+      service.getCallSettings('sess-no-events');
+      // addEventListener is called in registerSessionEventListeners, not getCallSettings
+      expect(mockCallsSDK.addEventListener).not.toHaveBeenCalled();
     });
   });
 
-  // ==================== Listener Callbacks ====================
+  // ==================== Session Event Listeners (v5) ====================
 
-  describe('OngoingCallListener callbacks', () => {
-    describe('onCallEnded - defaultCalling', () => {
+  describe('Session event listeners (v5 addEventListener)', () => {
+    describe('onSessionLeft - defaultCalling', () => {
       beforeEach(() => {
         service.setCallWorkflow(CallWorkflow.defaultCalling);
       });
 
-      it('should call CometChatUIKitCalls.endSession()', () => {
-        const callbacks = extractListenerCallbacks(service, 'sess-ended');
-        callbacks.onCallEnded();
-        expect(mockCallsSDK.endSession).toHaveBeenCalledOnce();
-      });
-
       it('should call CometChat.clearActiveCall()', () => {
-        const callbacks = extractListenerCallbacks(service, 'sess-ended');
-        callbacks.onCallEnded();
+        const listeners = extractRegisteredListeners(service, 'sess-left');
+        listeners['onSessionLeft']();
         expect(clearActiveCallSpy).toHaveBeenCalledOnce();
       });
 
@@ -323,57 +299,57 @@ describe('OngoingCallService', () => {
         CometChatCallEvents.ccCallEnded.subscribe(v => {
           emittedValue = v;
         });
-        const callbacks = extractListenerCallbacks(service, 'sess-ended');
-        callbacks.onCallEnded();
+        const listeners = extractRegisteredListeners(service, 'sess-left');
+        listeners['onSessionLeft']();
         expect(emittedValue).toBeNull();
       });
 
       it('should set isCallActive to false', () => {
         service['_isCallActive'].set(true);
-        const callbacks = extractListenerCallbacks(service, 'sess-ended');
-        callbacks.onCallEnded();
+        const listeners = extractRegisteredListeners(service, 'sess-left');
+        listeners['onSessionLeft']();
         expect(service.isCallActive()).toBe(false);
       });
     });
 
-    describe('onCallEndButtonPressed - defaultCalling', () => {
+    describe('onLeaveSessionButtonClicked - defaultCalling', () => {
       beforeEach(() => {
         service.setCallWorkflow(CallWorkflow.defaultCalling);
       });
 
       it('should call CometChat.endCall with the session ID', async () => {
-        const callbacks = extractListenerCallbacks(service, 'sess-btn');
-        callbacks.onCallEndButtonPressed();
+        const listeners = extractRegisteredListeners(service, 'sess-btn');
+        listeners['onLeaveSessionButtonClicked']();
         await vi.waitFor(() => {
           expect(endCallSpy).toHaveBeenCalledWith('sess-btn');
         });
       });
 
-      it('should call endSession and emit ccCallEnded after endCall succeeds', async () => {
+      it('should call leaveSession and emit ccCallEnded after endCall succeeds', async () => {
         const order: string[] = [];
         endCallSpy.mockImplementation(async () => {
           order.push('endCall');
           return createMockCall();
         });
-        mockCallsSDK.endSession = vi.fn().mockImplementation(() => {
-          order.push('endSession');
+        mockCallsSDK.leaveSession = vi.fn().mockImplementation(() => {
+          order.push('leaveSession');
         });
         CometChatCallEvents.ccCallEnded.subscribe(() => {
           order.push('ccCallEnded');
         });
 
-        const callbacks = extractListenerCallbacks(service, 'sess-btn-order');
-        callbacks.onCallEndButtonPressed();
+        const listeners = extractRegisteredListeners(service, 'sess-btn-order');
+        listeners['onLeaveSessionButtonClicked']();
 
         await vi.waitFor(() => {
-          expect(order).toEqual(['endCall', 'endSession', 'ccCallEnded']);
+          expect(order).toEqual(['endCall', 'leaveSession', 'ccCallEnded']);
         });
       });
 
       it('should set isCallActive to false after successful endCall', async () => {
         service['_isCallActive'].set(true);
-        const callbacks = extractListenerCallbacks(service, 'sess-btn-active');
-        callbacks.onCallEndButtonPressed();
+        const listeners = extractRegisteredListeners(service, 'sess-btn-active');
+        listeners['onLeaveSessionButtonClicked']();
         await vi.waitFor(() => {
           expect(service.isCallActive()).toBe(false);
         });
@@ -382,8 +358,8 @@ describe('OngoingCallService', () => {
       it('should forward error to onError callback when endCall fails', async () => {
         endCallSpy.mockRejectedValue(new Error('endCall failed'));
         const onError = vi.fn();
-        const callbacks = extractListenerCallbacks(service, 'sess-btn-err', onError);
-        callbacks.onCallEndButtonPressed();
+        const listeners = extractRegisteredListeners(service, 'sess-btn-err', onError);
+        listeners['onLeaveSessionButtonClicked']();
         await vi.waitFor(() => {
           expect(onError).toHaveBeenCalledOnce();
         });
@@ -392,52 +368,43 @@ describe('OngoingCallService', () => {
       });
     });
 
-    describe('onCallEndButtonPressed - directCalling', () => {
+    describe('onLeaveSessionButtonClicked - directCalling', () => {
       beforeEach(() => {
         service.setCallWorkflow(CallWorkflow.directCalling);
       });
 
-      it('should emit ccCallEnded then call endSession', () => {
+      it('should emit ccCallEnded then call leaveSession', () => {
         const order: string[] = [];
         CometChatCallEvents.ccCallEnded.subscribe(() => {
           order.push('ccCallEnded');
         });
-        mockCallsSDK.endSession = vi.fn().mockImplementation(() => {
-          order.push('endSession');
+        mockCallsSDK.leaveSession = vi.fn().mockImplementation(() => {
+          order.push('leaveSession');
         });
-        const callbacks = extractListenerCallbacks(service, 'sess-direct-btn');
-        callbacks.onCallEndButtonPressed();
-        expect(order).toEqual(['ccCallEnded', 'endSession']);
+        const listeners = extractRegisteredListeners(service, 'sess-direct-btn');
+        listeners['onLeaveSessionButtonClicked']();
+        expect(order).toEqual(['ccCallEnded', 'leaveSession']);
       });
 
       it('should NOT call CometChat.endCall', () => {
-        const callbacks = extractListenerCallbacks(service, 'sess-direct-btn2');
-        callbacks.onCallEndButtonPressed();
+        const listeners = extractRegisteredListeners(service, 'sess-direct-btn2');
+        listeners['onLeaveSessionButtonClicked']();
         expect(endCallSpy).not.toHaveBeenCalled();
       });
 
       it('should set isCallActive to false', () => {
         service['_isCallActive'].set(true);
-        const callbacks = extractListenerCallbacks(service, 'sess-direct-btn3');
-        callbacks.onCallEndButtonPressed();
+        const listeners = extractRegisteredListeners(service, 'sess-direct-btn3');
+        listeners['onLeaveSessionButtonClicked']();
         expect(service.isCallActive()).toBe(false);
       });
     });
 
-    describe('onError', () => {
-      it('should forward error to onError callback as CometChatException', () => {
-        const onError = vi.fn();
-        const callbacks = extractListenerCallbacks(service, 'sess-onerr', onError);
-        callbacks.onError(new Error('SDK error'));
-        expect(onError).toHaveBeenCalledOnce();
-        const exception = onError.mock.calls[0][0];
-        expect(exception).toBeInstanceOf(CometChat.CometChatException);
-        expect(exception.code).toBe('ONGOING_CALL_ERROR');
-      });
-
-      it('should not throw when no onError callback is provided', () => {
-        const callbacks = extractListenerCallbacks(service, 'sess-onerr-none');
-        expect(() => callbacks.onError(new Error('no handler'))).not.toThrow();
+    describe('addEventListener registration', () => {
+      it('should register onSessionLeft and onLeaveSessionButtonClicked listeners', () => {
+        const listeners = extractRegisteredListeners(service, 'sess-reg');
+        expect(listeners['onSessionLeft']).toBeDefined();
+        expect(listeners['onLeaveSessionButtonClicked']).toBeDefined();
       });
     });
   });
@@ -447,39 +414,43 @@ describe('OngoingCallService', () => {
   describe('startCall()', () => {
     const frame = document.createElement('div');
 
-    it('should call SDK methods in correct order: getLoggedinUser → generateToken → startSession', async () => {
+    it('should call SDK methods in correct order: generateToken → joinSession', async () => {
       const callOrder: string[] = [];
-      getLoggedinUserSpy.mockImplementation(async () => {
-        callOrder.push('getLoggedinUser');
-        return createMockUser();
-      });
       mockCallsSDK.generateToken = vi.fn().mockImplementation(async () => {
         callOrder.push('generateToken');
         return { token: 'tok' };
       });
-      mockCallsSDK.startSession = vi.fn().mockImplementation(() => {
-        callOrder.push('startSession');
+      mockCallsSDK.joinSession = vi.fn().mockImplementation(async () => {
+        callOrder.push('joinSession');
+        return { error: null };
       });
 
       service.setSessionID('sess-1');
       await service.startCall(frame);
-      expect(callOrder).toEqual(['getLoggedinUser', 'generateToken', 'startSession']);
+      expect(callOrder).toEqual(['generateToken', 'joinSession']);
     });
 
-    it('should pass sessionID and authToken to generateToken', async () => {
+    it('should pass only sessionID to generateToken (no authToken in v5)', async () => {
       service.setSessionID('sess-abc');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('sess-abc', 'mock-auth-token');
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('sess-abc');
+      expect(mockCallsSDK.generateToken).not.toHaveBeenCalledWith('sess-abc', expect.anything());
     });
 
-    it('should pass generated token, call settings, and frame to startSession', async () => {
+    it('should pass generated token, session settings, and frame to joinSession', async () => {
       service.setSessionID('sess-xyz');
       await service.startCall(frame);
-      expect(mockCallsSDK.startSession).toHaveBeenCalledWith(
+      expect(mockCallsSDK.joinSession).toHaveBeenCalledWith(
         'call-token-abc',
         expect.any(Object),
         frame
       );
+    });
+
+    it('should register event listeners before joining session', async () => {
+      service.setSessionID('sess-events');
+      await service.startCall(frame);
+      expect(mockCallsSDK.addEventListener).toHaveBeenCalled();
     });
 
     it('should set isCallActive to true on success', async () => {
@@ -510,23 +481,14 @@ describe('OngoingCallService', () => {
       }
       expect(service.isCallActive()).toBe(false);
     });
-
-    it('should throw when getLoggedinUser returns null', async () => {
-      getLoggedinUserSpy.mockResolvedValue(null as any);
-      const onError = vi.fn();
-      service.setSessionID('no-user');
-      await expect(service.startCall(frame, onError)).rejects.toThrow();
-      expect(onError).toHaveBeenCalledOnce();
-      expect(service.isCallActive()).toBe(false);
-    });
   });
 
   // ==================== endSession() ====================
 
   describe('endSession()', () => {
-    it('should call CometChatUIKitCalls.endSession()', () => {
+    it('should call CometChatUIKitCalls.leaveSession()', () => {
       service.endSession();
-      expect(mockCallsSDK.endSession).toHaveBeenCalledOnce();
+      expect(mockCallsSDK.leaveSession).toHaveBeenCalledOnce();
     });
 
     it('should set isCallActive to false', () => {
@@ -549,7 +511,7 @@ describe('OngoingCallService', () => {
       service.endSession();
       expect(service.isCallActive()).toBe(false);
       expect(() => service.endSession()).not.toThrow();
-      expect(mockCallsSDK.endSession).toHaveBeenCalledTimes(2);
+      expect(mockCallsSDK.leaveSession).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -566,9 +528,9 @@ describe('OngoingCallService', () => {
       expect(endCallSpy).toHaveBeenCalledWith('sess-default');
     });
 
-    it('should call endSession after CometChat.endCall succeeds', async () => {
+    it('should call endSession (leaveSession) after CometChat.endCall succeeds', async () => {
       await service.endCall();
-      expect(mockCallsSDK.endSession).toHaveBeenCalledOnce();
+      expect(mockCallsSDK.leaveSession).toHaveBeenCalledOnce();
     });
 
     it('should emit ccCallEnded with the ended call object', async () => {
@@ -581,20 +543,20 @@ describe('OngoingCallService', () => {
       expect(emittedValue.getSessionId()).toBe('session-123');
     });
 
-    it('should follow correct order: endCall → endSession → ccCallEnded', async () => {
+    it('should follow correct order: endCall → leaveSession → ccCallEnded', async () => {
       const order: string[] = [];
       endCallSpy.mockImplementation(async () => {
         order.push('endCall');
         return createMockCall();
       });
-      mockCallsSDK.endSession = vi.fn().mockImplementation(() => {
-        order.push('endSession');
+      mockCallsSDK.leaveSession = vi.fn().mockImplementation(() => {
+        order.push('leaveSession');
       });
       CometChatCallEvents.ccCallEnded.subscribe(() => {
         order.push('ccCallEnded');
       });
       await service.endCall();
-      expect(order).toEqual(['endCall', 'endSession', 'ccCallEnded']);
+      expect(order).toEqual(['endCall', 'leaveSession', 'ccCallEnded']);
     });
 
     it('should wrap error from CometChat.endCall on failure', async () => {
@@ -625,16 +587,16 @@ describe('OngoingCallService', () => {
       expect(endCallSpy).not.toHaveBeenCalled();
     });
 
-    it('should emit ccCallEnded then call endSession', async () => {
+    it('should emit ccCallEnded then call leaveSession', async () => {
       const order: string[] = [];
       CometChatCallEvents.ccCallEnded.subscribe(() => {
         order.push('ccCallEnded');
       });
-      mockCallsSDK.endSession = vi.fn().mockImplementation(() => {
-        order.push('endSession');
+      mockCallsSDK.leaveSession = vi.fn().mockImplementation(() => {
+        order.push('leaveSession');
       });
       await service.endCall();
-      expect(order).toEqual(['ccCallEnded', 'endSession']);
+      expect(order).toEqual(['ccCallEnded', 'leaveSession']);
     });
 
     it('should set isCallActive to false', async () => {
@@ -711,14 +673,14 @@ describe('OngoingCallService', () => {
     it('should use correct sessionID for each sequential session', async () => {
       service.setSessionID('first-sess');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('first-sess', 'mock-auth-token');
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('first-sess');
 
       await service.endCall();
       expect(endCallSpy).toHaveBeenCalledWith('first-sess');
 
       service.setSessionID('second-sess');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('second-sess', 'mock-auth-token');
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('second-sess');
 
       await service.endCall();
       expect(endCallSpy).toHaveBeenCalledWith('second-sess');
@@ -781,21 +743,21 @@ describe('OngoingCallService', () => {
       expect(service.isCallActive()).toBe(false);
     });
 
-    it('should transition to false via listener onCallEnded callback', () => {
+    it('should transition to false via listener onSessionLeft callback', () => {
       service.setCallWorkflow(CallWorkflow.defaultCalling);
       service['_isCallActive'].set(true);
-      const callbacks = extractListenerCallbacks(service, 'sess-listener-transition');
+      const listeners = extractRegisteredListeners(service, 'sess-listener-transition');
       expect(service.isCallActive()).toBe(true);
-      callbacks.onCallEnded();
+      listeners['onSessionLeft']();
       expect(service.isCallActive()).toBe(false);
     });
 
-    it('should transition to false via listener onCallEndButtonPressed (directCalling)', () => {
+    it('should transition to false via listener onLeaveSessionButtonClicked (directCalling)', () => {
       service.setCallWorkflow(CallWorkflow.directCalling);
       service['_isCallActive'].set(true);
-      const callbacks = extractListenerCallbacks(service, 'sess-btn-transition');
+      const listeners = extractRegisteredListeners(service, 'sess-btn-transition');
       expect(service.isCallActive()).toBe(true);
-      callbacks.onCallEndButtonPressed();
+      listeners['onLeaveSessionButtonClicked']();
       expect(service.isCallActive()).toBe(false);
     });
   });
@@ -828,13 +790,13 @@ describe('OngoingCallService', () => {
       await service.startCall(frame);
       expect(service.isCallActive()).toBe(true);
       expect(mockCallsSDK.generateToken).toHaveBeenCalledTimes(2);
-      expect(mockCallsSDK.startSession).toHaveBeenCalledTimes(2);
+      expect(mockCallsSDK.joinSession).toHaveBeenCalledTimes(2);
     });
 
     it('should handle startCall with empty sessionID', async () => {
       service.setSessionID('');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('', 'mock-auth-token');
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('');
       expect(service.isCallActive()).toBe(true);
     });
 
@@ -844,7 +806,7 @@ describe('OngoingCallService', () => {
       service.endSession();
       expect(service.isCallActive()).toBe(false);
       expect(() => service.endSession()).not.toThrow();
-      expect(mockCallsSDK.endSession).toHaveBeenCalledTimes(2);
+      expect(mockCallsSDK.leaveSession).toHaveBeenCalledTimes(2);
     });
 
     it('should handle rapid set/clear of sessionID without errors', () => {
@@ -947,10 +909,12 @@ describe('OngoingCallService', () => {
       expect(exception.message).toContain('string-error');
     });
 
-    it('should wrap listener onError with ONGOING_CALL_ERROR code for non-Error values', () => {
+    it('should wrap non-Error rejection from joinSession with ONGOING_CALL_ERROR code', async () => {
+      mockCallsSDK.joinSession = vi.fn().mockRejectedValue({ custom: 'error-object' });
       const onError = vi.fn();
-      const callbacks = extractListenerCallbacks(service, 'sess-wrap', onError);
-      callbacks.onError({ custom: 'error-object' });
+      service.setSessionID('sess-wrap');
+      const frame = document.createElement('div');
+      await expect(service.startCall(frame, onError)).rejects.toThrow();
       const exception = onError.mock.calls[0][0];
       expect(exception).toBeInstanceOf(CometChat.CometChatException);
       expect(exception.code).toBe('ONGOING_CALL_ERROR');

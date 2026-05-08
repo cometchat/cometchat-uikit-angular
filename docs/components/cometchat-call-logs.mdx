@@ -132,7 +132,7 @@ When `callButtonClicked` has no observers, clicking the trailing call button aut
 | `callLogRequestBuilder` | `any` | `null` | Custom `CallLogRequestBuilder` from `CometChatCalls`. When provided, overrides the default builder (limit 30, category "call"). |
 | `callInitiatedDateTimeFormat` | `CalendarObject \| null` | `null` | Custom date format for the call initiation timestamp. Merged with global and default `CalendarObject` formats (component-level wins). |
 | `showScrollbar` | `boolean` | `false` | Whether to show the scrollbar on the call logs list. |
-| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` to override the default call settings used in the ongoing call overlay. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
+| `callSettingsBuilder` | `SessionSettings` | `undefined` | Custom [v5 SessionSettings object](https://www.cometchat.com/docs/calls/javascript/session-settings) to override the default call settings used in the ongoing call overlay. Follows the three-tier priority: @Input > [GlobalConfig](/customization/global-config) > default. |
 | `onError` | `((error: CometChat.CometChatException) => void) \| null` | `null` | Error callback invoked when any error occurs during operations such as fetching call logs or initiating calls. |
 
 ### Template Properties
@@ -304,11 +304,10 @@ export class ActiveCallLogsComponent {
 
 ### Custom Call Settings
 
-Override the default `CallSettingsBuilder` used in the ongoing call overlay when a call is initiated from the call logs:
+Override the default session settings used in the ongoing call overlay when a call is initiated from the call logs:
 
 ```typescript expandable
 import { Component, OnInit } from '@angular/core';
-import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
 import { CometChatCallLogsComponent } from '@cometchat/chat-uikit-angular';
 
 @Component({
@@ -326,9 +325,15 @@ export class CustomCallSettingsLogsComponent implements OnInit {
   customCallSettings: any;
 
   ngOnInit(): void {
-    this.customCallSettings = new CometChatCalls.CallSettingsBuilder()
-      .enableDefaultLayout(true)
-      .setIsAudioOnlyCall(false);
+    // v5: pass a plain SessionSettings object instead of using CallSettingsBuilder
+    this.customCallSettings = {
+      sessionType: 'VIDEO',
+      layout: 'TILE',
+      startAudioMuted: false,
+      startVideoPaused: false,
+      hideRecordingButton: true,
+      hideScreenSharingButton: false,
+    };
   }
 
   onCallLogClick(callLog: any): void {

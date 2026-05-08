@@ -25,7 +25,7 @@
   border-right: none;
   background: var(--cometchat-background-color-01);
   overflow: hidden;
-  /* z-index: 0; */
+  position: relative;
 }
 
 /* ── Center Panel (Messages) ── */
@@ -38,7 +38,6 @@
   min-width: 0;
   background: var(--cometchat-background-color-03);
   overflow: hidden;
-  isolation: isolate;
 }
 
 /* ── Right Panel (Side Panel / Thread) ── */
@@ -72,7 +71,7 @@
   cursor: col-resize;
   background: transparent;
   position: relative;
-  z-index: 5;
+  z-index: 2;
   transition: background 0.15s ease;
 }
 
@@ -268,4 +267,15 @@
   flex-direction: column;
   background: var(--cometchat-background-color-01);
   overflow: hidden;
+}
+
+/* Search Overlay — positioned within the left panel */
+.cometchat-home__search-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--cometchat-background-color-01, #fff);
 }

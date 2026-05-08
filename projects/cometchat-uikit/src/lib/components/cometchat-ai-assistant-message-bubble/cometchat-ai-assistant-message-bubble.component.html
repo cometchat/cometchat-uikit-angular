@@ -1,0 +1,23 @@
+<div class="cometchat-ai-assistant-message-bubble" [attr.data-color-scheme]="colorScheme()">
+  @defer (on viewport) {
+    <cometchat-markdown-renderer
+      class="cometchat-ai-assistant-message-bubble__renderer"
+      [text]="messageText()"
+      [streaming]="false"
+      (imageClick)="onImageClick($event)"
+    />
+  } @placeholder {
+    <div class="cometchat-ai-assistant-message-bubble__placeholder" aria-hidden="true"></div>
+  }
+</div>
+
+<!-- Image viewer template — opened via CometChatUIEvents.ccShowDialog -->
+<ng-template #imageViewerTpl>
+  <div class="cometchat-ai-assistant-message-bubble__image-viewer">
+    <img
+      [src]="activeImageUrl()"
+      alt=""
+      class="cometchat-ai-assistant-message-bubble__image-viewer-img"
+    />
+  </div>
+</ng-template>

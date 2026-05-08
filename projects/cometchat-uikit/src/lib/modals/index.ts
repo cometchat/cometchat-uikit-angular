@@ -28,4 +28,7 @@ export type { AudioAttachment, AudioState } from './AudioAttachment';
 export type { SelectionState } from './SelectionState';
 
 
+// AI Assistant Tools model class
+export { CometChatAIAssistantTools } from './CometChatAIAssistantTools';
+
 // Note: CalendarObject is exported from CometChatLocalize (localization.interfaces.ts)

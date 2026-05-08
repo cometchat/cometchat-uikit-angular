@@ -2,6 +2,7 @@
      Uses CometChatPaginatedList for list rendering and CometChatConversationItem for item rendering.
      Maintains full backward compatibility with existing template inputs.
 -->
+<cometchat-error-boundary style="display:contents" [componentName]="'Conversations'">
 <div class="cometchat cometchat-conversations" 
      (keydown)="handleKeydown($event)" 
      (focusin)="handleFocusIn($event)"
@@ -194,3 +195,4 @@
     </div>
   }
 </div>
+</cometchat-error-boundary>

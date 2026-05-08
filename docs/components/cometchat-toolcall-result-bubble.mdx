@@ -1,0 +1,60 @@
+---
+title: "CometChatToolCallResultBubble"
+description: "Displays the result returned by an AI tool call as formatted JSON or plain text"
+---
+
+The `CometChatToolCallResultBubble` component renders the result returned by an AI tool call. It appears in the message list after a tool execution completes, showing what data the tool returned before the AI generates its final response.
+
+## Overview
+
+- **JSON formatting**: Valid JSON results are pretty-printed with 2-space indentation
+- **Plain text fallback**: Non-JSON results are displayed as raw text
+- **Empty state**: Renders nothing when the result is empty or null
+- **Agentic messages**: Used for messages with category `agentic` and type `tool_result`
+
+## Basic Usage
+
+```typescript
+import { CometChatToolCallResultBubble } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  standalone: true,
+  imports: [CometChatToolCallResultBubble],
+  template: `
+    <cometchat-toolcall-result-bubble
+      [message]="toolResultMessage">
+    </cometchat-toolcall-result-bubble>
+  `
+})
+export class MyComponent {
+  toolResultMessage!: CometChat.AIToolResultMessage;
+}
+```
+
+## Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `message` | `CometChat.AIToolResultMessage` | ✅ Yes | The AI tool result message containing the data returned by the tool |
+
+## Message Structure
+
+The component reads the result from `message.getToolResultMessageData().getText()`. The text is:
+- Pretty-printed if it is valid JSON
+- Displayed as-is if it is plain text or invalid JSON
+- Not rendered at all if it is empty or null
+
+## Agentic Message Flow
+
+Tool call messages appear in this order in the message list:
+
+1. **`CometChatToolCallArgumentBubble`** — shows what arguments were sent to the tool
+2. **`CometChatToolCallResultBubble`** — shows what the tool returned
+3. **`CometChatAIAssistantMessageBubble`** — shows the AI's final response using the tool result
+
+## Related Components
+
+- **CometChatToolCallArgumentBubble** — displays the arguments sent to the tool
+- **CometChatAIAssistantMessageBubble** — displays the final AI response
+- **CometChatStreamMessageBubble** — shows the live streaming state
+- **CometChatMessageBubble** — the parent bubble container

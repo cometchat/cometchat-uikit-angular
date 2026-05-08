@@ -1,8 +1,29 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { Subject } from 'rxjs';
-import { EventEmitter } from '@angular/core';
+import { DestroyRef, EventEmitter } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+vi.mock('@cometchat/calls-sdk-javascript', () => ({
+  CometChatCalls: {
+    init: vi.fn().mockResolvedValue(true),
+    endSession: vi.fn().mockResolvedValue(true),
+    leaveSession: vi.fn().mockResolvedValue(true),
+    generateToken: vi.fn().mockResolvedValue({ token: 'mock-token' }),
+    startSession: vi.fn().mockResolvedValue(true),
+    joinSession: vi.fn().mockResolvedValue(true),
+    CallSettingsBuilder: vi.fn().mockImplementation(function(this: any) {
+      this.enableDefaultLayout = vi.fn().mockReturnThis();
+      this.setIsAudioOnlyCall = vi.fn().mockReturnThis();
+      this.setCallListener = vi.fn().mockReturnThis();
+      this.build = vi.fn().mockReturnValue({});
+    }),
+    OngoingCallListener: vi.fn().mockImplementation(function(this: any, cb: any) {
+      Object.assign(this, cb);
+    }),
+  },
+}));
 
 import { CometChatCallEvents } from '../../events/CometChatCallEvents';
 import { OngoingCallService } from '../../services/ongoing-call.service';
@@ -28,7 +49,10 @@ function createComponentWithService(svc: OngoingCallService): CometChatOngoingCa
     CometChatOngoingCallComponent.prototype
   ) as CometChatOngoingCallComponent;
   (comp as any).ongoingCallService = svc;
+  (comp as any).callAnnouncer = { announceCallEnded: () => {} };
   (comp as any).pendingTimers = [];
+  // Inject a real DestroyRef from TestBed for takeUntilDestroyed compatibility
+  (comp as any).destroyRef = TestBed.inject(DestroyRef);
   comp.sessionID = '';
   comp.callSettingsBuilder = null;
   comp.callWorkflow = CallWorkflow.defaultCalling;
@@ -78,12 +102,14 @@ describe('Property 2: Input priority over service state', () => {
   let origCcCallEnded: Subject<CometChat.Call>;
 
   beforeEach(() => {
+    TestBed.configureTestingModule({});
     origCcCallEnded = CometChatCallEvents.ccCallEnded;
     CometChatCallEvents.ccCallEnded = new Subject<CometChat.Call>();
   });
 
   afterEach(() => {
     CometChatCallEvents.ccCallEnded = origCcCallEnded;
+    TestBed.resetTestingModule();
   });
 
   it('component input sessionID takes priority over pre-existing service sessionID after ngOnInit', () => {

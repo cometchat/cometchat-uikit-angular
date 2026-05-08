@@ -33,9 +33,9 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
   override getRegex(): RegExp {
     // Match any markdown syntax including blockquotes, lists (with indentation), inline formatting, and links
     // Use multiline flag to match patterns at start of any line
-    // Added \[.*?\]\(.*?\) to detect markdown links [text](url)
     // Match both raw > and HTML-escaped &gt; for blockquotes (text is HTML-escaped before formatters run)
-    return /(\*\*|__|~~|`|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s|\[.*?\]\(.*?\))/m;
+    // (?<!\*)\*(?!\*|\s) detects single * for italic (not ** for bold, not * followed by space for lists)
+    return /(\*\*|__|~~|`|(?<!\*)\*(?!\*|\s)|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s|\[.*?\]\(.*?\))/m;
   }
 
   /**

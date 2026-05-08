@@ -20,7 +20,6 @@
   #listContainer
   class="cometchat-paginated-list"
   [class.cometchat-paginated-list--show-scrollbar]="showScrollbar"
-  role="listbox"
   [attr.aria-label]="ariaLabel || null"
   [attr.aria-busy]="isFetchingMore() || isLoading"
   [attr.aria-multiselectable]="isMultiSelect || null"
@@ -88,7 +87,7 @@
   
   <!-- Items List -->
   @if (hasItems()) {
-    <div class="cometchat-paginated-list__items">
+    <div class="cometchat-paginated-list__items" role="listbox" [attr.aria-label]="ariaLabel || null" [attr.aria-multiselectable]="isMultiSelect || null">
       @for (item of items; track trackByFn($index, item); let i = $index) {
         <div 
           #listItem

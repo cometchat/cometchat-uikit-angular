@@ -601,12 +601,15 @@ describe('CometChatSearchBarComponent', () => {
     });
 
     it('should unsubscribe on destroy', () => {
+      // Component uses takeUntilDestroyed(destroyRef) — no explicit subscription property.
+      // Verify the searchSubject completes on destroy (which closes all derived subscriptions).
       fixture.detectChanges();
-      const sub = (component as any).subscription;
-      expect(sub).toBeTruthy();
+      const subject = (component as any).searchSubject;
+      let completed = false;
+      subject.subscribe({ complete: () => { completed = true; } });
 
       fixture.destroy();
-      expect(sub.closed).toBe(true);
+      expect(completed).toBe(true);
     });
 
     it('should complete searchSubject on destroy', () => {

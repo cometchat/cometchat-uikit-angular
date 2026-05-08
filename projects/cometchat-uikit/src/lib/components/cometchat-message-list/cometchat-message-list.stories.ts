@@ -422,6 +422,51 @@ const meta: Meta<CometChatMessageListComponent> = {
         category: 'Message Options',
       },
     },
+    hideFlagRemarkField: {
+      control: 'boolean',
+      description: 'Hide the remark text area in the flag message dialog',
+      table: {
+        type: { summary: 'boolean' },
+        defaultValue: { summary: 'false' },
+        category: 'Message Options',
+      },
+    },
+    showMarkAsUnreadOption: {
+      control: 'boolean',
+      description: 'Show "Mark as Unread" option in message context menu',
+      table: {
+        type: { summary: 'boolean' },
+        defaultValue: { summary: 'true' },
+        category: 'Message Options',
+      },
+    },
+    hideReplyOption: {
+      control: 'boolean',
+      description: 'Hide the "Reply" option from message context menu',
+      table: {
+        type: { summary: 'boolean' },
+        defaultValue: { summary: 'false' },
+        category: 'Message Options',
+      },
+    },
+    startFromUnreadMessages: {
+      control: 'boolean',
+      description: 'Scroll to first unread message on load instead of bottom',
+      table: {
+        type: { summary: 'boolean' },
+        defaultValue: { summary: 'true' },
+        category: 'Behavior',
+      },
+    },
+    isAgentChat: {
+      control: 'boolean',
+      description: 'Configure message list for AI agent chat mode',
+      table: {
+        type: { summary: 'boolean' },
+        defaultValue: { summary: 'false' },
+        category: 'Behavior',
+      },
+    },
 
     // Custom Views
     emptyView: {
@@ -481,6 +526,24 @@ const meta: Meta<CometChatMessageListComponent> = {
       table: {
         type: { summary: 'boolean' },
         defaultValue: { summary: 'false' },
+        category: 'AI Features',
+      },
+    },
+    smartRepliesKeywords: {
+      control: 'object',
+      description: 'Keywords that trigger smart reply suggestions',
+      table: {
+        type: { summary: 'string[]' },
+        defaultValue: { summary: "['what', 'when', 'why', 'who', 'where', 'how', '?']" },
+        category: 'AI Features',
+      },
+    },
+    smartRepliesDelayDuration: {
+      control: { type: 'number', min: 0, max: 30000, step: 1000 },
+      description: 'Delay in ms before showing smart replies after a message is received',
+      table: {
+        type: { summary: 'number' },
+        defaultValue: { summary: '10000' },
         category: 'AI Features',
       },
     },

@@ -1,4 +1,4 @@
-import { Component, effect, ElementRef, HostListener, inject, OnInit, signal, TemplateRef, ViewChild } from '@angular/core';
+import { Component, effect, ElementRef, EventEmitter, HostListener, inject, OnInit, Output, signal, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
@@ -44,6 +44,9 @@ export class CometChatSelectorComponent implements OnInit {
 
   protected activeTab = this.appStateService.activeTab;
 
+  /** Emitted when the search bar in conversations is clicked */
+  @Output() searchBarClick = new EventEmitter<void>();
+
   /** Toggle for the chats context menu dropdown */
   protected showContextMenu = signal(false);
 
@@ -80,6 +83,10 @@ export class CometChatSelectorComponent implements OnInit {
   groupsMenuRef!: TemplateRef<any>;
 
   // ── Conversation handlers ──
+
+  onSearchBarClick(): void {
+    this.searchBarClick.emit();
+  }
 
   onConversationClick(conversation: CometChat.Conversation): void {
     this.appStateService.setSelectedConversation(conversation);

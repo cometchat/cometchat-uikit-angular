@@ -1,0 +1,38 @@
+.cometchat-toolcall-argument-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2, 8px);
+  padding: var(--cometchat-spacing-3, 12px);
+  background-color: var(--cometchat-background-color-01);
+  border-radius: var(--cometchat-radius-3, 12px);
+  color: var(--cometchat-text-color-primary);
+  font: var(--cometchat-font-body-regular);
+}
+
+.cometchat-toolcall-argument-bubble__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-1, 4px);
+}
+
+.cometchat-toolcall-argument-bubble__name {
+  font: var(--cometchat-font-body-medium);
+  color: var(--cometchat-text-color-primary);
+}
+
+.cometchat-toolcall-argument-bubble__execution-text {
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+
+.cometchat-toolcall-argument-bubble__arguments {
+  margin: 0;
+  padding: var(--cometchat-spacing-2, 8px);
+  background-color: var(--cometchat-background-color-02);
+  border-radius: var(--cometchat-radius-2, 8px);
+  font: var(--cometchat-font-body-regular);
+  color: var(--cometchat-text-color-primary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}

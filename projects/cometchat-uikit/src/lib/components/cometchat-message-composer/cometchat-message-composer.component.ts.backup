@@ -592,11 +592,6 @@ export class CometChatMessageComposerComponent
    */
   @Input() customSoundForMessage?: string;
 
-  /**
-   * Custom icon for live reaction button
-   * @see Requirements 13.4
-   */
-  @Input() liveReactionIcon?: string;
 
   /**
    * Message to edit (enables edit mode)

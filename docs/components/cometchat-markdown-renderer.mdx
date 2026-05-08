@@ -1,0 +1,250 @@
+---
+title: "CometChatMarkdownRenderer"
+description: "Zero-dependency Angular component that parses and renders markdown to HTML with streaming support, XSS sanitization, and a copy button per code block."
+---
+
+## Overview
+
+`CometChatMarkdownRenderer` converts a markdown string to sanitized HTML using a custom TypeScript parser — no third-party markdown library is required. It is used internally by `CometChatAIAssistantMessageBubble` (completed messages) and `CometChatStreamMessageBubble` (live streaming), but can be used standalone anywhere you need markdown rendering.
+
+Key capabilities:
+
+- **Zero dependencies** — custom `CometChatMarkdownParser` class; no `marked`, `remark`, or `highlight.js`
+- **Streaming-safe** — when `streaming` is `true`, incomplete syntax at the end of the text is rendered as plain text rather than dropped or throwing an error
+- **XSS sanitization** — all raw HTML in the input is escaped before markdown rules are applied; only the supported markdown constructs produce HTML elements
+- **Code block copy** — each fenced code block gets a copy button; state is tracked per-block as an independent `WritableSignal<boolean>`
+- **Image click** — clicking a rendered image emits `imageClick` with the image URL
+- **Extensible parser** — `CometChatMarkdownParser` is exported from the public API so you can extend it with custom node types
+
+## Supported Markdown Constructs
+
+| Syntax | Output |
+|--------|--------|
+| `# Heading` through `###### Heading` | `<h1>` – `<h6>` |
+| `**bold**` | `<strong>` |
+| `_italic_` | `<em>` |
+| `~~strikethrough~~` | `<del>` |
+| `` `inline code` `` | `<code>` |
+| ` ```lang\ncode\n``` ` | `<pre><code class="language-{lang}">` |
+| `> blockquote` | `<blockquote>` |
+| `1. item` | `<ol><li>` |
+| `- item` or `* item` | `<ul><li>` |
+| Nested lists (up to 3 levels) | Nested `<ul>` / `<ol>` |
+| `[text](url)` | `<a target="_blank" rel="noopener noreferrer">` |
+| `![alt](url)` | Clickable `<img>` |
+| `---` | `<hr>` |
+| Two trailing spaces or `\n\n` | `<br>` / paragraph |
+| GFM tables `\| col \| col \|` | `<table><thead><tbody>` |
+
+## Basic Usage
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChatMarkdownRenderer } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-markdown-demo',
+  standalone: true,
+  imports: [CometChatMarkdownRenderer],
+  template: `
+    <cometchat-markdown-renderer
+      [text]="markdownText"
+    ></cometchat-markdown-renderer>
+  `,
+})
+export class MarkdownDemoComponent {
+  markdownText = `
+## Hello World
+
+Here is some **bold** text and _italic_ text.
+
+\`\`\`typescript
+const greeting = 'Hello, World!';
+console.log(greeting);
+\`\`\`
+
+- Item one
+- Item two
+  - Nested item
+
+[CometChat Docs](https://www.cometchat.com/docs)
+  `;
+}
+```
+
+## Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `string` | required | The markdown string to parse and render |
+| `streaming` | `boolean` | `false` | When `true`, tolerates incomplete syntax at the end of the string (for live streaming use cases) |
+
+## Outputs
+
+| Output | Payload | Description |
+|--------|---------|-------------|
+| `imageClick` | `string` | Emitted with the image URL when a rendered image is clicked; use this to open `CometChatFullScreenViewer` |
+
+## Streaming Mode
+
+When rendering a live AI response, set `streaming` to `true`. The parser will render any incomplete markdown at the end of the string as plain text rather than dropping it or throwing an error. This prevents visual glitches as tokens arrive incrementally.
+
+```typescript
+@Component({
+  standalone: true,
+  imports: [CometChatMarkdownRenderer],
+  template: `
+    <cometchat-markdown-renderer
+      [text]="streamedText"
+      [streaming]="true"
+    ></cometchat-markdown-renderer>
+  `,
+})
+export class StreamingBubbleComponent {
+  streamedText = ''; // Updated on each text_message_content event
+}
+```
+
+## Image Click Handling
+
+Wire `imageClick` to open the full-screen viewer:
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChatMarkdownRenderer, CometChatUIEvents } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  standalone: true,
+  imports: [CometChatMarkdownRenderer],
+  template: `
+    <cometchat-markdown-renderer
+      [text]="markdownText"
+      (imageClick)="onImageClick($event)"
+    ></cometchat-markdown-renderer>
+  `,
+})
+export class MarkdownWithImagesComponent {
+  markdownText = '![Screenshot](https://example.com/screenshot.png)';
+
+  onImageClick(imageUrl: string): void {
+    CometChatUIEvents.ccShowDialog.next({ child: imageUrl });
+  }
+}
+```
+
+## Extending the Parser
+
+`CometChatMarkdownParser` is exported from the public API. Extend it to add custom node types — for example, a `chart` block or a `video` embed — without modifying the renderer component.
+
+```typescript
+import {
+  CometChatMarkdownParser,
+  MarkdownNode,
+} from '@cometchat/chat-uikit-angular';
+
+export class MyMarkdownParser extends CometChatMarkdownParser {
+  override parse(text: string, streaming?: boolean): MarkdownNode[] {
+    // Pre-process custom syntax before passing to the base parser
+    const preprocessed = text.replace(
+      /:::chart\n([\s\S]*?):::/g,
+      (_match, data) => `\`\`\`chart\n${data}\n\`\`\``
+    );
+    return super.parse(preprocessed, streaming);
+  }
+}
+```
+
+Then provide your custom parser to the renderer by subclassing `CometChatMarkdownRenderer` or by rendering the HTML yourself using the parser directly:
+
+```typescript
+import { Component, computed, input } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
+import { MyMarkdownParser } from './my-markdown-parser';
+
+@Component({
+  selector: 'app-custom-renderer',
+  standalone: true,
+  template: `<div [innerHTML]="html()"></div>`,
+})
+export class CustomRendererComponent {
+  text = input.required<string>();
+
+  private parser = new MyMarkdownParser();
+  private sanitizer = inject(DomSanitizer);
+
+  html = computed(() => {
+    const nodes = this.parser.parse(this.text());
+    // Walk nodes and produce HTML string, then sanitize
+    const raw = nodesToHtml(nodes); // your own walker
+    return this.sanitizer.bypassSecurityTrustHtml(raw);
+  });
+}
+```
+
+## BEM Class Reference
+
+All rendered elements carry BEM class names prefixed with `cometchat-markdown-renderer`. Use these to apply custom styles:
+
+| Element | Class |
+|---------|-------|
+| Headings | `cometchat-markdown-renderer__heading`, `cometchat-markdown-renderer__heading--1` … `--6` |
+| Paragraph | `cometchat-markdown-renderer__paragraph` |
+| Bold | `cometchat-markdown-renderer__bold` |
+| Italic | `cometchat-markdown-renderer__italic` |
+| Strikethrough | `cometchat-markdown-renderer__strikethrough` |
+| Inline code | `cometchat-markdown-renderer__inline-code` |
+| Code block wrapper | `cometchat-markdown-renderer__code-block` |
+| Copy button | `cometchat-markdown-renderer__code-copy-btn` |
+| Blockquote | `cometchat-markdown-renderer__blockquote` |
+| Ordered list | `cometchat-markdown-renderer__ordered-list` |
+| Unordered list | `cometchat-markdown-renderer__unordered-list` |
+| List item | `cometchat-markdown-renderer__list-item` |
+| Link | `cometchat-markdown-renderer__link` |
+| Image | `cometchat-markdown-renderer__image` |
+| Horizontal rule | `cometchat-markdown-renderer__hr` |
+| Table | `cometchat-markdown-renderer__table` |
+| Table head | `cometchat-markdown-renderer__table-head` |
+| Table header cell | `cometchat-markdown-renderer__table-header-cell` |
+| Table body | `cometchat-markdown-renderer__table-body` |
+| Table row | `cometchat-markdown-renderer__table-row` |
+| Table cell | `cometchat-markdown-renderer__table-cell` |
+
+### Example: Custom Code Block Styling
+
+```css
+cometchat-markdown-renderer .cometchat-markdown-renderer__code-block {
+  background: var(--cometchat-background-color-03);
+  border-radius: var(--cometchat-radius-2);
+  padding: var(--cometchat-spacing-3);
+  position: relative;
+}
+
+cometchat-markdown-renderer .cometchat-markdown-renderer__code-copy-btn {
+  position: absolute;
+  top: var(--cometchat-spacing-2);
+  right: var(--cometchat-spacing-2);
+  background: var(--cometchat-primary-color);
+  color: #fff;
+  border: none;
+  border-radius: var(--cometchat-radius-1);
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+```
+
+## Localization Keys
+
+| Key | Default (en-us) |
+|-----|-----------------|
+| `ai_assistant_chat_code_copied` | "Copied!" |
+
+Override via `CometChatLocalize.updateKeys()`:
+
+```typescript
+import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+
+CometChatLocalize.updateKeys('en', {
+  ai_assistant_chat_code_copied: 'Copied to clipboard!',
+});
+```

@@ -27,12 +27,12 @@ import * as fc from 'fast-check';
 import { TestBed } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from './test-setup';
 
-import { CometChatButtonComponent } from './components/cometchat-button/cometchat-button.component';
+import { CometChatButtonComponent } from './components/base-elements/cometchat-button/cometchat-button.component';
 import { CometChatListItemComponent } from './components/base-elements/cometchat-list-item/cometchat-list-item.component';
 import { CometChatCheckboxComponent } from './components/base-elements/cometchat-checkbox/cometchat-checkbox.component';
 import { CometChatRadioButtonComponent } from './components/base-elements/cometchat-radio-button/cometchat-radio-button.component';
 import { CometChatSearchBarComponent } from './components/base-elements/cometchat-search-bar/cometchat-search-bar.component';
-import { CometChatActionSheetComponent } from './components/cometchat-action-sheet/cometchat-action-sheet.component';
+import { CometChatActionSheetComponent } from './components/base-elements/cometchat-action-sheet/cometchat-action-sheet.component';
 
 // ==================== Constants & Helpers ====================
 

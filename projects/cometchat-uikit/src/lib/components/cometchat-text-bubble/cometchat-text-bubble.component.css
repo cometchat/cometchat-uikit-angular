@@ -362,12 +362,12 @@
 
 .cometchat-text-bubble__translation-label {
   font: var(--cometchat-text-bubble-translation-label-font, var(--cometchat-font-caption2-regular));
-  color: var(--cometchat-text-bubble-translation-label-color, var(--cometchat-text-color-tertiary));
+  color: var(--cometchat-text-bubble-translation-label-color, var(--cometchat-static-white));
 }
 
 .cometchat-text-bubble__translation-text {
   font: var(--cometchat-text-bubble-translation-text-font, var(--cometchat-font-body-regular));
-  color: var(--cometchat-text-bubble-translation-text-color, var(--cometchat-text-color-primary));
+  color: var(--cometchat-text-bubble-translation-text-color, var(--cometchat-static-white));
   white-space: pre-wrap;
 }
 

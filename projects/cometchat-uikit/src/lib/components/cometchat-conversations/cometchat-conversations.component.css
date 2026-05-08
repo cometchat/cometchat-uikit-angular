@@ -46,16 +46,16 @@
   --cometchat-conversations-avatar-font-size: 20px;
 
   /* Status Indicator Variables */
-  --cometchat-conversations-status-size: 10px;
-  --cometchat-conversations-status-border: none;
+  --cometchat-conversations-status-size: 14px;
+  --cometchat-conversations-status-border: 2px solid var(--cometchat-neutral-color-50, #fff);
   --cometchat-conversations-status-online-color: var(--cometchat-success-color);
   --cometchat-conversations-status-offline-color: var(--cometchat-neutral-color-400);
   --cometchat-conversations-status-position-bottom: 0px;
   --cometchat-conversations-status-position-right: 6px;
 
   /* Group Type Icon Variables */
-  --cometchat-conversations-group-icon-size: 12px;
-  --cometchat-conversations-group-icon-border: none;
+  --cometchat-conversations-group-icon-size: 14px;
+  --cometchat-conversations-group-icon-border: 2px solid var(--cometchat-neutral-color-50);
   --cometchat-conversations-group-icon-password-background: var(--cometchat-success-color);
   --cometchat-conversations-group-icon-private-background: var(--cometchat-warning-color);
 
@@ -177,7 +177,8 @@
   position: relative; /* Required for dialog overlay positioning */
   overflow: hidden; /* Contain dialogs within component bounds */
   outline: none; /* Prevent browser/global focus outline on the container */
-    --cometchat-paginated-list-loading-padding:var(--cometchat-padding-2) var(--cometchat-padding-4);
+  contain: layout style;
+    --cometchat-paginated-list-loading-padding:var(--cometchat-padding-2) 0px;
 
 }
 
@@ -187,6 +188,8 @@
 .cometchat-conversations__header {
   flex-shrink: 0;
   background: var(--cometchat-conversations-header-background);
+  contain: layout style;
+  z-index: 1;
   }
 
 .cometchat-conversations__header-default {
@@ -357,7 +360,9 @@
   display: flex;
   align-items: center;
   gap: var(--cometchat-conversations-item-gap);
-  padding-bottom: var(--cometchat-padding-1);
+  padding: var(--cometchat-conversations-item-padding);
+  min-height: 64px;
+  box-sizing: border-box;
 }
 
 .cometchat-conversations__shimmer-avatar {
@@ -1064,18 +1069,18 @@
   
   /* Adjust status indicators for smaller avatar */
   .cometchat-conversations__status-indicator {
-    width: var(--cometchat-conversations-status-size-tablet, 8px);
-    height: var(--cometchat-conversations-status-size-tablet, 8px);
+    width: var(--cometchat-conversations-status-size-tablet, 12px);
+    height: var(--cometchat-conversations-status-size-tablet, 12px);
   }
   
   .cometchat-conversations__group-type-icon {
-    width: var(--cometchat-conversations-group-icon-size-tablet, 16px);
-    height: var(--cometchat-conversations-group-icon-size-tablet, 16px);
+    width: var(--cometchat-conversations-group-icon-size-tablet, 12px);
+    height: var(--cometchat-conversations-group-icon-size-tablet, 12px);
   }
   
   .cometchat-conversations__group-type-icon-svg {
-    width: var(--cometchat-conversations-group-icon-svg-size-tablet, 8px);
-    height: var(--cometchat-conversations-group-icon-svg-size-tablet, 8px);
+    width: var(--cometchat-conversations-group-icon-svg-size-tablet, 10px);
+    height: var(--cometchat-conversations-group-icon-svg-size-tablet, 10px);
   }
   
   .cometchat-conversations__group-type-text {

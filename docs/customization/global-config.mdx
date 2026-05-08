@@ -95,7 +95,7 @@ import { COMETCHAT_GLOBAL_CONFIG } from '@cometchat/chat-uikit-angular';
 | `customSoundForCalls` | `string` | `undefined` | Custom sound URL for calls |
 | `customSoundForMessages` | `string` | `undefined` | Custom sound URL for messages |
 | `hideAvatar` | `boolean` | `undefined` | Hide avatar across components |
-| `callSettingsBuilder` | `CallSettingsBuilder` | `undefined` | Custom `CallSettingsBuilder` for call components (call buttons, call logs, ongoing call) |
+| `callSettingsBuilder` | `SessionSettings` | `undefined` | Custom [v5 SessionSettings object](https://www.cometchat.com/docs/calls/javascript/session-settings) for call components (call buttons, call logs, ongoing call) |
 
 <Note>
   All properties are optional. When a property is `undefined` (not set), the component falls back to its own internal default.
@@ -103,17 +103,23 @@ import { COMETCHAT_GLOBAL_CONFIG } from '@cometchat/chat-uikit-angular';
 
 ## Call Settings Customization
 
-The `callSettingsBuilder` property lets you provide a custom `CometChatCalls.CallSettingsBuilder` that is used across all call-related components. This is useful for configuring call UI features like layout, recording, analytics, or audio-only mode globally.
+The `callSettingsBuilder` property lets you provide a custom v5 `SessionSettings` object that is used across all call-related components. This is useful for configuring call UI features like layout, recording, screen sharing, or audio-only mode globally.
 
 ### Global Call Settings
 
 ```typescript expandable
-import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
 import { COMETCHAT_GLOBAL_CONFIG } from '@cometchat/chat-uikit-angular';
 
-const customCallSettings = new CometChatCalls.CallSettingsBuilder()
-  .enableDefaultLayout(true)
-  .setIsAudioOnlyCall(false);
+// v5: pass a plain SessionSettings object instead of using CallSettingsBuilder
+const customCallSettings = {
+  sessionType: 'VIDEO',
+  layout: 'TILE',
+  startAudioMuted: false,
+  startVideoPaused: false,
+  hideRecordingButton: true,
+  hideScreenSharingButton: false,
+  hideChangeLayoutButton: false,
+};
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -175,12 +181,18 @@ The following components read from `COMETCHAT_GLOBAL_CONFIG` and apply the three
 
 ```typescript expandable
 import { ApplicationConfig } from '@angular/core';
-import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '@cometchat/chat-uikit-angular';
 
-const callSettings = new CometChatCalls.CallSettingsBuilder()
-  .enableDefaultLayout(true)
-  .setIsAudioOnlyCall(false);
+// v5: plain SessionSettings object — no CallSettingsBuilder needed
+const callSettings = {
+  sessionType: 'VIDEO',
+  layout: 'TILE',
+  startAudioMuted: false,
+  startVideoPaused: false,
+  hideRecordingButton: true,
+  hideScreenSharingButton: false,
+  hideChangeLayoutButton: false,
+};
 
 export const appConfig: ApplicationConfig = {
   providers: [

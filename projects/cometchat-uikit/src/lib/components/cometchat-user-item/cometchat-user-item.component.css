@@ -129,11 +129,11 @@
   bottom: 2px;
   right: 6px;
   transform: translate(25%, 25%);
-  width: var(--cometchat-user-item-status-size, 10px);
-  height: var(--cometchat-user-item-status-size, 10px);
+  width: var(--cometchat-user-item-status-size, 14px);
+  height: var(--cometchat-user-item-status-size, 14px);
   border-radius: var(--cometchat-radius-max);
-  border: var(--cometchat-user-item-status-border, none);
-  z-index: 2;
+  border: var(--cometchat-user-item-status-border, 2px solid var(--cometchat-neutral-color-50));
+  z-index: 0px;
 }
 
 .cometchat-user-item__status--online {
@@ -295,8 +295,8 @@
   }
 
   .cometchat-user-item__status {
-    width: var(--cometchat-user-item-status-size-tablet, 12px);
-    height: var(--cometchat-user-item-status-size-tablet, 12px);
+    width: var(--cometchat-user-item-status-size-tablet, 14px);
+    height: var(--cometchat-user-item-status-size-tablet, 14px);
   }
 
   .cometchat-user-item__title-text {
@@ -331,8 +331,8 @@
   }
 
   .cometchat-user-item__status {
-    width: var(--cometchat-user-item-status-size-mobile, 8px);
-    height: var(--cometchat-user-item-status-size-mobile, 8px);
+    width: var(--cometchat-user-item-status-size-mobile, 12px);
+    height: var(--cometchat-user-item-status-size-mobile, 12px);
     bottom: 3px;
     right: 4px;
   }

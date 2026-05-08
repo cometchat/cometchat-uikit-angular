@@ -295,6 +295,16 @@
   overflow-anchor: none; /* Let individual messages act as scroll anchors */
 }
 
+/* Agent chat mode: messages start from top instead of bottom */
+.cometchat-message-list--agent-chat .cometchat-message-list__messages {
+  margin-top: 0;
+}
+
+/* Agent chat mode: allow bubbles to use full width */
+.cometchat-message-list--agent-chat {
+  --cometchat-message-bubble-max-width: 100%;
+}
+
 /* ==================== Element: Message Item ==================== */
 .cometchat-message-list__message {
   outline: none;
@@ -696,4 +706,27 @@
   transform: translateX(-50%);
   z-index: 100;
   pointer-events: auto;
+}
+
+/* ==================== Element: Unread Divider ==================== */
+/* Shown above the message that was marked as unread via "Mark as Unread" option */
+.cometchat-message-list__unread-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-2);
+  padding: var(--cometchat-spacing-1) var(--cometchat-spacing-3);
+  margin: var(--cometchat-margin-1) 0;
+}
+
+.cometchat-message-list__unread-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--cometchat-message-list-unread-divider-line-color, var(--cometchat-error-color, #F44336));
+}
+
+.cometchat-message-list__unread-divider-text {
+  font: var(--cometchat-message-list-unread-divider-text-font, var(--cometchat-font-caption1-medium));
+  color: var(--cometchat-message-list-unread-divider-text-color, var(--cometchat-error-color, #F44336));
+  white-space: nowrap;
+  flex-shrink: 0;
 }

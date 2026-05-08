@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "提出问题...",
     "ai_assistant_chat_new_chat": "新聊天",
     "ai_assistant_chat_history": "历史记录",
-    "ai_assistant_chat_history_title": "聊天记录",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "思考中...",
     "ai_assistant_chat_executing_tool": "正在执行操作...",
     "ai_assistant_chat_no_internet": "无网络连接。请检查您的网络。",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "开始新对话即可在此查看。",
     "ai_assistant_chat_history_error_title": "出了点问题",
     "ai_assistant_chat_history_error_subtitle": "加载聊天记录时遇到问题。",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "添加成员",
     "add_member": "添加成员",
     "add_n_members": "添加 {n} 个成员",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "消息发送失败",
     "accessibility_message_deleted": "消息已删除",
     "accessibility_message_edited": "消息已编辑",
-    "accessibility_loading_older_messages": "正在加载更早的消息"
+    "accessibility_loading_older_messages": "正在加载更早的消息",
+    "message_list_option_mark_as_unread": "标记为未读",
+    "message_list_unread_messages": "未读消息",
+    "message_list_unread_divider": "未读消息分隔线"
 }

@@ -21,49 +21,12 @@ import { CometChatUIKitConstants } from '../../../constants';
 import { LiveAnnouncerService } from '../../../services/live-announcer.service';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 
-/**
- * Maximum number of smart replies to display.
- * @see Requirement 2.5 - Display up to 3 reply suggestions
- */
+/** Maximum number of smart replies to display. @see Requirement 2.5 */
 const MAX_REPLIES = 3;
 
 /**
- * CometChatSmartRepliesComponent displays AI-generated reply suggestions.
- *
- * This component shows up to 3 smart reply suggestions based on the last received message.
- * It supports configurable trigger keywords and delay duration before showing suggestions.
- *
- * Features:
- * - Displays up to 3 reply suggestions as clickable chips
- * - Configurable trigger keywords (default: what, when, why, who, where, how, ?)
- * - Configurable delay before showing (default: 10 seconds)
- * - Loading state while fetching suggestions
- * - Keyboard accessible (Tab navigation, Enter/Space to select)
- *
- * @example
- * ```html
- * <!-- Basic usage -->
- * <cometchat-smart-replies
- *   [message]="lastReceivedMessage"
- *   [user]="activeUser"
- *   (replyClick)="onSmartReplyClick($event)">
- * </cometchat-smart-replies>
- *
- * <!-- With custom keywords and delay -->
- * <cometchat-smart-replies
- *   [message]="lastReceivedMessage"
- *   [user]="activeUser"
- *   [keywords]="['help', 'question', '?']"
- *   [delayDuration]="5000"
- *   (replyClick)="onSmartReplyClick($event)">
- * </cometchat-smart-replies>
- * ```
- *
- * @see Requirement 2.1 - Display smart reply suggestions when showSmartReplies is true
- * @see Requirement 2.3 - Only appear for messages containing trigger keywords
- * @see Requirement 2.4 - Appear after configurable delay (default 10 seconds)
- * @see Requirement 2.5 - Display up to 3 reply suggestions
- * @see Requirement 2.6 - Emit smartReplyClick event when clicked
+ * CometChatSmartRepliesComponent displays up to 3 AI-generated reply suggestions.
+ * @see Requirements 2.1, 2.3-2.6
  */
 @Component({
   selector: 'cometchat-smart-replies',
@@ -74,160 +37,38 @@ const MAX_REPLIES = 3;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CometChatSmartRepliesComponent implements OnDestroy, OnChanges, AfterViewInit {
-  /**
-   * Reference to the LiveAnnouncerService for screen reader announcements.
-   * @see Requirement 24.6 - Announce "Smart replies available" when component appears
-   */
   private liveAnnouncer = inject(LiveAnnouncerService);
 
-  /**
-   * Reference to reply button elements for keyboard navigation.
-   */
   @ViewChildren('replyButton') replyButtons!: QueryList<ElementRef<HTMLButtonElement>>;
-
-  /**
-   * Currently focused reply index for keyboard navigation.
-   * @see Requirement 24.2 - ArrowRight/ArrowLeft navigation
-   */
   focusedIndex = signal(0);
 
-  /**
-   * The message to generate replies for.
-   * Smart replies are generated based on this message's content.
-   *
-   * @see Requirement 2.2 - Generated based on the last received message
-   */
   @Input() message?: CometChat.BaseMessage;
-
-  /**
-   * The user context for generating smart replies.
-   * Required for 1-on-1 conversations.
-   */
   @Input() user?: CometChat.User;
-
-  /**
-   * The group context for generating smart replies.
-   * Required for group conversations.
-   */
   @Input() group?: CometChat.Group;
-
-  /**
-   * Keywords that trigger smart replies.
-   * If the message contains any of these keywords, smart replies will be shown.
-   * An empty array means smart replies will be shown for all messages.
-   *
-   * @default ['what', 'when', 'why', 'who', 'where', 'how', '?']
-   * @see Requirement 2.3 - Only appear for messages containing trigger keywords
-   */
   @Input() keywords: string[] = ['what', 'when', 'why', 'who', 'where', 'how', '?'];
-
-  /**
-   * Delay in milliseconds before showing smart replies.
-   * This gives users time to start typing their own response.
-   * Set to 0 to fetch smart replies instantly without delay.
-   *
-   * @default 10000 (10 seconds)
-   * @see Requirement 2.4 - Appear after configurable delay
-   */
   @Input() delayDuration = 10000;
 
-  /**
-   * Emitted when a smart reply is clicked.
-   * The event payload is the reply text that was clicked.
-   *
-   * @see Requirement 2.6 - Emit smartReplyClick event when clicked
-   */
   @Output() replyClick = new EventEmitter<string>();
-
-  /**
-   * Emitted when the close button is clicked.
-   */
   @Output() closeClick = new EventEmitter<void>();
 
-  /**
-   * Loading state signal.
-   * True when fetching smart replies from the AI extension.
-   */
   isLoading = signal(false);
-
-  /**
-   * Generated replies signal.
-   * Contains up to 3 reply suggestions.
-   *
-   * @see Requirement 2.5 - Display up to 3 reply suggestions
-   */
   replies = signal<string[]>([]);
-
-  /**
-   * Error state signal.
-   * True when there was an error fetching smart replies.
-   */
   hasError = signal(false);
 
-  /**
-   * Timeout ID for the delay timer.
-   * Used to cancel the timer when component is destroyed or message changes.
-   */
   private delayTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  /**
-   * Handles changes to input properties.
-   * Resets state and starts delay timer when message changes.
-   *
-   * @see Requirement 2.4 - Appear after configurable delay
-   */
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['message']) {
-      this.resetState();
-      this.startDelayTimer();
-    }
+    if (changes['message']) { this.resetState(); this.startDelayTimer(); }
   }
 
-  /**
-   * Announces smart replies availability after view is initialized.
-   * @see Requirement 24.6 - Announce "Smart replies available" when component appears
-   */
-  ngAfterViewInit(): void {
-    // Subscribe to changes in replies to announce when they become available
-    // This is handled in fetchSmartReplies after replies are set
-  }
+  ngAfterViewInit(): void {}
 
-  /**
-   * Cleanup on component destruction.
-   * Clears any pending timeout.
-   */
-  ngOnDestroy(): void {
-    this.clearDelayTimeout();
-  }
+  ngOnDestroy(): void { this.clearDelayTimeout(); }
 
-  /**
-   * Handles click on a smart reply.
-   * Emits the replyClick event with the selected reply text.
-   *
-   * @param reply - The reply text that was clicked
-   * @see Requirement 2.6 - Emit smartReplyClick event when clicked
-   */
-  onReplyClick(reply: string): void {
-    this.replyClick.emit(reply);
-  }
-  /**
-   * Handles close button click.
-   * Emits the closeClick event.
-   */
-  onCloseClick(): void {
-    this.closeClick.emit();
-  }
+  onReplyClick(reply: string): void { this.replyClick.emit(reply); }
+  onCloseClick(): void { this.closeClick.emit(); }
 
-  /**
-   * Handles keyboard events on reply items.
-   * Supports Enter and Space keys for selection, ArrowLeft/ArrowRight for navigation.
-   *
-   * @param event - The keyboard event
-   * @param reply - The reply text
-   * @param index - The index of the reply in the list
-   * @see Requirement 24.2 - ArrowRight/ArrowLeft navigation with wrap-around
-   * @see Requirement 24.3 - Enter/Space to send reply
-   */
+  /** Handle keyboard events on reply items. @see Requirements 24.2, 24.3 */
   onReplyKeydown(event: KeyboardEvent, reply: string, index: number): void {
     const repliesCount = this.replies().length;
 
@@ -237,7 +78,6 @@ export class CometChatSmartRepliesComponent implements OnDestroy, OnChanges, Aft
         event.preventDefault();
         this.onReplyClick(reply);
         break;
-
       case 'ArrowRight':
         event.preventDefault();
         // Move to next reply with wrap-around

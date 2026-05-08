@@ -360,7 +360,8 @@
     "ai_assistant_chat_composer_placeholder": "Ställ en fråga...",
     "ai_assistant_chat_new_chat": "Ny chatt",
     "ai_assistant_chat_history": "chattens historik",
-    "ai_assistant_chat_history_title": "Chatthistorik",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Tänker...",
     "ai_assistant_chat_executing_tool": "Utför åtgärd...",
     "ai_assistant_chat_no_internet": "Ingen internetanslutning. Kontrollera ditt nätverk.",
@@ -368,6 +369,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Starta en ny konversation för att se den här.",
     "ai_assistant_chat_history_error_title": "Något Gick Fel",
     "ai_assistant_chat_history_error_subtitle": "Vi har problem med att ladda din chatthistorik.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Lägg till medlemmar",
     "add_member": "Lägg till medlem",
     "add_n_members": "Lägg till {n} medlemmar",
@@ -649,5 +651,8 @@
     "accessibility_message_failed": "Meddelande kunde inte skickas",
     "accessibility_message_deleted": "Meddelande raderat",
     "accessibility_message_edited": "Meddelande redigerat",
-    "accessibility_loading_older_messages": "Laddar äldre meddelanden"
+    "accessibility_loading_older_messages": "Laddar äldre meddelanden",
+    "message_list_option_mark_as_unread": "Markera som oläst",
+    "message_list_unread_messages": "Olästa meddelanden",
+    "message_list_unread_divider": "Avgränsare för olästa meddelanden"
 }

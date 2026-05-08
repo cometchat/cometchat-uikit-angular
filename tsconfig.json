@@ -15,11 +15,11 @@
     "target": "ES2022",
     "module": "preserve",
     // Uncomment this to use the local UI Kit path instead of the npm path
-    // "paths": {
-    //   "@cometchat/chat-uikit-angular": [
-    //     "./projects/cometchat-uikit/src/public-api.ts"
-    //   ]
-    // }
+    "paths": {
+      "@cometchat/chat-uikit-angular": [
+        "./projects/cometchat-uikit/src/public-api.ts"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

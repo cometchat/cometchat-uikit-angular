@@ -5,9 +5,11 @@
 >
   @if (showImage) {
     <img
-      loading="lazy"
+      [loading]="loading"
       [src]="image"
       class="cometchat-avatar__image"
+      width="48"
+      height="48"
       (error)="onImageError()"
       [alt]="name || 'avatar'"
     />

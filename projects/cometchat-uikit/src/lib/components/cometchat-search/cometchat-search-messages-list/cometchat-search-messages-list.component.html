@@ -1,0 +1,220 @@
+@if (!hideSection) {
+<div class="cometchat-search__messages"
+     [class.cometchat-search__messages-full]="useScrollPagination || activeFilters.length > 0"
+     role="region"
+     [attr.aria-label]="'search_messages_header' | translate">
+
+  <h3 class="cometchat-search__messages-header">
+    {{ 'search_messages_header' | translate }}
+  </h3>
+
+  @if (useScrollPagination) {
+    <!-- Scroll-based pagination via CometChatPaginatedList -->
+    <cometchat-paginated-list
+      #paginatedList
+      [items]="service.messages()"
+      [trackByFn]="trackByMessage"
+      [isLoading]="isLoading"
+      [hasMore]="service.hasMoreResults()"
+      [error]="suppressEmptyErrorView ? null : listError"
+      [hideError]="suppressEmptyErrorView"
+      [itemTemplate]="messageItemTpl"
+      [loadingTemplate]="shimmerTpl"
+      [emptyTemplate]="suppressEmptyErrorView ? undefined : emptyTpl"
+      [errorTemplate]="suppressEmptyErrorView ? undefined : errorTpl"
+      [enableKeyboardNavigation]="true"
+      [observeScrollFromViewport]="true"
+      [ariaLabel]="'search_messages_header' | translate"
+      (loadMore)="handleLoadMore()">
+    </cometchat-paginated-list>
+  } @else {
+    <!-- Non-scroll mode: manual state management with "See More" button -->
+    @switch (service.fetchState()) {
+      @case (States.loading) {
+        <ng-container *ngTemplateOutlet="shimmerTpl"></ng-container>
+      }
+
+      @case (States.empty) {
+        @if (!suppressEmptyErrorView) {
+          <ng-container *ngTemplateOutlet="emptyTpl"></ng-container>
+        }
+      }
+
+      @case (States.error) {
+        @if (!suppressEmptyErrorView) {
+          <ng-container *ngTemplateOutlet="errorTpl"></ng-container>
+        }
+      }
+
+      @case (States.loaded) {
+        <div class="cometchat-search__messages-list" role="list">
+          @for (message of service.messages(); track trackByMessage($index, message)) {
+            <ng-container *ngTemplateOutlet="messageItemTpl; context: { $implicit: message, index: $index }"></ng-container>
+          }
+        </div>
+
+        @if (service.hasMoreResults()) {
+          <button class="cometchat-search-messages__see-more"
+                  data-testid="search-messages-see-more"
+                  (click)="handleSeeMore()">
+            {{ 'search_result_see_more' | translate }}
+          </button>
+        }
+      }
+    }
+  }
+</div>
+}
+
+<!-- ═══ Shared Templates ═══ -->
+
+<!-- Message item template (used by both paginated list and @for loop) -->
+<ng-template #messageItemTpl let-message let-idx="index">
+  @if (shouldShowDateSeparator(idx ?? getMessageIndex(message))) {
+    <div class="cometchat-search__messages-date-separator">
+      {{ message.getSentAt() * 1000 | date:'MMMM yyyy' }}
+    </div>
+  }
+
+  @if (itemTemplate) {
+    <ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: message }"></ng-container>
+  } @else {
+    <div class="cometchat-search-messages__list-item"
+         role="listitem"
+         tabindex="0"
+         [attr.data-testid]="'search-message-item-' + message.getId()"
+         (click)="handleItemClick(message)"
+         (keydown.enter)="handleItemClick(message)"
+         (keydown.space)="handleItemClick(message); $event.preventDefault()">
+
+      <!-- Leading view -->
+      @if (leadingView) {
+        <ng-container *ngTemplateOutlet="leadingView; context: { $implicit: message }"></ng-container>
+      } @else {
+        @switch (getLeadingViewType(message)) {
+          @case ('audio') {
+            <div class="cometchat-search__messages-leading-view cometchat-search__messages-leading-view-audio">
+              <div class="cometchat-search__messages-leading-view-icon"></div>
+            </div>
+          }
+          @case ('file') {
+            <div class="cometchat-search__messages-leading-view cometchat-search__messages-leading-view-file">
+              <img [src]="getFileTypeIcon(message)" class="cometchat-search__messages-leading-view-file-icon" alt="" />
+            </div>
+          }
+          @case ('link') {
+            <div class="cometchat-search__messages-leading-view cometchat-search__messages-leading-view-link">
+              @if (getLinkFavicon(message); as favicon) {
+                <img [src]="favicon" class="cometchat-search__messages-leading-view-link-img" alt="" loading="lazy" />
+              } @else {
+                <div class="cometchat-search__messages-leading-view-icon"></div>
+              }
+            </div>
+          }
+        }
+      }
+
+      <!-- Body (title + subtitle) -->
+      <div class="cometchat-search-messages__list-item-body">
+        <div class="cometchat-search-messages__list-item-title">
+          @if (titleView) {
+            <ng-container *ngTemplateOutlet="titleView; context: { $implicit: message }"></ng-container>
+          } @else {
+            {{ getMessageTitle(message) }}
+          }
+        </div>
+        <div class="cometchat-search-messages__list-item-subtitle">
+          @if (subtitleView) {
+            <ng-container *ngTemplateOutlet="subtitleView; context: { $implicit: message }"></ng-container>
+          } @else {
+            {{ getMessageSubtitle(message) }}
+          }
+        </div>
+      </div>
+
+      <!-- Trailing view -->
+      @if (trailingView) {
+        <ng-container *ngTemplateOutlet="trailingView; context: { $implicit: message }"></ng-container>
+      } @else {
+        @switch (getTrailingViewType(message)) {
+          @case ('image') {
+            <div class="cometchat-search__messages-trailing-view cometchat-search__messages-trailing-view-image">
+              <img [src]="getAttachmentUrl(message)" alt="" loading="lazy" />
+            </div>
+          }
+          @case ('video') {
+            <div class="cometchat-search__messages-trailing-view cometchat-search__messages-trailing-view-video">
+              <video [src]="getAttachmentUrl(message)" preload="metadata"></video>
+              <div class="cometchat-search__messages-video-play-button"></div>
+            </div>
+          }
+          @case ('date') {
+            <div class="cometchat-search__messages-trailing-view-date">
+              {{ getFormattedDate(message) }}
+            </div>
+          }
+        }
+      }
+    </div>
+  }
+</ng-template>
+
+<!-- Shimmer loading template -->
+<ng-template #shimmerTpl>
+  @if (loadingView) {
+    <ng-container *ngTemplateOutlet="loadingView"></ng-container>
+  } @else {
+    <div class="cometchat-search__shimmer" aria-live="polite">
+      @for (item of [1,2,3]; track item) {
+        <div class="cometchat-search__shimmer-item">
+          <div class="cometchat-search__shimmer-item-avatar"></div>
+          <div class="cometchat-search__shimmer-item-body">
+            <div class="cometchat-search__shimmer-item-body-title-wrapper">
+              <div class="cometchat-search__shimmer-item-body-title"></div>
+              <div class="cometchat-search__shimmer-item-body-tail"></div>
+            </div>
+            <div class="cometchat-search__shimmer-item-body-subtitle"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</ng-template>
+
+<!-- Empty state template -->
+<ng-template #emptyTpl>
+  @if (emptyView) {
+    <ng-container *ngTemplateOutlet="emptyView"></ng-container>
+  } @else {
+    <div class="cometchat-search__empty-view" aria-live="assertive">
+      <div class="cometchat-search__empty-view-icon"></div>
+      <div class="cometchat-search__empty-view-body">
+        <div class="cometchat-search__empty-view-body-title">
+          {{ 'search_no_result_title' | translate }}
+        </div>
+        <div class="cometchat-search__empty-view-body-description">
+          {{ 'search_no_result_subtitle' | translate }}
+        </div>
+      </div>
+    </div>
+  }
+</ng-template>
+
+<!-- Error state template -->
+<ng-template #errorTpl>
+  @if (errorView) {
+    <ng-container *ngTemplateOutlet="errorView"></ng-container>
+  } @else {
+    <div class="cometchat-search__error-view" aria-live="assertive">
+      <div class="cometchat-search__error-view-icon"></div>
+      <div class="cometchat-search__error-view-body">
+        <div class="cometchat-search__error-view-body-title">
+          {{ 'search_error_title' | translate }}
+        </div>
+        <div class="cometchat-search__error-view-body-description">
+          {{ 'search_error_subtitle' | translate }}
+        </div>
+      </div>
+    </div>
+  }
+</ng-template>

@@ -354,7 +354,8 @@
     "ai_assistant_chat_composer_placeholder": "Fai una domanda...",
     "ai_assistant_chat_new_chat": "Nuova chat",
     "ai_assistant_chat_history": "cronologia chat",
-    "ai_assistant_chat_history_title": "Cronologia chat",
+    "ai_assistant_chat_history_title": "AI Assistant",
+    "ai_assistant_chat_history_list_title": "Chat History",
     "ai_assistant_chat_thinking": "Sto pensando...",
     "ai_assistant_chat_executing_tool": "Esecuzione azione...",
     "ai_assistant_chat_no_internet": "Nessuna connessione internet. Controlla la tua rete.",
@@ -362,6 +363,7 @@
     "ai_assistant_chat_history_empty_subtitle": "Inizia una nuova conversazione per vederla qui.",
     "ai_assistant_chat_history_error_title": "Qualcosa è andato storto",
     "ai_assistant_chat_history_error_subtitle": "Stiamo riscontrando problemi nel caricamento della cronologia chat.",
+    "ai_assistant_chat_code_copied": "Copied!",
     "add_members": "Aggiungi membri",
     "add_member": "Aggiungi membro",
     "add_n_members": "Aggiungi {n} membri",
@@ -645,5 +647,8 @@
     "button_loading_text": "Caricamento...",
     "group_members_custom_options_error": "Errore nella funzione opzioni personalizzate",
     "accessibility_recording_paused": "Registrazione in pausa a {duration}",
-    "accessibility_recording_resumed": "Registrazione ripresa"
+    "accessibility_recording_resumed": "Registrazione ripresa",
+    "message_list_option_mark_as_unread": "Segna come non letto",
+    "message_list_unread_messages": "Messaggi non letti",
+    "message_list_unread_divider": "Divisore messaggi non letti"
 }

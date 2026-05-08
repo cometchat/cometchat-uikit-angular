@@ -71,6 +71,7 @@ export class AppStateService {
    * mutual exclusivity (clears active group automatically).
    */
   setSelectedUser(user: CometChat.User): void {
+    this.navigationService.setGotoMessageId(null);
     this.chatStateService.setActiveUser(user);
     this.chatStateService.setActiveGroup(null);
     this.navigationService.closeThreadPanel();
@@ -83,6 +84,7 @@ export class AppStateService {
    * mutual exclusivity (clears active user automatically).
    */
   setSelectedGroup(group: CometChat.Group): void {
+    this.navigationService.setGotoMessageId(null);
     this.chatStateService.setActiveGroup(group);
     this.chatStateService.setActiveUser(null);
     this.navigationService.closeThreadPanel();
@@ -95,6 +97,7 @@ export class AppStateService {
    * from the conversation and sets it as active.
    */
   setSelectedConversation(conversation: CometChat.Conversation): void {
+    this.navigationService.setGotoMessageId(null);
     this.chatStateService.setActiveConversation(conversation);
     this.navigationService.closeThreadPanel();
     this.navigationService.closeSidePanel();

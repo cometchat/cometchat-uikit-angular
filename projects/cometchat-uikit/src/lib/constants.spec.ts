@@ -163,7 +163,7 @@ describe('CometChatUIKitConstants', () => {
       expect(Object.isFrozen(CometChatUIKitConstants.MessageOption)).toBe(true);
     });
 
-    it('should have all 13 expected keys', () => {
+    it('should have all 14 expected keys', () => {
       const keys = Object.keys(CometChatUIKitConstants.MessageOption);
       expect(keys).toEqual(
         expect.arrayContaining([
@@ -180,9 +180,10 @@ describe('CometChatUIKitConstants', () => {
           'forwardMessage',
           'sendMessagePrivately',
           'replyMessagePrivately',
+          'markAsUnread',
         ])
       );
-      expect(keys).toHaveLength(13);
+      expect(keys).toHaveLength(14);
     });
 
     it('should have correct string values', () => {

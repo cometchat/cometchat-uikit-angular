@@ -108,8 +108,16 @@
             "pages": ["components/cometchat-message-header"]
           },
           {
+            "group": "Search",
+            "pages": ["components/cometchat-search"]
+          },
+          {
             "group": "Message List",
-            "pages": ["components/cometchat-message-list"]
+            "pages": [
+              "components/cometchat-message-list",
+              "components/cometchat-flag-message-dialog",
+              "components/cometchat-typing-indicator"
+            ]
           },
           {
             "group": "Message Composer",
@@ -117,7 +125,10 @@
           },
           {
             "group": "Message Bubble",
-            "pages": ["components/cometchat-message-bubble"]
+            "pages": [
+              "components/cometchat-message-bubble",
+              "components/cometchat-paginated-list"
+            ]
           },
           {
             "group": "Message Information",
@@ -125,7 +136,10 @@
           },
           {
             "group": "Thread Header",
-            "pages": ["components/cometchat-thread-header"]
+            "pages": [
+              "components/cometchat-thread-header",
+              "components/cometchat-thread-view"
+            ]
           },
           {
             "group": "Message Bubbles",
@@ -139,6 +153,7 @@
               "components/cometchat-delete-bubble",
               "components/cometchat-call-bubble",
               "components/cometchat-poll-bubble",
+              "components/cometchat-create-poll",
               "components/cometchat-collaborative-document-bubble",
               "components/cometchat-collaborative-whiteboard-bubble",
               "components/cometchat-sticker-bubble",
@@ -159,6 +174,7 @@
               "components/cometchat-call-buttons",
               "components/cometchat-incoming-call",
               "components/cometchat-outgoing-call",
+              "components/cometchat-ongoing-call",
               "components/cometchat-call-logs"
             ]
           },
@@ -167,7 +183,14 @@
             "pages": [
               "components/cometchat-smart-replies",
               "components/cometchat-conversation-starter",
-              "components/cometchat-conversation-summary"
+              "components/cometchat-conversation-summary",
+              "components/cometchat-ai-assistant-chat",
+              "components/cometchat-ai-assistant-chat-history",
+              "components/cometchat-ai-assistant-message-bubble",
+              "components/cometchat-stream-message-bubble",
+              "components/cometchat-toolcall-argument-bubble",
+              "components/cometchat-toolcall-result-bubble",
+              "components/cometchat-markdown-renderer"
             ]
           }
         ]
@@ -195,7 +218,8 @@
           "guides/custom-text-formatter",
           "guides/mentions-formatter",
           "guides/shortcut-formatter",
-          "guides/hashtag-formatter"
+          "guides/hashtag-formatter",
+          "guides/subscription-patterns"
         ]
       },
       {
@@ -205,6 +229,8 @@
           "api-reference/chat-state-service",
           "api-reference/message-bubble-config-service",
           "api-reference/templates-service",
+          "api-reference/search-conversations-service",
+          "api-reference/search-messages-service",
           "api-reference/formatter-config-service",
           "api-reference/rich-text-editor-service"
         ]

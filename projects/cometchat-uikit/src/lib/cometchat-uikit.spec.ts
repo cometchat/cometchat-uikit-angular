@@ -4,18 +4,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('@cometchat/calls-sdk-javascript', () => {
   return {
     CometChatCalls: {
-      CallAppSettingsBuilder: class {
-        setAppId() {
-          return this;
-        }
-        setRegion() {
-          return this;
-        }
-        build() {
-          return {};
-        }
-      },
       init: vi.fn().mockResolvedValue(true),
+      login: vi.fn().mockResolvedValue({ uid: 'mock-user' }),
+      generateToken: vi.fn().mockResolvedValue({ token: 'mock-token' }),
+      joinSession: vi.fn().mockResolvedValue({ error: null }),
+      leaveSession: vi.fn(),
+      addEventListener: vi.fn().mockReturnValue(() => {}),
+      removeEventListener: vi.fn(),
     },
   };
 });

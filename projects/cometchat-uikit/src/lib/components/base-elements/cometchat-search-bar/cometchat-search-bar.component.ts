@@ -8,11 +8,16 @@ import {
   OnDestroy,
   HostListener,
   ViewChild,
-  ElementRef, ChangeDetectionStrategy} from '@angular/core';
+  ElementRef,
+  ChangeDetectionStrategy,
+  DestroyRef,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, Subscription } from 'rxjs';
+import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getLocalizedString } from '../../../resources/CometChatLocalize/cometchat-localize';
 import { handleActivation } from '../../../utils/keyboard-utils';
 
@@ -48,16 +53,16 @@ export class CometChatSearchBarComponent implements OnInit, OnChanges, OnDestroy
   // Internal state
   searchValue = '';
   private searchSubject = new Subject<string>();
-  private subscription?: Subscription;
+  private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('searchInput') searchInputRef!: ElementRef<HTMLInputElement>;
 
   ngOnInit(): void {
     this.searchValue = this.searchText;
 
-    // Set up debounced search
-    this.subscription = this.searchSubject
-      .pipe(debounceTime(this.debounceDelay), distinctUntilChanged())
+    // Set up debounced search using takeUntilDestroyed for automatic cleanup
+    this.searchSubject
+      .pipe(debounceTime(this.debounceDelay), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(value => {
         this.searchChanged.emit({ value });
       });
@@ -70,9 +75,6 @@ export class CometChatSearchBarComponent implements OnInit, OnChanges, OnDestroy
   }
 
   ngOnDestroy(): void {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
     this.searchSubject.complete();
   }
 

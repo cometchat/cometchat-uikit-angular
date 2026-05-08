@@ -29,9 +29,9 @@ export default defineConfig({
     reporters: ['default', ['json', { outputFile: 'test-results/failed-tests.json' }]],
   },
   // Uncomment this to use the local UI Kit path instead of the npm path
-  // resolve: {
-  //   alias: {
-  //     '@cometchat/chat-uikit-angular': resolve(__dirname, 'projects/cometchat-uikit/src/public-api.ts'),
-  //   },
-  // },
+  resolve: {
+    alias: {
+      '@cometchat/chat-uikit-angular': resolve(__dirname, 'projects/cometchat-uikit/src/public-api.ts'),
+    },
+  },
 });
