@@ -395,3 +395,67 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies context menu trigger button renders. */
+export const TestTriggerRenders: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const trigger = canvasElement.querySelector('cometchat-context-menu, .cometchat-context-menu');
+    expect(trigger).not.toBeNull();
+    // Should have a clickable trigger (button or icon)
+    const btn = canvasElement.querySelector('.cometchat-context-menu__trigger, [class*="context-menu"] button, [class*="context-menu"] [class*="trigger"]');
+    expect(btn).not.toBeNull();
+  },
+};
+
+/** Verifies menu is hidden by default. */
+export const TestMenuHiddenByDefault: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    // Menu content/options should not be visible initially
+    const menuContent = canvasElement.querySelector('.cometchat-context-menu__options, [class*="context-menu"] [class*="options"], [role="menu"]');
+    if (menuContent) {
+      const isVisible = (menuContent as HTMLElement).offsetParent !== null;
+      // Menu should be hidden or not rendered
+      expect(isVisible).toBe(false);
+    }
+  },
+};
+
+/** Verifies clicking trigger opens the menu. */
+export const TestClickOpensMenu: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const trigger = canvasElement.querySelector('.cometchat-context-menu__trigger, [class*="context-menu"] button, [class*="context-menu"] [class*="trigger"]') as HTMLElement;
+    expect(trigger).not.toBeNull();
+
+    // Click the trigger
+    trigger.click();
+    await new Promise(r => setTimeout(r, 500));
+
+    // Menu should now be visible
+    const menuContent = canvasElement.querySelector('.cometchat-context-menu__options, [class*="context-menu"] [class*="options"], [role="menu"], .cometchat-popover__content--visible');
+    expect(menuContent).not.toBeNull();
+  },
+};
+
+/** Verifies menu items render with correct count. */
+export const TestMenuItemsRender: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const trigger = canvasElement.querySelector('.cometchat-context-menu__trigger, [class*="context-menu"] button, [class*="context-menu"] [class*="trigger"]') as HTMLElement;
+    if (trigger) {
+      trigger.click();
+      await new Promise(r => setTimeout(r, 500));
+
+      const menuItems = canvasElement.querySelectorAll('[role="menuitem"], .cometchat-context-menu__option, [class*="context-menu"] [class*="option"]');
+      expect(menuItems.length).toBeGreaterThan(0);
+    }
+  },
+};

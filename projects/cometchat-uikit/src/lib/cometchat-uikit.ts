@@ -40,7 +40,7 @@ declare global {
  * @example
  * // Injectable usage in components
  * constructor(private uiKit: CometChatUIKit) {
- *   this.uiKit.loggedInUser$.subscribe(user => console.log(user));
+ *   this.uiKit.loggedInUser$.subscribe(user => CometChatLogger.info(user));
  * }
  */
 @Injectable({ providedIn: 'root' })
@@ -92,7 +92,7 @@ export class CometChatUIKit {
     if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
     CometChatLocalize.setCurrentLanguage(CometChatLocalize.getBrowserLanguage());
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.0' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.2' };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
           CometChat.getLoggedinUser()

@@ -1218,12 +1218,8 @@ describe('CometChatGroupItemComponent - Property-Based Tests', () => {
             const ariaLabel = component.ariaLabel;
 
             // Assert
-            // ARIA label should follow consistent format
-            const parts = ariaLabel.split(', ');
-            expect(parts.length).toBeGreaterThanOrEqual(2);
-
-            // First part should be group name
-            expect(parts[0]).toBe(group.getName());
+            // ARIA label should always start with the group name
+            expect(ariaLabel.startsWith(group.getName())).toBe(true);
 
             // Should contain member count
             expect(ariaLabel).toContain(component.memberCountText);

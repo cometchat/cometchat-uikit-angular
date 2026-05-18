@@ -33,6 +33,7 @@ import { CometChatMentionsFormatter } from '../../formatters/cometchat-mentions-
 import { FormatterConfigService } from '../../services/formatter-config.service';
 import { HtmlSanitizerService } from '../../services/html-sanitizer.service';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import type { LinkPreviewData } from './cometchat-text-bubble.types';
 import {
   extractMessageText,
@@ -133,7 +134,7 @@ export class CometChatTextBubbleComponent implements OnInit, OnChanges, AfterVie
   private async initializeTextFormatters(): Promise<void> {
     let loggedInUser: CometChat.User | null = null;
     try { loggedInUser = await CometChat.getLoggedinUser(); } catch {
-      console.warn('CometChatTextBubble: Could not get logged-in user for formatter context');
+      CometChatLogger.warn('CometChatTextBubble', 'Could not get logged-in user for formatter context');
     }
     const formatters = this.effectiveTextFormatters();
     if (!formatters || formatters.length === 0) {
@@ -152,6 +153,11 @@ export class CometChatTextBubbleComponent implements OnInit, OnChanges, AfterVie
         }
       });
     }
+    // ENG-35075: Re-process the message after async formatter init so that
+    // markdown formatting (bold, italic, etc.) is applied on the first render.
+    // Without this, processMessage() runs before formatters are ready and
+    // returns raw markdown syntax instead of rendered HTML.
+    this.processMessage();
   }
 
   // ── Message Processing ────────────────────────────────────────────────────
@@ -213,7 +219,7 @@ export class CometChatTextBubbleComponent implements OnInit, OnChanges, AfterVie
           if (typeof result === 'string') { formattedText = result; }
         }
       } catch (error) {
-        console.warn('CometChatTextBubble: Error applying text formatter', error);
+        CometChatLogger.warn('CometChatTextBubble', 'Error applying text formatter', error);
       }
     }
     return this.sanitizeHtml(stripInvalidMentionFormats(formattedText));

@@ -12,6 +12,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatMarkdownRenderer } from './cometchat-markdown-renderer.component';
 import { MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 const meta: Meta<CometChatMarkdownRenderer> = {
   title: 'Components/AI/Markdown Renderer',
@@ -236,5 +237,21 @@ export const StreamingMode: Story = {
   },
   parameters: {
     docs: { description: { story: 'Streaming mode enables partial markdown parsing for live-updating content.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders markdown renderer container */
+export const TestDefaultRendersMarkdown: Story = {
+  args: {
+    text: 'Hello, **world**! This is a *markdown* renderer.',
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-markdown-renderer__container');
+    expect(container).not.toBeNull();
   },
 };

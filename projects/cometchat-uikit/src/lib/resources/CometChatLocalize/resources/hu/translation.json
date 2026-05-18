@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Válasszon egy lehetőséget",
     "checkbox_aria_label": "Jelölőnégyzet",
     "file_bubble_unknown_file": "Ismeretlen fájl",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Valami hiba történt",
     "error_boundary_retry": "Újrapróbálás",
     "message_bubble_render_error": "Ez az üzenet nem jeleníthető meg",

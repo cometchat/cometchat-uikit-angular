@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatCollaborativeWhiteboardBubbleComponent } from './cometchat-collaborative-whiteboard-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 import {
   createMockWhiteboardMessage,
   createMockUser,
@@ -157,5 +158,18 @@ export const OutgoingAndIncoming: Story = {
   }),
   parameters: {
     docs: { description: { story: 'Outgoing and incoming collaborative whiteboard bubbles shown together.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders collaborative whiteboard bubble container */
+export const TestDefaultRendersWhiteboardBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-collaborative-whiteboard-bubble');
+    expect(container).not.toBeNull();
   },
 };

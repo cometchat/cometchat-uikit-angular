@@ -242,3 +242,53 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies checked=true renders selected state. */
+export const TestCheckedState: Story = {
+  args: { checked: true, labelText: 'Selected', value: 'opt1' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const radio = canvasElement.querySelector('input[type="radio"], .cometchat-radio-button__input') as HTMLInputElement;
+    expect(radio).not.toBeNull();
+    expect(radio.checked).toBe(true);
+  },
+};
+
+/** Verifies checked=false renders unselected state. */
+export const TestUncheckedState: Story = {
+  args: { checked: false, labelText: 'Unselected', value: 'opt2' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const radio = canvasElement.querySelector('input[type="radio"], .cometchat-radio-button__input') as HTMLInputElement;
+    expect(radio).not.toBeNull();
+    expect(radio.checked).toBe(false);
+  },
+};
+
+/** Verifies disabled=true makes radio non-interactive. */
+export const TestDisabledRadio: Story = {
+  args: { checked: false, disabled: true, labelText: 'Disabled', value: 'opt3' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const radio = canvasElement.querySelector('input[type="radio"], .cometchat-radio-button__input') as HTMLInputElement;
+    expect(radio).not.toBeNull();
+    expect(radio.disabled).toBe(true);
+  },
+};
+
+/** Verifies label text renders correctly. */
+export const TestLabelText: Story = {
+  args: { checked: false, labelText: 'Option Label', value: 'opt4' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const label = canvasElement.querySelector('.cometchat-radio-button__label, label');
+    expect(label).not.toBeNull();
+    expect(label!.textContent!.trim()).toContain('Option Label');
+  },
+};

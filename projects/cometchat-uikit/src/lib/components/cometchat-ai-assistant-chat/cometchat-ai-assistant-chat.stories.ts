@@ -20,6 +20,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAIAssistantChat } from './cometchat-ai-assistant-chat.component';
 import { createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
+import { within, expect } from '@storybook/test';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -315,5 +316,24 @@ export const LayoutPreview: Story = {
   parameters: {
     docs: { description: { story: 'Static layout preview showing the AI assistant chat design with message header, greeting, suggestion pills, and minimal composer.' } },
     layout: 'centered',
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders AI assistant chat container */
+export const TestDefaultRendersChat: Story = {
+  args: {
+    user: aiAgentUser,
+    streamingSpeed: 30,
+    showSuggestedMessages: true,
+    loadLastAgentConversation: false,
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-ai-assistant-chat');
+    expect(container).not.toBeNull();
   },
 };

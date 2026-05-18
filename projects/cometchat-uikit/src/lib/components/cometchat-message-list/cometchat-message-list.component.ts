@@ -437,7 +437,21 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   private getLatestReceiverMessage(messages: CometChat.BaseMessage[]): CometChat.BaseMessage | undefined { return getLatestReceiverMessageUtil(messages, this.loggedInUser?.getUid() || '') ?? undefined; }
   private isReceiverMessage(message: CometChat.BaseMessage): boolean { return isReceiverMessageUtil(message, this.loggedInUser?.getUid() || ''); }
   private isSenderMessage(message: CometChat.BaseMessage): boolean { return isSenderMessageUtil(message, this.loggedInUser?.getUid() || ''); }
-  private notifyUnreadCountChange(_count: number): void {}
+  private notifyUnreadCountChange(_count: number): void {
+    // Clear the unread count in the conversation list when messages are marked as read
+    const conversationId = this.getConversationId();
+    if (conversationId) {
+      this.conversationsService.updateConversationUnreadCount(conversationId, _count);
+    }
+    // Also clear the message list unread divider and count
+    if (_count === 0) {
+      this.unreadDividerMessageId.set(null);
+      this.markedAsUnreadCount.set(0);
+      this.showScrollToBottom.set(false);
+      this.showNewMessagesBanner.set(false);
+      this.newMessagesCount.set(0);
+    }
+  }
   private notifyMessagesRead(message: CometChat.BaseMessage): void { notifyMessagesReadImpl(this as any, message); }
   private getConversationId(): string | null { return getConversationIdUtil(this.user || null, this.group || null); }
   private getConversationType(): string { return getConversationTypeUtil(this.user || null, this.group || null); }

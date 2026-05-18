@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Bir seçenek belirleyin",
     "checkbox_aria_label": "Onay kutusu",
     "file_bubble_unknown_file": "Bilinmeyen dosya",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Bir şeyler ters gitti",
     "error_boundary_retry": "Tekrar dene",
     "message_bubble_render_error": "Bu mesaj görüntülenemiyor",

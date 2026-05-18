@@ -16,6 +16,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { CometChatGroupItemComponent } from './cometchat-group-item.component';
 import { createMockGroup } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ============================================
 // Meta Configuration
@@ -325,5 +326,18 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all group item variants — public, private, password-protected, large member count, and hidden type indicator — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders group item container */
+export const TestDefaultRendersItem: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-group-item');
+    expect(container).not.toBeNull();
   },
 };

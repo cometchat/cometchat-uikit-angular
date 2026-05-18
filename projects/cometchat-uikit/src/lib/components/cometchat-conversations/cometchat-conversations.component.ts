@@ -162,6 +162,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   private lastSoundPlayedAt = 0; private readonly SOUND_THROTTLE_INTERVAL = 2000; private previousConversations: CometChat.Conversation[] = [];
   private lastSelectedIndex = -1; public activeFormatters: CometChatTextFormatter[] = [];
   private typingAnnouncementTimeout: ReturnType<typeof setTimeout> | null = null; private lastAnnouncedTypingUser: string | null = null;
+  private previousTypingSize = 0;
   private readonly destroyRef = inject(DestroyRef);
   readonly SelectionMode = SelectionMode; readonly Placement = Placement;
 
@@ -174,7 +175,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
 
     effect(() => { const c = this.conversations(); this.detectAndAnnounceNewConversation(c, this.previousConversations); this.previousConversations = [...c]; }, { allowSignalWrites: true });
 
-    effect(() => { const ti = this.typingIndicators(); if (ti?.size > 0) { const e = ti.entries().next().value; if (e) { const s = (e[1] as CometChat.TypingIndicator).getSender(); if (s) this.announceTyping(s.getName()); } } }, { allowSignalWrites: true });
+    effect(() => { const ti = this.typingIndicators(); const currentSize = ti?.size ?? 0; if (currentSize > this.previousTypingSize && currentSize > 0) { const e = ti.entries().next().value; if (e) { const s = (e[1] as CometChat.TypingIndicator).getSender(); if (s) this.announceTyping(s.getName()); } } this.previousTypingSize = currentSize; }, { allowSignalWrites: true });
 
     effect(() => { const e = this.errorState(); if (e && !this.effectiveHideError()) this.error.emit(e as CometChat.CometChatException); }, { allowSignalWrites: true });
 
@@ -182,11 +183,13 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   }
   ngOnInit(): void {
     try {
-      this.initializeLoggedInUser();
+      this.initializeLoggedInUser().then(() => {
+        // Reconfigure formatters with the now-resolved logged-in user
+        this.configureFormattersWithUser();
+      }).catch(() => { /* ignore — formatters work without user context */ });
       this.initializeFormatters();
       this.initializeService();
       this.setupSearchDebouncing();
-
       this.subscribeToMessagesReadEvents();
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -215,7 +218,15 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   }
   handleScrollToTop(): void { this.scrollToTop.emit(); }
   handleScrollToBottom(): void { this.scrollToBottom.emit(); }
-  handleConversationClick(conversation: CometChat.Conversation): void { if (this.selectionMode !== SelectionMode.none) { this.handleSelection(conversation); return; } this.conversationsService.setActiveConversation(conversation); if (this.itemClick.observed) { this.itemClick.emit(conversation); } else { this.chatStateService.setActiveConversation(conversation); } }
+  handleConversationClick(conversation: CometChat.Conversation): void {
+    if (this.selectionMode !== SelectionMode.none) { this.handleSelection(conversation); return; }
+    // ENG-35029: Guard against clicks while the conversation list is still loading.
+    // Clicking during load can result in a "Something went wrong" error because the
+    // conversation object may be incomplete or the message list service isn't ready.
+    if (this.loadingState()) { return; }
+    this.conversationsService.setActiveConversation(conversation);
+    if (this.itemClick.observed) { this.itemClick.emit(conversation); } else { this.chatStateService.setActiveConversation(conversation); }
+  }
   handleConversationSelect(event: { conversation: CometChat.Conversation; selected: boolean }): void { this.select.emit(event); }
   handleContextMenuOpen(conversation: CometChat.Conversation): void { this.contextMenuOpen.emit(conversation); }
   handleContextMenuOptionClick(event: { option: CometChatOption; conversation: CometChat.Conversation }): void { if (event.option.id === 'delete') this.handleDeleteConversationClick(event.conversation); if (event.option.onClick) event.option.onClick(); }

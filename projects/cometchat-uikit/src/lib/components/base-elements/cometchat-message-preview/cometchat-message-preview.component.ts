@@ -7,6 +7,7 @@ import {
   ElementRef,
   ViewChild,
   AfterViewInit,
+  OnInit,
   OnDestroy,
   HostListener,
   inject,
@@ -18,6 +19,7 @@ import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometcha
 import { CometChatTextFormatter } from '../../../formatters/cometchat-text-formatter';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../../services/global-config.service';
 import { MessagePreviewMode, MESSAGE_TYPES } from './cometchat-message-preview.types';
+import { CometChatUIKit } from '../../../cometchat-uikit';
 
 export type { MessagePreviewMode };
 
@@ -59,7 +61,7 @@ export type { MessagePreviewMode };
   templateUrl: './cometchat-message-preview.component.html',
   styleUrls: ['./cometchat-message-preview.component.css'],
 })
-export class CometChatMessagePreviewComponent implements AfterViewInit, OnDestroy {
+export class CometChatMessagePreviewComponent implements OnInit, AfterViewInit, OnDestroy {
   // ============================================
   // Injected Services (GlobalConfig)
   // ============================================
@@ -140,6 +142,8 @@ export class CometChatMessagePreviewComponent implements AfterViewInit, OnDestro
 
   /** Internal width state for bubble view mode */
   width = 0;
+  /** Cached logged-in user for "You" detection in senderName */
+  private loggedInUser: CometChat.User | null = null;
 
   private resizeObserver: ResizeObserver | null = null;
 
@@ -197,7 +201,13 @@ export class CometChatMessagePreviewComponent implements AfterViewInit, OnDestro
       return '';
     }
     const sender = this.message.getSender?.();
-    return sender?.getName?.() || CometChatLocalize.getLocalizedString('unknown');
+    if (!sender) return CometChatLocalize.getLocalizedString('unknown');
+    // ENG-35080: Show "You" when the sender is the logged-in user
+    const loggedInUser = this.loggedInUser || CometChatUIKit.getLoggedInUser();
+    if (loggedInUser && sender.getUid() === loggedInUser.getUid()) {
+      return CometChatLocalize.getLocalizedString('conversation_subtitle_you_message');
+    }
+    return sender.getName?.() || CometChatLocalize.getLocalizedString('unknown');
   }
 
   /**
@@ -243,9 +253,29 @@ export class CometChatMessagePreviewComponent implements AfterViewInit, OnDestro
         return CometChatLocalize.getLocalizedString('conversation_subtitle_audio');
       case MESSAGE_TYPES.FILE:
         return CometChatLocalize.getLocalizedString('conversation_subtitle_file');
-      default:
-        // For custom messages or other types
+      // ENG-35080: Handle sticker and poll custom message types
+      case MESSAGE_TYPES.STICKER:
+        return CometChatLocalize.getLocalizedString('conversation_subtitle_sticker');
+      case MESSAGE_TYPES.POLL:
+        return CometChatLocalize.getLocalizedString('conversation_subtitle_poll');
+      case 'extension_document':
+        return CometChatLocalize.getLocalizedString('conversation_subtitle_collaborative_document');
+      case 'extension_whiteboard':
+        return CometChatLocalize.getLocalizedString('conversation_subtitle_collaborative_whiteboard');
+      default: {
+        // For unknown custom message types, show customData.text or the type name
+        const category = this.message.getCategory?.();
+        if (category === 'custom') {
+          try {
+            const customData = (this.message as CometChat.CustomMessage).getCustomData?.();
+            if (customData && typeof customData === 'object' && 'text' in customData) {
+              return String((customData as Record<string, unknown>)['text']) || messageType;
+            }
+          } catch { /* ignore */ }
+          return messageType;
+        }
         return CometChatLocalize.getLocalizedString('message');
+      }
     }
   }
 
@@ -299,11 +329,14 @@ export class CometChatMessagePreviewComponent implements AfterViewInit, OnDestro
    */
   get containerStyle(): Record<string, string> {
     if (this.hideCloseButton) {
-      const maxWidth = this.width <= 100 ? '105px' : `${this.width}px`;
+      // In bubble mode, always stretch to full width of the reply view container.
+      // The previous approach measured the content view width and used it as maxWidth,
+      // but that caused the reply preview to be narrower than the bubble when the
+      // message text was short.
       if (this.isMessageModerated && this.width < 240) {
         return { width: 'calc(240px - var(--cometchat-padding-1) * 2)' };
       }
-      return { maxWidth, width: '100%' };
+      return { width: '100%' };
     }
     return { maxWidth: '100%', width: '100%' };
   }
@@ -315,6 +348,17 @@ export class CometChatMessagePreviewComponent implements AfterViewInit, OnDestro
     return this.hideCloseButton ? 'cometchat-message-preview--bubble' : 'cometchat-message-preview--composer';
   }
 
+  ngOnInit(): void {
+    // Cache the logged-in user for "You" detection in senderName.
+    // Try the synchronous UIKit cache first; fall back to the async SDK call.
+    this.loggedInUser = CometChatUIKit.getLoggedInUser();
+    if (!this.loggedInUser) {
+      CometChat.getLoggedinUser().then(user => {
+        this.loggedInUser = user;
+      }).catch(() => {});
+    }
+  }
+
   ngAfterViewInit(): void {
     this.setupResizeObserver();
   }
@@ -322,10 +366,6 @@ export class CometChatMessagePreviewComponent implements AfterViewInit, OnDestro
   ngOnDestroy(): void {
     this.cleanupResizeObserver();
   }
-
-  /**
-   * Sets up ResizeObserver for bubble view mode width calculation
-   */
   private setupResizeObserver(): void {
     if (!this.hideCloseButton || !this.elementRef?.nativeElement) {
       return;

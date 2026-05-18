@@ -217,12 +217,24 @@
 }
 
 /**
- * Loading state for images
- * @see Requirements 11.5
+ * Loading state for images — kept for backward compatibility
  */
 .cometchat-image-bubble__image--loading {
   background: var(--cometchat-background-color-02);
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+/**
+ * Hidden preloader image — loads the real image off-screen.
+ * Once loaded, onImageLoad() swaps the visible src to the real URL.
+ */
+.cometchat-image-bubble__preloader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 @keyframes pulse {

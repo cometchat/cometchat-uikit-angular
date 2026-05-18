@@ -78,9 +78,7 @@ export async function markAsReadWithRetryImpl(ctx: any, message: CometChat.BaseM
   } catch (error) {
     if (retryCount < MAX_RETRIES) {
       const delay = RETRY_DELAYS[retryCount];
-      console.warn(
-        `[CometChatMessageList] Retrying markAsRead after ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`
-      );
+      CometChatLogger.warn('CometChatMessageList', `Retrying markAsRead after ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return markAsReadWithRetryImpl(ctx, message, retryCount + 1);
     } else {

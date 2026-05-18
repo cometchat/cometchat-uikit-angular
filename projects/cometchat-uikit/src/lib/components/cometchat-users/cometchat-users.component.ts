@@ -27,6 +27,7 @@ import { CometChatTemplatesService } from '../../services/templates.service';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
 import { TypeAheadService } from '../../services/type-ahead.service';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { handleListKeyDown, ListKeyboardHost } from '../../utils/list-keyboard-handler';
 import { focusNextUserItem, focusPreviousUserItem, scrollUserItemIntoView, focusUserItemAtIndex } from './cometchat-users.keyboard';
@@ -167,10 +168,10 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
 
   private setupUserListener(): void {
     try { CometChat.addUserListener(this.userListenerId, new CometChat.UserListener({ onUserOnline: (u: CometChat.User) => this.updateUser(u), onUserOffline: (u: CometChat.User) => this.updateUser(u) })); }
-    catch (error) { console.error('[CometChatUsers] Error setting up user listener:', error); }
+    catch (error) { CometChatLogger.error('CometChatUsers', 'Error setting up user listener:', error); }
   }
   private removeUserListener(): void {
-    try { CometChat.removeUserListener(this.userListenerId); } catch (error) { console.error('[CometChatUsers] Error removing user listener:', error); }
+    try { CometChat.removeUserListener(this.userListenerId); } catch (error) { CometChatLogger.error('CometChatUsers', 'Error removing user listener:', error); }
   }
 
   private setupUserEventSubscriptions(): void {
@@ -397,8 +398,9 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
     const target = event.target as HTMLElement; if (!target) return;
     const itemDiv = target.classList.contains('cometchat-user-item') ? target : target.closest('.cometchat-user-item'); if (!itemDiv) return;
     const paginatedListItem = itemDiv.closest('.cometchat-users__list-item-wrapper')?.closest('.cometchat-paginated-list__item'); if (!paginatedListItem) return;
-    const itemsContainer = paginatedListItem.parentElement; if (!itemsContainer?.classList.contains('cometchat-paginated-list__items')) return;
-    const index = Array.from(itemsContainer.children).indexOf(paginatedListItem);
+    // O(1) lookup via data-index attribute instead of Array.from().indexOf()
+    const indexAttr = (paginatedListItem as HTMLElement).dataset['index'];
+    const index = indexAttr !== undefined ? parseInt(indexAttr, 10) : -1;
     if (index !== -1 && this.focusedIndex !== index) { this.focusedIndex = index; this.cdr.markForCheck(); }
   }
 }

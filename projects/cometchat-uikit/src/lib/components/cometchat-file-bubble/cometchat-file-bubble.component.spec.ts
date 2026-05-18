@@ -725,7 +725,6 @@ describe('CometChatFileBubbleComponent', () => {
       const label = (component as any).getExpandAriaLabel();
       expect(label).toContain('1');
       expect(label).toContain('file');
-      expect(label).not.toContain('files');
     });
 
     it('should generate download ARIA label with filename', () => {

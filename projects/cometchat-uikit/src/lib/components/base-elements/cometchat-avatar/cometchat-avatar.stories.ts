@@ -172,6 +172,82 @@ export const BrokenImage: Story = {
 };
 
 // ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { within, expect } from '@storybook/test';
+
+/** Verifies image prop renders an img element. */
+export const TestImageRendersImg: Story = {
+  args: {
+    image: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp',
+    name: 'John Doe',
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const img = canvasElement.querySelector('.cometchat-avatar__image, img');
+    expect(img).not.toBeNull();
+  },
+};
+
+/** Verifies empty image shows initials fallback. */
+export const TestNoImageShowsInitials: Story = {
+  args: { image: '', name: 'Jane Smith' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const initials = canvasElement.querySelector('.cometchat-avatar__text, .cometchat-avatar__initials');
+    expect(initials).not.toBeNull();
+    expect(initials!.textContent!.trim()).toBe('JS');
+  },
+};
+
+/** Verifies single-word name produces first two characters. */
+export const TestSingleWordInitials: Story = {
+  args: { image: '', name: 'Alice' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const initials = canvasElement.querySelector('.cometchat-avatar__text, .cometchat-avatar__initials');
+    expect(initials).not.toBeNull();
+    expect(initials!.textContent!.trim()).toBe('AL');
+  },
+};
+
+/** Verifies multi-word name produces first letters of first two words. */
+export const TestMultiWordInitials: Story = {
+  args: { image: '', name: 'Robert James Wilson' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const initials = canvasElement.querySelector('.cometchat-avatar__text, .cometchat-avatar__initials');
+    expect(initials).not.toBeNull();
+    expect(initials!.textContent!.trim()).toBe('RJ');
+  },
+};
+
+/** Verifies empty name renders no initials text. */
+export const TestEmptyNameNoInitials: Story = {
+  args: { image: '', name: '' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const initials = canvasElement.querySelector('.cometchat-avatar__text, .cometchat-avatar__initials');
+    if (initials) {
+      expect(initials.textContent!.trim()).toBe('');
+    }
+  },
+};
+
+/** Verifies avatar has accessible aria-label. */
+export const TestAriaLabel: Story = {
+  args: { image: '', name: 'Test User' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const avatar = canvasElement.querySelector('.cometchat-avatar, cometchat-avatar');
+    expect(avatar).not.toBeNull();
+    const ariaLabel = avatar!.getAttribute('aria-label') || avatar!.querySelector('[aria-label]')?.getAttribute('aria-label');
+    expect(ariaLabel).toBeTruthy();
+  },
+};
+
+// ============================================
 // Showcase
 // ============================================
 

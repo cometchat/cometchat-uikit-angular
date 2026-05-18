@@ -338,7 +338,7 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
     const target = resolveDownloadTarget(
       this.isGalleryMode, this.currentAttachment, this.url, this.fileName, this.mediaType
     );
-    if (!target) { console.warn('No media URL available for download'); return; }
+    if (!target) { CometChatLogger.warn('CometChatFullscreenViewer', 'No media URL available for download'); return; }
     triggerMediaDownload(target.mediaUrl, target.filename);
     this.downloadClick.emit(target.currentMedia);
   }

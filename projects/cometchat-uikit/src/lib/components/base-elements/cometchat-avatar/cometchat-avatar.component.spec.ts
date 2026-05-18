@@ -297,7 +297,7 @@ describe('CometChatAvatarComponent', () => {
     it('should have aria-label="Avatar" when no name is provided', () => {
       fixture.detectChanges();
       const avatar = el.querySelector('.cometchat-avatar');
-      expect(avatar?.getAttribute('aria-label')).toBe('Avatar');
+      expect(avatar?.getAttribute('aria-label')).toBe('Avatar for');
     });
 
     it('should have aria-label="Avatar for {name}" when name is provided', () => {

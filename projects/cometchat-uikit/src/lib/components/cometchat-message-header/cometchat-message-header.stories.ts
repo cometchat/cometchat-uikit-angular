@@ -19,6 +19,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { within, expect } from '@storybook/test';
 
 import { CometChatMessageHeaderComponent } from './cometchat-message-header.component';
 import { CallButtonsService } from '../../services/call-buttons.service';
@@ -360,5 +361,112 @@ export const WithConversationSummary: Story = {
         story: 'Header with the AI conversation summary button enabled.',
       },
     },
+  },
+};
+
+
+// ============================================
+// Interaction Tests — Prop Toggle Verification
+// ============================================
+
+/** Verifies user chat header renders avatar, title, and status. */
+export const TestUserHeaderRendersContent: Story = {
+  render: headerRenderUser(onlineUser),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Header content should be present
+    const content = canvasElement.querySelector('.cometchat-message-header__content');
+    expect(content).not.toBeNull();
+    // Title should be visible
+    const title = canvasElement.querySelector('.cometchat-message-header__title');
+    expect(title).not.toBeNull();
+    expect(title!.textContent!.trim()).toBe('John Doe');
+    // Avatar should be present
+    const avatar = canvasElement.querySelector('cometchat-avatar');
+    expect(avatar).not.toBeNull();
+  },
+};
+
+/** Verifies group chat header renders member count in subtitle. */
+export const TestGroupHeaderRendersMemberCount: Story = {
+  render: headerRenderGroup(),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Title should show group name
+    const title = canvasElement.querySelector('.cometchat-message-header__title');
+    expect(title).not.toBeNull();
+    expect(title!.textContent!.trim()).toBe('Design Team');
+    // Subtitle should show member count
+    const subtitle = canvasElement.querySelector('.cometchat-message-header__subtitle--members');
+    expect(subtitle).not.toBeNull();
+    expect(subtitle!.textContent).toContain('12');
+  },
+};
+
+/** Verifies showBackButton=true renders the back button. */
+export const TestShowBackButton: Story = {
+  args: { showBackButton: true },
+  render: headerRenderUser(onlineUser),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Back button should be present
+    const backButton = canvasElement.querySelector('.cometchat-message-header__back-button');
+    expect(backButton).not.toBeNull();
+  },
+};
+
+/** Verifies showBackButton=false hides the back button. */
+export const TestHideBackButton: Story = {
+  args: { showBackButton: false },
+  render: headerRenderUser(onlineUser),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Back button should NOT be present
+    const backButton = canvasElement.querySelector('.cometchat-message-header__back-button');
+    expect(backButton).toBeNull();
+  },
+};
+
+/** Verifies hideVoiceCallButton=true and hideVideoCallButton=true hides call buttons. */
+export const TestHideCallButtons: Story = {
+  args: { hideVoiceCallButton: true, hideVideoCallButton: true },
+  render: headerRenderUser(onlineUser),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Call buttons container should have no visible call buttons
+    const callButtons = canvasElement.querySelector('.cometchat-message-header__call-buttons');
+    if (callButtons) {
+      const voiceBtn = callButtons.querySelector('.cometchat-call-buttons__voice-button, [aria-label*="voice"], [aria-label*="Voice"]');
+      const videoBtn = callButtons.querySelector('.cometchat-call-buttons__video-button, [aria-label*="video"], [aria-label*="Video"]');
+      expect(voiceBtn).toBeNull();
+      expect(videoBtn).toBeNull();
+    }
+  },
+};
+
+/** Verifies hideUserStatus=true hides the online/offline status indicator. */
+export const TestHideUserStatus: Story = {
+  args: { hideUserStatus: true },
+  render: headerRenderUser(onlineUser),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Status indicator should NOT be present
+    const statusIndicator = canvasElement.querySelector('.cometchat-message-header__status-indicator');
+    expect(statusIndicator).toBeNull();
+    // Online subtitle should NOT be present
+    const onlineSubtitle = canvasElement.querySelector('.cometchat-message-header__subtitle--online');
+    expect(onlineSubtitle).toBeNull();
+  },
+};
+
+/** Verifies showSearchOption=true renders the search button. */
+export const TestShowSearchOption: Story = {
+  args: { showSearchOption: true },
+  render: headerRenderUser(onlineUser),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Search button should be present
+    const searchBtn = canvasElement.querySelector('.cometchat-message-header__menu-button--search');
+    expect(searchBtn).not.toBeNull();
   },
 };

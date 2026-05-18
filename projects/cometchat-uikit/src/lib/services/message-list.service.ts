@@ -250,6 +250,8 @@ export class MessageListService {
   async fetchPreviousMessages(): Promise<boolean> { return fetchPreviousMessagesImpl(this as any); }
   async fetchNextMessages(): Promise<boolean> { return fetchNextMessagesImpl(this as any); }
   async fetchMessagesAroundId(messageId: number): Promise<void> { return fetchMessagesAroundIdImpl(this as any, messageId); }
+  /** Returns the current fetch generation — used by fetchWithUnreadPivot to detect stale async calls. */
+  getFetchGeneration(): number { return this.fetchGeneration; }
   private deduplicateMessages(messages: CometChat.BaseMessage[]): CometChat.BaseMessage[] { return deduplicateMessagesImpl(this as any, messages); }
   private isRecoverableError(error: unknown): boolean { return isRecoverableError(error); }
   private isRecoverableErrorMessage(message: string): boolean { return isRecoverableErrorMessage(message); }
@@ -331,19 +333,20 @@ export class MessageListService {
     CometChatMessageEvents.onMessageDeleted.next(message);
   }
   handleReceipt(receipt: CometChat.MessageReceipt, isGroupReceipt: boolean): void { handleReceiptImpl(this as any, receipt, isGroupReceipt); }
-  handleReactionEvent(reactionEvent: CometChat.ReactionEvent): void {
+  handleReactionEvent(reactionEvent: CometChat.ReactionEvent, action: 'added' | 'removed'): void {
     const reaction = reactionEvent.getReaction();
     if (!reaction) { CometChatLogger.warn('MessageListService', 'handleReactionEvent: No reaction in event'); return; }
     const messageId = reaction.getMessageId();
-    if (!messageId || typeof messageId !== 'number') { CometChatLogger.warn('MessageListService', 'handleReactionEvent: Invalid message ID:', messageId); return; }
-    const message = this.getMessageById(messageId);
-    if (!message) {
-      return;
-    }
-    const eventReactions = (reaction as unknown as CometChat.ReactionEvent & { getReactions?(): CometChat.ReactionCount[] }).getReactions?.();
-    const updatedReactions: CometChat.ReactionCount[] =
-      eventReactions || message.getReactions() || [];
-    this.updateMessageReactions(messageId, updatedReactions);
+    const numericMessageId = typeof messageId === 'string' ? parseInt(messageId, 10) : Number(messageId);
+    if (!numericMessageId || isNaN(numericMessageId)) { CometChatLogger.warn('MessageListService', 'handleReactionEvent: Invalid message ID:', messageId); return; }
+    const message = this.getMessageById(numericMessageId);
+    if (!message) { return; }
+    const emoji = reaction.getReaction();
+    const reactedBy = reaction.getReactedBy();
+    if (!emoji || !reactedBy) { return; }
+    const currentReactions = message.getReactions() || [];
+    const updatedReactions = applyReactionEvent(currentReactions, emoji, action, reactedBy);
+    this.updateMessageReactions(numericMessageId, updatedReactions);
   }
   private setupGroupListener(): void { setupGrpListener(this); }
   private setupCallListener(): void { setupCallLstnr(this); }

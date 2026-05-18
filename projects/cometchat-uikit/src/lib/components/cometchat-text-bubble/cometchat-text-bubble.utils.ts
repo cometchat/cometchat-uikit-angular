@@ -179,3 +179,21 @@ export function getDomainFromUrl(url: string): string {
     return '';
   }
 }
+
+/**
+ * Converts a subset of markdown syntax to HTML.
+ * Handles: inline code, bold, italic, underline, strikethrough, and markdown links.
+ * Shared utility used by CometChatConversationItem subtitle rendering.
+ */
+export function convertMarkdownToHtml(text: string): string {
+  if (!text) return '';
+  let r = text;
+  r = r.replace(/`([^`]+)`/g, '<code>$1</code>');
+  r = r.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  r = r.replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, '<em>$1</em>');
+  r = r.replace(/__([^_]+)__/g, '<u>$1</u>');
+  r = r.replace(/(?<!_)_(?!_)([^_]+)_(?!_)/g, '<em>$1</em>');
+  r = r.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+  r = r.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="cometchat-link">$1</a>');
+  return r;
+}

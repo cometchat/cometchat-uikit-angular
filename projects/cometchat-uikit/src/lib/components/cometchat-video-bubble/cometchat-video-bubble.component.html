@@ -23,7 +23,7 @@
       <img
         *ngIf="!failedThumbnails.has(0)"
         class="cometchat-video-bubble__thumbnail"
-        [src]="attachments[0].thumbnail || attachments[0].url"
+        [src]="attachments[0].displayUrl ?? attachments[0].url"
         alt=""
         aria-hidden="true"
         loading="lazy"
@@ -73,7 +73,7 @@
         <img
           *ngIf="!failedThumbnails.has(i)"
           class="cometchat-video-bubble__thumbnail"
-          [src]="attachment.thumbnail || attachment.url"
+          [src]="attachment.displayUrl ?? attachment.url"
           alt=""
           aria-hidden="true"
           loading="lazy"
@@ -121,7 +121,7 @@
         <img
           *ngIf="!failedThumbnails.has(i)"
           class="cometchat-video-bubble__thumbnail"
-          [src]="attachment.thumbnail || attachment.url"
+          [src]="attachment.displayUrl ?? attachment.url"
           alt=""
           aria-hidden="true"
           loading="lazy"
@@ -170,7 +170,7 @@
         <img
           *ngIf="!failedThumbnails.has(i)"
           class="cometchat-video-bubble__thumbnail"
-          [src]="attachment.thumbnail || attachment.url"
+          [src]="attachment.displayUrl ?? attachment.url"
           alt=""
           aria-hidden="true"
           loading="lazy"
@@ -207,7 +207,7 @@
         tabindex="0"
         role="button"
         [attr.aria-label]="getOverflowAriaLabel()"
-        [style.background-image]="'url(' + (attachments[3].thumbnail || attachments[3].url) + ')'">
+        [style.background-image]="'url(' + (attachments[3].displayUrl ?? attachments[3].url) + ')'">
         <div class="cometchat-video-bubble__overflow-overlay" aria-hidden="true">
           <span class="cometchat-video-bubble__overflow-text">
             {{ getOverflowText() }}

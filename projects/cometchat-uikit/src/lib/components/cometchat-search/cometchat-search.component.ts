@@ -39,6 +39,8 @@ import { CometChatLocalize } from '../../resources/CometChatLocalize';
 import { CometChatTemplatesService } from '../../services/templates.service';
 import { FormatterConfigService } from '../../services/formatter-config.service';
 import { CometChatUIKit } from '../../cometchat-uikit';
+import { SearchConversationsService } from '../../services/search-conversations.service';
+import { SearchMessagesService } from '../../services/search-messages.service';
 
 export interface SearchConversationClickEvent {
   conversation: CometChat.Conversation;
@@ -79,6 +81,11 @@ const DEFAULT_FILTERS: CometChatSearchFilter[] = [
   templateUrl: './cometchat-search.component.html',
   styleUrls: ['./cometchat-search.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Provide services at component level so each CometChatSearchComponent instance
+  // gets its own isolated service instances. Without this, both the global search
+  // and the in-chat (scoped) search share the same singleton services, causing
+  // filter selections in one to trigger searches and shimmer in the other.
+  providers: [SearchConversationsService, SearchMessagesService],
 })
 export class CometChatSearchComponent implements OnInit, OnDestroy {
   @Input() searchIn: CometChatSearchScope[] = [];
@@ -316,6 +323,17 @@ export class CometChatSearchComponent implements OnInit, OnDestroy {
 
     if (this.initialSearchFilter && this.activeFilters().length === 0) {
       this.activeFilters.set([this.initialSearchFilter]);
+    }
+
+    // ENG-35072: When scoped to a specific user/group (uid/guid), reset active filters
+    // to prevent conversation-scope filters from a previous global search from leaking
+    // into the message search results for this conversation.
+    if ((this.uid || this.guid) && this.activeFilters().some(f => [
+      CometChatSearchFilter.Conversations,
+      CometChatSearchFilter.Unread,
+      CometChatSearchFilter.Groups,
+    ].includes(f))) {
+      this.activeFilters.set([]);
     }
 
     if (this.defaultSearchText) {

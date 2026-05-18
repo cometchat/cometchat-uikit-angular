@@ -19,6 +19,7 @@ import {
   OnChanges,
 } from '@angular/core';
 import { CometChatReactionInfoComponent } from './cometchat-reaction-info.component';
+import { within, expect } from '@storybook/test';
 import {
   createMockMessage,
   createMockReaction,
@@ -404,3 +405,9 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+

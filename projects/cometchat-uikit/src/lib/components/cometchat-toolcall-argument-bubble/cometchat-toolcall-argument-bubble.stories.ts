@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatToolCallArgumentBubble } from './cometchat-toolcall-argument-bubble.component';
 import { MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -153,5 +154,18 @@ export const ComplexArguments: Story = {
   },
   parameters: {
     docs: { description: { story: 'Tool call with deeply nested JSON arguments.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders toolcall argument bubble container */
+export const TestDefaultRendersToolcallArgBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-toolcall-argument-bubble');
+    expect(container).not.toBeNull();
   },
 };

@@ -57,7 +57,7 @@ export class CometChatSelectorComponent implements OnInit {
   private tabChangeEffect = effect(() => {
     this.activeTab(); // track the signal
     this.showContextMenu.set(false);
-  });
+  },{ allowSignalWrites: true});
 
   /** Close context menu on any click outside the menu wrapper */
   @HostListener('document:click', ['$event'])

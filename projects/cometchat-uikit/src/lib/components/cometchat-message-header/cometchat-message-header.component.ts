@@ -20,6 +20,7 @@ import {COMETCHAT_GLOBAL_CONFIG, GlobalConfig} from '../../services/global-confi
 
 import {TranslatePipe} from '../../resources/CometChatLocalize/translate.pipe';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
+import {CometChatLogger} from '../../utils/CometChatLogger';
 
 import {CalendarObject} from '../../resources/CometChatLocalize/localization.interfaces';
 
@@ -146,7 +147,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
       if (changes['group'] && !changes['group'].firstChange) { this.handleGroupChange(changes['group'].previousValue); }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      console.error('[CometChatMessageHeader] Error in ngOnChanges:', err);
+      CometChatLogger.error('CometChatMessageHeader', 'Error in ngOnChanges:', err);
     }
   }
   ngOnDestroy(): void {
@@ -157,7 +158,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     } catch (error) {
       // @see Requirement 2.4 (Error Boundaries spec)
       const err = error instanceof Error ? error : new Error(String(error));
-      console.error('[CometChatMessageHeader] Error in ngOnDestroy:', err);
+      CometChatLogger.error('CometChatMessageHeader', 'Error in ngOnDestroy:', err);
     }
   }
   private setupErrorCallback(): void {
@@ -166,7 +167,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     });
   }
   private initializeService(): void {
-    if (this.user && this.group) { console.warn('[CometChatMessageHeader] Both user and group provided; user takes precedence.'); }
+    if (this.user && this.group) { CometChatLogger.warn('CometChatMessageHeader', 'Both user and group provided; user takes precedence.'); }
     if (this.user) { const uid = this.user.getUid?.(); if (!uid) throw new Error('Invalid user: missing UID'); this.messageHeaderService.setUser(this.user); this.messageHeaderService.setupListeners(uid, 'user'); }
     else if (this.group) { const gid = this.group.getGuid?.(); if (!gid) throw new Error('Invalid group: missing GUID'); this.messageHeaderService.setGroup(this.group); this.messageHeaderService.setupListeners(gid, 'group'); }
   }
@@ -189,7 +190,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
       return;
     }
     const userId = this.user.getUid?.();
-    if (!userId) { console.error('[CometChatMessageHeader] Invalid user: missing UID'); this.emitError(new Error('Invalid user: missing UID')); return; }
+    if (!userId) { CometChatLogger.error('CometChatMessageHeader', 'Invalid user: missing UID'); this.emitError(new Error('Invalid user: missing UID')); return; }
     const previousUserId = previousUser?.getUid?.();
     if (previousUserId === userId) { this.messageHeaderService.setUser(this.user); this.currentUser.set(this.user); this.cdr.markForCheck(); return; }
     this.messageHeaderService.setUser(this.user);
@@ -201,7 +202,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
   private handleGroupChange(previousGroup?: CometChat.Group): void {
     if (!this.group) { if (previousGroup) { this.messageHeaderService.cleanup(); this.setupErrorCallback(); this.currentGroup.set(null); } return; }
     const groupId = this.group.getGuid?.();
-    if (!groupId) { console.error('[CometChatMessageHeader] Invalid group: missing GUID'); this.emitError(new Error('Invalid group: missing GUID')); return; }
+    if (!groupId) { CometChatLogger.error('CometChatMessageHeader', 'Invalid group: missing GUID'); this.emitError(new Error('Invalid group: missing GUID')); return; }
     const previousGroupId = previousGroup?.getGuid?.();
     if (previousGroupId === groupId) { this.messageHeaderService.setGroup(this.group); this.currentGroup.set(this.group); this.cdr.markForCheck(); return; }
     this.messageHeaderService.setGroup(this.group);
@@ -211,7 +212,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     this.cdr.markForCheck();
   }
   private emitError(error: unknown): void {
-    console.error('[CometChatMessageHeader] Error:', error);
+    CometChatLogger.error('CometChatMessageHeader', 'Error:', error);
     if (error instanceof CometChat.CometChatException) { this.error.emit(error); } else if (error instanceof Error) {
       const exception = new CometChat.CometChatException({
         code: 'COMPONENT_ERROR',
@@ -230,7 +231,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
   }
   private handleLifecycleError(error: unknown, hook: string): void {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error(`[CometChatMessageHeader] Error in ${hook}:`, err);
+    CometChatLogger.error('CometChatMessageHeader', `Error in ${hook}:`, err);
     this.error.emit(err as CometChat.CometChatException);
   }
   handleBackClick(): void { this.backClick.emit(); }
@@ -250,13 +251,13 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     try {
       this.triggerSummaryGeneration();
     } catch (error) {
-      console.error('[CometChatMessageHeader] Error triggering summary generation:', error);
+      CometChatLogger.error('CometChatMessageHeader', 'Error triggering summary generation:', error);
       this.emitError(error);
     }
   }
   private triggerSummaryGeneration(): void {
     const user = this.currentUser(); const group = this.currentGroup();
-    if (!user && !group) { const e = new Error('Cannot generate summary: No user or group configured'); console.warn('[CometChatMessageHeader]', e.message); this.emitError(e); return; }
+    if (!user && !group) { const e = new Error('Cannot generate summary: No user or group configured'); CometChatLogger.warn('CometChatMessageHeader', e.message); this.emitError(e); return; }
     const receiverId = user ? user.getUid() : group!.getGuid(); const receiverType = user ? 'user' : 'group';
     CometChatUIEvents.ccShowPanel.next({ configuration: { getConversationSummary: () => CometChat.getConversationSummary(receiverId, receiverType, { lastNMessages: this.summaryGenerationMessageCount }), closeCallback: () => CometChatUIEvents.ccHidePanel.next(PanelAlignment.messageListFooter) }, position: PanelAlignment.messageListFooter });
     this.conversationSummaryClick.emit({ messageCount: this.summaryGenerationMessageCount });
@@ -265,11 +266,11 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     if (!this.enableAutoSummaryGeneration) return;
     CometChatUIEvents.ccActiveChatChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
       this.unreadMessageCount = event.unreadMessageCount ?? 0;
-      if (this.unreadMessageCount >= 15) { const u = this.currentUser(); const g = this.currentGroup(); if (!u && !g) return; this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { console.error('[CometChatMessageHeader] Error during auto-summary generation:', e); this.emitError(e); } }, 0)); }
+      if (this.unreadMessageCount >= 15) { const u = this.currentUser(); const g = this.currentGroup(); if (!u && !g) return; this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); }
     });
     const user = this.currentUser(); const group = this.currentGroup();
-    if (user || group) { this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { console.error('[CometChatMessageHeader] Error during auto-summary generation:', e); this.emitError(e); } }, 0)); }
-    else { this.autoSummaryTriggered = false; effect(() => { const u = this.currentUser(); const g = this.currentGroup(); if ((u || g) && !this.autoSummaryTriggered) { this.autoSummaryTriggered = true; this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { console.error('[CometChatMessageHeader] Error during auto-summary generation:', e); this.emitError(e); } }, 0)); } }, { injector: this.injector }); }
+    if (user || group) { this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); }
+    else { this.autoSummaryTriggered = false; effect(() => { const u = this.currentUser(); const g = this.currentGroup(); if ((u || g) && !this.autoSummaryTriggered) { this.autoSummaryTriggered = true; this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); } }, { injector: this.injector, allowSignalWrites: true  }); }
   }
   private subscribeToGroupEvents(): void {
     const loggedInUser = CometChatUIKit.getLoggedInUser();

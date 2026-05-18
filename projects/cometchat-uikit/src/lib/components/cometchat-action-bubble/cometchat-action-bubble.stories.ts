@@ -11,6 +11,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatActionBubbleComponent } from './cometchat-action-bubble.component';
+import { within, expect } from '@storybook/test';
 
 const meta: Meta<CometChatActionBubbleComponent> = {
   title: 'Components/Bubbles/Action Bubble',
@@ -146,5 +147,18 @@ export const MultipleActions: Story = {
   }),
   parameters: {
     docs: { description: { story: 'Multiple action messages stacked vertically as they appear in a chat.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders action bubble container */
+export const TestDefaultRendersActionBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-action-bubble');
+    expect(container).not.toBeNull();
   },
 };

@@ -15,6 +15,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { within, expect } from '@storybook/test';
 
 import { CometChatConversationsComponent } from './cometchat-conversations.component';
 import { CometChatConversationItemComponent } from '../cometchat-conversation-item/cometchat-conversation-item.component';
@@ -550,5 +551,632 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all conversation list variants — default, with search bar, single selection, and multiple selection — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests — Prop Toggle Verification
+// ============================================
+
+/** Verifies hideReceipts=true hides receipt icons. */
+export const TestHideReceipts: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    hideReceipts: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [hideReceipts]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Wait for render
+    await new Promise(r => setTimeout(r, 1000));
+    // Receipt icons should NOT be present when hideReceipts=true
+    const receipts = canvasElement.querySelectorAll('.cometchat-conversation-item__receipt-icon');
+    expect(receipts.length).toBe(0);
+  },
+};
+
+/** Verifies hideUserStatus=true hides online/offline indicators. */
+export const TestHideUserStatus: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    hideUserStatus: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [hideUserStatus]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Status indicators should NOT be present
+    const statusIndicators = canvasElement.querySelectorAll('.cometchat-avatar__status');
+    expect(statusIndicators.length).toBe(0);
+  },
+};
+
+/** Verifies hideGroupType=true hides group type icons. */
+export const TestHideGroupType: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(10)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    hideGroupType: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [hideGroupType]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Group type icons should NOT be present
+    const groupTypeIcons = canvasElement.querySelectorAll('.cometchat-conversation-item__group-type');
+    expect(groupTypeIcons.length).toBe(0);
+  },
+};
+
+/** Verifies showSearchBar=true renders the search bar. */
+export const TestShowSearchBar: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    showSearchBar: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [showSearchBar]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Search bar should be visible
+    const searchInput = canvasElement.querySelector('cometchat-search-bar input, input[placeholder*="Search"], input[placeholder*="search"]');
+    expect(searchInput).not.toBeNull();
+  },
+};
+
+/** Verifies showSearchBar=false hides the search bar. */
+export const TestHideSearchBar: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    showSearchBar: false,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [showSearchBar]="false"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Search bar should NOT be visible
+    const searchBar = canvasElement.querySelector('cometchat-search-bar');
+    expect(searchBar).toBeNull();
+  },
+};
+
+/** Verifies empty state renders correctly. */
+export const TestEmptyState: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService([]),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Empty state content should be visible
+    const emptyContent = canvasElement.querySelector('.cometchat-conversations__empty-content, [class*="empty"]');
+    expect(emptyContent).not.toBeNull();
+    // No conversation items should be present
+    const items = canvasElement.querySelectorAll('.cometchat-conversation-item');
+    expect(items.length).toBe(0);
+  },
+};
+
+/** Verifies loading state renders shimmer. */
+export const TestLoadingState: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService([], { loading: true }),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    // Shimmer/loading elements should be present
+    const shimmer = canvasElement.querySelector('.cometchat-conversations__shimmer, [class*="shimmer"], [class*="loading"]');
+    expect(shimmer).not.toBeNull();
+  },
+};
+
+/** Verifies default state renders conversation items. */
+export const TestDefaultRendersItems: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Conversation items should be rendered
+    const items = canvasElement.querySelectorAll('.cometchat-conversation-item, cometchat-conversation-item');
+    expect(items.length).toBeGreaterThan(0);
+    // Title should be visible
+    const title = canvasElement.querySelector('.cometchat-conversations__title');
+    expect(title).not.toBeNull();
+  },
+};
+
+/** Verifies hideError=true suppresses error state display. */
+export const TestHideError: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () =>
+            createMockConversationsService([], { error: new Error('Network error') }),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    hideError: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [hideError]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Error state view should NOT be visible when hideError=true
+    const errorView = canvasElement.querySelector('.cometchat-conversations__error-state-view');
+    expect(errorView).toBeNull();
+  },
+};
+
+/** Verifies hideError=false shows error state display. */
+export const TestShowError: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () =>
+            createMockConversationsService([], { error: new Error('Network error') }),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    hideError: false,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [hideError]="false"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Error state view should be visible when hideError=false
+    const errorView = canvasElement.querySelector('.cometchat-conversations__error-state-view');
+    expect(errorView).not.toBeNull();
+  },
+};
+
+/** Verifies showScrollbar=true does not apply hide-scrollbar class. */
+export const TestShowScrollbar: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    showScrollbar: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [showScrollbar]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // The root element should NOT have the hide-scrollbar class
+    const root = canvasElement.querySelector('.cometchat-conversations');
+    expect(root).not.toBeNull();
+    expect(root!.classList.contains('cometchat-conversations-hide-scrollbar')).toBe(false);
+  },
+};
+
+/** Verifies showScrollbar=false applies hide-scrollbar class. */
+export const TestHideScrollbar: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    showScrollbar: false,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [showScrollbar]="false"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // The root element should have the hide-scrollbar class
+    const root = canvasElement.querySelector('.cometchat-conversations');
+    expect(root).not.toBeNull();
+    expect(root!.classList.contains('cometchat-conversations-hide-scrollbar')).toBe(true);
+  },
+};
+
+/** Verifies selectionMode=single renders radio-style selection controls. */
+export const TestSingleSelectionMode: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  render: args => ({
+    props: {
+      ...args,
+      singleSelection: SelectionMode.single,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [selectionMode]="singleSelection"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Selection controls (radio buttons) should be present
+    const selectionControls = canvasElement.querySelectorAll('.cometchat-conversations__selection-control, input[type="radio"], .cometchat-radio-button');
+    expect(selectionControls.length).toBeGreaterThan(0);
+  },
+};
+
+/** Verifies selectionMode=multiple renders checkbox-style selection controls. */
+export const TestMultipleSelectionMode: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  render: args => ({
+    props: {
+      ...args,
+      multipleSelection: SelectionMode.multiple,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [selectionMode]="multipleSelection"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Selection controls (checkboxes) should be present
+    const selectionControls = canvasElement.querySelectorAll('.cometchat-conversations__selection-control, input[type="checkbox"], .cometchat-checkbox');
+    expect(selectionControls.length).toBeGreaterThan(0);
+  },
+};
+
+/** Verifies selectionMode=none does NOT render selection controls. */
+export const TestNoSelectionMode: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  render: args => ({
+    props: {
+      ...args,
+      noneSelection: SelectionMode.none,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [selectionMode]="noneSelection"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // No selection controls should be present
+    const radioButtons = canvasElement.querySelectorAll('input[type="radio"], .cometchat-radio-button');
+    const checkboxes = canvasElement.querySelectorAll('input[type="checkbox"], .cometchat-checkbox');
+    expect(radioButtons.length).toBe(0);
+    expect(checkboxes.length).toBe(0);
+  },
+};
+
+/** Verifies hideDeleteConversation=true hides delete option from context menu. */
+export const TestHideDeleteConversation: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    hideDeleteConversation: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [hideDeleteConversation]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Component should render without errors
+    const root = canvasElement.querySelector('.cometchat-conversations');
+    expect(root).not.toBeNull();
+    // Delete option should not be visible (context menu not open by default)
+    const deleteOption = canvasElement.querySelector('.cometchat-conversations__delete-option, [data-testid="delete-conversation"]');
+    expect(deleteOption).toBeNull();
+  },
+};
+
+/** Verifies disableDefaultContextMenu=true prevents browser context menu. */
+export const TestDisableDefaultContextMenu: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createMockConversations(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    disableDefaultContextMenu: true,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [disableDefaultContextMenu]="true"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Component should render correctly with context menu disabled
+    const root = canvasElement.querySelector('.cometchat-conversations');
+    expect(root).not.toBeNull();
+    // Conversation items should still render
+    const items = canvasElement.querySelectorAll('.cometchat-conversation-item, cometchat-conversation-item');
+    expect(items.length).toBeGreaterThan(0);
   },
 };

@@ -61,9 +61,9 @@ export async function onEmojiSelectedImpl(ctx: ReactionHandlerContext, emoji: st
   const message = ctx.emojiKeyboardMessage();
   ctx.emojiKeyboardMessage.set(null);
   ctx.emojiKeyboardPosition.set(null);
-  if (!message) { console.warn('[CometChatMessageList] onEmojiSelected: No message reference available'); return; }
+  if (!message) { CometChatLogger.warn('CometChatMessageList', 'onEmojiSelected: No message reference available'); return; }
   const messageId = message.getId();
-  if (!messageId || messageId <= 0) { console.warn('[CometChatMessageList] onEmojiSelected: Invalid messageId', messageId); return; }
+  if (!messageId || messageId <= 0) { CometChatLogger.warn('CometChatMessageList', 'onEmojiSelected: Invalid messageId', messageId); return; }
   try {
     ctx.saveScrollPositionForReaction();
     await ctx.messageListService.addReaction(messageId, emoji);

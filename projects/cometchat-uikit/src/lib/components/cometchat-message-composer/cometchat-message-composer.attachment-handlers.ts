@@ -1,11 +1,12 @@
 import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {AttachmentFile} from './cometchat-message-composer.component';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 
 export function handleAttachmentOptionClickImpl(self: any, optionId: string): void {
   self.contentToDisplay.set('none');
   self.syncLegacyPopoverSignals();
   const fileInput = self.fileInputRef?.nativeElement;
-  if (!fileInput) { console.warn('[CometChatMessageComposer] File input element not found'); return; }
+  if (!fileInput) { CometChatLogger.warn('CometChatMessageComposer', 'File input element not found'); return; }
   switch (optionId) {
     case 'image':
       fileInput.accept = 'image/*';

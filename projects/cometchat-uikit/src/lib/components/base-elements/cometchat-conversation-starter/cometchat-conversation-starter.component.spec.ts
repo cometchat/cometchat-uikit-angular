@@ -296,17 +296,17 @@ describe('CometChatConversationStarterComponent', () => {
 
     it('ariaLabel reflects starter count (plural)', () => {
       component.starters.set(['Starter 1', 'Starter 2', 'Starter 3']);
-      expect(component.ariaLabel).toBe('3 conversation starter suggestions available');
+      expect(component.ariaLabel).toBe('Conversation starters');
     });
 
     it('ariaLabel uses singular for one starter', () => {
       component.starters.set(['Starter 1']);
-      expect(component.ariaLabel).toBe('1 conversation starter suggestion available');
+      expect(component.ariaLabel).toBe('Conversation starters');
     });
 
     it('ariaLabel reflects no suggestions when empty', () => {
       component.starters.set([]);
-      expect(component.ariaLabel).toBe('No conversation starter suggestions available');
+      expect(component.ariaLabel).toBe('No results found');
     });
   });
 
@@ -355,13 +355,13 @@ describe('CometChatConversationStarterComponent', () => {
 
     it('ariaLabel reflects loading state', () => {
       component.isLoading.set(true);
-      expect(component.ariaLabel).toBe('Loading conversation starter suggestions');
+      expect(component.ariaLabel).toBe('Loading');
     });
 
     it('loading state takes priority in ariaLabel even with starters', () => {
       component.isLoading.set(true);
       component.starters.set(['Starter 1']);
-      expect(component.ariaLabel).toBe('Loading conversation starter suggestions');
+      expect(component.ariaLabel).toBe('Loading');
     });
   });
 
@@ -379,7 +379,7 @@ describe('CometChatConversationStarterComponent', () => {
 
     it('ariaLabel reflects empty state', () => {
       component.starters.set([]);
-      expect(component.ariaLabel).toBe('No conversation starter suggestions available');
+      expect(component.ariaLabel).toBe('No results found');
     });
   });
 

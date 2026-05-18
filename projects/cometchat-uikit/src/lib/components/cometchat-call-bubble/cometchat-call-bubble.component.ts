@@ -32,6 +32,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import {
   CallBubbleStatus,
   CallButtonClickEvent,
@@ -144,7 +145,7 @@ export class CometChatCallBubbleComponent implements OnInit, OnChanges {
    */
   private processMessage(): void {
     if (!this.message) {
-      console.warn('[CometChatCallBubble] Message is null or undefined');
+      CometChatLogger.warn('CometChatCallBubble', 'Message is null or undefined');
       this.setFallbackState();
       return;
     }
@@ -152,7 +153,7 @@ export class CometChatCallBubbleComponent implements OnInit, OnChanges {
     try {
       this.extractCallData();
     } catch (error) {
-      console.error('[CometChatCallBubble] Error processing message:', error);
+      CometChatLogger.error('CometChatCallBubble', 'Error processing message:', error);
       this.setFallbackState();
     }
 

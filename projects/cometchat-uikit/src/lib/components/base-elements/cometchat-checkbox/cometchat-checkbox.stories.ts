@@ -241,3 +241,64 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies checked=true renders checked state. */
+export const TestCheckedState: Story = {
+  args: { checked: true, labelText: 'Checked' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const checkbox = canvasElement.querySelector('input[type="checkbox"], .cometchat-checkbox__input') as HTMLInputElement;
+    expect(checkbox).not.toBeNull();
+    expect(checkbox.checked).toBe(true);
+  },
+};
+
+/** Verifies checked=false renders unchecked state. */
+export const TestUncheckedState: Story = {
+  args: { checked: false, labelText: 'Unchecked' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const checkbox = canvasElement.querySelector('input[type="checkbox"], .cometchat-checkbox__input') as HTMLInputElement;
+    expect(checkbox).not.toBeNull();
+    expect(checkbox.checked).toBe(false);
+  },
+};
+
+/** Verifies disabled=true makes checkbox non-interactive. */
+export const TestDisabledCheckbox: Story = {
+  args: { checked: false, disabled: true, labelText: 'Disabled' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const checkbox = canvasElement.querySelector('input[type="checkbox"], .cometchat-checkbox__input') as HTMLInputElement;
+    expect(checkbox).not.toBeNull();
+    expect(checkbox.disabled).toBe(true);
+  },
+};
+
+/** Verifies indeterminate=true renders indeterminate state. */
+export const TestIndeterminateState: Story = {
+  args: { indeterminate: true, labelText: 'Indeterminate' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const checkbox = canvasElement.querySelector('input[type="checkbox"], .cometchat-checkbox__input') as HTMLInputElement;
+    expect(checkbox).not.toBeNull();
+    expect(checkbox.indeterminate).toBe(true);
+  },
+};
+
+/** Verifies label text renders correctly. */
+export const TestLabelText: Story = {
+  args: { checked: false, labelText: 'My Label' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const label = canvasElement.querySelector('.cometchat-checkbox__label, label');
+    expect(label).not.toBeNull();
+    expect(label!.textContent!.trim()).toContain('My Label');
+  },
+};

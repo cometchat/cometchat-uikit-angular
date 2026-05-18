@@ -14,6 +14,14 @@ export function subscribeToActivePopoverEventImpl(ctx: any): void {
 
 export function subscribeToReplyToMessageEventImpl(ctx: any): void {
   CometChatMessageEvents.ccReplyToMessage.pipe(takeUntilDestroyed(ctx.destroyRef)).subscribe((data: any) => {
+    // ENG-35025: Scope reply events to the correct composer instance.
+    // A thread composer has a parentMessageId; the main composer does not.
+    // Only handle the event if the parentMessageId context matches.
+    const eventParentId = data.parentMessageId ?? null;
+    const composerParentId = ctx.parentMessageId ?? null;
+    if (eventParentId !== composerParentId) {
+      return;
+    }
     if (data.status === MessageStatus.inprogress) {
       ctx.enterReplyMode(data.message);
     } else if (data.status === MessageStatus.success || data.status === MessageStatus.cancelled) {

@@ -13,8 +13,17 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
  * @see Requirements 1.7, 1.8, 1.9, 1.10
  */
 export interface MediaAttachment {
-  /** The URL of the media file */
+  /** The URL of the media file — always the full-quality original */
   url: string;
+
+  /**
+   * The display URL for the thumbnail preview in the bubble.
+   * When the CometChat Thumbnail Generation extension is enabled, this is the
+   * compressed low-quality URL (url_medium for images, url_small for videos).
+   * Falls back to `url` when no extension thumbnail is available.
+   * The fullscreen viewer always uses `url` (full quality), never `displayUrl`.
+   */
+  displayUrl?: string;
 
   /** The type of media (image or video) - required for fullscreen viewer gallery mode */
   type?: 'image' | 'video';

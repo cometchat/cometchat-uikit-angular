@@ -354,17 +354,17 @@ describe('CometChatSmartRepliesComponent', () => {
 
     it('ariaLabel reflects reply count', () => {
       component.replies.set(['Reply 1', 'Reply 2']);
-      expect(component.ariaLabel).toBe('2 smart reply suggestions available');
+      expect(component.ariaLabel).toBe('Smart reply suggestions');
     });
 
     it('ariaLabel uses singular for one reply', () => {
       component.replies.set(['Reply 1']);
-      expect(component.ariaLabel).toBe('1 smart reply suggestion available');
+      expect(component.ariaLabel).toBe('Smart reply suggestions');
     });
 
     it('ariaLabel reflects no suggestions when empty', () => {
       component.replies.set([]);
-      expect(component.ariaLabel).toBe('No smart reply suggestions available');
+      expect(component.ariaLabel).toBe('No results found');
     });
   });
 
@@ -413,13 +413,13 @@ describe('CometChatSmartRepliesComponent', () => {
 
     it('ariaLabel reflects loading state', () => {
       component.isLoading.set(true);
-      expect(component.ariaLabel).toBe('Loading smart reply suggestions');
+      expect(component.ariaLabel).toBe('Loading');
     });
 
     it('loading state takes priority in ariaLabel even with replies', () => {
       component.isLoading.set(true);
       component.replies.set(['Reply 1']);
-      expect(component.ariaLabel).toBe('Loading smart reply suggestions');
+      expect(component.ariaLabel).toBe('Loading');
     });
   });
 
@@ -437,7 +437,7 @@ describe('CometChatSmartRepliesComponent', () => {
 
     it('ariaLabel reflects empty state', () => {
       component.replies.set([]);
-      expect(component.ariaLabel).toBe('No smart reply suggestions available');
+      expect(component.ariaLabel).toBe('No results found');
     });
   });
 

@@ -160,9 +160,11 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
 
     if (receiverType === CometChat.RECEIVER_TYPE.GROUP) {
       const group = message.getReceiver() as CometChat.Group;
-      // Set goToMessageId in next microtask so the null propagates through Angular change detection first
+      //  Set goToMessageId BEFORE setting the active group so that
+      // handleGroupChangeImpl reads the correct messageId when it runs.
       Promise.resolve().then(() => {
         this.navigationService.setGotoMessageId(messageId);
+      }).then(() => {
         this.chatStateService.setActiveGroup(group);
       });
     } else {
@@ -171,9 +173,11 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
       const receiver = message.getReceiver() as CometChat.User;
       const otherUser =
         loggedInUser && sender.getUid() === loggedInUser.getUid() ? receiver : sender;
-      // Set goToMessageId in next microtask so the null propagates through Angular change detection first
+      //  Set goToMessageId BEFORE setting the active user so that
+      // handleUserChangeImpl reads the correct messageId when it runs.
       Promise.resolve().then(() => {
         this.navigationService.setGotoMessageId(messageId);
+      }).then(() => {
         this.chatStateService.setActiveUser(otherUser);
       });
     }
@@ -182,6 +186,8 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     if (this.navigationService.isMobile()) {
       this.navigationService.navigateToMessages();
     }
+    // Close the search overlay after navigating to the message
+    this.showSearchOverlay.set(false);
   }
 
   /** Close the scoped search panel (right panel) */
@@ -239,7 +245,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     } else {
       this.removeDeliveryMarkingListener();
     }
-  });
+  },{ allowSignalWrites: true});
 
   // ── Accessibility: ViewChild refs for panel focus management ──
 
@@ -369,14 +375,14 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
           break;
       }
     }, 0);
-  });
+  },{ allowSignalWrites: true});
 
   /** Announce tab changes to screen readers */
   private tabAnnouncementEffect = effect(() => {
     const tab = this.appStateService.activeTab();
     const tabName = CometChatLocalize.getLocalizedString(tab);
     this.liveAnnouncer.announce(tabName);
-  });
+  },{ allowSignalWrites: true});
 
   /** Announce mobile panel transitions to screen readers */
   private panelAnnouncementKeys: Record<string, string> = {
@@ -393,7 +399,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     if (key) {
       this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString(key));
     }
-  });
+  },{ allowSignalWrites: true});
 
   /**
    * Track the last known container for modal overlay so we can
@@ -429,7 +435,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
         this.lastModalContainer = null;
       }
     }
-  });
+  },{ allowSignalWrites: true});
 
   /**
    * Dialog overlay focus management.
@@ -458,7 +464,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
         this.lastDialogContainer = null;
       }
     }
-  });
+  },{ allowSignalWrites: true});
 
   // ── Panel resize methods ──
 
@@ -833,13 +839,24 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       CometChatUIEvents.ccActiveChatChanged.subscribe((data) => {
         this.navigationService.setGotoMessageId(null);
+        //  Only close the side panel if the active entity actually changed.
+        // If the same user/group is already active, messages just finished loading —
+        // don't close the info/details panel in that case.
+        const currentUser = this.chatStateService.getActiveUser();
+        const currentGroup = this.chatStateService.getActiveGroup();
+        const entityChanged =
+          (data.user && currentUser?.getUid() !== data.user.getUid()) ||
+          (data.group && currentGroup?.getGuid() !== data.group.getGuid()) ||
+          (!data.user && !data.group);
         if (data.user) {
           this.chatStateService.setActiveUser(data.user);
         } else if (data.group) {
           this.chatStateService.setActiveGroup(data.group);
         }
         this.navigationService.closeThreadPanel();
-        this.navigationService.closeSidePanel();
+        if (entityChanged) {
+          this.navigationService.closeSidePanel();
+        }
       })
     );
 

@@ -35,7 +35,7 @@ export function initializeRichTextEditorImpl(ctx: EditorInitContext): void {
   if (ctx.customRichTextEditor) { return; }
   setTimeout(() => {
     const containerElement = ctx.richTextEditorContainerRef?.nativeElement;
-    if (!containerElement) { console.warn('[CometChatMessageComposer] Rich text editor container not found'); return; }
+    if (!containerElement) { CometChatLogger.warn('CometChatMessageComposer', 'Rich text editor container not found'); return; }
     try {
       const placeholder = CometChatLocalize.getLocalizedString(ctx.placeholderText);
       const shouldAutofocus = ctx.disableAutoFocusOnMobile && isMobileDevice() ? false : true;

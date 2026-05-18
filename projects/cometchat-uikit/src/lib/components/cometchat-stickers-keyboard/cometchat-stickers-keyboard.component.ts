@@ -187,7 +187,7 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handles sticker click - emits the sticker selection event
+   * Handles sticker click - emits the sticker selection event and closes the keyboard
    * @see Requirements 8.7
    */
   handleStickerClick(sticker: StickerItem): void {
@@ -195,6 +195,8 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
       stickerUrl: sticker.stickerUrl,
       stickerName: sticker.stickerSetName,
     });
+    // Close the keyboard after sending a sticker
+    this.closeKeyboard.emit();
   }
 
   /**

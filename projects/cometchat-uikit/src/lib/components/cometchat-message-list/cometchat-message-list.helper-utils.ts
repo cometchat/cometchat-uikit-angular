@@ -64,7 +64,11 @@ export function updateListStateImpl(self: any): void {
   const messages = self.messages();
   if (loading && messages.length === 0) {
     self.listState.set(States.loading);
-  } else if (error && !self.effectiveHideError()) {
+  } else if (error && !loading && !self.effectiveHideError()) {
+    // ENG-35029: Only show error state when NOT loading. A stale error from a previous
+    // conversation's fetch can arrive after setUser/setGroup clears the error state but
+    // before the new fetch completes. Ignoring errors during loading prevents false
+    // "Something went wrong" screens when switching conversations quickly.
     self.listState.set(States.error);
   } else if (messages.length === 0) {
     self.listState.set(States.empty);

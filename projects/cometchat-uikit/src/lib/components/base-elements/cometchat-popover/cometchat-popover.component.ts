@@ -58,6 +58,18 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
   @Input() ariaLabelledBy?: string;
   @Input() ariaDescribedBy?: string;
   @Input() contentStyle: Record<string, string> = {};
+  /**
+   * When true (and useParentContainer is true), the popover will not overflow
+   * the parent container horizontally. Use for popovers that must stay within
+   * a bounded horizontal region (e.g. attachment menu in the message composer).
+   */
+  @Input() constrainHorizontal = false;
+  /**
+   * When true (and useParentContainer is true), the popover will not overflow
+   * the parent container vertically. Use for popovers that must stay within
+   * a bounded vertical region (e.g. message bubble context menus in the message list).
+   */
+  @Input() constrainVertical = false;
 
   @Output() popoverOpened = new EventEmitter<void>();
   @Output() popoverClosed = new EventEmitter<void>();
@@ -148,6 +160,8 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
     this.isPositioned = false;
     this.cleanupFocusTrap();
     this.restoreFocus();
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
     if (emit) this.popoverClosed.emit();
   }
 
@@ -232,6 +246,26 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
       return;
     }
 
+    // When constrainHorizontal or constrainVertical is set without useParentContainer,
+    // find the parent container for constraint purposes but use viewport for placement.
+    if (this.constrainHorizontal || this.constrainVertical) {
+      this.parentViewRef = this.parentViewRef || getTopMostCometChatElement(popoverEl);
+      if (this.parentViewRef) {
+        const parentRect = this.parentViewRef.getBoundingClientRect();
+        // Use viewport-based placement (not parent-based) so the menu opens above
+        // even when the trigger is at the bottom of the parent container.
+        const availablePlacement = getAvailablePlacement(rect, height, this.placement, false, undefined);
+        this.availablePlacement = availablePlacement;
+        this.positionStyle = calculateParentPosition(
+          rect, height, width, parentRect, availablePlacement, false, null, this.showTooltip,
+          this.constrainHorizontal, this.constrainVertical
+        );
+        this.isPositioned = true;
+        this.cdr.detectChanges();
+        return;
+      }
+    }
+
     const availablePlacement = this.getAvailablePlacement(rect, height);
     this.availablePlacement = availablePlacement;
     this.positionStyle = calculateViewportPosition(rect, height, width, availablePlacement);
@@ -267,7 +301,8 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
     const hostRect = hostEl ? hostEl.getBoundingClientRect() : null;
 
     this.positionStyle = calculateParentPosition(
-      rect, height, width, parentRect, availablePlacement, inDocsMode, hostRect, this.showTooltip
+      rect, height, width, parentRect, availablePlacement, inDocsMode, hostRect, this.showTooltip,
+      this.constrainHorizontal, this.constrainVertical
     );
     this.isPositioned = true;
     this.cdr.detectChanges();

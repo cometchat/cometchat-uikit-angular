@@ -179,7 +179,16 @@ export class ConversationsService {
     if (msg) {
       if (!isAMessage(msg) || !shouldLastMessageAndUnreadCountBeUpdated(msg)) return;
       const me = CometChatUIKit.getLoggedInUser();
-      if (me && msg.getSender().getUid() !== me.getUid())
+      const active = this.activeConversationSignal();
+      const isActiveConversation = active && msg.getConversationId() === active.getConversationId();
+      // Only increment unread count if:
+      // 1. The message is not from the logged-in user
+      // 2. The conversation is NOT currently active (open)
+      // When the conversation is active, the message list handles the unread count:
+      // - If user is at bottom: markAsRead keeps count at 0 (no flash)
+      // - If user is scrolled up: handleNewMessagesImpl explicitly calls
+      //   updateConversationUnreadCount to increment the count
+      if (me && msg.getSender().getUid() !== me.getUid() && !isActiveConversation)
         conversation.setUnreadMessageCount((conversation.getUnreadMessageCount() ?? 0) + 1);
       if (msg instanceof CometChat.Action &&
           msg.getReceiverType() === CometChatUIKitConstants.MessageReceiverType.group &&

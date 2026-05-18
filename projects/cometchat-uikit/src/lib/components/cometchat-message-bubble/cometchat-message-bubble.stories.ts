@@ -14,6 +14,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageBubbleComponent } from './cometchat-message-bubble.component';
 import { CometChatUIKit } from '../../cometchat-uikit';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 import {
   createMockUser,
   createMockGroup,
@@ -711,5 +712,18 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase of every message bubble variant. Each message type shows sender (outgoing) and receiver (incoming) bubbles together in a single chat-thread-style preview block.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders message bubble container */
+export const TestDefaultRendersBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-message-bubble');
+    expect(container).not.toBeNull();
   },
 };

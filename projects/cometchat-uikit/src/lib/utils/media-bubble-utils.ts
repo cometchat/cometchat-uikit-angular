@@ -7,6 +7,7 @@
  */
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatLogger } from './CometChatLogger';
 import { MediaAttachment, MediaLayoutType } from '../modals/MediaAttachment';
 
 /**
@@ -23,7 +24,7 @@ export function extractMediaAttachments(
   logPrefix: string
 ): MediaAttachment[] {
   if (!message) {
-    console.warn(`[${logPrefix}] Message is null or undefined`);
+    CometChatLogger.warn(logPrefix, 'Message is null or undefined');
     return [];
   }
 
@@ -31,7 +32,7 @@ export function extractMediaAttachments(
     const rawAttachments = message.getAttachments();
 
     if (!rawAttachments || !Array.isArray(rawAttachments)) {
-      console.warn(`[${logPrefix}] Message has no attachments or attachments is not an array`);
+      CometChatLogger.warn(logPrefix, 'Message has no attachments or attachments is not an array');
       return [];
     }
 
@@ -40,19 +41,28 @@ export function extractMediaAttachments(
     const messageLevelThumbnail: string | undefined =
       typeof messageMeta?.thumbnail === 'string' ? messageMeta.thumbnail : undefined;
 
+    // CometChat Thumbnail Generation extension stores compressed URLs in:
+    //   metadata["@injected"]["extensions"]["thumbnail-generation"]["url_medium"] (images)
+    //   metadata["@injected"]["extensions"]["thumbnail-generation"]["url_small"]  (videos)
+    const thumbnailGenExt = messageMeta?.['@injected']?.['extensions']?.['thumbnail-generation'];
+    const extensionThumbnailUrl: string | undefined =
+      mediaType === 'image'
+        ? (typeof thumbnailGenExt?.['url_medium'] === 'string' ? thumbnailGenExt['url_medium'] : undefined)
+        : (typeof thumbnailGenExt?.['url_small'] === 'string' ? thumbnailGenExt['url_small'] : undefined);
+
     const mediaAttachments: MediaAttachment[] = [];
 
     for (let i = 0; i < rawAttachments.length; i++) {
       const attachment = rawAttachments[i];
 
       if (!attachment || typeof attachment !== 'object') {
-        console.warn(`[${logPrefix}] Attachment at index ${i} is invalid (not an object)`);
+        CometChatLogger.warn(logPrefix, `Attachment at index ${i} is invalid (not an object)`);
         continue;
       }
 
       const url = (attachment as any).url || (attachment as any).getUrl?.();
       if (!url || typeof url !== 'string') {
-        console.warn(`[${logPrefix}] Attachment at index ${i} is missing URL, skipping`);
+        CometChatLogger.warn(logPrefix, `Attachment at index ${i} is missing URL, skipping`);
         continue;
       }
 
@@ -67,6 +77,10 @@ export function extractMediaAttachments(
       const mediaAttachment: MediaAttachment = {
         url,
         type: mediaType,
+        // displayUrl: use extension thumbnail (low-quality) for bubble display.
+        // Falls back to attachment-level thumbnail, then message-level thumbnail, then full url.
+        // The fullscreen viewer always uses `url` (full quality) — never displayUrl.
+        displayUrl: extensionThumbnailUrl ?? (thumbnail && typeof thumbnail === 'string' ? thumbnail : undefined) ?? url,
         thumbnail: thumbnail && typeof thumbnail === 'string' ? thumbnail : undefined,
         width: typeof metadata.width === 'number' ? metadata.width : undefined,
         height: typeof metadata.height === 'number' ? metadata.height : undefined,
@@ -85,7 +99,7 @@ export function extractMediaAttachments(
 
     return mediaAttachments;
   } catch (error) {
-    console.error(`[${logPrefix}] Error extracting attachments:`, error);
+    CometChatLogger.error(logPrefix, 'Error extracting attachments:', error);
     return [];
   }
 }
@@ -123,7 +137,7 @@ export function extractMediaCaption(
 
     return '';
   } catch (error) {
-    console.warn(`[${logPrefix}] Error extracting caption, returning empty string:`, error);
+    CometChatLogger.warn(logPrefix, 'Error extracting caption, returning empty string:', error);
     return '';
   }
 }
@@ -153,7 +167,7 @@ export function extractSenderInfo(
     }
     return { senderName: '', senderAvatarUrl: '' };
   } catch (error) {
-    console.warn(`[${logPrefix}] Error extracting sender info:`, error);
+    CometChatLogger.warn(logPrefix, 'Error extracting sender info:', error);
     return { senderName: '', senderAvatarUrl: '' };
   }
 }

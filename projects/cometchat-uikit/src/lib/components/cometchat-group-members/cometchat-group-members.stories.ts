@@ -18,6 +18,7 @@ import { States } from '../../Enums/Enums';
 
 import { CometChatGroupMembersComponent } from './cometchat-group-members.component';
 import { SelectionMode } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 // ============================================
 // Mock Classes
 // ============================================
@@ -679,5 +680,333 @@ export const AllVariantsShowcase: Story = {
       },
       story: { inline: false, iframeHeight: 600 },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Search bar is hidden when hideSearch is true */
+export const TestHideSearch: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(5),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [hideSearch]="true"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const searchInput = canvasElement.querySelector('.cometchat-group-members__search');
+    expect(searchInput).toBeNull();
+  },
+};
+
+/** Test: Empty state renders when no members */
+export const TestEmptyState: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      simulateEmpty: true,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [simulateEmpty]="true">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const emptyState = canvasElement.querySelector('.cometchat-group-members__empty-state-view');
+    expect(emptyState).not.toBeNull();
+  },
+};
+
+/** Test: Error state renders error view */
+export const TestErrorState: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      simulateError: true,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [hideError]="false"
+          [simulateError]="true">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const errorState = canvasElement.querySelector('.cometchat-group-members__error-state-view');
+    expect(errorState).not.toBeNull();
+  },
+};
+
+/** Test: hideError=true suppresses error state display */
+export const TestHideError: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      simulateError: true,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [hideError]="true"
+          [simulateError]="true">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Error state view should NOT be visible when hideError=true
+    const errorState = canvasElement.querySelector('.cometchat-group-members__error-state-view');
+    expect(errorState).toBeNull();
+  },
+};
+
+/** Test: hideUserStatus=true hides online/offline indicators */
+export const TestHideUserStatus: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [hideUserStatus]="true"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Status indicators should NOT be present
+    const statusIndicators = canvasElement.querySelectorAll('.cometchat-avatar__status');
+    expect(statusIndicators.length).toBe(0);
+  },
+};
+
+/** Test: hideUserStatus=false shows online/offline indicators */
+export const TestShowUserStatus: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [hideUserStatus]="false"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Status indicators should be present for online members
+    const statusIndicators = canvasElement.querySelectorAll('.cometchat-avatar__status');
+    expect(statusIndicators.length).toBeGreaterThan(0);
+  },
+};
+
+/** Test: showScrollbar=true does not apply hide-scrollbar class */
+export const TestShowScrollbar: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [showScrollbar]="true"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const root = canvasElement.querySelector('.cometchat-group-members');
+    expect(root).not.toBeNull();
+    expect(root!.classList.contains('cometchat-group-members-hide-scrollbar')).toBe(false);
+  },
+};
+
+/** Test: showScrollbar=false applies hide-scrollbar class */
+export const TestHideScrollbar: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [showScrollbar]="false"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const root = canvasElement.querySelector('.cometchat-group-members');
+    expect(root).not.toBeNull();
+    expect(root!.classList.contains('cometchat-group-members-hide-scrollbar')).toBe(true);
+  },
+};
+
+/** Test: selectionMode=single renders radio-style selection controls */
+export const TestSingleSelectionMode: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+      singleSelection: SelectionMode.single,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [selectionMode]="singleSelection"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Selection controls (radio buttons) should be present
+    const selectionControls = canvasElement.querySelectorAll('.cometchat-group-members__selection-control, input[type="radio"], .cometchat-radio-button');
+    expect(selectionControls.length).toBeGreaterThan(0);
+  },
+};
+
+/** Test: selectionMode=multiple renders checkbox-style selection controls */
+export const TestMultipleSelectionMode: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+      multipleSelection: SelectionMode.multiple,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [selectionMode]="multipleSelection"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Selection controls (checkboxes) should be present
+    const selectionControls = canvasElement.querySelectorAll('.cometchat-group-members__selection-control, input[type="checkbox"], .cometchat-checkbox');
+    expect(selectionControls.length).toBeGreaterThan(0);
+  },
+};
+
+/** Test: selectionMode=none does NOT render selection controls */
+export const TestNoSelectionMode: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+      noneSelection: SelectionMode.none,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [selectionMode]="noneSelection"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // No selection controls should be present
+    const radioButtons = canvasElement.querySelectorAll('input[type="radio"], .cometchat-radio-button');
+    const checkboxes = canvasElement.querySelectorAll('input[type="checkbox"], .cometchat-checkbox');
+    expect(radioButtons.length).toBe(0);
+    expect(checkboxes.length).toBe(0);
+  },
+};
+
+/** Test: hideSearch=false shows the search bar */
+export const TestShowSearch: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(5),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [hideSearch]="false"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const searchBar = canvasElement.querySelector('cometchat-search-bar');
+    expect(searchBar).not.toBeNull();
+  },
+};
+
+/** Test: Default state renders member items */
+export const TestDefaultRendersItems: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockMembers: createRealisticMockMembers(8),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-group-members-story-wrapper
+          [showTitle]="true"
+          [mockMembers]="mockMembers">
+        </cometchat-group-members-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Member items should be rendered
+    const items = canvasElement.querySelectorAll('.cometchat-group-members__list-item-wrapper');
+    expect(items.length).toBeGreaterThan(0);
   },
 };

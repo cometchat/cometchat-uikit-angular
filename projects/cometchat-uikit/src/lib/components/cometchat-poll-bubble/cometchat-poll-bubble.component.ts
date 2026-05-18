@@ -24,6 +24,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import { CometChatRadioButtonComponent } from '../base-elements/cometchat-radio-button/cometchat-radio-button.component';
 import { CometChatAvatarComponent } from '../base-elements/cometchat-avatar/cometchat-avatar.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
@@ -125,7 +126,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
   private extractPollData(): void {
     try {
       if (!this.message) {
-        console.warn('[CometChatPollBubble] Message is null or undefined');
+      CometChatLogger.warn('CometChatPollBubble', 'Message is null or undefined');
         this.pollData = null;
         this.pollOptions = [];
         return;
@@ -157,7 +158,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
 
       this.processPollOptions();
     } catch (error) {
-      console.error('[CometChatPollBubble] Error extracting poll data:', error);
+      CometChatLogger.error('CometChatPollBubble', 'Error extracting poll data:', error);
       this.pollData = null;
       this.pollOptions = [];
     }
@@ -268,7 +269,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
         'polite'
       );
     } catch (error) {
-      console.error('[CometChatPollBubble] Vote submission failed:', error);
+      CometChatLogger.error('CometChatPollBubble', 'Vote submission failed:', error);
       this.pollData = previousPollData;
       this.pollOptions = previousOptions;
       this.cdr.markForCheck();

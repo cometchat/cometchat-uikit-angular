@@ -18,6 +18,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatUserItemComponent } from './cometchat-user-item.component';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { createMockUser } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ============================================
 // Meta Configuration
@@ -325,5 +326,18 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all user item variants — online user, offline user, hidden status indicator, and active state — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders user item container */
+export const TestDefaultRendersItem: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-user-item');
+    expect(container).not.toBeNull();
   },
 };

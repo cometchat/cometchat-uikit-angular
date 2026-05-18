@@ -156,7 +156,7 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
   protected onVideoClick(index: number): void {
     if (this.disableInteraction) return;
     if (index < 0 || index >= this.attachments.length) {
-      console.warn(`[CometChatVideoBubble] Invalid video index: ${index}`);
+      CometChatLogger.warn('CometChatVideoBubble', `Invalid video index: ${index}`);
       return;
     }
     this.videoClick.emit({ attachment: this.attachments[index], index });
@@ -192,7 +192,11 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
   protected getThumbnailAriaLabel(index: number): string {
     const attachment = this.attachments[index];
     if (!attachment) return CometChatLocalize.getLocalizedString('video_bubble_play_video');
-    const durationText = this.mediaControlsService.formatTimeForAnnouncement(attachment.duration || 0);
+    // If duration is 0 or unknown, use a generic "play video" label
+    if (!attachment.duration) {
+      return CometChatLocalize.getLocalizedString('video_bubble_play_video');
+    }
+    const durationText = this.mediaControlsService.formatTimeForAnnouncement(attachment.duration);
     return CometChatLocalize.getLocalizedString('accessibility_play_video')
       .replace('{duration}', durationText);
   }

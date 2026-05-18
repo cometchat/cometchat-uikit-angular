@@ -639,6 +639,7 @@
     "dropdown_placeholder": "Seleziona un'opzione",
     "checkbox_aria_label": "Casella di controllo",
     "file_bubble_unknown_file": "File sconosciuto",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Qualcosa è andato storto",
     "error_boundary_retry": "Riprova",
     "message_bubble_render_error": "Impossibile visualizzare questo messaggio",

@@ -22,6 +22,7 @@ import {
 } from '@angular/core';
 import { CometChatReactionListComponent } from './cometchat-reaction-list.component';
 import { createMockMessage, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ============================================
 // Mock Helpers
@@ -422,3 +423,9 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+

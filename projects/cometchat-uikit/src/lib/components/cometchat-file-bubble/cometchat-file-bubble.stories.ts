@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatFileBubbleComponent } from './cometchat-file-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 import { createMockMessage, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
@@ -173,5 +174,18 @@ export const OutgoingAndIncoming: Story = {
   }),
   parameters: {
     docs: { description: { story: 'Outgoing and incoming file bubbles shown together.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders file bubble container */
+export const TestDefaultRendersFileBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-file-bubble');
+    expect(container).not.toBeNull();
   },
 };

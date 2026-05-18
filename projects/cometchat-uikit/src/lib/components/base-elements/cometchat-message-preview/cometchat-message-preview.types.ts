@@ -12,4 +12,6 @@ export const MESSAGE_TYPES = {
   VIDEO: 'video',
   AUDIO: 'audio',
   FILE: 'file',
+  STICKER: 'extension_sticker',
+  POLL: 'extension_poll',
 } as const;

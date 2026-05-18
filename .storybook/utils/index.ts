@@ -18,6 +18,10 @@ export {
   MockSearchMessagesService,
   createMockSearchConversationsService,
   createMockSearchMessagesService,
+  installSearchSDKMock,
+  uninstallSearchSDKMock,
+  CometChatSearchStoryWrapperComponent,
+  patchSearchServices,
 } from './mock-services';
 
 export {

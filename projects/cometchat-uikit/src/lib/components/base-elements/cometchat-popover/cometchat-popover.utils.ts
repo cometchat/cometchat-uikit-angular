@@ -129,6 +129,9 @@ export function calculateViewportPosition(
 
 /**
  * Calculates parent-container-based popover position style.
+ * 
+ * @param constrainHorizontal - When true, clamp left so the popover stays within parentRect horizontally
+ * @param constrainVertical - When true, clamp top so the popover stays within parentRect vertically
  */
 export function calculateParentPosition(
   rect: DOMRect,
@@ -138,7 +141,9 @@ export function calculateParentPosition(
   availablePlacement: Placement,
   inDocsMode: boolean,
   hostRect: DOMRect | null,
-  showTooltip: boolean
+  showTooltip: boolean,
+  constrainHorizontal = false,
+  constrainVertical = false
 ): Record<string, string> {
   const positionStyle: Record<string, string> = {};
   const offset = !showTooltip ? 10 : 5;
@@ -168,24 +173,54 @@ export function calculateParentPosition(
     }
   } else {
     if (availablePlacement === Placement.top) {
-      positionStyle['top'] = `${Math.max(parentRect.top, rect.top - height - offset)}px`;
+      // Vertical: clamp to parentRect if constrainVertical, else use viewport
+      const rawTop = rect.top - height - offset;
+      positionStyle['top'] = constrainVertical
+        ? `${Math.max(parentRect.top, rawTop)}px`
+        : `${rawTop}px`;
+      // Horizontal: clamp to parentRect if constrainHorizontal, else clamp to viewport
       let left = rect.left + rect.width / 2 - width / 2;
-      left = Math.max(parentRect.left + 10, Math.min(left, parentRect.right - width - 10));
+      if (constrainHorizontal) {
+        left = Math.max(parentRect.left + 10, Math.min(left, parentRect.right - width - 10));
+      } else {
+        left = Math.max(10, Math.min(left, window.innerWidth - width - 10));
+      }
       positionStyle['left'] = `${left}px`;
     } else if (availablePlacement === Placement.bottom) {
-      positionStyle['top'] = `${Math.min(parentRect.bottom - height, rect.bottom + offset)}px`;
+      const rawTop = rect.bottom + offset;
+      positionStyle['top'] = constrainVertical
+        ? `${Math.min(parentRect.bottom - height, rawTop)}px`
+        : `${rawTop}px`;
       let left = rect.left + rect.width / 2 - width / 2;
-      left = Math.max(parentRect.left + 10, Math.min(left, parentRect.right - width - 10));
+      if (constrainHorizontal) {
+        left = Math.max(parentRect.left + 10, Math.min(left, parentRect.right - width - 10));
+      } else {
+        left = Math.max(10, Math.min(left, window.innerWidth - width - 10));
+      }
       positionStyle['left'] = `${left}px`;
     } else if (availablePlacement === Placement.left) {
-      positionStyle['left'] = `${Math.max(parentRect.left, rect.left - width - offset)}px`;
+      const rawLeft = rect.left - width - offset;
+      positionStyle['left'] = constrainHorizontal
+        ? `${Math.max(parentRect.left, rawLeft)}px`
+        : `${rawLeft}px`;
       let top = rect.top + rect.height / 2 - height / 2;
-      top = Math.max(parentRect.top + 10, Math.min(top, parentRect.bottom - height - 10));
+      if (constrainVertical) {
+        top = Math.max(parentRect.top + 10, Math.min(top, parentRect.bottom - height - 10));
+      } else {
+        top = Math.max(10, Math.min(top, window.innerHeight - height - 10));
+      }
       positionStyle['top'] = `${top}px`;
     } else if (availablePlacement === Placement.right) {
-      positionStyle['left'] = `${Math.min(parentRect.right - width, rect.right + offset)}px`;
+      const rawLeft = rect.right + offset;
+      positionStyle['left'] = constrainHorizontal
+        ? `${Math.min(parentRect.right - width, rawLeft)}px`
+        : `${rawLeft}px`;
       let top = rect.top + rect.height / 2 - height / 2;
-      top = Math.max(parentRect.top + 10, Math.min(top, parentRect.bottom - height - 10));
+      if (constrainVertical) {
+        top = Math.max(parentRect.top + 10, Math.min(top, parentRect.bottom - height - 10));
+      } else {
+        top = Math.max(10, Math.min(top, window.innerHeight - height - 10));
+      }
       positionStyle['top'] = `${top}px`;
     }
   }

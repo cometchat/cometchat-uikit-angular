@@ -233,3 +233,63 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies title prop renders in the dialog. */
+export const TestTitleRenders: Story = {
+  args: { title: 'Delete Conversation', messageText: 'Are you sure?', confirmButtonText: 'Delete', cancelButtonText: 'Cancel' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const title = canvasElement.querySelector('.cometchat-confirm-dialog__title, [class*="confirm-dialog"] [class*="title"]');
+    expect(title).not.toBeNull();
+    expect(title!.textContent!.trim()).toContain('Delete Conversation');
+  },
+};
+
+/** Verifies messageText prop renders in the dialog body. */
+export const TestMessageTextRenders: Story = {
+  args: { title: 'Confirm', messageText: 'This action cannot be undone.', confirmButtonText: 'Yes', cancelButtonText: 'No' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const message = canvasElement.querySelector('.cometchat-confirm-dialog__message, [class*="confirm-dialog"] [class*="message"], [class*="confirm-dialog"] [class*="subtitle"]');
+    expect(message).not.toBeNull();
+    expect(message!.textContent!.trim()).toContain('This action cannot be undone');
+  },
+};
+
+/** Verifies confirm button text renders correctly. */
+export const TestConfirmButtonText: Story = {
+  args: { title: 'Confirm', messageText: 'Proceed?', confirmButtonText: 'Yes, Delete', cancelButtonText: 'Cancel' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const confirmBtn = canvasElement.querySelector('.cometchat-confirm-dialog__button--danger, [class*="confirm-dialog"] button[class*="danger"], [class*="confirm-dialog"] button[class*="confirm"]');
+    expect(confirmBtn).not.toBeNull();
+    expect(confirmBtn!.textContent!.trim()).toContain('Yes, Delete');
+  },
+};
+
+/** Verifies cancel button text renders correctly. */
+export const TestCancelButtonText: Story = {
+  args: { title: 'Confirm', messageText: 'Proceed?', confirmButtonText: 'OK', cancelButtonText: 'Never Mind' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const cancelBtn = canvasElement.querySelector('.cometchat-confirm-dialog__button--cancel, [class*="confirm-dialog"] button[class*="cancel"], [class*="confirm-dialog"] button:not([class*="danger"]):not([class*="confirm"])');
+    expect(cancelBtn).not.toBeNull();
+    expect(cancelBtn!.textContent!.trim()).toContain('Never Mind');
+  },
+};
+
+/** Verifies both buttons are present. */
+export const TestBothButtonsPresent: Story = {
+  args: { title: 'Test', messageText: 'Test message', confirmButtonText: 'Confirm', cancelButtonText: 'Cancel' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const buttons = canvasElement.querySelectorAll('.cometchat-confirm-dialog button, [class*="confirm-dialog"] button');
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+  },
+};

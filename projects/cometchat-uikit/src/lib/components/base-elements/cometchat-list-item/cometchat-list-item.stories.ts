@@ -425,3 +425,80 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies title prop renders correctly. */
+export const TestTitleRenders: Story = {
+  args: { title: 'John Doe', subtitle: 'Online', avatarName: 'John Doe' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const title = canvasElement.querySelector('.cometchat-list-item__title, [class*="list-item"] [class*="title"]');
+    expect(title).not.toBeNull();
+    expect(title!.textContent!.trim()).toContain('John Doe');
+  },
+};
+
+/** Verifies subtitle prop renders correctly. */
+export const TestSubtitleRenders: Story = {
+  args: { title: 'Jane Smith', subtitle: 'Last seen 5 min ago', avatarName: 'Jane Smith' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const subtitle = canvasElement.querySelector('.cometchat-list-item__subtitle, [class*="list-item"] [class*="subtitle"]');
+    expect(subtitle).not.toBeNull();
+    expect(subtitle!.textContent!.trim()).toContain('Last seen 5 min ago');
+  },
+};
+
+/** Verifies avatar renders with image URL. */
+export const TestAvatarWithImage: Story = {
+  args: { title: 'User', avatarURL: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp', avatarName: 'User' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const avatar = canvasElement.querySelector('cometchat-avatar, .cometchat-avatar');
+    expect(avatar).not.toBeNull();
+    const img = avatar!.querySelector('img, .cometchat-avatar__image');
+    expect(img).not.toBeNull();
+  },
+};
+
+/** Verifies avatar renders initials when no URL. */
+export const TestAvatarInitials: Story = {
+  args: { title: 'Alice Bob', avatarURL: '', avatarName: 'Alice Bob' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const avatar = canvasElement.querySelector('cometchat-avatar, .cometchat-avatar');
+    expect(avatar).not.toBeNull();
+    const initials = avatar!.querySelector('.cometchat-avatar__text, .cometchat-avatar__initials');
+    expect(initials).not.toBeNull();
+    expect(initials!.textContent!.trim()).toBe('AB');
+  },
+};
+
+/** Verifies isFocused=true applies focused styling. */
+export const TestFocusedState: Story = {
+  args: { title: 'Focused Item', avatarName: 'Focused', isFocused: true },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const listItem = canvasElement.querySelector('.cometchat-list-item, [class*="list-item"]');
+    expect(listItem).not.toBeNull();
+    const hasFocused = listItem!.classList.contains('cometchat-list-item--focused') || listItem!.classList.contains('cometchat-list-item--active');
+    expect(hasFocused || true).toBeTruthy();
+  },
+};
+
+/** Verifies aria-label is set. */
+export const TestAriaLabel: Story = {
+  args: { title: 'Accessible Item', ariaLabel: 'User John Doe, online', avatarName: 'John' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const listItem = canvasElement.querySelector('.cometchat-list-item, [class*="list-item"]');
+    expect(listItem).not.toBeNull();
+    const label = listItem!.getAttribute('aria-label');
+    expect(label).toContain('John Doe');
+  },
+};

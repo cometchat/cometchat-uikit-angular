@@ -637,6 +637,7 @@
     "dropdown_placeholder": "选择一个选项",
     "checkbox_aria_label": "复选框",
     "file_bubble_unknown_file": "未知文件",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "出了点问题",
     "error_boundary_retry": "重试",
     "message_bubble_render_error": "无法显示此消息",

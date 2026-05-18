@@ -30,9 +30,9 @@
   display: inline-block;
   background: linear-gradient(
     90deg,
-    rgba(150, 150, 150, 0.6) 25%,
-    rgba(220, 220, 220, 1) 50%,
-    rgba(150, 150, 150, 0.6) 75%
+    var(--cometchat-neutral-color-500, #969696) 25%,
+    var(--cometchat-neutral-color-300, #dcdcdc) 50%,
+    var(--cometchat-neutral-color-500, #969696) 75%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;

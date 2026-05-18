@@ -16,7 +16,7 @@ export interface MessageListListenerHost {
   handleMessageEdited(message: CometChat.BaseMessage): void;
   handleMessageDeleted(message: CometChat.BaseMessage): void;
   handleReceipt(receipt: CometChat.MessageReceipt, isGroupReceipt: boolean): void;
-  handleReactionEvent(reactionEvent: CometChat.ReactionEvent): void;
+  handleReactionEvent(reactionEvent: CometChat.ReactionEvent, action: 'added' | 'removed'): void;
   handleGroupAction(message: CometChat.Action, group: CometChat.Group): void;
   handleCallAction(call: CometChat.Call): void;
   handleReconnection(): Promise<void>;
@@ -40,8 +40,8 @@ export function setupMessageListener(host: MessageListListenerHost, ngZone: NgZo
       onMessagesRead: (r: CometChat.MessageReceipt) => { try { ngZone.run(() => host.handleReceipt(r, false)); } catch (e) { CometChatLogger.error('MessageListService', 'onMessagesRead', e); } },
       onMessagesDeliveredToAll: (r: CometChat.MessageReceipt) => { try { ngZone.run(() => host.handleReceipt(r, true)); } catch (e) { CometChatLogger.error('MessageListService', 'onMessagesDeliveredToAll', e); } },
       onMessagesReadByAll: (r: CometChat.MessageReceipt) => { try { ngZone.run(() => host.handleReceipt(r, true)); } catch (e) { CometChatLogger.error('MessageListService', 'onMessagesReadByAll', e); } },
-      onMessageReactionAdded: (e: CometChat.ReactionEvent) => { try { host.handleReactionEvent(e); } catch (err) { CometChatLogger.error('MessageListService', 'onMessageReactionAdded', err); } },
-      onMessageReactionRemoved: (e: CometChat.ReactionEvent) => { try { host.handleReactionEvent(e); } catch (err) { CometChatLogger.error('MessageListService', 'onMessageReactionRemoved', err); } },
+      onMessageReactionAdded: (e: CometChat.ReactionEvent) => { try { host.handleReactionEvent(e, 'added'); } catch (err) { CometChatLogger.error('MessageListService', 'onMessageReactionAdded', err); } },
+      onMessageReactionRemoved: (e: CometChat.ReactionEvent) => { try { host.handleReactionEvent(e, 'removed'); } catch (err) { CometChatLogger.error('MessageListService', 'onMessageReactionRemoved', err); } },
       onAIAssistantMessageReceived: (m: CometChat.BaseMessage) => { try { host.handleNewMessage(m); } catch (e) { CometChatLogger.error('MessageListService', 'onAIAssistantMessageReceived', e); } },
     })
   );

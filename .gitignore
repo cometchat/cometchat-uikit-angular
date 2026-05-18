@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-
+.package-lock.json
 # Build artifacts
 .angular/
 dist/
@@ -32,3 +32,10 @@ docs/node_modules/
 docs/.mintlify/
 v5-calls
 public-docs-v5
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+e2e/.env

@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatPollBubbleComponent } from './cometchat-poll-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 import {
   createMockPollMessage,
   createMockUser,
@@ -209,5 +210,18 @@ export const OutgoingAndIncoming: Story = {
   }),
   parameters: {
     docs: { description: { story: 'Outgoing and incoming poll bubbles shown together.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders poll bubble container */
+export const TestDefaultRendersPollBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-poll-bubble');
+    expect(container).not.toBeNull();
   },
 };

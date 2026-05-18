@@ -39,7 +39,7 @@ export async function handleRecordingCompleteImpl(ctx: VoiceUtilsContext, audioB
   ctx.syncLegacyPopoverSignals();
   const receiver = ctx.getReceiver();
   if (!receiver) {
-    console.warn('[CometChatMessageComposer] No receiver (user or group) specified for audio message');
+    CometChatLogger.warn('CometChatMessageComposer', 'No receiver (user or group) specified for audio message');
     return;
   }
   const timestamp = Date.now();
@@ -80,7 +80,10 @@ export async function handleRecordingCompleteImpl(ctx: VoiceUtilsContext, audioB
     CometChatLogger.error('CometChatMessageComposer', 'Error sending audio message:', error);
     ctx.emitError(error);
   }
-  URL.revokeObjectURL(blobUrl);
+  // ENG-35026: Revoke the blob URL only after a delay to allow the audio bubble's
+  // WaveSurfer instance to finish loading the audio from the URL. Revoking immediately
+  // after send causes "failed to load" because the audio element hasn't loaded yet.
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
 }
 
 export function handleRecordingCancelImpl(ctx: VoiceUtilsContext): void {

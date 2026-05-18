@@ -7,7 +7,7 @@ import { hasValidMessageSearchCriteria } from '../components/cometchat-search/se
  * Service managing message search state and SDK queries.
  * Injected into CometChatSearchMessagesListComponent.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class SearchMessagesService {
   /** Current message results */
   readonly messages: WritableSignal<CometChat.BaseMessage[]> = signal<CometChat.BaseMessage[]>([]);

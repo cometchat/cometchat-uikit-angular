@@ -14,6 +14,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatPaginatedListComponent } from './cometchat-paginated-list.component';
+import { within, expect } from '@storybook/test';
 
 // ============================================
 // Mock Data
@@ -418,5 +419,25 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all paginated list states — populated list with pagination, fully loaded list, empty state, loading state, and error state — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders paginated list container */
+export const TestDefaultRendersList: Story = {
+  args: {
+    items: sampleItems,
+    isLoading: false,
+    hasMore: true,
+    showScrollbar: true,
+    ariaLabel: 'Test paginated list',
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-paginated-list');
+    expect(container).not.toBeNull();
   },
 };

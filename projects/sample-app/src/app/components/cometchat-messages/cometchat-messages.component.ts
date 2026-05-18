@@ -83,7 +83,7 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
     this.navigationService.isMobile();
     // Nudge the UIKit component's change detector
     this.messageHeaderRef?.['cdr']?.detectChanges();
-  });
+  },{ allowSignalWrites: true});
 
   /** Whether the composer should be hidden (user blocked by me) — local signal for realtime updates */
   protected isBlockedByMe = signal(false);
@@ -92,7 +92,7 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
   private activeUserSync = effect(() => {
     const user = this.activeUser();
     this.isBlockedByMe.set(user?.getBlockedByMe?.() ?? false);
-  });
+  },{ allowSignalWrites: true});
 
   /** goToMessageId from NavigationService, converted to string for the UIKit input */
   protected goToMessageId = computed(() => {

@@ -19,6 +19,7 @@ import { IncomingCallService } from '../../services/incoming-call.service';
 import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { DialogFocusManager } from '../../services/dialog-focus-manager.service';
 import { createMockCall, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 import {
   mockCallAnnouncer,
   MockDialogFocusManager,
@@ -381,5 +382,18 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all incoming call variants — audio call and video call — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders incoming call container */
+export const TestDefaultRendersIncomingCall: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-incoming-call');
+    expect(container).not.toBeNull();
   },
 };

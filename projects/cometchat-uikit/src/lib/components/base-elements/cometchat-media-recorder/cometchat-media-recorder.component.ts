@@ -18,6 +18,7 @@ import { TranslatePipe } from '../../../resources/CometChatLocalize';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 import { LiveAnnouncerService } from '../../../services/live-announcer.service';
 import { WaveSurfer } from '../../cometchat-audio-bubble/wavesurfer';
+import { CometChatLogger } from '../../../utils/CometChatLogger';
 import {
   formatRecordingTime,
   checkMicrophonePermission,
@@ -138,7 +139,7 @@ export class CometChatMediaRecorderComponent implements OnInit, OnDestroy {
         } else if (perm.state === 'granted') { this.hasError = false; }
         this.cdr.detectChanges();
       };
-    } catch (e) { console.error('Permission monitoring setup failed:', e); }
+    } catch (e) { CometChatLogger.error('CometChatMediaRecorder', 'Permission monitoring setup failed:', e); }
   }
 
   async initMediaRecorder(): Promise<MediaRecorder | null> {
@@ -200,7 +201,7 @@ export class CometChatMediaRecorderComponent implements OnInit, OnDestroy {
       this.sourceNode.connect(this.analyser);
       this.animationFrameId = this.runWaveformLoop();
     } catch (error) {
-      console.error('Failed to initialize audio analysis:', error);
+      CometChatLogger.error('CometChatMediaRecorder', 'Failed to initialize audio analysis:', error);
     }
   }
 
@@ -292,7 +293,7 @@ export class CometChatMediaRecorderComponent implements OnInit, OnDestroy {
     const options = buildWaveSurferOptions(this.waveformContainer.nativeElement);
     this.waveSurfer = WaveSurfer.create(options as any);
     this.wireWaveSurferEvents();
-    this.waveSurfer.load(previewUrl).catch((e: Error) => console.error('Failed to load preview audio:', e));
+    this.waveSurfer.load(previewUrl).catch((e: Error) => CometChatLogger.error('CometChatMediaRecorder', 'Failed to load preview audio:', e));
   }
 
   private wireWaveSurferEvents(): void {

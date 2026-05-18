@@ -466,9 +466,9 @@ describe('CometChatConversationsComponent', () => {
   // -------------------------------------------------------------------------
   describe('Lifecycle Guards', () => {
     it('should emit error output when ngOnInit throws', () => {
-      // Spy on a method called during ngOnInit to make it throw
+      // Spy on a method called synchronously during ngOnInit to make it throw
       const testError = new Error('ngOnInit failure');
-      vi.spyOn(component as any, 'initializeFormatters').mockImplementation(() => {
+      vi.spyOn(component as any, 'initializeService').mockImplementation(() => {
         throw testError;
       });
 
@@ -485,7 +485,7 @@ describe('CometChatConversationsComponent', () => {
     });
 
     it('should not propagate error from ngOnInit to Angular error handler', () => {
-      vi.spyOn(component as any, 'initializeFormatters').mockImplementation(() => {
+      vi.spyOn(component as any, 'initializeService').mockImplementation(() => {
         throw new Error('should be caught');
       });
 

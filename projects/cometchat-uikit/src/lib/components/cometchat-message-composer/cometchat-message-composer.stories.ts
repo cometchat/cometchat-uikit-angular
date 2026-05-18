@@ -14,6 +14,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { within, expect } from '@storybook/test';
 
 import { CometChatMessageComposerComponent } from './cometchat-message-composer.component';
 import { createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
@@ -504,5 +505,94 @@ export const WithRichText: Story = {
     docs: {
       description: { story: 'Message composer with rich text editing enabled.' },
     },
+  },
+};
+
+
+// ============================================
+// Interaction Tests — Prop Toggle Verification
+// ============================================
+
+/** Verifies default composer renders text input and action buttons. */
+export const TestDefaultRendersComposer: Story = {
+  render: composerRender(),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Composer container should be present
+    const composer = canvasElement.querySelector('.cometchat-message-composer');
+    expect(composer).not.toBeNull();
+    // Text input area should be present (contenteditable or textarea)
+    const input = canvasElement.querySelector('[contenteditable], textarea, .cometchat-message-composer__input');
+    expect(input).not.toBeNull();
+  },
+};
+
+/** Verifies hideAttachmentButton=true hides the attachment button. */
+export const TestHideAttachmentButton: Story = {
+  args: { hideAttachmentButton: true },
+  render: composerRender(),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Attachment button should NOT be present
+    const attachmentBtn = canvasElement.querySelector('.cometchat-message-composer__attachment-button, .cometchat-message-composer__action-attachment');
+    expect(attachmentBtn).toBeNull();
+  },
+};
+
+/** Verifies hideEmojiKeyboardButton=true hides the emoji button. */
+export const TestHideEmojiButton: Story = {
+  args: { hideEmojiKeyboardButton: true },
+  render: composerRender(),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Emoji button should NOT be present
+    const emojiBtn = canvasElement.querySelector('.cometchat-message-composer__emoji-button, .cometchat-message-composer__action-emoji');
+    expect(emojiBtn).toBeNull();
+  },
+};
+
+/** Verifies hideVoiceRecordingButton=true hides the voice recording button. */
+export const TestHideVoiceRecordingButton: Story = {
+  args: { hideVoiceRecordingButton: true },
+  render: composerRender(),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Voice recording button should NOT be present
+    const voiceBtn = canvasElement.querySelector('.cometchat-message-composer__voice-recording-button, .cometchat-message-composer__action-voice');
+    expect(voiceBtn).toBeNull();
+  },
+};
+
+/** Verifies hideSendButton=true hides the send button. */
+export const TestHideSendButton: Story = {
+  args: { hideSendButton: true },
+  render: composerRender(),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Send button should NOT be present
+    const sendBtn = canvasElement.querySelector('.cometchat-message-composer__send-button');
+    expect(sendBtn).toBeNull();
+  },
+};
+
+/** Verifies single-line layout renders correctly. */
+export const TestSingleLineLayout: Story = {
+  render: composerRender('single-line'),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Should have single-line modifier class
+    const composer = canvasElement.querySelector('.cometchat-message-composer--single-line');
+    expect(composer).not.toBeNull();
+  },
+};
+
+/** Verifies multiline layout renders correctly. */
+export const TestMultilineLayout: Story = {
+  render: composerRender('multiline'),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    // Should have multiline modifier class
+    const composer = canvasElement.querySelector('.cometchat-message-composer--multiline');
+    expect(composer).not.toBeNull();
   },
 };

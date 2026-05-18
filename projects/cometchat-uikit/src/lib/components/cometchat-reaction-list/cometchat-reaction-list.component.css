@@ -216,12 +216,13 @@
 /* ==================== Shimmer Loading State ==================== */
 .cometchat-reaction-list__shimmer {
   display: var(--cometchat-reaction-list-shimmer-display, flex);
-  width: var(--cometchat-reaction-list-shimmer-width, 280px);
+  width: var(--cometchat-reaction-list-shimmer-width, 100%);
   height: var(--cometchat-reaction-list-shimmer-height, 200px);
   flex-direction: var(--cometchat-reaction-list-shimmer-flex-direction, column);
   align-items: var(--cometchat-reaction-list-shimmer-align-items, flex-start);
   align-self: var(--cometchat-reaction-list-shimmer-align-self, stretch);
   background: var(--cometchat-reaction-list-shimmer-background, var(--cometchat-background-color-01, #FFFFFF));
+  box-sizing: border-box;
 }
 
 .cometchat-reaction-list__shimmer-tabs {
@@ -248,7 +249,7 @@
 
 .cometchat-reaction-list__shimmer-item {
   display: var(--cometchat-reaction-list-shimmer-item-display, flex);
-  width: var(--cometchat-reaction-list-shimmer-item-width, 280px);
+  width: var(--cometchat-reaction-list-shimmer-item-width, 100%);
   padding: var(--cometchat-reaction-list-shimmer-item-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-4, 16px));
   align-items: var(--cometchat-reaction-list-shimmer-item-align-items, center);
   gap: var(--cometchat-reaction-list-shimmer-item-gap, var(--cometchat-spacing-3, 12px));

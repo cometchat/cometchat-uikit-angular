@@ -22,7 +22,7 @@ export class ThemeService implements OnDestroy {
 
   private syncEffect = effect(() => {
     CometChatUIKit.themeMode = this.uiKitTheme.currentTheme();
-  });
+  },{ allowSignalWrites: true});
 
   ngOnDestroy(): void {
     this.syncEffect.destroy();

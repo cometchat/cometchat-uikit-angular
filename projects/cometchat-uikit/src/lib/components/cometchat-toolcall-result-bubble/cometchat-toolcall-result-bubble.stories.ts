@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatToolCallResultBubble } from './cometchat-toolcall-result-bubble.component';
 import { MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -152,5 +153,18 @@ export const EmptyResult: Story = {
   },
   parameters: {
     docs: { description: { story: 'When the result text is empty, the component renders nothing.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders toolcall result bubble container */
+export const TestDefaultRendersToolcallResultBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-toolcall-result-bubble');
+    expect(container).not.toBeNull();
   },
 };

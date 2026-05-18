@@ -79,8 +79,14 @@ export function handlePasteImpl(ctx: PasteHandlerContext, event: ClipboardEvent)
   }
   let processedContent: string;
   if (isHtml) {
+    // ENG-35081: If the HTML contains mention spans (data-uid attribute), preserve
+    // the HTML to keep the structured mention data. Using the plain text fallback
+    // would lose the @all/@user mention structure, causing broken content in the editor.
+    const hasMentionSpans = pastedContent.includes('data-uid=');
     const plainFallback = clipboardData.getData('text/plain');
-    if (plainFallback) { processedContent = ctx.linkManager.processAutoLink(ctx.markdownToHtml(plainFallback)); } else {
+    if (plainFallback && !hasMentionSpans) {
+      processedContent = ctx.linkManager.processAutoLink(ctx.markdownToHtml(plainFallback));
+    } else {
       processedContent = ctx.linkManager.processAutoLink(
         ctx.contentEditableManager.sanitizeHTML(pastedContent)
       );

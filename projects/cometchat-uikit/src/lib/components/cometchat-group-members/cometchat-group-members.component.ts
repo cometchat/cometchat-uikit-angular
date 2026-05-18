@@ -155,7 +155,7 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
   }
 
   private initializeService(): void {
-    if (!this.group) { console.warn('[CometChatGroupMembers] No group input provided.'); return; }
+    if (!this.group) { CometChatLogger.warn('CometChatGroupMembers', 'No group input provided.'); return; }
     this.groupMembersService.setErrorCallback((err: CometChat.CometChatException) => {
       this.lastError = err as unknown as Error; this.error.emit(err); this.cdr.markForCheck();
     });

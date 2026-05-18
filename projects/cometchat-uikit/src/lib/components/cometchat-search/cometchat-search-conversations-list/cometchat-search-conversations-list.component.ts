@@ -93,7 +93,7 @@ export class CometChatSearchConversationsListComponent implements OnInit, OnChan
   constructor() {
     effect(() => {
       this.stateChange.emit(this.service.fetchState() as States);
-    });
+    },{allowSignalWrites:true});
   }
 
   /** Get typing indicator for a conversation */

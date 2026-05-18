@@ -11,7 +11,7 @@ import { Subscription } from 'rxjs';
  * Service managing conversation search state, SDK queries,
  * and real-time listener lifecycle.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class SearchConversationsService {
   readonly conversations: WritableSignal<CometChat.Conversation[]> = signal<CometChat.Conversation[]>([]);
   readonly fetchState: WritableSignal<States> = signal<States>(States.loaded);

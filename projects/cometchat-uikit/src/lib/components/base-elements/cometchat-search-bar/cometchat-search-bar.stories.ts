@@ -241,3 +241,64 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies search bar renders with placeholder text. */
+export const TestPlaceholderText: Story = {
+  args: { placeholderText: 'Search users...' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const input = canvasElement.querySelector('input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input.placeholder).toContain('Search users');
+  },
+};
+
+/** Verifies searchText prop pre-fills the input. */
+export const TestSearchTextPrefill: Story = {
+  args: { searchText: 'hello', placeholderText: 'Search...' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const input = canvasElement.querySelector('input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('hello');
+  },
+};
+
+/** Verifies empty searchText shows empty input. */
+export const TestEmptySearchText: Story = {
+  args: { searchText: '', placeholderText: 'Search...' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const input = canvasElement.querySelector('input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('');
+  },
+};
+
+/** Verifies search bar has accessible aria-label. */
+export const TestAriaLabel: Story = {
+  args: { ariaLabel: 'Search conversations', placeholderText: 'Search...' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const input = canvasElement.querySelector('input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    const label = input.getAttribute('aria-label') || input.closest('[aria-label]')?.getAttribute('aria-label');
+    expect(label).toBeTruthy();
+  },
+};
+
+/** Verifies search icon is present. */
+export const TestSearchIconPresent: Story = {
+  args: { placeholderText: 'Search...' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const icon = canvasElement.querySelector('.cometchat-search-bar__icon, [class*="search-bar"] svg, [class*="search-bar"] img');
+    expect(icon).not.toBeNull();
+  },
+};

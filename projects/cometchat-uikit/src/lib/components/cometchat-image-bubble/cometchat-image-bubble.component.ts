@@ -8,6 +8,7 @@ import {
   SimpleChanges,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  NgZone,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -24,6 +25,7 @@ import {
 } from '../../utils/media-bubble-utils';
 import { CometChatTextBubbleComponent } from '../cometchat-text-bubble/cometchat-text-bubble.component';
 import { CometChatFullScreenViewerComponent } from '../base-elements/cometchat-fullscreen-viewer/cometchat-fullscreen-viewer.component';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 
 /**
  * CometChatImageBubbleComponent renders image messages with single/multi-image layouts,
@@ -61,10 +63,15 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
   protected galleryStartIndex = 0;
   protected senderName = '';
   protected senderAvatarUrl = '';
+  /** Tracks which attachment indices have finished loading their real image */
+  protected loadedIndices = new Set<number>();
+
+  /** Path to the placeholder image shown while the real image loads */
+  readonly placeholderSrc = 'assets/image_placeholder.png';
 
   readonly MessageBubbleAlignment = MessageBubbleAlignment;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
 
   ngOnInit(): void { this.processMessage(); }
 
@@ -79,6 +86,7 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
     this.extractSenderInfo();
     this.determineAlignment();
     this.determineLayout();
+    this.loadedIndices = new Set<number>(); // reset on message change
     this.cdr.markForCheck();
   }
 
@@ -101,7 +109,7 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
 
   protected onImageClick(index: number): void {
     if (this.disableInteraction) return;
-    if (index < 0 || index >= this.attachments.length) { console.warn(`[CometChatImageBubble] Invalid image index: ${index}`); return; }
+    if (index < 0 || index >= this.attachments.length) { CometChatLogger.warn('CometChatImageBubble', `Invalid image index: ${index}`); return; }
     this.imageClick.emit({ attachment: this.attachments[index], index });
     this.openGalleryViewer(index);
   }
@@ -137,4 +145,36 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
   }
 
   protected trackByAttachment(index: number, attachment: MediaAttachment): string { return attachment.url || index.toString(); }
+
+  /**
+   * Returns the src to display for an image at the given index.
+   * Shows the placeholder until the real image has loaded.
+   */
+  protected getImageSrc(index: number): string {
+    return this.loadedIndices.has(index)
+      ? (this.attachments[index]?.displayUrl ?? this.attachments[index]?.url ?? this.placeholderSrc)
+      : this.placeholderSrc;
+  }
+
+  /**
+   * Called when the real image finishes loading.
+   * Runs inside NgZone so OnPush change detection picks it up immediately.
+   */
+  protected onImageLoad(index: number, event: Event): void {
+    const img = event.target as HTMLImageElement;
+    // Only swap if this is the real image loading (not the placeholder itself)
+    if (img.src && !img.src.endsWith('image_placeholder.png')) {
+      this.ngZone.run(() => {
+        this.loadedIndices = new Set(this.loadedIndices).add(index);
+        this.cdr.markForCheck();
+      });
+    }
+  }
+
+  /**
+   * Called when the real image fails to load — keep showing placeholder.
+   */
+  protected onImageError(index: number): void {
+    // Keep placeholder — nothing to do, loadedIndices stays without this index
+  }
 }

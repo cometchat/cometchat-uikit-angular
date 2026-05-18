@@ -172,19 +172,22 @@ export class ContentEditableManager {
           }
         } else if (tagName === 'strong' || tagName === 'b') {
           const content = this.extractTextWithNewlines(el);
-          result += `**${content}**`;
+          if (content) result += `**${content}**`;
         } else if (tagName === 'em' || tagName === 'i') {
           const content = this.extractTextWithNewlines(el);
-          result += `*${content}*`;
+          if (content) result += `*${content}*`;
         } else if (tagName === 'u') {
           const content = this.extractTextWithNewlines(el);
-          result += `__${content}__`;
+          if (content) result += `__${content}__`;
         } else if (tagName === 's' || tagName === 'del' || tagName === 'strike') {
           const content = this.extractTextWithNewlines(el);
-          result += `~~${content}~~`;
+          if (content) result += `~~${content}~~`;
         } else if (tagName === 'code') {
+          // ENG-35159: Only wrap with backticks if there's actual content.
+          // An empty <code></code> from the formatter should not produce `\`` markers
+          // that make getText() non-empty, which would falsely activate the send button.
           const content = this.extractTextWithNewlines(el);
-          result += `\`${content}\``;
+          if (content) result += `\`${content}\``;
         } else {
           result += this.extractTextWithNewlines(el);
         }

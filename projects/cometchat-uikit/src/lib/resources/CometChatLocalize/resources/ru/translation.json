@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Выберите вариант",
     "checkbox_aria_label": "Флажок",
     "file_bubble_unknown_file": "Неизвестный файл",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Что-то пошло не так",
     "error_boundary_retry": "Повторить",
     "message_bubble_render_error": "Не удаётся отобразить это сообщение",

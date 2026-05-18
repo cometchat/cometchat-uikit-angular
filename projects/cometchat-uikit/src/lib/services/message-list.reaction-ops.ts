@@ -23,12 +23,25 @@ export async function addReactionImpl(ctx: ReactionOpsContext, messageId: number
   const originalReactions = message.getReactions() || [];
   const updatedReactions: CometChat.ReactionCount[] = [];
   let reactionFound = false;
+  let alreadyReacted = false;
   originalReactions.forEach(reaction => {
     if (reaction.getReaction() === emoji) {
-      reaction.setCount(reaction.getCount() + 1);
-      reaction.setReactedByMe(true);
-      updatedReactions.push(reaction);
       reactionFound = true;
+      if (reaction.getReactedByMe()) {
+        // ENG-35038: User already reacted with this emoji — toggle off (decrement/remove).
+        alreadyReacted = true;
+        const newCount = reaction.getCount() - 1;
+        if (newCount > 0) {
+          reaction.setCount(newCount);
+          reaction.setReactedByMe(false);
+          updatedReactions.push(reaction);
+        }
+        // If count reaches 0, drop the reaction entirely (don't push)
+      } else {
+        reaction.setCount(reaction.getCount() + 1);
+        reaction.setReactedByMe(true);
+        updatedReactions.push(reaction);
+      }
     } else {
       updatedReactions.push(reaction);
     }
@@ -36,9 +49,14 @@ export async function addReactionImpl(ctx: ReactionOpsContext, messageId: number
   if (!reactionFound) { const newReaction = new CometChat.ReactionCount(emoji, 1, true); updatedReactions.push(newReaction); }
   ctx.updateMessageReactions(messageId, updatedReactions);
   try {
-    await CometChat.addReaction(messageId, emoji);
+    if (alreadyReacted) {
+      // Toggle off — call removeReaction on the SDK
+      await CometChat.removeReaction(messageId, emoji);
+    } else {
+      await CometChat.addReaction(messageId, emoji);
+    }
   } catch (error) {
-    CometChatLogger.error('MessageListService', 'addReaction: Failed to add reaction', error);
+    CometChatLogger.error('MessageListService', 'addReaction: Failed to add/remove reaction', error);
     ctx.updateMessageReactions(messageId, originalReactions);
     if (ctx.errorCallback) { ctx.errorCallback(error as CometChat.CometChatException); }
   }

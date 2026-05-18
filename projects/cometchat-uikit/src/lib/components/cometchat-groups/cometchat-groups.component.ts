@@ -128,7 +128,8 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   searchText = '';
   selectedGroups = new Set<string>();
   focusedIndex = -1;
-  lastSelectedIndex = signal(-1);
+  lastSelectedIndex = -1;
+  private initialLoadComplete = false;
   isFetchingMore = signal(false);
   hasMore = signal(true);
   readonly SelectionMode = SelectionMode;
@@ -190,7 +191,7 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
     this.isFetchingMore.set(true);
     if (this.isFirstFetch) { this.fetchState = States.loading; this.cdr.markForCheck(); }
     this.groupsService.fetchNext()
-      .then(() => { this.isFetchingMore.set(false); this.syncStateFromService(); this.isFirstFetch = false; this.paginatedList?.loadComplete(); })
+      .then(() => { this.isFetchingMore.set(false); this.syncStateFromService(); this.isFirstFetch = false; if (!this.initialLoadComplete) { this.pendingTimers.push(setTimeout(() => { this.initialLoadComplete = true; }, 100)); } this.paginatedList?.loadComplete(); })
       .catch(() => { this.isFetchingMore.set(false); this.syncStateFromService(); this.paginatedList?.loadComplete(); });
   }
 
@@ -229,13 +230,13 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
       this.emitSelectionChange(guid);
     } else if (this.selectionMode === SelectionMode.multiple) {
       const isShiftClick = event instanceof MouseEvent && event.shiftKey;
-      const lastIndex = this.lastSelectedIndex();
+      const lastIndex = this.lastSelectedIndex;
       if (isShiftClick && lastIndex >= 0 && currentIndex !== -1) {
         this.selectRange(lastIndex, currentIndex);
       } else {
         if (isCurrentlySelected) { this.selectedGroups.delete(guid); } else { this.selectedGroups.add(guid); }
         this.select.emit({ group, selected: !isCurrentlySelected });
-        this.lastSelectedIndex.set(currentIndex);
+        this.lastSelectedIndex = currentIndex;
         this.emitSelectionChange(guid);
       }
     }
@@ -243,7 +244,7 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   }
 
   private selectRange(startIndex: number, endIndex: number): void {
-    this.lastSelectedIndex.set(selectGroupRange(this.groupList, startIndex, endIndex, this.selectedGroups, this.select, this.selectionChange, this.selectionMode));
+    this.lastSelectedIndex = selectGroupRange(this.groupList, startIndex, endIndex, this.selectedGroups, this.select, this.selectionChange, this.selectionMode);
   }
 
   handleSelectionControlChange(group: CometChat.Group, changeEvent: Event): void { this.handleSelectionChange(group, changeEvent); }
@@ -261,7 +262,7 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
 
   clearSelection(): void {
     clearGroupSelection(this.groupList, this.selectedGroups, this.select, this.selectionChange, this.selectionMode);
-    this.lastSelectedIndex.set(-1); this.cdr.markForCheck();
+    this.lastSelectedIndex = -1; this.cdr.markForCheck();
   }
 
   isGroupSelected(group: CometChat.Group): boolean { return this.selectedGroups.has(group.getGuid()); }
@@ -318,7 +319,7 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   }
 
   private selectRangeFromAnchor(currentIndex: number): void {
-    const anchorIndex = this.lastSelectedIndex();
+    const anchorIndex = this.lastSelectedIndex;
     if (anchorIndex === -1) { if (currentIndex >= 0 && currentIndex < this.groupList.length) this.handleSelectionChange(this.groupList[currentIndex]); return; }
     this.selectRange(anchorIndex, currentIndex);
   }
@@ -356,7 +357,10 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
     this.focusedIndex = -1; (document.activeElement as HTMLElement)?.blur(); this.cdr.markForCheck();
   }
 
-  private scrollFocusedItemIntoView(): void { scrollGroupItemIntoView(this.listContainer?.nativeElement, this.focusedIndex, this.pendingTimers); }
+  private scrollFocusedItemIntoView(): void {
+    if (!this.initialLoadComplete) return;
+    scrollGroupItemIntoView(this.listContainer?.nativeElement, this.focusedIndex, this.pendingTimers);
+  }
 
   getTabIndex(index: number): number {
     if (this.focusedIndex === index) return 0;

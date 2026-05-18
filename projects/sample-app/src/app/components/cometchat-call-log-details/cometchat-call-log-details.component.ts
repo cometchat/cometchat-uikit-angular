@@ -72,7 +72,7 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
     if (!call || !this.loggedInUser) return;
     this.resetState();
     this.resolveOtherUser();
-  });
+  },{ allowSignalWrites: true});
 
   async ngOnInit(): Promise<void> {
     try {

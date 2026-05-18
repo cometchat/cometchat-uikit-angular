@@ -14,6 +14,7 @@
 
 import { EventEmitter } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatLogger } from './CometChatLogger';
 
 /**
  * Normalizes an unknown error into a CometChat.CometChatException,
@@ -57,5 +58,5 @@ export function handleCallError(
     onError(exception);
   }
 
-  console.error(`[${logPrefix}] Error:`, err);
+  CometChatLogger.error(logPrefix, 'Error:', err);
 }

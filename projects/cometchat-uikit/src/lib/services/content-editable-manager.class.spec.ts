@@ -170,7 +170,7 @@ describe('ContentEditableManager', () => {
 
     it('should return text from formatted content', () => {
       element.innerHTML = '<p><strong>Bold</strong> and <em>italic</em></p>';
-      expect(manager.getText()).toBe('Bold and italic');
+      expect(manager.getText()).toBe('**Bold** and *italic*');
     });
 
     it('should preserve whitespace in text', () => {
@@ -180,7 +180,7 @@ describe('ContentEditableManager', () => {
 
     it('should extract text from deeply nested elements', () => {
       element.innerHTML = '<div><p><span><strong>Deep</strong></span></p></div>';
-      expect(manager.getText()).toBe('Deep');
+      expect(manager.getText()).toBe('**Deep**');
     });
   });
 
@@ -220,7 +220,7 @@ describe('ContentEditableManager', () => {
       expect(manager.getText()).toBe('Plain text');
 
       manager.setHTML('<p><strong>Bold text</strong></p>');
-      expect(manager.getText()).toBe('Bold text');
+      expect(manager.getText()).toBe('**Bold text**');
       expect(manager.getHTML()).toContain('<strong>');
     });
 

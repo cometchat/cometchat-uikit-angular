@@ -218,7 +218,7 @@ export class CometChatMarkdownRenderer {
         }
         this.isCopied.length = count;
       });
-    });
+    },{allowSignalWrites:true});
   }
 
   onContainerClick(event: MouseEvent): void {

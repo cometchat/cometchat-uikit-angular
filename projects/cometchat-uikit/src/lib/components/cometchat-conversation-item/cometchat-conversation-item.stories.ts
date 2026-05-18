@@ -15,6 +15,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatConversationItemComponent } from './cometchat-conversation-item.component';
+import { within, expect } from '@storybook/test';
 import {
   createMockConversation,
   createMockUser,
@@ -480,5 +481,18 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all conversation item variants — default user conversation, unread messages, typing indicator, group conversation, and active state — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders conversation item container */
+export const TestDefaultRendersItem: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-conversation-item');
+    expect(container).not.toBeNull();
   },
 };

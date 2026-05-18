@@ -741,3 +741,295 @@ export function createMockSearchMessagesService(
   }
   return svc;
 }
+
+
+// ── CometChat SDK-level search mock ───────────────────────────────────────
+
+/**
+ * Patches `CometChat.ConversationsRequestBuilder` and
+ * `CometChat.MessagesRequestBuilder` so that the real
+ * `SearchConversationsService` and `SearchMessagesService` (which are
+ * provided at the component level and cannot be overridden via
+ * `moduleMetadata`) return mock data instead of making live SDK calls.
+ *
+ * Call `installSearchSDKMock(conversations, messages)` in a story's
+ * `render` function or `play` hook before the component initialises.
+ * Call `uninstallSearchSDKMock()` in `play` cleanup if needed.
+ *
+ * @param conversations - Conversations to return from fetchNext()
+ * @param messages      - Messages to return from fetchPrevious()
+ * @param opts.forceState - 'loading' | 'error' | 'empty' to simulate those states
+ */
+export function installSearchSDKMock(
+  conversations: CometChat.Conversation[],
+  messages: CometChat.BaseMessage[],
+  opts?: { forceState?: 'loading' | 'error' | 'empty' }
+): void {
+  const forceState = opts?.forceState;
+
+  // --- ConversationsRequestBuilder mock ---
+  const origConvBuilder = (CometChat as any).ConversationsRequestBuilder;
+
+  function MockConvBuilder(this: any) {
+    this._limit = 30;
+    this._keyword = '';
+    this._type = '';
+    this._unread = false;
+  }
+  MockConvBuilder.prototype.setLimit = function (n: number) { this._limit = n; return this; };
+  MockConvBuilder.prototype.setSearchKeyword = function (k: string) { this._keyword = k; return this; };
+  MockConvBuilder.prototype.setConversationType = function (t: string) { this._type = t; return this; };
+  MockConvBuilder.prototype.setUnread = function (u: boolean) { this._unread = u; return this; };
+  MockConvBuilder.prototype.build = function () {
+    return {
+      fetchNext: () => {
+        if (forceState === 'loading') return new Promise(() => {}); // never resolves
+        if (forceState === 'error') return Promise.reject(new Error('mock error'));
+        if (forceState === 'empty') return Promise.resolve([]);
+        return Promise.resolve(conversations);
+      },
+    };
+  };
+  (CometChat as any).ConversationsRequestBuilder = MockConvBuilder;
+  (CometChat as any)._origConvBuilder = origConvBuilder;
+
+  // --- MessagesRequestBuilder mock ---
+  const origMsgBuilder = (CometChat as any).MessagesRequestBuilder;
+
+  function MockMsgBuilder(this: any) {}
+  MockMsgBuilder.prototype.setLimit = function () { return this; };
+  MockMsgBuilder.prototype.setSearchKeyword = function () { return this; };
+  MockMsgBuilder.prototype.setUID = function () { return this; };
+  MockMsgBuilder.prototype.setGUID = function () { return this; };
+  MockMsgBuilder.prototype.hideDeletedMessages = function () { return this; };
+  MockMsgBuilder.prototype.hasLinks = function () { return this; };
+  MockMsgBuilder.prototype.setAttachmentTypes = function () { return this; };
+  MockMsgBuilder.prototype.build = function () {
+    return {
+      fetchPrevious: () => {
+        if (forceState === 'loading') return new Promise(() => {});
+        if (forceState === 'error') return Promise.reject(new Error('mock error'));
+        if (forceState === 'empty') return Promise.resolve([]);
+        return Promise.resolve([...messages].reverse());
+      },
+    };
+  };
+  (CometChat as any).MessagesRequestBuilder = MockMsgBuilder;
+  (CometChat as any)._origMsgBuilder = origMsgBuilder;
+
+  // Also stub getLoggedinUser so the child components don't throw
+  if (!(CometChat as any)._origGetLoggedinUser) {
+    (CometChat as any)._origGetLoggedinUser = CometChat.getLoggedinUser;
+    (CometChat as any).getLoggedinUser = () =>
+      Promise.resolve(createMockUser({ uid: 'storybook-user', name: 'Storybook User' }));
+  }
+}
+
+/** Restores the original CometChat SDK builder classes. */
+export function uninstallSearchSDKMock(): void {
+  if ((CometChat as any)._origConvBuilder) {
+    (CometChat as any).ConversationsRequestBuilder = (CometChat as any)._origConvBuilder;
+    delete (CometChat as any)._origConvBuilder;
+  }
+  if ((CometChat as any)._origMsgBuilder) {
+    (CometChat as any).MessagesRequestBuilder = (CometChat as any)._origMsgBuilder;
+    delete (CometChat as any)._origMsgBuilder;
+  }
+  if ((CometChat as any)._origGetLoggedinUser) {
+    (CometChat as any).getLoggedinUser = (CometChat as any)._origGetLoggedinUser;
+    delete (CometChat as any)._origGetLoggedinUser;
+  }
+}
+
+
+// ── Search wrapper component for Storybook ────────────────────────────────
+
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { SearchConversationsService } from '../../projects/cometchat-uikit/src/lib/services/search-conversations.service';
+import { SearchMessagesService } from '../../projects/cometchat-uikit/src/lib/services/search-messages.service';
+import { CometChatSearchComponent } from '../../projects/cometchat-uikit/src/lib/components/cometchat-search/cometchat-search.component';
+import { CometChatSearchFilter, CometChatSearchScope, States } from '../../projects/cometchat-uikit/src/lib/Enums/Enums';
+
+/**
+ * Storybook-only wrapper for CometChatSearch.
+ *
+ * Passes mock conversationsRequestBuilder and messagesRequestBuilder via
+ * the component's own @Input() props — the same pattern as MessageList.
+ * This bypasses the SDK entirely without any DI tricks or global patching.
+ *
+ * The builders are built once in ngOnChanges (after inputs are set) and
+ * cached so Angular sees a stable object reference across CD cycles.
+ */
+@Component({
+  selector: 'cometchat-search-story-wrapper',
+  standalone: true,
+  imports: [CometChatSearchComponent],
+  template: `
+    <cometchat-search
+      [defaultSearchText]="defaultSearchText"
+      [hideBackButton]="hideBackButton"
+      [searchIn]="searchIn"
+      [searchFilters]="searchFilters ?? defaultFilters"
+      [initialSearchFilter]="initialSearchFilter"
+      [hideGroupType]="hideGroupType"
+      [hideUserStatus]="hideUserStatus"
+      [hideReceipts]="hideReceipts"
+      [conversationsRequestBuilder]="mockConvBuilder"
+      [messagesRequestBuilder]="mockMsgBuilder">
+    </cometchat-search>
+  `,
+})
+export class CometChatSearchStoryWrapperComponent implements OnChanges {
+  @Input() defaultSearchText?: string;
+  @Input() hideBackButton = false;
+  @Input() searchIn: CometChatSearchScope[] = [];
+  @Input() searchFilters?: CometChatSearchFilter[];
+  @Input() initialSearchFilter?: CometChatSearchFilter;
+  @Input() hideGroupType = false;
+  @Input() hideUserStatus = false;
+  @Input() hideReceipts = false;
+  @Input() forceState: 'loaded' | 'loading' | 'empty' | 'error' = 'loaded';
+  @Input() mockConversations: CometChat.Conversation[] = [];
+  @Input() mockMessages: CometChat.BaseMessage[] = [];
+
+  readonly defaultFilters = [
+    CometChatSearchFilter.Audio,
+    CometChatSearchFilter.Documents,
+    CometChatSearchFilter.Groups,
+    CometChatSearchFilter.Photos,
+    CometChatSearchFilter.Videos,
+    CometChatSearchFilter.Links,
+    CometChatSearchFilter.Unread,
+  ];
+
+  mockConvBuilder: any = null;
+  mockMsgBuilder: any = null;
+
+  ngOnChanges(_changes: SimpleChanges): void {
+    this._buildMocks();
+  }
+
+  private _makeBuilder(fetchNextFn: () => Promise<any[]>): any {
+    const builder: any = {};
+    const chain = [
+      'setLimit', 'setSearchKeyword', 'setConversationType', 'setUnread',
+      'setUID', 'setGUID', 'setCategories', 'setTypes', 'hideReplies',
+      'setTimestamp', 'setMessageId', 'setParentMessageId', 'withParent',
+      'hideDeletedMessages', 'setAttachmentTypes', 'hasLinks',
+    ];
+    chain.forEach(m => { builder[m] = () => builder; });
+    builder.build = () => ({ fetchNext: fetchNextFn, fetchPrevious: fetchNextFn });
+    return builder;
+  }
+
+  private _buildMocks(): void {
+    switch (this.forceState) {
+      case 'loading':
+        // Never-resolving promise keeps the service in loading state
+        this.mockConvBuilder = this._makeBuilder(() => new Promise(() => {}));
+        this.mockMsgBuilder = this._makeBuilder(() => new Promise(() => {}));
+        break;
+      case 'empty':
+        this.mockConvBuilder = this._makeBuilder(async () => []);
+        this.mockMsgBuilder = this._makeBuilder(async () => []);
+        break;
+      case 'error':
+        this.mockConvBuilder = this._makeBuilder(async () => { throw new Error('mock error'); });
+        this.mockMsgBuilder = this._makeBuilder(async () => { throw new Error('mock error'); });
+        break;
+      case 'loaded':
+      default: {
+        const convs = this.mockConversations;
+        const msgs = this.mockMessages;
+        this.mockConvBuilder = this._makeBuilder(async () => convs);
+        this.mockMsgBuilder = this._makeBuilder(async () => [...msgs].reverse());
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Patches the SearchConversationsService and SearchMessagesService instances
+ * that live inside the rendered CometChatSearch component tree.
+ *
+ * Call this from a story's `play` function after a short delay to allow
+ * Angular's @defer blocks to mount the child list components:
+ *
+ * ```ts
+ * play: async ({ canvasElement }) => {
+ *   await patchSearchServices(canvasElement, 'empty');
+ * }
+ * ```
+ */
+export async function patchSearchServices(
+  canvasElement: HTMLElement,
+  forceState: 'loaded' | 'loading' | 'empty' | 'error',
+  mockConversations: CometChat.Conversation[] = [],
+  mockMessages: CometChat.BaseMessage[] = [],
+): Promise<void> {
+  const { ɵgetDirectives } = await import('@angular/core');
+
+  // Wait for @defer (on idle) to mount the child list components
+  await new Promise(r => setTimeout(r, 400));
+
+  const convListEl = canvasElement.querySelector('cometchat-search-conversations-list');
+  const msgListEl = canvasElement.querySelector('cometchat-search-messages-list');
+
+  function applyToConvService(svc: SearchConversationsService): void {
+    switch (forceState) {
+      case 'loading':
+        svc.search = async () => { svc.fetchState.set(States.loading); svc.conversations.set([]); };
+        break;
+      case 'empty':
+        svc.search = async () => { svc.fetchState.set(States.empty); svc.conversations.set([]); };
+        break;
+      case 'error':
+        svc.search = async () => { svc.fetchState.set(States.error); svc.conversations.set([]); };
+        break;
+      default:
+        svc.search = async () => {
+          svc.conversations.set(mockConversations);
+          svc.fetchState.set(mockConversations.length > 0 ? States.loaded : States.empty);
+        };
+    }
+    // Re-trigger with current state immediately
+    svc.search('', []);
+  }
+
+  function applyToMsgService(svc: SearchMessagesService): void {
+    switch (forceState) {
+      case 'loading':
+        svc.search = async () => { svc.fetchState.set(States.loading); svc.messages.set([]); };
+        break;
+      case 'empty':
+        svc.search = async () => { svc.fetchState.set(States.empty); svc.messages.set([]); };
+        break;
+      case 'error':
+        svc.search = async () => { svc.fetchState.set(States.error); svc.messages.set([]); };
+        break;
+      default:
+        svc.search = async () => {
+          svc.messages.set(mockMessages);
+          svc.fetchState.set(mockMessages.length > 0 ? States.loaded : States.empty);
+        };
+    }
+    svc.search('', []);
+  }
+
+  if (convListEl) {
+    try {
+      const directives = ɵgetDirectives(convListEl);
+      const comp = directives.find((d: any) => d.service instanceof SearchConversationsService) as any;
+      if (comp?.service) applyToConvService(comp.service);
+    } catch { /* not yet mounted */ }
+  }
+
+  if (msgListEl) {
+    try {
+      const directives = ɵgetDirectives(msgListEl);
+      const comp = directives.find((d: any) => d.service instanceof SearchMessagesService) as any;
+      if (comp?.service) applyToMsgService(comp.service);
+    } catch { /* not yet mounted */ }
+  }
+}

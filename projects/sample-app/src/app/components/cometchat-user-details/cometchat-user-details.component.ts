@@ -56,7 +56,7 @@ export class CometChatUserDetailsComponent implements OnInit, OnDestroy {
     const u = this.user();
     this.isBlocked.set(u?.getBlockedByMe?.() ?? false);
     this.hasReceivedMessage.set(false);
-  });
+  },{ allowSignalWrites: true});
 
   /** Whether the user is online */
   protected isOnline = computed(() => {
@@ -69,8 +69,13 @@ export class CometChatUserDetailsComponent implements OnInit, OnDestroy {
   protected isDeleteDisabled = computed(() => {
     if (this.hasReceivedMessage()) return false;
     const conv = this.conversation();
-    if (!conv) return true;
-    return !conv.getLastMessage?.();
+    if (conv) return !conv.getLastMessage?.();
+    // ENG-35099: When opened from Users tab, conversation() is null because
+    // setActiveConversation() was never called — only setActiveUser() was.
+    // Enable delete if a user is active (CometChat.deleteConversation works
+    // even without a conversation object in ChatStateService).
+    const u = this.user();
+    return !u;
   });
 
   /** Show status (hidden when user is blocked) */

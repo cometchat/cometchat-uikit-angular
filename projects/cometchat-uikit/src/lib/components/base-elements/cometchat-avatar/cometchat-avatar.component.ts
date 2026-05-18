@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 
 /**
  * CometChatAvatar displays an avatar image or initials derived from a name.
@@ -83,9 +84,9 @@ export class CometChatAvatarComponent implements OnChanges {
    */
   get ariaLabel(): string {
     if (this.name) {
-      return `Avatar for ${this.name}`;
+      return CometChatLocalize.getLocalizedString('accessibility_avatar_for').replace('{name}', this.name);
     }
-    return 'Avatar';
+    return CometChatLocalize.getLocalizedString('accessibility_avatar_for').replace(' {name}', '').replace('{name}', '');
   }
 
   /**

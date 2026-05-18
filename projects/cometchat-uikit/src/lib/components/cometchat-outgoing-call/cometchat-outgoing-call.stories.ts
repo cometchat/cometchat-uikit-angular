@@ -19,6 +19,7 @@ import { OutgoingCallService } from '../../services/outgoing-call.service';
 import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { DialogFocusManager } from '../../services/dialog-focus-manager.service';
 import { createMockCall, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 import {
   mockCallAnnouncer,
   MockDialogFocusManager,
@@ -290,5 +291,18 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all outgoing call variants — audio call and video call — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders outgoing call container */
+export const TestDefaultRendersOutgoingCall: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-outgoing-call');
+    expect(container).not.toBeNull();
   },
 };

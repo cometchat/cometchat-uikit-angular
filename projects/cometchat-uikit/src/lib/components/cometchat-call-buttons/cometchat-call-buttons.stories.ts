@@ -19,6 +19,7 @@ import { CometChatCallButtonsComponent } from './cometchat-call-buttons.componen
 import { CallButtonsService } from '../../services/call-buttons.service';
 import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { createMockUser, createMockGroup } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 import {
   MockCallService,
   mockCallAnnouncer,
@@ -304,5 +305,53 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all call button variants — default with both buttons, audio-only, video-only, and group target — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders both call buttons */
+export const TestDefaultRendersBothButtons: Story = {
+  args: {
+    user: createMockUser({ uid: 'user-alice', name: 'Alice Johnson' }),
+    hideVoiceCallButton: false,
+    hideVideoCallButton: false,
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-call-buttons');
+    expect(container).not.toBeNull();
+    const buttons = canvasElement.querySelectorAll('.cometchat-call-buttons button, .cometchat-call-buttons [role="button"]');
+    expect(buttons.length).not.toBe(0);
+  },
+};
+
+/** Test: Voice call button is hidden */
+export const TestHideVoiceCallButton: Story = {
+  args: {
+    user: createMockUser({ uid: 'user-bob', name: 'Bob Smith' }),
+    hideVoiceCallButton: true,
+    hideVideoCallButton: false,
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const voiceButton = canvasElement.querySelector('.cometchat-call-buttons__voice-call');
+    expect(voiceButton).toBeNull();
+  },
+};
+
+/** Test: Video call button is hidden */
+export const TestHideVideoCallButton: Story = {
+  args: {
+    user: createMockUser({ uid: 'user-charlie', name: 'Charlie Brown' }),
+    hideVoiceCallButton: false,
+    hideVideoCallButton: true,
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const videoButton = canvasElement.querySelector('.cometchat-call-buttons__video-call');
+    expect(videoButton).toBeNull();
   },
 };

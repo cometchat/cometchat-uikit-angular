@@ -25,6 +25,7 @@ import { MessageBubbleAlignment } from '../../Enums/Enums';
 import { CometChatTextBubbleComponent } from '../cometchat-text-bubble/cometchat-text-bubble.component';
 import { FileAttachment } from '../../modals/FileAttachment';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import { getFileType, getFileIcon, formatFileSize } from './cometchat-file-bubble.types';
 
 @Component({
@@ -110,7 +111,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
   protected extractAttachments(): void {
     // Handle null/undefined message gracefully
     if (!this.message) {
-      console.warn('[CometChatFileBubble] Message is null or undefined');
+      CometChatLogger.warn('CometChatFileBubble', 'Message is null or undefined');
       this.attachments = [];
       return;
     }
@@ -121,9 +122,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
 
       // Handle null/undefined attachments array
       if (!rawAttachments || !Array.isArray(rawAttachments)) {
-        console.warn(
-          '[CometChatFileBubble] Message has no attachments or attachments is not an array'
-        );
+        CometChatLogger.warn('CometChatFileBubble', 'Message has no attachments or attachments is not an array');
         this.attachments = [];
         return;
       }
@@ -136,7 +135,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
 
         // Skip invalid attachments
         if (!attachment || typeof attachment !== 'object') {
-          console.warn(`[CometChatFileBubble] Attachment at index ${i} is invalid (not an object)`);
+          CometChatLogger.warn('CometChatFileBubble', `Attachment at index ${i} is invalid (not an object)`);
           continue;
         }
 
@@ -156,7 +155,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
 
         // Skip attachments without URL (required)
         if (!url || typeof url !== 'string') {
-          console.warn(`[CometChatFileBubble] Attachment at index ${i} is missing URL, skipping`);
+          CometChatLogger.warn('CometChatFileBubble', `Attachment at index ${i} is missing URL, skipping`);
           continue;
         }
 
@@ -177,7 +176,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
 
       this.attachments = fileAttachments;
     } catch (error) {
-      console.error('[CometChatFileBubble] Error extracting attachments:', error);
+      CometChatLogger.error('CometChatFileBubble', 'Error extracting attachments:', error);
       this.attachments = [];
     }
   }
@@ -251,7 +250,12 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
    */
   protected getExpandAriaLabel(): string {
     const count = this.getRemainingFilesCount();
-    return `Show ${count} more ${count === 1 ? 'file' : 'files'}`;
+    const template = CometChatLocalize.getLocalizedString('file_bubble_show_more_files');
+    if (template && template !== 'file_bubble_show_more_files') {
+      return template.replace('{count}', count.toString());
+    }
+    // Fallback with proper singular/plural
+    return count === 1 ? `Show 1 more file` : `Show ${count} more files`;
   }
 
   /**

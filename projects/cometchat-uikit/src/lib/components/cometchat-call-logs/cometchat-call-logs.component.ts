@@ -44,6 +44,7 @@ import { CometChatTemplatesService } from '../../services/templates.service';
 import { CometChatUIKitCalls } from '../../CometChatCalls';
 import { CometChatUIKit } from '../../cometchat-uikit';
 import { buildCallLogDateFormat, wrapCallLogsError, buildCallLogAriaLabel } from './cometchat-call-logs.utils';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
 
 @Component({
@@ -170,8 +171,9 @@ export class CometChatCallLogsComponent implements OnInit, OnDestroy {
   private async initializeLoggedInUser(): Promise<void> {
     try {
       this.loggedInUser = await CometChat.getLoggedinUser();
+      this.cdr.markForCheck();
     } catch (error) {
-      console.error('[CometChatCallLogs] Error getting logged-in user:', error);
+      CometChatLogger.error('CometChatCallLogs', 'Error getting logged-in user:', error);
     }
   }
 
@@ -298,7 +300,7 @@ export class CometChatCallLogsComponent implements OnInit, OnDestroy {
   private handleError(err: unknown): void {
     const exception = wrapCallLogsError(err);
     if (this.onError) this.onError(exception);
-    console.error('[CometChatCallLogs] Error:', err);
+    CometChatLogger.error('CometChatCallLogs', 'Error:', err);
   }
 
   // ==================== Keyboard Navigation ====================

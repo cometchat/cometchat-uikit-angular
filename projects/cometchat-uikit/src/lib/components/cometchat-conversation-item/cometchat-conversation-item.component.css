@@ -101,6 +101,20 @@
   background: var(--cometchat-background-color-04);
 }
 
+/* Active conversation with unread count: active background takes priority over unread */
+.cometchat-conversation-item--active.cometchat-conversation-item--unread {
+  background: var(--cometchat-background-color-04);
+}
+
+/* Active conversation with unread: title and subtitle use normal (non-bold) styling */
+.cometchat-conversation-item--active .cometchat-conversation-item__title-text--unread {
+  font: var(--cometchat-conversations-title-text-font, var(--cometchat-font-heading4-medium));
+}
+
+.cometchat-conversation-item--active .cometchat-conversation-item__subtitle-text--unread {
+  font: var(--cometchat-font-caption1-regular);
+}
+
 /* Disabled State */
 .cometchat-conversation-item--disabled {
   opacity: 0.5;

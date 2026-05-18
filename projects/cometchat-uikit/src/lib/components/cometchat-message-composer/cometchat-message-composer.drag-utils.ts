@@ -81,10 +81,10 @@ export function processFilesImpl(ctx: DragUtilsContext, files: File[]): void {
   const validFiles: File[] = [];
   for (const file of files) {
     if (ctx.allowedFileTypes && ctx.allowedFileTypes.length > 0) {
-      if (!ctx.allowedFileTypes.includes(file.type)) { console.warn('[CometChatMessageComposer] File type not allowed:', file.type); invalidTypeFiles.push(file); continue; }
+      if (!ctx.allowedFileTypes.includes(file.type)) { CometChatLogger.warn('CometChatMessageComposer', 'File type not allowed:', file.type); invalidTypeFiles.push(file); continue; }
     }
     const maxSize = ctx.maxFileSize || 100 * 1024 * 1024;
-    if (file.size > maxSize) { console.warn('[CometChatMessageComposer] File size exceeds limit:', file.size); oversizedFiles.push(file); continue; }
+    if (file.size > maxSize) { CometChatLogger.warn('CometChatMessageComposer', 'File size exceeds limit:', file.size); oversizedFiles.push(file); continue; }
     validFiles.push(file);
   }
   if (invalidTypeFiles.length > 0) {
@@ -103,7 +103,7 @@ export function processFilesImpl(ctx: DragUtilsContext, files: File[]): void {
 
 export async function sendFilesDirectlyImpl(ctx: DragUtilsContext, files: File[]): Promise<void> {
   const receiver = ctx.getReceiver();
-  if (!receiver) { console.warn('[CometChatMessageComposer] No receiver (user or group) specified'); return; }
+  if (!receiver) { CometChatLogger.warn('CometChatMessageComposer', 'No receiver (user or group) specified'); return; }
   const quotedMessage = ctx.messageToReplySignal() || undefined;
   let lastSentMessage: CometChat.BaseMessage | null = null;
   for (const file of files) {

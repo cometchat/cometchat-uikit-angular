@@ -7,16 +7,16 @@ import {CometChatMessageComposerAction, CometChatActionsView} from '../../modals
 export function handleEmojiSelectImpl(self: any, emoji: string): void {
   if (self.customRichTextEditor) {
     self.insertTextIntoRichTextEditor(emoji);
-    self.contentToDisplay.set('none');
-    self.syncLegacyPopoverSignals();
+    // ENG-35093: Close the emoji popover properly via closeAllPopups so the
+    // CometChatPopoverComponent's internal isOpen state is explicitly closed.
+    self.closeAllPopups();
     return;
   }
   const newCursorPosition = self.insertTextAtCursor(emoji);
   self.cursorPosition.set(newCursorPosition);
   self.textChange.emit(self.composerText());
-  self.contentToDisplay.set('none');
-  self.syncLegacyPopoverSignals();
-  self.focusTextInput();
+  // ENG-35093: Same fix for plain text mode.
+  self.closeAllPopups();
 }
 
 export function handleEmojiKeyboardCloseImpl(self: any): void {
@@ -40,11 +40,13 @@ export function handleActionSheetCloseImpl(self: any): void {
 }
 
 export async function handleStickerSelectImpl(self: any, event: StickerClickEvent): Promise<void> {
-  self.contentToDisplay.set('none');
-  self.syncLegacyPopoverSignals();
+  // ENG-35031: Use closeAllPopups to properly close the sticker keyboard popover.
+  // Setting contentToDisplay alone only updates the signal — the CometChatPopoverComponent's
+  // internal isOpen state must be explicitly closed via closeAllPopoverInstances().
+  self.closeAllPopups();
   const receiver = self.getReceiver();
   if (!receiver) {
-    console.warn('[CometChatMessageComposer] No receiver (user or group) specified for sticker message');
+    CometChatLogger.warn('CometChatMessageComposer', 'No receiver (user or group) specified for sticker message');
     return;
   }
   try {
@@ -131,7 +133,7 @@ export async function handleSendImpl(self: any): Promise<void> {
   if (self.customRichTextEditor) { const freshText = self.richTextEditorService.getText(self.customRichTextEditor); self.composerText.set(freshText); }
   if (!self.canSend()) { return; }
   const receiver = self.getReceiver();
-  if (!receiver) { console.warn('[CometChatMessageComposer] No receiver (user or group) specified'); return; }
+  if (!receiver) { CometChatLogger.warn('CometChatMessageComposer', 'No receiver (user or group) specified'); return; }
   try {
     if (!self.disableTypingEvents) { if (self.typingTimeout) { clearTimeout(self.typingTimeout); self.typingTimeout = undefined; } self.endTypingIndicator(); }
     const text = self.customRichTextEditor ? self.richTextEditorService.getTextWithMentionFormat(self.customRichTextEditor).trim() : self.composerText().trim();

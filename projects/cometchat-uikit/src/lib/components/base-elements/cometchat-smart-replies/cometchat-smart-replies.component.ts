@@ -18,6 +18,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 import { CometChatUIKitConstants } from '../../../constants';
+import { CometChatLogger } from '../../../utils/CometChatLogger';
 import { LiveAnnouncerService } from '../../../services/live-announcer.service';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 
@@ -160,12 +161,12 @@ export class CometChatSmartRepliesComponent implements OnDestroy, OnChanges, Aft
   get ariaLabel(): string {
     const count = this.replies().length;
     if (this.isLoading()) {
-      return 'Loading smart reply suggestions';
+      return CometChatLocalize.getLocalizedString('accessibility_loading');
     }
     if (count === 0) {
-      return 'No smart reply suggestions available';
+      return CometChatLocalize.getLocalizedString('accessibility_no_results');
     }
-    return `${count} smart reply suggestion${count > 1 ? 's' : ''} available`;
+    return CometChatLocalize.getLocalizedString('accessibility_smart_replies');
   }
 
   /**
@@ -248,7 +249,7 @@ export class CometChatSmartRepliesComponent implements OnDestroy, OnChanges, Aft
       : CometChatUIKitConstants.MessageReceiverType.group;
 
     if (!receiverId) {
-      console.warn('[CometChatSmartReplies] No user or group provided for smart replies');
+      CometChatLogger.warn('CometChatSmartReplies', 'No user or group provided for smart replies');
       return;
     }
 
@@ -279,7 +280,7 @@ export class CometChatSmartRepliesComponent implements OnDestroy, OnChanges, Aft
         );
       }
     } catch (error) {
-      console.error('[CometChatSmartReplies] Error fetching smart replies:', error);
+      CometChatLogger.error('CometChatSmartReplies', 'Error fetching smart replies:', error);
       this.hasError.set(true);
       this.replies.set([]);
     } finally {

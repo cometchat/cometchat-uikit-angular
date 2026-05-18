@@ -1,6 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CometChatSearchConversationsListComponent } from './cometchat-search-conversations-list.component';
+import { SearchConversationsService } from '../../../services/search-conversations.service';
+import { signal } from '@angular/core';
+
+class MockSearchConversationsService {
+  conversations = signal<any[]>([]);
+  fetchState = signal('loaded');
+  hasMore = signal(false);
+  searchKeyword = signal('');
+  activeFilters = signal<any[]>([]);
+  search = vi.fn();
+  fetchNext = vi.fn();
+  reset = vi.fn();
+  cleanup = vi.fn();
+}
 
 describe('CometChatSearchConversationsListComponent', () => {
   let component: CometChatSearchConversationsListComponent;
@@ -9,6 +23,9 @@ describe('CometChatSearchConversationsListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CometChatSearchConversationsListComponent],
+      providers: [
+        { provide: SearchConversationsService, useClass: MockSearchConversationsService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CometChatSearchConversationsListComponent);

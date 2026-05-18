@@ -33,6 +33,7 @@ import type { AudioAttachment, AudioState } from '../../modals';
 import { WaveSurfer } from './wavesurfer';
 import { MediaControlsService } from '../../services/media-controls.service';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import {
   resolveWaveSurferColors,
   createWaveSurferInstance,
@@ -139,7 +140,7 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
 
   private processMessage(): void {
     if (!this.message) {
-      console.warn('[CometChatAudioBubble] Message is null or undefined');
+      CometChatLogger.warn('CometChatAudioBubble', 'Message is null or undefined');
       this.attachments = []; this.hasCaption = false; return;
     }
     this.attachments = extractAudioAttachments(this.message);
@@ -228,7 +229,7 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
   }
 
   private handleLoadError(error: Error, index: number): void {
-    console.error(`[CometChatAudioBubble] Failed to load audio at index ${index}:`, error);
+    CometChatLogger.error('CometChatAudioBubble', `Failed to load audio at index ${index}:`, error);
     this.ngZone.run(() => {
       const state = this.getAudioState(index);
       state.isLoading = false; state.hasError = true; state.waveSurfer = null;
@@ -258,7 +259,7 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
           this.playStateChange.emit({ isPlaying: true, attachment });
           this.cdr.markForCheck();
         })
-        .catch((e: Error) => { console.error('[CometChatAudioBubble] Failed to play audio:', e); state.isPlaying = false; this.cdr.markForCheck(); });
+        .catch((e: Error) => { CometChatLogger.error('CometChatAudioBubble', 'Failed to play audio:', e); state.isPlaying = false; this.cdr.markForCheck(); });
     }
     this.cdr.markForCheck();
   }
@@ -300,7 +301,7 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
       state.isDownloading = false; state.downloadProgress = 0; state.abortController = null;
       this.cdr.markForCheck(); return;
     }
-    console.error(`[CometChatAudioBubble] Download failed for index ${index}:`, error);
+    CometChatLogger.error('CometChatAudioBubble', `Download failed for index ${index}:`, error);
     state.isDownloading = false; state.downloadProgress = 0; state.abortController = null;
     if (attachment) { this.downloadError.emit({ attachment, error }); }
     this.cdr.markForCheck();

@@ -15,7 +15,7 @@
 
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
-import { fn } from 'storybook/test';
+import { fn, within, expect } from 'storybook/test';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -317,5 +317,30 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying the create poll dialog in different configurations — user conversation, group conversation, and expanded options — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders create poll form container */
+export const TestDefaultRendersPollForm: Story = {
+  render: (args) => ({
+    template: `
+      <div style="width: 420px;">
+        <cometchat-create-poll [user]="user" [defaultAnswers]="defaultAnswers"></cometchat-create-poll>
+      </div>
+    `,
+    props: args,
+  }),
+  args: {
+    user: createMockUser({ uid: 'user-1', name: 'Alice' }),
+    defaultAnswers: 2,
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-create-poll');
+    expect(container).not.toBeNull();
   },
 };

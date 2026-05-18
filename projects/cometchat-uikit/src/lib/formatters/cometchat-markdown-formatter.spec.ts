@@ -306,7 +306,7 @@ describe('CometChatMarkdownFormatter', () => {
 
     it('should return true for text with italic markdown', () => {
       // The regex detects * as a potential markdown marker
-      expect(formatter.shouldFormat('*italic*')).toBe(false);
+      expect(formatter.shouldFormat('*italic*')).toBe(true);
     });
 
     it('should return true for text with strikethrough', () => {

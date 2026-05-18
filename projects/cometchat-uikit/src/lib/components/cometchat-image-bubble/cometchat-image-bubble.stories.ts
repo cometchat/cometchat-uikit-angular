@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatImageBubbleComponent } from './cometchat-image-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 import { createMockMessage, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
@@ -156,5 +157,18 @@ export const OutgoingAndIncoming: Story = {
   }),
   parameters: {
     docs: { description: { story: 'Outgoing and incoming image bubbles shown together.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders image bubble container */
+export const TestDefaultRendersImageBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-image-bubble');
+    expect(container).not.toBeNull();
   },
 };

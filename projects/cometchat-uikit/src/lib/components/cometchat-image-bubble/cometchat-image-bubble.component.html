@@ -19,13 +19,23 @@
       tabindex="0"
       role="button"
       [attr.aria-label]="imageAriaLabel">
+      <!-- Visible image: shows placeholder until real image loads -->
       <img
-        loading="lazy"
         class="cometchat-image-bubble__image"
-        [src]="attachments[0].url"
+        loading="lazy"
+        [src]="getImageSrc(0)"
         width="300"
         height="300"
         [alt]="captionText || ('image_bubble_image_alt' | translate)" />
+      <!-- Hidden preloader: loads the real image in background, triggers swap on load -->
+      <img
+        *ngIf="!loadedIndices.has(0)"
+        class="cometchat-image-bubble__preloader"
+        [src]="attachments[0].displayUrl ?? attachments[0].url"
+        alt=""
+        aria-hidden="true"
+        (load)="onImageLoad(0, $event)"
+        (error)="onImageError(0)" />
     </div>
   </div>
 
@@ -47,11 +57,18 @@
         [attr.aria-label]="imageAriaLabel">
         <img
           class="cometchat-image-bubble__image"
-          [src]="attachment.url"
+          [src]="getImageSrc(i)"
           [alt]="captionText || ('image_bubble_image_alt' | translate)"
           width="150"
-          height="150"
-          loading="lazy" />
+          height="150" />
+        <img
+          *ngIf="!loadedIndices.has(i)"
+          class="cometchat-image-bubble__preloader"
+          [src]="attachment.displayUrl ?? attachment.url"
+          alt=""
+          aria-hidden="true"
+          (load)="onImageLoad(i, $event)"
+          (error)="onImageError(i)" />
       </div>
     </div>
   </div>
@@ -71,11 +88,18 @@
         [attr.aria-label]="imageAriaLabel">
         <img
           class="cometchat-image-bubble__image"
-          [src]="attachment.url"
+          [src]="getImageSrc(i)"
           [alt]="captionText || ('image_bubble_image_alt' | translate)"
           width="150"
-          height="150"
-          loading="lazy" />
+          height="150" />
+        <img
+          *ngIf="!loadedIndices.has(i)"
+          class="cometchat-image-bubble__preloader"
+          [src]="attachment.displayUrl ?? attachment.url"
+          alt=""
+          aria-hidden="true"
+          (load)="onImageLoad(i, $event)"
+          (error)="onImageError(i)" />
       </div>
     </div>
   </div>
@@ -96,11 +120,18 @@
         [attr.aria-label]="imageAriaLabel">
         <img
           class="cometchat-image-bubble__image"
-          [src]="attachment.url"
+          [src]="getImageSrc(i)"
           [alt]="captionText || ('image_bubble_image_alt' | translate)"
           width="150"
-          height="150"
-          loading="lazy" />
+          height="150" />
+        <img
+          *ngIf="!loadedIndices.has(i)"
+          class="cometchat-image-bubble__preloader"
+          [src]="attachment.displayUrl ?? attachment.url"
+          alt=""
+          aria-hidden="true"
+          (load)="onImageLoad(i, $event)"
+          (error)="onImageError(i)" />
       </div>
 
       <!-- 4th tile with overflow indicator -->
@@ -111,7 +142,7 @@
         tabindex="0"
         role="button"
         [attr.aria-label]="overflowAriaLabel"
-        [style.background-image]="'url(' + attachments[3].url + ')'">
+        [style.background-image]="'url(' + (attachments[3].displayUrl ?? attachments[3].url) + ')'">
         <div class="cometchat-image-bubble__overflow-overlay">
           <span class="cometchat-image-bubble__overflow-text" aria-hidden="true">
             {{ getOverflowText() }}

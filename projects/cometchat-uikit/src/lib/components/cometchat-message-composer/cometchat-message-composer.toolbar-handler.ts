@@ -4,6 +4,7 @@
  */
 
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 import { RichTextFormatState } from '../../services/rich-text-editor.interfaces';
 
 export interface ToolbarHandlerContext {
@@ -203,7 +204,7 @@ export function updateBubbleMenuPositionImpl(ctx: ToolbarHandlerContext, range: 
     }
     calculateAndSetPositionImpl(ctx, rect, editorRect, composerRect, bubbleMenuWidth);
   } catch (error) {
-    console.warn('[CometChatMessageComposer] Error calculating bubble menu position:', error);
+    CometChatLogger.warn('CometChatMessageComposer', 'Error calculating bubble menu position:', error);
   }
 }
 

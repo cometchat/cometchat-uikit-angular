@@ -23,6 +23,7 @@ import { CometChatTextFormatter } from '../../../formatters/cometchat-text-forma
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 import { CometChatUIKit } from '../../../cometchat-uikit';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize';
+import { FILE_TYPE_ICONS } from '../../cometchat-file-bubble/cometchat-file-bubble.types';
 import { CometChatPaginatedListComponent } from '../../cometchat-paginated-list/cometchat-paginated-list.component';
 
 /**
@@ -86,7 +87,7 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
   constructor() {
     effect(() => {
       this.stateChange.emit(this.service.fetchState() as States);
-    });
+   },{allowSignalWrites:true});
   }
 
   /** Whether the paginated list is in loading state (initial load only) */
@@ -250,30 +251,10 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
   getFileTypeIcon(message: CometChat.BaseMessage): string {
     const media = message as CometChat.MediaMessage;
     const attachments = media.getAttachments();
-    if (!attachments?.length) return 'assets/file_type_unsupported.png';
+    if (!attachments?.length) return FILE_TYPE_ICONS['default'];
     const name = attachments[0].getName() || '';
     const ext = name.split('.').pop()?.toLowerCase() || '';
-    const iconMap: Record<string, string> = {
-      pdf: 'assets/file_type_pdf.png',
-      doc: 'assets/file_type_word.png',
-      docx: 'assets/file_type_word.png',
-      txt: 'assets/file_type_txt.png',
-      xls: 'assets/file_type_xlsx.png',
-      xlsx: 'assets/file_type_xlsx.png',
-      csv: 'assets/file_type_xlsx.png',
-      ppt: 'assets/file_type_ppt.png',
-      pptx: 'assets/file_type_ppt.png',
-      zip: 'assets/file_type_zip.png',
-      rar: 'assets/file_type_zip.png',
-      mp3: 'assets/file_type_mp3.png',
-      wav: 'assets/file_type_mp3.png',
-      mp4: 'assets/file_type_mov.png',
-      mov: 'assets/file_type_mov.png',
-      jpg: 'assets/file_type_jpg.png',
-      jpeg: 'assets/file_type_jpg.png',
-      png: 'assets/file_type_jpg.png',
-    };
-    return iconMap[ext] || 'assets/file_type_unsupported.png';
+    return FILE_TYPE_ICONS[ext] || FILE_TYPE_ICONS['default'];
   }
 
   /** Get link favicon URL from message metadata */
@@ -305,32 +286,14 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     return attachments?.[0]?.getUrl() || '';
   }
 
-  /** Format date for trailing view (DD MMM, hh:mm) */
+  /** Format date for trailing view using Angular DatePipe for locale-aware formatting */
   getFormattedDate(message: CometChat.BaseMessage): string {
     const sentAt = message.getSentAt();
     if (!sentAt) return '';
     const date = new Date(sentAt * 1000);
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    let hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'pm' : 'am';
-    hours = hours % 12 || 12;
-    return `${day} ${month}, ${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+    // Use Angular DatePipe for locale-aware month abbreviation
+    const datePipe = new DatePipe('en-US');
+    return datePipe.transform(date, 'd MMM, hh:mm a') ?? '';
   }
 
   /** Check if metadata has link preview */

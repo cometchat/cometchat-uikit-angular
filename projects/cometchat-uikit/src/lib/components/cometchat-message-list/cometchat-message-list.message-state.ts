@@ -39,6 +39,18 @@ export function handleNewMessagesImpl(ctx: any, currentMessages: CometChat.BaseM
       if (!ctx.isAtBottom()) {
         ctx.newMessagesCount.update((count: number) => count + 1);
         ctx.showNewMessagesBanner.set(true);
+        // Update the conversation list unread count when the user is scrolled up
+        // and not reading the latest messages.
+        const conversationId = ctx.getConversationId?.();
+        if (conversationId) {
+          const currentCount = ctx.conversationsService?.findConversation?.(
+            ctx.user?.getUid?.() || ctx.group?.getGuid?.()
+          )?.getUnreadMessageCount?.() ?? 0;
+          ctx.conversationsService?.updateConversationUnreadCount?.(
+            ctx.user?.getUid?.() || ctx.group?.getGuid?.(),
+            currentCount + 1
+          );
+        }
       }
     }
     if (ctx.shouldPlaySound(latestMessage)) { ctx.playMessageSound(); }
@@ -76,7 +88,7 @@ export function computeMessagesWithDateSeparatorsImpl(ctx: any): any[] {
   }
   const duplicates = Array.from(idCounts.entries()).filter(([, count]) => count > 1);
   if (duplicates.length > 0) {
-    console.warn('[MessageList] DUPLICATE message IDs in messages array:', duplicates, 'total messages:', messages.length);
+    CometChatLogger.warn('CometChatMessageList', 'DUPLICATE message IDs in messages array:', duplicates, 'total messages:', messages.length);
   }
   if (messages.length === 0 || ctx.hideDateSeparator) {
     return messages.map((msg: CometChat.BaseMessage) => ({

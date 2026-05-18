@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Pilih satu pilihan",
     "checkbox_aria_label": "Kotak semak",
     "file_bubble_unknown_file": "Fail tidak diketahui",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Sesuatu telah berlaku",
     "error_boundary_retry": "Cuba lagi",
     "message_bubble_render_error": "Tidak dapat memaparkan mesej ini",

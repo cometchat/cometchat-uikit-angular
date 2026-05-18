@@ -18,6 +18,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CometChatLogger } from '../../../utils/CometChatLogger';
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 
 /**
@@ -110,7 +111,7 @@ export class CometChatErrorBoundaryComponent {
       componentName: this.componentName,
       timestamp: Date.now(),
     };
-    console.error(`[CometChatErrorBoundary:${this.componentName}]`, err);
+    CometChatLogger.error('CometChatErrorBoundary', `[${this.componentName}]`, err);
     this.errorContext.set(context);
     this.hasError.set(true);
     this.error.emit(context);

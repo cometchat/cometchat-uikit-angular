@@ -8,6 +8,7 @@ import type { AudioAttachment } from '../../modals/AudioAttachment';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { MediaControlsService } from '../../services/media-controls.service';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 
 // ── WaveSurfer Config ─────────────────────────────────────────────────────
 
@@ -286,7 +287,7 @@ export function extractAudioAttachments(message: CometChat.MediaMessage): AudioA
     }
     return result;
   } catch (error) {
-    console.error('[CometChatAudioBubble] Error extracting attachments:', error);
+    CometChatLogger.error('CometChatAudioBubble', 'Error extracting attachments:', error);
     return [];
   }
 }
@@ -306,7 +307,7 @@ export function hasAudioCaption(message: CometChat.MediaMessage): boolean {
     }
     return false;
   } catch (error) {
-    console.warn('[CometChatAudioBubble] Error extracting caption:', error);
+    CometChatLogger.warn('CometChatAudioBubble', 'Error extracting caption:', error);
     return false;
   }
 }

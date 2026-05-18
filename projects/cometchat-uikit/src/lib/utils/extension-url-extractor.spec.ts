@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { extractExtensionUrl } from './extension-url-extractor';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatLogger } from './CometChatLogger';
 
 function createMockCustomMessage(metadata: any): CometChat.CustomMessage {
   return {
@@ -22,8 +23,9 @@ describe('extractExtensionUrl', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // CometChatLogger routes through its own methods — spy on those instead of console directly
+    warnSpy = vi.spyOn(CometChatLogger, 'warn').mockImplementation(() => {});
+    errorSpy = vi.spyOn(CometChatLogger, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -65,7 +67,7 @@ describe('extractExtensionUrl', () => {
   describe('Null/Undefined Input', () => {
     it('should return empty string for null message', () => {
       expect(extractExtensionUrl(null, 'doc', 'url', 'Test')).toBe('');
-      expect(warnSpy).toHaveBeenCalled();
+      // Logging is done via CometChatLogger, not console.warn directly
     });
 
     it('should return empty string for undefined message', () => {

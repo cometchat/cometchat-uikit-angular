@@ -644,6 +644,7 @@
     "dropdown_placeholder": "Option auswählen",
     "checkbox_aria_label": "Kontrollkästchen",
     "file_bubble_unknown_file": "Unbekannte Datei",
+    "file_bubble_show_more_files": "Show {count} more files",
     "details_unblock_user": "Entsperren",
     "details_block_user": "Sperren",
     "error_boundary_something_went_wrong": "Etwas ist schiefgelaufen",

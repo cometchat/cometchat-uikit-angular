@@ -2,6 +2,8 @@
  * Utility functions for CometChatVideoBubble component.
  */
 
+import { CometChatLogger } from '../../utils/CometChatLogger';
+
 /**
  * Formats video duration in seconds to display format (M:SS or H:MM:SS).
  *
@@ -39,7 +41,7 @@ export function cleanupPipResources(
     try {
       (document as any).exitPictureInPicture();
     } catch (error) {
-      console.warn('[VideoBubble] Error exiting PIP on cleanup:', error);
+      CometChatLogger.warn('CometChatVideoBubble', 'Error exiting PIP on cleanup:', error);
     }
   }
 

@@ -1695,6 +1695,8 @@ describe('Preservation: Preview and Display (Group G)', () => {
         getType: () => CometChat.MESSAGE_TYPE.IMAGE,
         getSender: () => createMockUser({ uid: 'u1', name: 'Bob' }),
         getMentionedUsers: () => [],
+        getDeletedAt: () => 0,
+        getCategory: () => 'message',
       } as unknown as CometChat.BaseMessage;
 
       component.enterReplyMode(imageMsg);

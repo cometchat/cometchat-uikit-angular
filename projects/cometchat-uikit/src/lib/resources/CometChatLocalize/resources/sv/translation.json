@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Välj ett alternativ",
     "checkbox_aria_label": "Kryssruta",
     "file_bubble_unknown_file": "Okänd fil",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Något gick fel",
     "error_boundary_retry": "Försök igen",
     "message_bubble_render_error": "Det går inte att visa detta meddelande",

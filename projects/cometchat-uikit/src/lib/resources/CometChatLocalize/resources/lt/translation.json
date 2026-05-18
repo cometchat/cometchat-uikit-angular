@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Pasirinkite parinktį",
     "checkbox_aria_label": "Žymimasis langelis",
     "file_bubble_unknown_file": "Nežinomas failas",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Kažkas nutiko",
     "error_boundary_retry": "Bandyti dar kartą",
     "message_bubble_render_error": "Nepavyksta rodyti šios žinutės",

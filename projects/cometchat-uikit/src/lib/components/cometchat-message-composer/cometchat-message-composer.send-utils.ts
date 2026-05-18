@@ -160,6 +160,23 @@ export async function handleSendNewMessageImpl(
     if (quotedMessage) { pendingMediaMessage.setQuotedMessage(quotedMessage); pendingMediaMessage.setQuotedMessageId(quotedMessage.getId()); }
     pendingMediaMessage.setMuid(CometChatUIKitUtility.ID());
     pendingMediaMessage.setSentAt(CometChatUIKitUtility.getUnixTimestamp());
+
+    // Patch getAttachments on the pending message so the image bubble can show
+    // a local blob URL as a placeholder while the upload is in progress.
+    // Use thumbnailUrl if available (already a blob URL for images), otherwise
+    // create a new blob URL from the file.
+    const localBlobUrl = attachment.thumbnailUrl || URL.createObjectURL(attachment.file);
+    const createdBlobUrl = attachment.thumbnailUrl ? null : localBlobUrl; // track if we created it
+    const fileExtension = attachment.file.name.split('.').pop() || '';
+    const localAttachment = {
+      url: localBlobUrl, name: attachment.file.name, mimeType: attachment.file.type,
+      size: attachment.file.size, extension: fileExtension,
+      getUrl: () => localBlobUrl, getName: () => attachment.file.name,
+      getMimeType: () => attachment.file.type, getSize: () => attachment.file.size,
+      getExtension: () => fileExtension,
+    };
+    (pendingMediaMessage as any).getAttachments = () => [localAttachment];
+
     CometChatMessageEvents.ccMessageSent.next({ message: pendingMediaMessage, status: MessageStatus.inprogress });
     if (text.length === 0 && !composerClearedForMedia) { ctx.clearComposer(); ctx.resetMentionsFormatter(); composerClearedForMedia = true; }
     try {
@@ -175,6 +192,9 @@ export async function handleSendNewMessageImpl(
       ctx.emitError(error);
       CometChatLogger.error('CometChatMessageComposer', 'Error sending media message:', error);
     }
+    // Revoke blob URLs after upload completes (thumbnailUrl is revoked by the composer,
+    // but if we created a new one we must revoke it here)
+    if (createdBlobUrl) { URL.revokeObjectURL(createdBlobUrl); }
     if (attachment.thumbnailUrl) { URL.revokeObjectURL(attachment.thumbnailUrl); }
   }
   if (quotedMessage && lastSentMessage) {

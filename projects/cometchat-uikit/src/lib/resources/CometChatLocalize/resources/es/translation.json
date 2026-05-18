@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Seleccionar una opción",
     "checkbox_aria_label": "Casilla de verificación",
     "file_bubble_unknown_file": "Archivo desconocido",
+    "file_bubble_show_more_files": "Show {count} more files",
     "details_unblock_user": "Desbloquear",
     "details_block_user": "Bloquear",
     "error_boundary_something_went_wrong": "Algo salió mal",

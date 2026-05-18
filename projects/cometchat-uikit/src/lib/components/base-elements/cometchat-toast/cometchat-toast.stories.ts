@@ -331,3 +331,76 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies toast renders with text content. */
+export const TestTextRenders: Story = {
+  args: { text: 'Message sent successfully', type: ToastType.success },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const toast = canvasElement.querySelector('.cometchat-toast, [class*="toast"]');
+    expect(toast).not.toBeNull();
+    expect(toast!.textContent!.trim()).toContain('Message sent successfully');
+  },
+};
+
+/** Verifies type=success applies success styling. */
+export const TestSuccessType: Story = {
+  args: { text: 'Success!', type: ToastType.success },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const toast = canvasElement.querySelector('.cometchat-toast, [class*="toast"]');
+    expect(toast).not.toBeNull();
+    const hasSuccess = toast!.classList.contains('cometchat-toast--success') || toast!.querySelector('[class*="success"]') !== null;
+    expect(hasSuccess).toBe(true);
+  },
+};
+
+/** Verifies type=error applies error styling. */
+export const TestErrorType: Story = {
+  args: { text: 'Something went wrong', type: ToastType.error },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const toast = canvasElement.querySelector('.cometchat-toast, [class*="toast"]');
+    expect(toast).not.toBeNull();
+    const hasError = toast!.classList.contains('cometchat-toast--error') || toast!.querySelector('[class*="error"]') !== null;
+    expect(hasError).toBe(true);
+  },
+};
+
+/** Verifies type=warning applies warning styling. */
+export const TestWarningType: Story = {
+  args: { text: 'Be careful', type: ToastType.warning },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const toast = canvasElement.querySelector('.cometchat-toast, [class*="toast"]');
+    expect(toast).not.toBeNull();
+    const hasWarning = toast!.classList.contains('cometchat-toast--warning') || toast!.querySelector('[class*="warning"]') !== null;
+    expect(hasWarning).toBe(true);
+  },
+};
+
+/** Verifies showCloseButton=true renders close button. */
+export const TestShowCloseButton: Story = {
+  args: { text: 'Closeable toast', type: ToastType.info, showCloseButton: true },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const closeBtn = canvasElement.querySelector('.cometchat-toast__close, [class*="toast"] [class*="close"], [class*="toast"] button');
+    expect(closeBtn).not.toBeNull();
+  },
+};
+
+/** Verifies showCloseButton=false hides close button. */
+export const TestHideCloseButton: Story = {
+  args: { text: 'No close button', type: ToastType.info, showCloseButton: false },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const closeBtn = canvasElement.querySelector('.cometchat-toast__close, [class*="toast"] button[class*="close"]');
+    expect(closeBtn).toBeNull();
+  },
+};

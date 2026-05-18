@@ -2,6 +2,7 @@ import { Component, Input, ChangeDetectionStrategy, computed, signal } from '@an
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
+import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 
 /**
  * CometChatTypingIndicatorComponent displays a typing indicator when users are typing.
@@ -175,16 +176,18 @@ export class CometChatTypingIndicatorComponent {
     }
 
     if (!isGroup) {
-      return 'Someone is typing';
+      return CometChatLocalize.getLocalizedString('accessibility_typing');
     }
 
     if (users.length === 1) {
       const name = this.firstTypingUserName;
-      return `${name} is typing`;
+      return CometChatLocalize.getLocalizedString('accessibility_user_is_typing').replace('{name}', name);
     } else if (users.length === 2) {
-      return `${this.firstTypingUserName} and ${this.secondTypingUserName} are typing`;
+      return CometChatLocalize.getLocalizedString('accessibility_two_users_typing')
+        .replace('{name1}', this.firstTypingUserName)
+        .replace('{name2}', this.secondTypingUserName);
     } else {
-      return 'Multiple people are typing';
+      return CometChatLocalize.getLocalizedString('accessibility_multiple_users_typing');
     }
   }
 }

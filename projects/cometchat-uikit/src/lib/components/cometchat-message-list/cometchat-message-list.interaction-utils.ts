@@ -25,6 +25,9 @@ export function onReplyMessageImpl(self: any, messageId: number): void {
     CometChatMessageEvents.ccReplyToMessage.next({
       message: message,
       status: MessageStatus.inprogress,
+      // ENG-35025: Include parentMessageId so the composer subscription can scope
+      // the reply event to the correct composer instance (thread vs main).
+      parentMessageId: self.parentMessageId ?? null,
     });
     self.replyClick.emit(message);
   }
@@ -58,8 +61,21 @@ export async function copyMessageToClipboardImpl(self: any, message: CometChat.B
   if (message.getType() !== CometChatUIKitConstants.MessageTypes.text) { return; }
   try {
     const textMessage = message as CometChat.TextMessage;
-    const text = textMessage.getText();
-    if (!text) { return; }
+    const rawText = textMessage.getText();
+    if (!rawText) { return; }
+
+    // Replace SDK mention patterns with display names before copying.
+    // <@uid:superhero1> → @DisplayName, <@all:label> → @label
+    const mentionedUsers: CometChat.User[] = textMessage.getMentionedUsers?.() || [];
+    const userMap = new Map<string, string>();
+    mentionedUsers.forEach(u => userMap.set(u.getUid(), u.getName()));
+
+    const text = rawText
+      // Replace user mentions: <@uid:superhero1> → @DisplayName (or @uid as fallback)
+      .replace(/<@uid:(.*?)>/g, (_match, uid) => `@${userMap.get(uid) ?? uid}`)
+      // Replace channel mentions: <@all:all> → @all
+      .replace(/<@all:(.*?)>/g, (_match, label) => `@${label || 'all'}`);
+
     await navigator.clipboard.writeText(text);
     self.showInlineToast(CometChatLocalize.getLocalizedString('message_list_message_copied'));
   } catch (error) {

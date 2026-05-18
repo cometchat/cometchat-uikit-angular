@@ -637,6 +637,7 @@
     "dropdown_placeholder": "एक विकल्प चुनें",
     "checkbox_aria_label": "चेकबॉक्स",
     "file_bubble_unknown_file": "अज्ञात फ़ाइल",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "कुछ गलत हो गया",
     "error_boundary_retry": "पुनः प्रयास करें",
     "message_bubble_render_error": "यह संदेश प्रदर्शित नहीं किया जा सकता",

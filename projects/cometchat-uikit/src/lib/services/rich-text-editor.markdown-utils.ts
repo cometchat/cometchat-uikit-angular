@@ -104,6 +104,20 @@ function convertNodeToMarkdown(node: Node): string {
   const children = Array.from(el.childNodes).map(convertNodeToMarkdown).join('');
 
   switch (tag) {
+    case 'span': {
+      // ENG-35081: Convert mention spans back to SDK mention format so that
+      // copy-pasting @all or @user mentions preserves the structured mention data.
+      const uid = el.getAttribute('data-uid');
+      const mentionType = el.getAttribute('data-mention-type');
+      if (uid !== null) {
+        if (mentionType === 'channel' || uid === 'all') {
+          const label = (el.textContent || '@all').replace(/^@/, '');
+          return `<@all:${label}>`;
+        }
+        return `<@uid:${uid}>`;
+      }
+      return children;
+    }
     case 'strong':
     case 'b':
       return `**${children}**`;

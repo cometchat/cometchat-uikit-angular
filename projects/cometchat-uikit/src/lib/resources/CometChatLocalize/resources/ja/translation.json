@@ -637,6 +637,7 @@
     "dropdown_placeholder": "オプションを選択",
     "checkbox_aria_label": "チェックボックス",
     "file_bubble_unknown_file": "不明なファイル",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "エラーが発生しました",
     "error_boundary_retry": "再試行",
     "message_bubble_render_error": "このメッセージを表示できません",

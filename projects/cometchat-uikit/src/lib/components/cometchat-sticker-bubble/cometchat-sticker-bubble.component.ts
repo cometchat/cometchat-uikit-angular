@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
+import { CometChatLogger } from '../../utils/CometChatLogger';
 
 /**
  * CometChatStickerBubble is a standalone Angular component that renders
@@ -110,7 +111,7 @@ export class CometChatStickerBubbleComponent implements OnChanges {
 
       return '';
     } catch (error) {
-      console.warn('[CometChatStickerBubble] Error extracting sticker URL:', error);
+      CometChatLogger.warn('CometChatStickerBubble', 'Error extracting sticker URL:', error);
       return '';
     }
   }

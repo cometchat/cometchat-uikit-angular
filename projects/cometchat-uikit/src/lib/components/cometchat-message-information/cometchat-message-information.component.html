@@ -168,7 +168,7 @@
             </cometchat-date>
           </div>
         } @else {
-          <span class="cometchat-message-information__receipt-empty-dash" aria-label="Not yet read">—</span>
+          <span class="cometchat-message-information__receipt-empty-dash" [attr.aria-label]="'accessibility_not_yet_read' | translate">—</span>
         }
       </div>
 
@@ -185,7 +185,7 @@
             </cometchat-date>
           </div>
         } @else {
-          <span class="cometchat-message-information__receipt-empty-dash" aria-label="Not yet delivered">—</span>
+          <span class="cometchat-message-information__receipt-empty-dash" [attr.aria-label]="'accessibility_not_yet_delivered' | translate">—</span>
         }
       </div>
     }

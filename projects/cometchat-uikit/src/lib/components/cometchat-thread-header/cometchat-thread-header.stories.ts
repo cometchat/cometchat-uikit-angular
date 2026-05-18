@@ -17,6 +17,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatThreadHeaderComponent } from './cometchat-thread-header.component';
 import { createMockMessage, createMockUser } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ============================================
 // Full-screen centered wrapper style
@@ -204,5 +205,18 @@ export const ZeroReplies: Story = {
         story: 'Thread header with zero replies, showing the initial state before any thread responses.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders thread header container */
+export const TestDefaultRendersThreadHeader: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-thread-header');
+    expect(container).not.toBeNull();
   },
 };

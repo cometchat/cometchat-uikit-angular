@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAudioBubbleComponent } from './cometchat-audio-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 import { createMockMessage, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
@@ -140,5 +141,18 @@ export const OutgoingAndIncoming: Story = {
   }),
   parameters: {
     docs: { description: { story: 'Outgoing and incoming audio bubbles shown together.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders audio bubble container */
+export const TestDefaultRendersAudioBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-audio-bubble');
+    expect(container).not.toBeNull();
   },
 };

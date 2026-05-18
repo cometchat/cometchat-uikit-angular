@@ -15,6 +15,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatReactionsComponent } from './cometchat-reactions.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { within, expect } from '@storybook/test';
 import {
   createMockMessage,
   createMockReactions,
@@ -301,5 +302,18 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying all reaction variants — few reactions, many reactions with overflow, single reaction reacted by me, empty reactions, and right alignment — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders reactions container */
+export const TestDefaultRendersReactions: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-reactions');
+    expect(container).not.toBeNull();
   },
 };

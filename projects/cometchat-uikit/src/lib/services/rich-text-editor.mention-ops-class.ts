@@ -5,6 +5,7 @@
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../utils/CometChatLogger';
+import { markdownToHtml as markdownToHtmlUtil } from './rich-text-editor.markdown-utils';
 
 export interface MentionOpsContext {
   contentEditable: HTMLDivElement;
@@ -94,20 +95,25 @@ export function getTextWithMentionFormatImpl(ctx: MentionOpsContext): string {
 
 export function setContentWithMentionsImpl(ctx: MentionOpsContext, text: string, mentionedUsers: (CometChat.User | CometChat.GroupMember)[]): void {
   if (!ctx.mentionsFormatter) { ctx.initializeMentionsFormatter(); }
-  const linkPlaceholders: string[] = [];
-  const processedText = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match: string, linkText: string, linkUrl: string) => {
-    const idx = linkPlaceholders.length;
-    const linkHtml = `<a href="${linkUrl}" class="cometchat-rich-text__link" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
-    linkPlaceholders.push(linkHtml);
-    return `\x00MDLINK${idx}\x00`;
+  // ENG-35077: Use the full markdownToHtml conversion (not just inline markdown)
+  // so that block-level formatting like blockquotes (>) and lists (-) are properly
+  // rendered in the editor when editing a formatted message.
+  // Protect SDK mention tags (<@uid:xxx>, <@all:label>) from being processed.
+  const sdkMentionRegex = /<@(uid|all):[^>]*>/g;
+  const mentionPlaceholders: string[] = [];
+  const textWithPlaceholders = text.replace(sdkMentionRegex, (match: string) => {
+    const idx = mentionPlaceholders.length;
+    mentionPlaceholders.push(match);
+    return `\x00SDKMENTION${idx}\x00`;
   });
-  const escapedText = ctx.escapeUserHtmlForEditor(processedText);
-  const formattedText = ctx.convertInlineMarkdown(escapedText);
-  const finalText = formattedText.replace(/\x00MDLINK(\d+)\x00/g, (_: string, idx: string) => {
-    return linkPlaceholders[parseInt(idx, 10)];
+  // Use full markdown-to-HTML conversion (handles blockquotes, lists, inline formatting)
+  let formattedHtml = markdownToHtmlUtil(textWithPlaceholders);
+  // Restore SDK mention placeholders
+  formattedHtml = formattedHtml.replace(/\x00SDKMENTION(\d+)\x00/g, (_: string, idx: string) => {
+    return mentionPlaceholders[parseInt(idx, 10)];
   });
-  const formattedHtml = ctx.mentionsFormatter!.formatSdkMentions(finalText, mentionedUsers);
-  ctx.setHTML(formattedHtml);
+  const finalHtml = ctx.mentionsFormatter!.formatSdkMentions(formattedHtml, mentionedUsers);
+  ctx.setHTML(finalHtml);
 }
 
 export function escapeUserHtmlForEditorImpl(_ctx: MentionOpsContext, text: string): string {

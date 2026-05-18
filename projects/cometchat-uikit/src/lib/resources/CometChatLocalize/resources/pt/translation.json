@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Selecione uma opção",
     "checkbox_aria_label": "Caixa de seleção",
     "file_bubble_unknown_file": "Arquivo desconhecido",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Algo deu errado",
     "error_boundary_retry": "Tentar novamente",
     "message_bubble_render_error": "Não é possível exibir esta mensagem",

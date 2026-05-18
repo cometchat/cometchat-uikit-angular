@@ -99,8 +99,12 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
   protected isDeleteChatDisabled = computed(() => {
     if (this.hasReceivedMessage()) return false;
     const conv = this.conversation();
-    if (!conv) return true;
-    return !conv.getLastMessage?.();
+    if (conv) return !conv.getLastMessage?.();
+    // ENG-35099: When opened from Groups tab, conversation() is null because
+    // setActiveConversation() was never called — only setActiveGroup() was.
+    // Enable delete if a group is active.
+    const g = this.group();
+    return !g;
   });
 
   @ViewChild('emptyHeader', { static: true })

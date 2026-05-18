@@ -8,6 +8,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 import {TranslatePipe} from '../../resources/CometChatLocalize/translate.pipe';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
+import {CometChatLogger} from '../../utils/CometChatLogger';
 import {MessageBubbleAlignment, Placement} from '../../Enums/Enums';
 import {CometChatActionsIcon} from '../../modals/CometChatActionsIcon';
 import {CometChatActionsView} from '../../modals/CometChatActionsView';
@@ -159,6 +160,7 @@ export class CometChatMessageBubbleComponent
   ngOnInit(): void {
     this.loggedInUser = CometChatUIKit.getLoggedInUser();
     this.detectMobileDevice();
+    this.setupMobileResizeListener();
     this.bubbleConfigService.configChanged$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.cdr.markForCheck();
     });
@@ -198,7 +200,44 @@ export class CometChatMessageBubbleComponent
   get isOutgoing(): boolean { if (!this.message || !this.loggedInUser) return false; const sender = this.message.getSender(); if (!sender) return true; return sender.getUid() === this.loggedInUser.getUid(); }
   get isOutgoingStyle(): boolean { return this.alignment === MessageBubbleAlignment.right; }
   get isDeleted(): boolean { if (!this.message) return false; return !!this.message.getDeletedAt(); }
-  get quotedMessage(): CometChat.BaseMessage | null { if (!this.message) return null; if (typeof (this.message as any).getQuotedMessage === 'function') return (this.message as any).getQuotedMessage() || null; return null; }
+  get quotedMessage(): CometChat.BaseMessage | null {
+    if (!this.message) return null;
+    if (typeof (this.message as any).getQuotedMessage === 'function') {
+      const quoted = (this.message as any).getQuotedMessage();
+      if (!quoted) return null;
+      // ENG-35031: The SDK may return a plain object without prototype methods when
+      // the message is received from the server. Ensure it has the required methods.
+      if (typeof quoted.getType !== 'function') {
+        try {
+          const type = quoted.type || quoted.messageType || 'text';
+          const receiverId = quoted.receiverId || '';
+          const receiverType = quoted.receiverType || 'user';
+          // Use TextMessage as a universal wrapper since it has all the base methods
+          const reconstructed = new CometChat.TextMessage(
+            receiverId,
+            type === 'text' ? (quoted.text || quoted.data?.text || '') : '',
+            receiverType
+          );
+          if (quoted.id) reconstructed.setId(quoted.id);
+          if (quoted.sentAt) reconstructed.setSentAt(quoted.sentAt);
+          if (quoted.sender) {
+            const sender = new CometChat.User({ uid: quoted.sender.uid || '', name: quoted.sender.name || '' });
+            reconstructed.setSender(sender);
+          }
+          if (quoted.deletedAt) reconstructed.setDeletedAt(quoted.deletedAt);
+          // Override getType to return the actual type
+          (reconstructed as any)._originalType = type;
+          const origGetType = reconstructed.getType.bind(reconstructed);
+          (reconstructed as any).getType = () => (reconstructed as any)._originalType || origGetType();
+          return reconstructed;
+        } catch {
+          return null;
+        }
+      }
+      return quoted;
+    }
+    return null;
+  }
   get isEdited(): boolean { if (!this.message) return false; return !!this.message.getEditedAt() && this.message.getType() == CometChatUIKitConstants.MessageTypes.text && this.message.getCategory() == CometChatUIKitConstants.MessageCategory.message; }
   get actionMessageText(): string {
     if (!this.message) { return ''; }
@@ -236,11 +275,14 @@ export class CometChatMessageBubbleComponent
   }
   get callIconErrorColor(): boolean {
     if (!this.message || this.messageCategory !== CometChatUIKitConstants.MessageCategory.call) { return false; }
-    const statusText = this.getCallMessageText();
+    const callMessage = this.message as any;
+    const callStatus = callMessage.getStatus?.() || callMessage.status || '';
     return (
-      statusText === CometChatLocalize.getLocalizedString('conversation_subtitle_missed_call') ||
-      statusText === CometChatLocalize.getLocalizedString('conversation_subtitle_ended_call') ||
-      statusText === CometChatLocalize.getLocalizedString('conversation_subtitle_cancelled_call')
+      callStatus === CometChatUIKitConstants.calls.unanswered ||
+      callStatus === CometChatUIKitConstants.calls.cancelled ||
+      callStatus === CometChatUIKitConstants.calls.ended ||
+      callStatus === CometChatUIKitConstants.calls.busy ||
+      callStatus === CometChatUIKitConstants.calls.rejected
     );
   }
   get contextMenuPlacement(): Placement {
@@ -306,13 +348,27 @@ export class CometChatMessageBubbleComponent
   onReactionClick(reaction: CometChat.ReactionCount): void { this.reactionClick.emit({ reaction, message: this.message }); }
   onReactionListItemClick(event: { reaction: CometChat.Reaction; message: CometChat.BaseMessage }): void { this.reactionListItemClick.emit(event); }
   private detectMobileDevice(): void { this.isMobile = window.innerWidth <= 768; }
+  private setupMobileResizeListener(): void {
+    const handler = () => {
+      const wasMobile = this.isMobile;
+      this.isMobile = window.innerWidth <= 768;
+      if (wasMobile !== this.isMobile) { this.cdr.markForCheck(); }
+    };
+    window.addEventListener('resize', handler);
+    this.destroyRef.onDestroy(() => window.removeEventListener('resize', handler));
+  }
   private clearHoverTimeout(): void {
     if (this.hoverTimeoutRef) { clearTimeout(this.hoverTimeoutRef); this.hoverTimeoutRef = null; }
   }
   private setupContentViewResizeObserver(): void {
     if (!this.contentViewRef?.nativeElement) return;
     const el = this.contentViewRef.nativeElement;
-    this.contentViewResizeObserver = new ResizeObserver(entries => { for (const e of entries) { const w = e.contentRect.width; if (this.contentViewWidth() !== w) this.contentViewWidth.set(w); } });
+    let destroyed = false;
+    this.destroyRef.onDestroy(() => { destroyed = true; });
+    this.contentViewResizeObserver = new ResizeObserver(entries => {
+      if (destroyed) return;
+      for (const e of entries) { const w = e.contentRect.width; if (this.contentViewWidth() !== w) this.contentViewWidth.set(w); }
+    });
     this.contentViewResizeObserver.observe(el); this.contentViewWidth.set(el.offsetWidth);
   }
   get accessibleLabel(): string {
@@ -352,7 +408,7 @@ export class CometChatMessageBubbleComponent
     return this.datePipe.transform(timestamp, 'short') || '';
   }
   private getReactionsSummary(): string { const reactions = this.reactions; if (!reactions?.length) return ''; const totalCount = reactions.reduce((sum, r) => sum + (r.getCount?.() || 0), 0); if (totalCount === 1) return CometChatLocalize.getLocalizedString('accessibility_one_reaction'); return CometChatLocalize.getLocalizedString('accessibility_reactions_count').replace('{count}', totalCount.toString()); }
-  private getMessageTypeLabel(): string { switch (this.messageType) { case 'text': return 'text message'; case 'image': return 'image'; case 'video': return 'video'; case 'audio': return 'audio message'; case 'file': return 'file'; default: return 'message'; } }
+  private getMessageTypeLabel(): string { switch (this.messageType) { case 'text': return CometChatLocalize.getLocalizedString('accessibility_message_type_text'); case 'image': return CometChatLocalize.getLocalizedString('accessibility_message_type_image'); case 'video': return CometChatLocalize.getLocalizedString('accessibility_message_type_video'); case 'audio': return CometChatLocalize.getLocalizedString('accessibility_message_type_audio'); case 'file': return CometChatLocalize.getLocalizedString('accessibility_message_type_file'); default: return CometChatLocalize.getLocalizedString('accessibility_message_type_custom'); } }
   get isMediaMessage(): boolean {
     return ['audio', 'video', 'image'].includes(this.messageType);
   }
@@ -377,12 +433,12 @@ export class CometChatMessageBubbleComponent
   getDocumentUrl(): string {
     if (!this.message) return '';
     try { const m = (this.message as any).getMetadata?.() as Record<string, any> | null; if (!m) return ''; const inj = m['@injected']; if (inj?.['extensions']?.['document']?.['document_url']) return inj['extensions']['document']['document_url']; if (m['data']?.['document_url']) return m['data']['document_url']; const cd = (this.message as any).getCustomData?.(); if (cd?.['document_url']) return cd['document_url']; return ''; }
-    catch (error) { console.warn('[CometChatMessageBubble] Error extracting document URL:', error); return ''; }
+    catch (error) { CometChatLogger.warn('CometChatMessageBubble', 'Error extracting document URL:', error); return ''; }
   }
   getWhiteboardUrl(): string {
     if (!this.message) return '';
     try { const m = (this.message as any).getMetadata?.() as Record<string, any> | null; if (!m) return ''; const inj = m['@injected']; if (inj?.['extensions']?.['whiteboard']?.['board_url']) return inj['extensions']['whiteboard']['board_url']; if (m['data']?.['board_url']) return m['data']['board_url']; const cd = (this.message as any).getCustomData?.(); if (cd?.['board_url']) return cd['board_url']; return ''; }
-    catch (error) { console.warn('[CometChatMessageBubble] Error extracting whiteboard URL:', error); return ''; }
+    catch (error) { CometChatLogger.warn('CometChatMessageBubble', 'Error extracting whiteboard URL:', error); return ''; }
   }
   getCallButtonText(): string {
     if (!this.message) { return ''; }

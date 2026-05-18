@@ -18,6 +18,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { CometChatCallLogsComponent } from './cometchat-call-logs.component';
 import { MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ============================================
 // Mock Classes
@@ -581,5 +582,53 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying call logs variants — default list with recent calls, empty state, and error state — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders call logs container */
+export const TestDefaultRendersCallLogs: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      mockCallLogs: createMockCallLogs(8),
+    },
+    template: `
+      <div style="width: 400px; height: 600px; overflow: hidden; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2);">
+        <cometchat-call-logs-story-wrapper
+          [mockCallLogs]="mockCallLogs">
+        </cometchat-call-logs-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-call-logs');
+    expect(container).not.toBeNull();
+  },
+};
+
+/** Test: Empty state renders when no logs */
+export const TestEmptyState: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      simulateEmpty: true,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; overflow: hidden; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2);">
+        <cometchat-call-logs-story-wrapper
+          [simulateEmpty]="true">
+        </cometchat-call-logs-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-call-logs');
+    expect(container).not.toBeNull();
   },
 };

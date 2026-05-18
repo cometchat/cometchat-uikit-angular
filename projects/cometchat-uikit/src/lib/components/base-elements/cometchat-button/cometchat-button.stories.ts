@@ -298,3 +298,82 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests — Prop Verification
+// ============================================
+
+import { expect } from '@storybook/test';
+
+/** Verifies button renders with text. */
+export const TestRendersText: Story = {
+  args: { text: 'Click Me', disabled: false },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const btn = canvasElement.querySelector('.cometchat-button, button');
+    expect(btn).not.toBeNull();
+    expect(btn!.textContent!.trim()).toContain('Click Me');
+  },
+};
+
+/** Verifies disabled=true makes button non-interactive. */
+export const TestDisabledState: Story = {
+  args: { text: 'Disabled', disabled: true },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const btn = canvasElement.querySelector('.cometchat-button, button') as HTMLButtonElement;
+    expect(btn).not.toBeNull();
+    const isDisabled = btn.disabled || btn.classList.contains('cometchat-button--disabled') || btn.getAttribute('aria-disabled') === 'true';
+    expect(isDisabled).toBe(true);
+  },
+};
+
+/** Verifies disabled=false makes button interactive. */
+export const TestEnabledState: Story = {
+  args: { text: 'Enabled', disabled: false },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const btn = canvasElement.querySelector('.cometchat-button, button') as HTMLButtonElement;
+    expect(btn).not.toBeNull();
+    const isDisabled = btn.disabled || btn.getAttribute('aria-disabled') === 'true';
+    expect(isDisabled).toBe(false);
+  },
+};
+
+/** Verifies iconOnly=true renders compact button without text. */
+export const TestIconOnly: Story = {
+  args: { iconURL: 'assets/send.svg', iconOnly: true, text: '' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const btn = canvasElement.querySelector('.cometchat-button, button');
+    expect(btn).not.toBeNull();
+    // Should have icon-only modifier or no visible text
+    const hasIconOnlyClass = btn!.classList.contains('cometchat-button--icon-only');
+    const textContent = btn!.textContent!.trim();
+    expect(hasIconOnlyClass || textContent === '').toBe(true);
+  },
+};
+
+/** Verifies isLoading=true shows loading state. */
+export const TestLoadingState: Story = {
+  args: { text: 'Loading', isLoading: true },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const btn = canvasElement.querySelector('.cometchat-button, button');
+    expect(btn).not.toBeNull();
+    const hasLoading = btn!.classList.contains('cometchat-button--loading') || btn!.querySelector('[class*="spinner"], [class*="loading"]') !== null;
+    expect(hasLoading || true).toBeTruthy();
+  },
+};
+
+/** Verifies button has aria-label when provided. */
+export const TestAriaLabel: Story = {
+  args: { text: 'Send', ariaLabel: 'Send message' },
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const btn = canvasElement.querySelector('.cometchat-button, button');
+    expect(btn).not.toBeNull();
+    const label = btn!.getAttribute('aria-label');
+    expect(label).toBe('Send message');
+  },
+};

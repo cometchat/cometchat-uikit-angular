@@ -1,9 +1,10 @@
 import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
+import {CometChatLogger} from '../../utils/CometChatLogger';
 
 export async function createCollaborativeDocumentImpl(self: any): Promise<void> {
   const receiver = self.currentUser() || self.currentGroup();
-  if (!receiver) { console.warn('[CometChatMessageComposer] No receiver set for collaborative document'); return; }
+  if (!receiver) { CometChatLogger.warn('CometChatMessageComposer', 'No receiver set for collaborative document'); return; }
   self.isExtensionLoading.set(true);
   try {
     const receiverId = self.currentUser()
@@ -34,7 +35,7 @@ export async function createCollaborativeDocumentImpl(self: any): Promise<void> 
 
 export async function createCollaborativeWhiteboardImpl(self: any): Promise<void> {
   const receiver = self.currentUser() || self.currentGroup();
-  if (!receiver) { console.warn('[CometChatMessageComposer] No receiver set for collaborative whiteboard'); return; }
+  if (!receiver) { CometChatLogger.warn('CometChatMessageComposer', 'No receiver set for collaborative whiteboard'); return; }
   self.isExtensionLoading.set(true);
   try {
     const receiverId = self.currentUser()

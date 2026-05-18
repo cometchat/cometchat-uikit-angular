@@ -10,6 +10,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatDeleteBubbleComponent } from './cometchat-delete-bubble.component';
+import { within, expect } from '@storybook/test';
 
 const meta: Meta<CometChatDeleteBubbleComponent> = {
   title: 'Components/Bubbles/Delete Bubble',
@@ -115,5 +116,18 @@ export const SenderAndReceiver: Story = {
   }),
   parameters: {
     docs: { description: { story: 'Sender (outgoing) and receiver (incoming) delete bubbles shown side by side.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders delete bubble container */
+export const TestDefaultRendersDeleteBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-delete-bubble');
+    expect(container).not.toBeNull();
   },
 };

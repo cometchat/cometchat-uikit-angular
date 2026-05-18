@@ -18,6 +18,7 @@
   z-index: 1;
   position: relative;
   background: var(--cometchat-emoji-keyboard-search-background, var(--cometchat-background-color-01));
+  border-radius: inherit;
 }
 
 /* Category tabs */

@@ -22,6 +22,8 @@ import {ConversationSubtitleService} from '../../services/conversation-subtitle.
 import {stripRichTextFormatting} from '../../utils/util';
 import {CometChatUIKitConstants} from '../../constants';
 import {getConversationAvatarImage, getConversationAvatarName, getConversationUserStatus, getConversationGroupType, getReceiptStatus, isURL, hasMarkdownLink, getConversationAccessibleLabel,} from './cometchat-conversation-item.utils';
+import {CometChatLogger} from '../../utils/CometChatLogger';
+import {convertMarkdownToHtml} from '../cometchat-text-bubble/cometchat-text-bubble.utils';
 
 @Component({
   selector: 'cometchat-conversation-item',
@@ -106,7 +108,7 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
       try {
         this.loggedInUser = await CometChat.getLoggedinUser();
       } catch (error) {
-        console.error('[CometChatConversationItem] Error getting logged-in user:', error);
+        CometChatLogger.error('CometChatConversationItem', 'Error getting logged-in user:', error);
       }
     }
   }
@@ -124,7 +126,7 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   }
   get isAgentConversation(): boolean {
     if (!(this.conversationWith instanceof CometChat.User)) return false;
-    return this.conversationWith.getRole() === '@agentic';
+    return typeof this.conversationWith.getRole === 'function' && this.conversationWith.getRole() === '@agentic';
   }
   get avatarImage(): string {
     return getConversationAvatarImage(this.conversationWith);
@@ -252,16 +254,8 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     const escapedText = this.htmlSanitizer.escapeUserHtml(plainText); let formattedText = escapedText;
     for (const formatter of formatters) { try { if (formatter instanceof CometChatMentionsFormatter) { if (hasSdkMentions && formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.formatSdkMentions(formattedText, mentionedUsers); }
         } else if (formatter.id !== 'tiptap-formatter') { if (formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.format(formattedText); }
-        } } catch (error) { console.error('[CometChatConversationItem] Formatter error:', error); } }
+        } } catch (error) { CometChatLogger.error('CometChatConversationItem', 'Formatter error:', error); } }
     return this.sanitizeSubtitleHtml(formattedText);
-  }
-  private convertMarkdownToHtml(text: string): string {
-    if (!text) return '';
-    let r = text;
-    r = r.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, '<em>$1</em>');
-    r = r.replace(/__([^_]+)__/g, '<u>$1</u>').replace(/(?<!_)_(?!_)([^_]+)_(?!_)/g, '<em>$1</em>').replace(/~~([^~]+)~~/g, '<s>$1</s>');
-    r = r.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="cometchat-link">$1</a>');
-    return r;
   }
   private getFormattersForSubtitle(): CometChatTextFormatter[] {
     const effectiveFormatters = this.effectiveTextFormatters();
@@ -290,7 +284,7 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     const hasCustomFormatters = formatters.some(f => !(f instanceof CometChatMentionsFormatter) && f.id !== 'tiptap-formatter');
     return (hasSdkMentions && hasMentionsFormatter) || hasCustomFormatters;
   }
-  private sanitizeSubtitleHtml(html: string): string { if (!html) return ''; try { let processed = html; const tempDiv = document.createElement('div'); tempDiv.innerHTML = processed; const ols = tempDiv.querySelectorAll('ol'); ols.forEach(ol => { const items = ol.querySelectorAll(':scope > li'); items.forEach((li, idx) => { const span = document.createElement('span'); span.innerHTML = `${idx + 1}. ${li.innerHTML} `; li.replaceWith(span); }); const span = document.createElement('span'); span.innerHTML = ol.innerHTML; ol.replaceWith(span); }); const uls = tempDiv.querySelectorAll('ul'); uls.forEach(ul => { const items = ul.querySelectorAll(':scope > li'); items.forEach(li => { const span = document.createElement('span'); span.innerHTML = `\u2022 ${li.innerHTML} `; li.replaceWith(span); }); const span = document.createElement('span'); span.innerHTML = ul.innerHTML; ul.replaceWith(span); }); processed = tempDiv.innerHTML.replace(/<br\s*\/?>/gi, ' ').replace(/<\/p>/gi, ' ').replace(/<\/blockquote>/gi, ' ').replace(/<\/h[1-6]>/gi, ' '); let s = this.htmlSanitizer.sanitizeWithConfig(processed, { ALLOWED_TAGS: ['span', 'strong', 'em', 'b', 'i', 'u', 's', 'code', 'a'], ALLOWED_ATTR: ['class', 'data-uid', 'data-mention-type', 'data-hashtag', 'href', 'target', 'rel', 'style'] }); s = String(s).replace(/\n/g, ' ').replace(/\s{2,}/g, ' ').trim(); return s; } catch (error) { console.error('[CometChatConversationItem] Sanitization error:', error); return ''; } }
+  private sanitizeSubtitleHtml(html: string): string { if (!html) return ''; try { let processed = html; const tempDiv = document.createElement('div'); tempDiv.innerHTML = processed; const ols = tempDiv.querySelectorAll('ol'); ols.forEach(ol => { const items = ol.querySelectorAll(':scope > li'); items.forEach((li, idx) => { const span = document.createElement('span'); span.innerHTML = `${idx + 1}. ${li.innerHTML} `; li.replaceWith(span); }); const span = document.createElement('span'); span.innerHTML = ol.innerHTML; ol.replaceWith(span); }); const uls = tempDiv.querySelectorAll('ul'); uls.forEach(ul => { const items = ul.querySelectorAll(':scope > li'); items.forEach(li => { const span = document.createElement('span'); span.innerHTML = `\u2022 ${li.innerHTML} `; li.replaceWith(span); }); const span = document.createElement('span'); span.innerHTML = ul.innerHTML; ul.replaceWith(span); }); processed = tempDiv.innerHTML.replace(/<br\s*\/?>/gi, ' ').replace(/<\/p>/gi, ' ').replace(/<\/blockquote>/gi, ' ').replace(/<\/h[1-6]>/gi, ' '); let s = this.htmlSanitizer.sanitizeWithConfig(processed, { ALLOWED_TAGS: ['span', 'strong', 'em', 'b', 'i', 'u', 's', 'code', 'a'], ALLOWED_ATTR: ['class', 'data-uid', 'data-mention-type', 'data-hashtag', 'href', 'target', 'rel', 'style'] }); s = String(s).replace(/\n/g, ' ').replace(/\s{2,}/g, ' ').trim(); return s; } catch (error) { CometChatLogger.error('CometChatConversationItem', 'Sanitization error:', error); return ''; } }
   private formatPlainMentions(text: string, mentionedUsers: CometChat.User[]): string {
     if (!text) return '';
     const userMap = new Map<string, string>(); mentionedUsers.forEach(u => userMap.set(u.getUid(), u.getName()));

@@ -14,6 +14,8 @@ export function handleConversationChangeImpl(ctx: any): void {
   ctx.hasMorePrevious.set(true);
   ctx.hasMoreNext.set(false);
   ctx.isFirstLoad = true;
+  // ENG-35029: Clear stale error state before switching conversations.
+  ctx.messageListService.clearError();
   if (ctx.user) {
     ctx.messageListService.setUser(ctx.user);
     if (ctx.isAgentChat && !ctx.parentMessageId) {
@@ -142,6 +144,9 @@ export function handleUserChangeImpl(ctx: any, user: CometChat.User): void {
   ctx.unreadDividerMessageId.set(null);
   ctx.markedAsUnreadCount.set(0);
   ctx.lastUnreadMarkedMessageId.set(null);
+  // ENG-35029: Explicitly clear any error state from the previous conversation
+  // before starting the new fetch, so the error effect doesn't fire with stale data.
+  ctx.messageListService.clearError();
   ctx.user = user;
   ctx.group = undefined;
   if (ctx.parentMessageId) {
@@ -186,6 +191,8 @@ export function handleGroupChangeImpl(ctx: any, group: CometChat.Group): void {
   ctx.unreadDividerMessageId.set(null);
   ctx.markedAsUnreadCount.set(0);
   ctx.lastUnreadMarkedMessageId.set(null);
+  // ENG-35029: Explicitly clear any error state from the previous conversation.
+  ctx.messageListService.clearError();
   ctx.group = group;
   ctx.user = undefined;
   if (ctx.parentMessageId) {
@@ -233,8 +240,17 @@ async function fetchWithUnreadPivot(
   id: string,
   receiverType: string
 ): Promise<void> {
+  // Capture generation at the start so we can abort if the conversation changes
+  // while the async getConversation() call is in-flight (group-specific race condition).
+  const generation = ctx.messageListService.getFetchGeneration?.() ?? 0;
   try {
     const conversation: CometChat.Conversation = await CometChat.getConversation(id, receiverType);
+    // ENG-35029: Abort if the conversation changed while we were waiting for getConversation().
+    // This is the group-specific race: switching groups quickly causes stale pivot data
+    // to be applied to the new group's message list.
+    if (ctx.messageListService.getFetchGeneration?.() !== generation) {
+      return;
+    }
     const lastReadMessageId = conversation.getLastReadMessageId?.();
     const unreadCount = conversation.getUnreadMessageCount?.() || 0;
 
@@ -292,6 +308,38 @@ async function fetchWithUnreadPivot(
             ctx.cdr.markForCheck();
             // Scroll to the first unread message
             ctx.scrollToMessageWithRetry(dividerId, 10);
+            // Mark the conversation as read on the server (matches React UIKit's markConversationAsRead).
+            // We do NOT call notifyUnreadCountChange(0) here — the unread divider stays visible
+            // until the user scrolls to the bottom, at which point markMessagesReadOnScrollToBottom
+            // clears it. We only update the server + conversation list badge.
+            const allMessages = ctx.messages();
+            if (allMessages.length > 0 && ctx.loggedInUser) {
+              // Find the latest receiver message to mark as read
+              let latestReceiverMsg: CometChat.BaseMessage | null = null;
+              for (let i = allMessages.length - 1; i >= 0; i--) {
+                const msg = allMessages[i];
+                if (msg.getSender()?.getUid() !== ctx.loggedInUser.getUid() && !msg.getReadAt()) {
+                  latestReceiverMsg = msg;
+                  break;
+                }
+              }
+              if (latestReceiverMsg) {
+                // Reset the scroll-to-bottom badge immediately — the unread divider stays
+                // visible but the count badge should be 0 since we've opened the chat.
+                ctx.markedAsUnreadCount.set(0);
+                ctx.newMessagesCount.set(0);
+                ctx.messageListService.markAsRead(latestReceiverMsg).then(() => {
+                  // Update conversation list badge to 0 immediately
+                  const conversationId = ctx.getConversationId?.();
+                  if (conversationId) {
+                    ctx.conversationsService?.updateConversationUnreadCount?.(conversationId, 0);
+                  }
+                  ctx.notifyMessagesRead?.(latestReceiverMsg);
+                }).catch((err: unknown) => {
+                  CometChatLogger.error('CometChatMessageList', 'markAsRead on chat open failed:', err);
+                });
+              }
+            }
           } else {
             // Couldn't determine first unread — just scroll to bottom
             ctx.hasMoreNext.set(true);

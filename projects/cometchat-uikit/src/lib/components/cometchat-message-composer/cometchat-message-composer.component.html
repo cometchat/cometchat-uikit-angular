@@ -35,6 +35,7 @@
 } @else {
 <div 
   class="cometchat-message-composer"
+  data-cometchat-container
   [class.cometchat-message-composer--single-line]="!isMultilineLayout()"
   [class.cometchat-message-composer--multiline]="isMultilineLayout()"
   role="region"
@@ -512,6 +513,7 @@
             [placement]="Placement.top"
             [content]="attachmentMenuContent"
             [closeOnOutsideClick]="true"
+            [constrainHorizontal]="true"
             (popoverOpened)="onAttachmentPopoverOpened()"
             (popoverClosed)="onAttachmentPopoverClosed()">
             <div class="cometchat-message-composer__attachment-button-inner"

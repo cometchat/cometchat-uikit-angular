@@ -12,8 +12,9 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { within, expect } from '@storybook/test';
 
 import { CometChatMessageListComponent } from './cometchat-message-list.component';
 import { MessageListAlignment } from '../../Enums/Enums';
@@ -103,6 +104,10 @@ class MockMessagesManager {
 /**
  * Wrapper component that provides mock data to CometChatMessageList.
  * Bypasses the SDK requirement by injecting mock data directly.
+ *
+ * mockRequestBuilder is built once in ngOnChanges (after inputs are set)
+ * and cached so Angular doesn't see a new object reference on every
+ * change detection cycle (which would cause infinite re-fetches).
  */
 @Component({
   selector: 'cometchat-message-list-story-wrapper',
@@ -128,7 +133,7 @@ class MockMessagesManager {
     </cometchat-message-list>
   `,
 })
-class CometChatMessageListStoryWrapperComponent implements OnInit {
+class CometChatMessageListStoryWrapperComponent implements OnChanges {
   @Input() user?: CometChat.User;
   @Input() group?: CometChat.Group;
   @Input() messageAlignment: MessageListAlignment = MessageListAlignment.standard;
@@ -146,63 +151,53 @@ class CometChatMessageListStoryWrapperComponent implements OnInit {
   @Input() simulateEmpty = false;
   @Input() simulateError = false;
 
+  /**
+   * Cached builder — built once when inputs arrive so Angular sees a stable
+   * object reference and doesn't re-trigger fetches on every CD cycle.
+   */
   mockRequestBuilder: any = null;
 
-  ngOnInit(): void {
-    // Mock the logged-in user so the component can identify outgoing messages
+  constructor() {
+    // Patch getLoggedinUser before any component initializes
     const loggedInUser = createMockUser({
       uid: 'user-john-doe',
       name: 'John Doe',
       avatar: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp?text=JD',
     });
     (CometChat as any).getLoggedinUser = async () => loggedInUser;
+  }
+
+  ngOnChanges(_changes: SimpleChanges): void {
+    this._buildRequestBuilder();
+  }
+
+  private _buildRequestBuilder(): void {
+    const makeBuilder = (fetchFn: () => Promise<CometChat.BaseMessage[]>) => {
+      const builder: any = {};
+      // All methods the service may call — each returns the same builder for chaining
+      const chainMethods = [
+        'setLimit', 'setUID', 'setGUID', 'setCategories', 'setTypes',
+        'hideReplies', 'setTimestamp', 'setMessageId', 'setParentMessageId',
+        'withParent', 'hideDeletedMessages', 'setAttachmentTypes', 'hasLinks',
+        'setSearchKeyword', 'setUnread', 'setConversationType',
+      ];
+      chainMethods.forEach(m => { builder[m] = () => builder; });
+      builder.build = () => ({ fetchPrevious: fetchFn, fetchNext: async () => [] });
+      return builder;
+    };
 
     if (this.simulateError) {
-      // Error simulation: shows shimmer for 300ms then throws error
-      this.mockRequestBuilder = {
-        setLimit: () => this.mockRequestBuilder,
-        setUID: () => this.mockRequestBuilder,
-        setGUID: () => this.mockRequestBuilder,
-        setCategories: () => this.mockRequestBuilder,
-        setTypes: () => this.mockRequestBuilder,
-        hideReplies: () => this.mockRequestBuilder,
-        setTimestamp: () => this.mockRequestBuilder,
-        build: () => ({
-          fetchPrevious: async () => {
-            // Simulate network delay to show shimmer
-            await new Promise(resolve => setTimeout(resolve, 300));
-            throw new Error('Failed to fetch messages. Please try again.');
-          },
-        }),
-      };
+      this.mockRequestBuilder = makeBuilder(async () => {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        throw new Error('Failed to fetch messages. Please try again.');
+      });
     } else if (this.simulateEmpty) {
-      this.mockRequestBuilder = {
-        setLimit: () => this.mockRequestBuilder,
-        setUID: () => this.mockRequestBuilder,
-        setGUID: () => this.mockRequestBuilder,
-        setCategories: () => this.mockRequestBuilder,
-        setTypes: () => this.mockRequestBuilder,
-        hideReplies: () => this.mockRequestBuilder,
-        setTimestamp: () => this.mockRequestBuilder,
-        build: () => ({
-          fetchPrevious: async () => [],
-        }),
-      };
+      this.mockRequestBuilder = makeBuilder(async () => []);
     } else if (this.mockMessages.length > 0) {
       const manager = new MockMessagesManager(this.mockMessages);
-      this.mockRequestBuilder = {
-        setLimit: () => this.mockRequestBuilder,
-        setUID: () => this.mockRequestBuilder,
-        setGUID: () => this.mockRequestBuilder,
-        setCategories: () => this.mockRequestBuilder,
-        setTypes: () => this.mockRequestBuilder,
-        hideReplies: () => this.mockRequestBuilder,
-        setTimestamp: () => this.mockRequestBuilder,
-        build: () => ({
-          fetchPrevious: () => manager.fetchPreviousMessages(),
-        }),
-      };
+      this.mockRequestBuilder = makeBuilder(() => manager.fetchPreviousMessages());
     }
+    // else: mockRequestBuilder stays null → component uses default (loading state)
   }
 }
 
@@ -929,5 +924,201 @@ export const AllVariantsShowcase: Story = {
           'Comprehensive showcase displaying message list variants — standard alignment with sent and received messages, empty state, and error state — in a single view.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests — Prop Toggle Verification
+// ============================================
+
+/** Verifies default state renders message bubbles. */
+export const TestDefaultRendersMessages: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      user: createMockUser({
+        uid: 'user-john-doe',
+        name: 'John Doe',
+        avatar: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp?text=JD',
+        status: CometChat.USER_STATUS.ONLINE,
+      }),
+      mockMessages: createTestMessages(10),
+    },
+    template: `
+      <div style="width: 100%; height: 100vh; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-message-list-story-wrapper
+          [user]="user"
+          [mockMessages]="mockMessages"
+          [disableSoundForMessages]="true"
+          [disableInteraction]="true">
+        </cometchat-message-list-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 3000));
+    // Message list container should be present
+    const messageList = canvasElement.querySelector('.cometchat-message-list');
+    expect(messageList).not.toBeNull();
+  },
+};
+
+/** Verifies hideDateSeparator=true hides date separators. */
+export const TestHideDateSeparator: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      user: createMockUser({
+        uid: 'user-john-doe',
+        name: 'John Doe',
+        avatar: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp?text=JD',
+        status: CometChat.USER_STATUS.ONLINE,
+      }),
+      mockMessages: createTestMessages(10),
+    },
+    template: `
+      <div style="width: 100%; height: 100vh; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-message-list-story-wrapper
+          [user]="user"
+          [mockMessages]="mockMessages"
+          [hideDateSeparator]="true"
+          [disableSoundForMessages]="true"
+          [disableInteraction]="true">
+        </cometchat-message-list-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 2000));
+    // Date separators should NOT be present
+    const dateSeparators = canvasElement.querySelectorAll('.cometchat-message-list__date-separator');
+    expect(dateSeparators.length).toBe(0);
+  },
+};
+
+/** Verifies hideReceipts=true hides receipt indicators. */
+export const TestHideReceipts: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      user: createMockUser({
+        uid: 'user-john-doe',
+        name: 'John Doe',
+        avatar: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp?text=JD',
+        status: CometChat.USER_STATUS.ONLINE,
+      }),
+      mockMessages: createTestMessages(10),
+    },
+    template: `
+      <div style="width: 100%; height: 100vh; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-message-list-story-wrapper
+          [user]="user"
+          [mockMessages]="mockMessages"
+          [hideReceipts]="true"
+          [disableSoundForMessages]="true"
+          [disableInteraction]="true">
+        </cometchat-message-list-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 2000));
+    // Receipt icons should NOT be present
+    const receipts = canvasElement.querySelectorAll('.cometchat-message-bubble__status-info-view-receipt');
+    expect(receipts.length).toBe(0);
+  },
+};
+
+/** Verifies hideAvatar=true hides avatars in message list. */
+export const TestHideAvatar: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      user: createMockUser({
+        uid: 'user-john-doe',
+        name: 'John Doe',
+        avatar: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp?text=JD',
+        status: CometChat.USER_STATUS.ONLINE,
+      }),
+      mockMessages: createTestMessages(10),
+    },
+    template: `
+      <div style="width: 100%; height: 100vh; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-message-list-story-wrapper
+          [user]="user"
+          [mockMessages]="mockMessages"
+          [hideAvatar]="true"
+          [disableSoundForMessages]="true"
+          [disableInteraction]="true">
+        </cometchat-message-list-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 2000));
+    // Avatar elements in message bubbles should NOT be visible
+    const avatars = canvasElement.querySelectorAll('.cometchat-message-bubble__leading-view cometchat-avatar');
+    expect(avatars.length).toBe(0);
+  },
+};
+
+/** Verifies empty state renders correctly. */
+export const TestEmptyState: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      user: createMockUser({
+        uid: 'user-empty',
+        name: 'Empty User',
+        avatar: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp?text=EU',
+      }),
+      simulateEmpty: true,
+    },
+    template: `
+      <div style="width: 100%; height: 100vh; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-message-list-story-wrapper
+          [user]="user"
+          [simulateEmpty]="simulateEmpty"
+          [disableSoundForMessages]="true">
+        </cometchat-message-list-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 3000));
+    // Message list component should be present
+    const messageList = canvasElement.querySelector('.cometchat-message-list');
+    expect(messageList).not.toBeNull();
+  },
+};
+
+/** Verifies error state renders error view. */
+export const TestErrorState: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      user: createMockUser({
+        uid: 'user-error',
+        name: 'Error User',
+        avatar: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-1.webp?text=EU',
+      }),
+      simulateError: true,
+    },
+    template: `
+      <div style="width: 100%; height: 100vh; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-message-list-story-wrapper
+          [user]="user"
+          [simulateError]="simulateError"
+          [hideError]="false"
+          [disableSoundForMessages]="true">
+        </cometchat-message-list-story-wrapper>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 2000));
+    // Error state should be visible
+    const errorView = canvasElement.querySelector('.cometchat-message-list__error');
+    expect(errorView).not.toBeNull();
   },
 };

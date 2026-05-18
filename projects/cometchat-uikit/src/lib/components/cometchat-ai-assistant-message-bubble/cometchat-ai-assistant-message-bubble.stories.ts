@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAIAssistantMessageBubble } from './cometchat-ai-assistant-message-bubble.component';
 import { MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
+import { within, expect } from '@storybook/test';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -173,5 +174,18 @@ npm install @cometchat/chat-uikit-angular
   },
   parameters: {
     docs: { description: { story: 'A long AI response with headings, lists, a table, code block, and a link.' } },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders AI assistant message bubble container */
+export const TestDefaultRendersBubble: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-ai-assistant-message-bubble');
+    expect(container).not.toBeNull();
   },
 };

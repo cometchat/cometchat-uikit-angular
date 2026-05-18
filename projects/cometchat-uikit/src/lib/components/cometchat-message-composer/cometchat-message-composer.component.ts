@@ -181,7 +181,7 @@ export class CometChatMessageComposerComponent
   fileSizeError = signal<FileSizeError | null>(null); uniqueMentionCount = signal<number>(0); showMentionsCountWarning = signal<boolean>(false);
   private plainTextMentionUids = new Set<string>(); private mentionedUsersMap = new Map<string, CometChat.User>(); private skipNextMentionCheck = false;
   messageToReplySignal = signal<CometChat.BaseMessage | null>(null); textMessageToEdit = signal<CometChat.TextMessage | null>(null); isEditMode = signal<boolean>(false);
-  canSend = computed(() => this.composerText().trim().length > 0 || this.attachments().length > 0 || this.isRecording()); showVoiceButton = computed(() => !this.composerText().trim().length);
+  canSend = computed(() => this.composerText().trim().length > 0 || this.attachments().length > 0 || this.isRecording()); showVoiceButton = computed(() => !this.composerText().trim().length && !this.isRecording());
   isInReplyMode = computed(() => !!this.parentMessageId); isInQuotedReplyMode = computed(() => !!this.messageToReplySignal()); isInEditMode = computed(() => !!this.messageToEdit || !!this.textMessageToEdit());
   hasAttachments = computed(() => this.attachments().length > 0); attachmentCount = computed(() => this.attachments().length); canAddMoreAttachments = computed(() => this.attachments().length < this.maxAttachments);
   protected shouldShowToolbar = computed(() => { if (!this.enableRichText) return false; if (this.isMobileView() && this.showBubbleMenuOnSelection && this.isFixedToolbarShown()) return true; return !this.hideRichTextToolbar; });
@@ -193,7 +193,7 @@ export class CometChatMessageComposerComponent
     setupConstructorEffectsImpl(this as any);
   }
   ngOnInit(): void { try { composerNgOnInitImpl(this as any); } catch (error) { this.handleLifecycleError(error, 'ngOnInit'); } }
-  ngAfterViewInit(): void { try { this.initializeRichTextEditor(); } catch (error) { this.handleLifecycleError(error, 'ngAfterViewInit'); } }
+  ngAfterViewInit(): void { try { this.initializeRichTextEditor(); this.initializeTextFormatters(); } catch (error) { this.handleLifecycleError(error, 'ngAfterViewInit'); } }
   ngOnChanges(changes: SimpleChanges): void { try { composerNgOnChangesImpl(this as any, changes); } catch (error) { CometChatLogger.error('CometChatMessageComposer', 'Error in ngOnChanges:', error); } }
   ngOnDestroy(): void { try { if (this.boundResizeHandler) { window.removeEventListener('resize', this.boundResizeHandler); this.boundResizeHandler = null; } if (this.typingTimeout) { clearTimeout(this.typingTimeout); this.typingTimeout = undefined; } this.endTypingIndicator(); this.destroyRichTextEditor(); this.messageComposerService.cleanup(); } catch (error) { CometChatLogger.error('CometChatMessageComposer', 'Error during cleanup:', error); } }
   private handleLifecycleError(error: unknown, hook: string): void { const err = error instanceof Error ? error : new Error(String(error)); CometChatLogger.error('CometChatMessageComposer', `Error in ${hook}:`, err); this.composerError.set(err); this.error.emit(err as CometChat.CometChatException); }
@@ -223,6 +223,13 @@ export class CometChatMessageComposerComponent
     this.updateMobileViewState();
     this.boundResizeHandler = () => this.updateMobileViewState();
     window.addEventListener('resize', this.boundResizeHandler);
+    // Guaranteed cleanup via DestroyRef — runs even if ngOnDestroy throws
+    this.destroyRef.onDestroy(() => {
+      if (this.boundResizeHandler) {
+        window.removeEventListener('resize', this.boundResizeHandler);
+        this.boundResizeHandler = null;
+      }
+    });
   }
   private updateMobileViewState(): void {
     const isMobile = window.innerWidth < 480;

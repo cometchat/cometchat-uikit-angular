@@ -18,6 +18,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 import { CometChatUIKitConstants } from '../../../constants';
 import { LiveAnnouncerService } from '../../../services/live-announcer.service';
+import { CometChatLogger } from '../../../utils/CometChatLogger';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 
 /**
@@ -272,12 +273,12 @@ export class CometChatConversationStarterComponent implements OnInit, OnDestroy,
   get ariaLabel(): string {
     const count = this.starters().length;
     if (this.isLoading()) {
-      return 'Loading conversation starter suggestions';
+      return CometChatLocalize.getLocalizedString('accessibility_loading');
     }
     if (count === 0) {
-      return 'No conversation starter suggestions available';
+      return CometChatLocalize.getLocalizedString('accessibility_no_results');
     }
-    return `${count} conversation starter suggestion${count > 1 ? 's' : ''} available`;
+    return CometChatLocalize.getLocalizedString('accessibility_conversation_starters');
   }
 
   /**
@@ -301,9 +302,7 @@ export class CometChatConversationStarterComponent implements OnInit, OnDestroy,
       : CometChatUIKitConstants.MessageReceiverType.group;
 
     if (!receiverId) {
-      console.warn(
-        '[CometChatConversationStarter] No user or group provided for conversation starters'
-      );
+      CometChatLogger.warn('CometChatConversationStarter', 'No user or group provided for conversation starters');
       return;
     }
 
@@ -341,7 +340,7 @@ export class CometChatConversationStarterComponent implements OnInit, OnDestroy,
         );
       }
     } catch (error) {
-      console.error('[CometChatConversationStarter] Error fetching conversation starters:', error);
+      CometChatLogger.error('CometChatConversationStarter', 'Error fetching conversation starters:', error);
       this.hasError.set(true);
       this.starters.set([]);
     } finally {

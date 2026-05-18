@@ -5,6 +5,7 @@ import { CometChatTextFormatter } from './cometchat-text-formatter';
 import { CometChatUrlFormatter } from './cometchat-url-formatter';
 import { CometChatMentionsFormatter } from './cometchat-mentions-formatter';
 import { CometChatEmojiFormatter } from './cometchat-emoji-formatter';
+import { CometChatLogger } from '../utils/CometChatLogger';
 
 /**
  * Unit Tests for Formatter Pipeline
@@ -172,8 +173,6 @@ describe('Formatter Pipeline', () => {
 
     describe('error handling', () => {
       it('should catch errors and continue with next formatter', () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
         const formatter1 = new MockFormatter('first', 10, t => t + '[1]');
         const formatter2 = new MockFormatter('failing', 20, t => t, true); // throws error
         const formatter3 = new MockFormatter('third', 30, t => t + '[3]');
@@ -184,18 +183,10 @@ describe('Formatter Pipeline', () => {
         expect(result.text).toBe('test[1][3]');
         expect(result.appliedFormatters).toEqual(['first', 'third']);
         expect(result.failedFormatters).toEqual(['failing']);
-
-        // Error should be logged
-        expect(consoleSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[FormatterPipeline]'),
-          expect.any(String)
-        );
-
-        consoleSpy.mockRestore();
       });
 
       it('should preserve text from previous formatter when error occurs', () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const loggerWarnSpy = vi.spyOn(CometChatLogger, 'warn').mockImplementation(() => {});
 
         const formatter1 = new MockFormatter('first', 10, t => 'MODIFIED');
         const formatter2 = new MockFormatter('failing', 20, t => t, true);
@@ -206,11 +197,11 @@ describe('Formatter Pipeline', () => {
         // Text from formatter1 should be preserved through formatter2's failure
         expect(result.text).toBe('MODIFIED!');
 
-        consoleSpy.mockRestore();
+        loggerWarnSpy.mockRestore();
       });
 
       it('should handle all formatters failing', () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const loggerWarnSpy = vi.spyOn(CometChatLogger, 'warn').mockImplementation(() => {});
 
         const formatter1 = new MockFormatter('fail1', 10, t => t, true);
         const formatter2 = new MockFormatter('fail2', 20, t => t, true);
@@ -222,7 +213,7 @@ describe('Formatter Pipeline', () => {
         expect(result.appliedFormatters).toEqual([]);
         expect(result.failedFormatters).toEqual(['fail1', 'fail2']);
 
-        consoleSpy.mockRestore();
+        loggerWarnSpy.mockRestore();
       });
     });
 

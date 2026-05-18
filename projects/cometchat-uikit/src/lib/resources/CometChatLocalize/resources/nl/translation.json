@@ -637,6 +637,7 @@
     "dropdown_placeholder": "Selecteer een optie",
     "checkbox_aria_label": "Selectievakje",
     "file_bubble_unknown_file": "Onbekend bestand",
+    "file_bubble_show_more_files": "Show {count} more files",
     "error_boundary_something_went_wrong": "Er is iets misgegaan",
     "error_boundary_retry": "Opnieuw proberen",
     "message_bubble_render_error": "Dit bericht kan niet worden weergegeven",

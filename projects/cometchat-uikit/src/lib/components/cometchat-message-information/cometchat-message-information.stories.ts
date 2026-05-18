@@ -29,6 +29,7 @@ import {
 } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageInformationComponent, UserReceiptInfo } from './cometchat-message-information.component';
+import { within, expect } from '@storybook/test';
 import { CalendarObject } from '../../resources/CometChatLocalize/localization.interfaces';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { createMockMessage, createMockUser, createMockGroup } from '../../../../../../.storybook/utils/mock-data';
@@ -401,5 +402,41 @@ export const GroupMessageNoReceipts: Story = {
         story: 'Group message information panel when no members have received or read the message yet.',
       },
     },
+  },
+};
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+/** Test: Default story renders message information container */
+export const TestDefaultRendersInfo: Story = {
+  args: {
+    message: createMockMessage('text', {
+      id: 200,
+      text: 'Hello! This is a test message for the information panel.',
+      sentAt: Date.now() / 1000 - 3600,
+      deliveredAt: Date.now() / 1000 - 3000,
+      readAt: Date.now() / 1000 - 1800,
+    }),
+  },
+  render: (args) => ({
+    props: args,
+    template: `
+      <div style="${fullScreenCenterStyle}">
+        <div style="${cardStyle}">
+          <cometchat-message-information-story-wrapper
+            [message]="message"
+            [mockReceipts]="mockReceipts || []"
+            [textFormatters]="textFormatters || []">
+          </cometchat-message-information-story-wrapper>
+        </div>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 1000));
+    const container = canvasElement.querySelector('.cometchat-message-information');
+    expect(container).not.toBeNull();
   },
 };

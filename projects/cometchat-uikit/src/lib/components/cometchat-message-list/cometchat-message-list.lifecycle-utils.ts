@@ -91,7 +91,7 @@ export function ngAfterViewInitImpl(self: any): void {
         setTimeout(() => { self.setupIntersectionObservers(); }, 0);
       }
     },
-    { injector: self.injector }
+    { injector: self.injector, allowSignalWrites: true }
   );
 }
 

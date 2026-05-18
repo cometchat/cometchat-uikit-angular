@@ -151,7 +151,7 @@ export class CometChatAIAssistantChat implements OnInit {
     effect(() => {
       const speed = this.streamingSpeed();
       untracked(() => this.streamingService.setStreamSpeed(speed));
-    });
+    },{allowSignalWrites:true});
 
     // Sync aiAssistantTools input → service
     effect(() => {
@@ -159,7 +159,7 @@ export class CometChatAIAssistantChat implements OnInit {
       untracked(() => {
         if (tools) this.streamingService.setAIAssistantTools(tools);
       });
-    });
+    },{allowSignalWrites:true});
 
     // Reset state when user changes (switching between agent chats)
     effect(() => {
@@ -172,7 +172,7 @@ export class CometChatAIAssistantChat implements OnInit {
         this.isSuggestionsVisible.set(true);
         this.hasComposerText.set(false);
       });
-    });
+    },{allowSignalWrites:true});
 
     // Focus management: when sidebar opens, focus first focusable element inside it
     effect(() => {
@@ -193,7 +193,7 @@ export class CometChatAIAssistantChat implements OnInit {
           trigger?.focus();
         });
       }
-    });
+    },{allowSignalWrites:true});
   }
 
   ngOnInit(): void {

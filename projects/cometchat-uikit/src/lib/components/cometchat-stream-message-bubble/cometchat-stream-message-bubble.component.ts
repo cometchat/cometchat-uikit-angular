@@ -8,8 +8,9 @@ import {
   input,
   OnInit,
   signal,
-  DOCUMENT,
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAIStreamingService } from '../../services/cometchat-ai-streaming.service';

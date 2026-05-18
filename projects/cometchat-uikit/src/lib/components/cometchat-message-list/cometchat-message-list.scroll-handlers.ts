@@ -21,6 +21,7 @@ export interface ScrollHandlerContext {
   newMessagesCount: any;
   unreadMessages: any;
   markedAsUnreadCount: any;
+  unreadDividerMessageId: any;
   stickyDateTimestamp: any;
   showStickyDateHeader: any;
   hideStickyDate: boolean;
@@ -141,6 +142,8 @@ export function updateIsAtBottomImpl(ctx: ScrollHandlerContext): void {
     ctx.newMessagesCount.set(0);
     if (ctx.markedAsUnreadCount() > 0) {
       ctx.markedAsUnreadCount.set(0);
+      // Clear the unread divider when user reaches the bottom
+      ctx.unreadDividerMessageId.set(null);
       const messages = ctx.messages();
       if (messages.length > 0 && ctx.loggedInUser) {
         let latestReceiverMsg: CometChat.BaseMessage | null = null;

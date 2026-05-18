@@ -1,5 +1,6 @@
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatTextFormatter, TextFormatterContext } from './cometchat-text-formatter';
+import { CometChatLogger } from '../utils/CometChatLogger';
 
 /**
  * Result of applying the formatter pipeline.
@@ -108,10 +109,7 @@ export function applyFormatters(
     } catch (error) {
       // Log the error but continue with the next formatter
       // The original text (from previous formatter) is preserved
-      console.warn(
-        `[FormatterPipeline] Formatter "${formatter.id}" encountered an error:`,
-        error instanceof Error ? error.message : error
-      );
+      CometChatLogger.warn('FormatterPipeline', `Formatter "${formatter.id}" encountered an error:`, error instanceof Error ? error.message : error);
 
       // Track failed formatter
       failedFormatters.push(formatter.id);

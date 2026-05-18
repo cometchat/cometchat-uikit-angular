@@ -10,6 +10,7 @@
  */
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatLogger } from './CometChatLogger';
 
 /**
  * Extracts a URL from a CometChat message's extension metadata.
@@ -30,7 +31,7 @@ export function extractExtensionUrl(
   logPrefix: string
 ): string {
   if (!message) {
-    console.warn(`[${logPrefix}] Message is null or undefined`);
+    CometChatLogger.warn(logPrefix, 'Message is null or undefined');
     return '';
   }
 
@@ -38,37 +39,37 @@ export function extractExtensionUrl(
     const metadata = message.getMetadata?.();
 
     if (!metadata || typeof metadata !== 'object') {
-      console.warn(`[${logPrefix}] Message has no metadata`);
+      CometChatLogger.warn(logPrefix, 'Message has no metadata');
       return '';
     }
 
     const injected = (metadata as any)['@injected'];
     if (!injected || typeof injected !== 'object') {
-      console.warn(`[${logPrefix}] Missing @injected in metadata`);
+      CometChatLogger.warn(logPrefix, 'Missing @injected in metadata');
       return '';
     }
 
     const extensions = injected['extensions'];
     if (!extensions || typeof extensions !== 'object') {
-      console.warn(`[${logPrefix}] Missing extensions in metadata`);
+      CometChatLogger.warn(logPrefix, 'Missing extensions in metadata');
       return '';
     }
 
     const extension = extensions[extensionKey];
     if (!extension || typeof extension !== 'object') {
-      console.warn(`[${logPrefix}] Missing ${extensionKey} in metadata`);
+      CometChatLogger.warn(logPrefix, `Missing ${extensionKey} in metadata`);
       return '';
     }
 
     const url = extension[urlKey];
     if (!url || typeof url !== 'string') {
-      console.warn(`[${logPrefix}] Missing ${urlKey} in metadata`);
+      CometChatLogger.warn(logPrefix, `Missing ${urlKey} in metadata`);
       return '';
     }
 
     return url;
   } catch (error) {
-    console.error(`[${logPrefix}] Error extracting ${extensionKey} URL:`, error);
+    CometChatLogger.error(logPrefix, `Error extracting ${extensionKey} URL:`, error);
     return '';
   }
 }

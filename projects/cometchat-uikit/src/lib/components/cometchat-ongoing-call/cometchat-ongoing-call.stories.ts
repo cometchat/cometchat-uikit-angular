@@ -22,6 +22,7 @@ import { OngoingCallService } from '../../services/ongoing-call.service';
 import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { CallWorkflow } from '../../Enums/Enums';
 import { mockCallAnnouncer } from '../../../../../../.storybook/utils/mock-services';
+import { within, expect } from '@storybook/test';
 
 // ============================================
 // Mock Helpers
@@ -231,3 +232,9 @@ export const AllVariantsShowcase: Story = {
     },
   },
 };
+
+// ============================================
+// Interaction Tests
+// ============================================
+
+

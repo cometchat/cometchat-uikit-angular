@@ -88,6 +88,18 @@ export function applyOrderedListImpl(ctx: FormatOpsContext): void {
     ctx.formatManager.applyCodeBlock();
     ctx.updateFormatState();
   }
+  // ENG-35096: Restore the saved selection before applying list formatting.
+  // Clicking the toolbar button blurs the contenteditable, losing the cursor
+  // position. Without restoring, the list manager's focus() call resets the
+  // cursor to position 0 instead of the user's current position.
+  const savedRange = (ctx as any).lastSavedRange as Range | null;
+  if (savedRange) {
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(savedRange);
+    }
+  }
   ctx.listManager.toggleOrderedList();
   ctx.updateFormatState();
   ctx.pushToHistory();
@@ -100,6 +112,15 @@ export function applyBulletListImpl(ctx: FormatOpsContext): void {
   if (ctx.currentFormatState.codeBlock || ctx.contentEditable.querySelector('pre')) {
     ctx.formatManager.applyCodeBlock();
     ctx.updateFormatState();
+  }
+  // ENG-35096: Same fix — restore saved selection before applying bullet list.
+  const savedRange = (ctx as any).lastSavedRange as Range | null;
+  if (savedRange) {
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(savedRange);
+    }
   }
   ctx.listManager.toggleBulletList();
   ctx.updateFormatState();
