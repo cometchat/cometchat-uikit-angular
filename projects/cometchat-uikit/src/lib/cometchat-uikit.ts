@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChat, CometChatSettings } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from './resources/CometChatLocalize/cometchat-localize';
-import { UIKitSettings } from './UIKitSettings';
+import { UIKitSettings, UIKitSettingsBuilder } from './UIKitSettings';
 import { CometChatSoundManager } from './resources/CometChatSoundManager/CometChatSoundManager';
 import { CometChatUIKitLoginListener } from './CometChatUIKitLoginListener';
 import { ChatSdkEventInitializer } from './utils/ChatSdkEventInitializer';
@@ -92,7 +92,7 @@ export class CometChatUIKit {
     if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
     CometChatLocalize.setCurrentLanguage(CometChatLocalize.getBrowserLanguage());
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.2' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.3' };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
           CometChat.getLoggedinUser()
@@ -106,6 +106,62 @@ export class CometChatUIKit {
     });
   }
   init(uiKitSettings: UIKitSettings | null): Promise<InitResult> | undefined { return CometChatUIKit.init(uiKitSettings); }
+
+  /**
+   * File-based init for AI agent skills.
+   * Accepts a parsed `cometchat-settings.json` object and delegates to the
+   * Chat SDK's file-based init, which internally sets
+   * `integrationSource = "ai-agent"` for telemetry.
+   *
+   * This method is independent of `init()` — it does NOT call `init()`.
+   * It builds UIKitSettings internally so login/createUser/updateUser keep working.
+   *
+   * @internal — excluded from public API docs
+   */
+  static initFromSettings(settings: CometChatSettings): Promise<InitResult> {
+    // Extract UIKit-specific config from the settings JSON
+    const authKey = settings.credentials?.authKey;
+    const subscribeAll = settings.uiKit?.['subscribePresenceForAllUsers'] ?? true;
+
+    // Build UIKitSettings so downstream code (login, enableCalling, etc.) works unchanged
+    const builder = new UIKitSettingsBuilder()
+      .setAppId(settings.appId)
+      .setRegion(settings.region);
+    if (authKey) { builder.setAuthKey(authKey); }
+    if (subscribeAll) { builder.subscribePresenceForAllUsers(); }
+    CometChatUIKit._uiKitSettings = builder.build();
+
+    // Set source for telemetry
+    if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
+    CometChatLocalize.setCurrentLanguage(CometChatLocalize.getBrowserLanguage());
+
+    // CRITICAL: Call CometChat.initFromSettings() (NOT CometChat.init()).
+    // This is the SDK's file-based init path which sets
+    // integrationSource = "ai-agent" for telemetry.
+    return new Promise((resolve, reject) => {
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.3' };
+
+      CometChat.initFromSettings(settings)
+        .then(() => {
+          CometChat.getLoggedinUser()
+            .then((user: CometChat.User | null) => {
+              if (user) {
+                CometChatUIKitLoginListener.setLoggedInUser(user);
+                CometChatUIKit._loggedInUser.next(user);
+                this.initiateAfterLogin();
+              }
+              return resolve({ user });
+            })
+            .catch((error: CometChat.CometChatException) => {
+              CometChatLogger.error('CometChatUIKit', 'Initialization failed:', error);
+              return reject(error);
+            });
+        })
+        .catch((error: CometChat.CometChatException) => {
+          return reject(error);
+        });
+    });
+  }
 
   static isInitialized(): boolean {
     try { return CometChat.isInitialized(); } catch (error) { CometChatLogger.error('CometChatUIKit', 'isInitialized check failed:', error); return false; }

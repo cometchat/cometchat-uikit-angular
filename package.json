@@ -1,6 +1,6 @@
 {
   "name": "uikit-angular",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "scripts": {
     "ng": "ng",
     "start": "ng serve sample-app",
@@ -49,7 +49,7 @@
     "@angular/router": "^21.0.0",
     "@babel/runtime": "^7.28.6",
     "@cometchat/calls-sdk-javascript": "^5.0.0",
-    "@cometchat/chat-sdk-javascript": "^4.1.8",
+    "@cometchat/chat-sdk-javascript": "^4.1.11",
     "dompurify": "^3.3.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
