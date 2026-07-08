@@ -1,6 +1,7 @@
 import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {AttachmentFile} from './cometchat-message-composer.component';
 import { CometChatLogger } from '../../utils/CometChatLogger';
+import {CometChatUIKitConstants} from '../../constants';
 
 export function handleAttachmentOptionClickImpl(self: any, optionId: string): void {
   self.contentToDisplay.set('none');
@@ -8,25 +9,25 @@ export function handleAttachmentOptionClickImpl(self: any, optionId: string): vo
   const fileInput = self.fileInputRef?.nativeElement;
   if (!fileInput) { CometChatLogger.warn('CometChatMessageComposer', 'File input element not found'); return; }
   switch (optionId) {
-    case 'image':
+    case CometChatUIKitConstants.ComposerAttachmentOption.image:
       fileInput.accept = 'image/*';
       fileInput.click();
       break;
-    case 'video':
+    case CometChatUIKitConstants.ComposerAttachmentOption.video:
       fileInput.accept = 'video/*';
       fileInput.click();
       break;
-    case 'audio':
+    case CometChatUIKitConstants.ComposerAttachmentOption.audio:
       fileInput.accept = 'audio/*';
       fileInput.click();
       break;
-    case 'file':
+    case CometChatUIKitConstants.ComposerAttachmentOption.file:
       fileInput.accept = '*/*';
       fileInput.click();
       break;
-    case 'polls': self.openPollModal(); break;
-    case 'collaborative-document': self.createCollaborativeDocument(); break;
-    case 'collaborative-whiteboard': self.createCollaborativeWhiteboard(); break;
+    case CometChatUIKitConstants.ComposerAttachmentOption.poll: self.openPollModal(); break;
+    case CometChatUIKitConstants.ComposerAttachmentOption.collaborativeDocument: self.createCollaborativeDocument(); break;
+    case CometChatUIKitConstants.ComposerAttachmentOption.collaborativeWhiteboard: self.createCollaborativeWhiteboard(); break;
     default:
       break;
   }

@@ -63,7 +63,7 @@
   background: var(--cometchat-conversation-summary-close-button-background-hover, var(--cometchat-background-color-04, #d9d9d9));
 }
 
-.cometchat-conversation-summary__header-close-button:focus {
+.cometchat-conversation-summary__header-close-button:focus-visible {
   outline: 2px solid var(--cometchat-primary-color);
   outline-offset: 2px;
 }

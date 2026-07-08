@@ -15,6 +15,7 @@
   background-color: var(--cometchat-background-color-02);
   overflow: hidden;
   --cometchat-message-list-background:transparent;
+  --cometchat-message-list-shimmer-background:transparent;
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
@@ -225,6 +226,7 @@
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
+/* Always mounted, hidden via transform. Opens with --open modifier. */
 
 .cometchat-ai-assistant-chat__sidebar {
   position: absolute;
@@ -240,12 +242,35 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transform: translateX(100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.25s ease, visibility 0.25s ease;
+}
+
+.cometchat-ai-assistant-chat__sidebar--open {
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.cometchat-ai-assistant-chat__sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .cometchat-ai-assistant-chat__sidebar {
     width: 100%;
     border-left: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-ai-assistant-chat__sidebar {
+    transition: none;
   }
 }
 

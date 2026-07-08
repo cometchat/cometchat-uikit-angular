@@ -1,6 +1,6 @@
 {
   "name": "uikit-angular",
-  "version": "5.0.3",
+  "version": "5.0.4",
   "scripts": {
     "ng": "ng",
     "start": "ng serve sample-app",
@@ -8,6 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:log": "node scripts/extract-failed-tests.js",
     "build:lib": "ng build cometchat-uikit",
     "build:app": "ng build sample-app",
     "e2e": "playwright test",
@@ -49,11 +51,16 @@
     "@angular/router": "^21.0.0",
     "@babel/runtime": "^7.28.6",
     "@cometchat/calls-sdk-javascript": "^5.0.0",
-    "@cometchat/chat-sdk-javascript": "^4.1.11",
+    "@cometchat/cards": "^1.0.0",
+    "@cometchat/cards-angular": "^1.0.0",
+    "@cometchat/chat-sdk-javascript": "^4.1.12",
     "dompurify": "^3.3.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "^0.16.0"
+  },
+  "overrides": {
+    "@cometchat/cards": "^1.0.0"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.3.1",
@@ -75,6 +82,7 @@
     "@storybook/test-runner": "^0.24.3",
     "@types/dompurify": "^3.0.5",
     "@types/node": "^25.2.3",
+    "@vitest/coverage-istanbul": "^4.1.7",
     "angular-eslint": "21.1.0",
     "axe-core": "^4.11.1",
     "dotenv": "17.4.2",
@@ -85,6 +93,8 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "fast-check": "^4.5.3",
     "jsdom": "^27.1.0",
+    "lcov-result-merger": "^6.0.0",
+    "monocart-coverage-reports": "^2.12.11",
     "ng-packagr": "^21.0.0",
     "pa11y-ci": "^4.0.1",
     "prettier": "^3.7.4",

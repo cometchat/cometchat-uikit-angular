@@ -131,7 +131,37 @@ done < <(find "$REPO_ROOT/projects" \( -name "*.ts" -o -name "*.js" \) -not -pat
 [ $DEBUGGER_FIXED -eq 0 ] && ok "No debugger statements found"
 
 # =============================================================================
-# CHECK 3: console.log in UIKit library source — BLOCK (must fix manually)
+# CHECK 3: Direct effect() usage in UIKit library source — BLOCK
+#
+# Developers must use safeEffect() from utils/safe-effect.ts instead of
+# Angular's effect() directly. This ensures allowSignalWrites:true is always
+# set, making the code compatible with Angular 18–21.
+# Skips: *.spec.ts, *.stories.ts, /testing/, safe-effect.ts itself
+# =============================================================================
+section "Check 3: Direct effect() usage (use safeEffect instead)"
+
+EFFECT_FOUND=0
+
+while IFS= read -r -d '' FILE; do
+  RELATIVE="${FILE#$REPO_ROOT/}"
+  if echo "$RELATIVE" | grep -qE "\.(spec|stories)\.ts$|/testing/|safe-effect\.ts$|test-setup\.ts$"; then
+    continue
+  fi
+
+  # Match effect( not preceded by 'safe' and not inside comments
+  if grep -vE "^\s*(\*|//)" "$FILE" | grep -qE "\beffect\s*\("; then
+    # Make sure it's not safeEffect(
+    if grep -vE "^\s*(\*|//)" "$FILE" | grep -E "\beffect\s*\(" | grep -qvE "safeEffect\s*\("; then
+      error "$RELATIVE uses effect() directly — use safeEffect() from utils/safe-effect.ts instead."
+      EFFECT_FOUND=1
+    fi
+  fi
+done < <(find "$REPO_ROOT/projects/cometchat-uikit/src/lib" -name "*.ts" -not -path "*/node_modules/*" -print0 2>/dev/null)
+
+[ $EFFECT_FOUND -eq 0 ] && ok "No direct effect() usage found in library source"
+
+# =============================================================================
+# CHECK 4: console.log in UIKit library source — BLOCK (must fix manually)
 #
 # Scans all library source files on disk.
 # Skips: *.spec.ts, *.stories.ts, CometChatLogger.ts, /testing/, /analyzers/
@@ -155,9 +185,9 @@ done < <(find "$REPO_ROOT/projects/cometchat-uikit/src/lib" -name "*.ts" -not -p
 [ $CONSOLE_FOUND -eq 0 ] && ok "No console.log in library source"
 
 # =============================================================================
-# CHECK 4: .env files accidentally staged — BLOCK
+# CHECK 5: .env files accidentally staged — BLOCK
 # =============================================================================
-section "Check 4: .env files"
+section "Check 5: .env files"
 
 ENV_STAGED=$(echo "$STAGED_FILES" | grep -E "(^|/)\.env(\.|$)" || true)
 

@@ -99,6 +99,7 @@
   cursor: pointer;
   text-align: left;
   transition: background-color 0.15s ease;
+  min-width: 200px;
 }
 
 .cometchat-selector__context-menu-item:hover {

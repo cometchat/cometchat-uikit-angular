@@ -1,0 +1,13 @@
+@if (count() > 0) {
+  <span
+    class="cometchat-notification-badge"
+    [style.backgroundColor]="style?.backgroundColor"
+    [style.color]="style?.textColor"
+    [style.fontSize]="style?.fontSize"
+    [style.borderRadius]="style?.borderRadius"
+    [attr.aria-label]="displayText() + ' ' + ('notifications_unread_badge' | translate)"
+    role="status"
+  >
+    {{ displayText() }}
+  </span>
+}

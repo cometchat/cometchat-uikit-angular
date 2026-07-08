@@ -91,26 +91,36 @@
   flex: 1;
   min-width: 0;
   gap: var(--cometchat-message-header-content-gap, var(--cometchat-spacing-3, 12px));
+}
+
+/* Clickable info region (leading + body). Carries the role="button" affordance
+   so the interactive trailing controls remain outside the button. */
+.cometchat-message-header__info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--cometchat-message-header-content-gap, var(--cometchat-spacing-3, 12px));
   padding: var(--cometchat-message-header-content-padding, var(--cometchat-padding-1, 4px) var(--cometchat-padding-2, 8px));
   border-radius: var(--cometchat-message-header-content-border-radius, var(--cometchat-radius-2, 8px));
   cursor: pointer;
   transition: var(--cometchat-message-header-content-transition, background-color 0.2s ease, transform 0.1s ease);
 }
 
-.cometchat-message-header__content:hover:not(:has(.cometchat-message-header__trailing:hover)) {
+.cometchat-message-header__info:hover {
   background: transparent;
 }
 
-.cometchat-message-header__content:focus {
+.cometchat-message-header__info:focus {
   outline: var(--cometchat-message-header-content-outline-focus, 2px solid var(--cometchat-primary-color));
   outline-offset: var(--cometchat-message-header-content-outline-offset-focus, 2px);
 }
 
-.cometchat-message-header__content:focus:not(:focus-visible) {
+.cometchat-message-header__info:focus:not(:focus-visible) {
   outline: none;
 }
 
-.cometchat-message-header__content:focus-visible {
+.cometchat-message-header__info:focus-visible {
   outline: var(--cometchat-message-header-content-outline-focus, 2px solid var(--cometchat-primary-color));
   outline-offset: var(--cometchat-message-header-content-outline-offset-focus, 2px);
 }

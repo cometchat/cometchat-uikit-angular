@@ -27,6 +27,8 @@
   border-radius: var(--cometchat-popover-content-border-radius, var(--cometchat-radius-2, 8px));
   padding: var(--cometchat-popover-content-padding, 0);
   max-width: var(--cometchat-popover-content-max-width, 300px);
+  max-height: var(--cometchat-popover-content-max-height, calc(100vh - 20px));
+  overflow: auto;
   word-wrap: break-word;
   /* Start hidden until position is calculated */
   opacity: 0;

@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { States } from '../Enums/Enums';
 import { CometChatUIKitConstants } from '../constants';
@@ -10,6 +11,7 @@ import {
 } from '../events/CometChatGroupEvents';
 import { CometChatUIKitUtility } from '../CometChatUIKitUtility';
 import { CometChatLogger } from '../utils/CometChatLogger';
+import { ConnectionStateService } from './connection-state.service';
 
 // Re-export for backward compatibility
 export type { GroupMembersErrorCallback } from './group-members.types';
@@ -44,8 +46,20 @@ export class GroupMembersService {
 
   private userListenerId = `group_members_user_${CometChatUIKitUtility.ID()}`;
   private groupListenerId = `group_members_group_${CometChatUIKitUtility.ID()}`;
+  /** Guard: only re-fetch on reconnect after the first fetch has completed. */
+  private initialFetchDone = false;
+
+  private connectionState = inject(ConnectionStateService);
+  private destroyRef = inject(DestroyRef);
 
   private static readonly DEFAULT_LIMIT = 30;
+
+  constructor() {
+    // Silent reconnect refresh — keeps existing list visible, resets to page 1.
+    this.connectionState.reconnected$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.handleReconnect());
+  }
 
   setErrorCallback(callback: GroupMembersErrorCallback | null): void { this.errorCallback = callback; }
 
@@ -107,6 +121,7 @@ export class GroupMembersService {
       }
 
       this.fetchStateSignal.set(States.loaded);
+      this.initialFetchDone = true;
     } catch (error) {
       CometChatLogger.error('GroupMembersService', 'Error fetching members:', error);
       if (this.membersSignal().length === 0) {
@@ -373,6 +388,31 @@ export class GroupMembersService {
     this.groupMembersRequest = null;
     this.currentGroup = null;
     this.errorCallback = null;
+    this.initialFetchDone = false;
+  }
+
+  // ==================== Private: Reconnect ====================
+
+  /**
+   * Called by ConnectionStateService when the WebSocket reconnects.
+   * Silently re-fetches page 1 without clearing the list or showing shimmer.
+   * Resets hasMore to true so pagination works again from the new first page.
+   */
+  private handleReconnect(): void {
+    if (!this.currentGroup || !this.initialFetchDone) return;
+    CometChatLogger.info('GroupMembersService', 'WebSocket reconnected — refreshing member list');
+    const freshRequest = new CometChat.GroupMembersRequestBuilder(this.currentGroup.getGuid())
+      .setLimit(GroupMembersService.DEFAULT_LIMIT)
+      .build();
+    freshRequest.fetchNext()
+      .then(newMembers => {
+        this.membersSignal.set(newMembers);
+        // Reset to true — back at page 1, more pages may exist
+        this.hasMoreSignal.set(true);
+        this.fetchStateSignal.set(newMembers.length === 0 ? States.empty : States.loaded);
+        this.groupMembersRequest = freshRequest;
+      })
+      .catch(e => CometChatLogger.error('GroupMembersService', 'Error refreshing members on reconnect:', e));
   }
 
   // ==================== Private Helpers ====================

@@ -43,6 +43,9 @@ export function setupMessageListener(host: MessageListListenerHost, ngZone: NgZo
       onMessageReactionAdded: (e: CometChat.ReactionEvent) => { try { host.handleReactionEvent(e, 'added'); } catch (err) { CometChatLogger.error('MessageListService', 'onMessageReactionAdded', err); } },
       onMessageReactionRemoved: (e: CometChat.ReactionEvent) => { try { host.handleReactionEvent(e, 'removed'); } catch (err) { CometChatLogger.error('MessageListService', 'onMessageReactionRemoved', err); } },
       onAIAssistantMessageReceived: (m: CometChat.BaseMessage) => { try { host.handleNewMessage(m); } catch (e) { CometChatLogger.error('MessageListService', 'onAIAssistantMessageReceived', e); } },
+      // Persisted developer cards (category "card"). Agent cards keep
+      // arriving on onAIAssistantMessageReceived above; no agent-card listener added.
+      onCardMessageReceived: (m: CometChat.BaseMessage) => { try { host.handleNewMessage(m); } catch (e) { CometChatLogger.error('MessageListService', 'onCardMessageReceived', e); } },
     })
   );
 }

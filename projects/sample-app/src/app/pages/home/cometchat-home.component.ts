@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -28,11 +28,13 @@ import {
   CometChatSearchFilter,
   CometChatSearchScope,
   CallWorkflow,
+  safeEffect,
 } from '@cometchat/chat-uikit-angular';
 import { NavigationService } from '../../services/navigation.service';
 import { AppStateService } from '../../services/app-state.service';
 import { ThemeService } from '../../services/theme.service';
 import { ViewportService } from '../../services/viewport.service';
+import { CardActionService } from '../../services/card-action.service';
 import { ToastService } from '../../services/toast.service';
 import { CometChatTabsComponent } from '../../components/cometchat-tabs/cometchat-tabs.component';
 import { CometChatSelectorComponent } from '../../components/cometchat-selector/cometchat-selector.component';
@@ -81,6 +83,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
 
   // Inject ViewportService for visual viewport tracking on mobile
   private viewportService = inject(ViewportService);
+  private cardActionService = inject(CardActionService);
 
   /** RxJS subscriptions for UIKit events — cleaned up in ngOnDestroy */
   private subscriptions: Subscription[] = [];
@@ -186,8 +189,6 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     if (this.navigationService.isMobile()) {
       this.navigationService.navigateToMessages();
     }
-    // Close the search overlay after navigating to the message
-    this.showSearchOverlay.set(false);
   }
 
   /** Close the scoped search panel (right panel) */
@@ -207,6 +208,11 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     Promise.resolve().then(() => {
       this.navigationService.setGotoMessageId(messageId);
     });
+
+    // On mobile, close the search panel so the user sees the message list
+    if (this.navigationService.isMobile()) {
+      this.closeScopedSearch();
+    }
   }
   
 
@@ -237,7 +243,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
    * on the chats tab, we mark incoming messages as delivered ourselves.
    * Otherwise the UIKit's message list handles delivery marking.
    */
-  private deliveryListenerEffect = effect(() => {
+  private deliveryListenerEffect = safeEffect(() => {
     const tab = this.appStateService.activeTab();
     const hasEntity = !!this.chatStateService.activeUser() || !!this.chatStateService.activeGroup();
     if (tab !== 'chats' && !hasEntity) {
@@ -245,7 +251,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     } else {
       this.removeDeliveryMarkingListener();
     }
-  },{ allowSignalWrites: true});
+  });
 
   // ── Accessibility: ViewChild refs for panel focus management ──
 
@@ -356,7 +362,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
    * Mobile panel focus management.
    * When on mobile and the visible panel changes, move focus to the new panel container.
    */
-  private mobilePanelFocusEffect = effect(() => {
+  private mobilePanelFocusEffect = safeEffect(() => {
     const panel = this.mobilePanel();
     const mobile = this.isMobile();
     if (!mobile) return;
@@ -375,14 +381,14 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
           break;
       }
     }, 0);
-  },{ allowSignalWrites: true});
+  });
 
   /** Announce tab changes to screen readers */
-  private tabAnnouncementEffect = effect(() => {
+  private tabAnnouncementEffect = safeEffect(() => {
     const tab = this.appStateService.activeTab();
     const tabName = CometChatLocalize.getLocalizedString(tab);
     this.liveAnnouncer.announce(tabName);
-  },{ allowSignalWrites: true});
+  });
 
   /** Announce mobile panel transitions to screen readers */
   private panelAnnouncementKeys: Record<string, string> = {
@@ -391,7 +397,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     'side-panel': 'panel_details_announcement',
   };
 
-  private mobilePanelAnnouncementEffect = effect(() => {
+  private mobilePanelAnnouncementEffect = safeEffect(() => {
     const panel = this.mobilePanel();
     const mobile = this.isMobile();
     if (!mobile) return;
@@ -399,7 +405,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     if (key) {
       this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString(key));
     }
-  },{ allowSignalWrites: true});
+  });
 
   /**
    * Track the last known container for modal overlay so we can
@@ -413,7 +419,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
    * When modalContent becomes non-null, open dialog focus trap on the modal container.
    * When it becomes null, close the dialog focus trap.
    */
-  private modalFocusEffect = effect(() => {
+  private modalFocusEffect = safeEffect(() => {
     const modal = this.appStateService.modalContent();
     if (modal) {
       // Content just appeared — wait for DOM render, then open dialog
@@ -435,14 +441,14 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
         this.lastModalContainer = null;
       }
     }
-  },{ allowSignalWrites: true});
+  });
 
   /**
    * Dialog overlay focus management.
    * When dialogContent becomes non-null, open dialog focus trap on the dialog container.
    * When it becomes null, close the dialog focus trap.
    */
-  private dialogFocusEffect = effect(() => {
+  private dialogFocusEffect = safeEffect(() => {
     const dialog = this.appStateService.dialogContent();
     if (dialog) {
       // Content just appeared — wait for DOM render, then open dialog
@@ -464,7 +470,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
         this.lastDialogContainer = null;
       }
     }
-  },{ allowSignalWrites: true});
+  });
 
   // ── Panel resize methods ──
 
@@ -550,6 +556,9 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     this.subscribeToGroupEvents();
     this.subscribeToUserEvents();
     this.subscribeToMessageEvents();
+    // Start the single card-action dispatcher (covers developer +
+    // nested agent cards via the ccCardActionClicked bus).
+    this.cardActionService.start();
     this.subscribeToConversationEvents();
     this.subscribeToUIEvents();
     this.attachSDKGroupListener();

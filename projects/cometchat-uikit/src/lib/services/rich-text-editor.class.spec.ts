@@ -3302,10 +3302,16 @@ describe('Bug Condition Exploration: List Formatting (Group C)', () => {
         fc.property(
           fc.array(
             fc.oneof(
-              // Non-empty items
+              // Non-empty items: filter out strings that are only whitespace,
+              // contain HTML special chars, or start with markdown list/heading
+              // syntax that could be reinterpreted during conversion.
               fc
                 .string({ minLength: 1, maxLength: 20 })
-                .filter(s => s.trim().length > 0 && !/[<>&]/.test(s)),
+                .filter(s =>
+                  s.trim().length > 0 &&
+                  !/[<>&'"!#*_`\-]/.test(s.trim()[0]) &&
+                  !/[<>&]/.test(s)
+                ),
               // Empty items (represented as empty string)
               fc.constant('')
             ),
@@ -3325,9 +3331,10 @@ describe('Bug Condition Exploration: List Formatting (Group C)', () => {
 
             const text = editor.getTextWithMentionFormat();
 
-            // All non-empty items should be present in the output
+            // All non-empty items should be present in the output (trim to ignore
+            // whitespace normalization differences between jsdom and real browsers)
             for (const item of nonEmptyItems) {
-              expect(text).toContain(item);
+              expect(text).toContain(item.trim());
             }
 
             // Clear for next iteration

@@ -165,8 +165,8 @@ export function stripRichTextFormatting(text: string): string {
   // Inline code: `text`
   result = result.replace(/`([^`]+)`/g, '$1');
 
-  // Blockquotes: > text (at start of line or after newline)
-  result = result.replace(/(?:^|\n)>\s*/g, '\n');
+  // Blockquotes: > text (at start of line or after newline) — only strip when there's content after >
+  result = result.replace(/(?:^|\n)>\s+(.+)/g, '\n$1');
 
   // Links: [text](url) -> text
   result = result.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');

@@ -314,19 +314,23 @@ describe('CometChatAvatarComponent', () => {
       expect(text?.getAttribute('aria-hidden')).toBe('true');
     });
 
-    it('should set alt attribute on image element matching name', () => {
+    it('should mark the image decorative (alt="" + aria-hidden) since the wrapper carries the name', () => {
       component.image = 'https://example.com/avatar.png';
       component.name = 'John Doe';
       fixture.detectChanges();
       const img = el.querySelector('.cometchat-avatar__image');
-      expect(img?.getAttribute('alt')).toBe('John Doe');
+      // The accessible name is provided once by the wrapper's role="img" + aria-label;
+      // the inner <img> is decorative to avoid a duplicate announcement.
+      expect(img?.getAttribute('alt')).toBe('');
+      expect(img?.getAttribute('aria-hidden')).toBe('true');
     });
 
-    it('should set alt="avatar" when name is empty and image is shown', () => {
+    it('should keep the image decorative even when name is empty', () => {
       component.image = 'https://example.com/avatar.png';
       fixture.detectChanges();
       const img = el.querySelector('.cometchat-avatar__image');
-      expect(img?.getAttribute('alt')).toBe('avatar');
+      expect(img?.getAttribute('alt')).toBe('');
+      expect(img?.getAttribute('aria-hidden')).toBe('true');
     });
 
     it('should maintain role="img" regardless of rendering mode', () => {

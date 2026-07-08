@@ -65,7 +65,7 @@
     [errorTemplate]="errorTemplateRef"
     [itemTemplate]="itemTemplateRef"
     (loadMore)="handleLoadMore()"
-    role="list"
+    role="listbox"
     [attr.aria-label]="'accessibility_groups_list' | translate"
     [attr.aria-busy]="fetchState === States.loading"
     aria-live="polite">
@@ -154,7 +154,7 @@
       [class.cometchat-groups__list-item--public]="group.getType() === 'public'"
       [class.cometchat-groups__list-item--private]="group.getType() === 'private'"
       [class.cometchat-groups__list-item--password]="group.getType() === 'password'"
-      role="listitem"
+      role="presentation"
       [attr.aria-label]="getGroupAriaLabel(group)"
       [attr.aria-selected]="selectionMode !== SelectionMode.none ? isGroupSelected(group) : null"
       (mousedown)="handleMouseDown($event)"

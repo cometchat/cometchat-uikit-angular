@@ -25,7 +25,6 @@ export function handleOptionClickImpl(self: any, option: ContextMenuItem, messag
     case CometChatUIKitConstants.MessageOption.editMessage:
       self.onEditMessage(message.getId());
       break;
-    case 'info':
     case CometChatUIKitConstants.MessageOption.messageInformation:
       self.onMessageInfo(message.getId());
       break;

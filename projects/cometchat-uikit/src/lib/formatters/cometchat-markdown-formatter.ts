@@ -35,7 +35,8 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
     // Use multiline flag to match patterns at start of any line
     // Match both raw > and HTML-escaped &gt; for blockquotes (text is HTML-escaped before formatters run)
     // (?<!\*)\*(?!\*|\s) detects single * for italic (not ** for bold, not * followed by space for lists)
-    return /(\*\*|__|~~|`|(?<!\*)\*(?!\*|\s)|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s|\[.*?\]\(.*?\))/m;
+    // (?<!_)_(?!_|\s) detects single _ for italic (not __ for underline)
+    return /(\*\*|__|~~|`|(?<!\*)\*(?!\*|\s)|(?<!_)_(?!_|\s)|^>\s.+|^&gt;\s.+|^ *[-*]\s|^ *\d+\.\s|\[.*?\]\(.*?\))/m;
   }
 
   /**
@@ -65,7 +66,10 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
     let html = markdown;
 
     // Code blocks (must be processed first to avoid conflicts)
-    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    html = html.replace(/```([\s\S]*?)```/g, (_match, code: string) => {
+      const trimmedCode = code.replace(/^\n/, '').replace(/\n$/, '');
+      return `<pre class="cometchat-rich-text__code-block"><code class="cometchat-rich-text__code">${trimmedCode}</code></pre>`;
+    });
 
     // Blockquotes (process before other inline formatting)
     // Group consecutive lines starting with > into a single blockquote
@@ -84,8 +88,12 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
     // Use negative lookbehind and lookahead to avoid matching ** from bold
     html = html.replace(/(?<!\*)\*([^\*\n]+?)\*(?!\*)/g, '<em>$1</em>');
 
+    // Italic: _text_ (single underscore, not preceded or followed by another underscore)
+    // Use negative lookbehind and lookahead to avoid matching __ from underline
+    html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em>$1</em>');
+
     // Inline code: `code` (but not inside code blocks)
-    html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');
+    html = html.replace(/`([^`]+?)`/g, '<code class="cometchat-rich-text__code">$1</code>');
 
     // Links: [text](url)
     html = html.replace(
@@ -113,6 +121,7 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
     const result: string[] = [];
     let inBlockquote = false;
     const blockquoteLines: string[] = [];
+    const rawBlockquoteLines: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -126,6 +135,7 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
         if (!inBlockquote) {
           inBlockquote = true;
         }
+        rawBlockquoteLines.push(line);
         // Only add non-empty content
         const content = match[1].trim();
         if (content) {
@@ -136,9 +146,13 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
         if (inBlockquote) {
           // Close the previous blockquote
           if (blockquoteLines.length > 0) {
-            result.push(`<blockquote>${blockquoteLines.join('<br>')}</blockquote>`);
+            result.push(`<blockquote class="cometchat-rich-text__blockquote">${blockquoteLines.join('<br>')}</blockquote>`);
+          } else {
+            // No content after > — output original lines as-is (not a blockquote)
+            result.push(...rawBlockquoteLines);
           }
           blockquoteLines.length = 0;
+          rawBlockquoteLines.length = 0;
           inBlockquote = false;
         }
         result.push(line);
@@ -146,8 +160,13 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
     }
 
     // Close any remaining blockquote
-    if (inBlockquote && blockquoteLines.length > 0) {
-      result.push(`<blockquote>${blockquoteLines.join('<br>')}</blockquote>`);
+    if (inBlockquote) {
+      if (blockquoteLines.length > 0) {
+        result.push(`<blockquote class="cometchat-rich-text__blockquote">${blockquoteLines.join('<br>')}</blockquote>`);
+      } else {
+        // No content after > — output original lines as-is (not a blockquote)
+        result.push(...rawBlockquoteLines);
+      }
     }
 
     return result.join('\n');

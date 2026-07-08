@@ -263,9 +263,13 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
 
       if (this.pollData) this.voteUpdate.emit(this.pollData);
 
+      // Announce confirmation plus the updated tally (count + percent) so screen
+      // reader users hear the new result, not just that a vote was recorded.
+      const updatedOption = this.pollOptions.find(o => o.id === option.id) ?? option;
       this.liveAnnouncer.announce(
         CometChatLocalize.getLocalizedString('accessibility_vote_submitted')
-          .replace('{option}', option.text),
+          .replace('{option}', option.text)
+          + ' ' + this.getOptionAriaLabel(updatedOption),
         'polite'
       );
     } catch (error) {

@@ -6,6 +6,7 @@
     [showSuggestedMessages]="true"
     [showBackButton]="showBackButton()"
     (backClick)="onBackClick()"
+    [loadLastAgentConversation]="true"
   />
 } @else {
 <div class="cometchat-messages">
@@ -39,7 +40,7 @@
       </div>
     } @else {
       <div class="cometchat-messages__composer">
-        <cometchat-message-composer></cometchat-message-composer>
+        <cometchat-message-composer ></cometchat-message-composer>
       </div>
     }
   </div>

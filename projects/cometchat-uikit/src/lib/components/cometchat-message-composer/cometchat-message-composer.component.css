@@ -1738,10 +1738,10 @@ margin-bottom: var(--cometchat-message-composer-single-line-auxiliary-buttons-ma
   }
 
   /* Reduce toolbar padding and gap */
-  .cometchat-message-composer__toolbar {
+  /* .cometchat-message-composer__toolbar {
     padding: var(--cometchat-message-composer-toolbar-padding-mobile, var(--cometchat-padding-1, 4px));
     gap: var(--cometchat-message-composer-toolbar-gap-mobile, var(--cometchat-spacing-1, 4px));
-  }
+  } */
 
   /* Reduce text input padding */
   .cometchat-message-composer__text-input {
@@ -1775,6 +1775,10 @@ margin-bottom: var(--cometchat-message-composer-single-line-auxiliary-buttons-ma
   cometchat-create-poll{
   width: 100%;
 }
+  .cometchat-message-composer__toolbar {
+    padding: var(--cometchat-message-composer-toolbar-padding-mobile, var(--cometchat-padding-1, 4px));
+    gap: var(--cometchat-message-composer-toolbar-gap-mobile, var(--cometchat-spacing-1, 4px));
+  }
   /* Reduce button sizes in both layouts */
   .cometchat-message-composer__attachment-button-inner,
   .cometchat-message-composer__emoji-button-inner,

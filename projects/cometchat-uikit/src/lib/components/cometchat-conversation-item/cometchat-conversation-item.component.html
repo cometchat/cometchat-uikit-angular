@@ -12,6 +12,9 @@
 -->
 
 <div class="cometchat-conversation-item"
+     role="option"
+     [attr.tabindex]="tabIndex"
+     [attr.aria-selected]="isSelected"
      [class.cometchat-conversation-item--active]="isActive"
      [class.cometchat-conversation-item--selected]="isSelected"
      [class.cometchat-conversation-item--focused]="isFocused"

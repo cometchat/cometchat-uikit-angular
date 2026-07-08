@@ -8,6 +8,10 @@ export class CometChatUIKitConstants {
     call: CometChat.CATEGORY_CALL,
     interactive: CometChat.CATEGORY_INTERACTIVE,
     agentic: CometChat.MessageCategory.AGENTIC,
+    // Card Messages — new first-party developer-card category.
+    // Distinct from the legacy interactive `card` *type*; the SDK beta exposes
+    // no CATEGORY_CARD constant, so the literal "card" is used intentionally.
+    card: 'card',
   });
   static moderationStatus = Object.freeze({
     pending: CometChat.ModerationStatus.PENDING,
@@ -31,6 +35,21 @@ export class CometChatUIKitConstants {
     assistant: CometChat.MESSAGE_TYPE.ASSISTANT,
     toolArguments: CometChat.MESSAGE_TYPE.TOOL_ARGUMENTS,
     toolResults: CometChat.MESSAGE_TYPE.TOOL_RESULT,
+  });
+  static ExtensionTypes = Object.freeze({
+    poll: 'extension_poll',
+    sticker: 'extension_sticker',
+    whiteboard: 'extension_whiteboard',
+    document: 'extension_document',
+  });
+  static ComposerAttachmentOption = Object.freeze({
+    image: 'image',
+    video: 'video',
+    audio: 'audio',
+    file: 'file',
+    poll: 'polls',
+    collaborativeDocument: 'collaborative-document',
+    collaborativeWhiteboard: 'collaborative-whiteboard',
   });
   static groupMemberAction = Object.freeze({
     ROLE: 'role',
@@ -60,7 +79,7 @@ export class CometChatUIKitConstants {
     replyInThread: 'replyInThread',
     translateMessage: 'translate',
     reactToMessage: 'react',
-    messageInformation: 'messageInformation',
+    messageInformation: 'info',
     flagMessage: 'flagMessage',
     copyMessage: 'copy',
     shareMessage: 'share',

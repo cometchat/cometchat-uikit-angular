@@ -1,5 +1,6 @@
 
-import { Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ContentChild, ChangeDetectionStrategy, OnInit, OnDestroy, signal, computed, effect, Signal, inject, ElementRef, booleanAttribute, Optional, DestroyRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ContentChild, ChangeDetectionStrategy, OnInit, OnDestroy, signal, computed, Signal, inject, ElementRef, booleanAttribute, Optional, DestroyRef } from '@angular/core';
+import { safeEffect } from '../../utils/safe-effect';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -173,13 +174,17 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
     this.activeConversationSignal = toSignal(this.conversationsService.activeConversation$, { initialValue: null as CometChat.Conversation | null });
     this.typingIndicators = toSignal(this.conversationsService.typingIndicators$, { initialValue: new Map<string, CometChat.TypingIndicator>() });
 
-    effect(() => { const c = this.conversations(); this.detectAndAnnounceNewConversation(c, this.previousConversations); this.previousConversations = [...c]; }, { allowSignalWrites: true });
+    safeEffect(() => { const c = this.conversations(); this.handleSoundNotification(c, this.previousConversations); this.detectAndAnnounceNewConversation(c, this.previousConversations); this.previousConversations = [...c]; });
 
-    effect(() => { const ti = this.typingIndicators(); const currentSize = ti?.size ?? 0; if (currentSize > this.previousTypingSize && currentSize > 0) { const e = ti.entries().next().value; if (e) { const s = (e[1] as CometChat.TypingIndicator).getSender(); if (s) this.announceTyping(s.getName()); } } this.previousTypingSize = currentSize; }, { allowSignalWrites: true });
+    safeEffect(() => { const ti = this.typingIndicators(); const currentSize = ti?.size ?? 0; if (currentSize > this.previousTypingSize && currentSize > 0) { const e = ti.entries().next().value; if (e) { const s = (e[1] as CometChat.TypingIndicator).getSender(); if (s) this.announceTyping(s.getName()); } } this.previousTypingSize = currentSize; });
 
-    effect(() => { const e = this.errorState(); if (e && !this.effectiveHideError()) this.error.emit(e as CometChat.CometChatException); }, { allowSignalWrites: true });
+    safeEffect(() => { const e = this.errorState(); if (e && !this.effectiveHideError()) this.error.emit(e as CometChat.CometChatException); });
 
-    effect(() => { if (this.showDeleteConfirmDialog() && this.dialogOverlay?.nativeElement) setTimeout(() => this.dialogOverlay?.nativeElement?.focus(), 0); }, { allowSignalWrites: true });
+    safeEffect(() => { if (this.showDeleteConfirmDialog() && this.dialogOverlay?.nativeElement) setTimeout(() => this.dialogOverlay?.nativeElement?.focus(), 0); });
+
+    // Sync hasMore from service — ensures pagination resets correctly after
+    // a silent reconnect fetch that resets the service's hasMore to true.
+    safeEffect(() => { this.hasMore.set(this.conversationsService.hasMore()); });
   }
   ngOnInit(): void {
     try {
@@ -219,7 +224,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   handleScrollToTop(): void { this.scrollToTop.emit(); }
   handleScrollToBottom(): void { this.scrollToBottom.emit(); }
   handleConversationClick(conversation: CometChat.Conversation): void {
-    if (this.selectionMode !== SelectionMode.none) { this.handleSelection(conversation); return; }
+    if (this.selectionMode !== SelectionMode.none) { this.handleSelection(conversation); this.announceSelectionCount(); return; }
     // ENG-35029: Guard against clicks while the conversation list is still loading.
     // Clicking during load can result in a "Something went wrong" error because the
     // conversation object may be incomplete or the message list service isn't ready.
@@ -290,6 +295,10 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
           }, 50);
         }
       });
+  }
+  onSearch(value: string): void {
+    this.currentSearchText = value;
+    this.searchSubject$.next(value);
   }
   handleSearchBarClick(): void { this.searchBarClick.emit(); }
   handleKeydown(event: KeyboardEvent): void {
@@ -395,7 +404,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   trackByConversation(_index: number, conversation: CometChat.Conversation): string { return this.getConversationId(conversation); }
   private subscribeToMessagesReadEvents(): void {
     CometChatMessageEvents.ccMessageRead.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((msg: CometChat.BaseMessage) => {
-      try { const r = msg.getReceiver(); const id = r instanceof CometChat.User ? r.getUid() : (r as CometChat.Group).getGuid(); this.conversationsService.updateConversationReadStatus(id, msg); }
+      try { const r = msg.getReceiver(); const id = r instanceof CometChat.User ? r.getUid() : r instanceof CometChat.Group ? r.getGuid() : (r as any)?.uid || (r as any)?.guid || ''; if (id) this.conversationsService.updateConversationReadStatus(id, msg); }
       catch (e) { CometChatLogger.error('CometChatConversations', 'Error handling message read event:', e); }
     });
     CometChatConversationEvents.ccUpdateConversation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((conv: CometChat.Conversation) => {

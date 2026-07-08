@@ -10,6 +10,7 @@ import {
   Output,
   EventEmitter,
   TemplateRef,
+  ViewChild,
   inject,
   computed,
   signal,
@@ -82,6 +83,8 @@ export class CometChatGroupItemComponent {
   @Output() contextMenuOptionClick = new EventEmitter<{ option: CometChatOption; group: CometChat.Group; }>();
   @Output() itemFocus = new EventEmitter<void>();
 
+  @ViewChild(CometChatContextMenuComponent) contextMenuRef?: CometChatContextMenuComponent;
+
   readonly Placement = Placement;
 
   get groupIcon(): string { return this.group?.getIcon() || ''; }
@@ -116,7 +119,19 @@ export class CometChatGroupItemComponent {
     if ((event.key === 'F10' && event.shiftKey) || event.key === 'ContextMenu') { event.preventDefault(); this.handleContextMenuOpen(); }
   }
 
-  handleContextMenuOpen(): void { this.contextMenuOpen.emit(this.group); }
-  handleContextMenu(event: MouseEvent): void { if (this.effectiveDisableDefaultContextMenu()) event.preventDefault(); }
+  handleContextMenuOpen(): void {
+    if (this.contextMenuRef && !this.contextMenuRef.showSubMenu) {
+      this.contextMenuRef.handleMenuClick();
+    }
+    this.contextMenuOpen.emit(this.group);
+  }
+
+  handleContextMenu(event: MouseEvent): void {
+    if (!this.effectiveDisableDefaultContextMenu()) return;
+    event.preventDefault();
+    if (this.contextMenuRef?.data?.length) {
+      this.handleContextMenuOpen();
+    }
+  }
   handleContextMenuOptionClick(option: CometChatOption): void { this.contextMenuOptionClick.emit({ option, group: this.group }); }
 }

@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   input,
   OnInit,
@@ -34,6 +35,7 @@ import { CometChatUIKitConstants } from '../../constants';
 })
 export class CometChatAIAssistantChatHistory implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly hostRef = inject(ElementRef<HTMLElement>);
 
   // ── Shared constants ──────────────────────────────────────────────────────
   readonly shimmerList = CometChatUIKitConstants.shimmerList;
@@ -205,14 +207,25 @@ export class CometChatAIAssistantChatHistory implements OnInit {
     const msgs = this.messages();
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      this.focusedIndex.set(Math.min(index + 1, msgs.length - 1));
+      this.moveFocusTo(Math.min(index + 1, msgs.length - 1));
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      this.focusedIndex.set(Math.max(index - 1, 0));
+      this.moveFocusTo(Math.max(index - 1, 0));
     } else if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       this.onMessageClick(msgs[index]);
     }
+  }
+
+  /**
+   * Updates the roving tabindex anchor and moves DOM focus to that option, so
+   * arrow-key navigation actually moves keyboard focus (not just the tabindex).
+   */
+  private moveFocusTo(index: number): void {
+    this.focusedIndex.set(index);
+    const host = this.hostRef.nativeElement as HTMLElement;
+    const items = host.querySelectorAll('.cometchat-ai-assistant-chat-history__item[role="option"]');
+    (items[index] as HTMLElement | undefined)?.focus();
   }
 
   /** Returns tabindex for a given list item index. */

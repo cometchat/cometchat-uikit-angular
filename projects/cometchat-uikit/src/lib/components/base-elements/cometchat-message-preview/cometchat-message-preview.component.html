@@ -41,9 +41,13 @@
             </div>
             <!-- Message content text with ellipsis truncation -->
             <!-- @see Requirements 7.1, 7.3: Display and truncate message content -->
-            <span class="cometchat-message-preview__subtitle-text">
-              {{ messageContentPreview }}
-            </span>
+            @if (_cachedPreviewHasHtml) {
+              <span class="cometchat-message-preview__subtitle-text" [innerHTML]="_cachedFormattedPreview"></span>
+            } @else {
+              <span class="cometchat-message-preview__subtitle-text">
+                {{ messageContentPreview }}
+              </span>
+            }
           </ng-container>
         </ng-template>
       </div>

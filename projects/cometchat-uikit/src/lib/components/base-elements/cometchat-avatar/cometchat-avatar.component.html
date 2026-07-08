@@ -11,7 +11,8 @@
       width="48"
       height="48"
       (error)="onImageError()"
-      [alt]="name || 'avatar'"
+      alt=""
+      aria-hidden="true"
     />
   } @else {
     <span class="cometchat-avatar__text" aria-hidden="true">{{ initials }}</span>

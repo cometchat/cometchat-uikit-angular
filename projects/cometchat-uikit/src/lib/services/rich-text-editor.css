@@ -63,7 +63,9 @@
 
   
 }
-
+.cometchat-rich-text-editor__content p{
+  margin: 0;
+}
 /* Placeholder shown when editor is empty 
    Note: contenteditable often has <br> tags even when "empty", so we use class-based approach
 */
@@ -148,7 +150,7 @@
 .cometchat-rich-text-editor__content ul,
 .cometchat-rich-text-editor__content ol {
   margin: var(--cometchat-spacing-2) 0;
-  padding-left: var(--cometchat-spacing-6);
+  padding-left: var(--cometchat-spacing-8);
 }
 
 .cometchat-rich-text-editor__content ul {

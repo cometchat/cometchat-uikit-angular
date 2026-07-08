@@ -92,15 +92,18 @@ export function exitEditModeWithoutEventImpl(ctx: any): void {
 
 export function formatReplyPreviewTextImpl(ctx: any, message: CometChat.TextMessage): string {
   const text = message.getText() || '';
-  if (!text) { return ''; }
-  try {
-    const metadata = message.getMetadata?.() as Record<string, any> | undefined;
-    const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
-    if (richText?.html && richText?.hasFormatting) {
-      const sanitized = ctx.htmlSanitizerService.sanitize(richText.html);
-      if (sanitized) return flattenListsForPreview(sanitized);
-    }
-  } catch { /* ignore */ }
+  if (!text) {
+    // Fallback: no text — try metadata as last resort
+    try {
+      const metadata = message.getMetadata?.() as Record<string, any> | undefined;
+      const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
+      if (richText?.html && richText?.hasFormatting) {
+        const sanitized = ctx.htmlSanitizerService.sanitize(richText.html);
+        if (sanitized) return flattenListsForPreview(sanitized);
+      }
+    } catch { /* ignore */ }
+    return '';
+  }
   const loggedInUser = CometChatUIKit.getLoggedInUser();
   const formatters = ctx.formatterConfigService.getFormattersWithContext(
     loggedInUser || undefined,
@@ -163,15 +166,18 @@ function flattenListsForPreview(html: string): string {
 
 export function formatEditPreviewTextImpl(ctx: any, message: CometChat.TextMessage): string {
   const text = message.getText() || '';
-  if (!text) { return ''; }
-  try {
-    const metadata = message.getMetadata?.() as Record<string, any> | undefined;
-    const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
-    if (richText?.html && richText?.hasFormatting) {
-      const sanitized = ctx.htmlSanitizerService.sanitize(richText.html);
-      if (sanitized) return sanitized;
-    }
-  } catch { /* ignore */ }
+  if (!text) {
+    // Fallback: no text — try metadata as last resort
+    try {
+      const metadata = message.getMetadata?.() as Record<string, any> | undefined;
+      const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
+      if (richText?.html && richText?.hasFormatting) {
+        const sanitized = ctx.htmlSanitizerService.sanitize(richText.html);
+        if (sanitized) return sanitized;
+      }
+    } catch { /* ignore */ }
+    return '';
+  }
   const loggedInUser = CometChatUIKit.getLoggedInUser();
   const formatters = ctx.formatterConfigService.getFormattersWithContext(
     loggedInUser || undefined,
@@ -199,9 +205,24 @@ export function formatEditPreviewTextImpl(ctx: any, message: CometChat.TextMessa
 export function convertMarkdownToHtmlImpl(text: string): string {
   if (!text) return '';
   let result = text;
-  result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Code blocks (``` ... ```) — must come before inline code to avoid double-processing
+  result = result.replace(/```([\s\S]*?)```/g, (_match, code: string) => {
+    // The text has already been HTML-escaped by the caller (escapeUserHtml), so
+    // the content inside the fences is safe to wrap directly.
+    // Trim leading/trailing newlines to avoid extra whitespace in the pre block.
+    const trimmedCode = code.replace(/^\n/, '').replace(/\n$/, '');
+    return `<pre class="cometchat-rich-text__code-block"><code class="cometchat-rich-text__code">${trimmedCode}</code></pre>`;
+  });
+
+  // Blockquotes — support both raw ">" and HTML-escaped "&gt;" (caller may escape first)
+  result = result.replace(/^(?:&gt;|>) (.+)$/gm, '<blockquote class="cometchat-rich-text__blockquote">$1</blockquote>');
+
+  // Inline code — must come before bold/italic to avoid mangling backtick content
+  result = result.replace(/`([^`]+)`/g, '<code class="cometchat-rich-text__code">$1</code>');
+
   result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  result = result.replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, '<strong>$1</strong>');
+  result = result.replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, '<em>$1</em>');
   result = result.replace(/__([^_]+)__/g, '<u>$1</u>');
   result = result.replace(/(?<!_)_(?!_)([^_]+)_(?!_)/g, '<em>$1</em>');
   result = result.replace(/~~([^~]+)~~/g, '<s>$1</s>');

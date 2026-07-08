@@ -29,6 +29,11 @@ export class CometChatAIAssistantTools {
    * Mutations to the returned object do not affect this instance.
    */
   getActions(): Record<string, (...args: unknown[]) => unknown> {
-    return Object.assign({}, this.actions);
+    // Use Object.create(null) to avoid __proto__ prototype pollution issues
+    const copy = Object.create(null) as Record<string, (...args: unknown[]) => unknown>;
+    for (const [key, val] of Object.entries(this.actions)) {
+      copy[key] = val;
+    }
+    return copy;
   }
 }

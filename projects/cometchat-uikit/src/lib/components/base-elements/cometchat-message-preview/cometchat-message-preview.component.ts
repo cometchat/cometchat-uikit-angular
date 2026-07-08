@@ -8,18 +8,25 @@ import {
   ViewChild,
   AfterViewInit,
   OnInit,
+  OnChanges,
   OnDestroy,
+  SimpleChanges,
   HostListener,
   inject,
   computed,
-  signal, ChangeDetectionStrategy} from '@angular/core';
+  signal, ChangeDetectionStrategy, ChangeDetectorRef} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 import { CometChatTextFormatter } from '../../../formatters/cometchat-text-formatter';
+import { CometChatMentionsFormatter } from '../../../formatters/cometchat-mentions-formatter';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../../services/global-config.service';
+import { HtmlSanitizerService } from '../../../services/html-sanitizer.service';
+import { FormatterConfigService } from '../../../services/formatter-config.service';
 import { MessagePreviewMode, MESSAGE_TYPES } from './cometchat-message-preview.types';
+import { CometChatUIKitConstants } from '../../../constants';
 import { CometChatUIKit } from '../../../cometchat-uikit';
+import { stripRichTextFormatting } from '../../../utils/util';
 
 export type { MessagePreviewMode };
 
@@ -61,7 +68,7 @@ export type { MessagePreviewMode };
   templateUrl: './cometchat-message-preview.component.html',
   styleUrls: ['./cometchat-message-preview.component.css'],
 })
-export class CometChatMessagePreviewComponent implements OnInit, AfterViewInit, OnDestroy {
+export class CometChatMessagePreviewComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   // ============================================
   // Injected Services (GlobalConfig)
   // ============================================
@@ -69,6 +76,15 @@ export class CometChatMessagePreviewComponent implements OnInit, AfterViewInit, 
   private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, {
     optional: true,
   });
+  private readonly htmlSanitizer = inject(HtmlSanitizerService);
+  private readonly formatterConfig = inject(FormatterConfigService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  // ============================================
+  // Cached formatted preview (recomputed in ngOnChanges)
+  // ============================================
+  _cachedPreviewHasHtml = false;
+  _cachedFormattedPreview = '';
 
   // ============================================
   // ExplicitlySet Flags & Backing Fields (GlobalConfig Priority System)
@@ -253,14 +269,14 @@ export class CometChatMessagePreviewComponent implements OnInit, AfterViewInit, 
         return CometChatLocalize.getLocalizedString('conversation_subtitle_audio');
       case MESSAGE_TYPES.FILE:
         return CometChatLocalize.getLocalizedString('conversation_subtitle_file');
-      // ENG-35080: Handle sticker and poll custom message types
-      case MESSAGE_TYPES.STICKER:
+      // ENG-35080: Handle sticker, poll and collaborative custom message types
+      case CometChatUIKitConstants.ExtensionTypes.sticker:
         return CometChatLocalize.getLocalizedString('conversation_subtitle_sticker');
-      case MESSAGE_TYPES.POLL:
+      case CometChatUIKitConstants.ExtensionTypes.poll:
         return CometChatLocalize.getLocalizedString('conversation_subtitle_poll');
-      case 'extension_document':
+      case CometChatUIKitConstants.ExtensionTypes.document:
         return CometChatLocalize.getLocalizedString('conversation_subtitle_collaborative_document');
-      case 'extension_whiteboard':
+      case CometChatUIKitConstants.ExtensionTypes.whiteboard:
         return CometChatLocalize.getLocalizedString('conversation_subtitle_collaborative_whiteboard');
       default: {
         // For unknown custom message types, show customData.text or the type name
@@ -277,6 +293,143 @@ export class CometChatMessagePreviewComponent implements OnInit, AfterViewInit, 
         return CometChatLocalize.getLocalizedString('message');
       }
     }
+  }
+
+  /**
+   * Returns true when the message preview text should be rendered as HTML
+   * (contains markdown, rich text metadata, or SDK mention tags).
+   */
+  get messagePreviewHasHtml(): boolean {
+    if (!this.message || this.message.getType?.() !== MESSAGE_TYPES.TEXT) return false;
+    const textMessage = this.message as CometChat.TextMessage;
+    const rawText = textMessage.getText?.() || '';
+
+    if (!rawText) {
+      // Fallback: no text — check metadata
+      try {
+        const metadata = textMessage.getMetadata?.() as Record<string, unknown> | undefined;
+        const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
+        if (richText?.html && richText?.hasFormatting) return true;
+      } catch { /* ignore */ }
+      return false;
+    }
+
+    // Plain URL or markdown link — render as plain text
+    if (/^https?:\/\//.test(rawText.trim()) || /\[([^\]]+)\]\([^)]+\)/.test(rawText)) return false;
+
+    // Markdown syntax
+    if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText)) return true;
+
+    // SDK mention tags
+    const hasSdkMentions = /<@uid:[^>]+>/.test(rawText) || /<@all:[^>]+>/.test(rawText);
+    const formatters = this.getActiveFormatters();
+    const hasMentionsFormatter = formatters.some(f => f instanceof CometChatMentionsFormatter);
+    const hasCustomFormatters = formatters.some(f => !(f instanceof CometChatMentionsFormatter) && f.id !== 'tiptap-formatter');
+    return (hasSdkMentions && hasMentionsFormatter) || hasCustomFormatters;
+  }
+
+  /**
+   * Returns sanitized HTML for the preview when messagePreviewHasHtml is true.
+   * Applies the same formatter pipeline as CometChatConversationItem.
+   * Result is single-line (block elements collapsed to spaces).
+   */
+  get formattedMessagePreview(): string {
+    if (!this.message || this.message.getType?.() !== MESSAGE_TYPES.TEXT) return '';
+    const textMessage = this.message as CometChat.TextMessage;
+    const rawText = textMessage.getText?.() || '';
+    const mentionedUsers = textMessage.getMentionedUsers?.() ?? [];
+
+    if (!rawText) {
+      // Fallback: no text — try metadata as last resort
+      try {
+        const metadata = textMessage.getMetadata?.() as Record<string, unknown> | undefined;
+        const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
+        if (richText?.html && richText?.hasFormatting) {
+          return this.sanitizePreviewHtml(richText.html);
+        }
+      } catch { /* ignore */ }
+      return '';
+    }
+
+    const formatters = this.getActiveFormatters();
+    const hasSdkMentions = /<@uid:[^>]+>/.test(rawText) || /<@all:[^>]+>/.test(rawText);
+
+    // 2. Markdown path
+    if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText)) {
+      const escaped = this.htmlSanitizer.escapeUserHtml(rawText);
+      let formattedText = escaped;
+      for (const formatter of formatters) {
+        try {
+          if (formatter instanceof CometChatMentionsFormatter) {
+            if (hasSdkMentions && formatter.shouldFormat(formattedText, this.message)) {
+              formattedText = (formatter as CometChatMentionsFormatter).formatSdkMentions(formattedText, mentionedUsers);
+            }
+          } else if (formatter.id !== 'tiptap-formatter') {
+            if (formatter.shouldFormat(formattedText, this.message)) {
+              formattedText = formatter.format(formattedText);
+            }
+          }
+        } catch { /* ignore */ }
+      }
+      return this.sanitizePreviewHtml(formattedText);
+    }
+
+    // 3. Plain text with mention formatting
+    const plainText = stripRichTextFormatting(rawText);
+    if (!formatters || formatters.length === 0) return plainText;
+    const hasMentionsFormatter = formatters.some(f => f instanceof CometChatMentionsFormatter);
+    const hasCustomFormatters = formatters.some(f => !(f instanceof CometChatMentionsFormatter) && f.id !== 'tiptap-formatter');
+    if (!hasSdkMentions && !hasCustomFormatters) return plainText;
+    if (!hasMentionsFormatter && !hasCustomFormatters) return plainText;
+    const escapedText = this.htmlSanitizer.escapeUserHtml(plainText);
+    let formattedText = escapedText;
+    for (const formatter of formatters) {
+      try {
+        if (formatter instanceof CometChatMentionsFormatter) {
+          if (hasSdkMentions && formatter.shouldFormat(formattedText, this.message)) {
+            formattedText = (formatter as CometChatMentionsFormatter).formatSdkMentions(formattedText, mentionedUsers);
+          }
+        } else if (formatter.id !== 'tiptap-formatter') {
+          if (formatter.shouldFormat(formattedText, this.message)) {
+            formattedText = formatter.format(formattedText);
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    return this.sanitizePreviewHtml(formattedText);
+  }
+
+  /** Get active formatters — explicit input takes priority over global config defaults. */
+  private getActiveFormatters(): CometChatTextFormatter[] {
+    const explicit = this.effectiveTextFormatters();
+    if (explicit?.length > 0) return explicit;
+    return this.formatterConfig.getDefaultFormatters();
+  }
+
+  /**
+   * Sanitize HTML to safe inline tags, collapsing block elements to spaces
+   * so the preview stays on a single line with ellipsis truncation.
+   */
+  private sanitizePreviewHtml(html: string): string {
+    // Inject list markers before stripping list tags
+    let processed = html;
+    processed = processed.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_m, inner) => {
+      let counter = 0;
+      return inner.replace(/<li[^>]*>/gi, () => { counter++; return `${counter}. `; });
+    });
+    processed = processed.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_m, inner) => {
+      return inner.replace(/<li[^>]*>/gi, () => '• ');
+    });
+    processed = processed
+      .replace(/<\/li>/gi, ' ')
+      .replace(/<\/p>/gi, ' ')
+      .replace(/<\/blockquote>/gi, ' ')
+      .replace(/<\/h[1-6]>/gi, ' ');
+    const s = this.htmlSanitizer.sanitizeWithConfig(processed, {
+      ALLOWED_TAGS: ['span', 'strong', 'em', 'b', 'i', 'u', 's', 'code', 'a'],
+      ALLOWED_ATTR: ['class', 'data-uid', 'data-mention-type', 'data-hashtag', 'href', 'target', 'rel', 'style'],
+    });
+    return String(s).replace(/\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
   }
 
   /**
@@ -356,6 +509,18 @@ export class CometChatMessagePreviewComponent implements OnInit, AfterViewInit, 
       CometChat.getLoggedinUser().then(user => {
         this.loggedInUser = user;
       }).catch(() => {});
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Recompute formatted preview whenever message or textFormatters change.
+    // Caching is necessary with OnPush — getters alone may not trigger re-render.
+    if (changes['message'] || changes['textFormatters']) {
+      this._cachedPreviewHasHtml = this.messagePreviewHasHtml;
+      this._cachedFormattedPreview = this._cachedPreviewHasHtml
+        ? this.formattedMessagePreview
+        : '';
+      this.cdr.markForCheck();
     }
   }
 

@@ -192,4 +192,13 @@ export function handleRichTextKeydownImpl(ctx: KeyboardHandlerContext, event: Ke
       ctx.handleSend();
     }
   }
+  // Shift+Enter in a list → let the RTE's handleKeyDown create the next
+  // list item (it handles both Enter and Shift+Enter for lists). We must
+  // NOT consume the event here so it reaches the RTE handler.
+  if (event.key === 'Enter' && event.shiftKey) {
+    if (ctx.customRichTextEditor && ctx.richTextEditorService.isInList(ctx.customRichTextEditor)) {
+      // Don't stop propagation — let the RTE handle list item creation.
+      return;
+    }
+  }
 }

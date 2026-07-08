@@ -26,6 +26,20 @@ export interface MessageOptionsContext {
 
 export function getMessageOptionsImpl(ctx: MessageOptionsContext, message: CometChat.BaseMessage): CometChatActionsIcon[] {
   if (message.getDeletedAt()) return [];
+
+  // Agentic messages (AI agent in group) get copy-only context menu
+  if (message.getCategory() === CometChatUIKitConstants.MessageCategory.agentic) {
+    if (ctx.hideCopyMessageOption) return [];
+    return [
+      new CometChatActionsIcon({
+        id: CometChatUIKitConstants.MessageOption.copyMessage,
+        title: CometChatLocalize.getLocalizedString('message_list_option_copy'),
+        iconURL: 'assets/Copy.svg',
+        onClick: () => {},
+      }),
+    ];
+  }
+
   const options: CometChatActionsIcon[] = [];
   if (!ctx.hideReactionOption) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.reactToMessage, title: CometChatLocalize.getLocalizedString('message_list_option_react'), iconURL: 'assets/add_reaction_icon.svg', onClick: () => {} }));
@@ -42,7 +56,7 @@ export function getMessageOptionsImpl(ctx: MessageOptionsContext, message: Comet
   const sender = message.getSender();
   const isOwnMessage = ctx.loggedInUser && sender?.getUid() === ctx.loggedInUser.getUid();
   if (!ctx.hideEditMessageOption && isOwnMessage && message.getType() === 'text') {
-    options.push(new CometChatActionsIcon({ id: 'edit', title: CometChatLocalize.getLocalizedString('message_list_option_edit'), iconURL: 'assets/edit_icon.svg', onClick: () => {} }));
+    options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.editMessage, title: CometChatLocalize.getLocalizedString('message_list_option_edit'), iconURL: 'assets/edit_icon.svg', onClick: () => {} }));
   }
   if (!ctx.hideDeleteMessageOption && isOwnMessage) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.deleteMessage, title: CometChatLocalize.getLocalizedString('message_list_option_delete'), iconURL: 'assets/delete.svg', onClick: () => {} }));
@@ -51,15 +65,22 @@ export function getMessageOptionsImpl(ctx: MessageOptionsContext, message: Comet
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.translateMessage, title: CometChatLocalize.getLocalizedString('message_list_option_translate'), iconURL: 'assets/translate.svg', onClick: () => {} }));
   }
   if (!ctx.hideMessageInfoOption && isOwnMessage) {
-    options.push(new CometChatActionsIcon({ id: 'info', title: CometChatLocalize.getLocalizedString('message_list_option_info'), iconURL: 'assets/info_icon.svg', onClick: () => {} }));
+    options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.messageInformation, title: CometChatLocalize.getLocalizedString('message_list_option_info'), iconURL: 'assets/info_icon.svg', onClick: () => {} }));
   }
-  if (!ctx.hideFlagMessageOption && !isOwnMessage && message.getCategory() === CometChatUIKitConstants.MessageCategory.message) {
+  // Developer cards get the same option set as text *minus* edit + copy
+  // (both already gated to type==='text' above, so cards naturally exclude them).
+  // flag / mark-as-unread are message-category-gated; include the card category so
+  // a card matches the text option set, preserving the existing per-option conditions.
+  const isMessageOrCard =
+    message.getCategory() === CometChatUIKitConstants.MessageCategory.message ||
+    message.getCategory() === CometChatUIKitConstants.MessageCategory.card;
+  if (!ctx.hideFlagMessageOption && !isOwnMessage && isMessageOrCard) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.flagMessage, title: CometChatLocalize.getLocalizedString('message_list_option_flag_message'), iconURL: 'assets/flags.svg', onClick: () => {} }));
   }
   if (!ctx.hideMessagePrivatelyOption && ctx.group && !isOwnMessage) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.sendMessagePrivately, title: CometChatLocalize.getLocalizedString('message_list_option_message_privately'), iconURL: 'assets/send_message_privately.svg', onClick: () => {} }));
   }
-  if (ctx.showMarkAsUnreadOption && !isOwnMessage && !message.getDeletedAt() && message.getCategory() === CometChatUIKitConstants.MessageCategory.message) {
+  if (ctx.showMarkAsUnreadOption && !isOwnMessage && !message.getDeletedAt() && isMessageOrCard) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.markAsUnread, title: CometChatLocalize.getLocalizedString('message_list_option_mark_as_unread'), iconURL: 'assets/mark_as_unread.svg', onClick: () => {} }));
   }
   if (ctx.additionalOptions.length > 0) { options.push(...ctx.additionalOptions); }

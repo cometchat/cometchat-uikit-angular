@@ -23,10 +23,10 @@ export type { ErrorCallback, MentionSuggestion, PollCreatePayload, Collaborative
  * Handles sending text/media messages, editing, typing indicators,
  * file upload progress, and mention suggestions.
  *
- * @Injectable providedIn: 'root'
+ * @Injectable — provided at component level via CometChatMessageComposerComponent providers
  * @see Requirements 29.1–29.10
  */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class MessageComposerService {
   // ==================== State Signals ====================
   private isSendingSignal = signal<boolean>(false);

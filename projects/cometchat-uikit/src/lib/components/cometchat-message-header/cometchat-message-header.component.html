@@ -51,20 +51,32 @@
     <ng-container *ngTemplateOutlet="effectiveHeaderView"></ng-container>
   } @else {
     <!-- Default header content -->
-    <div 
-      class="cometchat-message-header__content"
-      role="button"
-      tabindex="0"
-      [attr.aria-label]="getItemAriaLabel()"
-      (click)="handleItemClick()"
-      (keydown)="handleItemKeydown($event)">
-      
+    <div class="cometchat-message-header__content">
+
       @if (effectiveItemView) {
         <!-- Custom item view replaces item content -->
-        <ng-container *ngTemplateOutlet="effectiveItemView; context: templateContext"></ng-container>
+        <div
+          class="cometchat-message-header__info"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="getItemAriaLabel()"
+          (click)="handleItemClick()"
+          (keydown)="handleItemKeydown($event)">
+          <ng-container *ngTemplateOutlet="effectiveItemView; context: templateContext"></ng-container>
+        </div>
       } @else {
         <!-- Default item layout - to be implemented in Tasks 8, 9, 10 -->
-        
+
+        <!-- Clickable info region (leading + body). Action buttons live in the
+             sibling trailing section so this button has no focusable descendants. -->
+        <div
+          class="cometchat-message-header__info"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="getItemAriaLabel()"
+          (click)="handleItemClick()"
+          (keydown)="handleItemKeydown($event)">
+
         <!-- Leading Section (avatar/status) - Task 8 -->
         <div class="cometchat-message-header__leading">
           @if (effectiveLeadingView) {
@@ -182,8 +194,11 @@
             }
           </div>
         </div>
+        </div>
+        <!-- /__info -->
 
-        <!-- Trailing Section (action buttons) - Task 10 -->
+        <!-- Trailing Section (action buttons) - Task 10. Sibling of __info so the
+             interactive call/search controls are not nested inside a role="button". -->
         <div class="cometchat-message-header__trailing">
           @if (effectiveTrailingView) {
             <ng-container *ngTemplateOutlet="effectiveTrailingView; context: templateContext"></ng-container>

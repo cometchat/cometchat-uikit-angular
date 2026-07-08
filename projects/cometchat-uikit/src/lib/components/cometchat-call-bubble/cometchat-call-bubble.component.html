@@ -18,14 +18,13 @@
   <div class="cometchat-call-bubble__body">
     <!-- Icon Container -->
     <div class="cometchat-call-bubble__icon-wrapper">
-      <div 
+      <div
         class="cometchat-call-bubble__icon"
         [style.mask]="'url(' + computedIconUrl + ') center center no-repeat'"
         [style.-webkit-mask]="'url(' + computedIconUrl + ') center center no-repeat'"
         [style.mask-size]="'contain'"
         [style.-webkit-mask-size]="'contain'"
-        [attr.aria-label]="computedTitle"
-        role="img">
+        aria-hidden="true">
       </div>
     </div>
     

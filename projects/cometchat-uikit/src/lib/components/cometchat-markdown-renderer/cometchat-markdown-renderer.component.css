@@ -175,6 +175,24 @@ cometchat-markdown-renderer {
   box-sizing: border-box;
 }
 
+/* Nested ordered list cycling: decimal → lower-alpha → lower-roman */
+.cometchat-markdown-renderer__ordered-list .cometchat-markdown-renderer__ordered-list {
+  list-style-type: lower-alpha;
+  margin: 0;
+}
+.cometchat-markdown-renderer__ordered-list .cometchat-markdown-renderer__ordered-list .cometchat-markdown-renderer__ordered-list {
+  list-style-type: lower-roman;
+}
+
+/* Nested unordered list cycling: disc → circle → square */
+.cometchat-markdown-renderer__unordered-list .cometchat-markdown-renderer__unordered-list {
+  list-style-type: circle;
+  margin: 0;
+}
+.cometchat-markdown-renderer__unordered-list .cometchat-markdown-renderer__unordered-list .cometchat-markdown-renderer__unordered-list {
+  list-style-type: square;
+}
+
 /* Agent chat context: no extra rules needed — container overflow handles clipping */
 
 /* Agent chat context: add right margin to code blocks */

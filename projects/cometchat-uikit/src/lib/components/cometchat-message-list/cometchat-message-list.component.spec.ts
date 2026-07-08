@@ -133,10 +133,13 @@ describe('CometChatMessageListComponent', () => {
       expect(root?.getAttribute('role')).toBe('log');
     });
 
-    it('should have aria-live="polite" on the root element', async () => {
+    it('should have aria-live="off" on the root log (curated announcer handles announcements)', async () => {
       await initAndDetect(fixture);
+      // role="log" implicitly is a polite live region; we explicitly set it off so
+      // the dedicated LiveAnnouncerService is the single source of announcements
+      // (avoids double/verbose announcing of every DOM mutation).
       const root = el.querySelector('.cometchat-message-list');
-      expect(root?.getAttribute('aria-live')).toBe('polite');
+      expect(root?.getAttribute('aria-live')).toBe('off');
     });
 
     it('should initialize messages signal from service', async () => {

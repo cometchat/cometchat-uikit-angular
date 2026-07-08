@@ -9,6 +9,9 @@
  */
 
 import { RichTextFormatState } from './rich-text-editor.interfaces';
+
+/** Inline marks whose active state is driven by execCommand (no DOM inserted). */
+type PendingInlineFormat = 'bold' | 'italic' | 'underline' | 'strikethrough';
 import {
   applyBlockFormat,
   applyFormatSkippingMentions,
@@ -27,8 +30,51 @@ import {
 export class FormatManager {
   private element: HTMLElement;
 
+  /**
+   * Pending inline-mark state for an EMPTY editor.
+   *
+   * bold/italic/underline/strikethrough are applied via document.execCommand,
+   * which only toggles the browser's pending "typing state" and inserts no DOM.
+   * On an empty composer the editor stays empty, so getCurrentFormats() — which
+   * returns all-false when empty to avoid stale queryCommandState after a clear —
+   * would never reflect a toolbar toggle until the user starts typing.
+   *
+   * We mirror the real command state here right after each toggle so the toolbar
+   * can show active/inactive immediately on an empty composer, and reset it on
+   * clear() so stale state never leaks across messages.
+   */
+  private pendingEmptyInlineFormats: Record<PendingInlineFormat, boolean> = {
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+  };
+
   constructor(element: HTMLElement) {
     this.element = element;
+  }
+
+  /** True when the editor has no meaningful content (only whitespace / <br>). */
+  private isEditorEmpty(): boolean {
+    return (
+      !this.element.textContent?.trim() &&
+      (!this.element.innerHTML.trim() || /^(<br\s*\/?>)*$/i.test(this.element.innerHTML.trim()))
+    );
+  }
+
+  /**
+   * Record the pending state of an inline mark after a toolbar toggle.
+   * On an empty editor we capture the real command state so the toolbar reflects
+   * what the next typed character will be; once content exists, queryCommandState
+   * is authoritative and the pending value is cleared so it can't go stale.
+   */
+  private syncPendingEmptyFormat(format: PendingInlineFormat, command: string): void {
+    this.pendingEmptyInlineFormats[format] = this.isEditorEmpty() ? this.isActive(command) : false;
+  }
+
+  /** Clear pending inline-mark state. Called when the editor content is cleared. */
+  resetPendingEmptyFormats(): void {
+    this.pendingEmptyInlineFormats = { bold: false, italic: false, underline: false, strikethrough: false };
   }
 
   // ==================== Inline Formatting ====================
@@ -38,6 +84,7 @@ export class FormatManager {
     this.element.focus();
     if (isInsideFormattedElement('pre', this.element)) return;
     applyFormatSkippingMentions('bold', 'strong', this.element);
+    this.syncPendingEmptyFormat('bold', 'bold');
   }
 
   /** Apply italic formatting. Skips mention spans. @see Req 2.2 */
@@ -45,6 +92,7 @@ export class FormatManager {
     this.element.focus();
     if (isInsideFormattedElement('pre', this.element)) return;
     applyFormatSkippingMentions('italic', 'em', this.element);
+    this.syncPendingEmptyFormat('italic', 'italic');
   }
 
   /** Apply underline formatting. Skips mention spans. @see Req 2.3 */
@@ -52,6 +100,7 @@ export class FormatManager {
     this.element.focus();
     if (isInsideFormattedElement('pre', this.element)) return;
     applyFormatSkippingMentions('underline', 'u', this.element);
+    this.syncPendingEmptyFormat('underline', 'underline');
   }
 
   /** Apply strikethrough formatting. Skips mention spans. @see Req 2.4 */
@@ -59,6 +108,7 @@ export class FormatManager {
     this.element.focus();
     if (isInsideFormattedElement('pre', this.element)) return;
     applyFormatSkippingMentions('strikeThrough', 's', this.element);
+    this.syncPendingEmptyFormat('strikethrough', 'strikeThrough');
   }
 
   /** Apply inline code formatting. Wraps selection in &lt;code&gt;. @see Req 2.5 */
@@ -76,6 +126,9 @@ export class FormatManager {
    */
   applyCodeBlock(): void {
     this.element.focus();
+    // ENG-35732 (Safari): ensure a valid range exists after focus() before
+    // querying the selection — Safari may return rangeCount === 0 synchronously.
+    this.ensureSafariSelection();
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
@@ -96,6 +149,8 @@ export class FormatManager {
    */
   applyBlockquote(): void {
     this.element.focus();
+    // ENG-35732 (Safari): ensure a valid range exists after focus().
+    this.ensureSafariSelection();
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
@@ -147,11 +202,33 @@ export class FormatManager {
     }
   }
 
+  // ==================== Safari Selection Helper ====================
+
+  /**
+   * ENG-35732: Safari does not synchronously restore window.getSelection()
+   * after a programmatic element.focus() call. When the toolbar button is
+   * clicked, the contenteditable loses focus and rangeCount drops to 0.
+   * This helper synthesises a collapsed range at the end of the element's
+   * content so that subsequent formatting calls have a valid anchor point.
+   */
+  private ensureSafariSelection(): void {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount > 0) return;
+    const range = document.createRange();
+    if (this.element.lastChild) {
+      range.setStartAfter(this.element.lastChild);
+    } else {
+      range.setStart(this.element, 0);
+    }
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
   // ==================== Format State ====================
 
   /** Check if a specific format is currently active at the cursor position. */
-  isActive(format: string): boolean {
-    try {
+  isActive(format: string): boolean {    try {
       if (document.queryCommandState) return document.queryCommandState(format);
     } catch {
       return isInsideFormattedElement(format, this.element);
@@ -161,12 +238,25 @@ export class FormatManager {
 
   /** Get the current format state for all supported formats. */
   getCurrentFormats(): RichTextFormatState {
+    // If the editor is empty, return all-false immediately.
+    // Browsers can return stale queryCommandState('bold') = true on empty
+    // contenteditables if formatting was active before the content was cleared.
+    const isEmpty = this.isEditorEmpty();
+    if (isEmpty) {
+      // Inline marks (bold/italic/underline/strikethrough) leave no DOM, so reflect
+      // the pending toolbar toggle state captured at apply time. Block/list/code/link
+      // formats can't be active on truly empty content, so they stay false.
+      return {
+        ...this.pendingEmptyInlineFormats,
+        code: false, blockquote: false, codeBlock: false, orderedList: false, bulletList: false, link: false,
+      };
+    }
+
     const isLink = isInsideFormattedElement('a', this.element);
-    // When inside a link, queryCommandState('underline') returns true due to text-decoration.
-    // Check for an actual <u> tag instead to avoid false positives.
-    const isUnderline = isLink
-      ? isInsideFormattedElement('u', this.element)
-      : this.isActive('underline');
+    // Never use queryCommandState('underline') — browsers return true when the cursor
+    // is inside or adjacent to an <a> tag due to text-decoration, causing false positives.
+    // Always check for an actual <u> element in the ancestor chain instead.
+    const isUnderline = isInsideFormattedElement('u', this.element);
 
     return {
       bold: this.isActive('bold'),

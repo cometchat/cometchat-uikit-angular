@@ -196,7 +196,7 @@
       [attr.data-index]="index"
       [class.cometchat-users__list-item--active]="isUserActive(user)"
       [class.cometchat-users__list-item--selected]="isUserSelected(user)"
-      role="listitem"
+      role="presentation"
       [attr.aria-label]="getUserAriaLabel(user)"
       [attr.aria-selected]="selectionMode !== SelectionMode.none ? isUserSelected(user) : null"
       (mousedown)="handleMouseDown($event)"

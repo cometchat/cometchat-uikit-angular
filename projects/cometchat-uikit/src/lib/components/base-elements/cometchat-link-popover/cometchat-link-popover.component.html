@@ -6,7 +6,7 @@
   [style.left.px]="popoverLeft"
   [style.visibility]="isPositioned ? 'visible' : 'hidden'"
   (click)="handlePopoverClick($event)"
-  role="menu"
+  role="dialog"
   [attr.aria-label]="'link_popover_aria_label' | translate"
 >
   <!-- Close Button -->
@@ -36,7 +36,6 @@
       class="cometchat-link-popover__button cometchat-link-popover__button--edit"
       (click)="handleEditClick()"
       type="button"
-      role="menuitem"
       [attr.aria-label]="('message_composer_edit' | translate) + ' ' + ('message_composer_link' | translate)"
     >
       {{ 'message_composer_edit' | translate }}
@@ -47,7 +46,6 @@
       class="cometchat-link-popover__button cometchat-link-popover__button--remove"
       (click)="handleRemoveClick()"
       type="button"
-      role="menuitem"
       [attr.aria-label]="('message_composer_remove' | translate) + ' ' + ('message_composer_link' | translate)"
     >
       {{ 'message_composer_remove' | translate }}

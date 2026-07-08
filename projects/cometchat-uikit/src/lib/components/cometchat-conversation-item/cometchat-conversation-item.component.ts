@@ -24,6 +24,7 @@ import {CometChatUIKitConstants} from '../../constants';
 import {getConversationAvatarImage, getConversationAvatarName, getConversationUserStatus, getConversationGroupType, getReceiptStatus, isURL, hasMarkdownLink, getConversationAccessibleLabel,} from './cometchat-conversation-item.utils';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 import {convertMarkdownToHtml} from '../cometchat-text-bubble/cometchat-text-bubble.utils';
+import {getAgentMessageSubtitleText} from '../../utils/agent-message-utils';
 
 @Component({
   selector: 'cometchat-conversation-item',
@@ -176,6 +177,11 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     if (messageCategory === 'action') { return this.getActionMessageText(); }
     if (messageCategory === 'call') { return this.getCallMessageText(); }
     if (messageCategory === 'custom' && messageType === 'meeting') { return this.getMeetingMessageText(); }
+    // Developer card (category "card", arbitrary type): getText() else "Card Message".
+    if (messageCategory === CometChatUIKitConstants.MessageCategory.card) { return (this.lastMessage as CometChat.CardMessage).getText() || CometChatLocalize.getLocalizedString('card_message'); }
+    if (messageCategory === CometChatUIKitConstants.MessageCategory.agentic) {
+      return getAgentMessageSubtitleText(this.lastMessage) || CometChatLocalize.getLocalizedString('conversation_subtitle_ai_response');
+    }
     switch (messageType) {
       case 'text': { const tm = this.lastMessage as CometChat.TextMessage; const rt = tm.getText() || ''; if (this.hasMarkdownLink(rt)) return rt.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); if (this.isURL(rt)) return rt; return this.formatLastMessageSubtitle(); }
       case 'image': return CometChatLocalize.getLocalizedString('conversation_subtitle_image');
@@ -197,6 +203,7 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     if (messageCategory === 'action') { return 'none'; }
     if (messageCategory === 'call') { return this.getCallIconName(); }
     if (messageCategory === 'interactive') { return 'none'; }
+    if (messageCategory === CometChatUIKitConstants.MessageCategory.agentic) { return 'none'; }
     if (messageCategory === 'custom' && messageType === 'meeting') { return this.getMeetingIconName(); }
     switch (messageType) {
       case 'text': { const tm = this.lastMessage as CometChat.TextMessage; const t = tm.getText() || ''; return (this.isURL(t) || this.hasMarkdownLink(t)) ? 'link' : 'none'; }
@@ -235,13 +242,16 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   private hasMarkdownLink(text: string): boolean { return hasMarkdownLink(text); }
   private formatLastMessageSubtitle(): string {
     const textMessage = this.lastMessage as CometChat.TextMessage; const rawText = textMessage.getText() || ''; const mentionedUsers = textMessage.getMentionedUsers() || [];
-    try {
-      const metadata = textMessage.getMetadata?.() as Record<string, any> | undefined;
-      const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
-      if (richText?.html && richText?.hasFormatting) { const sanitized = this.sanitizeSubtitleHtml(richText.html); if (sanitized) return sanitized; }
-    } catch {
+    if (!rawText) {
+      // Fallback: no text — try metadata as last resort
+      try {
+        const metadata = textMessage.getMetadata?.() as Record<string, any> | undefined;
+        const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
+        if (richText?.html && richText?.hasFormatting) { const sanitized = this.sanitizeSubtitleHtml(richText.html); if (sanitized) return sanitized; }
+      } catch {}
+      return '';
     }
-    if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText) || this.hasMarkdownLink(rawText)) { const escaped = this.htmlSanitizer.escapeUserHtml(rawText); const formatters = this.getFormattersForSubtitle(); let formattedText = escaped;
+    if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s.+|^&gt;\s.+|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText) || this.hasMarkdownLink(rawText)) { const escaped = this.htmlSanitizer.escapeUserHtml(rawText); const formatters = this.getFormattersForSubtitle(); let formattedText = escaped;
       for (const formatter of formatters) { try { if (formatter instanceof CometChatMentionsFormatter) { if (this.hasSdkMentionTags(rawText) && formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.formatSdkMentions(formattedText, mentionedUsers); }
           } else if (formatter.id !== 'tiptap-formatter') { if (formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.format(formattedText); }
           } } catch {} }
@@ -276,7 +286,11 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     if (!this.lastMessage || this.lastMessage.getDeletedAt()) return false;
     if (this.lastMessage.getType() !== 'text' || this.lastMessage.getCategory() !== 'message') return false;
     const textMessage = this.lastMessage as CometChat.TextMessage; const rawText = textMessage.getText() || '';
-    try { const metadata = textMessage.getMetadata?.() as Record<string, any> | undefined; const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined; if (richText?.html && richText?.hasFormatting) return true; } catch {}
+    if (!rawText) {
+      // Fallback: no text — check metadata
+      try { const metadata = textMessage.getMetadata?.() as Record<string, any> | undefined; const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined; if (richText?.html && richText?.hasFormatting) return true; } catch {}
+      return false;
+    }
     if (this.isURL(rawText) || this.hasMarkdownLink(rawText)) return false;
     if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText) || this.hasMarkdownLink(rawText)) return true;
     const formatters = this.getFormattersForSubtitle(); if (!formatters?.length) return false;
@@ -380,8 +394,10 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     this.contextMenuOptionClick.emit({ option, conversation: this.conversation });
   }
   onKeyDown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.handleClick(); return; }
-    if ((event.key === 'F10' && event.shiftKey) || event.key === 'ContextMenu') { event.preventDefault(); this.openContextMenuViaKeyboard(); return; }
+    // Stop propagation on handled keys so the parent list's container keydown
+    // handler does not also act on them (which would double-toggle selection).
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); this.handleClick(); return; }
+    if ((event.key === 'F10' && event.shiftKey) || event.key === 'ContextMenu') { event.preventDefault(); event.stopPropagation(); this.openContextMenuViaKeyboard(); return; }
   }
   private openContextMenuViaKeyboard(): void {
     this.isHovered = true;

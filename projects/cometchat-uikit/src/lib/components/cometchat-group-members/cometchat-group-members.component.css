@@ -33,8 +33,7 @@
   display: flex;
   flex-direction: column;
   background: var(--cometchat-background-color-01);
-  overflow: hidden;
-  position: relative;
+  overflow: clip;
   color: var(--cometchat-text-color-primary);
 }
 

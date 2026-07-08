@@ -1,4 +1,4 @@
-import { Component, effect, ElementRef, EventEmitter, HostListener, inject, OnInit, Output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, inject, OnInit, Output, signal, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
@@ -8,6 +8,7 @@ import {
   CometChatCallLogsComponent,
   CometChatUIKit,
   TranslatePipe,
+  safeEffect,
 } from '@cometchat/chat-uikit-angular';
 import { AppStateService } from '../../services/app-state.service';
 import { AuthService } from '../../services/auth.service';
@@ -54,10 +55,10 @@ export class CometChatSelectorComponent implements OnInit {
   protected loggedInUserName = signal('');
 
   /** Close context menu when the active tab changes */
-  private tabChangeEffect = effect(() => {
+  private tabChangeEffect = safeEffect(() => {
     this.activeTab(); // track the signal
     this.showContextMenu.set(false);
-  },{ allowSignalWrites: true});
+  });
 
   /** Close context menu on any click outside the menu wrapper */
   @HostListener('document:click', ['$event'])

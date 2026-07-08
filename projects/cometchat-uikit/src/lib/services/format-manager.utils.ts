@@ -31,7 +31,22 @@ export {
 /** Apply block formatting (pre/blockquote) to all selected blocks. */
 export function applyBlockFormat(tagName: string, className: string | undefined, element: HTMLElement): void {
   const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return;
+
+  // ENG-35732 (Safari): same fix as applyFormatSkippingMentions — synthesise a
+  // collapsed range when the editor just regained focus and selection is empty.
+  if (!selection || selection.rangeCount === 0) {
+    if (!selection) return;
+    const syntheticRange = document.createRange();
+    if (element.lastChild) {
+      syntheticRange.setStartAfter(element.lastChild);
+    } else {
+      syntheticRange.setStart(element, 0);
+    }
+    syntheticRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(syntheticRange);
+  }
+
   const range = selection.getRangeAt(0);
   const blocks = getSelectedBlocks(range, element);
 
@@ -84,7 +99,21 @@ export function applyBlockFormat(tagName: string, className: string | undefined,
 /** Exit block formatting, converting blocks back to text nodes with br tags. */
 export function exitBlockFormat(tagName: string, element: HTMLElement): void {
   const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return;
+
+  // ENG-35732 (Safari): synthesise collapsed range on empty selection.
+  if (!selection || selection.rangeCount === 0) {
+    if (!selection) return;
+    const syntheticRange = document.createRange();
+    if (element.lastChild) {
+      syntheticRange.setStartAfter(element.lastChild);
+    } else {
+      syntheticRange.setStart(element, 0);
+    }
+    syntheticRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(syntheticRange);
+  }
+
   const range = selection.getRangeAt(0);
   const blocks = getSelectedBlocksOfType(range, tagName, element);
 
@@ -199,7 +228,26 @@ function restoreMentionsFromSnapshot(
 /** Apply inline formatting while skipping mention spans. */
 export function applyFormatSkippingMentions(command: string, tagName: string, element: HTMLElement): void {
   const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return;
+
+  // ENG-35732 (Safari): Clicking a toolbar button blurs the contenteditable.
+  // Safari does not synchronously restore window.getSelection() after a
+  // programmatic element.focus() call — rangeCount stays 0 right after focus().
+  // When the editor is empty (or focus was just restored), synthesise a
+  // collapsed range at the end of the content so execCommand has a valid
+  // anchor and can toggle the format mark even without a text selection.
+  if (!selection || selection.rangeCount === 0) {
+    if (!selection) return;
+    const syntheticRange = document.createRange();
+    if (element.lastChild) {
+      syntheticRange.setStartAfter(element.lastChild);
+    } else {
+      syntheticRange.setStart(element, 0);
+    }
+    syntheticRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(syntheticRange);
+  }
+
   const range = selection.getRangeAt(0);
 
   const container = range.commonAncestorContainer;

@@ -1,5 +1,6 @@
 
-import {Component, Input, Output, EventEmitter, TemplateRef, ContentChild, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, OnChanges, SimpleChanges, Signal, computed, signal, inject, Injector, HostListener, ViewChild, effect, booleanAttribute, DestroyRef,} from '@angular/core';
+import {Component, Input, Output, EventEmitter, TemplateRef, ContentChild, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, OnChanges, SimpleChanges, Signal, computed, signal, inject, Injector, HostListener, ViewChild, booleanAttribute, DestroyRef,} from '@angular/core';
+import { safeEffect } from '../../utils/safe-effect';
 import {CommonModule} from '@angular/common';
 
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
@@ -113,8 +114,8 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
   get templateContext(): { user?: CometChat.User; group?: CometChat.Group } { return { user: this.currentUser() ?? undefined, group: this.currentGroup() ?? undefined }; }
   constructor() {
     this.initializeSignals();
-    effect(() => { const s = this.userStatusSignal(); if (this.previousUserStatus !== null && this.previousUserStatus !== s && this.user) this.announceStatusChange(s); this.previousUserStatus = s; }, { allowSignalWrites: true });
-    effect(() => {
+    safeEffect(() => { const s = this.userStatusSignal(); if (this.previousUserStatus !== null && this.previousUserStatus !== s && this.user) this.announceStatusChange(s); this.previousUserStatus = s; });
+    safeEffect(() => {
       const su = this.chatStateService.activeUser(); const sg = this.chatStateService.activeGroup(); const up = this.propsProvided();
       if (!up) {
         this.currentUser.set(su); this.currentGroup.set(sg);
@@ -123,7 +124,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
         else { this.messageHeaderService.cleanup(); this.setupErrorCallback(); }
         this.cdr.markForCheck();
       }
-    }, { allowSignalWrites: true });
+    });
   }
   @HostListener('document:keydown.escape', ['$event'])
   handleEscapeKey(event: Event): void {
@@ -270,7 +271,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     });
     const user = this.currentUser(); const group = this.currentGroup();
     if (user || group) { this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); }
-    else { this.autoSummaryTriggered = false; effect(() => { const u = this.currentUser(); const g = this.currentGroup(); if ((u || g) && !this.autoSummaryTriggered) { this.autoSummaryTriggered = true; this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); } }, { injector: this.injector, allowSignalWrites: true  }); }
+    else { this.autoSummaryTriggered = false; safeEffect(() => { const u = this.currentUser(); const g = this.currentGroup(); if ((u || g) && !this.autoSummaryTriggered) { this.autoSummaryTriggered = true; this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); } }, { injector: this.injector }); }
   }
   private subscribeToGroupEvents(): void {
     const loggedInUser = CometChatUIKit.getLoggedInUser();

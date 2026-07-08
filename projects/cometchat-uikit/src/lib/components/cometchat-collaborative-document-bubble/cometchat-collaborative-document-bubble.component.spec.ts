@@ -270,7 +270,7 @@ describe('CometChatCollaborativeDocumentBubbleComponent', () => {
       const msg = createDocumentMessage();
       setMessageAndDetect(fixture, msg);
       const nameEl = el.querySelector(
-        '.cometchat-collaborative-document-bubble__body-content-name label'
+        '.cometchat-collaborative-document-bubble__body-content-name span'
       );
       expect(nameEl).toBeTruthy();
       expect(nameEl!.textContent!.trim()).toBeTruthy();
@@ -280,7 +280,7 @@ describe('CometChatCollaborativeDocumentBubbleComponent', () => {
       const msg = createDocumentMessage();
       setMessageAndDetect(fixture, msg);
       const descEl = el.querySelector(
-        '.cometchat-collaborative-document-bubble__body-content-description label'
+        '.cometchat-collaborative-document-bubble__body-content-description span'
       );
       expect(descEl).toBeTruthy();
       expect(descEl!.textContent!.trim()).toBeTruthy();
@@ -310,7 +310,7 @@ describe('CometChatCollaborativeDocumentBubbleComponent', () => {
       const msg = createDocumentMessage();
       setMessageAndDetect(fixture, msg);
       const nameLabel = el.querySelector(
-        '.cometchat-collaborative-document-bubble__body-content-name label'
+        '.cometchat-collaborative-document-bubble__body-content-name span'
       ) as HTMLElement;
       expect(nameLabel?.title).toBeTruthy();
     });
@@ -319,7 +319,7 @@ describe('CometChatCollaborativeDocumentBubbleComponent', () => {
       const msg = createDocumentMessage();
       setMessageAndDetect(fixture, msg);
       const descLabel = el.querySelector(
-        '.cometchat-collaborative-document-bubble__body-content-description label'
+        '.cometchat-collaborative-document-bubble__body-content-description span'
       ) as HTMLElement;
       expect(descLabel?.title).toBeTruthy();
     });

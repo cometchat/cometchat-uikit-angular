@@ -1,7 +1,8 @@
 <div
   class="cometchat-stream-message-bubble"
+  role="log"
   aria-live="polite"
-  aria-atomic="true"
+  aria-relevant="additions"
 >
   @if (hasError()) {
     <span class="cometchat-stream-message-bubble__error">
@@ -26,6 +27,25 @@
         [text]="streamedText()"
         [streaming]="true"
       />
+    }
+
+    <!-- Streamed cards: card_start → loader, card → rendered card. -->
+    @for (card of streamedCards(); track card.cardId) {
+      @if (card.status === 'loading') {
+        <div class="cometchat-stream-message-bubble__card-loader" aria-busy="true">
+          <div class="cometchat-stream-message-bubble__card-loader-skeleton"></div>
+          <span class="cometchat-stream-message-bubble__card-loader-label">
+            {{ card.label || ('ai_assistant_chat_thinking' | translate) }}
+          </span>
+        </div>
+      } @else if (card.cardJson) {
+        <cometchat-card-view
+          class="cometchat-stream-message-bubble__card"
+          [cardJson]="card.cardJson"
+          themeMode="auto"
+          (action)="onCardAction($event)"
+        ></cometchat-card-view>
+      }
     }
   }
 </div>

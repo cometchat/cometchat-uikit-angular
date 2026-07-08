@@ -49,10 +49,10 @@ export function getSubtitleIconName(
     case 'video': return 'video';
     case 'audio': return 'audio';
     case 'file': return 'file';
-    case 'extension_poll': return 'poll';
-    case 'extension_sticker': return 'sticker';
-    case 'extension_document': return 'collaborative-document';
-    case 'extension_whiteboard': return 'collaborative-whiteboard';
+    case CometChatUIKitConstants.ExtensionTypes.poll: return 'poll';
+    case CometChatUIKitConstants.ExtensionTypes.sticker: return 'sticker';
+    case CometChatUIKitConstants.ExtensionTypes.document: return 'collaborative-document';
+    case CometChatUIKitConstants.ExtensionTypes.whiteboard: return 'collaborative-whiteboard';
     default: return 'unsupported';
   }
 }

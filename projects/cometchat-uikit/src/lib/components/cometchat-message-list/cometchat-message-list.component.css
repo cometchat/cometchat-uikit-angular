@@ -5,6 +5,15 @@
  * @see Requirements 1.6, 1.7
  */
 
+:host {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+
 /* ==================== Block: Message List ==================== */
 .cometchat-message-list {
   display: flex;
@@ -14,6 +23,7 @@
   position: relative;
   background: var(--cometchat-message-list-background, var(--cometchat-background-color-03));
   overflow: hidden;
+  --cometchat-agent-bubble-padding: var(--cometchat-spacing-2) var(--cometchat-spacing-1) 0 var(--cometchat-spacing-1);
 }
 
 /* Thread mode: lighter background when parentMessageId is set */
@@ -303,6 +313,8 @@
 /* Agent chat mode: allow bubbles to use full width */
 .cometchat-message-list--agent-chat {
   --cometchat-message-bubble-max-width: 100%;
+  --cometchat-neutral-color-300: transparent;
+  --cometchat-agent-bubble-padding: 0
 }
 
 /* ==================== Element: Message Item ==================== */

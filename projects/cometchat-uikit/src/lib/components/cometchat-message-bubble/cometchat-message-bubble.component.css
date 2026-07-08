@@ -125,7 +125,7 @@
   pointer-events: none;
   transition: var(--cometchat-message-bubble-options-transition, opacity 0.2s ease-in-out);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   padding: var(--cometchat-message-bubble-options-padding, var(--cometchat-padding-1, 4px));
 }
 
@@ -170,6 +170,7 @@
   max-width: var(--cometchat-message-bubble-body-max-width, 100%);
   min-width: 0;
   box-sizing: border-box;
+  background: var(--cometchat-neutral-color-300);
 }
 
 /* Remove bottom border-radius when moderation indicator is shown */
@@ -211,6 +212,19 @@
   background: var(--cometchat-message-bubble-outgoing-text-background, var(--cometchat-primary-color));
   /* Set CSS variable to transparent for child text bubble component */
   --cometchat-text-bubble-background: transparent;
+}
+
+/* Card message: same container treatment as text (developer card). */
+.cometchat-message-bubble__card-message .cometchat-message-bubble__body-content-view {
+  margin-bottom: calc(var(--cometchat-margin-2) * -1);
+}
+/* Incoming (receiver) card message - neutral background like text */
+.cometchat-message-bubble-incoming .cometchat-message-bubble__card-message {
+  background: var(--cometchat-message-bubble-incoming-text-background, var(--cometchat-neutral-color-300));
+}
+/* Outgoing (sender) card message - primary color background like text */
+.cometchat-message-bubble-outgoing .cometchat-message-bubble__card-message {
+  background: var(--cometchat-message-bubble-outgoing-text-background, var(--cometchat-primary-color));
 }
 
 .cometchat-message-bubble__image-message,
@@ -539,14 +553,13 @@
 /* Moderation indicator container */
 .cometchat-message-bubble__moderation-indicator {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--cometchat-message-bubble-moderation-indicator-gap, var(--cometchat-spacing-1, 4px));
   padding: var(--cometchat-message-bubble-moderation-indicator-padding, var(--cometchat-padding-1, 4px) var(--cometchat-padding-2, 8px));
   border-radius: 0 0 var(--cometchat-radius-3) var(--cometchat-radius-3);
   font: var(--cometchat-font-body-regular);
-  overflow: hidden;
   box-sizing: border-box;
-  align-items: flex-start;
+  width: 100%;
 }
 
 /* Pending moderation state - warning color */

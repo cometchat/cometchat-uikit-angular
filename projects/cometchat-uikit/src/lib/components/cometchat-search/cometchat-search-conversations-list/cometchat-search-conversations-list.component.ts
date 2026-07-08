@@ -10,9 +10,9 @@ import {
   TemplateRef,
   ViewChild,
   inject,
-  effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { safeEffect } from '../../../utils/safe-effect';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatSearchFilter, States } from '../../../Enums/Enums';
@@ -91,9 +91,9 @@ export class CometChatSearchConversationsListComponent implements OnInit, OnChan
   loggedInUser: CometChat.User | null = null;
 
   constructor() {
-    effect(() => {
+    safeEffect(() => {
       this.stateChange.emit(this.service.fetchState() as States);
-    },{allowSignalWrites:true});
+    });
   }
 
   /** Get typing indicator for a conversation */

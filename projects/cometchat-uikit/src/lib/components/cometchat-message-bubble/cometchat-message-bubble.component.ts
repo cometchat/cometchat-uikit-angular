@@ -43,6 +43,7 @@ import {CometChatReactionsComponent} from '../cometchat-reactions';
 import {CometChatAIAssistantMessageBubble} from '../cometchat-ai-assistant-message-bubble/cometchat-ai-assistant-message-bubble.component';
 import {CometChatToolCallArgumentBubble} from '../cometchat-toolcall-argument-bubble/cometchat-toolcall-argument-bubble.component';
 import {CometChatToolCallResultBubble} from '../cometchat-toolcall-result-bubble/cometchat-toolcall-result-bubble.component';
+import {CometChatCardBubbleComponent} from '../cometchat-card-bubble/cometchat-card-bubble.component';
 
 const BUBBLE_TYPE_MAP: Record<string, string> = {
   text_message: 'cometchat-message-bubble__text-message',
@@ -86,7 +87,7 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
   standalone: true,
   templateUrl: './cometchat-message-bubble.component.html',
   styleUrls: ['./cometchat-message-bubble.component.css'],
-  imports: [CommonModule, CometChatContextMenuComponent, CometChatAvatarComponent, CometChatDateComponent, CometChatTextBubbleComponent, CometChatImageBubbleComponent, CometChatVideoBubbleComponent, CometChatAudioBubbleComponent, CometChatFileBubbleComponent, CometChatDeleteBubbleComponent, CometChatActionBubbleComponent, CometChatMessagePreviewComponent, CometChatThreadViewComponent, CometChatPollBubbleComponent, CometChatCollaborativeDocumentBubbleComponent, CometChatCollaborativeWhiteboardBubbleComponent, CometChatStickerBubbleComponent, CometChatCallBubbleComponent, CometChatReactionsComponent, CometChatAIAssistantMessageBubble, CometChatToolCallArgumentBubble, CometChatToolCallResultBubble, TranslatePipe],
+  imports: [CommonModule, CometChatContextMenuComponent, CometChatAvatarComponent, CometChatDateComponent, CometChatTextBubbleComponent, CometChatImageBubbleComponent, CometChatVideoBubbleComponent, CometChatAudioBubbleComponent, CometChatFileBubbleComponent, CometChatDeleteBubbleComponent, CometChatActionBubbleComponent, CometChatMessagePreviewComponent, CometChatThreadViewComponent, CometChatPollBubbleComponent, CometChatCollaborativeDocumentBubbleComponent, CometChatCollaborativeWhiteboardBubbleComponent, CometChatStickerBubbleComponent, CometChatCallBubbleComponent, CometChatReactionsComponent, CometChatAIAssistantMessageBubble, CometChatToolCallArgumentBubble, CometChatToolCallResultBubble, CometChatCardBubbleComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CometChatMessageBubbleComponent
@@ -174,7 +175,13 @@ export class CometChatMessageBubbleComponent
   get messageType(): string { if (!this.message) return ''; return this.message.getType() || ''; }
   get messageCategory(): string { if (!this.message) return ''; return this.message.getCategory() || ''; }
   get bubbleClassName(): string { switch (this.alignment) { case MessageBubbleAlignment.left: return 'cometchat-message-bubble-incoming'; case MessageBubbleAlignment.right: return 'cometchat-message-bubble-outgoing'; case MessageBubbleAlignment.center: return 'cometchat-message-bubble-action'; default: return 'cometchat-message-bubble-outgoing'; } }
-  get bubbleTypeClassName(): string { if (!this.message) return ''; return BUBBLE_TYPE_MAP[`${this.messageType}_${this.messageCategory}`] || ''; }
+  get bubbleTypeClassName(): string {
+    if (!this.message) return '';
+    // Developer card type is arbitrary, so key the bubble-type class by
+    // CATEGORY (not type_category) so the card gets the standard text-like container.
+    if (this.messageCategory === CometChatUIKitConstants.MessageCategory.card) return 'cometchat-message-bubble__card-message';
+    return BUBBLE_TYPE_MAP[`${this.messageType}_${this.messageCategory}`] || '';
+  }
   get contentType(): string { return this.getBubbleType(); }
   getBubbleType(): string {
     if (!this.message) return 'unsupported';
@@ -182,7 +189,8 @@ export class CometChatMessageBubbleComponent
     if (category === CometChatUIKitConstants.MessageCategory.call || category === 'call') return 'call';
     if (category === CometChatUIKitConstants.MessageCategory.action || category === 'action') return 'action';
     if (category === CometChatUIKitConstants.MessageCategory.message || category === 'message') { switch (type) { case CometChatUIKitConstants.MessageTypes.text: return 'text'; case CometChatUIKitConstants.MessageTypes.image: return 'image'; case CometChatUIKitConstants.MessageTypes.video: return 'video'; case CometChatUIKitConstants.MessageTypes.audio: return 'audio'; case CometChatUIKitConstants.MessageTypes.file: return 'file'; default: return 'text'; } }
-    if (category === CometChatUIKitConstants.MessageCategory.custom || category === 'custom') { if (type.includes('poll')) return 'poll'; if (type.includes('sticker')) return 'sticker'; if (type.includes('document')) return 'document'; if (type.includes('whiteboard')) return 'whiteboard'; if (type.includes('meeting')) return 'meeting'; }
+    if (category === CometChatUIKitConstants.MessageCategory.custom || category === 'custom') { if (type === CometChatUIKitConstants.ExtensionTypes.poll) return 'poll'; if (type === CometChatUIKitConstants.ExtensionTypes.sticker) return 'sticker'; if (type === CometChatUIKitConstants.ExtensionTypes.document) return 'document'; if (type === CometChatUIKitConstants.ExtensionTypes.whiteboard) return 'whiteboard'; if (type === CometChatUIKitConstants.calls.meeting) return 'meeting'; }
+    if (category === CometChatUIKitConstants.MessageCategory.card || category === 'card') return 'card';
     return CONTENT_TYPE_MAP[`${type}_${category}`] || 'unsupported';
   }
   get shouldShowLeadingView(): boolean { if (this.alignment === MessageBubbleAlignment.center) return false; if (this.effectiveHideAvatar()) return false; if (this.effectiveLeadingView) return true; return this.alignment === MessageBubbleAlignment.left; }
@@ -393,7 +401,7 @@ export class CometChatMessageBubbleComponent
       case 'video': return CometChatLocalize.getLocalizedString('accessibility_video_message');
       case 'audio': return CometChatLocalize.getLocalizedString('accessibility_audio_message');
       case 'file': { const fm = this.message as CometChat.MediaMessage; return fm.getAttachment?.()?.getName?.() || CometChatLocalize.getLocalizedString('accessibility_file_message'); }
-      default: if (this.messageType.includes('poll')) { const cd = (this.message as any).getCustomData?.(); return cd?.question || CometChatLocalize.getLocalizedString('accessibility_poll_message'); } return '';
+      default: if (this.messageType === CometChatUIKitConstants.ExtensionTypes.poll) { const cd = (this.message as any).getCustomData?.(); return cd?.question || CometChatLocalize.getLocalizedString('accessibility_poll_message'); } return '';
     }
   }
   private truncateText(text: string, maxLength: number): string {

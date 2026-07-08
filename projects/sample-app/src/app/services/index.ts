@@ -6,3 +6,4 @@ export { ThemeService } from './theme.service';
 export { GroupService } from './group.service';
 export { UserService } from './user.service';
 export { ConversationService } from './conversation.service';
+export { CardActionService } from './card-action.service';

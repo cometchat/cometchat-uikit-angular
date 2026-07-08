@@ -24,10 +24,10 @@
 }
 
 
-.cometchat-thread-view:focus {
+/* .cometchat-thread-view:focus {
   outline: var(--cometchat-thread-view-outline-focus, none);
   box-shadow: var(--cometchat-thread-view-box-shadow-focus, 0 0 0 2px var(--cometchat-primary-color, #6852D6));
-}
+} */
 
 .cometchat-thread-view:focus-visible {
   outline: var(--cometchat-thread-view-outline-focus-visible, 2px solid var(--cometchat-primary-color, #6852D6));

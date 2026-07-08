@@ -1,5 +1,5 @@
-import { Injectable, inject, OnDestroy, effect } from '@angular/core';
-import { ThemeService as UIKitThemeService } from '@cometchat/chat-uikit-angular';
+import { Injectable, inject, OnDestroy } from '@angular/core';
+import { safeEffect, ThemeService as UIKitThemeService } from '@cometchat/chat-uikit-angular';
 import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
 
 /**
@@ -20,9 +20,9 @@ export class ThemeService implements OnDestroy {
   /** Expose the signal so templates can bind to it */
   readonly currentTheme = this.uiKitTheme.currentTheme;
 
-  private syncEffect = effect(() => {
+  private syncEffect = safeEffect(() => {
     CometChatUIKit.themeMode = this.uiKitTheme.currentTheme();
-  },{ allowSignalWrites: true});
+  });
 
   ngOnDestroy(): void {
     this.syncEffect.destroy();

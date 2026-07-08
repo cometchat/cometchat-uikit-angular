@@ -25,7 +25,7 @@ export * from './lib/services';
 export { CometChatConversationEvents } from './lib/events/CometChatConversationEvents';
 
 export { CometChatMessageEvents } from './lib/events/CometChatMessageEvents';
-export type { IMessages } from './lib/events/CometChatMessageEvents';
+export type { IMessages, ICardActionEvent } from './lib/events/CometChatMessageEvents';
 export { CometChatCallEvents } from './lib/events/CometChatCallEvents';
 export { CometChatGroupEvents } from './lib/events/CometChatGroupEvents';
 export type {
@@ -58,3 +58,7 @@ export * from './lib/formatters';
 
 // Logger
 export { CometChatLogger, LogLevel } from './lib/utils/CometChatLogger';
+
+// Effect utility — Angular 18–21 compatible signal-write-safe effect wrapper
+export { safeEffect } from './lib/utils/safe-effect';
+export type { SafeEffectOptions } from './lib/utils/safe-effect';

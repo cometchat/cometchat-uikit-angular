@@ -10,9 +10,9 @@ import {
   TemplateRef,
   ViewChild,
   inject,
-  effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { safeEffect } from '../../../utils/safe-effect';
 import { CommonModule, DatePipe } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatSearchFilter, States } from '../../../Enums/Enums';
@@ -20,11 +20,15 @@ import { SearchMessagesService } from '../../../services/search-messages.service
 import { CometChatUIKitConstants } from '../../../constants';
 import { CalendarObject } from '../../../resources/CometChatLocalize/localization.interfaces';
 import { CometChatTextFormatter } from '../../../formatters/cometchat-text-formatter';
+import { CometChatMentionsFormatter } from '../../../formatters/cometchat-mentions-formatter';
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 import { CometChatUIKit } from '../../../cometchat-uikit';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize';
 import { FILE_TYPE_ICONS } from '../../cometchat-file-bubble/cometchat-file-bubble.types';
 import { CometChatPaginatedListComponent } from '../../cometchat-paginated-list/cometchat-paginated-list.component';
+import { HtmlSanitizerService } from '../../../services/html-sanitizer.service';
+import { FormatterConfigService } from '../../../services/formatter-config.service';
+import { stripRichTextFormatting } from '../../../utils/util';
 
 /**
  * Renders message search results with type-specific views,
@@ -82,12 +86,14 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
   readonly States = States;
   readonly MessageTypes = CometChatUIKitConstants.MessageTypes;
 
+  private readonly htmlSanitizer = inject(HtmlSanitizerService);
+  private readonly formatterConfig = inject(FormatterConfigService);
   private loggedInUser: CometChat.User | null = null;
 
   constructor() {
-    effect(() => {
+    safeEffect(() => {
       this.stateChange.emit(this.service.fetchState() as States);
-   },{allowSignalWrites:true});
+    });
   }
 
   /** Whether the paginated list is in loading state (initial load only) */
@@ -201,6 +207,170 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     }
 
     return text;
+  }
+
+  /**
+   * Returns true when the subtitle for a text message should be rendered as HTML
+   * (i.e. it contains markdown, rich text metadata, or SDK mention tags).
+   * Mirrors CometChatConversationItem.subtitleHasHtml.
+   */
+  subtitleHasHtml(message: CometChat.BaseMessage): boolean {
+    if (message.getType() !== CometChatUIKitConstants.MessageTypes.text) return false;
+    if (message.getCategory() !== 'message') return false;
+    const textMessage = message as CometChat.TextMessage;
+    const rawText = textMessage.getText() || '';
+
+    if (!rawText) {
+      // Fallback: no text — check metadata
+      try {
+        const metadata = textMessage.getMetadata?.() as Record<string, unknown> | undefined;
+        const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
+        if (richText?.html && richText?.hasFormatting) return true;
+      } catch { /* ignore */ }
+      return false;
+    }
+
+    // Plain URL or markdown link — render as plain text
+    if (this.isURL(rawText) || /\[([^\]]+)\]\([^)]+\)/.test(rawText)) return false;
+
+    // Markdown syntax
+    if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText)) return true;
+
+    // SDK mention tags
+    const hasSdkMentions = /<@uid:[^>]+>/.test(rawText) || /<@all:[^>]+>/.test(rawText);
+    const formatters = this.getFormattersForSubtitle();
+    const hasMentionsFormatter = formatters.some(f => f instanceof CometChatMentionsFormatter);
+    const hasCustomFormatters = formatters.some(f => !(f instanceof CometChatMentionsFormatter) && f.id !== 'tiptap-formatter');
+    return (hasSdkMentions && hasMentionsFormatter) || hasCustomFormatters;
+  }
+
+  /**
+   * Returns sanitized HTML for the subtitle when subtitleHasHtml() is true.
+   * Mirrors CometChatConversationItem.formatLastMessageSubtitle.
+   */
+  getMessageSubtitleHtml(message: CometChat.BaseMessage): string {
+    const textMessage = message as CometChat.TextMessage;
+    const rawText = textMessage.getText() || '';
+    const mentionedUsers = textMessage.getMentionedUsers?.() ?? [];
+
+    if (!rawText) {
+      // Fallback: no text — try metadata as last resort
+      try {
+        const metadata = textMessage.getMetadata?.() as Record<string, unknown> | undefined;
+        const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
+        if (richText?.html && richText?.hasFormatting) {
+          const sanitized = this.sanitizeSubtitleHtml(richText.html);
+          if (sanitized) return this.prependSenderHtml(sanitized, message);
+        }
+      } catch { /* ignore */ }
+      return '';
+    }
+
+    const formatters = this.getFormattersForSubtitle();
+    const hasSdkMentions = /<@uid:[^>]+>/.test(rawText) || /<@all:[^>]+>/.test(rawText);
+
+    // 2. Markdown path
+    if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s|^&gt;\s?|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText)) {
+      const escaped = this.htmlSanitizer.escapeUserHtml(rawText);
+      let formattedText = escaped;
+      for (const formatter of formatters) {
+        try {
+          if (formatter instanceof CometChatMentionsFormatter) {
+            if (hasSdkMentions && formatter.shouldFormat(formattedText, message)) {
+              formattedText = (formatter as CometChatMentionsFormatter).formatSdkMentions(formattedText, mentionedUsers);
+            }
+          } else if (formatter.id !== 'tiptap-formatter') {
+            if (formatter.shouldFormat(formattedText, message)) {
+              formattedText = formatter.format(formattedText);
+            }
+          }
+        } catch { /* ignore formatter errors */ }
+      }
+      return this.prependSenderHtml(this.sanitizeSubtitleHtml(formattedText), message);
+    }
+
+    // 3. Plain text path with mention formatting
+    const plainText = stripRichTextFormatting(rawText);
+    if (!formatters || formatters.length === 0) {
+      return this.prependSenderHtml(this.formatPlainMentions(plainText, mentionedUsers), message);
+    }
+    const hasCustomFormatters = formatters.some(f => !(f instanceof CometChatMentionsFormatter) && f.id !== 'tiptap-formatter');
+    const hasMentionsFormatter = formatters.some(f => f instanceof CometChatMentionsFormatter);
+    if (!hasSdkMentions && !hasCustomFormatters) {
+      return this.prependSenderHtml(plainText, message);
+    }
+    if (!hasMentionsFormatter && !hasCustomFormatters) {
+      return this.prependSenderHtml(this.formatPlainMentions(plainText, mentionedUsers), message);
+    }
+    const escapedText = this.htmlSanitizer.escapeUserHtml(plainText);
+    let formattedText = escapedText;
+    for (const formatter of formatters) {
+      try {
+        if (formatter instanceof CometChatMentionsFormatter) {
+          if (hasSdkMentions && formatter.shouldFormat(formattedText, message)) {
+            formattedText = (formatter as CometChatMentionsFormatter).formatSdkMentions(formattedText, mentionedUsers);
+          }
+        } else if (formatter.id !== 'tiptap-formatter') {
+          if (formatter.shouldFormat(formattedText, message)) {
+            formattedText = formatter.format(formattedText);
+          }
+        }
+      } catch { /* ignore formatter errors */ }
+    }
+    return this.prependSenderHtml(this.sanitizeSubtitleHtml(formattedText), message);
+  }
+
+  /** Prepend "You: " or "SenderName: " as plain text before the HTML subtitle. */
+  private prependSenderHtml(html: string, message: CometChat.BaseMessage): string {
+    if (this.uid || this.guid) return html;
+    const sender = message.getSender();
+    const isMe = sender?.getUid() === this.loggedInUser?.getUid();
+    const senderName = isMe
+      ? CometChatLocalize.getLocalizedString('search_message_subtitle_you')
+      : (sender?.getName() ?? '');
+    if (!senderName) return html;
+    const escapedName = this.htmlSanitizer.escapeUserHtml(senderName);
+    return `${escapedName}: ${html}`;
+  }
+
+  /** Get the active text formatters — explicit input takes priority over global config. */
+  private getFormattersForSubtitle(): CometChatTextFormatter[] {
+    if (this.textFormatters?.length > 0) return this.textFormatters;
+    return this.formatterConfig.getDefaultFormatters();
+  }
+
+  /** Sanitize HTML to safe inline tags only for search subtitle — single line, truncated. */
+  private sanitizeSubtitleHtml(html: string): string {
+    // Inject list markers as plain text before stripping list tags,
+    // so "1. item1 2. item2" appears inline instead of "item1 item2".
+    let processed = html;
+
+    // Ordered lists: replace <li> with counter prefix "N. "
+    processed = processed.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_match, inner) => {
+      let counter = 0;
+      return inner.replace(/<li[^>]*>/gi, () => {
+        counter++;
+        return `${counter}. `;
+      });
+    });
+
+    // Unordered lists: replace <li> with bullet "• "
+    processed = processed.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_match, inner) => {
+      return inner.replace(/<li[^>]*>/gi, () => '• ');
+    });
+
+    // Collapse remaining block-level elements to spaces
+    processed = processed
+      .replace(/<\/li>/gi, ' ')
+      .replace(/<\/p>/gi, ' ')
+      .replace(/<\/blockquote>/gi, ' ')
+      .replace(/<\/h[1-6]>/gi, ' ');
+
+    let s = this.htmlSanitizer.sanitizeWithConfig(processed, {
+      ALLOWED_TAGS: ['span', 'strong', 'em', 'b', 'i', 'u', 's', 'code', 'a'],
+      ALLOWED_ATTR: ['class', 'data-uid', 'data-mention-type', 'data-hashtag', 'href', 'target', 'rel', 'style'],
+    });
+    return String(s).replace(/\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
   }
 
   /**

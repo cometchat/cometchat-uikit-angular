@@ -3,6 +3,7 @@ import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-loc
 import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKit} from '../../cometchat-uikit';
+import {CometChatUIKitConstants} from '../../constants';
 
 export function getReplyPreviewTitleImpl(self: any): string {
   const message = self.messageToReplySignal();
@@ -49,13 +50,13 @@ export function getReplyPreviewSubtitleImpl(self: any): string {
       return CometChatLocalize.getLocalizedString('conversation_subtitle_audio');
     case CometChat.MESSAGE_TYPE.FILE:
       return CometChatLocalize.getLocalizedString('conversation_subtitle_file');
-    case 'extension_poll':
+    case CometChatUIKitConstants.ExtensionTypes.poll:
       return CometChatLocalize.getLocalizedString('conversation_subtitle_poll');
-    case 'extension_sticker':
+    case CometChatUIKitConstants.ExtensionTypes.sticker:
       return CometChatLocalize.getLocalizedString('conversation_subtitle_sticker');
-    case 'extension_document':
+    case CometChatUIKitConstants.ExtensionTypes.document:
       return CometChatLocalize.getLocalizedString('conversation_subtitle_collaborative_document');
-    case 'extension_whiteboard':
+    case CometChatUIKitConstants.ExtensionTypes.whiteboard:
       return CometChatLocalize.getLocalizedString('conversation_subtitle_collaborative_whiteboard');
     default:
       // For unknown custom message types, show the type name as fallback

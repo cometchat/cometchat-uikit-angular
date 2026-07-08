@@ -93,13 +93,17 @@ export function extractMentionedUsers(
 }
 
 /**
- * Extracts rich text HTML from message metadata.
+ * Extracts rich text HTML from message metadata — ONLY as a fallback when
+ * message.getText() is empty. Text is always the primary rendering source.
  * Path: metadata.richText.html (when metadata.richText.hasFormatting is true)
  */
 export function extractRichTextHtml(
   message: CometChat.TextMessage | null | undefined
 ): string {
   if (!message) return '';
+  // Primary source is always getText() — only use metadata when text is absent
+  const text = (message as CometChat.TextMessage).getText?.();
+  if (text && text.trim().length > 0) return '';
   try {
     const metadata = message.getMetadata?.();
     if (!metadata || typeof metadata !== 'object') return '';

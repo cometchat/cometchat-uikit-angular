@@ -26,6 +26,7 @@ export type MarkdownNodeType =
   | 'paragraph'
   | 'bold'
   | 'italic'
+  | 'underline'
   | 'strikethrough'
   | 'inlineCode'
   | 'codeBlock'
@@ -65,13 +66,14 @@ function escapeHtml(text: string): string {
 
 // ── Inline parser ─────────────────────────────────────────────────────────────
 
-function parseInline(text: string): MarkdownNode[] {
+export function parseInline(text: string): MarkdownNode[] {
   const nodes: MarkdownNode[] = [];
   let remaining = text;
 
-  // Order: images > links > bold (**/__) > strikethrough > italic (*/_) > inline code
+  // Order: images > links > bold+italic (***) > bold (**/__) > strikethrough > italic (*/_) > inline code
+  // Use negative lookbehind/lookahead on _ to prevent single _ from matching inside __
   const inlineRe =
-    /!\[([^\]]*)\]\(([^)]*)\)|\[([^\]]*)\]\(([^)]*)\)|\*\*([^*]+)\*\*|__([^_]+)__|~~([^~]+)~~|\*([^*]+)\*|_([^_]+)_|`([^`]+)`/g;
+    /!\[([^\]]*)\]\(([^)]*)\)|\[([^\]]*)\]\(([^)]*)\)|\*{3}(.+?)\*{3}|\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~|\*(.+?)\*|(?<!_)_([^_]+)_(?!_)|`([^`]+)`/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -87,17 +89,20 @@ function parseInline(text: string): MarkdownNode[] {
     } else if (match[3] !== undefined) {
       nodes.push({ type: 'link', content: match[3], href: match[4] });
     } else if (match[5] !== undefined) {
-      nodes.push({ type: 'bold', content: match[5] });
+      // ***text*** → bold+italic combined
+      nodes.push({ type: 'bold', content: `*${match[5]}*` });
     } else if (match[6] !== undefined) {
       nodes.push({ type: 'bold', content: match[6] });
     } else if (match[7] !== undefined) {
-      nodes.push({ type: 'strikethrough', content: match[7] });
+      nodes.push({ type: 'underline', content: match[7] });
     } else if (match[8] !== undefined) {
-      nodes.push({ type: 'italic', content: match[8] });
+      nodes.push({ type: 'strikethrough', content: match[8] });
     } else if (match[9] !== undefined) {
       nodes.push({ type: 'italic', content: match[9] });
     } else if (match[10] !== undefined) {
-      nodes.push({ type: 'inlineCode', content: match[10] });
+      nodes.push({ type: 'italic', content: match[10] });
+    } else if (match[11] !== undefined) {
+      nodes.push({ type: 'inlineCode', content: match[11] });
     }
 
     lastIndex = match.index + match[0].length;

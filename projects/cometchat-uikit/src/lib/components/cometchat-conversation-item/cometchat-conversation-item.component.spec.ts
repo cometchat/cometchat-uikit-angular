@@ -1102,6 +1102,7 @@ describe('CometChatConversationItemComponent', () => {
       const event = {
         key: 'Enter',
         preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
         shiftKey: false,
       } as unknown as KeyboardEvent;
       component.onKeyDown(event);
@@ -1115,6 +1116,7 @@ describe('CometChatConversationItemComponent', () => {
       const event = {
         key: ' ',
         preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
         shiftKey: false,
       } as unknown as KeyboardEvent;
       component.onKeyDown(event);
@@ -1131,6 +1133,7 @@ describe('CometChatConversationItemComponent', () => {
         key: 'F10',
         shiftKey: true,
         preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
       } as unknown as KeyboardEvent;
       component.onKeyDown(event);
       expect(event.preventDefault).toHaveBeenCalled();
@@ -1146,6 +1149,7 @@ describe('CometChatConversationItemComponent', () => {
         key: 'ContextMenu',
         shiftKey: false,
         preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
       } as unknown as KeyboardEvent;
       component.onKeyDown(event);
       expect(contextSpy).toHaveBeenCalledTimes(1);

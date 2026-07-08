@@ -8,6 +8,28 @@ import { IMessages } from './CometChatMessageEvents.types';
 export type { IMessages };
 
 /**
+ * Payload for the `ccCardActionClicked` event (Card Messages).
+ * `message` is the owning message — the `CardMessage` for a developer card or
+ * the `AIAssistantMessage` for a nested agent-card block. `action` is the raw
+ * renderer action object, forwarded untouched (the kit performs no behavior).
+ */
+export interface ICardActionEvent {
+  /**
+   * The owning message — `CardMessage` (developer) or `AIAssistantMessage`
+   * (persisted agent card). `null` only for a card tapped while the agent run is
+   * still streaming (no persisted message exists yet; the persisted bubble that
+   * follows is the source of truth).
+   */
+  message: CometChat.BaseMessage | null;
+  /** The renderer's raw discriminated action (`CometChatCardAction`) — forwarded untouched. */
+  action: unknown;
+  /** The renderer element id that emitted the action (for `customCallback`). */
+  elementId?: string;
+  /** The raw card JSON the action originated from (for `customCallback`). */
+  cardJson?: string;
+}
+
+/**
  * Message event subjects for handling actions related to messages (e.g., message sent, edited, deleted, etc.)
  */
 
@@ -24,6 +46,12 @@ export class CometChatMessageEvents {
    */
   static ccMessageRead: Subject<CometChat.BaseMessage> = new Subject<CometChat.BaseMessage>();
   static ccMessageDeleted: Subject<CometChat.BaseMessage> = new Subject<CometChat.BaseMessage>();
+  /**
+   * Emitted when a user taps an action on a card (developer card or nested
+   * agent-card block). Pure forward — the kit performs no behavior; the app
+   * subscribes once and runs the action.
+   */
+  static ccCardActionClicked: Subject<ICardActionEvent> = new Subject<ICardActionEvent>();
 
   // ── SDK-wrapper Subjects ──
   static onTextMessageReceived: Subject<CometChat.TextMessage> =
@@ -55,8 +83,10 @@ export class CometChatMessageEvents {
     new Subject<CometChat.InteractiveMessage>();
   static onFormMessageReceived: Subject<CometChat.InteractiveMessage> =
     new Subject<CometChat.InteractiveMessage>();
-  static onCardMessageReceived: Subject<CometChat.InteractiveMessage> =
-    new Subject<CometChat.InteractiveMessage>();
+  // Retyped from InteractiveMessage to the new CardMessage and
+  // wired to onCardMessageReceived (category "card").
+  static onCardMessageReceived: Subject<CometChat.CardMessage> =
+    new Subject<CometChat.CardMessage>();
   static onSchedulerMessageReceived: Subject<CometChat.InteractiveMessage> =
     new Subject<CometChat.InteractiveMessage>();
   static onAIAssistantMessageReceived: Subject<CometChat.AIAssistantMessage> =
@@ -165,7 +195,7 @@ export class CometChatMessageEvents {
     CometChatMessageEvents.onFormMessageReceived.next(message);
   }
 
-  static publishCardMessageReceived(message: CometChat.InteractiveMessage): void {
+  static publishCardMessageReceived(message: CometChat.CardMessage): void {
     CometChatMessageEvents.onCardMessageReceived.next(message);
   }
 
@@ -229,7 +259,6 @@ export class CometChatMessageEvents {
 
   static subscribeOnCustomMessageReceived(cb: (data: CometChat.CustomMessage) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onCustomMessageReceived, cb, destroyRef);
-      destroyRef
     
   }
 
@@ -288,8 +317,13 @@ export class CometChatMessageEvents {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onFormMessageReceived, cb, destroyRef);
   }
 
-  static subscribeOnCardMessageReceived(cb: (data: CometChat.InteractiveMessage) => void, destroyRef?: DestroyRef): Subscription {
+  static subscribeOnCardMessageReceived(cb: (data: CometChat.CardMessage) => void, destroyRef?: DestroyRef): Subscription {
     return subscribeWithOptionalCleanup(CometChatMessageEvents.onCardMessageReceived, cb, destroyRef);
+  }
+
+  /** Subscribes to card-action clicks; auto-cleans up when destroyRef is given. */
+  static subscribeOnCardActionClicked(cb: (data: ICardActionEvent) => void, destroyRef?: DestroyRef): Subscription {
+    return subscribeWithOptionalCleanup(CometChatMessageEvents.ccCardActionClicked, cb, destroyRef);
   }
 
   static subscribeOnSchedulerMessageReceived(cb: (data: CometChat.InteractiveMessage) => void, destroyRef?: DestroyRef): Subscription {

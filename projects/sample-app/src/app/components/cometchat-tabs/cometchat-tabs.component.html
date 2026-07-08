@@ -7,7 +7,6 @@
       [attr.aria-selected]="activeTab() === tab.id"
       [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
       [id]="'tab-' + tab.id"
-      [attr.aria-controls]="'tabpanel-' + tab.id"
       (click)="selectTab(tab)"
       (keydown)="onKeydown($event, i)"
     >

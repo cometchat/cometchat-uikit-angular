@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, OnInit, OnDestroy, signal, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, OnDestroy, signal, ViewChild, ViewEncapsulation } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
   ChatStateService,
@@ -8,6 +8,7 @@ import {
   CometChatUserEvents,
   CometChatLocalize,
   TranslatePipe,
+  safeEffect,
 } from '@cometchat/chat-uikit-angular';
 import { Subscription } from 'rxjs';
 import { NavigationService } from '../../services/navigation.service';
@@ -78,21 +79,21 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
    * so its internal computed doesn't track changes. We manually trigger
    * change detection on the child component to pick up the new value.
    */
-  private showBackButtonSync = effect(() => {
+  private showBackButtonSync = safeEffect(() => {
     // Track the signal so the effect re-runs on change
     this.navigationService.isMobile();
     // Nudge the UIKit component's change detector
     this.messageHeaderRef?.['cdr']?.detectChanges();
-  },{ allowSignalWrites: true});
+  });
 
   /** Whether the composer should be hidden (user blocked by me) — local signal for realtime updates */
   protected isBlockedByMe = signal(false);
 
   /** Sync isBlockedByMe when the active user changes (switching conversations) */
-  private activeUserSync = effect(() => {
+  private activeUserSync = safeEffect(() => {
     const user = this.activeUser();
     this.isBlockedByMe.set(user?.getBlockedByMe?.() ?? false);
-  },{ allowSignalWrites: true});
+  });
 
   /** goToMessageId from NavigationService, converted to string for the UIKit input */
   protected goToMessageId = computed(() => {

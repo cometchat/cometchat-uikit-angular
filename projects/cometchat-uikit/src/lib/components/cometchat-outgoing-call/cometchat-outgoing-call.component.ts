@@ -267,7 +267,8 @@ export class CometChatOutgoingCallComponent implements OnInit, OnDestroy, AfterV
       this.dialogFocusManager.openDialog({
         container: this.dialogContainer.nativeElement,
         initialFocus: this.cancelButton?.nativeElement,
-        labelledById: 'outgoing-call-title',
+        // Name comes from the template aria-label (robust for custom title views);
+        // omit labelledById so it isn't re-applied and override the aria-label.
         closeOnEscape: true,
         onEscape: () => this.onCancelClick(),
       });

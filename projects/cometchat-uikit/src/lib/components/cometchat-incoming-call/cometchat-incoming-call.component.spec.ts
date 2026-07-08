@@ -819,9 +819,9 @@ describe('CometChatIncomingCallComponent Unit Tests', () => {
       expect(component.effectiveCall).toBeTruthy();
     });
 
-    it('template has aria-labelledby="incoming-call-title" referencing the title element', () => {
-      // The HTML template has aria-labelledby="incoming-call-title" on the root div.
-      // The #defaultTitleView template has id="incoming-call-title" on the span.
+    it('exposes caller info used for the dialog aria-label', () => {
+      // The dialog name comes from the root div's aria-label (callerName + subtitle),
+      // which is robust even when a custom titleView replaces the default title.
       component.call = mockCall;
       expect(component.callerName).toBe('Alice');
     });

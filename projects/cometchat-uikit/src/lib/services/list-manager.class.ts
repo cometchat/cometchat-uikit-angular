@@ -307,6 +307,20 @@ export class ListManager {
     newList.className = list.className;
     while (list.firstChild) newList.appendChild(list.firstChild);
     list.parentNode?.replaceChild(newList, list);
+
+    // ENG-35758: When converting UL→OL the browser retains the internal list
+    // counter from the transplanted <li> nodes and may render them all as "1.".
+    // Force a counter reset by toggling the list-style and restoring it so the
+    // browser recalculates the ordinal values from 1.
+    if (newType === 'ol') {
+      newList.setAttribute('start', '1');
+      // Remove and re-append each <li> so the browser recounts from scratch.
+      const items = Array.from(newList.querySelectorAll(':scope > li'));
+      items.forEach(li => {
+        newList.removeChild(li);
+        newList.appendChild(li);
+      });
+    }
   }
 
   private manuallyCreateList(type: 'ol' | 'ul'): void {

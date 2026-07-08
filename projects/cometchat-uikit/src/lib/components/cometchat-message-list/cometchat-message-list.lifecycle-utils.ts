@@ -1,4 +1,5 @@
-import {SimpleChanges, effect, DestroyRef} from '@angular/core';
+import {SimpleChanges, DestroyRef} from '@angular/core';
+import { safeEffect } from '../../utils/safe-effect';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {CometChatUIEvents, IPanel} from '../../events/CometChatUIEvents';
@@ -53,6 +54,9 @@ export function ngOnChangesImpl(self: any, changes: SimpleChanges): void {
   const userChange = changes['user'];
   const groupChange = changes['group'];
   const goToMessageIdChange = changes['goToMessageId'];
+  if (changes['messagesRequestBuilder'] && self.messagesRequestBuilder) {
+    self.messageListService.setMessagesRequestBuilder(self.messagesRequestBuilder);
+  }
   if ((userChange && !userChange.firstChange) || (groupChange && !groupChange.firstChange)) {
     self.handleConversationChange();
   }
@@ -84,14 +88,14 @@ export function ngAfterViewInitImpl(self: any): void {
   self.setupIntersectionObservers();
   self.setupScrollListeners();
   // Re-setup observers when list transitions to loaded state
-  effect(
+  safeEffect(
     () => {
       const state = self.listState();
       if (state === States.loaded) {
         setTimeout(() => { self.setupIntersectionObservers(); }, 0);
       }
     },
-    { injector: self.injector, allowSignalWrites: true }
+    { injector: self.injector }
   );
 }
 

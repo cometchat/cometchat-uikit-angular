@@ -27,9 +27,7 @@
         type="button"
         class="cometchat-conversation-summary__header-close-button"
         [attr.aria-label]="'close' | translate"
-        tabindex="0"
-        (click)="closeCallback?.()"
-        (keydown)="onCloseKeydown($event)">
+        (click)="closeCallback?.()">
         <span
           class="cometchat-conversation-summary__header-close-icon"
           aria-hidden="true">

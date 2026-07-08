@@ -777,11 +777,14 @@ describe('CometChatEmojiKeyboardComponent', () => {
       });
     });
 
-    it('should have role="tabpanel" on the emoji list container', () => {
+    it('should have a role="tabpanel" per category, labelled by its tab', () => {
       component.emojiData = createSampleCategories();
       fixture.detectChanges();
-      const panel = getEmojiListContainer();
+      // Each category section is its own tabpanel (so each tab\'s aria-controls
+      // resolves to a real tabpanel), rather than one unlabeled outer panel.
+      const panel = el.querySelector('.cometchat-emoji-keyboard__list-content');
       expect(panel?.getAttribute('role')).toBe('tabpanel');
+      expect(panel?.getAttribute('aria-labelledby')).toMatch(/^emoji-tab-/);
     });
 
     it('should have roving tabindex on tabs (only focused tab has 0)', () => {

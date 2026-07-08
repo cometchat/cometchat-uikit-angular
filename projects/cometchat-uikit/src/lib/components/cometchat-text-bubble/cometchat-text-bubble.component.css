@@ -690,6 +690,22 @@
   margin: 0;
 }
 
+/* Nested ordered list cycling: decimal → lower-alpha → lower-roman */
+.cometchat-text-bubble__content ol ol {
+  list-style-type: lower-alpha;
+}
+.cometchat-text-bubble__content ol ol ol {
+  list-style-type: lower-roman;
+}
+
+/* Nested unordered list cycling: disc → circle → square */
+.cometchat-text-bubble__content ul ul {
+  list-style-type: circle;
+}
+.cometchat-text-bubble__content ul ul ul {
+  list-style-type: square;
+}
+
 /**
  * List items
  * @see Requirements 1.2, 2.2, 3.2, 4.2

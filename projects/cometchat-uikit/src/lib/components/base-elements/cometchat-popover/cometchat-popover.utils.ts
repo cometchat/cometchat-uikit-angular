@@ -103,7 +103,10 @@ export function calculateViewportPosition(
   const positionStyle: Record<string, string> = {};
 
   if (availablePlacement === Placement.top) {
-    positionStyle['top'] = `${rect.top - height - offset}px`;
+    // Clamp top to minimum 10px — Safari won't render fixed elements with negative top
+    let top = rect.top - height - offset;
+    top = Math.max(10, top);
+    positionStyle['top'] = `${top}px`;
     let left = rect.left + rect.width / 2 - width / 2;
     left = Math.max(10, Math.min(left, viewportWidth - width - 10));
     positionStyle['left'] = `${left}px`;

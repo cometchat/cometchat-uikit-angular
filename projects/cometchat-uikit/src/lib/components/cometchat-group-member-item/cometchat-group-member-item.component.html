@@ -19,7 +19,7 @@
      [attr.tabindex]="tabIndex"
      [attr.aria-selected]="isSelected"
      [attr.aria-label]="accessibleLabel"
-     (click)="handleClick()"
+     (click)="handleClick($event)"
      (keydown)="onKeyDown($event)"
      (mousedown)="handleMouseDown($event)"
      (focus)="onItemFocus()"
@@ -84,7 +84,7 @@
         <div class="cometchat-group-member-item__context-menu">
           <cometchat-context-menu
             [data]="contextMenuOptions"
-            [placement]="Placement.left"
+            [placement]="Placement.bottom"
             [topMenuSize]="1"
             [closeOnOutsideClick]="true"
             (optionClick)="handleContextMenuOptionClick($any($event))"

@@ -130,32 +130,44 @@ describe('CometChatMarkdownFormatter', () => {
 
   describe('format - inline code', () => {
     it('should convert `code` to <code>code</code>', () => {
-      expect(formatter.format('`code`')).toBe('<code>code</code>');
+      expect(formatter.format('`code`')).toContain('<code');
+      expect(formatter.format('`code`')).toContain('>code</code>');
     });
 
     it('should convert inline code within a sentence', () => {
-      expect(formatter.format('Use `npm install` to install')).toBe(
-        'Use <code>npm install</code> to install'
-      );
+      const result = formatter.format('Use `npm install` to install');
+      expect(result).toContain('<code');
+      expect(result).toContain('>npm install</code>');
+      expect(result).toContain('Use ');
+      expect(result).toContain(' to install');
     });
 
     it('should convert multiple inline code segments', () => {
-      expect(formatter.format('`one` and `two`')).toBe('<code>one</code> and <code>two</code>');
+      const result = formatter.format('`one` and `two`');
+      expect(result).toContain('>one</code>');
+      expect(result).toContain('>two</code>');
+      expect(result).toContain(' and ');
     });
   });
 
   describe('format - code blocks', () => {
     it('should convert ```code``` to <pre><code>code</code></pre>', () => {
-      expect(formatter.format('```code block```')).toBe('<pre><code>code block</code></pre>');
+      const result = formatter.format('```code block```');
+      expect(result).toContain('<pre');
+      expect(result).toContain('<code');
+      expect(result).toContain('>code block</code>');
+      expect(result).toContain('</pre>');
     });
 
     it('should handle multiline code blocks', () => {
       const input = '```\nline1\nline2\n```';
       const result = formatter.format(input);
-      expect(result).toContain('<pre><code>');
+      expect(result).toContain('<pre');
+      expect(result).toContain('<code');
       expect(result).toContain('line1');
       expect(result).toContain('line2');
-      expect(result).toContain('</code></pre>');
+      expect(result).toContain('</code>');
+      expect(result).toContain('</pre>');
     });
   });
 
@@ -183,14 +195,14 @@ describe('CometChatMarkdownFormatter', () => {
   describe('format - blockquotes', () => {
     it('should convert > text to <blockquote>text</blockquote>', () => {
       const result = formatter.format('> quoted text');
-      expect(result).toContain('<blockquote>');
+      expect(result).toContain('<blockquote');
       expect(result).toContain('quoted text');
       expect(result).toContain('</blockquote>');
     });
 
     it('should group consecutive blockquote lines', () => {
       const result = formatter.format('> line1\n> line2');
-      expect(result).toContain('<blockquote>');
+      expect(result).toContain('<blockquote');
       expect(result).toContain('line1');
       expect(result).toContain('line2');
     });
@@ -240,7 +252,7 @@ describe('CometChatMarkdownFormatter', () => {
     it('should handle code with other formatting', () => {
       const result = formatter.format('**bold** and `code`');
       expect(result).toContain('<strong>bold</strong>');
-      expect(result).toContain('<code>code</code>');
+      expect(result).toContain('>code</code>');
     });
 
     it('should handle link with other formatting', () => {
@@ -254,7 +266,7 @@ describe('CometChatMarkdownFormatter', () => {
       expect(result).toContain('<strong>bold</strong>');
       expect(result).toContain('<em>italic</em>');
       expect(result).toContain('<s>strike</s>');
-      expect(result).toContain('<code>code</code>');
+      expect(result).toContain('>code</code>');
       expect(result).toContain('<a href="https://x.com"');
     });
   });

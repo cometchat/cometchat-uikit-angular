@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
   ChatStateService,
@@ -9,6 +9,7 @@ import {
   ConversationsService,
   TranslatePipe,
   CometChatLocalize,
+  safeEffect,
 } from '@cometchat/chat-uikit-angular';
 import { Subscription } from 'rxjs';
 import { UserService } from '../../services/user.service';
@@ -52,11 +53,11 @@ export class CometChatUserDetailsComponent implements OnInit, OnDestroy {
   protected isBlocked = signal(false);
 
   /** Sync isBlocked when the active user changes (switching conversations) */
-  private activeUserSync = effect(() => {
+  private activeUserSync = safeEffect(() => {
     const u = this.user();
     this.isBlocked.set(u?.getBlockedByMe?.() ?? false);
     this.hasReceivedMessage.set(false);
-  },{ allowSignalWrites: true});
+  });
 
   /** Whether the user is online */
   protected isOnline = computed(() => {

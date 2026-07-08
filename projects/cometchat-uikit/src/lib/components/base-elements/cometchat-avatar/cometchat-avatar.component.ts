@@ -81,12 +81,23 @@ export class CometChatAvatarComponent implements OnChanges {
   /**
    * Generates an accessible label for screen readers.
    * Describes the avatar content for assistive technologies.
+   *
+   * Falls back to a hardcoded template when the localization service has not
+   * been initialized (e.g., in unit tests) so that the aria-label always
+   * contains the name when one is provided.
    */
   get ariaLabel(): string {
     if (this.name) {
-      return CometChatLocalize.getLocalizedString('accessibility_avatar_for').replace('{name}', this.name);
+      const template = CometChatLocalize.getLocalizedString('accessibility_avatar_for');
+      // Use the localized template only when it actually contains the placeholder;
+      // fall back to a safe default so the name is always present in the label.
+      const resolved = template.includes('{name}')
+        ? template.replace('{name}', this.name)
+        : `Avatar for ${this.name}`;
+      return resolved;
     }
-    return CometChatLocalize.getLocalizedString('accessibility_avatar_for').replace(' {name}', '').replace('{name}', '');
+    const template = CometChatLocalize.getLocalizedString('accessibility_avatar_for');
+    return template.replace(' {name}', '').replace('{name}', '') || 'Avatar';
   }
 
   /**

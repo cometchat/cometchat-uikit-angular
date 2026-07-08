@@ -741,9 +741,12 @@ describe('CometChatAudioBubbleComponent', () => {
 
     it('should render tail view with download button', async () => {
       component.message = createMockAudioMessage(1);
-      await initAndDetect(fixture);
+      // ENG-35743: download button moved from __tail-view into __time-download-row.
+      // Use only the first detectChanges before WaveSurfer async init fails in
+      // jsdom and sets hasError=true (which hides the download row).
+      fixture.detectChanges();
 
-      expect(el.querySelector('.cometchat-audio-bubble__tail-view')).toBeTruthy();
+      expect(el.querySelector('.cometchat-audio-bubble__time-download-row')).toBeTruthy();
       expect(el.querySelector('.cometchat-audio-bubble__download-button')).toBeTruthy();
     });
 
@@ -793,7 +796,10 @@ describe('CometChatAudioBubbleComponent', () => {
 
     it('should have aria-label on download button', async () => {
       component.message = createMockAudioMessage(1);
-      await initAndDetect(fixture);
+      // ENG-35743: download button is now inside __time-download-row which only
+      // renders in the non-error branch. Use first detectChanges only, before
+      // WaveSurfer async init fails in jsdom and sets hasError=true.
+      fixture.detectChanges();
 
       const downloadBtn = el.querySelector('.cometchat-audio-bubble__download-button');
       expect(downloadBtn?.getAttribute('aria-label')).toBeTruthy();

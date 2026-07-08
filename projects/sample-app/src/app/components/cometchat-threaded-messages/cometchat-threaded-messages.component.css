@@ -40,7 +40,7 @@
 }
 
 .cometchat-threaded-messages__composer cometchat-message-composer {
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ── Blocked user banner ── */

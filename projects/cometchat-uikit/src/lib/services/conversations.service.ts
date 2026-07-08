@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject, DestroyRef, NgZone } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subscription } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageEvents, IMessages } from '../events/CometChatMessageEvents';
@@ -19,10 +19,12 @@ import {
   getConversationEntityId, findConversationIndex,
   isAMessage, shouldLastMessageAndUnreadCountBeUpdated,
   applyReceiptToConversations, getTypingIndicatorKey,
+  dedupeConversations,
 } from './conversations.utils';
 import {
   setupUIEventSubscriptions, setupCallEventSubscriptions,
 } from './conversations.ui-events';
+import { ConnectionStateService } from './connection-state.service';
 
 // Re-export types for backward compatibility
 export type { ConversationId, ConversationOperationContext } from './conversations.types';
@@ -39,6 +41,7 @@ export type { ConversationId, ConversationOperationContext } from './conversatio
 export class ConversationsService {
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
+  private connectionState = inject(ConnectionStateService);
 
   // ==================== State Signals ====================
   private conversationsSignal = signal<CometChat.Conversation[]>([]);
@@ -66,6 +69,11 @@ export class ConversationsService {
   readonly isLoading = computed(() => this.loadingStateSignal());
   readonly hasError = computed(() => this.errorStateSignal() !== null);
 
+  // Tracks whether more pages are available for pagination.
+  // Reset to true whenever a fresh first-page fetch completes (e.g. on reconnect).
+  private hasMoreSignal = signal<boolean>(true);
+  readonly hasMore = this.hasMoreSignal.asReadonly();
+
   // ==================== Configuration ====================
   private conversationsRequest?: CometChat.ConversationsRequest;
   private requestBuilder?: CometChat.ConversationsRequestBuilder;
@@ -74,6 +82,8 @@ export class ConversationsService {
   private groupListenerId = `conversations_group_${Date.now()}`;
   private callListenerId = `conversations_call_${Date.now()}`;
   private retryAttempts = new Map<string, number>();
+  /** Guard: only re-fetch on reconnect after the first fetch has completed. */
+  private initialFetchDone = false;
 
   private ccMessageSentSubscription: Subscription | null = null;
   private ccMessageDeletedSubscription: Subscription | null = null;
@@ -90,10 +100,27 @@ export class ConversationsService {
       removeConversationSilently: id => this.removeConversationSilently(id),
       updateGroupOnConversation: g => this.updateGroupOnConversation(g),
       updateUserOnConversation: u => this.updateUserOnConversation(u),
-      addConversationToTop: conv => { const c = [conv, ...this.allConversationsSignal()]; this.allConversationsSignal.set(c); this.conversationsSignal.set(c); },
+      addConversationToTop: conv => { const c = dedupeConversations([conv, ...this.allConversationsSignal()]); this.allConversationsSignal.set(c); this.conversationsSignal.set(c); },
       removeConversationFromList: id => this.removeConversationSilently(id),
       requestBuilder: this.requestBuilder,
     });
+
+    // Single shared connection listener — re-fetch on WebSocket reconnect.
+    // Guard: only fires after the initial fetch has completed, so the startup
+    // onConnected event (which arrives around the same time as the first fetch)
+    // does not cause a duplicate load.
+    this.connectionState.reconnected$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (!this.initialFetchDone) return;
+        CometChatLogger.info('ConversationsService', 'WebSocket reconnected — refreshing conversation list');
+        const builder = this.requestBuilder
+          ?? new CometChat.ConversationsRequestBuilder().setLimit(30);
+        // silent=true: skip loading state and shimmer delay — just swap the list
+        this.fetchConversations(builder, true).catch(e =>
+          CometChatLogger.error('ConversationsService', 'Error refreshing conversations on reconnect:', e)
+        );
+      });
 
     this.destroyRef.onDestroy(() => { this.removeListeners(); this.resetState(); });
   }
@@ -107,17 +134,33 @@ export class ConversationsService {
   setActiveConversation(conversation: CometChat.Conversation | null): void { this.activeConversationSignal.set(conversation); }
   getConversations(): CometChat.Conversation[] { return this.conversationsSignal(); }
 
-  async fetchConversations(builder?: CometChat.ConversationsRequestBuilder): Promise<void> {
+  async fetchConversations(builder?: CometChat.ConversationsRequestBuilder, silent = false): Promise<void> {
     try {
-      this.allConversationsSignal.set([]); this.conversationsSignal.set([]);
-      this.loadingStateSignal.set(true); this.errorStateSignal.set(null);
+      if (!silent) {
+        // Normal load: clear immediately and show shimmer
+        this.allConversationsSignal.set([]); this.conversationsSignal.set([]);
+        this.loadingStateSignal.set(true);
+      }
+      // Silent reconnect load: keep existing list visible until new data arrives
+      this.errorStateSignal.set(null);
       const t0 = Date.now();
       const b = builder || this.requestBuilder || new CometChat.ConversationsRequestBuilder().setLimit(30);
       this.conversationsRequest = b.build();
       const conversations = await this.conversationsRequest.fetchNext();
-      await new Promise<void>(r => setTimeout(r, Math.max(0, 1000 - (Date.now() - t0))));
-      this.allConversationsSignal.set(conversations); this.conversationsSignal.set(conversations);
+      // A realtime listener (e.g. a group-action message for a just-created group)
+      // can insert a conversation while this fetch is in flight. Merge those in front
+      // of the fetched page and dedupe by entity id so the same conversation is never
+      // listed twice — keep the realtime copy, drop the duplicate from the page.
+      const merged = dedupeConversations([...this.allConversationsSignal(), ...conversations]);
+      this.allConversationsSignal.set(merged); this.conversationsSignal.set(merged);
+      // Only apply shimmer minimum delay on the initial (non-silent) fetch
+      if (!silent) {
+        await new Promise<void>(r => setTimeout(r, Math.max(0, 1000 - (Date.now() - t0))));
+      }
       this.loadingStateSignal.set(false);
+      // After a fresh first-page fetch, pagination is available again
+      this.hasMoreSignal.set(true);
+      this.initialFetchDone = true;
     } catch (error) {
       this.loadingStateSignal.set(false);
       await handleErrorWithRetry(error, 'fetchConversations', this.retryAttempts, this.setError.bind(this), () => this.fetchConversations(builder));
@@ -130,10 +173,14 @@ export class ConversationsService {
     try {
       this.loadingStateSignal.set(true); this.errorStateSignal.set(null);
       const next = await this.conversationsRequest.fetchNext();
-      const updated = [...this.conversationsSignal(), ...next];
+      // Dedupe so a conversation already promoted to the list by a realtime event
+      // isn't added again when it also comes back in the next page.
+      const updated = dedupeConversations([...this.conversationsSignal(), ...next]);
       this.allConversationsSignal.set(updated); this.conversationsSignal.set(updated);
       this.loadingStateSignal.set(false);
-      return next.length > 0;
+      const hasMore = next.length > 0;
+      this.hasMoreSignal.set(hasMore);
+      return hasMore;
     } catch (error) {
       this.loadingStateSignal.set(false);
       this.errorStateSignal.set(createEnhancedError(error, 'fetchNextConversations'));
@@ -277,6 +324,7 @@ export class ConversationsService {
   removeListeners(): void {
     removeMessageListener(this.messageListenerId); removeUserListener(this.userListenerId);
     removeGroupListener(this.groupListenerId); removeCallListener(this.callListenerId);
+    // Connection listener is owned by ConnectionStateService — nothing to remove here.
     this.ccMessageSentSubscription?.unsubscribe(); this.ccMessageSentSubscription = null;
     this.ccMessageDeletedSubscription?.unsubscribe(); this.ccMessageDeletedSubscription = null;
     this.callEventSubscriptions.forEach(s => s.unsubscribe()); this.callEventSubscriptions = [];
@@ -288,6 +336,8 @@ export class ConversationsService {
     this.loadingStateSignal.set(false); this.errorStateSignal.set(null);
     this.activeConversationSignal.set(null); this.typingIndicatorsSignal.set(new Map());
     this.retryAttempts.clear();
+    this.hasMoreSignal.set(true);
+    this.initialFetchDone = false;
   }
 
   // ==================== SDK Listener Setup ====================
@@ -297,6 +347,8 @@ export class ConversationsService {
     setupMessageListener(this.messageListenerId, {
       onTextMessageReceived: nm, onMediaMessageReceived: nm,
       onCustomMessageReceived: nm, onInteractiveMessageReceived: nm,
+      onCardMessageReceived: nm,
+      onAIAssistantMessageReceived: nm,
       onMessageEdited: m => this.handleMessageUpdate(m),
       onMessageDeleted: m => this.handleMessageDelete(m),
       onMessagesDelivered: r => this.handleReceipt(r, false),

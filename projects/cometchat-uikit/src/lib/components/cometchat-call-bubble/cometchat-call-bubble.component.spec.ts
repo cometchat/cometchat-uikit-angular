@@ -459,21 +459,16 @@ describe('CometChatCallBubbleComponent', () => {
       expect(ariaLabel).toContain(voiceCallTitle);
     });
 
-    it('should have role="img" on the icon element', () => {
-      component.message = createCallMessage();
-      fixture.detectChanges();
-
-      const iconEl = el.querySelector('.cometchat-call-bubble__icon');
-      expect(iconEl?.getAttribute('role')).toBe('img');
-    });
-
-    it('should set aria-label on the icon element to the computed title', () => {
+    it('should mark the icon decorative (aria-hidden, no role/aria-label) since the title text conveys it', () => {
       component.message = createCallMessage({ type: 'video' });
       fixture.detectChanges();
 
+      // The call type is conveyed by the visible title text and the container's
+      // aria-label; the masked icon is decorative to avoid a duplicate announcement.
       const iconEl = el.querySelector('.cometchat-call-bubble__icon');
-      const videoTitle = CometChatLocalize.getLocalizedString('message_list_video_call');
-      expect(iconEl?.getAttribute('aria-label')).toBe(videoTitle);
+      expect(iconEl?.getAttribute('aria-hidden')).toBe('true');
+      expect(iconEl?.getAttribute('role')).toBeNull();
+      expect(iconEl?.getAttribute('aria-label')).toBeNull();
     });
 
     it('should set aria-label on the action button to buttonText', () => {

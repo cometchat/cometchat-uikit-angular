@@ -1,15 +1,3 @@
-/**
- * CometChat environment configuration.
- *
- * Single source of truth for all credentials used by:
- * - Sample app (main.ts)
- * - E2E tests (Playwright)
- * - Storybook (stories that initialize CometChat)
- *
- * IMPORTANT: Do not commit real credentials to source control.
- * Copy this file to environment.local.ts and add it to .gitignore,
- * or override via environment variables (E2E_APP_ID, E2E_AUTH_KEY, etc.)
- */
 export const environment = {
   /** CometChat App ID — from https://app.cometchat.com */
   appId: 'appId',
@@ -28,4 +16,10 @@ export const environment = {
 
   /** Secondary test user UID — used by E2E tests for real-time messaging */
   userUid2: 'userUid2',
+
+  /** Test agent UID — used by E2E tests to test agent responses in groups */
+  agentUid: 'agentUid',
+
+  /** Test agent name — used by E2E tests to test agent responses in groups {@link agentUid} */
+  agentName: 'agentName',
 };

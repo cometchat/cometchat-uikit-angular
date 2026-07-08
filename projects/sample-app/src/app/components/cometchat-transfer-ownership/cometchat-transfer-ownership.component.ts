@@ -92,9 +92,15 @@ export class CometChatTransferOwnershipComponent {
       // Emit ccOwnershipChanged event so other components update
       const loggedInUser = CometChatUIKit.getLoggedInUser();
       if (loggedInUser) {
-        // Update the group's owner reference
+        // Update the in-memory group object with the new owner. The previous
+        // owner (the logged-in user) is no longer the owner, so the new owner's
+        // member scope is promoted to admin and the group's owner reference is
+        // updated. group-details listens to ccOwnershipChanged to refresh the
+        // active-group signal so owner-only UI (delete group, add members,
+        // transfer-on-leave) stops showing for the previous owner.
         const updatedGroup = g;
         updatedGroup.setOwner(member.getUid());
+        member.setScope(CometChat.GROUP_MEMBER_SCOPE.ADMIN as CometChat.GroupMemberScope);
 
         CometChatGroupEvents.ccOwnershipChanged.next({
           group: updatedGroup,

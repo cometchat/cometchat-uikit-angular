@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
@@ -10,8 +10,8 @@ import {
   CometChatCallButtonsComponent,
   CalendarObject,
   CometChatUIKitCalls,
+  safeEffect,
 } from '@cometchat/chat-uikit-angular';
-import { CometChatCalls } from '@cometchat/calls-sdk-javascript';
 import { NavigationService } from '../../services/navigation.service';
 
 /** Missed call statuses */
@@ -67,12 +67,12 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
   private historyFetched = false;
 
   /** React to callLog signal changes (when user picks a different call log) */
-  private callLogEffect = effect(() => {
+  private callLogEffect = safeEffect(() => {
     const call = this.callLog();
     if (!call || !this.loggedInUser) return;
     this.resetState();
     this.resolveOtherUser();
-  },{ allowSignalWrites: true});
+  });
 
   async ngOnInit(): Promise<void> {
     try {

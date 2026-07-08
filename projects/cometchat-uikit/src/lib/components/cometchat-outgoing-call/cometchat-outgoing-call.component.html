@@ -6,7 +6,6 @@
     role="dialog"
     aria-modal="true"
     aria-live="assertive"
-    aria-labelledby="outgoing-call-title"
     [attr.aria-label]="receiverName + ' ' + ('calls_outgoing' | translate)">
 
     <!-- Title + Subtitle -->
@@ -40,11 +39,8 @@
       <div #cancelButton class="cometchat-outgoing-call__button">
         <cometchat-button
           [iconURL]="endCallIconUrl"
-          (click)="onCancelClick()"
-          (keydown.enter)="onCancelClick()"
-          (keydown.space)="onCancelClick()"
-          [attr.aria-label]="'accessibility_cancel_call' | translate"
-          tabindex="0">
+          [ariaLabel]="'accessibility_cancel_call' | translate"
+          (buttonClick)="onCancelClick()">
         </cometchat-button>
       </div>
     }

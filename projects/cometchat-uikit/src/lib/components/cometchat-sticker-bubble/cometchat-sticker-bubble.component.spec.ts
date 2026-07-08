@@ -342,15 +342,18 @@ describe('CometChatStickerBubbleComponent', () => {
       expect(ariaLabel).toBeTruthy();
     });
 
-    it('should set alt text on the sticker image', () => {
+    it('should render the sticker image as decorative (empty alt + aria-hidden)', () => {
       const msg = createMockStickerMessage({
         metadata: { sticker_url: 'https://cdn.example.com/sticker.png' },
       });
       setMessageAndDetect(fixture, msg);
 
+      // The accessible name is provided once by the container's role="img" +
+      // aria-label; the inner <img> is decorative to avoid a duplicate announcement.
       const img = el.querySelector('.cometchat-sticker-bubble__image') as HTMLImageElement;
       expect(img).toBeTruthy();
-      expect(img.alt).toBeTruthy();
+      expect(img.getAttribute('alt')).toBe('');
+      expect(img.getAttribute('aria-hidden')).toBe('true');
     });
 
     it('should not render img (and thus no alt) when stickerUrl is empty', () => {

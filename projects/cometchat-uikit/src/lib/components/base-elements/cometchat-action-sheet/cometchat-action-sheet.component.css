@@ -42,6 +42,7 @@
   box-sizing: var(--cometchat-action-sheet-item-box-sizing, border-box);
   outline: var(--cometchat-action-sheet-item-outline, none);
   list-style: var(--cometchat-action-sheet-item-list-style, none);
+  min-width: 200px;
 }
 
 .cometchat-action-sheet__item:hover {
@@ -49,7 +50,7 @@
 }
 
 /* Focus indicator for keyboard navigation */
-.cometchat-action-sheet__item:focus {
+.cometchat-action-sheet__item:focus-visible {
   background: var(--cometchat-action-sheet-item-background-focus, var(--cometchat-white-hover));
   outline: var(--cometchat-action-sheet-item-outline-focus, 2px solid var(--cometchat-primary-color, #6852D6));
   outline-offset: var(--cometchat-action-sheet-item-outline-offset-focus, 2px);

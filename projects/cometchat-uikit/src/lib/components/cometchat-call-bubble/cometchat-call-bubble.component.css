@@ -22,7 +22,7 @@
   flex-direction: column;
   align-items: center;
   width: var(--cometchat-call-bubble-width, 240px);
-  max-width: var(--cometchat-call-bubble-max-width, 240px);
+  max-width: var(--cometchat-call-bubble-max-width, 100%);
   border-radius: var(--cometchat-call-bubble-border-radius, var(--cometchat-radius-3, 12px));
   box-sizing: border-box;
   overflow: hidden;

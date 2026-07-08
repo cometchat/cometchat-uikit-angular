@@ -99,6 +99,7 @@
       role="menu"
       [attr.aria-label]="'Submenu options'"
       [attr.data-visible]="showSubMenu"
+      (keydown)="handleKeydown($event)"
       [ngStyle]="{
         top: positionStyle['top'] || 'auto',
         left: positionStyle['left'] || 'auto',

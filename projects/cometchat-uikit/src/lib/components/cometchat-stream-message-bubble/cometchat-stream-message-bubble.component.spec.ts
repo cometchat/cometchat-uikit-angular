@@ -266,9 +266,13 @@ describe('CometChatStreamMessageBubble', () => {
       expect(ariaContainerAfter).toBe(ariaContainer);
     });
 
-    it('should have aria-atomic="true" on the live region', () => {
+    it('should announce only additions (role=log + aria-relevant), not re-read the whole reply', () => {
+      // aria-atomic="true" re-announced the entire growing reply on every streamed
+      // token; role="log" + aria-relevant="additions" announces only new text.
       const ariaContainer = fixture.nativeElement.querySelector('[aria-live="polite"]');
-      expect(ariaContainer?.getAttribute('aria-atomic')).toBe('true');
+      expect(ariaContainer?.getAttribute('aria-atomic')).toBeNull();
+      expect(ariaContainer?.getAttribute('role')).toBe('log');
+      expect(ariaContainer?.getAttribute('aria-relevant')).toBe('additions');
     });
   });
 

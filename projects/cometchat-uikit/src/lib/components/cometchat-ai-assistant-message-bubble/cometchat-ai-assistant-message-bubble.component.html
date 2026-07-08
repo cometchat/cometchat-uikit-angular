@@ -1,13 +1,47 @@
 <div class="cometchat-ai-assistant-message-bubble" [attr.data-color-scheme]="colorScheme()">
-  @defer (on viewport) {
-    <cometchat-markdown-renderer
-      class="cometchat-ai-assistant-message-bubble__renderer"
-      [text]="messageText()"
-      [streaming]="false"
-      (imageClick)="onImageClick($event)"
-    />
-  } @placeholder {
-    <div class="cometchat-ai-assistant-message-bubble__placeholder" aria-hidden="true"></div>
+  @if (blocks(); as contentBlocks) {
+    <!--
+      Render getElements() blocks IN ORDER: text blocks via the existing markdown
+      renderer, card blocks via the shared CometChatCardView.
+    -->
+    @for (block of contentBlocks; track $index) {
+      @switch (block.kind) {
+        @case ('text') {
+          <cometchat-markdown-renderer
+            class="cometchat-ai-assistant-message-bubble__renderer"
+            [text]="block.text"
+            [streaming]="false"
+            (imageClick)="onImageClick($event)"
+          />
+        }
+        @case ('card') {
+          @if (block.cardJson) {
+            <cometchat-card-view
+              class="cometchat-ai-assistant-message-bubble__card"
+              [cardJson]="block.cardJson"
+              [themeMode]="colorScheme()"
+              (action)="onCardAction($event)"
+            ></cometchat-card-view>
+          } @else {
+            <div class="cometchat-ai-assistant-message-bubble__card-fallback">
+              {{ block.fallback || ('card_message' | translate) }}
+            </div>
+          }
+        }
+      }
+    }
+  } @else {
+    <!-- No elements (older messages) — existing getText() render, unchanged. -->
+    @defer (on viewport) {
+      <cometchat-markdown-renderer
+        class="cometchat-ai-assistant-message-bubble__renderer"
+        [text]="messageText()"
+        [streaming]="false"
+        (imageClick)="onImageClick($event)"
+      />
+    } @placeholder {
+      <div class="cometchat-ai-assistant-message-bubble__placeholder" aria-hidden="true"></div>
+    }
   }
 </div>
 

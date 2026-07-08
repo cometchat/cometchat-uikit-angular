@@ -16,6 +16,8 @@ export interface MessageListenerCallbacks {
   onMediaMessageReceived: (m: CometChat.MediaMessage) => void;
   onCustomMessageReceived: (m: CometChat.CustomMessage) => void;
   onInteractiveMessageReceived: (m: CometChat.InteractiveMessage) => void;
+  onCardMessageReceived: (m: CometChat.CardMessage) => void;
+  onAIAssistantMessageReceived: (m: CometChat.BaseMessage) => void;
   onMessageEdited: (m: CometChat.BaseMessage) => void;
   onMessageDeleted: (m: CometChat.BaseMessage) => void;
   onMessagesDelivered: (r: CometChat.MessageReceipt) => void;
@@ -39,6 +41,10 @@ export function setupMessageListener(
         onMediaMessageReceived: (m: CometChat.MediaMessage) => ngZone.run(() => callbacks.onMediaMessageReceived(m)),
         onCustomMessageReceived: (m: CometChat.CustomMessage) => ngZone.run(() => callbacks.onCustomMessageReceived(m)),
         onInteractiveMessageReceived: (m: CometChat.InteractiveMessage) => ngZone.run(() => callbacks.onInteractiveMessageReceived(m)),
+        // Developer card (category "card"); keep the conversation list's
+        // last message in sync, same as text/media/custom/interactive.
+        onCardMessageReceived: (m: CometChat.CardMessage) => ngZone.run(() => callbacks.onCardMessageReceived(m)),
+        onAIAssistantMessageReceived: (m: CometChat.BaseMessage) => ngZone.run(() => callbacks.onAIAssistantMessageReceived(m)),
         onMessageEdited: (m: CometChat.BaseMessage) => ngZone.run(() => callbacks.onMessageEdited(m)),
         onMessageDeleted: (m: CometChat.BaseMessage) => ngZone.run(() => callbacks.onMessageDeleted(m)),
         onMessagesDelivered: (r: CometChat.MessageReceipt) => ngZone.run(() => callbacks.onMessagesDelivered(r)),

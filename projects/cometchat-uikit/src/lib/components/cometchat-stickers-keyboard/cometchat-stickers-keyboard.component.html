@@ -68,7 +68,7 @@
           role="tab"
           [attr.aria-selected]="activeCategory() === categoryName"
           [attr.aria-label]="categoryName"
-          tabindex="0"
+          [attr.tabindex]="getTabTabIndex(i)"
         >
           <img
             class="cometchat-stickers-keyboard__tab-icon"
@@ -85,16 +85,17 @@
       class="cometchat-stickers-keyboard__grid"
       role="grid"
       [attr.aria-label]="activeCategory() + ' stickers'"
-      aria-rowcount="-1"
+      [attr.aria-rowcount]="getRowCount()"
     >
       @for (sticker of currentStickers(); track trackByStickerUrl($index, sticker); let i = $index) {
         <div
           class="cometchat-stickers-keyboard__sticker-item"
           (click)="handleStickerClick(sticker)"
           (keydown)="onStickerKeydown($event, sticker, i)"
+          (focus)="onStickerFocus(i)"
           [title]="sticker.stickerSetName"
           role="gridcell"
-          tabindex="0"
+          [attr.tabindex]="getStickerTabIndex(i)"
           [attr.aria-label]="'Sticker ' + (i + 1) + ' from ' + sticker.stickerSetName"
           [attr.aria-rowindex]="getRowIndex(i)"
           [attr.aria-colindex]="getColIndex(i)"

@@ -37,11 +37,11 @@ background: var(--cometchat-collaborative-document-bubble-background, var(--come
   /* border: 1px solid var(--cometchat-primary-color); */
 }
 
-.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__body-content-name label {
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__body-content-name span {
   color: var(--cometchat-static-white);
 }
 
-.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__body-content-description label {
+.cometchat-collaborative-document-bubble--outgoing .cometchat-collaborative-document-bubble__body-content-description span {
   color: var(--cometchat-static-white);
   opacity: 0.8;
 }
@@ -74,11 +74,11 @@ background: var(--cometchat-collaborative-document-bubble-background, var(--come
 background: var(--cometchat-collaborative-document-bubble-background, var(--cometchat-neutral-color-300));  /* border: 1px solid var(--cometchat-border-color-light); */
 }
 
-.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__body-content-name label {
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__body-content-name span {
   color: var(--cometchat-text-color-primary);
 }
 
-.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__body-content-description label {
+.cometchat-collaborative-document-bubble--incoming .cometchat-collaborative-document-bubble__body-content-description span {
   color: var(--cometchat-text-color-secondary);
 }
 
@@ -166,7 +166,7 @@ background: var(--cometchat-collaborative-document-bubble-background, var(--come
   display: flex;
 }
 
-.cometchat-collaborative-document-bubble__body-content-name label {
+.cometchat-collaborative-document-bubble__body-content-name span {
   font: var(--cometchat-font-body-medium);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -182,7 +182,7 @@ background: var(--cometchat-collaborative-document-bubble-background, var(--come
   display: flex;
 }
 
-.cometchat-collaborative-document-bubble__body-content-description label {
+.cometchat-collaborative-document-bubble__body-content-description span {
   font: var(--cometchat-font-caption2-regular);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -246,11 +246,11 @@ background: var(--cometchat-collaborative-document-bubble-background, var(--come
     height: var(--cometchat-collaborative-document-bubble-icon-height-mobile, 24px);
   }
 
-  .cometchat-collaborative-document-bubble__body-content-name label {
+  .cometchat-collaborative-document-bubble__body-content-name span {
     font: var(--cometchat-collaborative-document-bubble-name-font-mobile, var(--cometchat-font-caption1-medium, 500 12px Roboto));
   }
 
-  .cometchat-collaborative-document-bubble__body-content-description label {
+  .cometchat-collaborative-document-bubble__body-content-description span {
     font: var(--cometchat-collaborative-document-bubble-description-font-mobile, var(--cometchat-font-caption2-regular, 400 10px Roboto));
   }
 }

@@ -103,8 +103,15 @@ export function getMediaMessageTypeImpl(fileType: 'image' | 'video' | 'audio' | 
 }
 
 export function handleRichTextUpdateImpl(self: any, html: string, text: string): void {
-  self.composerText.set(text);
-  self.textChange.emit(text);
+  // Defer composerText signal update to the next microtask to prevent
+  // Angular change detection from running synchronously during a
+  // contenteditable input event. Synchronous signal updates cause
+  // layout shifts (send/voice button show/hide) which reset the cursor
+  // position in inline <code> elements on the 2nd character typed.
+  Promise.resolve().then(() => {
+    self.composerText.set(text);
+    self.textChange.emit(text);
+  });
   self.updateMentionsCount();
   if (!self.disableTypingEvents) { self.handleTypingStart(); }
   if (!self.disableMentions && self.customRichTextEditor) { self.checkForMentionTrigger(text, 0); }

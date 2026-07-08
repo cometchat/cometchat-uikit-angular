@@ -124,11 +124,38 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
 
   /**
    * Fetches stickers from the CometChat stickers extension.
+   * Retries once if the first attempt fails (handles SDK not ready after page refresh).
    * @see Requirements 8.4, 8.14, 8.15
    */
   async fetchStickers(): Promise<void> {
     this.componentState.set('loading');
     this.liveAnnouncer.announce(getLocalizedString('accessibility_loading_stickers'), 'polite');
+
+    // Check if user is logged in before attempting extension call
+    let loggedInUser: CometChat.User | null = null;
+    try {
+      loggedInUser = await CometChat.getLoggedinUser();
+    } catch {
+      // SDK not ready
+    }
+
+    if (!loggedInUser) {
+      // SDK not ready yet — retry after a short delay
+      await new Promise(resolve => {
+        const timer = setTimeout(resolve, 1500);
+        this.pendingTimers.push(timer);
+      });
+      try {
+        loggedInUser = await CometChat.getLoggedinUser();
+      } catch {
+        // Still not ready
+      }
+      if (!loggedInUser) {
+        this.componentState.set('error');
+        return;
+      }
+    }
+
     try {
       const response = await CometChat.callExtension('stickers', 'GET', 'v1/fetch', undefined);
       if (response && typeof response === 'object') {
@@ -184,6 +211,8 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
   onCategoryClick(categoryName: string): void {
     this.activeCategory.set(categoryName);
     this.focusedStickerIndex.set(-1);
+    // Keep the roving tab anchor on the selected category.
+    this.focusedTabIndex.set(this.categoryNames().indexOf(categoryName));
   }
 
   /**
@@ -361,6 +390,27 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
   /** Gets the 1-based column index for ARIA grid navigation */
   getColIndex(index: number): number {
     return (index % this.gridColumns) + 1;
+  }
+
+  /** Total number of grid rows for the current category (aria-rowcount). */
+  getRowCount(): number {
+    return Math.ceil(this.currentStickers().length / this.gridColumns);
+  }
+
+  /** Roving tabindex for category tabs: only the focused tab is in tab order. */
+  getTabTabIndex(index: number): number {
+    return index === this.focusedTabIndex() ? 0 : -1;
+  }
+
+  /** Roving tabindex for sticker cells: focused cell (or first when none) is tabbable. */
+  getStickerTabIndex(index: number): number {
+    const focused = this.focusedStickerIndex();
+    return focused === -1 ? (index === 0 ? 0 : -1) : (index === focused ? 0 : -1);
+  }
+
+  /** Keeps the roving anchor in sync when a sticker cell receives focus. */
+  onStickerFocus(index: number): void {
+    this.focusedStickerIndex.set(index);
   }
 
   ngOnDestroy(): void {

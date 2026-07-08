@@ -8,7 +8,7 @@
   (keydown)="handleKeydown($event)"
   role="log"
   [attr.aria-label]="'message_list_aria_label' | translate"
-  aria-live="polite"
+  aria-live="off"
   [attr.aria-busy]="isFetchingPrevious() || isFetchingNext() || listState() === States.loading"
 >
   <!-- Header View -->
@@ -160,8 +160,6 @@
               [attr.tabindex]="getMessageTabIndex(i)"
               role="article"
               [attr.aria-label]="'message_aria_label' | translate"
-              [attr.aria-posinset]="i + 1"
-              [attr.aria-setsize]="messagesWithSeparators().length"
             >
               <cometchat-error-boundary
                 [componentName]="'MessageBubble:' + item.message.getType()"
@@ -185,7 +183,7 @@
                   [reactionsRequestBuilder]="reactionsRequestBuilder"
                   [disableInteraction]="disableInteraction"
                   [hideThreadView]="isAgentChat"
-                  [footerView]="getMessageAlignment(item.message) !== MessageBubbleAlignment.right ? bubbleFooterView : null"
+                  [footerView]="bubbleFooterView"
                   (optionClick)="handleOptionClick($event, item.message)"
                   (reactionClick)="onBubbleReactionClick($event)"
                   (reactionListItemClick)="onBubbleReactionListItemClick($event)"

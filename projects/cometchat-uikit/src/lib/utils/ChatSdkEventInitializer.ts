@@ -85,13 +85,18 @@ export class ChatSdkEventInitializer {
           case CometChatUIKitConstants.MessageTypes.form:
             CometChatMessageEvents.onFormMessageReceived.next(message);
             break;
-          case CometChatUIKitConstants.MessageTypes.card:
-            CometChatMessageEvents.onCardMessageReceived.next(message);
-            break;
+          // NOTE: the legacy interactive `card` type (category
+          // "interactive") is NOT the new developer card. It flows through the
+          // generic interactive channel; `onCardMessageReceived` is now reserved
+          // for the new CardMessage (category "card") published below.
           default:
             CometChatMessageEvents.onCustomInteractiveMessageReceived.next(message);
             break;
         }
+      },
+      // New developer card (category "card"); publish the typed CardMessage.
+      onCardMessageReceived: (message: CometChat.CardMessage) => {
+        CometChatMessageEvents.onCardMessageReceived.next(message);
       },
       onAIAssistantMessageReceived: (message: CometChat.AIAssistantMessage) => {
         CometChatMessageEvents.onAIAssistantMessageReceived.next(message);

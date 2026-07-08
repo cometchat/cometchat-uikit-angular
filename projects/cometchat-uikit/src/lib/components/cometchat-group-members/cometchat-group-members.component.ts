@@ -58,6 +58,7 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
   private _hideUserStatus = signal(false);
 
   @Input() group!: CometChat.Group;
+
   @Input({ transform: booleanAttribute }) hideSearch = false;
   @Input({ transform: booleanAttribute })
   set hideError(value: boolean) { this._hideError.set(value); this.hideErrorExplicitlySet.set(true); }
@@ -156,6 +157,7 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
 
   private initializeService(): void {
     if (!this.group) { CometChatLogger.warn('CometChatGroupMembers', 'No group input provided.'); return; }
+    this.groupMembersService.cleanup();
     this.groupMembersService.setErrorCallback((err: CometChat.CometChatException) => {
       this.lastError = err as unknown as Error; this.error.emit(err); this.cdr.markForCheck();
     });
@@ -167,6 +169,7 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
     this.searchSubject$.pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((keyword: string) => this.handleSearchTextChange(keyword));
   }
+
 
   private setupGroupEventSubscriptions(): void {
     CometChatGroupEvents.ccGroupMemberKicked.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event: IGroupMemberKickedBanned) => {
@@ -262,6 +265,7 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
   }
 
   handleActionOnGroupMember(option: CometChatOption, member: CometChat.GroupMember): void {
+    if (!this.group) return;
     switch (option.id) {
       case CometChatUIKitConstants.GroupMemberOptions.kick:
         this.groupMembersService.kickMember(this.group, member).then(() => { this.checkEmptyState(); this.cdr.markForCheck(); }); break;
@@ -280,7 +284,7 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
 
   getOptionsForMember(member: CometChat.GroupMember): CometChatOption[] | string {
     const user = this.loggedInUser();
-    if (!user) return member.getScope();
+    if (!user || !this.group) return member.getScope();
     if (this.options) {
       try { return this.options(this.group, member); } catch (err) {
         CometChatLogger.error('CometChatGroupMembers', 'Custom options function error:', err);
@@ -291,11 +295,13 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
   }
 
   hasActionOptions(optionsResult: CometChatOption[] | string): optionsResult is CometChatOption[] { return Array.isArray(optionsResult); }
-  getAllowedScopes(member: CometChat.GroupMember): string[] { return GroupMemberUtils.allowScopeChange(this.group, member); }
+  getAllowedScopes(member: CometChat.GroupMember): string[] {
+    return this.group ? GroupMemberUtils.allowScopeChange(this.group, member) : [];
+  }
 
   onScopeChanged(newScope: string): void {
     const member = this.memberToChangeScope();
-    if (!member) return;
+    if (!member || !this.group) return;
     this.groupMembersService.updateMemberScope(this.group, member, newScope)
       .then(() => { this.changeScopeRef?.setSuccess(); this.memberToChangeScope.set(null); this.cdr.markForCheck(); })
       .catch(() => { this.changeScopeRef?.setError(); this.cdr.markForCheck(); });

@@ -111,6 +111,7 @@ export interface FileSizeError {
   templateUrl: './cometchat-message-composer.component.html',
   styleUrls: ['./cometchat-message-composer.component.css', '../../services/rich-text-editor.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [MessageComposerService],
 })
 export class CometChatMessageComposerComponent
   implements OnInit, OnDestroy, OnChanges, AfterViewInit
@@ -134,13 +135,23 @@ export class CometChatMessageComposerComponent
   richTextFormatState = signal<RichTextFormatState>({ bold: false, italic: false, underline: false, strikethrough: false, code: false, blockquote: false, codeBlock: false, orderedList: false, bulletList: false, link: false });
   isInlineFormattingDisabled = computed(() => this.richTextFormatState().codeBlock);
   @Input() user?: CometChat.User; @Input() group?: CometChat.Group; @Input() parentMessageId?: number; @Input() placeholderText = 'message_composer_placeholder'; @Input() initialComposerText = ''; @Input() text = '';
-  @Input() maxHeight = 200; @Input() enterKeyBehavior: EnterKeyBehavior = EnterKeyBehavior.SendMessage; @Input() attachmentOptions?: CometChatMessageComposerAction[]; @Input() maxAttachments = 10;
-  @Input() allowedFileTypes?: string[]; @Input() maxFileSize?: number; @Input() showAttachmentPreview = true; @Input() enableDragDrop = true; @Input() hideAttachmentButton = false;
+  @Input() maxHeight = 200; @Input() enterKeyBehavior: EnterKeyBehavior = EnterKeyBehavior.SendMessage; @Input() attachmentOptions?: CometChatMessageComposerAction[];
+  /** @note kept for future attachment preview/queue support; active flow sends selected files directly. */
+  @Input() maxAttachments = 10;
+  /** @note kept for future attachment preview/queue support; active flow sends selected files directly. */
+  @Input() allowedFileTypes?: string[];
+  /** @note kept for future attachment preview/queue support; active flow sends selected files directly. */
+  @Input() maxFileSize?: number;
+  /** @note kept for future attachment preview/queue support; active flow sends selected files directly. */
+  @Input() showAttachmentPreview = true;
+  /** @note kept for future attachment preview/queue support; active flow sends selected files directly. */
+  @Input() enableDragDrop = true;
+  @Input() hideAttachmentButton = false;
   @Input() hideImageAttachmentOption = false; @Input() hideVideoAttachmentOption = false; @Input() hideAudioAttachmentOption = false; @Input() hideFileAttachmentOption = false; @Input() hidePollsOption = false;
   @Input() hideCollaborativeDocumentOption = false; @Input() hideCollaborativeWhiteboardOption = false; @Input() hideEmojiKeyboardButton = false; @Input() hideVoiceRecordingButton = false; @Input() hideStickersButton = false;
   @Input() hideLiveReaction = false; @Input() hideSendButton = false; @Input() disableMentions = false; @Input() disableMentionAll = false; @Input() mentionAllLabel = '';
   @Input() mentionsUsersRequestBuilder?: CometChat.UsersRequestBuilder; @Input() mentionsGroupMembersRequestBuilder?: CometChat.GroupMembersRequestBuilder;
-  @Input() enableRichText = true; @Input() hideRichTextToolbar = true; @Input() showBubbleMenuOnSelection = false; @Input() layout: 'single-line' | 'multiline' = 'single-line'; @Input() disableAutoFocusOnMobile = true; @Input() disableTypingEvents = false;
+  @Input() enableRichText = true; @Input() hideRichTextToolbar = false; @Input() showBubbleMenuOnSelection = false; @Input() layout: 'single-line' | 'multiline' = 'single-line'; @Input() disableAutoFocusOnMobile = true; @Input() disableTypingEvents = false;
   @Input()
   set disableSoundForMessage(value: boolean) { this._disableSoundForMessage.set(value); this.disableSoundForMessageExplicitlySet.set(true); }
   get disableSoundForMessage(): boolean { return this._disableSoundForMessage(); }
@@ -157,7 +168,12 @@ export class CometChatMessageComposerComponent
   @Input() listItemTemplate: TemplateRef<any> | null = null; @Input() emptyStateTemplate: TemplateRef<any> | null = null; @Input() errorStateTemplate: TemplateRef<any> | null = null; @Input() loadingStateTemplate: TemplateRef<any> | null = null;
   @Input({ transform: booleanAttribute }) hideError = false;
   @Output() textChange = new EventEmitter<string>(); @Output() sendButtonClick = new EventEmitter<CometChat.BaseMessage>(); @Output() error = new EventEmitter<CometChat.CometChatException>();
-  @Output() closePreview = new EventEmitter<void>(); @Output() attachmentAdded = new EventEmitter<File>(); @Output() attachmentRemoved = new EventEmitter<File>(); @Output() mentionSelected = new EventEmitter<CometChat.User | CometChat.GroupMember>();
+  @Output() closePreview = new EventEmitter<void>();
+  /** @note currently retained for future use; the active file flow sends selected files directly. */
+  @Output() attachmentAdded = new EventEmitter<File>();
+  /** @note currently retained for future use; the active file flow sends selected files directly. */
+  @Output() attachmentRemoved = new EventEmitter<File>();
+  @Output() mentionSelected = new EventEmitter<CometChat.User | CometChat.GroupMember>();
   @ViewChild('textInput') textInputRef?: ElementRef<HTMLTextAreaElement>; @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('attachmentButton', { read: ElementRef }) attachmentButtonRef?: ElementRef; @ViewChild('emojiButton', { read: ElementRef }) emojiButtonRef?: ElementRef;
   @ViewChild('stickersButton', { read: ElementRef }) stickersButtonRef?: ElementRef; @ViewChild('voiceButton', { read: ElementRef }) voiceButtonRef?: ElementRef; @ViewChild('sendButton', { read: ElementRef }) sendButtonRef?: ElementRef;

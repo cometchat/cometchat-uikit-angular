@@ -52,8 +52,8 @@
           }
         </div>
 
-        <!-- Body: Waveform + Time -->
-        <!-- @see Requirements 7.3, 7.4, 7.5, 7.6, 7.8, 10.7, 10.8 -->
+        <!-- Body: Waveform + Time + Download (ENG-35743: download below waveform) -->
+        <!-- @see Requirements 7.3, 7.4, 7.5, 7.6, 7.8, 7.9, 10.4, 10.5, 10.6, 10.7, 10.8 -->
         <div class="cometchat-audio-bubble__body">
           @if (getAudioState(0).hasError) {
             <!-- Error state: show error message -->
@@ -64,80 +64,79 @@
               {{ 'audio_bubble_load_error' | translate }}
             </div>
           } @else {
-            <div
-              #waveformContainer
-              class="cometchat-audio-bubble__waveform"
-              [class.cometchat-audio-bubble__waveform--loading]="getAudioState(0).isLoading"
-              [attr.data-index]="0"
-              tabindex="0"
-              role="slider"
-              [attr.aria-label]="'audio_bubble_waveform' | translate"
-              [attr.aria-valuemin]="0"
-              [attr.aria-valuemax]="getAudioState(0).duration"
-              [attr.aria-valuenow]="getAudioState(0).currentTime"
-              [attr.aria-valuetext]="getProgressValueText(0)"
-              [attr.aria-disabled]="getAudioState(0).isLoading"
-              (keydown)="onWaveformKeydown($event, 0)">
-            </div>
-            <div 
-              class="cometchat-audio-bubble__time"
-              aria-hidden="true">
-              @if (getAudioState(0).isLoading) {
-                {{ 'audio_bubble_loading' | translate }}
+            <div class="cometchat-audio-bubble__waveform-row">
+              <div
+                #waveformContainer
+                class="cometchat-audio-bubble__waveform"
+                [class.cometchat-audio-bubble__waveform--loading]="getAudioState(0).isLoading"
+                [attr.data-index]="0"
+                tabindex="0"
+                role="slider"
+                [attr.aria-label]="'audio_bubble_waveform' | translate"
+                [attr.aria-valuemin]="0"
+                [attr.aria-valuemax]="getAudioState(0).duration"
+                [attr.aria-valuenow]="getAudioState(0).currentTime"
+                [attr.aria-valuetext]="getProgressValueText(0)"
+                [attr.aria-disabled]="getAudioState(0).isLoading"
+                (keydown)="onWaveformKeydown($event, 0)">
+              </div>
+              <!-- Download control: aligned with waveform row -->
+              @if (!getAudioState(0).isDownloading) {
+                <button
+                  type="button"
+                  class="cometchat-audio-bubble__download-button"
+                  (click)="onDownload(0)"
+                  (keydown)="onDownloadKeydown($event, 0)"
+                  [disabled]="getAudioState(0).isLoading || getAudioState(0).hasError"
+                  [attr.aria-label]="'audio_bubble_download' | translate"
+                  [attr.aria-disabled]="getAudioState(0).isLoading || getAudioState(0).hasError">
+                </button>
               } @else {
-                {{ formatTime(getAudioState(0).currentTime) }} / {{ formatTime(getAudioState(0).duration) }}
+                <div 
+                  class="cometchat-audio-bubble__download-progress"
+                  role="progressbar"
+                  [attr.aria-valuenow]="getAudioState(0).downloadProgress"
+                  [attr.aria-valuemin]="0"
+                  [attr.aria-valuemax]="100"
+                  [attr.aria-label]="'audio_bubble_downloading' | translate">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true">
+                    <circle
+                      class="cometchat-audio-bubble__progress-bg"
+                      cx="12"
+                      cy="12"
+                      r="10" />
+                    <circle
+                      class="cometchat-audio-bubble__progress-fg"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      [style.strokeDasharray]="getProgressDashArray(0)" />
+                  </svg>
+                  <button
+                    type="button"
+                    class="cometchat-audio-bubble__cancel-button"
+                    (click)="onCancelDownload(0)"
+                    (keydown)="onCancelDownloadKeydown($event, 0)"
+                    [attr.aria-label]="'audio_bubble_cancel_download' | translate">
+                  </button>
+                </div>
               }
             </div>
-          }
-        </div>
-
-        <!-- Tail View: Download -->
-        <!-- @see Requirements 7.9, 10.4, 10.5, 10.6 -->
-        <div class="cometchat-audio-bubble__tail-view">
-          @if (!getAudioState(0).isDownloading) {
-            <button
-              type="button"
-              class="cometchat-audio-bubble__download-button"
-              (click)="onDownload(0)"
-              (keydown)="onDownloadKeydown($event, 0)"
-              [disabled]="getAudioState(0).isLoading || getAudioState(0).hasError"
-              [attr.aria-label]="'audio_bubble_download' | translate"
-              [attr.aria-disabled]="getAudioState(0).isLoading || getAudioState(0).hasError">
-            </button>
-          } @else {
-            <!-- Download Progress -->
-            <div 
-              class="cometchat-audio-bubble__download-progress"
-              role="progressbar"
-              [attr.aria-valuenow]="getAudioState(0).downloadProgress"
-              [attr.aria-valuemin]="0"
-              [attr.aria-valuemax]="100"
-              [attr.aria-label]="'audio_bubble_downloading' | translate">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+            <div class="cometchat-audio-bubble__time-download-row">
+              <div 
+                class="cometchat-audio-bubble__time"
                 aria-hidden="true">
-                <circle
-                  class="cometchat-audio-bubble__progress-bg"
-                  cx="12"
-                  cy="12"
-                  r="10" />
-                <circle
-                  class="cometchat-audio-bubble__progress-fg"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  [style.strokeDasharray]="getProgressDashArray(0)" />
-              </svg>
-              <button
-                type="button"
-                class="cometchat-audio-bubble__cancel-button"
-                (click)="onCancelDownload(0)"
-                (keydown)="onCancelDownloadKeydown($event, 0)"
-                [attr.aria-label]="'audio_bubble_cancel_download' | translate">
-              </button>
+                @if (getAudioState(0).isLoading) {
+                  {{ 'audio_bubble_loading' | translate }}
+                } @else {
+                  {{ formatTime(getAudioState(0).currentTime) }} / {{ formatTime(getAudioState(0).duration) }}
+                }
+              </div>
             </div>
           }
         </div>
@@ -208,8 +207,8 @@
               }
             </div>
 
-            <!-- Body: Waveform + Time -->
-            <!-- @see Requirements 7.3, 7.4, 7.5, 7.6, 7.8 -->
+            <!-- Body: Waveform + Time + Download (ENG-35743: download below waveform) -->
+            <!-- @see Requirements 7.3, 7.4, 7.5, 7.6, 7.8, 7.9 -->
             <div class="cometchat-audio-bubble__body">
               @if (getAudioState(i + 1).hasError) {
                 <!-- Error state: show error message -->
@@ -220,80 +219,78 @@
                   {{ 'audio_bubble_load_error' | translate }}
                 </div>
               } @else {
-                <div
-                  #waveformContainer
-                  class="cometchat-audio-bubble__waveform"
-                  [class.cometchat-audio-bubble__waveform--loading]="getAudioState(i + 1).isLoading"
-                  [attr.data-index]="i + 1"
-                  tabindex="0"
-                  role="slider"
-                  [attr.aria-label]="'audio_bubble_waveform' | translate"
-                  [attr.aria-valuemin]="0"
-                  [attr.aria-valuemax]="getAudioState(i + 1).duration"
-                  [attr.aria-valuenow]="getAudioState(i + 1).currentTime"
-                  [attr.aria-valuetext]="getProgressValueText(i + 1)"
-                  [attr.aria-disabled]="getAudioState(i + 1).isLoading"
-                  (keydown)="onWaveformKeydown($event, i + 1)">
-                </div>
-                <div 
-                  class="cometchat-audio-bubble__time"
-                  aria-hidden="true">
-                  @if (getAudioState(i + 1).isLoading) {
-                    {{ 'audio_bubble_loading' | translate }}
+                <div class="cometchat-audio-bubble__waveform-row">
+                  <div
+                    #waveformContainer
+                    class="cometchat-audio-bubble__waveform"
+                    [class.cometchat-audio-bubble__waveform--loading]="getAudioState(i + 1).isLoading"
+                    [attr.data-index]="i + 1"
+                    tabindex="0"
+                    role="slider"
+                    [attr.aria-label]="'audio_bubble_waveform' | translate"
+                    [attr.aria-valuemin]="0"
+                    [attr.aria-valuemax]="getAudioState(i + 1).duration"
+                    [attr.aria-valuenow]="getAudioState(i + 1).currentTime"
+                    [attr.aria-valuetext]="getProgressValueText(i + 1)"
+                    [attr.aria-disabled]="getAudioState(i + 1).isLoading"
+                    (keydown)="onWaveformKeydown($event, i + 1)">
+                  </div>
+                  @if (!getAudioState(i + 1).isDownloading) {
+                    <button
+                      type="button"
+                      class="cometchat-audio-bubble__download-button"
+                      (click)="onDownload(i + 1)"
+                      (keydown)="onDownloadKeydown($event, i + 1)"
+                      [disabled]="getAudioState(i + 1).isLoading || getAudioState(i + 1).hasError"
+                      [attr.aria-label]="'audio_bubble_download' | translate"
+                      [attr.aria-disabled]="getAudioState(i + 1).isLoading || getAudioState(i + 1).hasError">
+                    </button>
                   } @else {
-                    {{ formatTime(getAudioState(i + 1).currentTime) }} / {{ formatTime(getAudioState(i + 1).duration) }}
+                    <div 
+                      class="cometchat-audio-bubble__download-progress"
+                      role="progressbar"
+                      [attr.aria-valuenow]="getAudioState(i + 1).downloadProgress"
+                      [attr.aria-valuemin]="0"
+                      [attr.aria-valuemax]="100"
+                      [attr.aria-label]="'audio_bubble_downloading' | translate">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true">
+                        <circle
+                          class="cometchat-audio-bubble__progress-bg"
+                          cx="12"
+                          cy="12"
+                          r="10" />
+                        <circle
+                          class="cometchat-audio-bubble__progress-fg"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          [style.strokeDasharray]="getProgressDashArray(i + 1)" />
+                      </svg>
+                      <button
+                        type="button"
+                        class="cometchat-audio-bubble__cancel-button"
+                        (click)="onCancelDownload(i + 1)"
+                        (keydown)="onCancelDownloadKeydown($event, i + 1)"
+                        [attr.aria-label]="'audio_bubble_cancel_download' | translate">
+                      </button>
+                    </div>
                   }
                 </div>
-              }
-            </div>
-
-            <!-- Tail View: Download -->
-            <!-- @see Requirements 7.9 -->
-            <div class="cometchat-audio-bubble__tail-view">
-              @if (!getAudioState(i + 1).isDownloading) {
-                <button
-                  type="button"
-                  class="cometchat-audio-bubble__download-button"
-                  (click)="onDownload(i + 1)"
-                  (keydown)="onDownloadKeydown($event, i + 1)"
-                  [disabled]="getAudioState(i + 1).isLoading || getAudioState(i + 1).hasError"
-                  [attr.aria-label]="'audio_bubble_download' | translate"
-                  [attr.aria-disabled]="getAudioState(i + 1).isLoading || getAudioState(i + 1).hasError">
-                </button>
-              } @else {
-                <!-- Download Progress -->
-                <div 
-                  class="cometchat-audio-bubble__download-progress"
-                  role="progressbar"
-                  [attr.aria-valuenow]="getAudioState(i + 1).downloadProgress"
-                  [attr.aria-valuemin]="0"
-                  [attr.aria-valuemax]="100"
-                  [attr.aria-label]="'audio_bubble_downloading' | translate">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                <div class="cometchat-audio-bubble__time-download-row">
+                  <div 
+                    class="cometchat-audio-bubble__time"
                     aria-hidden="true">
-                    <circle
-                      class="cometchat-audio-bubble__progress-bg"
-                      cx="12"
-                      cy="12"
-                      r="10" />
-                    <circle
-                      class="cometchat-audio-bubble__progress-fg"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      [style.strokeDasharray]="getProgressDashArray(i + 1)" />
-                  </svg>
-                  <button
-                    type="button"
-                    class="cometchat-audio-bubble__cancel-button"
-                    (click)="onCancelDownload(i + 1)"
-                    (keydown)="onCancelDownloadKeydown($event, i + 1)"
-                    [attr.aria-label]="'audio_bubble_cancel_download' | translate">
-                  </button>
+                    @if (getAudioState(i + 1).isLoading) {
+                      {{ 'audio_bubble_loading' | translate }}
+                    } @else {
+                      {{ formatTime(getAudioState(i + 1).currentTime) }} / {{ formatTime(getAudioState(i + 1).duration) }}
+                    }
+                  </div>
                 </div>
               }
             </div>

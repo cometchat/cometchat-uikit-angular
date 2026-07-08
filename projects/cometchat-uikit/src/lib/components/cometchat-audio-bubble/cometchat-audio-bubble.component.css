@@ -168,11 +168,15 @@
 
 /* ============================================
    Element: Audio Item
+   ENG-35743: align-items changed from center to flex-start so the
+   play button aligns with the top of the body (waveform row) rather
+   than vertically centering against the now-taller body that includes
+   the time+download row below the waveform.
    ============================================ */
 
 .cometchat-audio-bubble__audio-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--cometchat-audio-bubble-audio-item-gap, var(--cometchat-spacing-2, 8px));
 }
 
@@ -183,7 +187,7 @@
 }
 
 .cometchat-audio-bubble__audio-item--loading .cometchat-audio-bubble__leading-view,
-.cometchat-audio-bubble__audio-item--loading .cometchat-audio-bubble__tail-view {
+.cometchat-audio-bubble__audio-item--loading .cometchat-audio-bubble__time-download-row {
   pointer-events: none;
   opacity: 0.6;
 }
@@ -195,7 +199,7 @@
 }
 
 .cometchat-audio-bubble__audio-item--error .cometchat-audio-bubble__leading-view,
-.cometchat-audio-bubble__audio-item--error .cometchat-audio-bubble__tail-view {
+.cometchat-audio-bubble__audio-item--error .cometchat-audio-bubble__time-download-row {
   pointer-events: none;
   opacity: 0.5;
 }
@@ -278,8 +282,12 @@
 }
 
 /* ============================================
-   Element: Body (Waveform + Time)
-   @see Requirements 4.6, 4.7
+   Element: Body (Waveform + Time + Download)
+   ENG-35743: Download icon repositioned below waveform.
+   The __body now has two child rows:
+     __waveform-row  → contains the waveform canvas
+     __time-download-row → contains the timestamp and download control side-by-side
+   @see Requirements 4.6, 4.7, 7.9
    ============================================ */
 
 .cometchat-audio-bubble__body {
@@ -291,11 +299,28 @@
   justify-content: center;
 }
 
+/* Row 1: waveform canvas + download button */
+.cometchat-audio-bubble__waveform-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-audio-bubble-waveform-row-gap, var(--cometchat-spacing-2, 8px));
+  width: 100%;
+}
+
+/* Row 2: timestamp only */
+.cometchat-audio-bubble__time-download-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .cometchat-audio-bubble__waveform {
-  width: var(--cometchat-audio-bubble-waveform-width, 140px);
+  flex: 1;
+  min-width: var(--cometchat-audio-bubble-waveform-min-width, 60px);
   height: var(--cometchat-audio-bubble-waveform-height, 16px);
   cursor: pointer;
   border-radius: var(--cometchat-audio-bubble-waveform-border-radius, var(--cometchat-radius-1));
+  overflow: hidden;
 }
 
 /* Waveform loading state */
@@ -319,6 +344,7 @@
 .cometchat-audio-bubble__time {
   font: var(--cometchat-audio-bubble-time-font, var(--cometchat-font-caption2-regular));
   white-space: nowrap;
+  flex: 1;
 }
 
 /* Error message element */
@@ -344,6 +370,7 @@
 .cometchat-audio-bubble__download-button {
   width: var(--cometchat-audio-bubble-download-button-size, 24px);
   height: var(--cometchat-audio-bubble-download-button-size, 24px);
+  flex-shrink: 0;
   border: none;
   background-color: transparent;
   cursor: pointer;

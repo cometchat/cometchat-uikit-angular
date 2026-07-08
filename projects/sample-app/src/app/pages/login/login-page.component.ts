@@ -54,9 +54,10 @@ export class LoginPageComponent implements OnInit {
     this.loggingIn.set(true);
     try {
       await this.authService.login(uid);
-    } catch (error: any) {
-      this.errorMessage.set(error?.message || 'Login failed. Please try again.');
-    } finally {
+    } catch (error: unknown) {
+      this.errorMessage.set(error instanceof Error ? error.message : 'Login failed. Please try again.');
+    }
+ finally {
       this.loggingIn.set(false);
     }
   }

@@ -7,7 +7,7 @@
   
   Accessibility Features:
   - role="listbox" on container for screen reader list semantics
-  - role="option" on each item for proper list item semantics
+  - each projected item component provides its own role="option" semantics
   - aria-label for list identification
   - aria-busy indicates loading state
   - aria-multiselectable for selection mode
@@ -89,12 +89,17 @@
   @if (hasItems()) {
     <div class="cometchat-paginated-list__items" role="listbox" [attr.aria-label]="ariaLabel || null" [attr.aria-multiselectable]="isMultiSelect || null">
       @for (item of items; track trackByFn($index, item); let i = $index) {
-        <div 
+        <!--
+          Generic scroll/keyboard container. The projected item component
+          (e.g. cometchat-conversation-item) owns role="option", aria-selected
+          and aria-label, so this wrapper is intentionally left without an ARIA
+          role to avoid nesting one option inside another (which breaks the
+          listbox → option ownership required by assistive tech).
+        -->
+        <div
           #listItem
           class="cometchat-paginated-list__item"
-          role="option"
           [attr.tabindex]="getItemTabIndex(i)"
-          [attr.aria-selected]="isItemSelected(item)"
           (click)="handleItemClick(item, i)"
           (focus)="onItemFocus(i)">
           @if (itemTemplate) {

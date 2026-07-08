@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, TemplateRef, ViewChild, ViewEncapsulation, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, TemplateRef, ViewChild, ViewEncapsulation, OnInit, OnDestroy } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { Subscription } from 'rxjs';
 import {
@@ -15,6 +15,7 @@ import {
   CometChatLocalize,
   IGroupMemberAdded,
   IGroupMemberKickedBanned,
+  safeEffect,
 } from '@cometchat/chat-uikit-angular';
 import { GroupService } from '../../services/group.service';
 import { NavigationService } from '../../services/navigation.service';
@@ -186,6 +187,16 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
           this.memberCount.update((c) => c - 1);
         }
       }),
+      // Ownership transfer mutates the active group object in place (setOwner),
+      // which does not change the signal reference and so leaves owner-only
+      // computeds (isOwner, canDeleteGroup, …) stale. Re-push the same instance
+      // through setActiveGroup — clearing first so the signal's Object.is
+      // equality check fires — to force those computeds to recompute.
+      CometChatGroupEvents.ccOwnershipChanged.subscribe((data) => {
+        if (data.group?.getGuid() !== guid) return;
+        this.chatStateService.setActiveGroup(null);
+        this.chatStateService.setActiveGroup(data.group);
+      }),
     );
   }
 
@@ -195,7 +206,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
    * from the group object to ensure it reflects any newly added members.
    */
   private previousPanelView = this.navigationService.sidePanelView();
-  private panelVisibilityEffect = effect(() => {
+  private panelVisibilityEffect = safeEffect(() => {
     const currentView = this.navigationService.sidePanelView();
     if (this.previousPanelView === 'add-members' && currentView === 'group-details') {
       const count = this.group()?.getMembersCount?.() ?? 0;
@@ -204,7 +215,7 @@ export class CometChatGroupDetailsComponent implements OnInit, OnDestroy {
       }
     }
     this.previousPanelView = currentView;
-  }, { allowSignalWrites: true });
+  });
 
   /**
    * Attach SDK GroupListener for real-time group member events.

@@ -297,12 +297,14 @@ describe('CometChatMessageHeaderComponent', () => {
       expect(el.querySelector('.cometchat-message-header__back-button')).toBeFalsy();
     });
 
-    it('should render content section with role="button"', async () => {
+    it('should render the clickable info region with role="button"', async () => {
       component.user = testUser;
       await initAndDetect(fixture);
-      const content = el.querySelector('.cometchat-message-header__content');
-      expect(content).toBeTruthy();
-      expect(content?.getAttribute('role')).toBe('button');
+      // role="button" lives on the leading+body __info region so the interactive
+      // trailing controls remain outside the button (no focusable descendants).
+      const info = el.querySelector('.cometchat-message-header__info');
+      expect(info).toBeTruthy();
+      expect(info?.getAttribute('role')).toBe('button');
     });
 
     it('should render the display name in the title element', async () => {
@@ -528,11 +530,11 @@ describe('CometChatMessageHeaderComponent', () => {
       expect(component.getItemAriaLabel()).toBe('');
     });
 
-    it('should have tabindex="0" on the content section', async () => {
+    it('should have tabindex="0" on the info region', async () => {
       component.user = testUser;
       await initAndDetect(fixture);
-      const content = el.querySelector('.cometchat-message-header__content');
-      expect(content?.getAttribute('tabindex')).toBe('0');
+      const info = el.querySelector('.cometchat-message-header__info');
+      expect(info?.getAttribute('tabindex')).toBe('0');
     });
 
     it('should have tabindex="0" on the back button', async () => {

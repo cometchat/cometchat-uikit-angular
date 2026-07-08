@@ -32,6 +32,8 @@
             #searchBar
             [searchText]="currentSearchText"
             [placeholderText]="'conversation_search_placeholder' | translate"
+            (searchChanged)="onSearch($event.value)"
+            (clearClick)="onSearch('')"
             (click)="handleSearchBarClick()">
           </cometchat-search-bar>
         }
@@ -42,6 +44,7 @@
   <!-- ==================== List Body using CometChatPaginatedList ==================== -->
   <cometchat-paginated-list
     #paginatedList
+    [ariaLabel]="'conversation_chat_title' | translate"
     [items]="conversations()"
     [trackByFn]="trackByConversation.bind(this)"
     [isLoading]="loadingState()"

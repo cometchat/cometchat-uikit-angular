@@ -218,6 +218,11 @@
                           (buttonClick)="onCallBubbleJoinClick($event)">
                         </cometchat-call-bubble>
                       }
+                      @case ('card') {
+                        <cometchat-card-bubble
+                          [message]="$any(message)">
+                        </cometchat-card-bubble>
+                      }
                       @case ('ai-assistant') {
                         <!-- AI Assistant Message Bubble (category: agentic, type: assistant) -->
                         <cometchat-ai-assistant-message-bubble

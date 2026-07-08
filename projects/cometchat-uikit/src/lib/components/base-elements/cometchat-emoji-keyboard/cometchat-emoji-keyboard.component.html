@@ -29,6 +29,7 @@
       [class.cometchat-emoji-keyboard__tab-active]="activeCategory === emoji.id"
       class="cometchat-emoji-keyboard__tab"
       role="tab"
+      [id]="'emoji-tab-' + emoji.id"
       [attr.aria-selected]="activeCategory === emoji.id"
       [attr.aria-label]="getLocalizedCategoryName(emoji.name)"
       [attr.aria-controls]="'emoji-panel-' + emoji.id"
@@ -48,8 +49,8 @@
     </div>
   </div>
   
-  <!-- Emoji list -->
-  <div class="cometchat-emoji-keyboard__list" role="tabpanel" #emojiListRef>
+  <!-- Emoji list (scroll container; per-category panels below are the tabpanels) -->
+  <div class="cometchat-emoji-keyboard__list" #emojiListRef>
     <!-- Search results -->
     <ng-container *ngIf="getEmojiEntries(searchEmojiData).length > 0">
       <div 
@@ -79,10 +80,12 @@
     
     <!-- All categories -->
     <ng-container *ngIf="getEmojiEntries(searchEmojiData).length === 0">
-      <div 
+      <div
         *ngFor="let emoji of emojiDataState; trackBy: trackByCategoryId"
         class="cometchat-emoji-keyboard__list-content"
+        role="tabpanel"
         [id]="'emoji-panel-' + emoji.id"
+        [attr.aria-labelledby]="'emoji-tab-' + emoji.id"
       >
         <div class="cometchat-emoji-keyboard__list-title" [id]="emoji.id">
           <div [title]="getLocalizedCategoryName(emoji.name)">

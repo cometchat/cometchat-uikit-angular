@@ -103,6 +103,10 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
     document.removeEventListener('cometchat-context-menu-open', this.boundHandleOtherMenuOpen);
     window.removeEventListener('resize', this.boundHandleResize);
     if (this.resizeTimeoutRef) clearTimeout(this.resizeTimeoutRef);
+    // If sub-menu was portaled to body, move it back before Angular destroys the view
+    if (this.subMenuRef?.nativeElement && this.subMenuRef.nativeElement.parentElement === document.body) {
+      this.subMenuRef.nativeElement.remove();
+    }
   }
 
   private handleOtherMenuOpen(event: Event): void {
@@ -121,6 +125,11 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
       if (isMoreButton && isActivationKey(event)) { event.preventDefault(); this.handleMenuClick(event); }
       return;
     }
+
+    // This handler is bound both as a @HostListener and on the (portaled) submenu
+    // element. Stop propagation so it is not invoked twice (which would double-step
+    // arrow navigation when the submenu is not portaled out of the host).
+    event.stopPropagation();
 
     if (isEscapeKey(event)) {
       event.preventDefault();
@@ -161,8 +170,15 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
     if (items[index]) items[index].nativeElement.focus();
   }
 
+  private originalSubMenuParent: HTMLElement | null = null;
+
   private closeSubMenu(): void {
     this.showSubMenu = false;
+    // Move sub-menu back from document.body to its original parent
+    if (this.subMenuRef?.nativeElement && this.originalSubMenuParent) {
+      this.originalSubMenuParent.appendChild(this.subMenuRef.nativeElement);
+      this.originalSubMenuParent = null;
+    }
     this.positionStyle = {};
     this.positionPreCalculated = false;
     this.focusedItemIndex = -1;
@@ -209,7 +225,15 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
       if (!this.positionPreCalculated) this.getPopoverPositionStyle();
       this.cdr.detectChanges();
 
-      requestAnimationFrame(() => this.getPopoverPositionStyle());
+      // Portal the sub-menu to document.body to escape any overflow:hidden
+      // ancestors that clip position:fixed elements.
+      requestAnimationFrame(() => {
+        this.getPopoverPositionStyle();
+        if (this.subMenuRef?.nativeElement && this.subMenuRef.nativeElement.parentElement !== document.body) {
+          this.originalSubMenuParent = this.subMenuRef.nativeElement.parentElement;
+          document.body.appendChild(this.subMenuRef.nativeElement);
+        }
+      });
 
       if (this.useParentContainer && !this.useParentHeight) {
         window.addEventListener('resize', this.boundHandleResize);

@@ -1,3 +1,4 @@
+export { ConnectionStateService } from './connection-state.service';
 export { ChatStateService } from './chat-state.service';
 export { ConversationsService } from './conversations.service';
 export { CometChatTemplatesService } from './templates.service';
@@ -27,6 +28,7 @@ export type {
 } from './rich-text-editor.interfaces';
 export { MessageUtilsService } from './message-utils.service';
 export { MessageListService } from './message-list.service';
+export { DEFAULT_MESSAGE_TYPES, DEFAULT_MESSAGE_CATEGORIES } from './message-list.request-builder';
 export { MessageBubbleConfigService } from './message-bubble-config.service';
 export type { BubblePart, MessageTypeKey, BubblePartMap } from './message-bubble-config.service';
 export { FormatterConfigService } from './formatter-config.service';
@@ -68,3 +70,6 @@ export { CometChatAIStreamingService } from './cometchat-ai-streaming.service';
 export type { IAIStreamEvent } from './cometchat-ai-streaming.service';
 export { SearchMessagesService } from './search-messages.service';
 export { SearchConversationsService } from './search-conversations.service';
+
+export { NotificationUnreadCountService } from './notification-unread-count.service';
+export type { NotificationUnreadCountOptions } from './notification-unread-count.service';

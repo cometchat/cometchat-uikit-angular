@@ -160,7 +160,7 @@
   border-radius: var(--cometchat-fullscreen-viewer-avatar-border-radius, var(--cometchat-radius-max, 1000px));
   overflow: var(--cometchat-fullscreen-viewer-avatar-overflow, hidden);
   flex-shrink: var(--cometchat-fullscreen-viewer-avatar-flex-shrink, 0);
-  background-color: var(--cometchat-fullscreen-viewer-avatar-background, var(--cometchat-neutral-color-300, #D1D1D1));
+  background-color: var(--cometchat-fullscreen-viewer-avatar-background, var(--cometchat-extended-primary-color-500, #AA9EE8));
   display: var(--cometchat-fullscreen-viewer-avatar-display, flex);
   align-items: var(--cometchat-fullscreen-viewer-avatar-align-items, center);
   justify-content: var(--cometchat-fullscreen-viewer-avatar-justify-content, center);

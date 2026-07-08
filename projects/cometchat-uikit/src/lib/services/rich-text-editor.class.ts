@@ -41,6 +41,7 @@ export class RichTextEditor {
   private historyManager: HistoryManager; private listManager: ListManager; private linkManager: LinkManager; private mentionsFormatter: CometChatMentionsFormatter | null = null;
   private customFormatters: CometChatTextFormatter[] = []; private ariaLiveRegion: HTMLDivElement | null = null;
   private _pendingLinkClick: { url: string; text: string; x: number; y: number } | null = null; private lastSavedRange: Range | null = null;
+  private autofocusTimer: ReturnType<typeof setTimeout> | null = null;
 
   private currentFormatState: RichTextFormatState = {
     bold: false,
@@ -78,8 +79,9 @@ export class RichTextEditor {
     if (config.content) { this.setHTML(config.content); }
     this.attachEventListeners();
     if (config.autofocus) {
-      setTimeout(() => {
-        this.focus(config.autofocus);
+      this.autofocusTimer = setTimeout(() => {
+        this.autofocusTimer = null;
+        if (!this.destroyed) this.focus(config.autofocus);
       }, 0);
     }
   }
@@ -203,36 +205,21 @@ export class RichTextEditor {
     const linkElement = target.closest('a') as HTMLAnchorElement | null;
     if (linkElement && this.contentEditable.contains(linkElement) && this.config.onLinkClick) {
       event.preventDefault();
+      event.stopPropagation();
       this._pendingLinkClick = null;
       const url = linkElement.href;
       const text = linkElement.textContent || '';
-      const x = event.clientX;
-      const y = event.clientY;
+      // Use the link element's bounding rect for accurate positioning
+      // (clientX/Y can be off when the editor is scrolled or in a modal)
+      const rect = linkElement.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top;
       this.config.onLinkClick(url, text, x, y);
     }
   }
-  private handleMouseDown(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    const linkElement = target.closest('a') as HTMLAnchorElement | null;
-    if (linkElement && this.contentEditable.contains(linkElement) && this.config.onLinkClick) {
-      const url = linkElement.href;
-      const text = linkElement.textContent || '';
-      const x = event.clientX;
-      const y = event.clientY;
-      this._pendingLinkClick = { url, text, x, y };
-      setTimeout(() => {
-        if (this._pendingLinkClick) {
-          event.preventDefault();
-          this.config.onLinkClick!(
-            this._pendingLinkClick.url,
-            this._pendingLinkClick.text,
-            this._pendingLinkClick.x,
-            this._pendingLinkClick.y
-          );
-          this._pendingLinkClick = null;
-        }
-      }, 100);
-    }
+  private handleMouseDown(_event: MouseEvent): void {
+    // mousedown on links is handled by handleClick — no action needed here.
+    // Previously this used a _pendingLinkClick timeout which raced with handleClick.
   }
   private updateFormatState(): void {
     this.currentFormatState = this.formatManager.getCurrentFormats();
@@ -247,7 +234,7 @@ export class RichTextEditor {
   getHTML(): string { return this.contentEditableManager.getHTML(); }
   getText(): string { return this.contentEditableManager.getText(); }
   setHTML(html: string): void { this.contentEditableManager.setHTML(html); }
-  clear(): void { this.justAppliedFormatting = false; this.contentEditableManager.clear(); }
+  clear(): void { this.justAppliedFormatting = false; this.contentEditableManager.clear(); this.formatManager.resetPendingEmptyFormats(); this.updateFormatState(); }
   isEmpty(): boolean { return this.contentEditableManager.isEmpty(); }
   focus(position?: boolean | 'start' | 'end' | 'all' | number): void {
     this.contentEditable.focus();
@@ -336,6 +323,7 @@ export class RichTextEditor {
   private htmlToMarkdown(element: HTMLElement): string { return htmlToMarkdownUtil(element); }
   destroy(): void {
     if (this.destroyed) return;
+    if (this.autofocusTimer !== null) { clearTimeout(this.autofocusTimer); this.autofocusTimer = null; }
     if (this.customFormatterTimer !== null) { clearTimeout(this.customFormatterTimer); this.customFormatterTimer = null; }
     for (const { target, type, listener } of this.eventListeners) {
       target.removeEventListener(type, listener);

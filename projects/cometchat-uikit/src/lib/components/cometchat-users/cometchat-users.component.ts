@@ -6,7 +6,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatUserEvents } from '../../events/CometChatUserEvents';
 import { CometChatPaginatedListComponent } from '../cometchat-paginated-list/cometchat-paginated-list.component';
@@ -148,10 +148,18 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
   private initialLoadComplete = false;
   private userListenerId = `users_component_${Date.now()}`;
 
+  constructor() {
+    // Sync hasMore from service signal — picks up reconnect resets automatically.
+    // Must be in constructor to ensure injection context for toObservable.
+    toObservable(this.usersService.hasMore)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(v => this.hasMore.set(v));
+  }
+
   ngOnInit(): void {
     this.usersService.setErrorCallback((error) => { this.lastError = error as unknown as Error; this.error.emit(error); });
     this.initializeUsersManager(); this.setupSearchDebouncing(); this.setupUserListener();
-    this.setupUserEventSubscriptions(); this.setupConnectionListener(); this.fetchNextAndAppendUsers();
+    this.setupUserEventSubscriptions(); this.fetchNextAndAppendUsers();
   }
   ngOnDestroy(): void { this.pendingTimers.forEach(t => clearTimeout(t)); this.pendingTimers = []; this.removeUserListener(); this.usersService.cleanup(); }
 
@@ -179,7 +187,6 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
     CometChatUserEvents.ccUserUnblocked.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user: CometChat.User) => this.updateUser(user));
   }
 
-  private setupConnectionListener(): void { this.usersService.attachConnectionListener(() => this.refreshUserList()); }
   private updateUser(user: CometChat.User): void { this.usersService.updateUser(user); this.syncStateFromService(); }
   private refreshUserList(): void { this.userList = []; this.initializeUsersManager(); this.fetchNextAndAppendUsers(); }
 
@@ -187,7 +194,7 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
     if (this.isFetchingMore() || !this.hasMore()) return;
     this.isFetchingMore.set(true);
     const isFirstFetch = this.isFirstFetch;
-    if (isFirstFetch && !this.disableLoadingState) { this.fetchState = States.loading; this.cdr.markForCheck(); }
+    if (isFirstFetch && !this.disableLoadingState) { this.fetchState = States.loading; this.cdr.detectChanges(); }
     this.usersService.fetchNext()
       .then(() => {
         this.isFetchingMore.set(false); this.syncStateFromService();

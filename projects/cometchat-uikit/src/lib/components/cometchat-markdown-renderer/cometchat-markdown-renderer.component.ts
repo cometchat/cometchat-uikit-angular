@@ -3,7 +3,6 @@ import {
   Component,
   ViewEncapsulation,
   computed,
-  effect,
   inject,
   output,
   signal,
@@ -12,10 +11,11 @@ import {
   PLATFORM_ID,
   untracked,
 } from '@angular/core';
+import { safeEffect } from '../../utils/safe-effect';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
-import { CometChatMarkdownParser, MarkdownNode } from './cometchat-markdown-parser';
+import { CometChatMarkdownParser, MarkdownNode, parseInline } from './cometchat-markdown-parser';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 
 /**
@@ -35,6 +35,19 @@ function renderChildren(node: MarkdownNode, codeBlockIndex: { value: number }): 
   return renderToHtml(node.children, codeBlockIndex);
 }
 
+/**
+ * Recursively parse inline content for nested formatting (e.g. bold containing italic).
+ * If the content has no formatting markers it returns the text as-is.
+ */
+function parseAndRenderInline(content: string, codeBlockIndex: { value: number }): string {
+  // Quick check: if there are no formatting markers, just return as-is
+  if (!/[*_~`]/.test(content)) return content;
+  const nodes = parseInline(content);
+  // If parsing produced only a single text node with same content, no nesting found
+  if (nodes.length === 1 && nodes[0].type === 'text') return content;
+  return renderToHtml(nodes, codeBlockIndex);
+}
+
 function renderNode(node: MarkdownNode, codeBlockIndex: { value: number }): string {
   switch (node.type) {
     case 'heading': {
@@ -46,12 +59,22 @@ function renderNode(node: MarkdownNode, codeBlockIndex: { value: number }): stri
       const inner = renderChildren(node, codeBlockIndex);
       return `<p class="cometchat-markdown-renderer__paragraph">${inner}</p>`;
     }
-    case 'bold':
-      return `<strong class="cometchat-markdown-renderer__bold">${node.content ?? ''}</strong>`;
-    case 'italic':
-      return `<em class="cometchat-markdown-renderer__italic">${node.content ?? ''}</em>`;
-    case 'strikethrough':
-      return `<del class="cometchat-markdown-renderer__strikethrough">${node.content ?? ''}</del>`;
+    case 'bold': {
+      const inner = parseAndRenderInline(node.content ?? '', codeBlockIndex);
+      return `<strong class="cometchat-markdown-renderer__bold">${inner}</strong>`;
+    }
+    case 'italic': {
+      const inner = parseAndRenderInline(node.content ?? '', codeBlockIndex);
+      return `<em class="cometchat-markdown-renderer__italic">${inner}</em>`;
+    }
+    case 'underline': {
+      const inner = parseAndRenderInline(node.content ?? '', codeBlockIndex);
+      return `<u class="cometchat-markdown-renderer__underline">${inner}</u>`;
+    }
+    case 'strikethrough': {
+      const inner = parseAndRenderInline(node.content ?? '', codeBlockIndex);
+      return `<del class="cometchat-markdown-renderer__strikethrough">${inner}</del>`;
+    }
     case 'inlineCode':
       return `<code class="cometchat-markdown-renderer__inline-code">${node.content ?? ''}</code>`;
     case 'codeBlock': {
@@ -210,7 +233,7 @@ export class CometChatMarkdownRenderer {
     // Sync isCopied array length whenever the number of code blocks changes.
     // Uses untracked() to avoid circular dependency — we only read codeBlocks()
     // to determine the new length, then mutate the plain array outside the signal graph.
-    effect(() => {
+    safeEffect(() => {
       const count = this.codeBlocks().length;
       untracked(() => {
         while (this.isCopied.length < count) {
@@ -218,7 +241,7 @@ export class CometChatMarkdownRenderer {
         }
         this.isCopied.length = count;
       });
-    },{allowSignalWrites:true});
+    });
   }
 
   onContainerClick(event: MouseEvent): void {

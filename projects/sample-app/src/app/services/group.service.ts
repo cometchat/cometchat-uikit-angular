@@ -23,8 +23,8 @@ export class GroupService {
       const created = await CometChat.createGroup(group);
       this.toastService.showSuccess('Group created successfully');
       return created;
-    } catch (error: any) {
-      this.toastService.showError(error?.message ?? 'Failed to create group');
+    } catch (error: unknown) {
+      this.toastService.showError(error instanceof Error ?  error?.message : 'Failed to create group');
       throw error;
     }
   }
@@ -35,8 +35,8 @@ export class GroupService {
       const joined = await CometChat.joinGroup(guid, type as CometChat.GroupType, password ?? '');
       this.toastService.showSuccess('Joined group successfully');
       return joined;
-    } catch (error: any) {
-      this.toastService.showError(error?.message ?? 'Failed to join group');
+    } catch (error: unknown) {
+      this.toastService.showError(error instanceof Error ?  error?.message : 'Failed to join group');
       throw error;
     }
   }
@@ -47,8 +47,8 @@ export class GroupService {
       const result = await CometChat.leaveGroup(guid);
       this.toastService.showSuccess('Left group successfully');
       return result;
-    } catch (error: any) {
-      this.toastService.showError(error?.message ?? 'Failed to leave group');
+    } catch (error: unknown) {
+      this.toastService.showError(error instanceof Error ?  error?.message : 'Failed to leave group');
       throw error;
     }
   }
@@ -59,8 +59,8 @@ export class GroupService {
       const result = await CometChat.deleteGroup(guid);
       this.toastService.showSuccess('Group deleted successfully');
       return result;
-    } catch (error: any) {
-      this.toastService.showError(error?.message ?? 'Failed to delete group');
+    } catch (error: unknown) {
+      this.toastService.showError(error instanceof Error ?  error?.message : 'Failed to delete group');
       throw error;
     }
   }
@@ -70,8 +70,8 @@ export class GroupService {
     try {
       await CometChat.addMembersToGroup(guid, members, []);
       this.toastService.showSuccess('Members added successfully');
-    } catch (error: any) {
-      this.toastService.showError(error?.message ?? 'Failed to add members');
+    } catch (error: unknown) {
+      this.toastService.showError(error instanceof Error ?  error?.message : 'Failed to add members');
       throw error;
     }
   }
@@ -81,8 +81,8 @@ export class GroupService {
     try {
       await CometChat.unbanGroupMember(guid, uid);
       this.toastService.showSuccess('Member unbanned successfully');
-    } catch (error: any) {
-      this.toastService.showError(error?.message ?? 'Failed to unban member');
+    } catch (error: unknown) {
+      this.toastService.showError(error instanceof Error ?  error?.message : 'Failed to unban member');
       throw error;
     }
   }
@@ -92,8 +92,8 @@ export class GroupService {
     try {
       await CometChat.transferGroupOwnership(guid, uid);
       this.toastService.showSuccess('Ownership transferred successfully');
-    } catch (error: any) {
-      this.toastService.showError(error?.message ?? 'Failed to transfer ownership');
+    } catch (error: unknown) {
+      this.toastService.showError(error instanceof Error ?  error?.message : 'Failed to transfer ownership');
       throw error;
     }
   }

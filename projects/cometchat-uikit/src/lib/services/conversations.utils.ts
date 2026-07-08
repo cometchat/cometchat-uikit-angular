@@ -88,6 +88,28 @@ export function findConversationIndex(conversations: CometChat.Conversation[], e
   return conversations.findIndex(conv => getConversationEntityId(conv) === entityId);
 }
 
+/**
+ * Removes duplicate conversations, keeping the first occurrence of each entity id.
+ *
+ * Guards against the race between the initial ConversationsRequest fetch and the
+ * realtime message/group listeners: a newly-created conversation can be inserted
+ * by `CometChatHelper.getConversationFromMessage()` (async) and also arrive in the
+ * fetched page, which would otherwise list it twice. Callers order the list so the
+ * entry they want to keep (e.g. the most-recent realtime copy at the top) comes
+ * first; the later duplicate is dropped — "replace if it exists, never add twice".
+ */
+export function dedupeConversations(conversations: CometChat.Conversation[]): CometChat.Conversation[] {
+  const seen = new Set<string>();
+  const result: CometChat.Conversation[] = [];
+  for (const conv of conversations) {
+    const id = getConversationEntityId(conv);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    result.push(conv);
+  }
+  return result;
+}
+
 // ─── Conversation Update Settings ────────────────────────────────────────────
 
 export function isAMessage(message: unknown): message is CometChat.BaseMessage {
@@ -96,8 +118,12 @@ export function isAMessage(message: unknown): message is CometChat.BaseMessage {
     message instanceof CometChat.MediaMessage ||
     message instanceof CometChat.CustomMessage ||
     message instanceof CometChat.InteractiveMessage ||
+    // Developer card; without this the conversation list ignores
+    // cards as a "last message" and never updates/re-sorts on a new card.
+    message instanceof CometChat.CardMessage ||
     message instanceof CometChat.Action ||
-    message instanceof CometChat.Call
+    message instanceof CometChat.Call ||
+    message instanceof CometChat.AIAssistantMessage
   );
 }
 

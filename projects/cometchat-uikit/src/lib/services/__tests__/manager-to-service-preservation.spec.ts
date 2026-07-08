@@ -98,7 +98,7 @@ const GROUPS_TARGET: PreservationTarget = {
     'getGroupType',
   ],
   expectedLifecycleHooks: ['ngOnInit', 'ngOnDestroy'],
-  managerMethods: ['fetchNext', 'attachListeners', 'attachConnectionListener'],
+  managerMethods: ['fetchNext', 'attachListeners'],
   managerClassName: 'GroupsManager',
 };
 
@@ -147,7 +147,7 @@ const USERS_TARGET: PreservationTarget = {
     'getSectionHeaderValue',
   ],
   expectedLifecycleHooks: ['ngOnInit', 'ngOnDestroy'],
-  managerMethods: ['fetchNext', 'attachConnectionListener'],
+  managerMethods: ['fetchNext'],
   managerClassName: 'UsersManager',
 };
 

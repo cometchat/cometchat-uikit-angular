@@ -47,7 +47,7 @@
       }
 
       @case (States.loaded) {
-        <div class="cometchat-search__conversations-list" role="list">
+        <div class="cometchat-search__conversations-list" role="listbox">
           @for (conversation of service.conversations(); track trackByConversation($index, conversation)) {
             <ng-container *ngTemplateOutlet="conversationItemTpl; context: { $implicit: conversation }"></ng-container>
           }
@@ -78,6 +78,7 @@
          (click)="handleItemClick(conversation)">
       <cometchat-conversation-item
         [conversation]="conversation"
+        [tabIndex]="0"
         [loggedInUser]="loggedInUser"
         [typingIndicator]="getTypingIndicator(conversation)"
         [hideReceipts]="hideReceipts"

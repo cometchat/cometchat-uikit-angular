@@ -59,7 +59,7 @@ export class SelectionManager {
    * @see Requirements 2.8
    */
   getSelection(): Selection | null {
-    return window.getSelection();
+    return typeof window !== 'undefined' ? window.getSelection() : null;
   }
 
   /**

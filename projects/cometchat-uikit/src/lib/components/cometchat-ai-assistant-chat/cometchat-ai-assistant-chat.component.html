@@ -52,9 +52,8 @@
         [user]="user()"
         [parentMessageId]="messageListParentId() ?? undefined"
         [isAgentChat]="true"
+        [loadLastAgentConversation]="loadLastAgentConversationState()"
         [emptyView]="agentEmptyState"
-        [appendView]="isStreaming() ? streamBubbleFooter : undefined"
-        [bubbleFooterView]="agentBubbleFooter ?? null"
         [hideReplyInThreadOption]="messageListConfig().hideReplyInThreadOption"
         [hideCopyMessageOption]="messageListConfig().hideCopyMessageOption"
         [hideDeleteMessageOption]="messageListConfig().hideDeleteMessageOption"
@@ -92,25 +91,29 @@
     </div>
   </div>
 
-  <!-- Chat History Sidebar -->
-  @if (isSidebarOpen()) {
-    <div
-      #sidebarContainer
-      id="ai-assistant-chat-sidebar"
-      class="cometchat-ai-assistant-chat__sidebar"
-      role="complementary"
-      [attr.aria-label]="'ai_assistant_chat_history_title' | translate"
-    >
+  <!-- Chat History Sidebar — always mounted so history fetches on init.
+       loadLastAgentConversation auto-emits messageClick on first load. -->
+  <div
+    class="cometchat-ai-assistant-chat__sidebar"
+    [class.cometchat-ai-assistant-chat__sidebar--open]="isSidebarOpen()"
+    [attr.aria-hidden]="!isSidebarOpen()"
+  >
+    <div #sidebarContainer
+         id="ai-assistant-chat-sidebar"
+         class="cometchat-ai-assistant-chat__sidebar-content"
+         role="complementary"
+         (keydown.escape)="onHistoryCloseClick()"
+         [attr.aria-label]="'ai_assistant_chat_history_title' | translate">
       <cometchat-ai-assistant-chat-history
         [user]="user()"
-        [loadLastAgentConversation]="loadLastAgentConversation()"
+        [loadLastAgentConversation]="loadLastAgentConversationState()"
         (messageClick)="onHistoryMessageClick($event)"
         (newChatClick)="onHistoryNewChatClick($event)"
         (closeClick)="onHistoryCloseClick()"
       >
       </cometchat-ai-assistant-chat-history>
     </div>
-  }
+  </div>
 
 </div>
 </cometchat-error-boundary>
@@ -134,20 +137,22 @@
 
 <!-- Agent bubble footer: copy button shown below each AI response -->
 <ng-template #agentBubbleFooterTpl let-message>
-  <div class="cometchat-ai-assistant-chat__bubble-footer">
-    <button
-      class="cometchat-ai-assistant-chat__bubble-copy-btn"
-      type="button"
-      [attr.aria-label]="'copy_message' | translate"
-      (click)="onCopyMessage(message)"
-    >
-      <span class="cometchat-ai-assistant-chat__bubble-copy-icon" aria-hidden="true"></span>
-    </button>
-  </div>
+  @if (message && message.getSender()?.getUid() && message.getSender()?.getUid() !== loggedInUser()?.getUid()) {
+    <div class="cometchat-ai-assistant-chat__bubble-footer">
+      <button
+        class="cometchat-ai-assistant-chat__bubble-copy-btn"
+        type="button"
+        [attr.aria-label]="'copy_message' | translate"
+        (click)="onCopyMessage(message)"
+      >
+        <span class="cometchat-ai-assistant-chat__bubble-copy-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+  }
 </ng-template>
 
-<!-- Stream bubble footer: thinking/streaming state rendered as a message bubble in the list -->
-<ng-template #streamBubbleFooter>
+<!-- Stream bubble view: rendered as a full bubble replacement for the streaming placeholder message -->
+<ng-template #streamBubbleViewTpl let-message>
   <div class="cometchat-ai-assistant-chat__stream-bubble-wrapper">
     <div class="cometchat-ai-assistant-chat__stream-bubble-avatar">
       <cometchat-avatar [image]="user().getAvatar()" [name]="user().getName()"></cometchat-avatar>

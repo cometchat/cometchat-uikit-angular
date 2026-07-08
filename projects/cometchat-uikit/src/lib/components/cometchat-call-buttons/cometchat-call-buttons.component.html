@@ -10,13 +10,9 @@
           <cometchat-button
             [iconURL]="voiceCallIconUrl"
             [hoverText]="'call_button_voice_hover' | translate"
+            [ariaLabel]="'call_button_voice_hover' | translate"
             [disabled]="isDisabled()"
-            [attr.aria-label]="'call_button_voice_hover' | translate"
-            [attr.aria-disabled]="isDisabled()"
-            tabindex="0"
-            (click)="onVoiceCallButtonClick()"
-            (keydown.enter)="onVoiceCallButtonClick()"
-            (keydown.space)="onVoiceCallButtonClick()">
+            (buttonClick)="onVoiceCallButtonClick()">
           </cometchat-button>
         </div>
       }
@@ -31,13 +27,9 @@
           <cometchat-button
             [iconURL]="videoCallIconUrl"
             [hoverText]="'call_button_video_hover' | translate"
+            [ariaLabel]="'call_button_video_hover' | translate"
             [disabled]="isDisabled()"
-            [attr.aria-label]="'call_button_video_hover' | translate"
-            [attr.aria-disabled]="isDisabled()"
-            tabindex="0"
-            (click)="onVideoCallButtonClick()"
-            (keydown.enter)="onVideoCallButtonClick()"
-            (keydown.space)="onVideoCallButtonClick()">
+            (buttonClick)="onVideoCallButtonClick()">
           </cometchat-button>
         </div>
       }

@@ -23,11 +23,25 @@ export function markdownToHtml(text: string): string {
   // Escape HTML entities first to prevent XSS
   html = escapeHtmlEntities(html);
 
-  // Code blocks (``` ... ```) — must come before inline code
-  html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+  // ── Step 1: Extract multi-line block elements into placeholders ──────────
+  // wrapParagraphs splits on \n, so any block element that spans multiple
+  // lines (pre/code blocks, multi-line blockquotes) must be pulled out first,
+  // processed, then restored after paragraph-wrapping is done.
+  const blockPlaceholders: string[] = [];
 
-  // Blockquotes (> text)
-  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+  // Code blocks (``` ... ```) — must come before inline code
+  html = html.replace(/```([\s\S]*?)```/g, (_match, code: string) => {
+    const idx = blockPlaceholders.length;
+    // Trim leading/trailing newlines from the code content to avoid extra whitespace
+    const trimmedCode = code.replace(/^\n/, '').replace(/\n$/, '');
+    blockPlaceholders.push(`<pre class="cometchat-rich-text__code-block"><code class="cometchat-rich-text__code">${trimmedCode}</code></pre>`);
+    return `\x00BLOCK${idx}\x00`;
+  });
+
+  // ── Step 2: Single-line block elements ───────────────────────────────────
+
+  // Blockquotes (> text) — after escaping, ">" becomes "&gt;"
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="cometchat-rich-text__blockquote">$1</blockquote>');
 
   // Ordered lists (1. item)
   html = convertOrderedLists(html);
@@ -40,11 +54,16 @@ export function markdownToHtml(text: string): string {
   html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
   html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
 
-  // Inline elements
+  // ── Step 3: Inline elements ───────────────────────────────────────────────
   html = convertInlineMarkdown(html);
 
-  // Paragraphs — wrap bare lines
+  // ── Step 4: Wrap bare lines in <p> tags ──────────────────────────────────
   html = wrapParagraphs(html);
+
+  // ── Step 5: Restore multi-line block placeholders ────────────────────────
+  html = html.replace(/\x00BLOCK(\d+)\x00/g, (_match, idx: string) => {
+    return blockPlaceholders[parseInt(idx, 10)];
+  });
 
   return html;
 }
@@ -52,29 +71,51 @@ export function markdownToHtml(text: string): string {
 /**
  * Converts inline markdown syntax to HTML.
  * Handles bold, italic, strikethrough, inline code, and links.
+ *
+ * Uses a placeholder strategy to protect link syntax from being mangled
+ * by bold/italic regexes:
+ *  1. Extract all [label](url) patterns into indexed placeholders
+ *  2. Run bold/italic/strikethrough/code on the placeholder-safe text
+ *  3. Restore placeholders as proper <a> tags
+ *
+ * This prevents underscores or asterisks inside link labels or URLs
+ * (e.g. target="_blank") from being misinterpreted as italic/bold markers.
  */
 export function convertInlineMarkdown(text: string): string {
-  let result = text;
+  // Step 1: Extract markdown links into placeholders
+  const linkPlaceholders: Array<{ label: string; url: string }> = [];
+  let result = text.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    (_match, label: string, url: string) => {
+      const idx = linkPlaceholders.length;
+      linkPlaceholders.push({ label, url });
+      return `\x00LINK${idx}\x00`;
+    }
+  );
 
-  // Bold (**text** or __text__)
+  // Step 2: Apply bold/italic/strikethrough/underline/code on placeholder-safe text
+  // Bold (**text**)
   result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  result = result.replace(/__(.+?)__/g, '<strong>$1</strong>');
 
-  // Italic (*text* or _text_) — must come after bold
+  // Underline (__text__)
+  result = result.replace(/__(.+?)__/g, '<u>$1</u>');
+
+  // Italic (*text* or _text_) — must come after bold and underline
+  // Use negative lookbehind/lookahead to prevent matching _ inside __
   result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  result = result.replace(/_(.+?)_/g, '<em>$1</em>');
+  result = result.replace(/(?<!_)_([^_]+)_(?!_)/g, '<em>$1</em>');
 
   // Strikethrough (~~text~~)
   result = result.replace(/~~(.+?)~~/g, '<s>$1</s>');
 
   // Inline code (`code`)
-  result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+  result = result.replace(/`([^`]+)`/g, '<code class="cometchat-rich-text__code">$1</code>');
 
-  // Links ([text](url))
-  result = result.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-  );
+  // Step 3: Restore link placeholders as <a> tags
+  result = result.replace(/\x00LINK(\d+)\x00/g, (_match, idx: string) => {
+    const { label, url } = linkPlaceholders[parseInt(idx, 10)];
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
 
   return result;
 }
@@ -123,7 +164,7 @@ function convertNodeToMarkdown(node: Node): string {
       return `**${children}**`;
     case 'em':
     case 'i':
-      return `*${children}*`;
+      return `_${children}_`;
     case 'u':
       return `__${children}__`;
     case 's':
@@ -150,14 +191,23 @@ function convertNodeToMarkdown(node: Node): string {
       return `${children}\n`;
     case 'li': {
       const parent = el.parentElement;
+      // Calculate nesting depth for indentation
+      let depth = 0;
+      let ancestor: Element | null = parent?.parentElement ?? null;
+      while (ancestor) {
+        if (ancestor.tagName.toLowerCase() === 'ol' || ancestor.tagName.toLowerCase() === 'ul') depth++;
+        ancestor = ancestor.parentElement;
+      }
+      const indent = '    '.repeat(depth); // 4 spaces per level (matches CometChatMarkdownFormatter)
       if (parent && parent.tagName.toLowerCase() === 'ol') {
         const index = Array.from(parent.children).indexOf(el) + 1;
-        return `${index}. ${children}\n`;
+        return `${indent}${index}. ${children}\n`;
       }
-      return `- ${children}\n`;
+      return `${indent}- ${children}\n`;
     }
     case 'ul':
     case 'ol':
+      // Add leading newline so nested lists start on a new line after parent text
       return `\n${children}`;
     case 'h1':
       return `# ${children}\n`;
@@ -198,35 +248,76 @@ function escapeHtmlEntities(text: string): string {
 }
 
 function convertOrderedLists(html: string): string {
-  return html.replace(/((?:^\d+\. .+\n?)+)/gm, match => {
-    const items = match
-      .trim()
-      .split('\n')
-      .map(line => `<li>${line.replace(/^\d+\. /, '')}</li>`)
-      .join('');
-    return `<ol>${items}</ol>`;
+  return html.replace(/((?:^[ ]*\d+\. .+\n?)+)/gm, match => {
+    return buildNestedList(match.trim().split('\n'), 'ol');
   });
 }
 
 function convertUnorderedLists(html: string): string {
-  return html.replace(/((?:^[-*] .+\n?)+)/gm, match => {
-    const items = match
-      .trim()
-      .split('\n')
-      .map(line => `<li>${line.replace(/^[-*] /, '')}</li>`)
-      .join('');
-    return `<ul>${items}</ul>`;
+  return html.replace(/((?:^[ ]*[-*] .+\n?)+)/gm, match => {
+    return buildNestedList(match.trim().split('\n'), 'ul');
   });
 }
 
+/**
+ * Builds nested HTML list structure from indented markdown lines.
+ * Each 4-space indent level creates a nested list.
+ */
+function buildNestedList(lines: string[], defaultType: 'ol' | 'ul'): string {
+  let result = '';
+  const stack: { type: string; indent: number }[] = [];
+  
+  for (const line of lines) {
+    const indentMatch = line.match(/^( *)/);
+    const indent = indentMatch ? indentMatch[1].length : 0;
+    const depth = Math.floor(indent / 4); // 4 spaces per level (matches CometChatMarkdownFormatter)
+    const content = line.replace(/^ *(?:\d+\. |[-*] )/, '');
+    const lineType = /^ *\d+\./.test(line) ? 'ol' : 'ul';
+
+    // Close deeper levels
+    while (stack.length > depth + 1) {
+      const popped = stack.pop()!;
+      result += `</li></${popped.type}>`;
+    }
+
+    if (stack.length === 0) {
+      // Start the top-level list
+      result += `<${lineType}>`;
+      stack.push({ type: lineType, indent: 0 });
+    } else if (depth >= stack.length) {
+      // Go deeper — open a nested list inside the current <li>
+      result += `<${lineType}>`;
+      stack.push({ type: lineType, indent: depth });
+    } else {
+      // Same level — close previous <li>
+      result += '</li>';
+    }
+
+    result += `<li>${content}`;
+  }
+
+  // Close all remaining open tags
+  while (stack.length > 0) {
+    const popped = stack.pop()!;
+    result += `</li></${popped.type}>`;
+  }
+
+  return result;
+}
 function wrapParagraphs(html: string): string {
-  // Only wrap lines that aren't already block elements
+  // Only wrap lines that aren't already block elements or don't contain block elements
   const blockTags = /^<(h[1-6]|ul|ol|li|pre|blockquote|div|p)/i;
+  // Lines that ARE a block element (possibly with closing tag on same line)
+  const isBlockLine = /^<(h[1-6]|ul|ol|li|pre|blockquote|div|p)[\s>]/i;
+  // Lines that contain a block-level element as their primary content
+  const containsBlock = /<(blockquote|pre|ul|ol|h[1-6]|div)[\s>]/i;
   return html
     .split('\n')
     .map(line => {
       if (!line.trim()) return '';
       if (blockTags.test(line.trim())) return line;
+      if (isBlockLine.test(line.trim())) return line;
+      if (containsBlock.test(line)) return line;
       return `<p>${line}</p>`;
     })
     .join('\n');

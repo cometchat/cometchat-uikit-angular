@@ -26,6 +26,7 @@ export * from './cometchat-message-header';
 export * from './base-elements/cometchat-message-preview';
 export * from './cometchat-paginated-list';
 export * from './cometchat-text-bubble';
+export * from './cometchat-card-bubble';
 export * from './cometchat-image-bubble';
 export * from './cometchat-video-bubble';
 export * from './cometchat-file-bubble';
@@ -85,3 +86,8 @@ export * from './cometchat-ai-assistant-chat';
 
 // Search
 export * from './cometchat-search';
+
+
+// Notification Feed
+export * from './cometchat-notification-feed';
+export * from './cometchat-notification-badge';

@@ -22,6 +22,7 @@ import {
   Output,
   EventEmitter,
   TemplateRef,
+  ViewChild,
   inject,
   computed,
   booleanAttribute,
@@ -100,6 +101,7 @@ export class CometChatGroupMemberItemComponent {
   });
 
   @Input() contextMenuOptions?: CometChatOption[];
+  @ViewChild(CometChatContextMenuComponent) contextMenuRef?: CometChatContextMenuComponent;
   @Input() leadingView?: TemplateRef<{ $implicit: CometChat.GroupMember }>;
   @Input() titleView?: TemplateRef<{ $implicit: CometChat.GroupMember }>;
   @Input() subtitleView?: TemplateRef<{ $implicit: CometChat.GroupMember }>;
@@ -129,8 +131,26 @@ export class CometChatGroupMemberItemComponent {
     return parts.join(', ');
   }
 
-  handleMouseDown(event: MouseEvent): void { event.preventDefault(); }
-  handleClick(): void { this.itemClick.emit(this.member); }
+  handleMouseDown(event: MouseEvent): void {
+    // Prevent focus-steal from the list item on click, but only when the click
+    // is NOT on the context menu — blocking mousedown on the context menu
+    // prevents the subsequent click event from firing on menu options (ENG-35744).
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('cometchat-context-menu')) {
+      event.preventDefault();
+    }
+  }
+  handleClick(event?: MouseEvent): void {
+    // Don't emit itemClick when the user clicked on the context menu dropdown
+    // — that would trigger navigation/selection and cause the menu to close.
+    if (event) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('cometchat-context-menu') || target?.closest('.cometchat-group-member-item__context-menu')) {
+        return;
+      }
+    }
+    this.itemClick.emit(this.member);
+  }
   onItemFocus(): void { this.itemFocus.emit(); }
 
   onKeyDown(event: KeyboardEvent): void {
@@ -138,7 +158,19 @@ export class CometChatGroupMemberItemComponent {
     if ((event.key === 'F10' && event.shiftKey) || event.key === 'ContextMenu') { event.preventDefault(); this.handleContextMenuOpen(); }
   }
 
-  handleContextMenuOpen(): void {}
-  handleContextMenu(event: MouseEvent): void { if (this.effectiveDisableDefaultContextMenu()) event.preventDefault(); }
+  handleContextMenuOpen(): void {
+    if (this.contextMenuRef && !this.contextMenuRef.showSubMenu) {
+      this.contextMenuRef.handleMenuClick();
+    }
+  }
+
+  handleContextMenu(event: MouseEvent): void {
+    if (!this.effectiveDisableDefaultContextMenu()) return;
+    event.preventDefault();
+    if (this.contextMenuRef?.data?.length) {
+      this.handleContextMenuOpen();
+    }
+  }
+
   handleContextMenuOptionClick(option: CometChatOption): void { this.contextMenuOptionClick.emit({ option, member: this.member }); }
 }

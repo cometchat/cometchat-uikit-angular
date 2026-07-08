@@ -1,0 +1,255 @@
+<div
+  class="cometchat-notification-feed"
+  [style.backgroundColor]="style?.backgroundColor"
+  [style.width]="style?.width"
+  [style.height]="style?.height"
+>
+  <!-- Header -->
+  @if (showHeader) {
+    @if (headerView) {
+      <ng-container *ngTemplateOutlet="headerView"></ng-container>
+    } @else {
+      <div class="cometchat-notification-feed__header">
+        <div class="cometchat-notification-feed__header-left">
+          @if (showBackButton) {
+            <div
+              class="cometchat-notification-feed__header-back"
+              (click)="onBackClick()"
+              (keydown.enter)="onBackClick()"
+              (keydown.space)="onBackClick(); $event.preventDefault()"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'back' | translate"
+            ></div>
+          }
+          <h2
+            class="cometchat-notification-feed__header-title"
+            [style.color]="style?.headerTitleColor"
+            [style.font]="style?.headerTitleFont"
+          >
+            {{ title || ('notifications_title' | translate) }}
+          </h2>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Filter Chips -->
+  @if (showFilterChips) {
+    <div
+      class="cometchat-notification-feed__chips"
+      role="group"
+      [attr.aria-label]="'notifications_filter_all' | translate"
+    >
+      <!-- "All" chip -->
+      <button
+        class="cometchat-notification-feed__chip"
+        [class.cometchat-notification-feed__chip--active]="state().activeCategory === null"
+        [class.cometchat-notification-feed__chip--inactive-with-badge]="state().activeCategory !== null && state().totalUnreadCount > 0"
+        [class.cometchat-notification-feed__chip--inactive]="state().activeCategory !== null && state().totalUnreadCount === 0"
+        (click)="onChipClick(null)"
+        [attr.aria-pressed]="state().activeCategory === null"
+        [style.backgroundColor]="state().activeCategory === null ? style?.chipActiveBackgroundColor : undefined"
+        [style.color]="state().activeCategory === null ? style?.chipActiveTextColor : undefined"
+        [style.borderColor]="state().activeCategory !== null ? style?.chipBorderColor : undefined"
+      >
+        <span class="cometchat-notification-feed__chip-text">{{ 'notifications_filter_all' | translate }}</span>
+        @if (state().totalUnreadCount > 0) {
+          <span
+            class="cometchat-notification-feed__chip-badge"
+            [class.cometchat-notification-feed__chip-badge--active]="state().activeCategory === null"
+            [class.cometchat-notification-feed__chip-badge--inactive]="state().activeCategory !== null"
+          >
+            {{ state().totalUnreadCount | badgeCount }}
+          </span>
+        }
+      </button>
+
+      <!-- Category chips -->
+      @for (cat of state().categories; track cat.id) {
+        <button
+          class="cometchat-notification-feed__chip"
+          [class.cometchat-notification-feed__chip--active]="state().activeCategory === cat.label"
+          [class.cometchat-notification-feed__chip--inactive-with-badge]="state().activeCategory !== cat.label && (cat.id | categoryUnreadCount:state().categoryUnreadCounts) > 0"
+          [class.cometchat-notification-feed__chip--inactive]="state().activeCategory !== cat.label && (cat.id | categoryUnreadCount:state().categoryUnreadCounts) === 0"
+          (click)="onChipClick(cat.label)"
+          [attr.aria-pressed]="state().activeCategory === cat.label"
+          [style.backgroundColor]="state().activeCategory === cat.label ? style?.chipActiveBackgroundColor : undefined"
+          [style.color]="state().activeCategory === cat.label ? style?.chipActiveTextColor : undefined"
+          [style.borderColor]="state().activeCategory !== cat.label ? style?.chipBorderColor : undefined"
+        >
+          <span class="cometchat-notification-feed__chip-text">{{ cat.label }}</span>
+          @if ((cat.id | categoryUnreadCount:state().categoryUnreadCounts) > 0) {
+            <span
+              class="cometchat-notification-feed__chip-badge"
+              [class.cometchat-notification-feed__chip-badge--active]="state().activeCategory === cat.label"
+              [class.cometchat-notification-feed__chip-badge--inactive]="state().activeCategory !== cat.label"
+            >
+              {{ (cat.id | categoryUnreadCount:state().categoryUnreadCounts) | badgeCount }}
+            </span>
+          }
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Connectivity Banner -->
+  @if (state().isOffline) {
+    <div
+      class="cometchat-notification-feed__connectivity-banner"
+      role="alert"
+      aria-live="polite"
+    >
+      {{ 'notifications_offline_banner' | translate }}
+    </div>
+  }
+
+  <!-- Content Area -->
+  <div
+    #contentRef
+    class="cometchat-notification-feed__content"
+    (scroll)="onScroll($event)"
+    [attr.aria-busy]="state().screenState === 'loading'"
+  >
+    <!-- Loading State -->
+    @if (state().screenState === 'loading') {
+      @if (loadingStateView) {
+        <ng-container *ngTemplateOutlet="loadingStateView"></ng-container>
+      } @else {
+        <div class="cometchat-notification-feed__loading" aria-busy="true" [attr.aria-label]="'loading' | translate">
+          <div class="cometchat-notification-feed__loading-spinner"></div>
+          <p class="cometchat-notification-feed__loading-text">{{ 'loading' | translate }}</p>
+        </div>
+      }
+    }
+
+    <!-- Empty State -->
+    @if (state().screenState === 'empty') {
+      @if (emptyStateView) {
+        <ng-container *ngTemplateOutlet="emptyStateView"></ng-container>
+      } @else {
+        <div class="cometchat-notification-feed__empty">
+          <div class="cometchat-notification-feed__empty-illustration">
+            <div class="cometchat-notification-feed__empty-illustration-icon"></div>
+          </div>
+          <div class="cometchat-notification-feed__empty-text-container">
+            <p class="cometchat-notification-feed__empty-title">{{ 'notifications_empty_title' | translate }}</p>
+            <p class="cometchat-notification-feed__empty-subtitle">{{ 'notifications_empty_subtitle' | translate }}</p>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Error State -->
+    @if (state().screenState === 'error') {
+      @if (errorStateView) {
+        <ng-container *ngTemplateOutlet="errorStateView"></ng-container>
+      } @else {
+        <div class="cometchat-notification-feed__error">
+          <div class="cometchat-notification-feed__error-illustration">
+            <div class="cometchat-notification-feed__error-illustration-icon"></div>
+          </div>
+          <div class="cometchat-notification-feed__error-text-container">
+            <p class="cometchat-notification-feed__error-title">{{ 'notifications_error_title' | translate }}</p>
+            <p class="cometchat-notification-feed__error-subtitle">{{ 'notifications_error_subtitle' | translate }}</p>
+          </div>
+          <button
+            class="cometchat-notification-feed__error-retry-button"
+            (click)="onRetry()"
+            [attr.aria-label]="'notifications_tap_to_retry' | translate"
+          >
+            {{ 'retry' | translate }}
+          </button>
+        </div>
+      }
+    }
+
+    <!-- Feed List -->
+    @if (state().screenState === 'loaded') {
+      <div role="feed" [attr.aria-label]="'notifications_title' | translate" [attr.aria-busy]="state().isLoadingMore">
+        @for (group of state().groupedItems; track group.label) {
+          @for (item of group.items; track item.getId()) {
+            <div
+              class="cometchat-notification-feed__item"
+              [class.cometchat-notification-feed__item--unread]="item.getReadAt() === null"
+              [attr.data-feed-item-id]="item.getId()"
+              (click)="onItemClick(item)"
+              (keydown.enter)="onItemClick(item)"
+              (keydown.space)="onItemClick(item); $event.preventDefault()"
+              role="article"
+              tabindex="0"
+              [attr.aria-label]="('notifications_item_from' | translate) + ' ' + item.getCategory()"
+              #feedItem
+              [attr.data-observe]="observeItem(feedItem, item)"
+            >
+              <!-- Unread indicator -->
+              @if (item.getReadAt() === null) {
+                <div
+                  class="cometchat-notification-feed__unread-indicator"
+                  [style.background]="style?.unreadIndicatorColor"
+                ></div>
+              }
+
+              <!-- Item meta -->
+              <div class="cometchat-notification-feed__item-meta">
+                <span class="cometchat-notification-feed__item-category">
+                  {{ item.getCategory() }}
+                </span>
+                <span class="cometchat-notification-feed__item-time">
+                  <cometchat-date
+                    [timestamp]="item.getSentAt()"
+                    [calendarObject]="{ today: 'hh:mm A', yesterday: 'YESTERDAY', otherDays: 'DD/MM/YYYY' }"
+                  ></cometchat-date>
+                </span>
+              </div>
+
+              <!-- Card container -->
+              <div
+                class="cometchat-notification-feed__card-container"
+                [style.backgroundColor]="style?.cardBackgroundColor"
+                [style.borderColor]="style?.cardBorderColor"
+                [style.borderRadius]="style?.cardBorderRadius"
+                [style.borderWidth]="style?.cardBorderWidth"
+                [style.borderStyle]="style?.cardBorderWidth ? 'solid' : undefined"
+              >
+                <cometchat-card-view
+                  [cardJson]="item | cardJson"
+                  [themeMode]="cardThemeMode"
+                  [themeOverride]="cardThemeOverride"
+                  (action)="onCardAction(item, $event)"
+                ></cometchat-card-view>
+              </div>
+            </div>
+          }
+        }
+
+        <!-- Loading More -->
+        @if (state().isLoadingMore) {
+          <div class="cometchat-notification-feed__loading-more" aria-busy="true">
+            <div class="cometchat-notification-feed__loading-more-spinner"></div>
+            <span class="cometchat-notification-feed__loading-more-text">{{ 'loading' | translate }}</span>
+          </div>
+        }
+
+        <!-- Pagination Error -->
+        @if (state().paginationError && !state().isLoadingMore) {
+          <div
+            class="cometchat-notification-feed__pagination-error"
+            (click)="onRetryPagination()"
+            (keydown.enter)="onRetryPagination()"
+            (keydown.space)="onRetryPagination(); $event.preventDefault()"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'notifications_tap_to_retry' | translate"
+          >
+            <div class="cometchat-notification-feed__pagination-error-icon"></div>
+            <div class="cometchat-notification-feed__pagination-error-text">
+              <p class="cometchat-notification-feed__pagination-error-message">{{ 'notifications_pagination_error' | translate }}</p>
+              <p class="cometchat-notification-feed__pagination-error-retry">{{ 'notifications_tap_to_retry' | translate }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

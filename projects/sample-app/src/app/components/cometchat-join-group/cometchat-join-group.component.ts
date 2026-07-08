@@ -56,6 +56,11 @@ export class CometChatJoinGroupComponent {
   onClose(): void {
     this.appStateService.showJoinGroup.set(false);
     this.appStateService.pendingJoinGroup.set(null);
+
+    // On mobile, go back to the conversations list instead of showing the empty state
+    if (this.navigationService.isMobile()) {
+      this.navigationService.navigateToSelector();
+    }
   }
 
   /** Submit the form to join the group */

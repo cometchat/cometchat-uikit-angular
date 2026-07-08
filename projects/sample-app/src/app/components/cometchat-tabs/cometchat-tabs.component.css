@@ -45,6 +45,16 @@
   font: var(--cometchat-font-caption1-bold);
 }
 
+/*
+  In dark mode the brand purple (#6852D6) on the dark tab background
+  (#141414) only reaches ~3.4:1, below the WCAG AA 4.5:1 threshold for
+  this small caption text. Use a lighter on-brand purple (~5.2:1) for the
+  active tab label in dark mode only; light mode already passes (~5.6:1).
+*/
+:host-context([data-theme='dark']) .cometchat-tabs__tab--active {
+  color: #8978df;
+}
+
 /* ── Icon (mask-image technique — inherits currentColor) ── */
 
 .cometchat-tabs__tab-icon {

@@ -1,0 +1,15 @@
+<div class="cometchat-card-bubble">
+  @if (hasCard()) {
+    <cometchat-card-view
+      class="cometchat-card-bubble__card"
+      [cardJson]="cardJson()"
+      [themeMode]="themeMode"
+      [themeOverride]="themeOverride"
+      (action)="handleAction($event)"
+    ></cometchat-card-view>
+  } @else {
+    <div class="cometchat-card-bubble__fallback">
+      {{ fallbackText() || ('card_message' | translate) }}
+    </div>
+  }
+</div>

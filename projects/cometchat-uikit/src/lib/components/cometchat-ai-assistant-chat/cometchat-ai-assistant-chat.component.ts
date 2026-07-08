@@ -1,11 +1,12 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
-  effect,
   inject,
   input,
+  OnDestroy,
   OnInit,
   output,
   signal,
@@ -14,6 +15,7 @@ import {
   ViewChild,
   ElementRef,
 } from '@angular/core';
+import { safeEffect } from '../../utils/safe-effect';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -32,6 +34,8 @@ import { CometChatAIAssistantChatHistory } from '../cometchat-ai-assistant-chat-
 import { CometChatStreamMessageBubble } from '../cometchat-stream-message-bubble/cometchat-stream-message-bubble.component';
 import { CometChatAvatarComponent } from '../base-elements/cometchat-avatar/cometchat-avatar.component';
 import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
+import { MessageBubbleConfigService } from '../../services/message-bubble-config.service';
+import { CometChatUIKit } from '../../cometchat-uikit';
 
 /**
  * CometChatAIAssistantChat is the top-level orchestrator component for the AI assistant
@@ -59,10 +63,11 @@ import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-erro
   templateUrl: './cometchat-ai-assistant-chat.component.html',
   styleUrls: ['./cometchat-ai-assistant-chat.component.css'],
 })
-export class CometChatAIAssistantChat implements OnInit {
+export class CometChatAIAssistantChat implements OnInit, AfterViewInit, OnDestroy {
   // ── DI ───────────────────────────────────────────────────────────────────
   readonly streamingService = inject(CometChatAIStreamingService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly bubbleConfigService = inject(MessageBubbleConfigService);
 
   // ── Signal inputs ─────────────────────────────────────────────────────────
   readonly user = input.required<CometChat.User>();
@@ -98,10 +103,25 @@ export class CometChatAIAssistantChat implements OnInit {
   readonly hasComposerText = signal(false);
   readonly activeRunId = signal<string | null>(null);
 
+  /**
+   * Local mutable copy of loadLastAgentConversation. Set to false after the
+   * first load resolves or when "New Chat" is clicked — prevents the message
+   * list from staying in shimmer state forever.
+   */
+  readonly loadLastAgentConversationState = signal(false);
+
+  /** Sentinel message ID used for the temporary streaming placeholder message. */
+  private readonly STREAMING_MESSAGE_ID = -999999;
+
+  /** The currently logged-in user (used in templates for sender checks). */
+  readonly loggedInUser = signal<CometChat.User | null>(CometChatUIKit.getLoggedInUser());
+
   // ── ViewChild for sidebar focus management ────────────────────────────────
   @ViewChild('sidebarContainer') sidebarContainerRef?: ElementRef<HTMLElement>;
   @ViewChild('agentBubbleFooterTpl') agentBubbleFooter?: TemplateRef<any>;
+  @ViewChild('streamBubbleViewTpl') streamBubbleViewTpl?: TemplateRef<any>;
   @ViewChild(CometChatMessageComposerComponent) composerRef?: CometChatMessageComposerComponent;
+  @ViewChild(CometChatMessageListComponent) messageListRef?: CometChatMessageListComponent;
 
   // ── Computed signals ──────────────────────────────────────────────────────
 
@@ -148,21 +168,21 @@ export class CometChatAIAssistantChat implements OnInit {
 
   constructor() {
     // Sync streamingSpeed input → service
-    effect(() => {
+    safeEffect(() => {
       const speed = this.streamingSpeed();
       untracked(() => this.streamingService.setStreamSpeed(speed));
-    },{allowSignalWrites:true});
+    });
 
     // Sync aiAssistantTools input → service
-    effect(() => {
+    safeEffect(() => {
       const tools = this.aiAssistantTools();
       untracked(() => {
         if (tools) this.streamingService.setAIAssistantTools(tools);
       });
-    },{allowSignalWrites:true});
+    });
 
     // Reset state when user changes (switching between agent chats)
-    effect(() => {
+    safeEffect(() => {
       const _user = this.user(); // track user signal
       untracked(() => {
         this.streamingService.stopStreamingMessage(_user.getUid());
@@ -172,10 +192,10 @@ export class CometChatAIAssistantChat implements OnInit {
         this.isSuggestionsVisible.set(true);
         this.hasComposerText.set(false);
       });
-    },{allowSignalWrites:true});
+    });
 
     // Focus management: when sidebar opens, focus first focusable element inside it
-    effect(() => {
+    safeEffect(() => {
       const isOpen = this.isSidebarOpen();
       if (isOpen) {
         setTimeout(() => {
@@ -193,14 +213,35 @@ export class CometChatAIAssistantChat implements OnInit {
           trigger?.focus();
         });
       }
-    },{allowSignalWrites:true});
+    });
   }
 
   ngOnInit(): void {
+    this.loadLastAgentConversationState.set(this.loadLastAgentConversation());
     this._subscribeToStreamingState();
     this._subscribeToMessageSent();
     this._subscribeToStreamEvents();
     this._subscribeToAIMessageReceived();
+  }
+
+  ngAfterViewInit(): void {
+    // Register the footer view via the service instead of passing it as an input
+    if (this.agentBubbleFooter) {
+      this.bubbleConfigService.setGlobalView('footerView', this.agentBubbleFooter);
+    }
+    // Register the streaming bubble view for the placeholder message type
+    if (this.streamBubbleViewTpl) {
+      this.bubbleConfigService.setBubbleView('ai_streaming_custom', {
+        bubbleView: this.streamBubbleViewTpl,
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Clean up service-registered views to avoid leaking templates
+    this.bubbleConfigService.setGlobalView('footerView', null);
+    this.bubbleConfigService.clearType('ai_streaming_custom');
+    this._removeStreamingMessage();
   }
 
   // ── Public event handlers ─────────────────────────────────────────────────
@@ -219,6 +260,7 @@ export class CometChatAIAssistantChat implements OnInit {
     this.newChatKey.update((k) => k + 1);
     this.isSuggestionsVisible.set(true);
     this.hasComposerText.set(false);
+    this.loadLastAgentConversationState.set(false);
   }
 
   /** Called by the composer's (textChange) output to track whether text is present. */
@@ -258,6 +300,7 @@ export class CometChatAIAssistantChat implements OnInit {
     this.isSidebarOpen.set(false);
     this.streamingService.stopStreamingMessage(this.user().getUid());
     this.isSuggestionsVisible.set(false);
+    this.loadLastAgentConversationState.set(false);
   }
 
   /** Handle new-chat click from the history sidebar. */
@@ -307,12 +350,21 @@ export class CometChatAIAssistantChat implements OnInit {
 
   /**
    * Subscribe to the streaming state observable for this user and keep
-   * the isStreaming signal in sync.
+   * the isStreaming signal in sync. When streaming stops, remove the
+   * temporary placeholder message from the list.
    */
   private _subscribeToStreamingState(): void {
     this.streamingService.isStreamingFor(this.user().getUid())
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((streaming) => this.isStreaming.set(streaming));
+      .subscribe((streaming) => {
+        const wasStreaming = this.isStreaming();
+        this.isStreaming.set(streaming);
+
+        // Only handle removal here — addition is handled after message sent success
+        if (!streaming && wasStreaming) {
+          this._removeStreamingMessage();
+        }
+      });
   }
 
   /**
@@ -365,6 +417,11 @@ export class CometChatAIAssistantChat implements OnInit {
               this.activeParentMessageId.set(msgId);
             }
           }
+
+          // Add the streaming placeholder message after the user's message is confirmed sent
+          if (this.isStreaming() && msg.getReceiverId() === chatId) {
+            this._addStreamingMessage();
+          }
         }
       });
   }
@@ -385,5 +442,35 @@ export class CometChatAIAssistantChat implements OnInit {
           this.activeRunId.set(null);
         }
       });
+  }
+
+  /**
+   * Adds a temporary placeholder message to the message list that triggers
+   * the streaming bubble view via MessageBubbleConfigService.
+   */
+  private _addStreamingMessage(): void {
+    if (!this.messageListRef) return;
+    const placeholder = new CometChat.TextMessage(
+      this.user().getUid(),
+      '',
+      CometChat.RECEIVER_TYPE.USER
+    );
+    // Use a stable sentinel ID so we can reliably remove it later
+    placeholder.setId(this.STREAMING_MESSAGE_ID);
+    placeholder.setMuid(`streaming_placeholder_${this.user().getUid()}`);
+    placeholder.setType('ai_streaming');
+    placeholder.setCategory(CometChat.CATEGORY_CUSTOM as any);
+    placeholder.setSender(this.user());
+    placeholder.setSentAt(Math.floor(Date.now() / 1000));
+    this.messageListRef.addMessage(placeholder);
+    this.messageListRef.scrollToBottom(false);
+  }
+
+  /**
+   * Removes the temporary streaming placeholder message from the message list.
+   */
+  private _removeStreamingMessage(): void {
+    if (!this.messageListRef) return;
+    this.messageListRef.removeMessage(this.STREAMING_MESSAGE_ID);
   }
 }

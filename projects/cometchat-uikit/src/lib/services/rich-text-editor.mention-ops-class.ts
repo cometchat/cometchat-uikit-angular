@@ -11,6 +11,7 @@ export interface MentionOpsContext {
   contentEditable: HTMLDivElement;
   selectionManager: any;
   mentionsFormatter: any;
+  linkManager: { processAutoLink(html: string): string };
   pushToHistory: () => void;
   emitUpdate: () => void;
   announceToScreenReader: (msg: string) => void;
@@ -112,6 +113,8 @@ export function setContentWithMentionsImpl(ctx: MentionOpsContext, text: string,
   formattedHtml = formattedHtml.replace(/\x00SDKMENTION(\d+)\x00/g, (_: string, idx: string) => {
     return mentionPlaceholders[parseInt(idx, 10)];
   });
+  // Auto-link URLs in the converted HTML
+  formattedHtml = ctx.linkManager.processAutoLink(formattedHtml);
   const finalHtml = ctx.mentionsFormatter!.formatSdkMentions(formattedHtml, mentionedUsers);
   ctx.setHTML(finalHtml);
 }

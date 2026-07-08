@@ -3,10 +3,10 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy,
   inject, HostListener, signal, computed, booleanAttribute, DestroyRef,
 } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatGroupEvents } from '../../events/CometChatGroupEvents';
 import { CometChatPaginatedListComponent } from '../cometchat-paginated-list/cometchat-paginated-list.component';
@@ -137,13 +137,20 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   private searchSubject$ = new Subject<string>();
   private isFirstFetch = true;
 
+  constructor() {
+    // Sync hasMore from service signal — picks up reconnect resets automatically.
+    // Must be in constructor to ensure injection context for toObservable.
+    toObservable(this.groupsService.hasMore)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(v => this.hasMore.set(v));
+  }
+
   ngOnInit(): void {
     this.groupsService.setErrorCallback((error) => { this.lastError = error as unknown as Error; this.error.emit(error); });
     this.initializeGroupsManager();
     this.setupSearchDebouncing();
     this.setupGroupListeners();
     this.setupGroupEventSubscriptions();
-    this.setupConnectionListener();
     this.fetchNextAndAppendGroups();
   }
 
@@ -164,7 +171,6 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   }
 
   private setupGroupListeners(): void { this.groupsService.attachListeners(); }
-  private setupConnectionListener(): void { this.groupsService.attachConnectionListener(() => this.refreshGroupList()); }
 
   private setupGroupEventSubscriptions(): void {
     const d = this.destroyRef;
@@ -189,7 +195,7 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   fetchNextAndAppendGroups(): void {
     if (this.isFetchingMore() || !this.hasMore()) return;
     this.isFetchingMore.set(true);
-    if (this.isFirstFetch) { this.fetchState = States.loading; this.cdr.markForCheck(); }
+    if (this.isFirstFetch) { this.fetchState = States.loading; this.cdr.detectChanges(); }
     this.groupsService.fetchNext()
       .then(() => { this.isFetchingMore.set(false); this.syncStateFromService(); this.isFirstFetch = false; if (!this.initialLoadComplete) { this.pendingTimers.push(setTimeout(() => { this.initialLoadComplete = true; }, 100)); } this.paginatedList?.loadComplete(); })
       .catch(() => { this.isFetchingMore.set(false); this.syncStateFromService(); this.paginatedList?.loadComplete(); });

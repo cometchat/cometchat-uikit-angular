@@ -7,6 +7,7 @@ import {CometChatLogger} from '../../utils/CometChatLogger';
 import {CometChatUIKitConstants} from '../../constants';
 import {MessageStatus} from '../../Enums/Enums';
 import {ToastType} from '../base-elements/cometchat-toast/cometchat-toast.component';
+import {getAgentMessageCopyText} from '../../utils/agent-message-utils';
 
 export function onEditMessageImpl(self: any, messageId: number): void {
   const message = self.messages().find((m: CometChat.BaseMessage) => m.getId() === messageId);
@@ -58,6 +59,29 @@ export function closeMessageInfoImpl(self: any): void {
 }
 
 export async function copyMessageToClipboardImpl(self: any, message: CometChat.BaseMessage): Promise<void> {
+  // Handle agentic (AI agent) messages — extract text from elements or assistantMessageData
+  if (message.getCategory() === CometChatUIKitConstants.MessageCategory.agentic) {
+    try {
+      const text = getAgentMessageCopyText(message);
+      if (text && navigator?.clipboard) {
+        await navigator.clipboard.writeText(text);
+        self.showInlineToast(CometChatLocalize.getLocalizedString('message_list_message_copied'));
+      }
+    } catch (error) {
+      CometChatLogger.error(
+        'CometChatMessageList',
+        'Error copying agent message to clipboard:',
+        error
+      );
+      self.showInlineToast(
+        CometChatLocalize.getLocalizedString('message_copy_error'),
+        ToastType.error,
+        3000
+      );
+    }
+    return;
+  }
+
   if (message.getType() !== CometChatUIKitConstants.MessageTypes.text) { return; }
   try {
     const textMessage = message as CometChat.TextMessage;

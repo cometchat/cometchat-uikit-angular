@@ -1,0 +1,19 @@
+.cometchat-card-bubble {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cometchat-card-bubble__card {
+  display: block;
+  width: 100%;
+}
+
+.cometchat-card-bubble__fallback {
+  padding: 8px 12px;
+  font: var(--cometchat-font-body-regular, 400 14px/20px sans-serif);
+  color: var(--cometchat-text-color-primary, inherit);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

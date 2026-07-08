@@ -1,5 +1,6 @@
 
-import {Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, OnChanges, AfterViewInit, SimpleChanges, signal, computed, effect, Signal, inject, DestroyRef, booleanAttribute, Injector,} from '@angular/core';
+import {Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, OnChanges, AfterViewInit, SimpleChanges, signal, computed, Signal, inject, DestroyRef, booleanAttribute, Injector,} from '@angular/core';
+import { safeEffect } from '../../utils/safe-effect';
 import {CommonModule} from '@angular/common';
 import {CometChat} from '@cometchat/chat-sdk-javascript';
 
@@ -128,6 +129,7 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   @Input() group?: CometChat.Group;
   @Input() parentMessageId?: number;
   @Input({ transform: booleanAttribute }) isAgentChat = false;
+  @Input({ transform: booleanAttribute }) loadLastAgentConversation = false;
   @Input() messagesRequestBuilder?: CometChat.MessagesRequestBuilder;
   @Input() reactionsRequestBuilder?: CometChat.ReactionsRequestBuilder;
   @Input()
@@ -340,21 +342,21 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
     this.loadingState = this.messageListService.loadingState;
     this.errorState = this.messageListService.errorState;
     this.unreadCount = this.messageListService.unreadCount;
-    effect(() => {
+    safeEffect(() => {
       const messages = this.messages();
       this.handleNewMessages(messages);
       this.previousMessages = [...messages];
       this.cdr.markForCheck();
-    }, { allowSignalWrites: true });
-    effect(() => {
+    });
+    safeEffect(() => {
       const error = this.errorState();
       if (error && !this.effectiveHideError()) {
         this.handleServiceError(error);
       }
-    }, { allowSignalWrites: true });
-    effect(() => {
+    });
+    safeEffect(() => {
       this.updateListState();
-    }, { allowSignalWrites: true });
+    });
   }
     private setupMessageListener(): void { setupMessageListenerImpl(this as any); }
   ngOnInit(): void { try { ngOnInitImpl(this as any); } catch (error) { this.handleLifecycleError(error, 'ngOnInit'); } }
@@ -468,6 +470,10 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   private safeEmitUnreadCountChange(count: number): void { try { this.notifyUnreadCountChange(count); } catch { /* ignore */ } }
   private shouldShowSmartRepliesForMessage(message: CometChat.BaseMessage): boolean { return shouldShowSmartRepliesForMessageImpl(this as any, message); }
   handleRetryClick(): void { this.listState.set(States.loading); this.messageListService.clearError(); this.refreshMessages(); }
+  /** Adds a message to the list (used by parent components for temporary messages). */
+  addMessage(message: CometChat.BaseMessage): void { this.messageListService.addMessage(message); }
+  /** Removes a message from the list by ID (used by parent components to remove temporary messages). */
+  removeMessage(messageId: number): void { this.messageListService.removeMessage(messageId); }
   onUserTyping(): void {}
   onMessageSent(): void { this.hideSmartReplies.set(true); this.hideConversationStarters.set(true); }
   onSmartReplyClick(reply: string): void { this.smartReplyClick.emit(reply); this.hideSmartReplies.set(true); CometChatUIEvents.ccComposeMessage.next(reply); }

@@ -27,7 +27,6 @@
   background: var(--cometchat-context-menu-menu-background, var(--cometchat-background-color-01, #fff));
   box-shadow: var(--cometchat-context-menu-menu-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
   will-change: transform, opacity; /* Optimize rendering performance */
-  contain: layout style paint; /* Contain layout, style, and paint to prevent shifts */
 }
 
 .cometchat-menu-list__main-menu-item {

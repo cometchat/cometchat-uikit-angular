@@ -1,10 +1,12 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { States } from '../Enums/Enums';
 import { CometChatUIKitUtility } from '../CometChatUIKitUtility';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { GroupsErrorCallback } from './groups.service.types';
 import { attachGroupListener } from './groups.service.utils';
+import { ConnectionStateService } from './connection-state.service';
 
 export type { GroupsErrorCallback };
 
@@ -30,10 +32,24 @@ export class GroupsService {
   private loggedInUser: CometChat.User | null = null;
 
   private groupListenerId = `groups_service_group_${CometChatUIKitUtility.ID()}`;
-  private connectionListenerId = `groups_service_conn_${CometChatUIKitUtility.ID()}`;
+  /** Guard: only re-fetch on reconnect after the first fetch has completed. */
+  private initialFetchDone = false;
+
+  // Injected here so the component doesn't need to wire up reconnect logic —
+  // the service subscribes to the shared connection state directly.
+  private connectionState = inject(ConnectionStateService);
+  private destroyRef = inject(DestroyRef);
 
   private static readonly DEFAULT_LIMIT = 30;
   private static readonly MIN_SHIMMER_TIME = 1000;
+
+  constructor() {
+    // Re-fetch on WebSocket reconnect. Uses the shared singleton listener
+    // instead of registering a per-service CometChat.ConnectionListener.
+    this.connectionState.reconnected$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.handleReconnect());
+  }
 
   /**
    * Set the error callback for propagating errors to the component.
@@ -117,6 +133,7 @@ export class GroupsService {
       }
 
       this.fetchStateSignal.set(States.loaded);
+      this.initialFetchDone = true;
     } catch (error) {
       CometChatLogger.error('GroupsService', 'Error fetching groups:', error);
       if (this.groupsSignal().length === 0) {
@@ -168,30 +185,8 @@ export class GroupsService {
   }
 
   /**
-   * Attach a connection listener for handling reconnection events.
-   *
-   * @param callback - Function to call when connection is re-established
-   */
-  attachConnectionListener(callback: () => void): void {
-    try {
-      CometChat.addConnectionListener(
-        this.connectionListenerId,
-        new CometChat.ConnectionListener({
-          onConnected: () => {
-            callback();
-          },
-          onDisconnected: () => {
-            // No action needed — will refresh on reconnect
-          },
-        })
-      );
-    } catch (error) {
-      CometChatLogger.error('GroupsService', 'Error attaching connection listener:', error);
-    }
-  }
-
-  /**
-   * Remove all SDK listeners.
+   * Remove the SDK group listener.
+   * Connection listener is managed by the shared ConnectionStateService.
    */
   detachListeners(): void {
     try {
@@ -199,12 +194,32 @@ export class GroupsService {
     } catch (error) {
       CometChatLogger.error('GroupsService', 'Error removing group listener:', error);
     }
+  }
 
-    try {
-      CometChat.removeConnectionListener(this.connectionListenerId);
-    } catch (error) {
-      CometChatLogger.error('GroupsService', 'Error removing connection listener:', error);
-    }
+  // ==================== Private: Reconnect ====================
+
+  /**
+   * Called by ConnectionStateService when the WebSocket reconnects.
+   * Resets the request and re-fetches the first page of groups.
+   */
+  private handleReconnect(): void {
+    if (!this.groupsRequest || !this.initialFetchDone) return;
+    CometChatLogger.info('GroupsService', 'WebSocket reconnected — refreshing group list');
+    // Silent refresh: don't show shimmer, don't clear the list until new data arrives.
+    const freshRequest = this.buildRequest('', null, null, '');
+    freshRequest.fetchNext()
+      .then(newGroups => {
+        this.groupsSignal.set(newGroups);
+        // Reset hasMore to true — we're back at page 1, more pages may exist
+        this.hasMoreSignal.set(true);
+        if (newGroups.length === 0) {
+          this.fetchStateSignal.set(States.empty);
+        } else {
+          this.fetchStateSignal.set(States.loaded);
+        }
+        this.groupsRequest = freshRequest;
+      })
+      .catch(e => CometChatLogger.error('GroupsService', 'Error refreshing groups on reconnect:', e));
   }
 
 
@@ -297,6 +312,7 @@ export class GroupsService {
     this.errorCallback = null;
     this.isFetching = false;
     this.loggedInUser = null;
+    this.initialFetchDone = false;
   }
 
   // ==================== Private Helpers ====================

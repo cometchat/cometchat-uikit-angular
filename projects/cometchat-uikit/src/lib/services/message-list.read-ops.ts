@@ -17,6 +17,9 @@ export interface ReadOpsContext {
 }
 
 export async function markAsReadImpl(ctx: ReadOpsContext, message: CometChat.BaseMessage): Promise<void> {
+  // Guard: don't attempt markAsRead on messages without a valid server ID
+  // (e.g., pending/optimistic messages that haven't received their ID yet)
+  if (!message.getId()) { return; }
   const maxRetries = 2;
   const retryDelays = [1000, 2000];
   for (let attempt = 0; attempt <= maxRetries; attempt++) {

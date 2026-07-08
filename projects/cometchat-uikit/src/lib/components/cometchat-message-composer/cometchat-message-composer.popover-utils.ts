@@ -3,6 +3,7 @@ import {CometChatUIEvents} from '../../events/CometChatUIEvents';
 import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKitUtility} from '../../CometChatUIKitUtility';
+import {CometChatUIKitConstants} from '../../constants';
 
 export function syncLegacyPopoverSignalsImpl(ctx: any): void {
   const content = ctx.contentToDisplay();
@@ -90,7 +91,7 @@ export async function sendStickerMessageImpl(
   const pendingStickerMessage = new CometChat.CustomMessage(
     receiverId,
     receiverType,
-    'extension_sticker',
+    CometChatUIKitConstants.ExtensionTypes.sticker,
     customData
   );
   pendingStickerMessage.setMuid(CometChatUIKitUtility.ID());

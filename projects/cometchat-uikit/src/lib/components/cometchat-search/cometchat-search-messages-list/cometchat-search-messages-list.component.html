@@ -126,6 +126,8 @@
         <div class="cometchat-search-messages__list-item-subtitle">
           @if (subtitleView) {
             <ng-container *ngTemplateOutlet="subtitleView; context: { $implicit: message }"></ng-container>
+          } @else if (subtitleHasHtml(message)) {
+            <span [innerHTML]="getMessageSubtitleHtml(message)"></span>
           } @else {
             {{ getMessageSubtitle(message) }}
           }

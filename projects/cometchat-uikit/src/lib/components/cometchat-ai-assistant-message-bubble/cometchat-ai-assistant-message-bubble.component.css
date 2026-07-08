@@ -23,6 +23,7 @@
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
+  padding: var(--cometchat-agent-bubble-padding);
 }
 
 .cometchat-ai-assistant-message-bubble__renderer {

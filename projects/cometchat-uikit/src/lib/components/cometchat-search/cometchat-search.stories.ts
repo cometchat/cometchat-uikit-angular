@@ -126,6 +126,26 @@ const meta: Meta<CometChatSearchStoryWrapperComponent> = {
       description: 'Filter that should be active by default when the component loads',
       table: { type: { summary: 'CometChatSearchFilter' }, category: 'Configuration' },
     },
+    backClick: {
+      action: 'backClick',
+      description: 'Emitted when the back button is clicked',
+      table: { category: 'Events' },
+    },
+    conversationClick: {
+      action: 'conversationClick',
+      description: 'Emitted when a conversation result item is clicked',
+      table: { category: 'Events' },
+    },
+    messageClick: {
+      action: 'messageClick',
+      description: 'Emitted when a message result item is clicked',
+      table: { category: 'Events' },
+    },
+    searchError: {
+      action: 'searchError',
+      description: 'Emitted when a search operation fails',
+      table: { category: 'Events' },
+    },
   },
   parameters: {
     layout: 'centered',

@@ -1,8 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { States } from '../Enums/Enums';
-import { CometChatUIKitUtility } from '../CometChatUIKitUtility';
 import { CometChatLogger } from '../utils/CometChatLogger';
+import { ConnectionStateService } from './connection-state.service';
 
 /**
  * Error callback type for propagating errors to the component.
@@ -18,13 +19,8 @@ export type UsersErrorCallback = (error: CometChat.CometChatException) => void;
  *
  * Uses Angular Signals for reactive state management.
  *
- * Replaces the plain-class `UsersManager` with an Angular-native `@Injectable()`
- * service following the `GroupMembersService` / `GroupsService` pattern.
- *
- * Note: Unlike GroupsService, UsersService does NOT need `attachListeners()`
- * for user events (online/offline/blocked/unblocked) — those are handled
- * directly in the component via CometChat.UserListener and CometChatUserEvents.
- * This service only manages `attachConnectionListener()`.
+ * Reconnection on WebSocket drop is handled via the shared ConnectionStateService
+ * rather than a per-instance CometChat.ConnectionListener.
  *
  * @see Requirements 2.2, 2.4, 2.6, 2.8
  */
@@ -50,13 +46,24 @@ export class UsersService {
   private usersRequest: CometChat.UsersRequest | null = null;
   private errorCallback: UsersErrorCallback | null = null;
   private isFetching = false;
+  /** Guard: only re-fetch on reconnect after the first fetch has completed. */
+  private initialFetchDone = false;
 
-  private connectionListenerId = `users_service_conn_${CometChatUIKitUtility.ID()}`;
+  // Shared singleton connection listener — no per-service SDK listener needed.
+  private connectionState = inject(ConnectionStateService);
+  private destroyRef = inject(DestroyRef);
 
   // ==================== Configuration ====================
 
   private static readonly DEFAULT_LIMIT = 30;
   private static readonly MIN_SHIMMER_TIME = 1000;
+
+  constructor() {
+    // Re-fetch on WebSocket reconnect using the shared ConnectionStateService.
+    this.connectionState.reconnected$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.handleReconnect());
+  }
 
   // ==================== Public API ====================
 
@@ -141,6 +148,7 @@ export class UsersService {
       }
 
       this.fetchStateSignal.set(States.loaded);
+      this.initialFetchDone = true;
     } catch (error) {
       CometChatLogger.error('UsersService', 'Error fetching users:', error);
       if (this.usersSignal().length === 0) {
@@ -182,37 +190,37 @@ export class UsersService {
   // ==================== Listener Management ====================
 
   /**
-   * Attach a connection listener for handling reconnection events.
-   *
-   * @param callback - Function to call when connection is re-established
-   */
-  attachConnectionListener(callback: () => void): void {
-    try {
-      CometChat.addConnectionListener(
-        this.connectionListenerId,
-        new CometChat.ConnectionListener({
-          onConnected: () => {
-            callback();
-          },
-          onDisconnected: () => {
-            // No action needed — will refresh on reconnect
-          },
-        })
-      );
-    } catch (error) {
-      CometChatLogger.error('UsersService', 'Error attaching connection listener:', error);
-    }
-  }
-
-  /**
-   * Remove the connection listener.
+   * Remove the user listener (connection listener is handled by ConnectionStateService).
    */
   detachListeners(): void {
-    try {
-      CometChat.removeConnectionListener(this.connectionListenerId);
-    } catch (error) {
-      CometChatLogger.error('UsersService', 'Error removing connection listener:', error);
-    }
+    // No per-service connection listener to remove — ConnectionStateService owns it.
+  }
+
+  // ==================== Private: Reconnect ====================
+
+  /**
+   * Called by ConnectionStateService when the WebSocket reconnects.
+   * Resets the list and re-fetches the first page of users.
+   */
+  private handleReconnect(): void {
+    if (!this.usersRequest || !this.initialFetchDone) return;
+    CometChatLogger.info('UsersService', 'WebSocket reconnected — refreshing user list');
+    // Silent refresh: don't show shimmer, don't clear the list until new data arrives.
+    // Build a fresh request to get the latest first page.
+    const freshRequest = this.buildRequest('', null, null, '');
+    freshRequest.fetchNext()
+      .then(newUsers => {
+        this.usersSignal.set(newUsers);
+        // Reset hasMore to true — we're back at page 1, more pages may exist
+        this.hasMoreSignal.set(true);
+        if (newUsers.length === 0) {
+          this.fetchStateSignal.set(States.empty);
+        } else {
+          this.fetchStateSignal.set(States.loaded);
+        }
+        this.usersRequest = freshRequest;
+      })
+      .catch(e => CometChatLogger.error('UsersService', 'Error refreshing users on reconnect:', e));
   }
 
   // ==================== List Mutation Methods ====================
@@ -278,6 +286,7 @@ export class UsersService {
     this.usersRequest = null;
     this.errorCallback = null;
     this.isFetching = false;
+    this.initialFetchDone = false;
   }
 
   // ==================== Private Helpers ====================

@@ -12,7 +12,21 @@ code.cometchat-rich-text__code {
   padding: var(--cometchat-spacing) var(--cometchat-spacing-1);
   border-radius: var(--cometchat-radius-1);
 }
+/* Nested ordered list cycling: decimal → lower-alpha → lower-roman */
+.cometchat-text-bubble__content ol ol {
+  list-style-type: lower-alpha;
+}
+.cometchat-text-bubble__content ol ol ol {
+  list-style-type: lower-roman;
+}
 
+/* Nested unordered list cycling: disc → circle → square */
+.cometchat-text-bubble__content ul ul {
+  list-style-type: circle;
+}
+.cometchat-text-bubble__content ul ul ul {
+  list-style-type: square;
+}
 /* Reset rich text element spacing inside subtitle preview */
 .cometchat-message-composer__reply-preview p,
 .cometchat-message-composer__reply-preview blockquote,
@@ -51,6 +65,9 @@ code.cometchat-rich-text__code {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
 }
+.cometchat-rich-text-editor__content p{
+  margin: 0;
+}
 .cometchat-rich-text-editor__content::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
 }
@@ -61,7 +78,20 @@ code.cometchat-rich-text__code {
 .cometchat-rich-text__code-block{
     background: var(--cometchat-neutral-color-100);
     margin: 0;
+    padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+    display: block;
+    line-height: 1.5;
+}
+
+/* Reset inline code styles when <code> is inside a <pre> code block */
+.cometchat-rich-text__code-block .cometchat-rich-text__code,
+.cometchat-rich-text__code-block code {
+    background: transparent;
+    color: inherit;
     padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    vertical-align: baseline;
 }
 .cometchat-rich-text-editor__content:focus-visible{
     outline: none;
@@ -70,11 +100,28 @@ code.cometchat-rich-text__code {
     padding-left: var(--cometchat-padding-8);
     margin: 0;
 }
+/* Nested ordered list cycling in composer: decimal → lower-alpha → lower-roman */
+.cometchat-rich-text-editor__content ol ol {
+    list-style-type: lower-alpha;
+}
+.cometchat-rich-text-editor__content ol ol ol {
+    list-style-type: lower-roman;
+}
+/* Nested unordered list cycling in composer: disc → circle → square */
+.cometchat-rich-text-editor__content ul ul {
+    list-style-type: circle;
+}
+.cometchat-rich-text-editor__content ul ul ul {
+    list-style-type: square;
+}
 .cometchat-rich-text__blockquote{
-    margin: var(--cometchat-rich-text-blockquote-margin, 0 var(--cometchat-spacing-2));
-    padding: var(--cometchat-rich-text-blockquote-padding, 0 var(--cometchat-spacing-3));
+    display: block;
+    margin: var(--cometchat-rich-text-blockquote-margin, var(--cometchat-spacing-1) 0);
+    padding: var(--cometchat-rich-text-blockquote-padding, var(--cometchat-spacing-2) var(--cometchat-spacing-3));
     border-left: var(--cometchat-rich-text-blockquote-border-left, 4px solid var(--cometchat-neutral-color-400));
     color: var(--cometchat-rich-text-blockquote-color, var(--cometchat-text-color-secondary));
+    background: var(--cometchat-background-color-02, rgba(0,0,0,0.04));
+    border-radius: 0 var(--cometchat-radius-1) var(--cometchat-radius-1) 0;
 }
 
 /* ============================================
@@ -92,20 +139,34 @@ code.cometchat-rich-text__code {
   border-radius: var(--cometchat-radius-1);
 }
 
+/* Inline code in incoming messages — exclude code inside pre (code blocks) */
+.cometchat-text-bubble-incoming .cometchat-text-bubble__content code:not(pre code),
+.cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content code:not(pre code) {
+  background: var(--cometchat-extended-primary-color-100);
+  color: var(--cometchat-primary-color);
+}
+
+/* Inline code in outgoing messages — exclude code inside pre (code blocks) */
+.cometchat-text-bubble-outgoing .cometchat-text-bubble__content code:not(pre code),
+.cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content code:not(pre code) {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--cometchat-static-white);
+}
 
 
+.cometchat-message-composer__edit-preview-subtitle * {
+margin: 0;
+}
 /**
  * Code blocks
  */
 .cometchat-text-bubble__content pre {
-  padding: var(--cometchat-spacing-3);
   border-radius: var(--cometchat-radius-2);
   overflow-x: auto;
   max-width: 100%;
-  margin: var(--cometchat-spacing-2) 0;
+  margin: var(--cometchat-spacing-1) 0;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
   white-space: pre;
-  margin: 0;
-  padding: 0;
 }
 
 /* Code blocks in incoming messages */
@@ -126,33 +187,36 @@ code.cometchat-rich-text__code {
   background: transparent;
   padding: 0;
   border-radius: 0;
-  display: inline-block;
-  height: fit-content;
-  width: fit-content;
+  display: block;
+  color: inherit;
 }
 
 /**
  * Blockquote
  */
 .cometchat-text-bubble__content blockquote {
-  margin: var(--cometchat-spacing-2) 0;
-  padding-left: var(--cometchat-spacing-3);
-  border-left: 3px solid;
-  font-style: italic;
+  display: block;
+  margin: var(--cometchat-spacing-1) 0;
+  padding: var(--cometchat-spacing-2) var(--cometchat-spacing-3);
+  border-left: 4px solid;
+  border-radius: 0 var(--cometchat-radius-1) var(--cometchat-radius-1) 0;
+  font-style: normal;
 }
 
 /* Blockquote in incoming messages */
 .cometchat-text-bubble-incoming .cometchat-text-bubble__content blockquote,
 .cometchat-text-bubble.cometchat-text-bubble-incoming .cometchat-text-bubble__content blockquote {
-  border-left-color: var(--cometchat-neutral-color-600);
-  color: var(--cometchat-neutral-color-700);
+  border-left-color: var(--cometchat-neutral-color-400);
+  color: var(--cometchat-text-color-secondary);
+  background: var(--cometchat-background-color-02);
 }
 
 /* Blockquote in outgoing messages */
 .cometchat-text-bubble-outgoing .cometchat-text-bubble__content blockquote,
 .cometchat-text-bubble.cometchat-text-bubble-outgoing .cometchat-text-bubble__content blockquote {
-  border-left-color: rgba(255, 255, 255, 0.5);
+  border-left-color: rgba(255, 255, 255, 0.6);
   color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /**

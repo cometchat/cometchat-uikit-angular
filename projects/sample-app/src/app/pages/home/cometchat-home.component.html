@@ -105,7 +105,15 @@
             <cometchat-transfer-ownership></cometchat-transfer-ownership>
           }
           @case ('call-log-details') {
-            <cometchat-call-log-details></cometchat-call-log-details>
+            <!--
+              Deferred so the ~533 KiB Calls SDK (statically imported by this
+              component) is code-split into a lazy chunk instead of bloating the
+              initial/critical bundle. It only loads when a user opens call-log
+              details, keeping the SDK off the app's first-load critical path.
+            -->
+            @defer (on immediate) {
+              <cometchat-call-log-details></cometchat-call-log-details>
+            }
           }
           @case ('search') {
             <cometchat-search

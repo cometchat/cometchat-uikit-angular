@@ -12,9 +12,11 @@ export function initializeServiceImpl(self: any): void {
   if (self.isAgentChat && !self.parentMessageId) {
     // Agent chat without parentMessageId: show empty state immediately (no shimmer),
     // only display real-time messages as they arrive.
+    // When loadLastAgentConversation is true, keep shimmer visible while parent
+    // fetches history in the background and sets parentMessageId once resolved.
     // Reset loadingState since no fetch will happen (setUser/setGroup sets it to true).
     self.messageListService.setLoadingState(false);
-    self.listState.set(States.empty);
+    self.listState.set(self.loadLastAgentConversation ? States.loading : States.empty);
     return;
   }
   if (self.goToMessageId) {

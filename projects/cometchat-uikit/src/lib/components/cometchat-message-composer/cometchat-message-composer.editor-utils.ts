@@ -55,10 +55,24 @@ export function initializeRichTextEditorImpl(ctx: EditorInitContext): void {
         },
         containerElement
       );
-      containerElement.addEventListener('keydown', (event: KeyboardEvent) => { ctx.handleRichTextKeydown(event); }, true);
+      // Track whether Shift is held so beforeinput can distinguish
+      // Shift+Enter (new line) from bare Enter (send) in Safari, which
+      // fires inputType 'insertParagraph' for both.
+      let shiftHeld = false;
+      containerElement.addEventListener('keydown', (event: KeyboardEvent) => {
+        shiftHeld = event.shiftKey;
+        ctx.handleRichTextKeydown(event);
+      }, true);
+      containerElement.addEventListener('keyup', (event: KeyboardEvent) => {
+        if (event.key === 'Shift') { shiftHeld = false; }
+      }, true);
       containerElement.addEventListener('beforeinput', (event: InputEvent) => {
         if (!ctx.isMultilineLayout() && event.inputType === 'insertParagraph' && ctx.enterKeyBehavior === EnterKeyBehavior.SendMessage) {
-          event.preventDefault();
+          // Safari fires insertParagraph even for Shift+Enter. Don't block
+          // the event when Shift is held — the user wants a line break.
+          if (!shiftHeld) {
+            event.preventDefault();
+          }
         }
       }, true);
       containerElement.addEventListener('mousedown', () => { ctx.isMouseDown = true; });

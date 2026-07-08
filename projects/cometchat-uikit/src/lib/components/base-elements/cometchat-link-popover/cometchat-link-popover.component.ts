@@ -24,7 +24,7 @@ export interface LinkPopoverData {
  *
  * A small popover that appears when clicking on a link in the editor.
  * Shows "Edit" and "Remove" buttons for quick link actions.
- * Positioned absolutely relative to the parent composer element.
+ * Positioned above the clicked link using viewport coordinates.
  *
  * @component
  */
@@ -50,10 +50,10 @@ export class CometChatLinkPopoverComponent implements OnInit, AfterViewInit, OnD
   /** The link text */
   @Input() text = '';
 
-  /** X coordinate (viewport-relative, i.e. clientX) */
+  /** X coordinate (viewport-relative center of the link element) */
   @Input() x = 0;
 
-  /** Y coordinate (viewport-relative, i.e. clientY) */
+  /** Y coordinate (viewport-relative top of the link element) */
   @Input() y = 0;
 
   /** Emitted when the Edit button is clicked */
@@ -92,19 +92,19 @@ export class CometChatLinkPopoverComponent implements OnInit, AfterViewInit, OnD
     this.keydownListener = this.handleKeydown.bind(this);
     document.addEventListener('keydown', this.keydownListener);
 
-    // Close on outside click (delayed to avoid catching the triggering click)
+    // Close on outside click — delay 150ms to avoid catching the triggering click
     this.pendingTimers.push(setTimeout(() => {
       this.documentClickListener = this.handleDocumentClick.bind(this);
-      document.addEventListener('click', this.documentClickListener, true);
-    }, 0));
+      document.addEventListener('click', this.documentClickListener as EventListener, true);
+    }, 150));
   }
 
   ngAfterViewInit(): void {
-    // Position centered above the composer — no dependency on click coordinates
-    this.positionAboveComposer();
+    // Initial position estimate using link coordinates
+    this.positionAboveLink();
     this.isPositioned = true;
 
-    // After layout, refine with actual popover dimensions
+    // Refine with actual popover dimensions after layout
     this.pendingTimers.push(setTimeout(() => {
       this.refinePosition();
       this.editButton?.nativeElement.focus();
@@ -118,7 +118,7 @@ export class CometChatLinkPopoverComponent implements OnInit, AfterViewInit, OnD
       document.removeEventListener('keydown', this.keydownListener);
     }
     if (this.documentClickListener) {
-      document.removeEventListener('click', this.documentClickListener, true);
+      document.removeEventListener('click', this.documentClickListener as EventListener, true);
     }
     this.restoreFocus();
   }
@@ -130,8 +130,7 @@ export class CometChatLinkPopoverComponent implements OnInit, AfterViewInit, OnD
         this.closeClick.emit();
         break;
       case 'Tab':
-        event.preventDefault();
-        this.closeClick.emit();
+        this.trapTabFocus(event);
         break;
       case 'ArrowDown':
       case 'ArrowRight':
@@ -143,6 +142,30 @@ export class CometChatLinkPopoverComponent implements OnInit, AfterViewInit, OnD
         event.preventDefault();
         this.focusPreviousItem();
         break;
+    }
+  }
+
+  /**
+   * Keeps Tab focus cycling within the popover (dialog focus trap), so the
+   * close button and URL link are reachable instead of Tab closing the popover.
+   */
+  private trapTabFocus(event: KeyboardEvent): void {
+    const root = this.popoverElement?.nativeElement;
+    if (!root) { event.preventDefault(); return; }
+    const focusables = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(el => el.offsetParent !== null);
+    if (focusables.length === 0) { event.preventDefault(); return; }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+    const inside = !!active && root.contains(active);
+    if (event.shiftKey) {
+      if (!inside || active === first) { event.preventDefault(); last.focus(); }
+    } else {
+      if (!inside || active === last) { event.preventDefault(); first.focus(); }
     }
   }
 
@@ -178,104 +201,126 @@ export class CometChatLinkPopoverComponent implements OnInit, AfterViewInit, OnD
   }
 
   /**
-   * Position the popover centered horizontally, just above the composer.
-   * Uses estimated popover height for initial placement before layout.
-   * In Storybook docs mode, positions relative to the nearest
-   * [data-cometchat-container] ancestor instead of the full viewport.
+   * Initial position estimate using link x/y coordinates.
+   * Uses estimated dimensions before the popover has been laid out.
    */
-  private positionAboveComposer(): void {
-    const hostEl = this.hostEl.nativeElement as HTMLElement;
+  private positionAboveLink(): void {
+    const estimatedHeight = 120;
+    const estimatedWidth = 280;
+    const gap = 8;
 
-    // Prefer [data-cometchat-container] ancestor (Storybook wrapper)
-    const container = this.findContainerAncestor(hostEl);
-    if (container) {
-      const containerRect = container.getBoundingClientRect();
-      this.popoverTop = containerRect.top + containerRect.height / 2 - 80;
-      this.popoverLeft = containerRect.left + (containerRect.width - 280) / 2;
-      if (this.popoverTop < containerRect.top + 8) {
-        this.popoverTop = containerRect.top + 8;
+    if (this.x > 0 && this.y > 0) {
+      let top = this.y - estimatedHeight - gap;
+      let left = this.x - estimatedWidth / 2;
+
+      // Flip below if no room above
+      if (top < gap) { top = this.y + gap; }
+      // Clamp horizontally
+      if (left < gap) { left = gap; }
+      if (left + estimatedWidth > window.innerWidth - gap) {
+        left = window.innerWidth - estimatedWidth - gap;
       }
-      if (this.popoverLeft < containerRect.left + 8) {
-        this.popoverLeft = containerRect.left + 8;
-      }
+
+      this.popoverTop = top;
+      this.popoverLeft = left;
       return;
     }
 
-    const composer = hostEl.closest('.cometchat-message-composer') as HTMLElement;
-    if (!composer) {
-      // Fallback to click coordinates
-      this.popoverTop = this.y - 160;
-      this.popoverLeft = this.x;
-      return;
-    }
-
-    const composerRect = composer.getBoundingClientRect();
-
-    // Place just above the composer with a small gap (8px)
-    this.popoverTop = composerRect.top - 160;
-    // Center horizontally using estimated width (280px min-width)
-    this.popoverLeft = composerRect.left + (composerRect.width - 280) / 2;
-
-    // If would go above viewport, place at top of viewport
-    if (this.popoverTop < 8) {
-      this.popoverTop = 8;
-    }
-    if (this.popoverLeft < 8) {
-      this.popoverLeft = 8;
-    }
+    // Fallback: center above composer
+    this.positionAboveComposer();
   }
 
   /**
-   * After layout, refine position using actual popover dimensions.
+   * Fallback positioning: center above the composer element.
    */
-  private refinePosition(): void {
-    if (!this.popoverElement) {
+  private positionAboveComposer(): void {
+    const hostEl = this.hostEl.nativeElement as HTMLElement;
+    const gap = 8;
+
+    const container = this.findContainerAncestor(hostEl);
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      this.popoverTop = rect.top + rect.height / 2 - 80;
+      this.popoverLeft = rect.left + (rect.width - 280) / 2;
+      if (this.popoverTop < rect.top + gap) { this.popoverTop = rect.top + gap; }
+      if (this.popoverLeft < rect.left + gap) { this.popoverLeft = rect.left + gap; }
       return;
     }
 
-    const popover = this.popoverElement.nativeElement;
-    const popoverRect = popover.getBoundingClientRect();
-    const hostEl = this.hostEl.nativeElement as HTMLElement;
+    const composer = hostEl.closest('.cometchat-message-composer') as HTMLElement | null;
+    if (composer) {
+      const rect = composer.getBoundingClientRect();
+      this.popoverTop = rect.top - 160;
+      this.popoverLeft = rect.left + (rect.width - 280) / 2;
+      if (this.popoverTop < gap) { this.popoverTop = gap; }
+      if (this.popoverLeft < gap) { this.popoverLeft = gap; }
+      return;
+    }
 
-    // Prefer [data-cometchat-container] ancestor (Storybook wrapper)
+    // Last resort: use click coordinates
+    this.popoverTop = Math.max(gap, this.y - 160);
+    this.popoverLeft = Math.max(gap, this.x);
+  }
+
+  /**
+   * Refine position after layout using actual popover dimensions.
+   */
+  private refinePosition(): void {
+    if (!this.popoverElement) { return; }
+
+    const popoverEl = this.popoverElement.nativeElement;
+    const rect = popoverEl.getBoundingClientRect();
+    const gap = 8;
+
+    if (this.x > 0 && this.y > 0) {
+      let left = this.x - rect.width / 2;
+      let top = this.y - rect.height - gap;
+
+      // Flip below if no room above
+      if (top < gap) { top = this.y + gap; }
+      // Clamp horizontally
+      if (left < gap) { left = gap; }
+      if (left + rect.width > window.innerWidth - gap) {
+        left = window.innerWidth - rect.width - gap;
+      }
+      // Clamp vertically
+      if (top + rect.height > window.innerHeight - gap) {
+        top = window.innerHeight - rect.height - gap;
+      }
+
+      this.popoverLeft = left;
+      this.popoverTop = top;
+      return;
+    }
+
+    // Fallback: refine composer-centered position
+    const hostEl = this.hostEl.nativeElement as HTMLElement;
     const container = this.findContainerAncestor(hostEl);
     if (container) {
       const containerRect = container.getBoundingClientRect();
-      this.popoverLeft = containerRect.left + (containerRect.width - popoverRect.width) / 2;
-      this.popoverTop = containerRect.top + containerRect.height / 2 - popoverRect.height / 2;
-      // Clamp to container bounds
-      if (this.popoverLeft + popoverRect.width > containerRect.right - 8) {
-        this.popoverLeft = containerRect.right - popoverRect.width - 8;
+      this.popoverLeft = containerRect.left + (containerRect.width - rect.width) / 2;
+      this.popoverTop = containerRect.top + containerRect.height / 2 - rect.height / 2;
+      if (this.popoverLeft + rect.width > containerRect.right - gap) {
+        this.popoverLeft = containerRect.right - rect.width - gap;
       }
-      if (this.popoverLeft < containerRect.left + 8) {
-        this.popoverLeft = containerRect.left + 8;
-      }
-      if (this.popoverTop < containerRect.top + 8) {
-        this.popoverTop = containerRect.top + 8;
-      }
+      if (this.popoverLeft < containerRect.left + gap) { this.popoverLeft = containerRect.left + gap; }
+      if (this.popoverTop < containerRect.top + gap) { this.popoverTop = containerRect.top + gap; }
       return;
     }
 
-    const composer = hostEl.closest('.cometchat-message-composer') as HTMLElement;
-
+    const composer = hostEl.closest('.cometchat-message-composer') as HTMLElement | null;
     if (composer) {
       const composerRect = composer.getBoundingClientRect();
-      // Re-center with actual popover width
-      this.popoverLeft = composerRect.left + (composerRect.width - popoverRect.width) / 2;
-      // Place just above composer with actual height + 8px gap
-      this.popoverTop = composerRect.top - popoverRect.height - 8;
+      this.popoverLeft = composerRect.left + (composerRect.width - rect.width) / 2;
+      this.popoverTop = composerRect.top - rect.height - gap;
     }
 
     // Clamp to viewport
-    if (this.popoverLeft + popoverRect.width > window.innerWidth) {
-      this.popoverLeft = window.innerWidth - popoverRect.width - 8;
+    if (this.popoverLeft + rect.width > window.innerWidth) {
+      this.popoverLeft = window.innerWidth - rect.width - gap;
     }
-    if (this.popoverLeft < 8) {
-      this.popoverLeft = 8;
-    }
-    if (this.popoverTop < 8) {
-      this.popoverTop = 8;
-    }
+    if (this.popoverLeft < gap) { this.popoverLeft = gap; }
+    if (this.popoverTop < gap) { this.popoverTop = gap; }
   }
 
   /**
@@ -295,9 +340,7 @@ export class CometChatLinkPopoverComponent implements OnInit, AfterViewInit, OnD
 
   /** Handle document click to close popover when clicking outside */
   private handleDocumentClick(event: MouseEvent): void {
-    if (!this.popoverElement) {
-      return;
-    }
+    if (!this.popoverElement) { return; }
     const popoverEl = this.popoverElement.nativeElement;
     if (!popoverEl.contains(event.target as Node)) {
       this.closeClick.emit();

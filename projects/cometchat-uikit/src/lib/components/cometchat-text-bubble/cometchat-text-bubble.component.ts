@@ -27,7 +27,8 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
-import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { MessageBubbleAlignment, MouseEventSource } from '../../Enums/Enums';
+import { CometChatUIEvents } from '../../events/CometChatUIEvents';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { CometChatMentionsFormatter } from '../../formatters/cometchat-mentions-formatter';
 import { FormatterConfigService } from '../../services/formatter-config.service';
@@ -278,7 +279,14 @@ export class CometChatTextBubbleComponent implements OnInit, OnChanges, AfterVie
   }
 
   protected onMentionClick(user: CometChat.User): void {
-    if (user) { this.mentionClick.emit(user); }
+    if (user) {
+      this.mentionClick.emit(user);
+      CometChatUIEvents.ccMouseEvent.next({
+        event: new MouseEvent('click'),
+        source: MouseEventSource.mentions,
+        body: { CometChatUserGroupMembersObject: user },
+      });
+    }
   }
 
   protected onTextContentClick(event: MouseEvent): void {
@@ -288,7 +296,10 @@ export class CometChatTextBubbleComponent implements OnInit, OnChanges, AfterVie
     if (target.tagName === 'A' && target.classList.contains('cometchat-link')) {
       event.preventDefault(); event.stopPropagation();
       const url = target.getAttribute('href');
-      if (url) { this.linkClick.emit(url); }
+      if (url) {
+        this.linkClick.emit(url);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
       return;
     }
 
@@ -299,7 +310,7 @@ export class CometChatTextBubbleComponent implements OnInit, OnChanges, AfterVie
       if (mentionType === 'channel' || uid === 'all') return;
       if (uid && this.mentionedUsers.length > 0) {
         const user = this.mentionedUsers.find(u => u.getUid() === uid);
-        if (user) { this.mentionClick.emit(user); }
+        if (user) { this.onMentionClick(user); }
       }
     }
   }

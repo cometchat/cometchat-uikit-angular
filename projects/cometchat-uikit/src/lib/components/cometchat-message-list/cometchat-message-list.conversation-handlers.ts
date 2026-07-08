@@ -20,7 +20,10 @@ export function handleConversationChangeImpl(ctx: any): void {
     ctx.messageListService.setUser(ctx.user);
     if (ctx.isAgentChat && !ctx.parentMessageId) {
       ctx.messageListService.setLoadingState(false);
-      ctx.listState.set(States.empty);
+      // When loadLastAgentConversation is true, keep shimmer visible while
+      // the parent fetches history in the background. The parent will set
+      // parentMessageId once resolved, triggering a re-fetch.
+      ctx.listState.set(ctx.loadLastAgentConversation ? States.loading : States.empty);
       return;
     }
     if (ctx.goToMessageId) {
@@ -48,7 +51,7 @@ export function handleConversationChangeImpl(ctx: any): void {
     ctx.messageListService.setGroup(ctx.group);
     if (ctx.isAgentChat && !ctx.parentMessageId) {
       ctx.messageListService.setLoadingState(false);
-      ctx.listState.set(States.empty);
+      ctx.listState.set(ctx.loadLastAgentConversation ? States.loading : States.empty);
       return;
     }
     if (ctx.goToMessageId) {

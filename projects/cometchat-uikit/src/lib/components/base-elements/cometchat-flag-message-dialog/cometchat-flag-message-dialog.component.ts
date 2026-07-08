@@ -142,6 +142,9 @@ export class CometChatFlagMessageDialogComponent implements OnInit, AfterViewIni
     } finally {
       this.isLoadingReasons.set(false);
       this.cdr.markForCheck();
+      // Reason buttons render asynchronously after this resolves; rebuild the
+      // focus-trap boundaries so Tab cycling includes them. Don't move focus.
+      this.pendingTimers.push(setTimeout(() => this.setupFocusTrap(), 0));
     }
   }
 

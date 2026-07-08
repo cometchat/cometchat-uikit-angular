@@ -92,7 +92,7 @@ export class CometChatUIKit {
     if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
     CometChatLocalize.setCurrentLanguage(CometChatLocalize.getBrowserLanguage());
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.3' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.4' };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
           CometChat.getLoggedinUser()
@@ -139,7 +139,7 @@ export class CometChatUIKit {
     // This is the SDK's file-based init path which sets
     // integrationSource = "ai-agent" for telemetry.
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.3' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.4' };
 
       CometChat.initFromSettings(settings)
         .then(() => {

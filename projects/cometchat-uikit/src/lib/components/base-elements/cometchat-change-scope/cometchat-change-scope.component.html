@@ -25,6 +25,7 @@
           [id]="option"
           [name]="'scope'"
           [value]="option"
+          [ariaLabel]="'member_scope_' + option.toLowerCase() | translate"
           [checked]="selectedValue === option"
           [disabled]="isLoading"
           (radioChanged)="onSelectionChanged($event)">
