@@ -34,6 +34,17 @@
   --cometchat-avatar-height:40px;
 }
 
+/* Empty spacer that reserves the avatar column width for batch-continuation messages, so their
+   content aligns under the first message of the batch (the wrapper's gap adds the same spacing).
+   MUST match the leading-view avatar's rendered width (--cometchat-avatar-width: 40px, set above) —
+   NOT the global --cometchat-avatar-size (48px, used by conversation lists), otherwise continuation
+   bubbles (e.g. a video grid under an image grid) sit ~8px further right than the first message. */
+.cometchat-message-bubble__leading-spacer {
+  flex-shrink: 0;
+  align-self: flex-start;
+  width: var(--cometchat-avatar-width, 40px);
+}
+
 .cometchat-message-bubble__leading-view cometchat-avatar {
   cursor: pointer;
 }
@@ -50,7 +61,11 @@
   display: flex;
   flex-direction: column;
   max-width: var(--cometchat-message-bubble-max-width, 65%);
-  min-width: var(--cometchat-message-bubble-min-width, 0);
+  /* fit-content, matching the React kit: 65% of a narrow panel is smaller than the content needs, and
+     a 0 floor let the bubble collapse — squashing image/video grids to unusable thumbnails. The floor
+     keeps the bubble at least as wide as its content; text still shrinks to fit since its fit-content
+     is its wrapped width. */
+  min-width: var(--cometchat-message-bubble-min-width, fit-content);
   overflow: hidden;
   /* --cometchat-delete-bubble-padding:var(--cometchat-padding-2) var(--cometchat-padding-2) 0 var(--cometchat-padding-2) */
 }
@@ -60,6 +75,18 @@
   overflow: hidden;
   min-width: 0;
   max-width: 100%;
+}
+
+/* Multiple-attachments batch bubbles: force a consistent width. The bubble normally sizes to its
+   content (so images stretch wide while a lone video/file stays narrow); flex-grow makes every
+   batch bubble expand to the same width (capped by --cometchat-multi-attachment-width, default the
+   standard 65% bubble max), and the inner per-type bubble then fills it.
+   Do NOT drop flex-grow: everything inside a batch is percentage-width (grid -> tile -> img are all
+   width:100%), so with nothing to size to the bubble collapses and the tiles render as tiny
+   thumbnails. flex-grow is what gives that percentage chain a width to resolve against. */
+.cometchat-message-bubble--multi-attachment {
+  flex-grow: 1;
+  max-width: var(--cometchat-multi-attachment-width, var(--cometchat-message-bubble-max-width, 65%));
 }
 
 /* Alignment modifiers */
@@ -119,13 +146,17 @@
   order: 1;
 }
 
-/* Options menu */
+/* Options menu.
+   No align-self, so this column stretches to the bubble's full height and `align-items: center`
+   centres the buttons against it. On a tall bubble (a large image) flex-start would strand them up
+   by the top edge. Note this is a deliberate divergence from the React kit, which pins the options
+   to the top via `align-self: flex-start`. */
 .cometchat-message-bubble__options {
   opacity: var(--cometchat-message-bubble-options-opacity, 0);
   pointer-events: none;
   transition: var(--cometchat-message-bubble-options-transition, opacity 0.2s ease-in-out);
   display: flex;
-  align-items: center;
+  align-items: var(--cometchat-message-bubble-options-align, center);
   padding: var(--cometchat-message-bubble-options-padding, var(--cometchat-padding-1, 4px));
 }
 
@@ -173,6 +204,16 @@
   background: var(--cometchat-neutral-color-300);
 }
 
+/* The body has 0 bottom-padding by design — the status-info footer normally supplies that space. But
+   every batch bubble EXCEPT the last hides its footer (per the DD: time/receipt only on the last
+   message of a multi-attachment batch). Without the footer the media sits flush against the body's
+   rounded, overflow-hidden bottom edge, so its bottom corners get clipped and read as "trimmed".
+   Restore just the bottom padding (no timestamp/receipt) so those media tiles sit inside the rounded
+   corners like a complete card. */
+.cometchat-message-bubble__body--batch-no-footer {
+  padding-bottom: var(--cometchat-message-bubble-body-padding-bottom, var(--cometchat-padding-1));
+}
+
 /* Remove bottom border-radius when moderation indicator is shown */
 .cometchat-message-bubble__body--moderated {
   border-radius: var(--cometchat-radius-3) var(--cometchat-radius-3) 0 0;
@@ -187,6 +228,18 @@
 .cometchat-message-bubble__document-message .cometchat-message-bubble__body-content-view
 {
   margin-bottom: calc(var(--cometchat-margin-2) * -1);
+}
+
+/* The pull-up above assumes the inner bubble pads its own bottom edge (the single audio bubble's
+   container has 12px), so the footer needs closing up. The batch audio bubble has no root padding by
+   design — each row supplies its own inset — so the same pull-up drags the timestamp flush against
+   the last row. Drop it there and let the footer's own padding space it, as on the image, video and
+   file batches (which never got the pull-up). Keyed off the batch class rather than the type class
+   because both bubbles share `audio_message`. */
+.cometchat-message-bubble--multi-attachment
+  .cometchat-message-bubble__audio-message
+  .cometchat-message-bubble__body-content-view {
+  margin-bottom: 0;
 }
 /* Incoming (receiver) text message - use neutral background */
 .cometchat-message-bubble-incoming .cometchat-message-bubble__text-message {
@@ -483,10 +536,31 @@
   background: var(--cometchat-message-bubble-receipt-read-color, var(--cometchat-message-seen-color, #56E8A7));
 }
 
-.cometchat-receipts-error .cometchat-message-list__receipt {
-  -webkit-mask: url('../../assets/status_error.svg') center center no-repeat;
-  mask: url('../../assets/status_error.svg') center center no-repeat;
+/* Error receipt — a red disc with a white "!" inside (React parity). The disc is the CONTAINER and
+   the "!" is the inner glyph, masked from the single-colour error_info.svg. status_error.svg is a
+   FULL-COLOUR icon (white disc + red glyph) and must NOT be used as a mask: masking keeps only its
+   alpha — the whole disc — which flattens to a solid red dot with no "!". */
+.cometchat-receipts-error {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--cometchat-error-color);
+  border-radius: var(--cometchat-radius-max, 1000px);
+}
+
+.cometchat-receipts-error .cometchat-message-list__receipt {
+  width: 12px;
+  height: 12px;
+  -webkit-mask: url('../../assets/error_info.svg') center center no-repeat;
+  mask: url('../../assets/error_info.svg') center center no-repeat;
+  /* React parity: render the "!" at its NATURAL size, center-cropped into the 12px box — NOT
+     `contain`. The glyph lives in a 24x24 viewBox, so `contain` would scale it to ~half height and
+     the "!" reads as a thin sliver; natural size fills the disc and stays prominent. */
+  -webkit-mask-size: auto;
+  mask-size: auto;
+  background: var(--cometchat-static-white);
 }
 
 /* Unsupported message type fallback */
@@ -568,8 +642,10 @@
   color: var(--cometchat-warning-color);
 }
 
-/* Disapproved moderation state - error color */
-.cometchat-message-bubble__moderation-indicator--disapproved {
+/* Disapproved moderation / permission-denied state - error color (React parity: same look, only
+   the message text differs) */
+.cometchat-message-bubble__moderation-indicator--disapproved,
+.cometchat-message-bubble__moderation-indicator--permission-denied {
   background: linear-gradient(0deg, rgba(244, 70, 73, 0.10) 0%, rgba(244, 70, 73, 0.10) 100%), var(--cometchat-background-color-01);
   color: var(--cometchat-error-color);
 }
@@ -590,8 +666,9 @@
   background: var(--cometchat-warning-color);
 }
 
-/* Disapproved icon - error style */
-.cometchat-message-bubble__moderation-indicator--disapproved .cometchat-message-bubble__moderation-indicator-icon {
+/* Disapproved / permission-denied icon - error style */
+.cometchat-message-bubble__moderation-indicator--disapproved .cometchat-message-bubble__moderation-indicator-icon,
+.cometchat-message-bubble__moderation-indicator--permission-denied .cometchat-message-bubble__moderation-indicator-icon {
   mask: url("../../assets/message_blocked.svg") center center no-repeat;
   -webkit-mask: url("../../assets/message_blocked.svg") center center no-repeat;
   mask-size: contain;

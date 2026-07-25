@@ -19,6 +19,30 @@ export class CometChatUIKitConstants {
     disapproved: CometChat.ModerationStatus.DISAPPROVED,
     unmoderated: CometChat.ModerationStatus.UNMODERATED,
   });
+
+  /**
+   * UI Kit-owned message metadata keys for the multi-attachments feature.
+   * `batchId` is the render-time grouping key shared across all messages produced by one
+   * send; `audioType` disambiguates an attached audio file from a recorded voice note.
+   */
+  static MetadataKeys = Object.freeze({
+    batchId: 'batchId',
+    audioType: 'audioType',
+  });
+
+  /**
+   * Values for the `audioType` metadata key. A recorded voice note is explicitly tagged
+   * `voice_note`; audio WITHOUT the tag (attached files, legacy audio) is a normal audio
+   * message — absence never means voice note.
+   *
+   * `legacyVoiceNote` is the camelCase value this kit wrote before aligning with the
+   * React/iOS/Android kits. It is READ for backward compatibility but never written, so
+   * voice notes already in a conversation keep rendering as waveforms.
+   */
+  static AudioType = Object.freeze({
+    voiceNote: 'voice_note',
+    legacyVoiceNote: 'voiceNote',
+  });
   static MessageTypes = Object.freeze({
     text: CometChat.MESSAGE_TYPE.TEXT,
     file: CometChat.MESSAGE_TYPE.FILE,

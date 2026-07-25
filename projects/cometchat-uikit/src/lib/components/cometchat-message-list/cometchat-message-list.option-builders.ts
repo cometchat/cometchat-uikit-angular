@@ -5,6 +5,53 @@ import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {CometChatActionsIcon} from '../../modals/CometChatActionsIcon';
 import {CometChatUIKitConstants} from '../../constants';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
+import {hasMediaCaption} from '../../utils/message-metadata-utils';
+
+/**
+ * A message disapproved by moderation shows an error indicator on its bubble and must not be
+ * editable — editing would let the sender slip a rejected message back into an approved state.
+ * Mirrors the bubble's `isDisapprovedByModeration` getter, guarding the SDK method in case an
+ * older Chat SDK build doesn't expose `getModerationStatus`.
+ */
+function isDisapprovedByModeration(message: CometChat.BaseMessage): boolean {
+  const getStatus = (message as any).getModerationStatus;
+  if (typeof getStatus !== 'function') return false;
+  return getStatus.call(message) === CometChatUIKitConstants.moderationStatus.disapproved;
+}
+
+/**
+ * A locally-rejected message can have no sender yet, in which case it was authored by the logged-in
+ * user — so a missing sender counts as "mine". Mirrors the React kit's `isSentByMe`.
+ */
+function isSentByMe(loggedInUser: CometChat.User | null, message: CometChat.BaseMessage): boolean {
+  const sender = message.getSender();
+  return !sender || sender.getUid() === loggedInUser?.getUid();
+}
+
+/**
+ * Options for a message disapproved by moderation. Matches the React kit's `getMessageOptions`
+ * whitelist: a rejected message collapses to at most Delete + Copy — every other action
+ * (react/reply/thread/edit/translate/info/flag/message-privately/mark-unread) is stripped so the
+ * message can't be re-shared or re-surfaced. Returned directly (no `optionsOverride`), exactly as
+ * React returns this list early.
+ */
+function getModeratedMessageOptions(ctx: MessageOptionsContext, message: CometChat.BaseMessage): CometChatActionsIcon[] {
+  const options: CometChatActionsIcon[] = [];
+  const isParticipant = ctx.group?.getScope() === CometChatUIKitConstants.groupMemberScope.participant;
+
+  // Delete: the sender can always remove it; in a group a non-participant (moderator/admin/owner)
+  // can too. Mirrors React's `(isSentByMe || (!isParticipant && group))`.
+  if ((isSentByMe(ctx.loggedInUser, message) || (!isParticipant && !!ctx.group)) && !ctx.hideDeleteMessageOption) {
+    options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.deleteMessage, title: CometChatLocalize.getLocalizedString('message_list_option_delete'), iconURL: 'assets/delete.svg', onClick: () => {} }));
+  }
+
+  // Copy: text messages only (captioned media is NOT copyable here), matching React.
+  if (message.getType() === 'text' && !ctx.hideCopyMessageOption) {
+    options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.copyMessage, title: CometChatLocalize.getLocalizedString('message_list_option_copy'), iconURL: 'assets/Copy.svg', onClick: () => {} }));
+  }
+
+  return options;
+}
 
 export interface MessageOptionsContext {
   loggedInUser: CometChat.User | null;
@@ -26,6 +73,8 @@ export interface MessageOptionsContext {
 
 export function getMessageOptionsImpl(ctx: MessageOptionsContext, message: CometChat.BaseMessage): CometChatActionsIcon[] {
   if (message.getDeletedAt()) return [];
+  // A moderation-rejected message gets the restricted (Delete + Copy) set, matching the React kit.
+  if (isDisapprovedByModeration(message)) return getModeratedMessageOptions(ctx, message);
 
   // Agentic messages (AI agent in group) get copy-only context menu
   if (message.getCategory() === CometChatUIKitConstants.MessageCategory.agentic) {
@@ -50,13 +99,17 @@ export function getMessageOptionsImpl(ctx: MessageOptionsContext, message: Comet
   if (!ctx.hideReplyInThreadOption) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.replyInThread, title: CometChatLocalize.getLocalizedString('message_list_option_reply_in_thread'), iconURL: 'assets/reply_in_thread.svg', onClick: () => {} }));
   }
-  if (!ctx.hideCopyMessageOption && message.getType() === 'text') {
+  // Copy and Edit act on the message's TEXT. A text message always has one; a media message has
+  // one only when it carries a caption — so captioned media gets both options too (matching the
+  // React kit's getMediaMessageOptions).
+  const isTextual = message.getType() === 'text' || hasMediaCaption(message);
+  if (!ctx.hideCopyMessageOption && isTextual) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.copyMessage, title: CometChatLocalize.getLocalizedString('message_list_option_copy'), iconURL: 'assets/Copy.svg', onClick: () => {} }));
   }
   const sender = message.getSender();
   const isOwnMessage = ctx.loggedInUser && sender?.getUid() === ctx.loggedInUser.getUid();
-  if (!ctx.hideEditMessageOption && isOwnMessage && message.getType() === 'text') {
-    options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.editMessage, title: CometChatLocalize.getLocalizedString('message_list_option_edit'), iconURL: 'assets/edit_icon.svg', onClick: () => {} }));
+  if (!ctx.hideEditMessageOption && isOwnMessage && isTextual) {
+    options.push(new CometChatActionsIcon({ id: 'edit', title: CometChatLocalize.getLocalizedString('message_list_option_edit'), iconURL: 'assets/edit_icon.svg', onClick: () => {} }));
   }
   if (!ctx.hideDeleteMessageOption && isOwnMessage) {
     options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.deleteMessage, title: CometChatLocalize.getLocalizedString('message_list_option_delete'), iconURL: 'assets/delete.svg', onClick: () => {} }));

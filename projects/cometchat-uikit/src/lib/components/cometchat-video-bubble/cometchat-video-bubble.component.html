@@ -19,15 +19,19 @@
       tabindex="0"
       role="button"
       [attr.aria-label]="getThumbnailAriaLabel(0)">
-      <!-- Thumbnail -->
-      <img
-        *ngIf="!failedThumbnails.has(0)"
+      <!-- Thumbnail: <video> paints the first frame natively (an <img> can't decode a video file) -->
+      <video
+        *ngIf="shouldShowThumbnail(0)"
         class="cometchat-video-bubble__thumbnail"
-        [src]="attachments[0].displayUrl ?? attachments[0].url"
-        alt=""
+        [src]="getThumbnailVideoSrc(attachments[0])"
+        [attr.poster]="getThumbnailPoster(attachments[0])"
+        preload="metadata"
+        muted
+        playsinline
+        tabindex="-1"
         aria-hidden="true"
-        loading="lazy"
-        (error)="onThumbnailError(0)" />
+        (error)="onThumbnailError(0, attachments[0])"
+        (loadedmetadata)="onThumbnailMetadata(0, $event)"></video>
       <!-- Placeholder when thumbnail fails -->
       <div
         *ngIf="failedThumbnails.has(0)"
@@ -69,15 +73,19 @@
         tabindex="0"
         role="button"
         [attr.aria-label]="getThumbnailAriaLabel(i)">
-        <!-- Thumbnail -->
-        <img
-          *ngIf="!failedThumbnails.has(i)"
+        <!-- Thumbnail: <video> paints the first frame natively (an <img> can't decode a video file) -->
+        <video
+          *ngIf="shouldShowThumbnail(i)"
           class="cometchat-video-bubble__thumbnail"
-          [src]="attachment.displayUrl ?? attachment.url"
-          alt=""
+          [src]="getThumbnailVideoSrc(attachment)"
+          [attr.poster]="getThumbnailPoster(attachment)"
+          preload="metadata"
+          muted
+          playsinline
+          tabindex="-1"
           aria-hidden="true"
-          loading="lazy"
-          (error)="onThumbnailError(i)" />
+          (error)="onThumbnailError(i, attachment)"
+          (loadedmetadata)="onThumbnailMetadata(i, $event)"></video>
         <!-- Placeholder when thumbnail fails -->
         <div
           *ngIf="failedThumbnails.has(i)"
@@ -117,15 +125,19 @@
         tabindex="0"
         role="button"
         [attr.aria-label]="getThumbnailAriaLabel(i)">
-        <!-- Thumbnail -->
-        <img
-          *ngIf="!failedThumbnails.has(i)"
+        <!-- Thumbnail: <video> paints the first frame natively (an <img> can't decode a video file) -->
+        <video
+          *ngIf="shouldShowThumbnail(i)"
           class="cometchat-video-bubble__thumbnail"
-          [src]="attachment.displayUrl ?? attachment.url"
-          alt=""
+          [src]="getThumbnailVideoSrc(attachment)"
+          [attr.poster]="getThumbnailPoster(attachment)"
+          preload="metadata"
+          muted
+          playsinline
+          tabindex="-1"
           aria-hidden="true"
-          loading="lazy"
-          (error)="onThumbnailError(i)" />
+          (error)="onThumbnailError(i, attachment)"
+          (loadedmetadata)="onThumbnailMetadata(i, $event)"></video>
         <!-- Placeholder when thumbnail fails -->
         <div
           *ngIf="failedThumbnails.has(i)"
@@ -166,15 +178,19 @@
         tabindex="0"
         role="button"
         [attr.aria-label]="getThumbnailAriaLabel(i)">
-        <!-- Thumbnail -->
-        <img
-          *ngIf="!failedThumbnails.has(i)"
+        <!-- Thumbnail: <video> paints the first frame natively (an <img> can't decode a video file) -->
+        <video
+          *ngIf="shouldShowThumbnail(i)"
           class="cometchat-video-bubble__thumbnail"
-          [src]="attachment.displayUrl ?? attachment.url"
-          alt=""
+          [src]="getThumbnailVideoSrc(attachment)"
+          [attr.poster]="getThumbnailPoster(attachment)"
+          preload="metadata"
+          muted
+          playsinline
+          tabindex="-1"
           aria-hidden="true"
-          loading="lazy"
-          (error)="onThumbnailError(i)" />
+          (error)="onThumbnailError(i, attachment)"
+          (loadedmetadata)="onThumbnailMetadata(i, $event)"></video>
         <!-- Placeholder when thumbnail fails -->
         <div
           *ngIf="failedThumbnails.has(i)"
@@ -200,14 +216,23 @@
       </div>
 
       <!-- 4th tile with overflow indicator -->
-      <div 
+      <div
         class="cometchat-video-bubble__overflow-tile"
         (click)="onVideoClick(3); $event.stopPropagation()"
         (keydown)="onThumbnailKeyDown($event, 3)"
         tabindex="0"
         role="button"
-        [attr.aria-label]="getOverflowAriaLabel()"
-        [style.background-image]="'url(' + (attachments[3].displayUrl ?? attachments[3].url) + ')'">
+        [attr.aria-label]="getOverflowAriaLabel()">
+        <!-- First frame of the 4th video sits behind the "+N" overlay (an <img>/bg-image can't decode video) -->
+        <video
+          class="cometchat-video-bubble__thumbnail"
+          [src]="getThumbnailVideoSrc(attachments[3])"
+          [attr.poster]="getThumbnailPoster(attachments[3])"
+          preload="metadata"
+          muted
+          playsinline
+          tabindex="-1"
+          aria-hidden="true"></video>
         <div class="cometchat-video-bubble__overflow-overlay" aria-hidden="true">
           <span class="cometchat-video-bubble__overflow-text">
             {{ getOverflowText() }}

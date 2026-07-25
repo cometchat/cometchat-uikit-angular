@@ -3,6 +3,61 @@ import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-loc
 import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKit} from '../../cometchat-uikit';
+import {getMediaCaption} from '../../utils/message-metadata-utils';
+import {
+  getAttachmentCount,
+  getMediaTypeLabel,
+  isMediaPreviewType,
+  MediaPreviewType,
+} from '../../utils/message-preview-utils';
+import {formatEditPreviewTextImpl, formatReplyPreviewTextImpl} from './cometchat-message-composer.edit-mode';
+
+/** Type glyph shown before the media label in the edit / reply preview banners. */
+const MEDIA_PREVIEW_ICONS: Record<MediaPreviewType, string> = {
+  image: 'assets/conversations_image-message.svg',
+  video: 'assets/conversations_video-message.svg',
+  audio: 'assets/conversations_audio-message.svg',
+  file: 'assets/conversations_file-message.svg',
+};
+
+/** The pieces of a media preview banner: `[icon] label · caption`. */
+export interface MediaPreviewParts {
+  iconUrl: string;
+  /** "Image" for one attachment, "3 Images" for several. */
+  label: string;
+  /** Sanitized HTML for the caption, or '' when there is none. */
+  captionHtml: string;
+}
+
+/**
+ * Summary for a media message being edited or replied to: the type glyph, a counted label, and the
+ * formatted caption. `null` for text and every other type, which keep their existing subtitle.
+ *
+ * NOTE: unlike the conversation list, a voice note is NOT special-cased here — it previews as
+ * "Audio", matching the React kit's edit and reply banners.
+ */
+export function getMediaPreviewPartsImpl(
+  self: any,
+  message: CometChat.BaseMessage | null | undefined,
+  mode: 'edit' | 'reply',
+): MediaPreviewParts | null {
+  if (!message) { return null; }
+  const type = message.getType();
+  if (!isMediaPreviewType(type)) { return null; }
+
+  const caption = getMediaCaption(message).trim();
+  const captionHtml = caption
+    ? (mode === 'edit'
+        ? formatEditPreviewTextImpl(self, message as CometChat.TextMessage, caption)
+        : formatReplyPreviewTextImpl(self, message as CometChat.TextMessage, caption))
+    : '';
+
+  return {
+    iconUrl: MEDIA_PREVIEW_ICONS[type],
+    label: getMediaTypeLabel(type, getAttachmentCount(message)),
+    captionHtml,
+  };
+}
 import {CometChatUIKitConstants} from '../../constants';
 
 export function getReplyPreviewTitleImpl(self: any): string {
@@ -78,16 +133,20 @@ export function getEditPreviewTitleImpl(): string {
   return CometChatLocalize.getLocalizedString('message_composer_edit_message');
 }
 
+/**
+ * Subtitle for the edit banner. Media messages are rendered from {@link getMediaPreviewPartsImpl}
+ * by the template instead, so this only ever handles text.
+ *
+ * It used to fall through to `escapeUserHtml(getText())` for everything non-text — and a
+ * MediaMessage has no `getText()`, so editing a captioned image showed an EMPTY subtitle.
+ */
 export function getEditPreviewSubtitleImpl(self: any): string {
   const editMessage = self.getCurrentEditMessage();
   if (!editMessage) { return ''; }
   if (editMessage.getType() === CometChat.MESSAGE_TYPE.TEXT) {
-    const textMessage = editMessage as CometChat.TextMessage;
-    return self.formatEditPreviewText(textMessage);
+    return self.formatEditPreviewText(editMessage as CometChat.TextMessage);
   }
-  const textMessage = editMessage as CometChat.TextMessage;
-  const rawText = textMessage.getText?.() || '';
-  return self.htmlSanitizerService.escapeUserHtml(rawText);
+  return '';
 }
 
 export function enterReplyModeImpl(self: any, message: CometChat.BaseMessage): void {

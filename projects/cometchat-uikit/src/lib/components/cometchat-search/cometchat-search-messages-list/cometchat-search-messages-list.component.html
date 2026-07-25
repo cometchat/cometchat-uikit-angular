@@ -129,7 +129,27 @@
           } @else if (subtitleHasHtml(message)) {
             <span [innerHTML]="getMessageSubtitleHtml(message)"></span>
           } @else {
-            {{ getMessageSubtitle(message) }}
+            <!-- [thread] "You:" [type glyph] text -->
+            @if (hasThreadReply(message)) {
+              <span
+                class="cometchat-search__messages-subtitle-icon-thread"
+                [attr.aria-label]="'thread_reply' | translate"></span>
+            }
+            @if (getSubtitleSenderPrefix(message); as prefix) {
+              <span class="cometchat-search__messages-subtitle-sender">{{ prefix }}</span>
+            }
+            @if (getSubtitleIconType(message); as iconType) {
+              <span
+                class="cometchat-search__messages-subtitle-icon"
+                aria-hidden="true"
+                [class.cometchat-search__messages-subtitle-icon--image]="iconType === 'image'"
+                [class.cometchat-search__messages-subtitle-icon--video]="iconType === 'video'"
+                [class.cometchat-search__messages-subtitle-icon--audio]="iconType === 'audio'"
+                [class.cometchat-search__messages-subtitle-icon--file]="iconType === 'file'"></span>
+            }
+            <span class="cometchat-search__messages-list-item-subtitle-content">{{
+              getMessageSubtitleContent(message)
+            }}</span>
           }
         </div>
       </div>
@@ -142,12 +162,27 @@
           @case ('image') {
             <div class="cometchat-search__messages-trailing-view cometchat-search__messages-trailing-view-image">
               <img [src]="getAttachmentUrl(message)" alt="" loading="lazy" />
+              <!-- The subtitle omits the count for image/video batches; this badge carries it. -->
+              @if (getAttachmentOverflow(message) > 0) {
+                <div class="cometchat-search__messages-trailing-overlay" aria-hidden="true">
+                  +{{ getAttachmentOverflow(message) }}
+                </div>
+              }
             </div>
           }
           @case ('video') {
             <div class="cometchat-search__messages-trailing-view cometchat-search__messages-trailing-view-video">
-              <video [src]="getAttachmentUrl(message)" preload="metadata"></video>
+              <!-- Prefer the backend-generated poster; the raw <video> first frame is the fallback. -->
+              <video
+                [src]="getAttachmentUrl(message)"
+                [attr.poster]="getVideoPosterUrl(message)"
+                preload="metadata"></video>
               <div class="cometchat-search__messages-video-play-button"></div>
+              @if (getAttachmentOverflow(message) > 0) {
+                <div class="cometchat-search__messages-trailing-overlay" aria-hidden="true">
+                  +{{ getAttachmentOverflow(message) }}
+                </div>
+              }
             </div>
           }
           @case ('date') {

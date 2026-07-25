@@ -1,0 +1,306 @@
+<div
+  #tileRoot
+  class="cometchat-attachment-tile"
+  [class.cometchat-attachment-tile--image]="view.isImage"
+  [class.cometchat-attachment-tile--video]="view.isVideo"
+  [class.cometchat-attachment-tile--file]="view.isFile"
+  [class.cometchat-attachment-tile--audio]="view.isAudio"
+  [class.cometchat-attachment-tile--uploading]="view.isUploading"
+  [class.cometchat-attachment-tile--clickable]="view.clickable"
+  (mouseenter)="showErrorTooltip(tileRoot)"
+  (mouseleave)="hideErrorTooltip()"
+  (focusin)="showErrorTooltip(tileRoot)"
+  (focusout)="hideErrorTooltip()"
+>
+  <!-- Image / Video square -->
+  @if (view.isMediaSquare) {
+    <div
+      class="cometchat-attachment-tile__media"
+      [class.cometchat-attachment-tile__media--error]="view.hasError"
+      [attr.role]="view.clickable ? 'button' : null"
+      [attr.tabindex]="view.clickable ? 0 : null"
+      [attr.aria-label]="tile.name"
+      [style.background-image]="tile.thumbnailUrl ? 'url(' + tile.thumbnailUrl + ')' : null"
+      (click)="onOpen()"
+      (keydown.enter)="onOpenKeydown($event)"
+      (keydown.space)="onOpenKeydown($event)"
+      data-testid="attachment-tile-open"
+    >
+      @if (view.isVideo) {
+        <span class="cometchat-attachment-tile__play" aria-hidden="true">
+          <span
+            class="cometchat-attachment-tile__play-icon"
+            [style.-webkit-mask-image]="'url(' + playIconUrl + ')'"
+            [style.mask-image]="'url(' + playIconUrl + ')'"
+          ></span>
+        </span>
+      }
+      @if (view.durationLabel) {
+        <span class="cometchat-attachment-tile__duration" aria-hidden="true">{{
+          view.durationLabel
+        }}</span>
+      }
+      <!-- Scrim: dims the thumbnail behind the ring (uploading) OR the retry/error badge, so the
+           centred affordance always reads on a dark backdrop. Ring only while in flight. -->
+      @if (view.hasScrim) {
+        <span class="cometchat-attachment-tile__overlay">
+          @if (view.hasOverlay) {
+            <ng-container *ngTemplateOutlet="progressRing"></ng-container>
+          }
+        </span>
+      }
+      <!-- Error/retry indicator, centred on the thumbnail (not the corner). -->
+      @if (view.hasError) {
+        <ng-container *ngTemplateOutlet="statusBadge"></ng-container>
+      }
+    </div>
+  } @else if (view.isAudio) {
+    <!-- Audio player card: round play/pause button + seekable slider + current/total time.
+         Playback is enabled only once the upload has succeeded. On an error the bar and time give
+         way to the inline status line, and the top-right badge carries the retry/error affordance. -->
+    <div
+      class="cometchat-attachment-tile__card cometchat-attachment-tile__card--audio"
+      [class.cometchat-attachment-tile__card--error]="view.hasError"
+    >
+      <div class="cometchat-attachment-tile__audio-control">
+        <button
+          type="button"
+          class="cometchat-attachment-tile__audio-button"
+          [disabled]="!view.clickableAudio"
+          [attr.aria-label]="(audioPlaying ? 'audio_bubble_pause' : 'audio_bubble_play') | translate"
+          (click)="toggleAudio(audioEl)"
+        >
+          <span
+            class="cometchat-attachment-tile__audio-icon"
+            aria-hidden="true"
+            [style.-webkit-mask-image]="'url(' + (audioPlaying ? pauseIconUrl : playIconUrl) + ')'"
+            [style.mask-image]="'url(' + (audioPlaying ? pauseIconUrl : playIconUrl) + ')'"
+          ></span>
+        </button>
+        <!-- Scrim is a SIBLING of the button, never a child — it must not swallow its clicks. Dims
+             the play disc behind the ring (uploading) OR the retry/error badge. Ring only in flight. -->
+        @if (view.hasScrim) {
+          <span class="cometchat-attachment-tile__overlay">
+            @if (view.hasOverlay) {
+              <ng-container *ngTemplateOutlet="progressRing"></ng-container>
+            }
+          </span>
+        }
+        <!-- Error/retry indicator, centred on the play disc (not the corner). -->
+        @if (view.hasError) {
+          <ng-container *ngTemplateOutlet="statusBadge"></ng-container>
+        }
+      </div>
+
+      <div class="cometchat-attachment-tile__audio-body">
+        <span class="cometchat-attachment-tile__name" [title]="tile.name">{{ tile.name }}</span>
+        @if (view.statusTextKey) {
+          <span class="cometchat-attachment-tile__error-text" data-testid="attachment-tile-status">
+            {{ view.statusTextKey | translate }}
+          </span>
+        } @else {
+          <input
+            type="range"
+            class="cometchat-attachment-tile__audio-bar"
+            min="0"
+            [max]="audioDuration || 0"
+            step="0.1"
+            [value]="audioCurrentTime"
+            [disabled]="!view.clickableAudio"
+            [attr.aria-label]="tile.name"
+            (input)="onAudioSeek(audioEl, $event)"
+          />
+          <span class="cometchat-attachment-tile__audio-status">
+            {{ formatTime(audioCurrentTime) }}/{{ formatTime(audioDuration) }}
+          </span>
+        }
+      </div>
+
+      <audio
+        #audioEl
+        [src]="audioSrc"
+        preload="metadata"
+        (loadedmetadata)="onAudioLoaded(audioEl)"
+        (timeupdate)="onAudioTime(audioEl)"
+        (play)="audioPlaying = true"
+        (pause)="audioPlaying = false"
+        (ended)="onAudioEnded()"
+      ></audio>
+    </div>
+  } @else {
+    <!-- File card -->
+    <div
+      class="cometchat-attachment-tile__card"
+      [class.cometchat-attachment-tile__card--error]="view.hasError"
+      [attr.role]="view.clickable ? 'button' : null"
+      [attr.tabindex]="view.clickable ? 0 : null"
+      [attr.aria-label]="tile.name"
+      (click)="onOpen()"
+      (keydown.enter)="onOpenKeydown($event)"
+      (keydown.space)="onOpenKeydown($event)"
+      data-testid="attachment-tile-open"
+    >
+      <span class="cometchat-attachment-tile__leading">
+        <!-- Dedicated colored file-type icon (PDF/Word/Excel/…) — a real image, never a mask. -->
+        <img
+          class="cometchat-attachment-tile__type-image"
+          [src]="view.fileTypeIconUrl"
+          alt=""
+          aria-hidden="true"
+        />
+        <!-- Scrim: dims the file glyph behind the ring (uploading) OR the retry/error badge, so the
+             centred affordance always reads on a dark backdrop. Ring only while in flight. -->
+        @if (view.hasScrim) {
+          <span class="cometchat-attachment-tile__overlay">
+            @if (view.hasOverlay) {
+              <ng-container *ngTemplateOutlet="progressRing"></ng-container>
+            }
+          </span>
+        }
+        <!-- Error/retry indicator, centred on the file-type icon (not the corner). -->
+        @if (view.hasError) {
+          <ng-container *ngTemplateOutlet="statusBadge"></ng-container>
+        }
+      </span>
+      <span class="cometchat-attachment-tile__meta">
+        <span class="cometchat-attachment-tile__name" [title]="tile.name">{{ tile.name }}</span>
+        @if (view.statusTextKey) {
+          <span class="cometchat-attachment-tile__error-text" data-testid="attachment-tile-status">
+            {{ view.statusTextKey | translate }}
+          </span>
+        } @else {
+          <span class="cometchat-attachment-tile__sub">{{ view.metaText }}</span>
+        }
+      </span>
+    </div>
+  }
+
+  <!--
+    Top-right ✕: cancel while uploading, otherwise remove — revealed on hover/focus. A FAILED tile
+    still shows the ✕ (to dismiss the attachment) ALONGSIDE its centred retry badge, so retry and
+    remove are both reachable; the two never collide (retry is centred, ✕ overhangs the corner). The
+    retry/error indicators themselves render CENTRED on the icon (see the #statusBadge outlets in
+    each type block above), not here.
+  -->
+  <button
+    type="button"
+    class="cometchat-attachment-tile__close"
+    [attr.aria-label]="
+      (view.isUploading
+        ? 'message_composer_attachment_cancel'
+        : 'message_composer_remove_attachment') | translate
+    "
+    [attr.data-testid]="view.isUploading ? 'attachment-tile-cancel' : 'attachment-tile-remove'"
+    (click)="onTopRightAction()"
+  >
+    <span
+      class="cometchat-attachment-tile__close-icon"
+      aria-hidden="true"
+      [style.-webkit-mask-image]="'url(' + closeIconUrl + ')'"
+      [style.mask-image]="'url(' + closeIconUrl + ')'"
+    ></span>
+  </button>
+
+  <!--
+    Failure tooltip. Only a failed/rejected tile builds `errorTooltip`, so healthy tiles render
+    nothing here. `position: fixed`, anchored to the tile's viewport rect (see showErrorTooltip),
+    so it clears the tray row's overflow clip and sits on top of the tile.
+  -->
+  @if (view.errorTooltip && tooltipVisible) {
+    <span
+      #tooltipEl
+      class="cometchat-attachment-tile__tooltip"
+      [class.cometchat-attachment-tile__tooltip--placed]="tooltipPlaced"
+      role="tooltip"
+      data-testid="attachment-tile-tooltip"
+      [style.left.px]="tooltipLeft"
+      [style.top.px]="tooltipTop"
+      [style.--cometchat-attachment-tile-tooltip-arrow-left]="tooltipArrowLeft + 'px'"
+    >
+      {{ view.errorTooltip }}
+    </span>
+  }
+</div>
+
+<!--
+  Determinate upload ring, centred by an ancestor `__overlay` scrim: over the image/video square,
+  the file-type icon box, or the audio play disc. Shown only while the upload is in flight — error
+  states are carried by the red border, the corner badge and the inline status line.
+-->
+<ng-template #progressRing>
+  <span class="cometchat-attachment-tile__progress" aria-hidden="true">
+    <svg
+      class="cometchat-attachment-tile__loader-ring"
+      [class.cometchat-attachment-tile__loader-ring--indeterminate]="view.isIndeterminate"
+      [attr.width]="ringSize"
+      [attr.height]="ringSize"
+      [attr.viewBox]="'0 0 ' + ringSize + ' ' + ringSize"
+    >
+      <circle
+        class="cometchat-attachment-tile__loader-track"
+        [attr.cx]="ringSize / 2"
+        [attr.cy]="ringSize / 2"
+        [attr.r]="ringRadius"
+        [attr.stroke-width]="ringStroke"
+        fill="none"
+      ></circle>
+      <circle
+        class="cometchat-attachment-tile__loader-fill"
+        [attr.cx]="ringSize / 2"
+        [attr.cy]="ringSize / 2"
+        [attr.r]="ringRadius"
+        [attr.stroke-width]="ringStroke"
+        fill="none"
+        stroke-linecap="round"
+        [attr.stroke-dasharray]="ringDasharray"
+        [attr.stroke-dashoffset]="view.isIndeterminate ? 0 : ringDashoffset(tile.uploadProgress)"
+      ></circle>
+    </svg>
+  </span>
+</ng-template>
+
+<!--
+  Error/retry indicator, centred over the tile's icon (thumbnail / file glyph / audio disc). Outlet
+  into each type block's icon container so it centres on the icon regardless of type. failed -> a
+  tappable retry circle; rejected -> a static error circle. Both SVGs bake in their own red disc +
+  white glyph, so they are plain <img> (no mask). testids/roles are unchanged from the old corner
+  badge — only the position moved.
+-->
+<ng-template #statusBadge>
+  @if (view.canRetry) {
+    <button
+      type="button"
+      class="cometchat-attachment-tile__status-badge cometchat-attachment-tile__status-badge--retry"
+      [attr.aria-label]="'message_composer_retry_upload' | translate"
+      data-testid="attachment-tile-retry"
+      (click)="onRetry($event)"
+    >
+      <img
+        class="cometchat-attachment-tile__badge-icon"
+        [src]="retryIconUrl"
+        alt=""
+        aria-hidden="true"
+        width="24"
+        height="24"
+        draggable="false"
+      />
+    </button>
+  } @else if (view.isRejected) {
+    <span
+      class="cometchat-attachment-tile__status-badge cometchat-attachment-tile__status-badge--error"
+      role="img"
+      [attr.aria-label]="'attachment_tile_upload_failed' | translate"
+      data-testid="attachment-tile-error"
+    >
+      <img
+        class="cometchat-attachment-tile__badge-icon"
+        [src]="errorIconUrl"
+        alt=""
+        aria-hidden="true"
+        width="24"
+        height="24"
+        draggable="false"
+      />
+    </span>
+  }
+</ng-template>

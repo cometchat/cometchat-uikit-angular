@@ -149,11 +149,39 @@
       <!-- Image display (Task 6.3) -->
       <!-- Gallery mode: use currentAttachment, Single mode: use url -->
       <img
-        *ngIf="!isDownloading && (isGalleryMode ? currentAttachment?.type === 'image' : mediaType === 'image') && (isGalleryMode ? currentAttachment?.url : (image || url))"
+        *ngIf="!isDownloading && !imageError && (isGalleryMode ? currentAttachment?.type === 'image' : mediaType === 'image') && (isGalleryMode ? currentAttachment?.url : (image || url))"
         [src]="isGalleryMode ? currentAttachment!.url : (image || url)"
         class="cometchat-fullscreen-viewer__body-image"
         [alt]="getMediaAltText()"
+        (error)="handleImageError()"
       />
+
+      <!-- No-preview state: the image can't be decoded/previewed (unsupported type, broken/expired
+           link, 403). Show a friendly message + Download instead of a broken-image glyph. -->
+      <div
+        *ngIf="!isDownloading && imageError && (isGalleryMode ? currentAttachment?.type === 'image' : mediaType === 'image')"
+        class="cometchat-fullscreen-viewer__no-preview"
+        role="status"
+      >
+        <div class="cometchat-fullscreen-viewer__no-preview-icon" aria-hidden="true">
+          <img src="assets/unsupported.svg" alt="" />
+        </div>
+        <div class="cometchat-fullscreen-viewer__no-preview-title">
+          {{ getLocalizedString('fullscreen_viewer_no_preview') }}
+        </div>
+        <div class="cometchat-fullscreen-viewer__no-preview-subtitle">
+          {{ getLocalizedString('fullscreen_viewer_no_preview_subtitle') }}
+        </div>
+        <button
+          type="button"
+          class="cometchat-fullscreen-viewer__no-preview-download"
+          (click)="download()"
+          [attr.aria-label]="getLocalizedString('fullscreen_viewer_download')"
+        >
+          <span class="cometchat-fullscreen-viewer__download-icon"></span>
+          <span>{{ getLocalizedString('fullscreen_viewer_download') }}</span>
+        </button>
+      </div>
 
       <!-- Video display (Task 6.3) -->
       <!-- Gallery mode: use currentAttachment, Single mode: use url -->

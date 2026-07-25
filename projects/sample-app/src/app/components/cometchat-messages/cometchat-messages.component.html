@@ -40,7 +40,11 @@
       </div>
     } @else {
       <div class="cometchat-messages__composer">
-        <cometchat-message-composer ></cometchat-message-composer>
+        <cometchat-message-composer
+          [layout]="'multiline'"
+          [enableRichText]="true"
+          [hideRichTextToolbar]="false"
+        ></cometchat-message-composer>
       </div>
     }
   </div>

@@ -46,7 +46,8 @@ function createMockFileMessage(attachmentCount: number, caption?: string): any {
 
   return {
     getAttachments: () => attachments,
-    getText: () => caption || '',
+    // A real CometChat.MediaMessage has NO getText(); the caption lives in getCaption()/data.text.
+    getCaption: () => caption || '',
     getData: () => (caption ? { text: caption } : {}),
     getSender: () => ({ getUid: () => 'superhero1' }),
     getReceiverType: () => 'user',
@@ -257,13 +258,13 @@ describe('CometChatFileBubbleComponent', () => {
       expect(filenameEl?.textContent?.trim()).toBe('file-1.pdf');
     });
 
-    it('should display file size in the DOM', async () => {
+    it('should display the "EXT · size" meta line in the DOM', async () => {
       component.message = createMockFileMessage(1);
       await initAndDetect(fixture);
 
       const sizeEl = el.querySelector('.cometchat-file-bubble__filesize');
       expect(sizeEl).toBeTruthy();
-      expect(sizeEl?.textContent?.trim()).toBe('1.00 KB');
+      expect(sizeEl?.textContent?.trim()).toBe('PDF · 1 KB');
     });
 
     it('should provide defaults for missing properties', async () => {
@@ -291,20 +292,23 @@ describe('CometChatFileBubbleComponent', () => {
       expect((component as any).formatFileSize(1023)).toBe('1023 B');
     });
 
-    it('should format kilobytes correctly', () => {
-      expect((component as any).formatFileSize(1024)).toBe('1.00 KB');
-      expect((component as any).formatFileSize(2048)).toBe('2.00 KB');
-      expect((component as any).formatFileSize(1536)).toBe('1.50 KB');
+    // Rounded, matching the React kit: "98 KB" / "35.9 MB", not "98.00 KB" / "35.90 MB".
+    it('should format kilobytes correctly (rounded, no decimals)', () => {
+      expect((component as any).formatFileSize(1024)).toBe('1 KB');
+      expect((component as any).formatFileSize(2048)).toBe('2 KB');
+      expect((component as any).formatFileSize(1536)).toBe('2 KB'); // 1.5 rounds up
+      expect((component as any).formatFileSize(100352)).toBe('98 KB');
     });
 
-    it('should format megabytes correctly', () => {
-      expect((component as any).formatFileSize(1048576)).toBe('1.00 MB');
-      expect((component as any).formatFileSize(5242880)).toBe('5.00 MB');
+    it('should format megabytes correctly (one decimal)', () => {
+      expect((component as any).formatFileSize(1048576)).toBe('1.0 MB');
+      expect((component as any).formatFileSize(5242880)).toBe('5.0 MB');
+      expect((component as any).formatFileSize(37643878)).toBe('35.9 MB');
     });
 
-    it('should format gigabytes correctly', () => {
-      expect((component as any).formatFileSize(1073741824)).toBe('1.00 GB');
-      expect((component as any).formatFileSize(2147483648)).toBe('2.00 GB');
+    it('should format gigabytes correctly (one decimal; no React counterpart)', () => {
+      expect((component as any).formatFileSize(1073741824)).toBe('1.0 GB');
+      expect((component as any).formatFileSize(2147483648)).toBe('2.0 GB');
     });
 
     it('should handle null/undefined/zero size', () => {
@@ -555,25 +559,48 @@ describe('CometChatFileBubbleComponent', () => {
   // Multiple Files & Expand/Collapse
   // ---------------------------------------------------------------------------
   describe('Multiple Files & Expand/Collapse', () => {
-    it('should show expand indicator when multiple files exist', async () => {
-      component.message = createMockFileMessage(3);
+    // The list collapses only beyond COLLAPSED_MAX (3), matching the React kit.
+    it('shows the first three files and a "Show N more" toggle beyond that', async () => {
+      component.message = createMockFileMessage(5);
       await initAndDetect(fixture);
 
+      expect(el.querySelectorAll('.cometchat-file-bubble__file-item').length).toBe(3);
       const expandBtn = el.querySelector('.cometchat-file-bubble__expand-indicator');
       expect(expandBtn).toBeTruthy();
-      expect(expandBtn?.textContent?.trim()).toContain('+2');
+      expect(expandBtn?.textContent?.trim()).toBe('Show 2 more');
+      // A down-chevron precedes the label.
+      expect(expandBtn?.querySelector('.cometchat-file-bubble__toggle-icon')).toBeTruthy();
     });
 
-    it('should not show expand indicator for single file', async () => {
+    it('the collapse control carries an up-chevron and matches the expand control', async () => {
+      component.message = createMockFileMessage(5);
+      await initAndDetect(fixture);
+      (component as any).toggleExpanded();
+      fixture.detectChanges();
+
+      const collapseBtn = el.querySelector('.cometchat-file-bubble__collapse-control');
+      expect(collapseBtn?.textContent?.trim()).toBe('Show less');
+      expect(collapseBtn?.querySelector('.cometchat-file-bubble__toggle-icon')).toBeTruthy();
+    });
+
+    it('should not show expand indicator for a single file', async () => {
       component.message = createMockFileMessage(1);
       await initAndDetect(fixture);
 
-      const expandBtn = el.querySelector('.cometchat-file-bubble__expand-indicator');
-      expect(expandBtn).toBeNull();
+      expect(el.querySelector('.cometchat-file-bubble__expand-indicator')).toBeNull();
+      expect(el.querySelectorAll('.cometchat-file-bubble__file-item').length).toBe(1);
+    });
+
+    it('should not collapse at exactly three files', async () => {
+      component.message = createMockFileMessage(3);
+      await initAndDetect(fixture);
+
+      expect(el.querySelectorAll('.cometchat-file-bubble__file-item').length).toBe(3);
+      expect(el.querySelector('.cometchat-file-bubble__expand-indicator')).toBeNull();
     });
 
     it('should toggle expanded state', async () => {
-      component.message = createMockFileMessage(3);
+      component.message = createMockFileMessage(5);
       await initAndDetect(fixture);
 
       expect((component as any).isExpanded).toBe(false);
@@ -583,24 +610,34 @@ describe('CometChatFileBubbleComponent', () => {
       expect((component as any).isExpanded).toBe(false);
     });
 
-    it('should show file list and collapse button when expanded', async () => {
-      component.message = createMockFileMessage(3);
+    it('should render every file and a collapse button when expanded', async () => {
+      component.message = createMockFileMessage(5);
       await initAndDetect(fixture);
 
       (component as any).toggleExpanded();
       fixture.detectChanges();
 
-      const fileList = el.querySelector('.cometchat-file-bubble__file-list');
-      expect(fileList).toBeTruthy();
-
-      const collapseBtn = el.querySelector('.cometchat-file-bubble__collapse-control');
-      expect(collapseBtn).toBeTruthy();
+      expect(el.querySelectorAll('.cometchat-file-bubble__file-item').length).toBe(5);
+      expect(el.querySelector('.cometchat-file-bubble__collapse-control')).toBeTruthy();
+      expect(el.querySelector('.cometchat-file-bubble__expand-indicator')).toBeNull();
     });
 
-    it('should calculate remaining files count correctly', async () => {
+    it('should calculate remaining files count beyond the first three', async () => {
       component.message = createMockFileMessage(5);
       await initAndDetect(fixture);
-      expect((component as any).getRemainingFilesCount()).toBe(4);
+      expect((component as any).getRemainingFilesCount()).toBe(2);
+    });
+
+    it('should group multiple files with the --multi container modifier', async () => {
+      component.message = createMockFileMessage(2);
+      await initAndDetect(fixture);
+      expect(el.querySelector('.cometchat-file-bubble__container--multi')).toBeTruthy();
+    });
+
+    it('should NOT apply the --multi modifier for a single file', async () => {
+      component.message = createMockFileMessage(1);
+      await initAndDetect(fixture);
+      expect(el.querySelector('.cometchat-file-bubble__container--multi')).toBeNull();
     });
   });
 
@@ -608,24 +645,26 @@ describe('CometChatFileBubbleComponent', () => {
   // Caption Extraction
   // ---------------------------------------------------------------------------
   describe('Caption Extraction', () => {
-    it('should detect caption via getText()', async () => {
+    it('should detect caption via getCaption() (MediaMessage stores it in data.text)', async () => {
       component.message = createMockFileMessage(1, 'Test caption');
       await initAndDetect(fixture);
       expect((component as any).hasCaption).toBe(true);
     });
 
-    it('should detect no caption when getText() returns empty', async () => {
+    it('should detect no caption when there is none', async () => {
       component.message = createMockFileMessage(1);
       await initAndDetect(fixture);
       expect((component as any).hasCaption).toBe(false);
     });
 
-    it('should render caption section when caption exists', async () => {
+    it('should render the caption section AND its text when a caption exists', async () => {
       component.message = createMockFileMessage(1, 'My file caption');
       await initAndDetect(fixture);
 
       const captionEl = el.querySelector('.cometchat-file-bubble__caption');
       expect(captionEl).toBeTruthy();
+      // Regression guard: the caption TEXT must actually render (not an empty bubble).
+      expect(captionEl?.textContent).toContain('My file caption');
     });
 
     it('should not render caption section when no caption', async () => {
@@ -702,7 +741,7 @@ describe('CometChatFileBubbleComponent', () => {
     });
 
     it('should have aria-expanded on expand indicator', async () => {
-      component.message = createMockFileMessage(3);
+      component.message = createMockFileMessage(5);
       await initAndDetect(fixture);
 
       const expandBtn = el.querySelector('.cometchat-file-bubble__expand-indicator');
@@ -710,7 +749,7 @@ describe('CometChatFileBubbleComponent', () => {
     });
 
     it('should generate expand ARIA label with correct count', async () => {
-      component.message = createMockFileMessage(4);
+      component.message = createMockFileMessage(6);
       await initAndDetect(fixture);
 
       const label = (component as any).getExpandAriaLabel();
@@ -719,7 +758,7 @@ describe('CometChatFileBubbleComponent', () => {
     });
 
     it('should generate singular expand ARIA label for 1 remaining file', async () => {
-      component.message = createMockFileMessage(2);
+      component.message = createMockFileMessage(4);
       await initAndDetect(fixture);
 
       const label = (component as any).getExpandAriaLabel();

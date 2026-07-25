@@ -7,11 +7,14 @@ import {CometChatLogger} from '../../utils/CometChatLogger';
 import {CometChatUIKitConstants} from '../../constants';
 import {MessageStatus} from '../../Enums/Enums';
 import {ToastType} from '../base-elements/cometchat-toast/cometchat-toast.component';
+import {getMediaCaption, hasMediaCaption} from '../../utils/message-metadata-utils';
 import {getAgentMessageCopyText} from '../../utils/agent-message-utils';
 
 export function onEditMessageImpl(self: any, messageId: number): void {
   const message = self.messages().find((m: CometChat.BaseMessage) => m.getId() === messageId);
-  if (message && message instanceof CometChat.TextMessage) {
+  if (!message) { return; }
+  // Editable: a text message, or a media message whose caption is the thing being edited.
+  if (message instanceof CometChat.TextMessage || hasMediaCaption(message)) {
     CometChatMessageEvents.ccMessageEdited.next({
       message: message,
       status: MessageStatus.inprogress,
@@ -59,6 +62,8 @@ export function closeMessageInfoImpl(self: any): void {
 }
 
 export async function copyMessageToClipboardImpl(self: any, message: CometChat.BaseMessage): Promise<void> {
+  const isText = message.getType() === CometChatUIKitConstants.MessageTypes.text;
+  if (!isText && !hasMediaCaption(message)) { return; }
   // Handle agentic (AI agent) messages — extract text from elements or assistantMessageData
   if (message.getCategory() === CometChatUIKitConstants.MessageCategory.agentic) {
     try {
@@ -85,7 +90,8 @@ export async function copyMessageToClipboardImpl(self: any, message: CometChat.B
   if (message.getType() !== CometChatUIKitConstants.MessageTypes.text) { return; }
   try {
     const textMessage = message as CometChat.TextMessage;
-    const rawText = textMessage.getText();
+    // Media messages carry their copyable text in the caption, not getText().
+    const rawText = isText ? textMessage.getText() : getMediaCaption(message);
     if (!rawText) { return; }
 
     // Replace SDK mention patterns with display names before copying.

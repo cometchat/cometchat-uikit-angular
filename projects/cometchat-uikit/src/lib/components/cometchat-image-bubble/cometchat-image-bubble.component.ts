@@ -5,6 +5,7 @@ import {
   EventEmitter,
   OnInit,
   OnChanges,
+  OnDestroy,
   SimpleChanges,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -31,6 +32,9 @@ import { CometChatLogger } from '../../utils/CometChatLogger';
  * CometChatImageBubbleComponent renders image messages with single/multi-image layouts,
  * overflow handling, fullscreen gallery, and keyboard accessibility.
  * @see Requirements 18.1, 18.6
+ * @deprecated Prefer {@link CometChatImagesBubbleComponent}, which the message bubble now renders
+ * for every image message. This bubble stays public for direct use and remains the internal
+ * primitive that the new bubble delegates to.
  */
 @Component({
   selector: 'cometchat-image-bubble',
@@ -40,7 +44,7 @@ import { CometChatLogger } from '../../utils/CometChatLogger';
   imports: [CommonModule, TranslatePipe, CometChatTextBubbleComponent, CometChatFullScreenViewerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CometChatImageBubbleComponent implements OnInit, OnChanges {
+export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestroy {
   /** The media message object. @see Requirements 1.1, 1.3, 1.5 */
   @Input({ required: true }) message!: CometChat.MediaMessage;
 
@@ -65,9 +69,30 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
   protected senderAvatarUrl = '';
   /** Tracks which attachment indices have finished loading their real image */
   protected loadedIndices = new Set<number>();
+  /** Tracks which attachment indices failed to load (unsupported / broken / 403) */
+  protected errorIndices = new Set<number>();
+  /**
+   * Indices whose preloader is parked between a failed attempt and its retry. While an index is in
+   * here the preloader is NOT rendered, so re-adding it later builds a FRESH <img> that re-requests
+   * the URL (re-assigning the same src to the existing element would not).
+   */
+  protected reloadingIndices = new Set<number>();
+  /** Failed attempts so far, per index. */
+  private retryCounts = new Map<number, number>();
+  private retryTimers: ReturnType<typeof setTimeout>[] = [];
+
+  /**
+   * A just-sent attachment can 403/404 for a moment before the CDN starts serving it, so the FIRST
+   * load failure is not proof the media is unsupported. Retry once and keep showing the loading
+   * placeholder in between; only a second failure flips the tile to the unsupported glyph.
+   */
+  private static readonly MAX_LOAD_RETRIES = 1;
+  private static readonly RETRY_DELAY_MS = 700;
 
   /** Path to the placeholder image shown while the real image loads */
   readonly placeholderSrc = 'assets/image_placeholder.png';
+  /** Glyph shown when the media can't be previewed (unsupported type or unreachable source) */
+  readonly unsupportedSrc = 'assets/unsupported.svg';
 
   readonly MessageBubbleAlignment = MessageBubbleAlignment;
 
@@ -86,7 +111,13 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
     this.extractSenderInfo();
     this.determineAlignment();
     this.determineLayout();
-    this.loadedIndices = new Set<number>(); // reset on message change
+    // Reset load state on message change — a pending message being replaced by its sent counterpart
+    // must get a clean slate, otherwise a failure against the pending URL sticks to the real one.
+    this.clearRetryTimers();
+    this.loadedIndices = new Set<number>();
+    this.errorIndices = new Set<number>();
+    this.reloadingIndices = new Set<number>();
+    this.retryCounts.clear();
     this.cdr.markForCheck();
   }
 
@@ -147,10 +178,24 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
   protected trackByAttachment(index: number, attachment: MediaAttachment): string { return attachment.url || index.toString(); }
 
   /**
+   * Whether the hidden preloader should be in the DOM for this index. It runs only while the image
+   * is still unresolved: not loaded, not given up on, and not parked between a failed attempt and
+   * its retry (that gap is what lets the retry mount a fresh <img> and re-request the URL).
+   */
+  protected shouldPreload(index: number): boolean {
+    return (
+      !this.loadedIndices.has(index) &&
+      !this.errorIndices.has(index) &&
+      !this.reloadingIndices.has(index)
+    );
+  }
+
+  /**
    * Returns the src to display for an image at the given index.
    * Shows the placeholder until the real image has loaded.
    */
   protected getImageSrc(index: number): string {
+    if (this.errorIndices.has(index)) return this.unsupportedSrc;
     return this.loadedIndices.has(index)
       ? (this.attachments[index]?.displayUrl ?? this.attachments[index]?.url ?? this.placeholderSrc)
       : this.placeholderSrc;
@@ -172,9 +217,48 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges {
   }
 
   /**
-   * Called when the real image fails to load — keep showing placeholder.
+   * Called when the real image fails to load (unsupported format, broken/expired link, 403).
+   *
+   * The first failure is NOT treated as "unsupported": a freshly-sent attachment routinely 403s for
+   * a moment before the CDN serves it, and flipping straight to the glyph made it flash on screen
+   * before the picture appeared. Park the preloader, rebuild it shortly after so a new <img>
+   * re-requests the URL, and only surface the glyph once that retry has failed too. The loading
+   * placeholder stays visible throughout, so an unresolved image just looks like it is still loading.
    */
   protected onImageError(index: number): void {
-    // Keep placeholder — nothing to do, loadedIndices stays without this index
+    const attempts = this.retryCounts.get(index) ?? 0;
+
+    if (attempts < CometChatImageBubbleComponent.MAX_LOAD_RETRIES) {
+      this.retryCounts.set(index, attempts + 1);
+      this.ngZone.run(() => {
+        this.reloadingIndices = new Set(this.reloadingIndices).add(index);
+        this.cdr.markForCheck();
+      });
+      this.retryTimers.push(
+        setTimeout(() => {
+          this.ngZone.run(() => {
+            const next = new Set(this.reloadingIndices);
+            next.delete(index);
+            this.reloadingIndices = next;
+            this.cdr.markForCheck();
+          });
+        }, CometChatImageBubbleComponent.RETRY_DELAY_MS)
+      );
+      return;
+    }
+
+    this.ngZone.run(() => {
+      this.errorIndices = new Set(this.errorIndices).add(index);
+      this.cdr.markForCheck();
+    });
+  }
+
+  private clearRetryTimers(): void {
+    this.retryTimers.forEach(clearTimeout);
+    this.retryTimers = [];
+  }
+
+  ngOnDestroy(): void {
+    this.clearRetryTimers();
   }
 }

@@ -5,54 +5,56 @@
   [class.cometchat-file-bubble--receiver]="alignment === MessageBubbleAlignment.left"
   [class.cometchat-file-bubble--expanded]="isExpanded">
   
-  <!-- File Container -->
-  <div class="cometchat-file-bubble__container">
-    
-    <!-- First File (Always Visible) -->
-    <div 
-      *ngIf="attachments.length > 0"
+  <!-- File Container. Multiple files get a grouping background, as in the React kit. -->
+  <div
+    class="cometchat-file-bubble__container"
+    [class.cometchat-file-bubble__container--multi]="attachments.length > 1">
+
+    <!-- Up to COLLAPSED_MAX (3) files; all of them once expanded. -->
+    <div
+      *ngFor="let attachment of visibleAttachments; trackBy: trackByAttachment"
       class="cometchat-file-bubble__file-item"
-      [attr.aria-label]="getFileAriaLabel(attachments[0])">
-      <img 
-        [src]="getFileIcon(getFileType(attachments[0]))" 
+      [attr.aria-label]="getFileAriaLabel(attachment)">
+      <img
+        [src]="getFileIcon(getFileType(attachment))"
         class="cometchat-file-bubble__icon"
         [alt]="'file_bubble_file_icon' | translate"
         aria-hidden="true" />
-      
+
       <div class="cometchat-file-bubble__metadata" aria-hidden="true">
         <span class="cometchat-file-bubble__filename">
-          {{ attachments[0].name }}
+          {{ attachment.name }}
         </span>
         <span class="cometchat-file-bubble__filesize">
-          {{ formatFileSize(attachments[0].size) }}
+          {{ getFileMeta(attachment) }}
         </span>
       </div>
-      
-      <button 
-        *ngIf="attachments[0].url"
+
+      <button
+        *ngIf="attachment.url"
         type="button"
         class="cometchat-file-bubble__download"
-        [attr.aria-label]="getDownloadAriaLabel(attachments[0].name)"
-        (click)="initiateDownload(attachments[0])"
-        (keydown)="onDownloadKeyDown($event, attachments[0])">
-        <div 
-          class="cometchat-file-bubble__download-icon" 
+        [attr.aria-label]="getDownloadAriaLabel(attachment.name)"
+        (click)="initiateDownload(attachment)"
+        (keydown)="onDownloadKeyDown($event, attachment)">
+        <div
+          class="cometchat-file-bubble__download-icon"
           aria-hidden="true"></div>
       </button>
-      <span 
-        *ngIf="!attachments[0].url"
+      <span
+        *ngIf="!attachment.url"
         class="cometchat-file-bubble__download cometchat-file-bubble__download--disabled"
         [attr.aria-label]="'file_bubble_download_unavailable' | translate"
         [attr.title]="'file_bubble_download_unavailable' | translate">
-        <div 
-          class="cometchat-file-bubble__download-icon cometchat-file-bubble__download-icon--disabled" 
+        <div
+          class="cometchat-file-bubble__download-icon cometchat-file-bubble__download-icon--disabled"
           aria-hidden="true"></div>
       </span>
     </div>
-    
-    <!-- Expand Indicator (Multiple Files, Collapsed State) -->
-    <button 
-      *ngIf="attachments.length > 1 && !isExpanded"
+
+    <!-- "Show N more" (collapsed) -->
+    <button
+      *ngIf="hasOverflow && !isExpanded"
       class="cometchat-file-bubble__expand-indicator"
       (click)="toggleExpanded()"
       (keydown.enter)="toggleExpanded()"
@@ -60,59 +62,18 @@
       tabindex="0"
       [attr.aria-label]="getExpandAriaLabel()"
       [attr.aria-expanded]="false">
-      +{{ getRemainingFilesCount() }}
+      <span
+        class="cometchat-file-bubble__toggle-icon"
+        aria-hidden="true"
+        [style.-webkit-mask-image]="'url(' + expandIconUrl + ')'"
+        [style.mask-image]="'url(' + expandIconUrl + ')'"></span>
+      {{ getShowMoreLabel() }}
     </button>
-    
-    <!-- Additional Files (Expanded State) -->
-    <div 
-      *ngIf="isExpanded && attachments.length > 1"
-      class="cometchat-file-bubble__file-list">
-      <div 
-        *ngFor="let attachment of attachments.slice(1); let i = index; trackBy: trackByAttachment"
-        class="cometchat-file-bubble__file-item"
-        [attr.aria-label]="getFileAriaLabel(attachment)">
-        <img 
-          [src]="getFileIcon(getFileType(attachment))" 
-          class="cometchat-file-bubble__icon"
-          [alt]="'file_bubble_file_icon' | translate"
-          aria-hidden="true" />
-        
-        <div class="cometchat-file-bubble__metadata" aria-hidden="true">
-          <span class="cometchat-file-bubble__filename">
-            {{ attachment.name }}
-          </span>
-          <span class="cometchat-file-bubble__filesize">
-            {{ formatFileSize(attachment.size) }}
-          </span>
-        </div>
-        
-        <button 
-          *ngIf="attachment.url"
-          type="button"
-          class="cometchat-file-bubble__download"
-          [attr.aria-label]="getDownloadAriaLabel(attachment.name)"
-          (click)="initiateDownload(attachment)"
-          (keydown)="onDownloadKeyDown($event, attachment)">
-          <div 
-            class="cometchat-file-bubble__download-icon" 
-            aria-hidden="true"></div>
-        </button>
-        <span 
-          *ngIf="!attachment.url"
-          class="cometchat-file-bubble__download cometchat-file-bubble__download--disabled"
-          [attr.aria-label]="'file_bubble_download_unavailable' | translate"
-          [attr.title]="'file_bubble_download_unavailable' | translate">
-          <div 
-            class="cometchat-file-bubble__download-icon cometchat-file-bubble__download-icon--disabled" 
-            aria-hidden="true"></div>
-        </span>
-      </div>
-    </div>
-    
-    <!-- Collapse Control (Expanded State) -->
-    <button 
+
+    <!-- "Show less" (expanded) -->
+    <button
       #collapseButton
-      *ngIf="isExpanded && attachments.length > 1"
+      *ngIf="hasOverflow && isExpanded"
       class="cometchat-file-bubble__collapse-control"
       (click)="toggleExpanded()"
       (keydown.enter)="toggleExpanded()"
@@ -120,6 +81,11 @@
       tabindex="0"
       [attr.aria-label]="'file_bubble_show_less' | translate"
       [attr.aria-expanded]="true">
+      <span
+        class="cometchat-file-bubble__toggle-icon"
+        aria-hidden="true"
+        [style.-webkit-mask-image]="'url(' + collapseIconUrl + ')'"
+        [style.mask-image]="'url(' + collapseIconUrl + ')'"></span>
       {{ 'file_bubble_show_less' | translate }}
     </button>
   </div>

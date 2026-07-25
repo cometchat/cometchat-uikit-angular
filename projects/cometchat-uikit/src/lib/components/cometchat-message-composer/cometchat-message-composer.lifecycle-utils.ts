@@ -5,6 +5,20 @@ import {CometChatMessageComposerAction} from '../../modals';
 import {CometChatUIKitConstants} from '../../constants';
 
 export function setupConstructorEffectsImpl(self: any): void {
+  /**
+   * Only one composer may record at a time — the main list and an open thread each have their own
+   * recorder and mic stream. Hooked on the `isRecording` signal rather than the individual start
+   * calls because recording is toggled from several places (toggleVoiceRecording, startInlineRecording,
+   * handleVoiceRecordingClick, the recorder popover handlers, syncLegacyPopoverSignals), and not all
+   * of them announce themselves — watching the signal covers every path.
+   */
+  safeEffect(() => {
+    if (self.isRecording()) {
+      self.voiceCoordinator.claim(self, () => self.stopRecordingForCoordinator());
+    } else {
+      self.voiceCoordinator.release(self);
+    }
+  });
   safeEffect(() => {
     const st = self.mentionSearchText();
     const io = self.isMentionSuggestionsOpen();

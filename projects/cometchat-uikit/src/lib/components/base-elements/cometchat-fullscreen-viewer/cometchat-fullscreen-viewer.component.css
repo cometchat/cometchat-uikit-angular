@@ -249,7 +249,11 @@
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
-  background: var(--cometchat-fullscreen-viewer-action-icon-background, var(--cometchat-static-white, #FFFFFF));
+  /* Theme-aware icon color (black in light, white in dark), matching the ✕ close icon. NOT
+     --cometchat-static-white: the header background is --cometchat-background-color-01 (white in
+     light theme), so a static-white icon was invisible. The --active state keeps white on purpose,
+     since its button background is the solid primary color. */
+  background: var(--cometchat-fullscreen-viewer-action-icon-background, var(--cometchat-icon-color-primary, #141414));
 }
 
 .cometchat-fullscreen-viewer__action-button:hover {
@@ -570,6 +574,70 @@
   color: var(--cometchat-fullscreen-viewer-error-text-color, var(--cometchat-text-color-secondary, #666666));
   font: var(--cometchat-fullscreen-viewer-error-text-font, var(--cometchat-font-body-regular, 400 14px Roboto));
   text-align: var(--cometchat-fullscreen-viewer-error-text-text-align, center);
+}
+
+/* No-preview state — shown on the dark viewer body when an image can't be decoded/previewed. */
+.cometchat-fullscreen-viewer__no-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--cometchat-spacing-3, 12px);
+  padding: var(--cometchat-padding-6, 24px);
+  text-align: center;
+}
+.cometchat-fullscreen-viewer__no-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: var(--cometchat-spacing-2, 8px);
+}
+.cometchat-fullscreen-viewer__no-preview-icon img {
+  width: 44px;
+  height: auto;
+  display: block;
+}
+.cometchat-fullscreen-viewer__no-preview-title {
+  color: var(--cometchat-static-white, #ffffff);
+  font: var(--cometchat-font-heading3-bold, 700 20px Roboto);
+}
+/* A soft white-grey. The viewer's body is ALWAYS dark, whatever the app theme, but every neutral
+   grey token flips with the theme (neutral-300 is #E8E8E8 in light and #383838 in dark), so a plain
+   grey would sink into this backdrop in one theme or the other. --cometchat-static-white is the one
+   light token that is theme-stable, softened here via the same color-mix convention the audios
+   bubble uses for its secondary copy on a coloured surface. */
+.cometchat-fullscreen-viewer__no-preview-subtitle {
+  color: var(
+    --cometchat-fullscreen-viewer-no-preview-subtitle-color,
+    color-mix(in srgb, var(--cometchat-static-white) 80%, transparent)
+  );
+  font: var(--cometchat-font-body-regular, 400 14px Roboto);
+}
+.cometchat-fullscreen-viewer__no-preview-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch; /* full width of the no-preview block; label stays centered */
+  gap: var(--cometchat-spacing-2, 8px);
+  margin-top: var(--cometchat-spacing-3, 12px);
+  padding: var(--cometchat-padding-3, 12px) var(--cometchat-padding-5, 20px);
+  background-color: var(--cometchat-primary-button-background, #6852d6);
+  color: var(--cometchat-primary-button-text, #ffffff);
+  font: var(--cometchat-font-button-medium, 500 14px Roboto);
+  border: none;
+  border-radius: var(--cometchat-radius-2, 8px);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.cometchat-fullscreen-viewer__no-preview-download:hover {
+  opacity: 0.9;
+}
+.cometchat-fullscreen-viewer__no-preview-download:focus-visible {
+  outline: 2px solid var(--cometchat-static-white, #ffffff);
+  outline-offset: 2px;
 }
 
 /* Element: download-progress */

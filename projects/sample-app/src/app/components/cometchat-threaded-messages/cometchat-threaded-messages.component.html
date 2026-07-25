@@ -19,6 +19,9 @@
       <div class="cometchat-threaded-messages__composer">
         <cometchat-message-composer
           [parentMessageId]="parentMessageId()"
+          [layout]="'multiline'"
+          [enableRichText]="true"
+          [hideRichTextToolbar]="true"
         ></cometchat-message-composer>
       </div>
     } @else {

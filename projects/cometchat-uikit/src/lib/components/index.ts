@@ -30,6 +30,13 @@ export * from './cometchat-card-bubble';
 export * from './cometchat-image-bubble';
 export * from './cometchat-video-bubble';
 export * from './cometchat-file-bubble';
+// Per-type bubbles for media messages — the message bubble always routes here.
+// See message-bubble getBubbleType().
+export * from './cometchat-images-bubble';
+export * from './cometchat-videos-bubble';
+export * from './cometchat-audios-bubble';
+export * from './cometchat-voice-note-bubble';
+export * from './cometchat-files-bubble';
 export * from './cometchat-users';
 export * from './cometchat-groups';
 export * from './cometchat-group-members';

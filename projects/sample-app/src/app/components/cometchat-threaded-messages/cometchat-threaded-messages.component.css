@@ -32,6 +32,26 @@
   background: transparent;
 }
 
+/* ── Non-textual (media) bubbles fill the narrow thread panel ──
+   The default bubble cap is 65% of the panel, which makes images/videos shrink to unusable sizes in
+   the slim thread column. Any bubble whose content is NOT text (images, videos, audios, files, and
+   their multi-attachment variants) takes the full panel width and never drops below the width its
+   content needs. Scoped to the thread (this component is ViewEncapsulation.None, so it reaches the
+   UIKit bubbles). */
+.cometchat-threaded-messages .cometchat-message-bubble:has(
+  cometchat-image-bubble,
+  cometchat-images-bubble,
+  cometchat-video-bubble,
+  cometchat-videos-bubble,
+  cometchat-audio-bubble,
+  cometchat-audios-bubble,
+  cometchat-file-bubble,
+  cometchat-files-bubble
+) {
+  max-width: 100%;
+  min-width: fit-content;
+}
+
 /* ── Thread Composer ── */
 
 .cometchat-threaded-messages__composer {
@@ -39,6 +59,9 @@
   padding: 0 var(--cometchat-spacing-2) var(--cometchat-spacing-2);
 }
 
+/* Must stay visible: the mention list, emoji and attachment popovers render above the input
+   (position: absolute; bottom: 100%). Hiding overflow on the host clips them, so the mention
+   suggestions never appear in the thread composer. */
 .cometchat-threaded-messages__composer cometchat-message-composer {
   overflow: visible;
 }

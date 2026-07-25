@@ -430,6 +430,41 @@ describe('CometChatMessagePreviewComponent', () => {
       expect(component.messageContentPreview.length).toBeGreaterThan(0);
     });
 
+    // ---- Quoted media: attachment count + caption ----
+    /** A MediaMessage stand-in; createMockMessage cannot express attachments/captions. */
+    const quotedMedia = (over: { type?: string; count?: number; caption?: string }) => {
+      const n = over.count ?? 1;
+      return {
+        getType: () => over.type ?? 'image',
+        getCategory: () => 'message',
+        getAttachments: () => Array.from({ length: n }, () => ({ getName: () => 'a.jpg' })),
+        getCaption: () => over.caption ?? '',
+        getData: () => undefined,
+        getMetadata: () => null,
+        getSender: () => ({ getUid: () => 'u1', getName: () => 'Alice' }),
+      } as any;
+    };
+
+    it('quoting a single image with no caption shows the bare type label', () => {
+      component.message = quotedMedia({ type: 'image' });
+      expect(component.messageContentPreview).toBe('Image');
+    });
+
+    it('quoting several images counts them', () => {
+      component.message = quotedMedia({ type: 'image', count: 3 });
+      expect(component.messageContentPreview).toBe('3 Images');
+    });
+
+    it('quoting a captioned media message shows "label · caption"', () => {
+      component.message = quotedMedia({ type: 'video', count: 2, caption: 'nice trip' });
+      expect(component.messageContentPreview).toBe('2 Videos · nice trip');
+    });
+
+    it('quoting a captioned single file shows "File · caption"', () => {
+      component.message = quotedMedia({ type: 'file', caption: 'the contract' });
+      expect(component.messageContentPreview).toBe('File · the contract');
+    });
+
     it('should return localized label for video messages', () => {
       component.message = createMockMessage({ type: 'video' });
       expect(component.messageContentPreview.length).toBeGreaterThan(0);

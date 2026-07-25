@@ -17,7 +17,10 @@
   display: flex;
   flex-direction: column;
   width: var(--cometchat-audio-bubble-width, 240px);
-  max-width: 100%;
+  /* Pinned to a fixed 240 (min == max), matching the React kit: the player is a play button +
+     waveform + time, which stop being usable if the bubble squeezes them. */
+  min-width: var(--cometchat-audio-bubble-min-width, 240px);
+  max-width: var(--cometchat-audio-bubble-max-width, 240px);
   border-radius: var(--cometchat-audio-bubble-border-radius, var(--cometchat-radius-3));
   overflow: hidden;
   box-sizing: border-box;
@@ -632,8 +635,19 @@
    @see Requirements 8.1, 8.2
    ============================================ */
 
+/* The nested text bubble is a caption here, not a standalone message: it must not paint its own
+   surface inside the audio bubble. The inset now lives on the text bubble rather than this wrapper
+   (a slightly larger left pad than image/video, since the audio row is narrower), so the caption
+   lines up with the row above. Mirrors the React kit's CometChatAudioBubble.css.
+   --cometchat-audio-bubble-caption-padding is kept for themes that already override it. */
 .cometchat-audio-bubble__caption {
-  padding: var(--cometchat-audio-bubble-caption-padding, 0 var(--cometchat-padding-3) var(--cometchat-padding-3));
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 2px;
+  padding: var(--cometchat-audio-bubble-caption-padding, 0);
+  --cometchat-text-bubble-background: transparent;
+  --cometchat-text-bubble-padding: 4px 4px 6px 8px;
 }
 
 /* ============================================

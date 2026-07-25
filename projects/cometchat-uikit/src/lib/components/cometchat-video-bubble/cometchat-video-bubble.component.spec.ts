@@ -1055,4 +1055,62 @@ describe('CometChatVideoBubbleComponent', () => {
       expect(att.size).toBeUndefined();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Duration badge — client-side fallback (React parity)
+  // ---------------------------------------------------------------------------
+  describe('Duration badge fallback', () => {
+    /** Fake a `loadedmetadata` event off the thumbnail <video>. */
+    function metadataEvent(duration: number): Event {
+      return { target: { duration } } as unknown as Event;
+    }
+
+    it('adopts the duration read off the thumbnail <video> when metadata has none', () => {
+      (component as any).attachments = [{ url: 'v.mp4' }];
+      (component as any).onThumbnailMetadata(0, metadataEvent(67));
+      expect((component as any).attachments[0].duration).toBe(67);
+    });
+
+    it('never overrides a duration the backend supplied', () => {
+      (component as any).attachments = [{ url: 'v.mp4', duration: 30 }];
+      (component as any).onThumbnailMetadata(0, metadataEvent(67));
+      expect((component as any).attachments[0].duration).toBe(30);
+    });
+
+    it('ignores a non-finite, zero or missing duration', () => {
+      (component as any).attachments = [{ url: 'v.mp4' }];
+      (component as any).onThumbnailMetadata(0, metadataEvent(Infinity));
+      expect((component as any).attachments[0].duration).toBeUndefined();
+
+      (component as any).onThumbnailMetadata(0, metadataEvent(0));
+      expect((component as any).attachments[0].duration).toBeUndefined();
+
+      (component as any).onThumbnailMetadata(0, { target: null } as unknown as Event);
+      expect((component as any).attachments[0].duration).toBeUndefined();
+    });
+
+    it('is a no-op for an out-of-range index', () => {
+      (component as any).attachments = [];
+      expect(() => (component as any).onThumbnailMetadata(3, metadataEvent(10))).not.toThrow();
+    });
+
+    it('renders the badge once a duration is known', async () => {
+      component.message = {
+        getAttachments: () => [{ url: 'https://example.com/v.mp4', metadata: {} }],
+        getText: () => '',
+        getData: () => ({}),
+        getSender: () => null,
+      } as any;
+      await initAndDetect(fixture);
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.cometchat-video-bubble__duration-badge')).toBeNull();
+
+      (component as any).onThumbnailMetadata(0, metadataEvent(67));
+      fixture.detectChanges();
+      expect(
+        el.querySelector('.cometchat-video-bubble__duration-text')?.textContent?.trim(),
+      ).toBe('1:07');
+    });
+  });
 });

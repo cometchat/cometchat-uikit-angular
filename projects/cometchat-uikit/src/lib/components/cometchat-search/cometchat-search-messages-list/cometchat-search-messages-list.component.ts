@@ -24,8 +24,8 @@ import { CometChatMentionsFormatter } from '../../../formatters/cometchat-mentio
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 import { CometChatUIKit } from '../../../cometchat-uikit';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize';
-import { FILE_TYPE_ICONS } from '../../cometchat-file-bubble/cometchat-file-bubble.types';
 import { CometChatPaginatedListComponent } from '../../cometchat-paginated-list/cometchat-paginated-list.component';
+import { getMediaPreview, isMediaPreviewType, getAttachmentCount, MediaPreviewType } from '../../../utils/message-preview-utils';
 import { HtmlSanitizerService } from '../../../services/html-sanitizer.service';
 import { FormatterConfigService } from '../../../services/formatter-config.service';
 import { stripRichTextFormatting } from '../../../utils/util';
@@ -170,43 +170,73 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     return d1.getMonth() !== d2.getMonth() || d1.getFullYear() !== d2.getFullYear();
   }
 
+  /**
+   * The full subtitle as one string: `"You: test-video.mov"`. Kept for the `subtitleView` override
+   * and for callers that want plain text. The template renders the pieces separately so the media
+   * glyph can sit between the sender prefix and the text, as in the React kit.
+   */
   getMessageSubtitle(message: CometChat.BaseMessage): string {
+    const prefix = this.getSubtitleSenderPrefix(message);
+    const content = this.getMessageSubtitleContent(message);
+    return prefix ? `${prefix} ${content}` : content;
+  }
+
+  /** `"You:"` / `"Alice:"`, or `''` when the search is already scoped to one conversation. */
+  getSubtitleSenderPrefix(message: CometChat.BaseMessage): string {
+    if (this.uid || this.guid) {
+      return '';
+    }
+    const sender = message.getSender();
+    const isMe = sender?.getUid() === this.loggedInUser?.getUid();
+    const senderName = isMe
+      ? CometChatLocalize.getLocalizedString('search_message_subtitle_you')
+      : (sender?.getName() ?? '');
+    return senderName ? `${senderName}:` : '';
+  }
+
+  /**
+   * The media type whose glyph precedes the subtitle text, or `null` for everything else.
+   * Note this is independent of the LEADING view: images and videos have no leading icon, but they
+   * do get this inline one.
+   */
+  getSubtitleIconType(message: CometChat.BaseMessage): MediaPreviewType | null {
     const type = message.getType();
-    let text = '';
+    return isMediaPreviewType(type) ? type : null;
+  }
+
+  /** Whether the message is a thread reply, which prefixes the subtitle with a thread glyph. */
+  hasThreadReply(message: CometChat.BaseMessage): boolean {
+    return !!message.getParentMessageId?.();
+  }
+
+  /** The subtitle text, WITHOUT the sender prefix. */
+  getMessageSubtitleContent(message: CometChat.BaseMessage): string {
+    const type = message.getType();
 
     if (type === CometChatUIKitConstants.MessageTypes.text) {
-      text = (message as CometChat.TextMessage).getText() ?? '';
+      let text = (message as CometChat.TextMessage).getText() ?? '';
       // Strip markdown links [text](url) → text
       text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
       // Convert SDK mention tags <@uid:xxx> → @DisplayName (or @uid fallback)
       const mentionedUsers = (message as CometChat.TextMessage).getMentionedUsers?.() ?? [];
-      text = this.formatPlainMentions(text, mentionedUsers);
-    } else if (
-      type === CometChatUIKitConstants.MessageTypes.image ||
-      type === CometChatUIKitConstants.MessageTypes.video ||
-      type === CometChatUIKitConstants.MessageTypes.audio ||
-      type === CometChatUIKitConstants.MessageTypes.file
-    ) {
-      const media = message as CometChat.MediaMessage;
-      const attachments = media.getAttachments();
-      text = attachments?.[0]?.getName() ?? type;
-    } else {
-      text = type;
+      return this.formatPlainMentions(text, mentionedUsers);
     }
 
-    // Prepend sender name for non-scoped search
-    if (!this.uid && !this.guid) {
-      const sender = message.getSender();
-      const isMe = sender?.getUid() === this.loggedInUser?.getUid();
-      const senderName = isMe
-        ? CometChatLocalize.getLocalizedString('search_message_subtitle_you')
-        : (sender?.getName() ?? '');
-      if (senderName) {
-        text = `${senderName}: ${text}`;
-      }
+    if (isMediaPreviewType(type)) {
+      // Filename when there is nothing better to say; otherwise the caption, or a count such as
+      // "3 Images". See getMediaPreview for the full table. Search renders plain text, so the
+      // caption is stripped of markdown rather than turned into HTML.
+      return getMediaPreview(message, 'search', {
+        formatCaption: (raw) => {
+          if (!raw.trim()) return '';
+          const mentionedUsers = (message as CometChat.TextMessage).getMentionedUsers?.() ?? [];
+          const plain = stripRichTextFormatting(raw).replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+          return this.formatPlainMentions(plain, mentionedUsers).replace(/\s+/g, ' ').trim();
+        },
+      });
     }
 
-    return text;
+    return type;
   }
 
   /**
@@ -417,14 +447,14 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     return 'none';
   }
 
-  /** Get file type icon path for document messages */
-  getFileTypeIcon(message: CometChat.BaseMessage): string {
-    const media = message as CometChat.MediaMessage;
-    const attachments = media.getAttachments();
-    if (!attachments?.length) return FILE_TYPE_ICONS['default'];
-    const name = attachments[0].getName() || '';
-    const ext = name.split('.').pop()?.toLowerCase() || '';
-    return FILE_TYPE_ICONS[ext] || FILE_TYPE_ICONS['default'];
+  /**
+   * Leading-view glyph for a file result: one stacked-sheets illustration for EVERY file, matching
+   * the React kit. Deliberately not the per-extension icon used in the message bubble and composer
+   * tray — a search result may carry several attachments of different types, and picking the first
+   * one's icon would misrepresent the rest.
+   */
+  getFileTypeIcon(_message?: CometChat.BaseMessage): string {
+    return 'assets/document-file-icon.svg';
   }
 
   /** Get link favicon URL from message metadata */
@@ -447,6 +477,30 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     if (type === CometChatUIKitConstants.MessageTypes.image) return 'image';
     if (type === CometChatUIKitConstants.MessageTypes.video) return 'video';
     return 'date';
+  }
+
+  /**
+   * Attachments hidden behind the single thumbnail, shown as a "+N" badge. The thumbnail already
+   * accounts for one of them, hence `count - 1`.
+   */
+  getAttachmentOverflow(message: CometChat.BaseMessage): number {
+    return Math.max(0, getAttachmentCount(message) - 1);
+  }
+
+  /**
+   * Backend-generated video poster, when the thumbnail-generation extension supplied one. Without
+   * it the `<video>` element paints its own first frame, which costs a media fetch.
+   */
+  getVideoPosterUrl(message: CometChat.BaseMessage): string | null {
+    try {
+      const metadata = (message as CometChat.MediaMessage).getMetadata?.() as
+        | Record<string, any>
+        | null;
+      const url = metadata?.['@injected']?.['extensions']?.['thumbnail-generation']?.['url_medium'];
+      return typeof url === 'string' && url.length > 0 ? url : null;
+    } catch {
+      return null;
+    }
   }
 
   /** Get attachment URL for image/video thumbnails */

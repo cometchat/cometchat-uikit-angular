@@ -87,7 +87,7 @@ const ROOT_SERVICES: ServiceEntry[] = [
 // ==================== Arbitraries ====================
 
 /** Services that are NOT providedIn: 'root' and need explicit providers */
-const NON_ROOT_PROVIDERS = [MessageHeaderService];
+const NON_ROOT_PROVIDERS = [MessageHeaderService, MessageComposerService];
 
 /** Picks a random service entry from the registry. */
 const arbService = fc.constantFrom(...ROOT_SERVICES);

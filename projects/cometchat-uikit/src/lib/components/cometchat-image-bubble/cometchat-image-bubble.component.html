@@ -29,7 +29,7 @@
         [alt]="captionText || ('image_bubble_image_alt' | translate)" />
       <!-- Hidden preloader: loads the real image in background, triggers swap on load -->
       <img
-        *ngIf="!loadedIndices.has(0)"
+        *ngIf="shouldPreload(0)"
         class="cometchat-image-bubble__preloader"
         [src]="attachments[0].displayUrl ?? attachments[0].url"
         alt=""
@@ -62,7 +62,7 @@
           width="150"
           height="150" />
         <img
-          *ngIf="!loadedIndices.has(i)"
+          *ngIf="shouldPreload(i)"
           class="cometchat-image-bubble__preloader"
           [src]="attachment.displayUrl ?? attachment.url"
           alt=""
@@ -93,7 +93,7 @@
           width="150"
           height="150" />
         <img
-          *ngIf="!loadedIndices.has(i)"
+          *ngIf="shouldPreload(i)"
           class="cometchat-image-bubble__preloader"
           [src]="attachment.displayUrl ?? attachment.url"
           alt=""
@@ -125,7 +125,7 @@
           width="150"
           height="150" />
         <img
-          *ngIf="!loadedIndices.has(i)"
+          *ngIf="shouldPreload(i)"
           class="cometchat-image-bubble__preloader"
           [src]="attachment.displayUrl ?? attachment.url"
           alt=""

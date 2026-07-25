@@ -1,0 +1,550 @@
+/* CometChatAttachmentTile
+ * BEM + design tokens. Geometry mirrors the React UI Kit's composer tray tile
+ * (CometChatMessageComposerTray.css); dimensions with no global token use
+ * component-scoped variables with literal fallbacks. */
+
+.cometchat-attachment-tile {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  height: var(--cometchat-attachment-tile-size, 54px);
+  box-sizing: border-box;
+  /* Must NOT clip — the close button overflows the top-right corner by 50%. */
+  overflow: visible;
+}
+
+/* ── Image / Video square ─────────────────────────────────────────────── */
+.cometchat-attachment-tile__media {
+  position: relative;
+  /* border-box so the error state's 1px red border doesn't grow the square. */
+  box-sizing: border-box;
+  width: var(--cometchat-attachment-tile-size, 54px);
+  height: var(--cometchat-attachment-tile-size, 54px);
+  border-radius: var(--cometchat-radius-3, 8px);
+  background-color: var(--cometchat-neutral-color-300, #dcdcdc);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--cometchat-border-color-default);
+}
+
+.cometchat-attachment-tile--clickable .cometchat-attachment-tile__media,
+.cometchat-attachment-tile--clickable .cometchat-attachment-tile__card {
+  cursor: pointer;
+}
+
+/* Video play affordance — centered frosted disc. */
+.cometchat-attachment-tile__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-attachment-tile-play-size, 32px);
+  height: var(--cometchat-attachment-tile-play-size, 32px);
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: rgba(127, 127, 127, 0.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.cometchat-attachment-tile__play-icon {
+  width: var(--cometchat-attachment-tile-play-icon-size, 24px);
+  height: var(--cometchat-attachment-tile-play-icon-size, 24px);
+  background-color: var(--cometchat-static-white, #ffffff);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* Video duration badge */
+.cometchat-attachment-tile__duration {
+  position: absolute;
+  bottom: 2px;
+  left: 4px;
+  padding: 1px 4px;
+  border-radius: var(--cometchat-radius-1, 4px);
+  background: rgba(0, 0, 0, 0.5);
+  font: var(--cometchat-font-caption2-medium, 500 10px/12px sans-serif);
+  color: var(--cometchat-static-neutral-100, #f5f5f5);
+  pointer-events: none;
+}
+
+/* ── File / Audio card ────────────────────────────────────────────────── */
+.cometchat-attachment-tile__card {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-attachment-tile-card-gap, 10px);
+  box-sizing: border-box;
+  width: var(--cometchat-attachment-tile-card-width, 200px);
+  height: var(--cometchat-attachment-tile-card-height, 62px);
+  padding: var(--cometchat-attachment-tile-card-padding, 10px);
+  border-radius: var(--cometchat-radius-2, 8px);
+  border: 1px solid var(--cometchat-border-color-default);
+  /* Matches the React UI Kit tray card (background-color-03), a touch greyer than -02. */
+  background-color: var(--cometchat-background-color-03, #fafafa);
+  text-align: start;
+}
+
+/* File-type icon box — also anchors the status overlay. A 40x40 slot with the file glyph centred
+   smaller inside (React sizes the glyph 32x32 in a 40x40 box), so there is spacing around the icon.
+   No plate background here — the spacing shows the card behind it. */
+.cometchat-attachment-tile__leading {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--cometchat-attachment-tile-type-icon-size, 40px);
+  height: var(--cometchat-attachment-tile-type-icon-size, 40px);
+  border-radius: var(--cometchat-radius-2, 6px);
+}
+
+/* Dedicated colored file-type icon (rendered as a real image, not a monochrome mask). Sized smaller
+   than its plate so the white spacing shows around it (React uses a 32x32 glyph in the 40x40 box). */
+.cometchat-attachment-tile__type-image {
+  display: block;
+  width: var(--cometchat-attachment-tile-type-glyph-size, 32px);
+  height: var(--cometchat-attachment-tile-type-glyph-size, 32px);
+  object-fit: contain;
+}
+
+.cometchat-attachment-tile__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cometchat-attachment-tile__name {
+  font-size: var(--cometchat-attachment-tile-name-font-size, 12px);
+  font-weight: 500;
+  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  color: var(--cometchat-text-color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "PDF · 2.4 MB". The extension is already uppercased by the view model, so no text-transform —
+   it would also uppercase the unit and give "2.4 MB" -> "2.4 MB" only by luck of the token. */
+.cometchat-attachment-tile__sub {
+  font-size: var(--cometchat-attachment-tile-sub-font-size, 11px);
+  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  color: var(--cometchat-text-color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Audio player card (playable in the tray) ─────────────────────────── */
+.cometchat-attachment-tile__card--audio {
+  width: var(--cometchat-attachment-tile-card-width, 200px);
+  gap: var(--cometchat-attachment-tile-card-gap, 10px);
+  padding: 0 14px 0 8px;
+}
+
+.cometchat-attachment-tile__audio-control {
+  position: relative;
+  flex: none;
+  width: var(--cometchat-attachment-tile-audio-button-size, 44px);
+  height: var(--cometchat-attachment-tile-audio-button-size, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--cometchat-radius-max, 1000px);
+}
+
+.cometchat-attachment-tile__audio-button {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background-color: var(--cometchat-primary-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cometchat-attachment-tile__audio-button:disabled {
+  cursor: default;
+}
+
+.cometchat-attachment-tile__audio-icon {
+  width: var(--cometchat-attachment-tile-audio-icon-size, 28px);
+  height: var(--cometchat-attachment-tile-audio-icon-size, 28px);
+  background-color: var(--cometchat-static-white, #ffffff);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-attachment-tile__audio-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cometchat-attachment-tile__card--audio .cometchat-attachment-tile__name {
+  margin-bottom: 4px;
+  font: var(--cometchat-font-caption1-medium, 500 12px/16px sans-serif);
+}
+
+/* Seekable bar: a flat, uniform track with a circular knob — progress is conveyed by the knob's
+   position, not by a filled segment (per the design reference). */
+.cometchat-attachment-tile__audio-bar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: var(--cometchat-attachment-tile-audio-bar-height, 4px);
+  margin: 0;
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: var(
+    --cometchat-attachment-tile-audio-bar-track,
+    color-mix(in srgb, var(--cometchat-text-color-primary) 14%, transparent)
+  );
+  cursor: pointer;
+}
+
+.cometchat-attachment-tile__audio-bar:disabled {
+  cursor: default;
+}
+
+.cometchat-attachment-tile__audio-bar::-webkit-slider-runnable-track {
+  height: var(--cometchat-attachment-tile-audio-bar-height, 4px);
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: transparent;
+}
+
+.cometchat-attachment-tile__audio-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--cometchat-attachment-tile-audio-thumb-size, 10px);
+  height: var(--cometchat-attachment-tile-audio-thumb-size, 10px);
+  border-radius: 50%;
+  background: var(
+    --cometchat-attachment-tile-audio-thumb-color,
+    var(--cometchat-static-white, #ffffff)
+  );
+  border: 1px solid var(--cometchat-border-color-light, #e8e8e8);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  /* centre the thumb on the 4px track */
+  margin-top: calc(
+    (
+        var(--cometchat-attachment-tile-audio-bar-height, 4px) -
+          var(--cometchat-attachment-tile-audio-thumb-size, 10px)
+      ) / 2
+  );
+}
+
+/* Let the inline played/remaining gradient show through in Firefox. */
+.cometchat-attachment-tile__audio-bar::-moz-range-track {
+  height: var(--cometchat-attachment-tile-audio-bar-height, 4px);
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: transparent;
+}
+
+.cometchat-attachment-tile__audio-bar::-moz-range-thumb {
+  width: var(--cometchat-attachment-tile-audio-thumb-size, 10px);
+  height: var(--cometchat-attachment-tile-audio-thumb-size, 10px);
+  border-radius: 50%;
+  background: var(
+    --cometchat-attachment-tile-audio-thumb-color,
+    var(--cometchat-static-white, #ffffff)
+  );
+  border: 1px solid var(--cometchat-border-color-light, #e8e8e8);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.cometchat-attachment-tile__audio-status {
+  margin-top: 4px;
+  font: var(--cometchat-font-caption2-regular, 400 11px/14px sans-serif);
+  color: var(--cometchat-text-color-secondary);
+}
+
+/* ── Status overlay (progress ring / retry / error) ───────────────────── */
+
+/* Scrim behind the ring/retry/error so it stays legible over any content. Fills its anchor: the
+   whole image/video square, or a card's icon box / audio circle. Rendered only when there IS an
+   affordance, so an uploaded tile carries no tint. */
+.cometchat-attachment-tile__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  /* 75% black scrim, token-driven rather than a hardcoded rgba. Deliberately heavier than the 62%
+     the spec called for: over a bright, busy photo the ring/badge lost contrast against the tile. */
+  background: var(--cometchat-attachment-tile-overlay-bg,
+    color-mix(in srgb, var(--cometchat-static-black, #000000) 75%, transparent));
+  color: var(--cometchat-static-white, #ffffff);
+  z-index: 1;
+}
+
+.cometchat-attachment-tile__leading .cometchat-attachment-tile__overlay {
+  border-radius: var(--cometchat-radius-2, 6px);
+}
+
+.cometchat-attachment-tile__audio-control .cometchat-attachment-tile__overlay {
+  border-radius: var(--cometchat-radius-max, 1000px);
+}
+
+.cometchat-attachment-tile__progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cometchat-attachment-tile__loader-ring {
+  /* Start the progress at 12 o'clock; fill grows clockwise as the dash offset decreases. */
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.cometchat-attachment-tile__loader-track {
+  fill: none;
+  stroke: var(--cometchat-attachment-tile-loader-track, rgba(255, 255, 255, 0.35));
+}
+
+.cometchat-attachment-tile__loader-fill {
+  fill: none;
+  stroke: var(--cometchat-attachment-tile-loader-color, var(--cometchat-static-white, #ffffff));
+  transition: stroke-dashoffset 0.2s ease;
+}
+
+/* Indeterminate: the upload has been queued but hasn't reported any progress yet, so there is
+   nothing to fill — a determinate ring would sit at 0% and read as frozen. Spin the arc (sized by
+   `ringDasharray`) continuously until the first progress event flips it to the real percentage. */
+.cometchat-attachment-tile__loader-ring--indeterminate {
+  animation: cometchat-attachment-tile-loader-spin 0.9s linear infinite;
+}
+
+/* The offset is fixed at 0 while spinning, so the easing meant for percentage steps would only
+   smear the animation. */
+.cometchat-attachment-tile__loader-ring--indeterminate .cometchat-attachment-tile__loader-fill {
+  transition: none;
+}
+
+/* Starts at the ring's resting -90deg (12 o'clock) so the switch to the determinate arc is seamless. */
+@keyframes cometchat-attachment-tile-loader-spin {
+  from {
+    transform: rotate(-90deg);
+  }
+  to {
+    transform: rotate(270deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-attachment-tile__loader-ring--indeterminate {
+    animation-duration: 2s;
+  }
+}
+
+/* ── Error / retry states ─────────────────────────────────────────────────
+   A failed or rejected tile is outlined in red, its meta line is replaced by an inline status
+   message, and the top-right slot carries a retry or error badge. */
+.cometchat-attachment-tile__media--error,
+.cometchat-attachment-tile__card--error {
+  border: 1px solid var(--cometchat-error-color, #f44649);
+}
+
+.cometchat-attachment-tile__error-text {
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-error-color, #f44649);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Error / retry indicator, CENTRED over the tile's icon (thumbnail / file glyph / audio disc)
+   rather than pinned to the top-right corner. It is absolutely positioned inside the icon
+   container (__media / __leading / __audio-control — all position:relative), so it always lands on
+   the icon regardless of tile type. The retry/error SVGs supply their own red disc + white glyph,
+   so they are plain <img> — no mask, no background. The ✕ lives in the corner, so the two never
+   overlap. z-index is kept LOW (matches the scrim; still paints above it since the badge comes
+   after the scrim in the DOM) so the badge can't escape the tile and paint over the composer's
+   attachment-menu popover, whose wrapper sits at z-index 2. */
+.cometchat-attachment-tile__status-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--cometchat-attachment-tile-status-badge-size, 24px);
+  height: var(--cometchat-attachment-tile-status-badge-size, 24px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  z-index: 1;
+}
+
+.cometchat-attachment-tile__status-badge--retry {
+  cursor: pointer;
+}
+
+/* Static indicator — never intercept a click meant for the icon/tile beneath it. */
+.cometchat-attachment-tile__status-badge--error {
+  pointer-events: none;
+}
+
+.cometchat-attachment-tile__badge-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cometchat-attachment-tile__status-badge--retry:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) solid
+    var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: 2px;
+  border-radius: var(--cometchat-radius-max, 1000px);
+}
+
+/* ── Top-right cross (cancel / remove) — overhangs the corner, revealed on hover ── */
+.cometchat-attachment-tile__close {
+  position: absolute;
+  top: var(--cometchat-attachment-tile-badge-offset, -6px);
+  right: var(--cometchat-attachment-tile-badge-offset, -6px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--cometchat-attachment-tile-badge-size, 22px);
+  height: var(--cometchat-attachment-tile-badge-size, 22px);
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--cometchat-background-color-01, #ffffff);
+  /* A dark grey disc (#4d4d4d), not neutral-700 — it must read on a light AND a dark tile. */
+  background-color: var(
+    --cometchat-attachment-tile-badge-bg,
+    color-mix(in srgb, var(--cometchat-static-black, #000000) 70%, var(--cometchat-static-white, #ffffff))
+  );
+  color: var(--cometchat-static-white, #ffffff);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  /* Above the error badge it overlays in the same corner slot. */
+  z-index: 3;
+  transition: opacity 0.15s ease;
+}
+
+.cometchat-attachment-tile:hover .cometchat-attachment-tile__close,
+.cometchat-attachment-tile__close:focus-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.cometchat-attachment-tile__close:hover {
+  background-color: var(
+    --cometchat-attachment-tile-badge-bg-hover,
+    color-mix(in srgb, var(--cometchat-static-black, #000000) 85%, var(--cometchat-static-white, #ffffff))
+  );
+}
+
+.cometchat-attachment-tile__close-icon {
+  width: var(--cometchat-attachment-tile-close-icon-size, 8px);
+  height: var(--cometchat-attachment-tile-close-icon-size, 8px);
+  background-color: var(--cometchat-static-white, #ffffff);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* ── Focus ring (a11y — mandatory) ────────────────────────────────────── */
+.cometchat-attachment-tile__media:focus-visible,
+.cometchat-attachment-tile__card:focus-visible,
+.cometchat-attachment-tile__close:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) solid
+    var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: 2px;
+}
+
+/* ── Failure tooltip ──────────────────────────────────────────────────────
+   `position: fixed`, so `left`/`top` (set inline) are viewport coordinates and the tooltip escapes
+   the tray row's overflow clip. `left` is now the bubble's LEFT edge (clamped inside the composer
+   width by positionTooltip, so a tile near either edge never pushes it past the composer), hence
+   only `translateY(-100%)` here to lift it above the tile — the gap is tucked into the bottom margin
+   so the arrow still touches the tile. It mounts at opacity 0 and fades in via `--placed` once
+   measured and clamped, so the reposition is never seen. */
+.cometchat-attachment-tile__tooltip {
+  position: fixed;
+  z-index: var(--cometchat-attachment-tile-tooltip-z-index, 1000);
+  transform: translateY(-100%);
+  margin-top: calc(-1 * var(--cometchat-attachment-tile-tooltip-gap, 8px));
+  width: max-content;
+  max-width: var(--cometchat-attachment-tile-tooltip-max-width, 320px);
+  box-sizing: border-box;
+  padding: var(--cometchat-attachment-tile-tooltip-padding,
+    var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  border-radius: var(--cometchat-radius-2, 8px);
+  /* Light: neutral-900 (#141414). That token FLIPS to #FFFFFF under [data-theme="dark"], which would
+     make the tooltip a white patch, so the dark override below swaps it for neutral-300 (#383838). */
+  background: var(--cometchat-attachment-tile-tooltip-background, var(--cometchat-neutral-color-900, #141414));
+  color: var(--cometchat-attachment-tile-tooltip-color, var(--cometchat-static-white, #ffffff));
+  font-family: var(--cometchat-font-family);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  /* Multi-word API errors wrap rather than overflow; the tile itself is only 54px wide. */
+  white-space: normal;
+  word-break: break-word;
+  text-align: center;
+  box-shadow: var(--cometchat-shadow-2, 0 4px 12px rgba(16, 24, 40, 0.16));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.cometchat-attachment-tile__tooltip--placed {
+  opacity: 1;
+}
+
+/* Dark theme: neutral-900 flips to white, so use neutral-300 (#383838) — a dark grey that still
+   reads as a tooltip against the dark surface. `:host-context` (not a bare `[data-theme="dark"]`)
+   because view encapsulation would otherwise scope the ancestor selector and it could not match the
+   <html> theme attribute. The ::after arrow inherits this background, so it needs no separate rule. */
+:host-context([data-theme="dark"]) .cometchat-attachment-tile__tooltip {
+  background: var(--cometchat-attachment-tile-tooltip-background, var(--cometchat-neutral-color-300, #383838));
+}
+
+/* Arrow: a small square rotated 45°, half-sunk below the bubble, pointing at the tile. Its `left`
+   is driven per-instance from `--cometchat-attachment-tile-tooltip-arrow-left` (px from the bubble's
+   left edge, set inline) so it stays under the tile as the bubble is clamped — bottom-left, centre
+   or bottom-right. Falls back to centre before placement. */
+.cometchat-attachment-tile__tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--cometchat-attachment-tile-tooltip-arrow-left, 50%);
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  transform: translate(-50%, -50%) rotate(45deg);
+}

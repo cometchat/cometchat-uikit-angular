@@ -15,6 +15,15 @@ export interface DragUtilsContext {
   parentMessageId?: number;
   allowedFileTypes?: string[];
   maxFileSize?: number;
+  enableDragDrop?: boolean;
+  /** Routes selected/pasted/dropped files into the composer (staging tray). */
+  processFiles(files: File[]): void;
+  /**
+   * The attachment-menu option that opened the file dialog, consumed once by `processFiles`.
+   * Dropped/pasted files have no picker, so these paths clear it before staging — otherwise a
+   * dialog the user cancelled would leave a stale kind behind and mis-type the next drop.
+   */
+  pendingPickerKind?: 'image' | 'video' | 'audio' | 'file';
   fileSizeError: { set(v: any): void };
   messageComposerService: MessageComposerService;
   messageToReplySignal: () => CometChat.BaseMessage | null;
@@ -53,26 +62,44 @@ export function handleDropImpl(ctx: DragUtilsContext, event: DragEvent): void {
   event.stopPropagation();
   ctx.dragCounter = 0;
   ctx.isDraggingOver.set(false);
-  // Files should only be sent via the attachment button
+  if (ctx.enableDragDrop === false) { return; }
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    ctx.pendingPickerKind = undefined; // no picker involved — categorise by MIME
+    ctx.processFiles(Array.from(files));
+  }
 }
 
 export function handlePasteImpl(ctx: DragUtilsContext, event: ClipboardEvent): void {
   const clipboardData = event.clipboardData;
   if (!clipboardData) { return; }
   const items = clipboardData.items;
+  const files: File[] = [];
   for (let i = 0; i < items.length; i++) {
     if (items[i].kind === 'file') {
-      event.preventDefault();
-      return;
+      const file = items[i].getAsFile();
+      if (file) { files.push(file); }
     }
+  }
+  if (files.length > 0) {
+    event.preventDefault();
+    ctx.pendingPickerKind = undefined; // no picker involved — categorise by MIME
+    ctx.processFiles(files);
   }
 }
 
 export function handleFileInputChangeImpl(ctx: DragUtilsContext, event: Event): void {
   const target = event.target as HTMLInputElement;
-  const files = target.files;
-  if (files && files.length > 0) { processFilesImpl(ctx, Array.from(files)); }
+  const selected = target.files ? Array.from(target.files) : [];
+  // Reset up front so re-picking the same file still fires (change) again.
   target.value = '';
+  if (selected.length === 0) { return; }
+
+  // Hand the FULL selection to the tray, exactly like drag-drop and paste, so an over-limit pick
+  // hits the tray's all-or-nothing count check and raises the same limit toast. Truncating here to
+  // the free slots staged a silent subset — or, when the tray was already full, nothing at all with
+  // no feedback.
+  ctx.processFiles(selected);
 }
 
 export function processFilesImpl(ctx: DragUtilsContext, files: File[]): void {

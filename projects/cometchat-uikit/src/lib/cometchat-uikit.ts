@@ -50,6 +50,14 @@ export class CometChatUIKit {
     new BehaviorSubject<CometChat.User | null>(null);
   private static _conversationUpdateSettings: CometChat.ConversationUpdateSettings;
   private static _themeMode: 'light' | 'dark' = 'light';
+  /**
+   * Parsed `cometchat-settings.json` captured when the kit was initialized via
+   * `initFromSettings()`. Non-null only on the AI agent / skills path — it is
+   * what tells `initCalling()` to route the Calls SDK through its own
+   * `initFromSettings()` so `integrationSource = "ai-agent"` propagates to the
+   * Calls SDK the same way it already does for the Chat SDK.
+   */
+  private static _cometChatSettings: CometChatSettings | null = null;
 
   static SoundManager: typeof CometChatSoundManager = CometChatSoundManager;
   static Localize: typeof CometChatLocalize = CometChatLocalize;
@@ -78,6 +86,8 @@ export class CometChatUIKit {
 
   static init(uiKitSettings: UIKitSettings | null): Promise<InitResult> | undefined {
     CometChatUIKit._uiKitSettings = uiKitSettings;
+    // Plain developer path — the Calls SDK must go through plain init() too.
+    CometChatUIKit._cometChatSettings = null;
     if (!CometChatUIKit.checkAuthSettings()) return undefined;
     const builder = new CometChat.AppSettingsBuilder();
     if (uiKitSettings!.getRoles()) { builder.subscribePresenceForRoles(uiKitSettings!.getRoles()!); }
@@ -92,7 +102,7 @@ export class CometChatUIKit {
     if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
     CometChatLocalize.setCurrentLanguage(CometChatLocalize.getBrowserLanguage());
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.4' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.5' };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
           CometChat.getLoggedinUser()
@@ -111,7 +121,9 @@ export class CometChatUIKit {
    * File-based init for AI agent skills.
    * Accepts a parsed `cometchat-settings.json` object and delegates to the
    * Chat SDK's file-based init, which internally sets
-   * `integrationSource = "ai-agent"` for telemetry.
+   * `integrationSource = "ai-agent"` for telemetry. The same settings object is
+   * retained so that, when calling is enabled, the Calls SDK is initialized via
+   * `CometChatCalls.initFromSettings()` and reports the same source.
    *
    * This method is independent of `init()` — it does NOT call `init()`.
    * It builds UIKitSettings internally so login/createUser/updateUser keep working.
@@ -122,6 +134,9 @@ export class CometChatUIKit {
     // Extract UIKit-specific config from the settings JSON
     const authKey = settings.credentials?.authKey;
     const subscribeAll = settings.uiKit?.['subscribePresenceForAllUsers'] ?? true;
+    // Calling stays opt-in on this path too — enabled only when the settings
+    // file declares a `callsSDK` block, matching the React UI Kit's key.
+    const callingEnabled = !!settings.uiKit?.['callsSDK'];
 
     // Build UIKitSettings so downstream code (login, enableCalling, etc.) works unchanged
     const builder = new UIKitSettingsBuilder()
@@ -129,7 +144,12 @@ export class CometChatUIKit {
       .setRegion(settings.region);
     if (authKey) { builder.setAuthKey(authKey); }
     if (subscribeAll) { builder.subscribePresenceForAllUsers(); }
+    if (callingEnabled) { builder.setCallingEnabled(true); }
     CometChatUIKit._uiKitSettings = builder.build();
+
+    // Retained for the Calls SDK: initCalling() uses its presence to pick
+    // CometChatCalls.initFromSettings() over plain CometChatCalls.init().
+    CometChatUIKit._cometChatSettings = settings;
 
     // Set source for telemetry
     if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
@@ -139,7 +159,7 @@ export class CometChatUIKit {
     // This is the SDK's file-based init path which sets
     // integrationSource = "ai-agent" for telemetry.
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.4' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.5' };
 
       CometChat.initFromSettings(settings)
         .then(() => {
@@ -191,13 +211,28 @@ export class CometChatUIKit {
     try {
       const callsSDK = await getCometChatCalls();
       if (callsSDK) {
-        const callAppSetting = CometChatUIKit._uiKitSettings?.getCallAppSettings()
-          ?? new callsSDK.CallAppSettingsBuilder()
-            .setAppId(CometChatUIKit._uiKitSettings?.appId!)
-            .setRegion(CometChatUIKit._uiKitSettings?.region!)
-            .build();
-        callsSDK.init(callAppSetting).then(
-          () => { /* initialized */ },
+        const settings = CometChatUIKit._cometChatSettings;
+        // On the AI agent / skills path (`initFromSettings`) route the Calls SDK
+        // through its own file-based init so it reports
+        // `integrationSource = "ai-agent"`, mirroring the Chat SDK. Requires
+        // @cometchat/calls-sdk-javascript >= 5.0.3 — older versions fall back to
+        // plain init(), since the Calls SDK is an optional peer dependency.
+        const initCallsSDK: Promise<unknown> =
+          settings && typeof callsSDK.initFromSettings === 'function'
+            ? callsSDK.initFromSettings(settings)
+            : callsSDK.init(
+              CometChatUIKit._uiKitSettings?.getCallAppSettings()
+              ?? new callsSDK.CallAppSettingsBuilder()
+                .setAppId(CometChatUIKit._uiKitSettings?.appId!)
+                .setRegion(CometChatUIKit._uiKitSettings?.region!)
+                .build()
+            );
+        initCallsSDK.then(
+          (result: any) => {
+            // The Calls SDK reports validation failures in the resolved value
+            // instead of rejecting, so surface those too.
+            if (result?.success === false) { CometChatLogger.error('CometChatUIKit', 'CometChatUIKitCalls initialization failed:', result.error); }
+          },
           (error: CometChat.CometChatException) => { CometChatLogger.error('CometChatUIKit', 'CometChatUIKitCalls initialization failed:', error); }
         );
         const user = CometChatUIKit.getLoggedInUser();

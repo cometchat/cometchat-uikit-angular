@@ -26,8 +26,15 @@ import { CometChatTextBubbleComponent } from '../cometchat-text-bubble/cometchat
 import { FileAttachment } from '../../modals/FileAttachment';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
 import { CometChatLogger } from '../../utils/CometChatLogger';
-import { getFileType, getFileIcon, formatFileSize } from './cometchat-file-bubble.types';
+import { triggerMediaDownload } from '../../utils/media-download';
+import { getFileType, getFileIcon, formatFileSize, resolveFileExtension } from './cometchat-file-bubble.types';
 
+/**
+ * CometChatFileBubbleComponent renders file/document message attachments.
+ * @deprecated Prefer {@link CometChatFilesBubbleComponent}, which the message bubble now renders
+ * for every file message. This bubble stays public for direct use and remains the internal
+ * primitive that the new bubble delegates to.
+ */
 @Component({
   selector: 'cometchat-file-bubble',
   standalone: true,
@@ -88,9 +95,8 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
     // Extract attachments from the message
     this.extractAttachments();
 
-    // Check if message has caption text
-    // Use optional chaining with any cast to handle SDK type limitations
-    this.hasCaption = !!(this.message as any)?.getText?.();
+    // A MediaMessage's caption lives in getCaption()/data.text (there is NO getText() on MediaMessage).
+    this.hasCaption = !!(this.message as unknown as { getCaption?: () => string })?.getCaption?.();
 
     // Determine if message is outgoing based on alignment
     this.isOutgoing = this.alignment === MessageBubbleAlignment.right;
@@ -160,14 +166,20 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
         }
 
         // Build FileAttachment object
+        const resolvedName =
+          typeof name === 'string'
+            ? name
+            : CometChatLocalize.getLocalizedString('file_bubble_unknown_file');
         const fileAttachment: FileAttachment = {
-          name:
-            typeof name === 'string'
-              ? name
-              : CometChatLocalize.getLocalizedString('file_bubble_unknown_file'),
+          name: resolvedName,
           url,
           mimeType: typeof mimeType === 'string' ? mimeType : 'application/octet-stream',
-          extension: typeof extension === 'string' ? extension : '',
+          // The SDK often reports no extension on a received attachment; the filename still has it,
+          // and it identifies the format far more precisely than the MIME type can.
+          extension: resolveFileExtension(
+            resolvedName,
+            typeof extension === 'string' ? extension : '',
+          ),
           size: typeof size === 'number' ? size : 0,
         };
 
@@ -205,14 +217,52 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
     return formatFileSize(bytes);
   }
 
-  /**
-   * Get the count of remaining files (for +N indicator).
-   *
-   * @returns Count of files beyond the first one
-   * @see Requirements 3.3
-   */
+  /** Chevrons on the expand / collapse bar. Masked, so they take the button's text colour. */
+  protected readonly expandIconUrl = 'assets/keyboard_arrow_down.svg';
+  protected readonly collapseIconUrl = 'assets/keyboard_arrow_up.svg';
+
+  /** Files shown before the list collapses behind a "Show N more" toggle. Matches the React kit. */
+  static readonly COLLAPSED_MAX = 3;
+
+  /** The files rendered right now: the first three, or all of them once expanded. */
+  protected get visibleAttachments(): FileAttachment[] {
+    return this.isExpanded
+      ? this.attachments
+      : this.attachments.slice(0, CometChatFileBubbleComponent.COLLAPSED_MAX);
+  }
+
+  /** Whether there are more files than the collapsed list shows. */
+  protected get hasOverflow(): boolean {
+    return this.getRemainingFilesCount() > 0;
+  }
+
+  /** Count of files hidden by the collapsed list (drives the "+N more" label). */
   protected getRemainingFilesCount(): number {
-    return this.attachments.length - 1;
+    return Math.max(0, this.attachments.length - CometChatFileBubbleComponent.COLLAPSED_MAX);
+  }
+
+  /** "+N more", localized. */
+  protected getShowMoreLabel(): string {
+    return CometChatLocalize.getLocalizedString('bubble_show_more').replace(
+      '{count}',
+      String(this.getRemainingFilesCount()),
+    );
+  }
+
+  /** Uppercased extension for the meta line (e.g. "DOC"), or "FILE" when there is none. */
+  protected getFileExtLabel(attachment: FileAttachment): string {
+    const parts = (attachment.name ?? '').split('.');
+    if (parts.length < 2) {
+      return 'FILE';
+    }
+    return (parts.pop() ?? '').toUpperCase();
+  }
+
+  /** Meta line: `DOC · 98 KB`, falling back to just the extension when the size is unknown. */
+  protected getFileMeta(attachment: FileAttachment): string {
+    const ext = this.getFileExtLabel(attachment);
+    const size = attachment.size;
+    return size && size > 0 ? `${ext} · ${formatFileSize(size)}` : ext;
   }
 
   /**
@@ -317,7 +367,10 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
    * Initiates file download with screen reader announcements.
    *
    * @remarks
-   * Announces download start, completion, and failure via LiveAnnouncerService.
+   * Announces download start, then completion or failure once the download actually resolves.
+   * The outcome is real, not assumed: an anchor pointed at the cross-origin CDN can only open the
+   * file in a tab, so `triggerMediaDownload` fetches the bytes into a same-origin blob and reports
+   * back whether it managed to save or had to fall back to a tab.
    *
    * @param attachment - The file attachment to download
    * @see Requirements 10.5, 10.6, 10.7
@@ -332,18 +385,8 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
       'polite'
     );
 
-    // Create a temporary anchor element to trigger download
-    const link = document.createElement('a');
-    link.href = attachment.url;
-    link.download = attachment.name;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-
-    try {
-      link.click();
-      // Announce download complete (browser handles actual download)
-      // Note: We can't truly detect download completion, so we announce after click
-      this.pendingTimers.push(setTimeout(() => {
+    triggerMediaDownload(attachment.url, attachment.name).then(outcome => {
+      if (outcome === 'saved') {
         this.liveAnnouncer.announce(
           CometChatLocalize.getLocalizedString('accessibility_download_complete').replace(
             '{filename}',
@@ -351,18 +394,17 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
           ),
           'polite'
         );
-      }, 500));
-    } catch (error) {
-      // Announce download failure
+        return;
+      }
+      // Opened in a tab instead of saving — announcing "complete" here would tell a screen-reader
+      // user the file is on disk when it isn't.
       this.liveAnnouncer.announceError(
         CometChatLocalize.getLocalizedString('accessibility_download_failed').replace(
           '{filename}',
           attachment.name
         )
       );
-    } finally {
-      document.body.removeChild(link);
-    }
+    });
   }
 
   /**

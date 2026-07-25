@@ -417,10 +417,52 @@ Define border colors for UI elements,
   /* Date Global Variables */
   --cometchat-date-color: var(--cometchat-text-color-secondary);
   --cometchat-date-font: var(--cometchat-font-caption1-regular);
+
+  /* Attachment Tray / Tile Global Variables (Multiple Attachments) */
+  --cometchat-attachment-tile-size: 72px;
+  --cometchat-attachment-tile-card-width: 200px;
+  --cometchat-attachment-tile-type-icon-size: 40px;
+  --cometchat-attachment-tile-play-size: 28px;
+  --cometchat-attachment-tile-ring-size: 28px;
+  --cometchat-attachment-tile-ring-track: rgba(255, 255, 255, 0.4);
+  --cometchat-attachment-tile-overlay-bg: rgba(0, 0, 0, 0.55);
+  --cometchat-attachment-tile-affordance-size: 24px;
+  --cometchat-attachment-tile-close-size: 20px;
+  --cometchat-attachment-tile-close-icon-size: 12px;
+  --cometchat-attachment-tile-close-offset: -8px;
+  --cometchat-attachment-tray-row-padding: 6px;
+  --cometchat-attachment-tray-add-icon-size: 24px;
+  --cometchat-attachment-tray-aggregate-height: 4px;
+  /* Upload progress ring on the tile (image/video square + file icon): dark backdrop + white ring. */
+  --cometchat-attachment-tile-loader-backdrop: #141414cc;
+  --cometchat-attachment-tile-loader-color: #ffffff;
+  --cometchat-attachment-tile-loader-track: rgba(255, 255, 255, 0.3);
+  /* Audio player tile (playable in the tray): play button + seekable 6px progress bar / 18px thumb. */
+  --cometchat-attachment-tile-audio-card-width: 260px;
+  --cometchat-attachment-tile-audio-button-size: 44px;
+  --cometchat-attachment-tile-audio-icon-size: 20px;
+  --cometchat-attachment-tile-audio-bar-height: 6px;
+  --cometchat-attachment-tile-audio-thumb-size: 18px;
+  /* Lighter than the media loader backdrop so the play icon stays visible under the ring. */
+  --cometchat-attachment-tile-audio-loader-backdrop: rgba(20, 20, 20, 0.4);
+
+  /* Audios Bubble Global Variables (Multiple Attachments — audio files) */
+  --cometchat-audios-bubble-min-width: 240px;
+  --cometchat-audios-bubble-play-size: 40px;
+  --cometchat-audios-bubble-slider-height: 4px;
+
+  /* Multiple-attachments batch bubbles — shared width so every per-type bubble in a batch
+     (images/videos/audios/files) renders at the same width.
+     Left UNSET here; the batch bubbles fall back to 400px, matching the React kit's container cap.
+     Set `100%` to let batch media fill the standard bubble max-width (~65%, responsive) instead, or
+     any px value to cap it differently — it applies to all four per-type bubbles at once. */
 }
 
 [data-theme="dark"] {
   --cometchat-primary-color: #6852D6;
+  /* Attachment overlay/track adjusted for dark surfaces */
+  --cometchat-attachment-tile-overlay-bg: rgba(0, 0, 0, 0.65);
+  --cometchat-attachment-tile-ring-track: rgba(255, 255, 255, 0.24);
   --cometchat-extended-primary-color-50: #15102B;
   --cometchat-extended-primary-color-100: #1D173C;
   --cometchat-extended-primary-color-200: #251E4D;

@@ -1295,6 +1295,87 @@ describe('Bug Condition Exploration: Preview and Display Formatting (Group G)', 
       expect(subtitle).toContain('underlined text');
     });
 
+    // ---- Media edit / reply preview: [icon] "N Images" · caption ----
+    /** A MediaMessage stand-in; the SDK constructor cannot express attachments/captions. */
+    const mediaMessage = (over: { type?: string; count?: number; caption?: string }) => {
+      const n = over.count ?? 1;
+      return {
+        getId: () => 7,
+        getType: () => over.type ?? 'image',
+        getCategory: () => 'message',
+        getDeletedAt: () => undefined,
+        getAttachments: () =>
+          Array.from({ length: n }, (_, i) => ({ getName: () => `a${String(i)}.jpg` })),
+        getCaption: () => over.caption ?? '',
+        getData: () => undefined,
+        getMetadata: () => null,
+        getMentionedUsers: () => [],
+        getSender: () => ({ getUid: () => 'u1', getName: () => 'Alice' }),
+      } as any;
+    };
+
+    it('edit preview: a captioned media message is NOT blank (it used to be)', () => {
+      component.messageToEdit = mediaMessage({ type: 'image', caption: 'nice trip' });
+      fixture.detectChanges();
+
+      // The text subtitle stays empty; the media summary carries the content.
+      expect(component.getEditPreviewSubtitle()).toBe('');
+      const media = component.getEditPreviewMedia();
+      expect(media).not.toBeNull();
+      expect(media!.label).toBe('Image');
+      expect(media!.captionHtml).toContain('nice trip');
+      expect(media!.iconUrl).toBe('assets/conversations_image-message.svg');
+    });
+
+    it('edit preview: counts and pluralizes several attachments', () => {
+      component.messageToEdit = mediaMessage({ type: 'image', count: 4 });
+      fixture.detectChanges();
+      const media = component.getEditPreviewMedia();
+      expect(media!.label).toBe('4 Images');
+      expect(media!.captionHtml).toBe('');
+    });
+
+    it('edit preview: each media type gets its own glyph and label', () => {
+      const cases: [string, string, string][] = [
+        ['video', '2 Videos', 'assets/conversations_video-message.svg'],
+        ['audio', '2 Audio Files', 'assets/conversations_audio-message.svg'],
+        ['file', '2 Files', 'assets/conversations_file-message.svg'],
+      ];
+      for (const [type, label, icon] of cases) {
+        component.messageToEdit = mediaMessage({ type, count: 2 });
+        fixture.detectChanges();
+        const media = component.getEditPreviewMedia();
+        expect(media!.label, type).toBe(label);
+        expect(media!.iconUrl, type).toBe(icon);
+      }
+    });
+
+    it('edit preview: a text message has no media summary', () => {
+      component.messageToEdit = {
+        getId: () => 8,
+        getType: () => 'text',
+        getCategory: () => 'message',
+        getDeletedAt: () => undefined,
+        getText: () => 'hello',
+        getMetadata: () => null,
+        getMentionedUsers: () => [],
+        getSender: () => ({ getUid: () => 'u1', getName: () => 'Alice' }),
+      } as any;
+      fixture.detectChanges();
+      expect(component.getEditPreviewMedia()).toBeNull();
+      expect(component.getEditPreviewSubtitle()).toContain('hello');
+    });
+
+    it('reply preview: the same summary shape applies', () => {
+      (component as any).messageToReplySignal.set(
+        mediaMessage({ type: 'file', count: 3, caption: 'specs' }),
+      );
+      fixture.detectChanges();
+      const media = component.getReplyPreviewMedia();
+      expect(media!.label).toBe('3 Files');
+      expect(media!.captionHtml).toContain('specs');
+    });
+
     it('should use metadata.richText.html for reply preview when available (property-based)', async () => {
       /**
        * **Validates: Requirements 1.13**

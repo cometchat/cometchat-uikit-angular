@@ -10,6 +10,24 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 // ==================== Attachment Types ====================
 
 /**
+ * Upload lifecycle status for a staged attachment tile.
+ * Extends the legacy statuses with the multi-attachment upload states.
+ * - 'failed'    : transfer failed (UploadFileListener.onFileFailure) — retryable (show Retry)
+ * - 'rejected'  : not retryable (UploadFileListener.onFileError) — show Remove
+ * - 'cancelled' : user cancelled an in-flight upload
+ *
+ * @remarks 'error' is retained as a deprecated alias of 'failed' for backward compatibility.
+ */
+export type AttachmentTileStatus =
+  | 'pending'
+  | 'uploading'
+  | 'uploaded'
+  | 'failed'
+  | 'rejected'
+  | 'cancelled'
+  | 'error';
+
+/**
  * Tracks a file attachment in the composer's pending attachment list.
  */
 export interface AttachmentFile {
@@ -23,14 +41,27 @@ export interface AttachmentFile {
   name: string;
   /** File size in bytes */
   size: number;
-  /** Thumbnail URL for preview (images/videos) */
+  /** MIME type of the file (e.g. 'image/png'). */
+  mimeType?: string;
+  /** Upload id. UIKit-generated and passed to the SDK, which echoes it back on every upload event;
+   *  it is the tile key from the moment the file is staged. */
+  fileId?: string;
+  /** Thumbnail URL for preview (local object URL while uploading; attachment URL once uploaded). */
   thumbnailUrl?: string;
+  /** Video clip length in seconds, read locally alongside the poster. Drives the tile's duration badge. */
+  durationSec?: number;
   /** Upload progress percentage (0-100) */
   uploadProgress: number;
+  /** Bytes uploaded so far (UploadFileListener.onFileProgress). */
+  loaded?: number;
+  /** Total bytes to upload (UploadFileListener.onFileProgress). */
+  total?: number;
   /** Current upload status */
-  status: 'pending' | 'uploading' | 'uploaded' | 'error';
-  /** Error message if status is 'error' */
+  status: AttachmentTileStatus;
+  /** Error message if status is 'failed' | 'rejected' (or legacy 'error'). */
   errorMessage?: string;
+  /** SDK Attachment, set on onFileUploaded — the object sent via MediaMessage.setAttachments. */
+  attachment?: CometChat.Attachment;
 }
 
 /**

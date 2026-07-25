@@ -40,12 +40,16 @@
             </cometchat-avatar>
           }
         </div>
+      } @else if (reserveLeadingSpace && alignment === MessageBubbleAlignment.left) {
+        <!-- Reserve the avatar column so batch-continuation messages align under the first message -->
+        <div class="cometchat-message-bubble__leading-spacer" aria-hidden="true"></div>
       }
-      
+
       <!-- Message Bubble Container -->
-      <div 
+      <div
         class="cometchat-message-bubble"
         [class]="bubbleClassName"
+        [class.cometchat-message-bubble--multi-attachment]="isBatchBubble"
         [id]="'message-' + messageId">
       
       <!-- Header View (Sender Name) -->
@@ -86,10 +90,11 @@
           
           <!-- Body Wrapper -->
           <div class="cometchat-message-bubble__body-wrapper">
-            <div 
+            <div
               class="cometchat-message-bubble__body"
               [class]="bubbleTypeClassName"
-              [class.cometchat-message-bubble__body--moderated]="shouldShowModerationIndicator"
+              [class.cometchat-message-bubble__body--moderated]="shouldShowBlockNotice"
+              [class.cometchat-message-bubble__body--batch-no-footer]="isBatchBubble && !shouldShowStatusInfoView && !shouldShowBlockNotice"
               (mouseenter)="!disableInteraction && onMouseEnter()"
               (click)="!disableInteraction && onBodyClick()">
               
@@ -151,31 +156,37 @@
                           [translatedTextOverride]="translatedText">
                         </cometchat-text-bubble>
                       }
-                      @case ('image') {
-                        <cometchat-image-bubble
+                      @case ('images-batch') {
+                        <cometchat-images-bubble
                           [message]="$any(message)"
                           [alignment]="alignment"
                           [disableInteraction]="disableInteraction">
-                        </cometchat-image-bubble>
+                        </cometchat-images-bubble>
                       }
-                      @case ('video') {
-                        <cometchat-video-bubble
+                      @case ('videos-batch') {
+                        <cometchat-videos-bubble
                           [message]="$any(message)"
                           [alignment]="alignment"
                           [disableInteraction]="disableInteraction">
-                        </cometchat-video-bubble>
+                        </cometchat-videos-bubble>
                       }
-                      @case ('audio') {
-                        <cometchat-audio-bubble
+                      @case ('audios-batch') {
+                        <cometchat-audios-bubble
                           [message]="$any(message)"
                           [alignment]="alignment">
-                        </cometchat-audio-bubble>
+                        </cometchat-audios-bubble>
                       }
-                      @case ('file') {
-                        <cometchat-file-bubble
+                      @case ('voice-note') {
+                        <cometchat-voice-note-bubble
                           [message]="$any(message)"
                           [alignment]="alignment">
-                        </cometchat-file-bubble>
+                        </cometchat-voice-note-bubble>
+                      }
+                      @case ('files-batch') {
+                        <cometchat-files-bubble
+                          [message]="$any(message)"
+                          [alignment]="alignment">
+                        </cometchat-files-bubble>
                       }
                       @case ('poll') {
                         <!-- Poll Bubble - Requirement 3.1 -->
@@ -272,9 +283,9 @@
                       @if (!hideTimestamp) {
                         <cometchat-date [timestamp]="message.getSentAt()" [calendarObject]="calendarObject"></cometchat-date>
                       }
-                      @if (showError) {
-                        <!-- Error state indicator - shown when message is in error state -->
-                        <div 
+                      @if (showErrorReceipt) {
+                        <!-- Error state indicator - shown when a message is in error / disapproved state -->
+                        <div
                           class="cometchat-receipts cometchat-receipts-error"
                           role="img"
                           [attr.aria-label]="'message_status_error' | translate">
@@ -311,17 +322,20 @@
               </div>
             }
             @else {
-                 <!-- Moderation Status Indicator - Requirement 9.7 -->
-              @if (shouldShowModerationIndicator) {
-                <div 
+                 <!-- Moderation / permission-denied status indicator - Requirement 9.7. A disapproved
+                      message ("blocked by moderation") or one the server refused ("file type not
+                      allowed") shows the same error notice to the sender; moderation wins if both. -->
+              @if (shouldShowModerationIndicator || shouldShowPermissionDeniedIndicator) {
+                <div
                   class="cometchat-message-bubble__moderation-indicator"
-                  [class.cometchat-message-bubble__moderation-indicator--disapproved]="isDisapprovedByModeration"
+                  [class.cometchat-message-bubble__moderation-indicator--disapproved]="shouldShowModerationIndicator"
+                  [class.cometchat-message-bubble__moderation-indicator--permission-denied]="!shouldShowModerationIndicator && shouldShowPermissionDeniedIndicator"
                   [style.width]="moderationIndicatorWidth()"
                   role="status"
-                  [attr.aria-label]="('moderation_block_message' | translate)">
+                  [attr.aria-label]="(moderationIndicatorTextKey | translate)">
                   <div class="cometchat-message-bubble__moderation-indicator-icon"></div>
                   <span class="cometchat-message-bubble__moderation-indicator-text">
-                   {{ 'moderation_block_message' | translate }}
+                   {{ moderationIndicatorTextKey | translate }}
                   </span>
                 </div>
               }

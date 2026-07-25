@@ -61,18 +61,12 @@ export function restoreBodyScroll(originalOverflow: string): void {
 // ── Download ──────────────────────────────────────────────────────────────
 
 /**
- * Triggers a browser file download via a temporary anchor element.
+ * The viewer's download button. Re-exported from the shared implementation so every download
+ * affordance in the kit behaves identically — see `utils/media-download.ts` for why a plain
+ * anchor is not enough and why the fetch must stay a simple request.
  */
-export function triggerMediaDownload(url: string, filename: string): void {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+export { triggerMediaDownload } from '../../../utils/media-download';
+export type { MediaDownloadOutcome } from '../../../utils/media-download';
 
 /**
  * Resolves the media URL and filename for download in both gallery and single mode.

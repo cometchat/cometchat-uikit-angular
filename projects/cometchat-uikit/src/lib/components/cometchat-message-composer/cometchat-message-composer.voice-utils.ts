@@ -7,6 +7,8 @@ import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKitUtility} from '../../CometChatUIKitUtility';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 import {MessageComposerService} from '../../services/message-composer.service';
+import {CometChatUIKitConstants} from '../../constants';
+import {stampBatchMetadata} from '../../utils/message-metadata-utils';
 
 export interface VoiceUtilsContext {
   isRecording: { (): boolean; set(v: boolean): void };
@@ -48,6 +50,12 @@ export async function handleRecordingCompleteImpl(ctx: VoiceUtilsContext, audioB
   const receiverId = receiver instanceof CometChat.User ? receiver.getUid() : receiver.getGuid();
   const receiverType = receiver instanceof CometChat.User ? CometChat.RECEIVER_TYPE.USER : CometChat.RECEIVER_TYPE.GROUP;
   const pendingAudioMessage = new CometChat.MediaMessage(receiverId, audioFile, CometChat.MESSAGE_TYPE.AUDIO, receiverType);
+  // Tag as a voice note so the receive side routes it to CometChatVoiceNoteBubble (vs an audio
+  // file). The value is the cross-platform `voice_note` — the React/iOS/Android kits read that
+  // exact string, so a camelCase tag would render as a plain audio bubble on those clients.
+  stampBatchMetadata(pendingAudioMessage, {
+    audioType: CometChatUIKitConstants.AudioType.voiceNote,
+  });
   if (ctx.parentMessageId) { pendingAudioMessage.setParentMessageId(ctx.parentMessageId); }
   if (quotedMessage) { pendingAudioMessage.setQuotedMessage(quotedMessage); pendingAudioMessage.setQuotedMessageId(quotedMessage.getId()); }
   pendingAudioMessage.setMuid(CometChatUIKitUtility.ID());

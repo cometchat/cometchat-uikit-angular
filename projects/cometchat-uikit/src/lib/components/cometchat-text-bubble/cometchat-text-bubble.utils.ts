@@ -13,7 +13,12 @@ import type { LinkPreviewData } from './cometchat-text-bubble.types';
  */
 export function extractMessageText(message: CometChat.TextMessage | null | undefined): string {
   if (!message) return '';
-  return message.getText?.() || '';
+  const text = message.getText?.();
+  if (text) return text;
+  // A MediaMessage carries its CAPTION in data.text (set via setCaption()/getCaption()) and has no
+  // getText(). Fall back to it so media-bubble captions (rendered via a nested text-bubble) show up.
+  const data = (message as unknown as { getData?: () => { text?: string } | undefined }).getData?.();
+  return typeof data?.text === 'string' ? data.text : '';
 }
 
 /**

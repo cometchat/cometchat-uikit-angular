@@ -1,0 +1,31 @@
+@if (tray.hasTiles()) {
+  <div class="cometchat-attachment-tray">
+    <div
+      class="cometchat-attachment-tray__row"
+      role="list"
+      [attr.aria-label]="'message_composer_attachments' | translate"
+    >
+      @for (t of tray.tiles(); track t.fileId) {
+        <div class="cometchat-attachment-tray__item" role="listitem">
+          <cometchat-attachment-tile
+            [tile]="t"
+            (cancelClick)="tray.cancel($event)"
+            (removeClick)="tray.remove($event)"
+            (retryClick)="tray.retry($event)"
+            (tileClick)="openViewer($event)"
+          ></cometchat-attachment-tile>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (viewer().open) {
+    <cometchat-fullscreen-viewer
+      [isOpen]="true"
+      [url]="viewer().url"
+      [mediaType]="viewer().mediaType"
+      [fileName]="viewer().fileName"
+      (closeClick)="closeViewer()"
+    ></cometchat-fullscreen-viewer>
+  }
+}

@@ -87,6 +87,9 @@ function makeBaseCtx(overrides: Partial<DragUtilsContext> = {}): DragUtilsContex
     emitError: vi.fn(),
     sendButtonClick: { emit: vi.fn() },
     announceMessageSent: vi.fn(),
+    // Drop/paste/file-input now route through the composer's own processFiles (the multi-attachment
+    // tray path); the drag-utils impls call ctx.processFiles, so the mock context must supply it.
+    processFiles: vi.fn(),
     ...overrides,
   };
 }
@@ -230,9 +233,9 @@ describe('cometchat-message-composer.drag-utils', () => {
       const input = { files: [file], value: '' } as unknown as HTMLInputElement;
       const event = { target: input } as unknown as Event;
       handleFileInputChangeImpl(ctx, event);
-      // processFilesImpl calls sendFilesDirectlyImpl which is async
-      await new Promise(r => setTimeout(r, 50));
-      expect(ctx.messageComposerService.sendMediaMessage).toHaveBeenCalled();
+      // File-input selection now routes into the composer's processFiles (multi-attachment tray path),
+      // not the deprecated direct sendMediaMessage path.
+      expect(ctx.processFiles).toHaveBeenCalledWith([file]);
     });
 
     it('should reset input value after processing', () => {

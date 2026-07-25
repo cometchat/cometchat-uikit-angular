@@ -68,6 +68,12 @@ export interface MessageListItem {
   date?: number;
 
   key: string;
+
+  /** True when this message is the FIRST of a multi-attachment batch (same metadata.batchId run). */
+  isFirstInBatch?: boolean;
+
+  /** True when this message is the LAST of a multi-attachment batch (same metadata.batchId run). */
+  isLastInBatch?: boolean;
 }
 @Component({
   selector: 'cometchat-message-list',

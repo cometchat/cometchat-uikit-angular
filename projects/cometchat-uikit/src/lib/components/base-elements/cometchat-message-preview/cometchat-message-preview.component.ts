@@ -26,6 +26,8 @@ import { FormatterConfigService } from '../../../services/formatter-config.servi
 import { MessagePreviewMode, MESSAGE_TYPES } from './cometchat-message-preview.types';
 import { CometChatUIKitConstants } from '../../../constants';
 import { CometChatUIKit } from '../../../cometchat-uikit';
+import { getMediaPreview, isMediaPreviewType } from '../../../utils/message-preview-utils';
+import { convertInlineMarkdownToHtml } from '../../../utils/inline-markdown';
 import { stripRichTextFormatting } from '../../../utils/util';
 
 export type { MessagePreviewMode };
@@ -85,6 +87,8 @@ export class CometChatMessagePreviewComponent implements OnInit, OnChanges, Afte
   // ============================================
   _cachedPreviewHasHtml = false;
   _cachedFormattedPreview = '';
+
+  private htmlSanitizerService = inject(HtmlSanitizerService);
 
   // ============================================
   // ExplicitlySet Flags & Backing Fields (GlobalConfig Priority System)
@@ -257,6 +261,12 @@ export class CometChatMessagePreviewComponent implements OnInit, OnChanges, Afte
 
     const messageType = this.message.getType?.();
 
+    // Media: "Image", "3 Images", or "3 Images · caption". A bare "Image" throws away the caption,
+    // which is the only text distinguishing one quoted photo from another.
+    if (isMediaPreviewType(messageType)) {
+      return getMediaPreview(this.message, 'conversation');
+    }
+
     switch (messageType) {
       case MESSAGE_TYPES.TEXT:
         // Return text content - CSS handles truncation with ellipsis
@@ -293,6 +303,21 @@ export class CometChatMessagePreviewComponent implements OnInit, OnChanges, Afte
         return CometChatLocalize.getLocalizedString('message');
       }
     }
+  }
+
+  /**
+   * {@link messageContentPreview} with its markdown rendered, for binding to innerHTML.
+   *
+   * A caption (and a text body) is stored as markdown, so interpolating the raw string showed
+   * literal `**bold**` in the quoted-reply block while the bubble above it rendered the formatting.
+   * Escape first, convert inline markdown second, sanitize last — in that order the user's own
+   * angle brackets stay inert and only the tags this component emits survive.
+   */
+  get messageContentPreviewHtml(): string {
+    const text = this.messageContentPreview;
+    if (!text) { return ''; }
+    const escaped = this.htmlSanitizerService.escapeUserHtml(text);
+    return this.htmlSanitizerService.sanitize(convertInlineMarkdownToHtml(escaped));
   }
 
   /**
@@ -516,10 +541,20 @@ export class CometChatMessagePreviewComponent implements OnInit, OnChanges, Afte
     // Recompute formatted preview whenever message or textFormatters change.
     // Caching is necessary with OnPush — getters alone may not trigger re-render.
     if (changes['message'] || changes['textFormatters']) {
-      this._cachedPreviewHasHtml = this.messagePreviewHasHtml;
-      this._cachedFormattedPreview = this._cachedPreviewHasHtml
-        ? this.formattedMessagePreview
-        : '';
+      if (this.messagePreviewHasHtml) {
+        // Rich TEXT preview: mentions, markdown, lists, rich-text metadata.
+        this._cachedPreviewHasHtml = true;
+        this._cachedFormattedPreview = this.formattedMessagePreview;
+      } else if (isMediaPreviewType(this.message?.getType?.() ?? '')) {
+        // Media captions are stored as markdown; render their inline formatting
+        // so a quoted photo's "**bold**" caption isn't shown with literal asterisks.
+        const captionHtml = this.messageContentPreviewHtml;
+        this._cachedPreviewHasHtml = !!captionHtml;
+        this._cachedFormattedPreview = captionHtml;
+      } else {
+        this._cachedPreviewHasHtml = false;
+        this._cachedFormattedPreview = '';
+      }
       this.cdr.markForCheck();
     }
   }

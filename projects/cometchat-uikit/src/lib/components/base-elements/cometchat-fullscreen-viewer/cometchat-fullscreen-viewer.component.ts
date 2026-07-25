@@ -97,6 +97,8 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
   isDownloading = true;
   progress = 0;
   videoError = false;
+  /** True when the current image can't be decoded/previewed (unsupported type, broken/expired link, 403). */
+  imageError = false;
   isPipMode = false;
   isPipSupported = false;
 
@@ -249,6 +251,9 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
 
   handleVideoError(): void { this.videoError = true; this.cdr.detectChanges(); }
 
+  /** The image element failed to load — show the "no preview available" state instead of a broken img. */
+  handleImageError(): void { this.imageError = true; this.cdr.detectChanges(); }
+
   // ── Getters ───────────────────────────────────────────────────────────────
 
   getDateFormat(): CalendarObject {
@@ -292,7 +297,7 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
   navigateNext(): void {
     if (!this.canNavigateNext) return;
     if (this.isPipMode) { this.exitPictureInPicture(); }
-    this.stopCurrentVideo(); this.currentIndex++;
+    this.stopCurrentVideo(); this.imageError = false; this.currentIndex++;
     this.indexChange.emit(this.currentIndex);
     this.liveAnnouncer.announce(getGalleryPositionText(this.currentIndex + 1, this.attachments.length), 'polite');
     setTimeout(() => this.setupPipEventListeners(), 100); this.cdr.detectChanges();
@@ -301,7 +306,7 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
   navigatePrev(): void {
     if (!this.canNavigatePrev) return;
     if (this.isPipMode) { this.exitPictureInPicture(); }
-    this.stopCurrentVideo(); this.currentIndex--;
+    this.stopCurrentVideo(); this.imageError = false; this.currentIndex--;
     this.indexChange.emit(this.currentIndex);
     this.liveAnnouncer.announce(getGalleryPositionText(this.currentIndex + 1, this.attachments.length), 'polite');
     setTimeout(() => this.setupPipEventListeners(), 100); this.cdr.detectChanges();
@@ -310,7 +315,7 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
   navigateToIndex(index: number): void {
     if (!this.isGalleryMode || index < 0 || index >= this.attachments.length) return;
     if (this.isPipMode) { this.exitPictureInPicture(); }
-    this.stopCurrentVideo(); this.currentIndex = index;
+    this.stopCurrentVideo(); this.imageError = false; this.currentIndex = index;
     this.indexChange.emit(this.currentIndex);
     setTimeout(() => this.setupPipEventListeners(), 100); this.cdr.detectChanges();
   }

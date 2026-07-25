@@ -265,7 +265,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
 
   private static readonly STORAGE_KEY_LEFT = 'cometchat-home-left-width';
   private static readonly STORAGE_KEY_RIGHT = 'cometchat-home-right-width';
-  private static readonly MIN_PANEL_WIDTH = 240;
+  private static readonly MIN_PANEL_WIDTH = 300;
   private static readonly MIN_CENTER_WIDTH = 300;
 
   /** Which panel handle is being dragged (null = idle) */

@@ -1,0 +1,50 @@
+/* CometChatAttachmentTray — composer staging strip.
+ * BEM + design tokens; dimensions with no global token use component-scoped
+ * variables with literal fallbacks (formal tokens land in U6). */
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.cometchat-attachment-tray {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2);
+  width: 100%;
+  box-sizing: border-box;
+  /* No outer padding: the __row below already carries its own inset (top/side for the close-button
+     overhang), so a wrapper pad here just doubled it and showed as a band around the tiles. */
+  padding: var(--cometchat-attachment-tray-padding, 0);
+  background-color: var(--cometchat-background-color-01);
+  /* Divider lives on the content wrapper (not :host) so the line only shows when tiles are
+     actually staged — an empty tray leaves no border. --cometchat-border-color-light resolves to
+     --cometchat-neutral-color-200 (#F5F5F5). Kept behind a component var so themes can override it. */
+  border-bottom: var(--cometchat-attachment-tray-border-bottom, 1px solid var(--cometchat-border-color-light));
+}
+
+.cometchat-attachment-tray__row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: var(--cometchat-attachment-tray-row-gap, 12px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* The tile's close button is centred on the corner, so it overhangs by half its 24px width.
+     Top/side padding keeps it from being clipped by this scroll container. */
+  padding: var(--cometchat-attachment-tray-row-padding-top, 12px)
+    var(--cometchat-attachment-tray-row-padding, 12px)
+    var(--cometchat-attachment-tray-row-padding-bottom, 4px);
+  /* Scrollable but with the scrollbar hidden */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+
+.cometchat-attachment-tray__row::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / WebKit */
+}
+
+.cometchat-attachment-tray__item {
+  flex: none;
+}

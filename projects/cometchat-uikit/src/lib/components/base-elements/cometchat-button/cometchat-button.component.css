@@ -68,13 +68,13 @@
   -webkit-mask-size: contain;
 }
 
-.cometchat-button:hover {
+.cometchat-button:not(:disabled):hover {
   padding: var(--cometchat-button-hover-padding, var(--cometchat-button-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-5, 20px)));
   border-radius: var(--cometchat-button-hover-border-radius, var(--cometchat-button-border-radius, var(--cometchat-radius-2, 8px)));
   background: var(--cometchat-button-background-hover, var(--cometchat-extended-primary-color-800, #7A6BD6));
 }
 
-.cometchat-button:hover .cometchat-button__icon-default {
+.cometchat-button:not(:disabled):hover .cometchat-button__icon-default {
   background-color: var(--cometchat-button-icon-background-hover, var(--cometchat-button-icon-background, var(--cometchat-static-white, #FFFFFF)));
 }
 

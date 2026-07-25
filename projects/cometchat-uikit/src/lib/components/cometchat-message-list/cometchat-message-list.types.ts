@@ -22,6 +22,10 @@ export interface MessageListItem {
   date?: number;
   /** Unique key for tracking */
   key: string;
+  /** True when this message is the FIRST of a multi-attachment batch (same metadata.batchId run). */
+  isFirstInBatch?: boolean;
+  /** True when this message is the LAST of a multi-attachment batch (same metadata.batchId run). */
+  isLastInBatch?: boolean;
 }
 
 // ==================== Scroll State Types ====================

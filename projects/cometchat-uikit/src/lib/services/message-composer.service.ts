@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { Subject, debounceTime, switchMap, of, catchError } from 'rxjs';
 import { CometChatLogger } from '../utils/CometChatLogger';
+import { isMediaMessage } from '../utils/message-metadata-utils';
 import type { ErrorCallback, MentionSuggestion, PollCreatePayload, CollaborativePayload } from './message-composer.types';
 import {
   handleComposerError,
@@ -149,9 +150,21 @@ export class MessageComposerService {
     finally { this.isSendingSignal.set(false); }
   }
 
+  /**
+   * Edit a message's text. For a media message the edited value is its CAPTION — sending a
+   * MediaMessage shell carrying only the id + caption, since `setText` is meaningless there.
+   */
   async editMessage(message: CometChat.BaseMessage, newText: string): Promise<CometChat.BaseMessage | null> {
     try {
       this.isSendingSignal.set(true);
+      if (isMediaMessage(message)) {
+        const shell = new CometChat.MediaMessage('', null as unknown as object, '', '');
+        shell.setId(message.getId());
+        shell.setCaption(newText);
+        const mentioned = message.getMentionedUsers?.() ?? [];
+        if (mentioned.length > 0) { shell.setMentionedUsers(mentioned); }
+        return await CometChat.editMessage(shell);
+      }
       const textMessage = message as CometChat.TextMessage;
       textMessage.setText(newText);
       return await CometChat.editMessage(textMessage);

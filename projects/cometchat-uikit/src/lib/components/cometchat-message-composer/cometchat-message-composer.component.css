@@ -134,6 +134,87 @@ cometchat-message-preview{
   word-break: break-word;
 }
 
+/* ── Media summary row: [icon] "3 Images" · caption ──────────────────────
+   Shared by the edit and reply banners. The label and separator never shrink; only the caption
+   ellipsises, so "3 Images ·" stays readable however long the caption is.
+
+   Chained with the base class so this wins regardless of source order — the edit banner's base
+   rule sets `display: -webkit-box` further down the file, which would otherwise override the
+   flex row and drop both the gap and the icon's vertical centering. */
+.cometchat-message-composer__edit-preview-subtitle.cometchat-message-composer__edit-preview-subtitle--media,
+.cometchat-message-composer__reply-preview-subtitle.cometchat-message-composer__reply-preview-subtitle--media {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-1, 4px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cometchat-message-composer__edit-preview-media-icon,
+.cometchat-message-composer__reply-preview-media-icon {
+  width: var(--cometchat-message-composer-preview-media-icon-size, 16px);
+  height: var(--cometchat-message-composer-preview-media-icon-size, 16px);
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.cometchat-message-composer__edit-preview-media-label,
+.cometchat-message-composer__reply-preview-media-label,
+.cometchat-message-composer__edit-preview-separator,
+.cometchat-message-composer__reply-preview-separator {
+  flex-shrink: 0;
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+
+.cometchat-message-composer__edit-preview-caption,
+.cometchat-message-composer__reply-preview-caption {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-text-color-secondary);
+}
+
+/* The caption is sanitized markdown, so it can contain block elements. Keep them on one line —
+   as a flex item the caption span would otherwise grow to fit a <p>'s default margins. */
+.cometchat-message-composer__edit-preview-caption p,
+.cometchat-message-composer__edit-preview-caption blockquote,
+.cometchat-message-composer__edit-preview-caption pre,
+.cometchat-message-composer__edit-preview-caption ul,
+.cometchat-message-composer__edit-preview-caption ol,
+.cometchat-message-composer__edit-preview-caption li,
+.cometchat-message-composer__edit-preview-caption h1,
+.cometchat-message-composer__edit-preview-caption h2,
+.cometchat-message-composer__edit-preview-caption h3,
+.cometchat-message-composer__edit-preview-caption h4,
+.cometchat-message-composer__edit-preview-caption h5,
+.cometchat-message-composer__edit-preview-caption h6,
+.cometchat-message-composer__edit-preview-caption div,
+.cometchat-message-composer__reply-preview-caption p,
+.cometchat-message-composer__reply-preview-caption blockquote,
+.cometchat-message-composer__reply-preview-caption pre,
+.cometchat-message-composer__reply-preview-caption ul,
+.cometchat-message-composer__reply-preview-caption ol,
+.cometchat-message-composer__reply-preview-caption li,
+.cometchat-message-composer__reply-preview-caption h1,
+.cometchat-message-composer__reply-preview-caption h2,
+.cometchat-message-composer__reply-preview-caption h3,
+.cometchat-message-composer__reply-preview-caption h4,
+.cometchat-message-composer__reply-preview-caption h5,
+.cometchat-message-composer__reply-preview-caption h6,
+.cometchat-message-composer__reply-preview-caption div {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+
 /* Reset block-level elements inside reply preview to inline for single-line display */
 .cometchat-message-composer__reply-preview-subtitle p,
 .cometchat-message-composer__reply-preview-subtitle blockquote,
@@ -1347,6 +1428,23 @@ cometchat-message-preview{
   --cometchat-button-background-hover: transparent;
 }
 
+/* Disabled trigger (e.g. attachment/sticker buttons while editing a message):
+   keep the icon at its resting colour on hover and show a not-allowed cursor.
+   pointer-events:none on the inner button lets the wrapper's not-allowed cursor
+   win in Chrome, which ignores `cursor` on disabled form controls. */
+.cometchat-message-composer__attachment-button-inner:has(.cometchat-button:disabled),
+.cometchat-message-composer__sticker-button-inner:has(.cometchat-button:disabled) {
+  cursor: not-allowed;
+}
+.cometchat-message-composer__attachment-button-inner:has(.cometchat-button:disabled):hover,
+.cometchat-message-composer__sticker-button-inner:has(.cometchat-button:disabled):hover {
+  --cometchat-button-icon-background: var(--cometchat-icon-color-secondary);
+}
+.cometchat-message-composer__attachment-button-inner:has(.cometchat-button:disabled) .cometchat-button,
+.cometchat-message-composer__sticker-button-inner:has(.cometchat-button:disabled) .cometchat-button {
+  pointer-events: none;
+}
+
 /* Active state - primary background with white icon when popover is open */
 .cometchat-message-composer__attachment-button-inner--active,
 .cometchat-message-composer__emoji-button-inner--active,
@@ -1417,42 +1515,69 @@ cometchat-message-preview{
 
 /* ==================== Drop Zone Overlay ==================== */
 
+/* A dim scrim over the whole composer — no dashed outline, no inner card. The staged tiles stay
+   faintly readable through it, which is the point of 92% rather than a solid fill.
+   `--cometchat-backdrop-color` is NOT defined by this library; without the literal fallback the
+   whole `background` declaration is invalid and the scrim disappears entirely. */
 .cometchat-message-composer__drop-zone {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--cometchat-message-composer-drop-zone-background, var(--cometchat-backdrop-color));
-  border: var(--cometchat-message-composer-drop-zone-border, 2px dashed var(--cometchat-primary-color));
-  border-radius: var(--cometchat-message-composer-drop-zone-border-radius, var(--cometchat-radius-2));
-  z-index: var(--cometchat-message-composer-drop-zone-z-index, 10);
+  gap: var(--cometchat-message-composer-drop-zone-content-gap, var(--cometchat-spacing-1, 4px));
+  background: var(
+    --cometchat-message-composer-drop-zone-background,
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--cometchat-static-black, #000000) 80%, var(--cometchat-static-white, #ffffff))
+        92%,
+      transparent
+    )
+  );
+  border: none;
+  border-radius: var(--cometchat-message-composer-drop-zone-border-radius, var(--cometchat-radius-3));
+  /* The scrim must never intercept the drop — the composer below owns the dragover/drop events. */
+  pointer-events: none;
+  z-index: var(--cometchat-message-composer-drop-zone-z-index, 5);
 }
 
 .cometchat-message-composer__drop-zone-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--cometchat-message-composer-drop-zone-content-gap, var(--cometchat-spacing-2));
-  padding: var(--cometchat-message-composer-drop-zone-content-padding, var(--cometchat-padding-4, 16px));
-  background: var(--cometchat-message-composer-drop-zone-content-background, var(--cometchat-background-color-01));
-  border-radius: var(--cometchat-message-composer-drop-zone-content-border-radius, var(--cometchat-radius-2));
+  gap: var(--cometchat-message-composer-drop-zone-content-gap, var(--cometchat-spacing-1, 4px));
 }
 
+/* Masked so it takes the label's colour. */
 .cometchat-message-composer__drop-zone-icon {
-  font-size: var(--cometchat-message-composer-drop-zone-icon-font-size, 32px);
+  width: var(--cometchat-message-composer-drop-zone-icon-size, 16px);
+  height: var(--cometchat-message-composer-drop-zone-icon-size, 16px);
+  background-color: var(--cometchat-message-composer-drop-zone-text-color, var(--cometchat-static-white, #ffffff));
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .cometchat-message-composer__drop-zone-text {
-  font: var(--cometchat-message-composer-drop-zone-text-font, var(--cometchat-font-body-medium));
-  color: var(--cometchat-message-composer-drop-zone-text-color, var(--cometchat-text-color-primary));
+  font-size: var(--cometchat-message-composer-drop-zone-text-font-size, 14px);
+  font-weight: 700;
+  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  color: var(--cometchat-message-composer-drop-zone-text-color, var(--cometchat-static-white, #ffffff));
 }
 .cometchat-message-composer__input-section--multiline .cometchat-message-composer__rich-text-editor{
      padding-bottom: var(--cometchat-padding-2);
   }
+/* Multiline stacks the input above the action-button row, where the input's border-bottom read as an
+   unwanted divider between the two — so drop it. The staging tray sits ABOVE the input and carries
+   its own divider, which is the only line wanted in this layout. */
+.cometchat-message-composer__input-section--multiline .cometchat-message-composer__rich-text-editor {
+  border-bottom: none;
+}
 /* ==================== Recording State ==================== */
 /**
  * Recording state styles - kept for backward compatibility

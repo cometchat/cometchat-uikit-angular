@@ -25,10 +25,11 @@ import {CometChatContextMenuComponent, ContextMenuItem,} from '../base-elements/
 import {CometChatAvatarComponent} from '../base-elements/cometchat-avatar/cometchat-avatar.component';
 import {CometChatDateComponent} from '../base-elements/cometchat-date/cometchat-date.component';
 import {CometChatTextBubbleComponent} from '../cometchat-text-bubble/cometchat-text-bubble.component';
-import {CometChatImageBubbleComponent} from '../cometchat-image-bubble/cometchat-image-bubble.component';
-import {CometChatVideoBubbleComponent} from '../cometchat-video-bubble/cometchat-video-bubble.component';
-import {CometChatAudioBubbleComponent} from '../cometchat-audio-bubble/cometchat-audio-bubble.component';
-import {CometChatFileBubbleComponent} from '../cometchat-file-bubble/cometchat-file-bubble.component';
+import {CometChatImagesBubbleComponent} from '../cometchat-images-bubble/cometchat-images-bubble.component';
+import {CometChatVideosBubbleComponent} from '../cometchat-videos-bubble/cometchat-videos-bubble.component';
+import {CometChatFilesBubbleComponent} from '../cometchat-files-bubble/cometchat-files-bubble.component';
+import {CometChatAudiosBubbleComponent} from '../cometchat-audios-bubble/cometchat-audios-bubble.component';
+import {CometChatVoiceNoteBubbleComponent} from '../cometchat-voice-note-bubble/cometchat-voice-note-bubble.component';
 import {CometChatDeleteBubbleComponent} from '../cometchat-delete-bubble/cometchat-delete-bubble.component';
 import {CometChatActionBubbleComponent} from '../cometchat-action-bubble/cometchat-action-bubble.component';
 import {CometChatMessagePreviewComponent} from '../base-elements/cometchat-message-preview/cometchat-message-preview.component';
@@ -43,6 +44,7 @@ import {CometChatReactionsComponent} from '../cometchat-reactions';
 import {CometChatAIAssistantMessageBubble} from '../cometchat-ai-assistant-message-bubble/cometchat-ai-assistant-message-bubble.component';
 import {CometChatToolCallArgumentBubble} from '../cometchat-toolcall-argument-bubble/cometchat-toolcall-argument-bubble.component';
 import {CometChatToolCallResultBubble} from '../cometchat-toolcall-result-bubble/cometchat-toolcall-result-bubble.component';
+import {isVoiceNote} from '../../utils/message-metadata-utils';
 import {CometChatCardBubbleComponent} from '../cometchat-card-bubble/cometchat-card-bubble.component';
 
 const BUBBLE_TYPE_MAP: Record<string, string> = {
@@ -87,7 +89,7 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
   standalone: true,
   templateUrl: './cometchat-message-bubble.component.html',
   styleUrls: ['./cometchat-message-bubble.component.css'],
-  imports: [CommonModule, CometChatContextMenuComponent, CometChatAvatarComponent, CometChatDateComponent, CometChatTextBubbleComponent, CometChatImageBubbleComponent, CometChatVideoBubbleComponent, CometChatAudioBubbleComponent, CometChatFileBubbleComponent, CometChatDeleteBubbleComponent, CometChatActionBubbleComponent, CometChatMessagePreviewComponent, CometChatThreadViewComponent, CometChatPollBubbleComponent, CometChatCollaborativeDocumentBubbleComponent, CometChatCollaborativeWhiteboardBubbleComponent, CometChatStickerBubbleComponent, CometChatCallBubbleComponent, CometChatReactionsComponent, CometChatAIAssistantMessageBubble, CometChatToolCallArgumentBubble, CometChatToolCallResultBubble, CometChatCardBubbleComponent, TranslatePipe],
+  imports: [CommonModule, CometChatContextMenuComponent, CometChatAvatarComponent, CometChatDateComponent, CometChatTextBubbleComponent, CometChatImagesBubbleComponent, CometChatVideosBubbleComponent, CometChatAudiosBubbleComponent, CometChatVoiceNoteBubbleComponent, CometChatFilesBubbleComponent, CometChatDeleteBubbleComponent, CometChatActionBubbleComponent, CometChatMessagePreviewComponent, CometChatThreadViewComponent, CometChatPollBubbleComponent, CometChatCollaborativeDocumentBubbleComponent, CometChatCollaborativeWhiteboardBubbleComponent, CometChatStickerBubbleComponent, CometChatCallBubbleComponent, CometChatReactionsComponent, CometChatAIAssistantMessageBubble, CometChatToolCallArgumentBubble, CometChatToolCallResultBubble, CometChatCardBubbleComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CometChatMessageBubbleComponent
@@ -131,6 +133,9 @@ export class CometChatMessageBubbleComponent
   @Input() translatedText?: string;
   @Input() reactionsRequestBuilder?: CometChat.ReactionsRequestBuilder;
   @Input() disableInteraction = false;
+  /** When true (and left-aligned), reserve the avatar column even though the avatar is hidden, so
+   *  batch-continuation messages align under the first message of the batch. */
+  @Input({ transform: booleanAttribute }) reserveLeadingSpace = false;
   @Output() optionClick = new EventEmitter<ContextMenuItem>();
   @Output() replyPreviewClick = new EventEmitter<CometChat.BaseMessage>();
   @Output() avatarClick = new EventEmitter<CometChat.User>();
@@ -182,13 +187,22 @@ export class CometChatMessageBubbleComponent
     if (this.messageCategory === CometChatUIKitConstants.MessageCategory.card) return 'cometchat-message-bubble__card-message';
     return BUBBLE_TYPE_MAP[`${this.messageType}_${this.messageCategory}`] || '';
   }
+  /** A voice note is an audio message tagged with metadata.audioType (see isVoiceNote). */
+  private isVoiceNoteMessage(): boolean {
+    return isVoiceNote(this.message);
+  }
   get contentType(): string { return this.getBubbleType(); }
+  /** True for the multi-attachment per-type bubbles — used to force a consistent batch width. */
+  get isBatchBubble(): boolean {
+    const t = this.contentType;
+    return t === 'images-batch' || t === 'videos-batch' || t === 'audios-batch' || t === 'files-batch';
+  }
   getBubbleType(): string {
     if (!this.message) return 'unsupported';
     const category = this.messageCategory; const type = this.messageType;
     if (category === CometChatUIKitConstants.MessageCategory.call || category === 'call') return 'call';
     if (category === CometChatUIKitConstants.MessageCategory.action || category === 'action') return 'action';
-    if (category === CometChatUIKitConstants.MessageCategory.message || category === 'message') { switch (type) { case CometChatUIKitConstants.MessageTypes.text: return 'text'; case CometChatUIKitConstants.MessageTypes.image: return 'image'; case CometChatUIKitConstants.MessageTypes.video: return 'video'; case CometChatUIKitConstants.MessageTypes.audio: return 'audio'; case CometChatUIKitConstants.MessageTypes.file: return 'file'; default: return 'text'; } }
+    if (category === CometChatUIKitConstants.MessageCategory.message || category === 'message') { if (type === CometChatUIKitConstants.MessageTypes.image) return 'images-batch'; if (type === CometChatUIKitConstants.MessageTypes.video) return 'videos-batch'; if (type === CometChatUIKitConstants.MessageTypes.file) return 'files-batch'; if (type === CometChatUIKitConstants.MessageTypes.audio) return this.isVoiceNoteMessage() ? 'voice-note' : 'audios-batch'; return 'text'; }
     if (category === CometChatUIKitConstants.MessageCategory.custom || category === 'custom') { if (type === CometChatUIKitConstants.ExtensionTypes.poll) return 'poll'; if (type === CometChatUIKitConstants.ExtensionTypes.sticker) return 'sticker'; if (type === CometChatUIKitConstants.ExtensionTypes.document) return 'document'; if (type === CometChatUIKitConstants.ExtensionTypes.whiteboard) return 'whiteboard'; if (type === CometChatUIKitConstants.calls.meeting) return 'meeting'; }
     if (category === CometChatUIKitConstants.MessageCategory.card || category === 'card') return 'card';
     return CONTENT_TYPE_MAP[`${type}_${category}`] || 'unsupported';
@@ -324,7 +338,32 @@ export class CometChatMessageBubbleComponent
   get moderationStatus(): string { if (!this.message) return CometChatUIKitConstants.moderationStatus.unmoderated; if (typeof (this.message as any).getModerationStatus === 'function') return (this.message as any).getModerationStatus() || CometChatUIKitConstants.moderationStatus.unmoderated; return CometChatUIKitConstants.moderationStatus.unmoderated; }
   get isPendingModeration(): boolean { return this.moderationStatus === CometChatUIKitConstants.moderationStatus.pending; }
   get isDisapprovedByModeration(): boolean { return this.moderationStatus === CometChatUIKitConstants.moderationStatus.disapproved; }
-  get shouldShowModerationIndicator(): boolean { if (this.effectiveHideModerationView()) return false; if (this.isDeleted) return false; if (this.messageCategory === CometChatUIKitConstants.MessageCategory.action) return false; return this.isDisapprovedByModeration; }
+  // Only the sender sees the moderation notice — a disapproved message is invisible to everyone else,
+  // so showing "your message was blocked" to a viewer would be wrong. Mirrors the React kit's
+  // getIsMessageModerated (`loggedInUser === sender`); isOutgoing treats a not-yet-sent (senderless)
+  // message as mine too.
+  get shouldShowModerationIndicator(): boolean { if (this.effectiveHideModerationView()) return false; if (this.isDeleted) return false; if (this.messageCategory === CometChatUIKitConstants.MessageCategory.action) return false; if (!this.isOutgoing) return false; return this.isDisapprovedByModeration; }
+  /** SDK error on the message — either set directly on it or stashed in its metadata. */
+  private get messageError(): { code?: string } | null { const m = this.message as any; if (!m) return null; return m.error || m.getMetadata?.()?.error || null; }
+  /** Any send/processing error — drives the error receipt tick (see {@link showErrorReceipt}). */
+  get hasMessageError(): boolean { return !!this.messageError; }
+  // A message the server refused on policy grounds (e.g. a disallowed attachment type) carries
+  // ERR_PERMISSION_DENIED. Sender-only, and a message rejected before reaching the server has no
+  // sender yet — so a missing sender counts as mine. Mirrors React's getIsPermissionDeniedError.
+  get isPermissionDeniedError(): boolean { if (!this.message) return false; if (this.messageError?.code !== 'ERR_PERMISSION_DENIED') return false; return this.isOutgoing; }
+  get shouldShowPermissionDeniedIndicator(): boolean { if (this.isDeleted) return false; if (this.messageCategory === CometChatUIKitConstants.MessageCategory.action) return false; return this.isPermissionDeniedError; }
+  /**
+   * True when EITHER block notice (moderation-disapproved or permission-denied) is showing. Both
+   * render the same footer banner, so the body must get the same treatment for both: square off the
+   * bottom corners and drop the batch media-padding, so the banner reads as the bubble's rounded
+   * bottom instead of a detached card floating over a strip of bubble background.
+   */
+  get shouldShowBlockNotice(): boolean { return this.shouldShowModerationIndicator || this.shouldShowPermissionDeniedIndicator; }
+  /** Localization key for whichever block notice is showing (moderation takes precedence). */
+  get moderationIndicatorTextKey(): string { return this.shouldShowModerationIndicator ? 'moderation_block_message' : 'file_type_not_allowed'; }
+  // Besides the explicit `showError` input, a disapproved message or one carrying a send error flips
+  // the sender's receipt to the error tick — matching React's MessageReceiptUtils.getReceiptStatus.
+  get showErrorReceipt(): boolean { if (this.showError) return true; return this.isOutgoing && (this.isDisapprovedByModeration || this.hasMessageError); }
   moderationIndicatorWidth = computed(() => { const w = this.contentViewWidth(); return w >= 240 ? `calc(${w}px + var(--cometchat-padding-1) * 2)` : '240px'; });
 
   get messageTypeKey(): string { if (!this.message) return ''; return `${this.messageType}_${this.messageCategory}`; }

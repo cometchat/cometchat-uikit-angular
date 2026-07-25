@@ -4,8 +4,10 @@ import {CometChatMentionsFormatter} from '../../formatters/cometchat-mentions-fo
 import {CometChatUIKit} from '../../cometchat-uikit';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
+import {getMediaCaption, isMediaMessage} from '../../utils/message-metadata-utils';
+import {convertInlineMarkdownToHtml} from '../../utils/inline-markdown';
 
-export function enterEditModeImpl(ctx: any, message: CometChat.TextMessage): void {
+export function enterEditModeImpl(ctx: any, message: CometChat.TextMessage | CometChat.MediaMessage): void {
   if (ctx._enteringEditMode) { return; }
   ctx._enteringEditMode = true;
   try {
@@ -15,11 +17,22 @@ export function enterEditModeImpl(ctx: any, message: CometChat.TextMessage): voi
     ctx.originalTextBeforeEdit = ctx.composerText();
     ctx.textMessageToEdit.set(message);
     ctx.isEditMode.set(true);
-    const messageText = message.getText?.() || '';
+    // A media message is edited through its CAPTION; a text message through its text.
+    const isMedia = isMediaMessage(message);
+    const messageText = isMedia
+      ? getMediaCaption(message)
+      : (message as CometChat.TextMessage).getText?.() || '';
     ctx.composerText.set(messageText);
     if (ctx.customRichTextEditor) {
+      // A caption carries the same markdown a text body does, so it needs the same markdown → rich
+      // nodes conversion. `setContent` writes the string in verbatim, which surfaced the raw `**`.
+      // getText() is absent on a MediaMessage, hence passing the caption as rawText.
       if (ctx.enableRichText) {
-        populateEditorWithFormattedTextImpl(ctx, message);
+        populateEditorWithFormattedTextImpl(
+          ctx,
+          message as CometChat.TextMessage,
+          isMedia ? messageText : undefined,
+        );
       } else {
         ctx.richTextEditorService.setContent(ctx.customRichTextEditor, messageText);
       }
@@ -41,9 +54,10 @@ export function enterEditModeImpl(ctx: any, message: CometChat.TextMessage): voi
   }
 }
 
-export function populateEditorWithFormattedTextImpl(ctx: any, message: CometChat.TextMessage): void {
+/** @param rawText overrides `message.getText()` — pass a media message's CAPTION here. */
+export function populateEditorWithFormattedTextImpl(ctx: any, message: CometChat.TextMessage, rawText?: string): void {
   if (!ctx.customRichTextEditor) { return; }
-  const messageText = message.getText?.() || '';
+  const messageText = (rawText === undefined ? message.getText?.() : rawText) || '';
   const mentionedUsers = message.getMentionedUsers?.() || [];
   ctx.richTextEditorService.setContentWithMentions(
     ctx.customRichTextEditor,
@@ -90,10 +104,16 @@ export function exitEditModeWithoutEventImpl(ctx: any): void {
   }
 }
 
-export function formatReplyPreviewTextImpl(ctx: any, message: CometChat.TextMessage): string {
-  const text = message.getText() || '';
-  if (!text) {
-    // Fallback: no text — try metadata as last resort
+/**
+ * @param rawText overrides `message.getText()` — pass a media message's CAPTION here. When given,
+ *   the `metadata.richText` shortcut is skipped: that pre-rendered HTML describes the message BODY,
+ *   and substituting it for a caption would show the wrong text.
+ */
+export function formatReplyPreviewTextImpl(ctx: any, message: CometChat.TextMessage, rawText?: string): string {
+  const isMessageBody = rawText === undefined;
+  const text = (isMessageBody ? message.getText?.() : rawText) || '';
+  if (!text) { return ''; }
+  if (isMessageBody) {
     try {
       const metadata = message.getMetadata?.() as Record<string, any> | undefined;
       const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
@@ -102,7 +122,6 @@ export function formatReplyPreviewTextImpl(ctx: any, message: CometChat.TextMess
         if (sanitized) return flattenListsForPreview(sanitized);
       }
     } catch { /* ignore */ }
-    return '';
   }
   const loggedInUser = CometChatUIKit.getLoggedInUser();
   const formatters = ctx.formatterConfigService.getFormattersWithContext(
@@ -164,10 +183,12 @@ function flattenListsForPreview(html: string): string {
   return tempDiv.innerHTML;
 }
 
-export function formatEditPreviewTextImpl(ctx: any, message: CometChat.TextMessage): string {
-  const text = message.getText() || '';
-  if (!text) {
-    // Fallback: no text — try metadata as last resort
+/** @param rawText overrides `message.getText()` — see {@link formatReplyPreviewTextImpl}. */
+export function formatEditPreviewTextImpl(ctx: any, message: CometChat.TextMessage, rawText?: string): string {
+  const isMessageBody = rawText === undefined;
+  const text = (isMessageBody ? message.getText?.() : rawText) || '';
+  if (!text) { return ''; }
+  if (isMessageBody) {
     try {
       const metadata = message.getMetadata?.() as Record<string, any> | undefined;
       const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
@@ -176,7 +197,6 @@ export function formatEditPreviewTextImpl(ctx: any, message: CometChat.TextMessa
         if (sanitized) return sanitized;
       }
     } catch { /* ignore */ }
-    return '';
   }
   const loggedInUser = CometChatUIKit.getLoggedInUser();
   const formatters = ctx.formatterConfigService.getFormattersWithContext(

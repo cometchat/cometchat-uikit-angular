@@ -1,0 +1,126 @@
+<div
+  class="cometchat-audios-bubble"
+  [class.cometchat-audios-bubble--sender]="isSender"
+>
+  <!-- Multiple audio files read as one grouped stack, as in the React kit. -->
+  <div
+    class="cometchat-audios-bubble__container"
+    [class.cometchat-audios-bubble__container--multi]="isMulti"
+  >
+    <!-- Up to COLLAPSED_MAX (3) rows; all of them once expanded. The collapsed slice is a prefix,
+         so $index still indexes `states` correctly. -->
+    @for (att of visibleAttachments; track att.url; let i = $index) {
+      <div class="cometchat-audios-bubble__item" [class.cometchat-audios-bubble__item--unsupported]="isUnsupported(i)">
+        @if (isUnsupported(i)) {
+          <!-- Not a playable audio file (unsupported type / broken link): render like a file row. -->
+          <img class="cometchat-audios-bubble__file-icon" [src]="unsupportedIconUrl" alt="" aria-hidden="true" />
+          <span class="cometchat-audios-bubble__name cometchat-audios-bubble__name--file" [title]="att.name">{{ att.name }}</span>
+        } @else {
+          <button
+            type="button"
+            class="cometchat-audios-bubble__play"
+            [attr.aria-label]="(states[i].playing ? 'audio_bubble_pause' : 'audio_bubble_play') | translate"
+            (click)="togglePlay(i, audioEl)"
+          >
+            <div
+              class="cometchat-audios-bubble__play-icon"
+              aria-hidden="true"
+              [style.-webkit-mask-image]="'url(' + (states[i].playing ? pauseIconUrl : playIconUrl) + ')'"
+              [style.mask-image]="'url(' + (states[i].playing ? pauseIconUrl : playIconUrl) + ')'"
+            ></div>
+          </button>
+
+          <!-- Filename, then the seek bar, then the elapsed/total time BELOW it (per design). -->
+          <div class="cometchat-audios-bubble__body">
+            <span class="cometchat-audios-bubble__name" [title]="att.name">{{ att.name }}</span>
+            <input
+              type="range"
+              class="cometchat-audios-bubble__slider"
+              min="0"
+              [max]="states[i].duration || 0"
+              step="0.1"
+              [value]="states[i].currentTime"
+              [attr.aria-label]="att.name"
+              (input)="onSeek(i, audioEl, $event)"
+            />
+            <span class="cometchat-audios-bubble__duration">
+              {{ formatTime(states[i].currentTime) }}/{{ formatTime(states[i].duration) }}
+            </span>
+          </div>
+
+          <audio
+            #audioEl
+            [src]="att.url"
+            preload="metadata"
+            (timeupdate)="onTimeUpdate(i, audioEl)"
+            (loadedmetadata)="onLoadedMetadata(i, audioEl)"
+            (ended)="onEnded(i)"
+            (error)="onAudioError(i)"
+          ></audio>
+        }
+
+        <button
+          *ngIf="att.url"
+          type="button"
+          class="cometchat-audios-bubble__download"
+          [attr.aria-label]="'file_bubble_download' | translate"
+          (click)="download(att)"
+        >
+          <div
+            class="cometchat-audios-bubble__download-icon"
+            aria-hidden="true"
+            [style.-webkit-mask-image]="'url(' + downloadIconUrl + ')'"
+            [style.mask-image]="'url(' + downloadIconUrl + ')'"
+          ></div>
+        </button>
+      </div>
+    }
+
+    <!-- "Show N more" (collapsed) -->
+    @if (hasOverflow && !isExpanded) {
+      <button
+        type="button"
+        class="cometchat-audios-bubble__toggle"
+        [attr.aria-expanded]="false"
+        (click)="toggleExpanded()"
+      >
+        <span
+          class="cometchat-audios-bubble__toggle-icon"
+          aria-hidden="true"
+          [style.-webkit-mask-image]="'url(' + expandIconUrl + ')'"
+          [style.mask-image]="'url(' + expandIconUrl + ')'"
+        ></span>
+        {{ getShowMoreLabel() }}
+      </button>
+    }
+
+    <!-- "Show less" (expanded) -->
+    @if (hasOverflow && isExpanded) {
+      <button
+        type="button"
+        class="cometchat-audios-bubble__toggle"
+        [attr.aria-expanded]="true"
+        (click)="toggleExpanded()"
+      >
+        <span
+          class="cometchat-audios-bubble__toggle-icon"
+          aria-hidden="true"
+          [style.-webkit-mask-image]="'url(' + collapseIconUrl + ')'"
+          [style.mask-image]="'url(' + collapseIconUrl + ')'"
+        ></span>
+        {{ 'file_bubble_show_less' | translate }}
+      </button>
+    }
+  </div>
+
+  <!-- Caption via the text bubble, so mentions / URLs / link previews format the same way they
+       do on the image, video and file bubbles. -->
+  @if (captionText) {
+    <div class="cometchat-audios-bubble__caption">
+      <cometchat-text-bubble
+        [message]="$any(message)"
+        [alignment]="alignment"
+      ></cometchat-text-bubble>
+    </div>
+  }
+</div>

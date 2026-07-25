@@ -453,7 +453,7 @@ describe('CometChatContextMenuComponent', () => {
       expect(getSubMenuItems().length).toBe(0);
     });
 
-    it('should apply destructive modifier for delete items', () => {
+    it('does NOT special-case delete items with a destructive/red modifier (React parity)', () => {
       component.data = createSampleActions(5);
       component.topMenuSize = 2;
       fixture.detectChanges();
@@ -461,12 +461,13 @@ describe('CometChatContextMenuComponent', () => {
       component.handleMenuClick();
       fixture.detectChanges();
 
-      // 'delete' is at subMenu index 1 (data index 2, subMenu starts at 1)
+      // React's context menu tints every icon the same neutral colour — delete is not styled red.
       const subItems = getSubMenuItems();
       const deleteItem = Array.from(subItems).find(item => item.id === 'delete');
+      expect(deleteItem).toBeTruthy();
       expect(
         deleteItem?.classList.contains('cometchat-menu-list__sub-menu-list-item--destructive')
-      ).toBe(true);
+      ).toBe(false);
     });
   });
 

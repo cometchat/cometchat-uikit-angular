@@ -37,6 +37,7 @@ import { ensureSdkReady, sdkCleanup } from '../../testing';
 import { flushPromises } from '../../testing';
 import { CometChatMessageBubbleComponent } from './cometchat-message-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { CometChatUIKitConstants } from '../../constants';
 
 // ---------------------------------------------------------------------------
 // Test-only wrapper that exposes ng-template refs for template override tests
@@ -304,49 +305,70 @@ describe('CometChatMessageBubbleComponent', () => {
       expect(el.querySelector('cometchat-image-bubble')).toBeNull();
     });
 
-    it('should resolve contentType to "image" for an image MediaMessage', () => {
+    it('routes an image message to "images-batch"', () => {
       component.message = createImageMessage();
-      expect(component.contentType).toBe('image');
+      expect(component.contentType).toBe('images-batch');
     });
 
-    it('should render cometchat-image-bubble for image messages', async () => {
+    it('should render cometchat-images-bubble for image messages', async () => {
       component.message = createImageMessage();
       await initAndDetect(fixture);
-      expect(el.querySelector('cometchat-image-bubble')).toBeTruthy();
+      expect(el.querySelector('cometchat-images-bubble')).toBeTruthy();
       expect(el.querySelector('cometchat-text-bubble')).toBeNull();
     });
 
-    it('should resolve contentType to "video" for a video MediaMessage', () => {
+    it('routes a video message to "videos-batch"', () => {
       component.message = createVideoMessage();
-      expect(component.contentType).toBe('video');
+      expect(component.contentType).toBe('videos-batch');
     });
 
-    it('should render cometchat-video-bubble for video messages', async () => {
+    it('should render cometchat-videos-bubble for video messages', async () => {
       component.message = createVideoMessage();
       await initAndDetect(fixture);
-      expect(el.querySelector('cometchat-video-bubble')).toBeTruthy();
+      expect(el.querySelector('cometchat-videos-bubble')).toBeTruthy();
     });
 
-    it('should resolve contentType to "audio" for an audio MediaMessage', () => {
+    it('routes an audio (file) message to "audios-batch"', () => {
       component.message = createAudioMessage();
-      expect(component.contentType).toBe('audio');
+      expect(component.contentType).toBe('audios-batch');
     });
 
-    it('should render cometchat-audio-bubble for audio messages', async () => {
+    it('routes a voice-note audio message (metadata.audioType) to "voice-note"', () => {
+      const audio = createAudioMessage();
+      audio.setMetadata({ audioType: 'voice_note' } as unknown as Record<string, unknown>);
+      component.message = audio;
+      expect(component.contentType).toBe('voice-note');
+    });
+
+    it('still routes the LEGACY camelCase audioType to "voice-note" (already-sent messages)', () => {
+      const audio = createAudioMessage();
+      audio.setMetadata({ audioType: 'voiceNote' } as unknown as Record<string, unknown>);
+      component.message = audio;
+      expect(component.contentType).toBe('voice-note');
+    });
+
+    it('does not treat an unrelated audioType as a voice note', () => {
+      const audio = createAudioMessage();
+      audio.setMetadata({ audioType: 'podcast' } as unknown as Record<string, unknown>);
+      component.message = audio;
+      expect(component.contentType).toBe('audios-batch');
+    });
+
+    it('renders cometchat-audios-bubble for audio-file messages by default', async () => {
       component.message = createAudioMessage();
       await initAndDetect(fixture);
-      expect(el.querySelector('cometchat-audio-bubble')).toBeTruthy();
+      expect(el.querySelector('cometchat-audios-bubble')).toBeTruthy();
     });
 
-    it('should resolve contentType to "file" for a file MediaMessage', () => {
+    it('routes a file message to "files-batch"', () => {
       component.message = createFileMessage();
-      expect(component.contentType).toBe('file');
+      expect(component.contentType).toBe('files-batch');
     });
 
-    it('should render cometchat-file-bubble for file messages', async () => {
+    it('should render cometchat-files-bubble for file messages', async () => {
       component.message = createFileMessage();
       await initAndDetect(fixture);
-      expect(el.querySelector('cometchat-file-bubble')).toBeTruthy();
+      expect(el.querySelector('cometchat-files-bubble')).toBeTruthy();
     });
 
     it('should resolve contentType to "poll" for extension_poll custom message', () => {
@@ -793,6 +815,150 @@ describe('CometChatMessageBubbleComponent', () => {
 
       component.message = createFileMessage();
       expect(component.isMediaMessage).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Moderation / permission-denied notice + error receipt (React parity)
+  // ---------------------------------------------------------------------------
+  describe('Moderation, permission-denied & error receipt', () => {
+    const M = CometChatUIKitConstants.moderationStatus;
+    const ME = { getUid: () => 'me' } as any;
+    const setSender = (msg: any, uid: string | null) =>
+      (msg.getSender = () => (uid ? { getUid: () => uid } : undefined));
+    const withModeration = (msg: any, status: string) => (msg.getModerationStatus = () => status);
+
+    beforeEach(() => {
+      component.loggedInUser = ME;
+    });
+
+    describe('shouldShowModerationIndicator is sender-only', () => {
+      it('shows for a disapproved message that I sent', () => {
+        const msg = createTextMessage('blocked');
+        withModeration(msg, M.disapproved);
+        setSender(msg, 'me');
+        component.message = msg;
+        expect(component.shouldShowModerationIndicator).toBe(true);
+      });
+
+      it('shows for a disapproved message with no sender yet (locally rejected = mine)', () => {
+        const msg = createTextMessage('blocked');
+        withModeration(msg, M.disapproved);
+        setSender(msg, null);
+        component.message = msg;
+        expect(component.shouldShowModerationIndicator).toBe(true);
+      });
+
+      it('does NOT show a disapproved message sent by someone else', () => {
+        const msg = createTextMessage('blocked');
+        withModeration(msg, M.disapproved);
+        setSender(msg, 'other');
+        component.message = msg;
+        expect(component.shouldShowModerationIndicator).toBe(false);
+      });
+
+      it('is suppressed when hideModerationView is set', () => {
+        const msg = createTextMessage('blocked');
+        withModeration(msg, M.disapproved);
+        setSender(msg, 'me');
+        component.message = msg;
+        component.hideModerationView = true;
+        expect(component.shouldShowModerationIndicator).toBe(false);
+      });
+
+      it('uses the moderation text key', () => {
+        const msg = createTextMessage('blocked');
+        withModeration(msg, M.disapproved);
+        setSender(msg, 'me');
+        component.message = msg;
+        expect(component.moderationIndicatorTextKey).toBe('moderation_block_message');
+      });
+    });
+
+    describe('permission-denied ("file type not allowed") notice', () => {
+      it('shows for my message carrying ERR_PERMISSION_DENIED on .error', () => {
+        const msg = createFileMessage();
+        setSender(msg, 'me');
+        (msg as any).error = { code: 'ERR_PERMISSION_DENIED' };
+        component.message = msg;
+        expect(component.shouldShowPermissionDeniedIndicator).toBe(true);
+        expect(component.moderationIndicatorTextKey).toBe('file_type_not_allowed');
+      });
+
+      it('reads the code from metadata.error too', () => {
+        const msg = createFileMessage();
+        setSender(msg, 'me');
+        (msg as any).getMetadata = () => ({ error: { code: 'ERR_PERMISSION_DENIED' } });
+        component.message = msg;
+        expect(component.shouldShowPermissionDeniedIndicator).toBe(true);
+      });
+
+      it('ignores a different error code', () => {
+        const msg = createFileMessage();
+        setSender(msg, 'me');
+        (msg as any).error = { code: 'ERR_SOMETHING_ELSE' };
+        component.message = msg;
+        expect(component.shouldShowPermissionDeniedIndicator).toBe(false);
+      });
+
+      it('is sender-only', () => {
+        const msg = createFileMessage();
+        setSender(msg, 'other');
+        (msg as any).error = { code: 'ERR_PERMISSION_DENIED' };
+        component.message = msg;
+        expect(component.shouldShowPermissionDeniedIndicator).toBe(false);
+      });
+
+      it('is NOT suppressed by hideModerationView (matches React)', () => {
+        const msg = createFileMessage();
+        setSender(msg, 'me');
+        (msg as any).error = { code: 'ERR_PERMISSION_DENIED' };
+        component.message = msg;
+        component.hideModerationView = true;
+        expect(component.shouldShowPermissionDeniedIndicator).toBe(true);
+      });
+    });
+
+    describe('showErrorReceipt flips the tick to error', () => {
+      it('is true for my disapproved message', () => {
+        const msg = createTextMessage('blocked');
+        withModeration(msg, M.disapproved);
+        setSender(msg, 'me');
+        component.message = msg;
+        expect(component.showErrorReceipt).toBe(true);
+      });
+
+      it('is true for my message with any send error', () => {
+        const msg = createFileMessage();
+        setSender(msg, 'me');
+        (msg as any).error = { code: 'ERR_PERMISSION_DENIED' };
+        component.message = msg;
+        expect(component.showErrorReceipt).toBe(true);
+      });
+
+      it('honours the explicit showError input regardless of sender', () => {
+        const msg = createTextMessage('hi');
+        setSender(msg, 'other');
+        component.message = msg;
+        component.showError = true;
+        expect(component.showErrorReceipt).toBe(true);
+      });
+
+      it('is false for a healthy approved message of mine', () => {
+        const msg = createTextMessage('hi');
+        withModeration(msg, M.approved);
+        setSender(msg, 'me');
+        component.message = msg;
+        expect(component.showErrorReceipt).toBe(false);
+      });
+
+      it('is false for someone else\'s disapproved message', () => {
+        const msg = createTextMessage('blocked');
+        withModeration(msg, M.disapproved);
+        setSender(msg, 'other');
+        component.message = msg;
+        expect(component.showErrorReceipt).toBe(false);
+      });
     });
   });
 });

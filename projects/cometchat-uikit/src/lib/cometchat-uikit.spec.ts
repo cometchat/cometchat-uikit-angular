@@ -19,8 +19,9 @@ import { TestBed } from '@angular/core/testing';
 import { CometChatUIKit } from './cometchat-uikit';
 import { InitResult, LogoutResult } from './modals/CometChatUIKitInterfaces';
 import { UIKitSettings } from './UIKitSettings';
-import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChat, CometChatSettings } from '@cometchat/chat-sdk-javascript';
 import { CometChatUIKitLoginListener } from './CometChatUIKitLoginListener';
+import { _setCallsSDKForTesting } from './CometChatCalls';
 import { CometChatMessageEvents } from './events/CometChatMessageEvents';
 
 describe('CometChatUIKit Type Safety', () => {
@@ -195,6 +196,8 @@ function resetStaticState(): void {
   // Reset the BehaviorSubject by accessing the private field
   (CometChatUIKit as any)._loggedInUser?.next(null);
   (CometChatUIKit as any)._themeMode = 'light';
+  (CometChatUIKit as any)._cometChatSettings = null;
+  CometChatUIKit.callingReady = Promise.resolve();
 }
 
 // ==================== 1. Initialization Tests ====================
@@ -276,6 +279,125 @@ describe('CometChatUIKit Initialization', () => {
     await expect(CometChatUIKit.init(settings)!).rejects.toEqual(sdkError);
   });
 });
+
+// ==================== 1b. Calls SDK Init Routing (ENG-37367) ====================
+
+describe('CometChatUIKit Calls SDK init routing', () => {
+  let callsSDKMock: ReturnType<typeof createCallsSDKMock>;
+
+  beforeEach(() => {
+    resetStaticState();
+    callsSDKMock = createCallsSDKMock();
+    _setCallsSDKForTesting(callsSDKMock);
+    vi.spyOn(CometChat, 'getConversationUpdateSettings').mockResolvedValue({} as any);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    _setCallsSDKForTesting(null);
+    resetStaticState();
+  });
+
+  it('routes the Calls SDK through plain init() for developers (not ai-agent)', async () => {
+    vi.spyOn(CometChat, 'init').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+    await CometChatUIKit.init(createCallingSettings())!;
+    await CometChatUIKit.callingReady;
+
+    expect(callsSDKMock.init).toHaveBeenCalledWith({ appId: 'test-app-id', region: 'us' });
+    expect(callsSDKMock.initFromSettings).not.toHaveBeenCalled();
+  });
+
+  it('routes the Calls SDK through initFromSettings (ai-agent) when calling is enabled', async () => {
+    const settings = createAgentSettings();
+    vi.spyOn(CometChat, 'initFromSettings').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+    await CometChatUIKit.initFromSettings(settings);
+    await CometChatUIKit.callingReady;
+
+    expect(callsSDKMock.initFromSettings).toHaveBeenCalledWith(settings);
+    expect(callsSDKMock.init).not.toHaveBeenCalled();
+  });
+
+  it('does not initialize the Calls SDK when the settings file does not enable calling', async () => {
+    const settings = createAgentSettings();
+    delete (settings as any).uiKit.callsSDK;
+    vi.spyOn(CometChat, 'initFromSettings').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+    await CometChatUIKit.initFromSettings(settings);
+    await CometChatUIKit.callingReady;
+
+    expect(callsSDKMock.initFromSettings).not.toHaveBeenCalled();
+    expect(callsSDKMock.init).not.toHaveBeenCalled();
+  });
+
+  it('routes the Calls SDK through plain init() even after a prior ai-agent init', async () => {
+    // A prior initFromSettings() run captures ai-agent settings; a subsequent
+    // plain init() must clear them so developers keep plain Calls-SDK init.
+    vi.spyOn(CometChat, 'initFromSettings').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'init').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+    await CometChatUIKit.initFromSettings(createAgentSettings());
+    await CometChatUIKit.callingReady;
+    callsSDKMock.init.mockClear();
+    callsSDKMock.initFromSettings.mockClear();
+
+    await CometChatUIKit.init(createCallingSettings())!;
+    await CometChatUIKit.callingReady;
+
+    expect(callsSDKMock.init).toHaveBeenCalledWith({ appId: 'test-app-id', region: 'us' });
+    expect(callsSDKMock.initFromSettings).not.toHaveBeenCalled();
+  });
+
+  it('falls back to plain init() when the installed Calls SDK predates initFromSettings', async () => {
+    // The Calls SDK is an optional peer dependency — apps pinned below 5.0.3
+    // must keep working instead of throwing.
+    delete (callsSDKMock as any).initFromSettings;
+    vi.spyOn(CometChat, 'initFromSettings').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+    await CometChatUIKit.initFromSettings(createAgentSettings());
+    await CometChatUIKit.callingReady;
+
+    expect(callsSDKMock.init).toHaveBeenCalledWith({ appId: 'test-app-id', region: 'us' });
+  });
+});
+
+function createCallsSDKMock() {
+  return {
+    init: vi.fn().mockResolvedValue({ success: true, error: null }),
+    initFromSettings: vi.fn().mockResolvedValue({ success: true, error: null }),
+    loginWithAuthToken: vi.fn().mockResolvedValue({}),
+    CallAppSettingsBuilder: class {
+      private settings: Record<string, unknown> = {};
+      setAppId(appId: string) { this.settings['appId'] = appId; return this; }
+      setRegion(region: string) { this.settings['region'] = region; return this; }
+      build() { return this.settings; }
+    },
+  };
+}
+
+function createCallingSettings(): UIKitSettings {
+  return new UIKitSettings({
+    appId: 'test-app-id',
+    region: 'us',
+    authKey: 'test-auth-key',
+    callingEnabled: true,
+  } as any);
+}
+
+function createAgentSettings(): CometChatSettings {
+  return {
+    appId: 'test-app-id',
+    region: 'us',
+    credentials: { authKey: 'test-auth-key' },
+    uiKit: { callsSDK: true },
+  } as unknown as CometChatSettings;
+}
 
 // ==================== 2. Authentication Tests ====================
 

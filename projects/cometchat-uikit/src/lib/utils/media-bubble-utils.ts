@@ -36,17 +36,25 @@ export function extractMediaAttachments(
       return [];
     }
 
+    // Both the message-level thumbnail and the thumbnail-generation extension describe ONE image, so
+    // they are only meaningful when the message carries a single attachment. Applying them to every
+    // attachment of a batch gave each tile the same displayUrl, so the grid rendered the same picture
+    // repeated instead of the distinct images that were sent. A batch attachment falls back to its
+    // OWN thumbnail, then its own full url.
+    const isSingleAttachment = rawAttachments.length === 1;
+
     // Thumbnail may be stored at message metadata level (e.g. from mock data or some SDK versions)
     const messageMeta = (message as any).getMetadata?.() || {};
     const messageLevelThumbnail: string | undefined =
-      typeof messageMeta?.thumbnail === 'string' ? messageMeta.thumbnail : undefined;
+      isSingleAttachment && typeof messageMeta?.thumbnail === 'string' ? messageMeta.thumbnail : undefined;
 
     // CometChat Thumbnail Generation extension stores compressed URLs in:
     //   metadata["@injected"]["extensions"]["thumbnail-generation"]["url_medium"] (images)
     //   metadata["@injected"]["extensions"]["thumbnail-generation"]["url_small"]  (videos)
     const thumbnailGenExt = messageMeta?.['@injected']?.['extensions']?.['thumbnail-generation'];
-    const extensionThumbnailUrl: string | undefined =
-      mediaType === 'image'
+    const extensionThumbnailUrl: string | undefined = !isSingleAttachment
+      ? undefined
+      : mediaType === 'image'
         ? (typeof thumbnailGenExt?.['url_medium'] === 'string' ? thumbnailGenExt['url_medium'] : undefined)
         : (typeof thumbnailGenExt?.['url_small'] === 'string' ? thumbnailGenExt['url_small'] : undefined);
 

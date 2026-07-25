@@ -71,6 +71,12 @@ export function closeCurrentMediaPlayer(emitEvent = true): void {
   }
 }
 
+/**
+ * CometChatAudioBubbleComponent renders an audio message with a waveform player.
+ * @deprecated For audio *files*, prefer {@link CometChatAudiosBubbleComponent}, which the message
+ * bubble now renders for every non-voice-note audio message. This bubble is intentionally retained
+ * as the renderer for **voice notes** (via {@link CometChatVoiceNoteBubbleComponent}).
+ */
 @Component({
   selector: 'cometchat-audio-bubble',
   standalone: true,

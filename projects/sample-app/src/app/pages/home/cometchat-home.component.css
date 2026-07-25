@@ -20,7 +20,7 @@
   flex: 0 1 30%;
   flex-direction: column;
   max-width: 450px;
-  min-width: 280px;
+  min-width: 300px;
   height: 100%;
   border-right: none;
   background: var(--cometchat-background-color-01);
@@ -35,7 +35,7 @@
   flex-direction: column;
   flex: 1 1 40%;
   height: 100%;
-  min-width: 0;
+  min-width: 300px;
   background: var(--cometchat-background-color-03);
   overflow: hidden;
 }
@@ -47,7 +47,7 @@
   flex-direction: column;
   flex: 0 1 30%;
   max-width: 420px;
-  min-width: 280px;
+  min-width: 300px;
   height: 100%;
   /* border-left: 1px solid var(--cometchat-border-color-light); */
   background: var(--cometchat-background-color-01);
@@ -176,6 +176,7 @@
 
 .cometchat-home--mobile .cometchat-home__center-panel {
   width: 100%;
+  min-width: 100%;
 }
 
 .cometchat-home--mobile .cometchat-home__right-panel {

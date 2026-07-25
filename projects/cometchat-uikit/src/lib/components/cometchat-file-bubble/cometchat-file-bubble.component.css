@@ -93,13 +93,27 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: var(--cometchat-file-bubble-container-max-width, 400px);
+  /* Pinned to a fixed 240 (min == max), matching the React kit: the icon + filename + size row reads
+     the same at any bubble width, and a long filename ellipsises rather than stretching the bubble.
+     The batch wrapper still overrides the max via --cometchat-file-bubble-container-max-width so
+     every bubble in a batch shares one width. */
+  max-width: var(--cometchat-file-bubble-container-max-width, 240px);
+  min-width: var(--cometchat-file-bubble-min-width, 240px);
   padding: var(--cometchat-file-bubble-container-padding, var(--cometchat-padding-2));
-  padding-bottom: var(--cometchat-file-bubble-container-padding-bottom, var(--cometchat-padding-1));
-  border-radius: var(--cometchat-file-bubble-container-border-radius, var(--cometchat-radius-2));
-  gap: var(--cometchat-file-bubble-container-gap, var(--cometchat-spacing-2));
+  /* padding-bottom: var(--cometchat-file-bubble-container-padding-bottom, var(--cometchat-padding-1));
+  border-radius: var(--cometchat-file-bubble-container-border-radius, var(--cometchat-radius-2)); */
+  /* Row-to-row gap matches the inset each row already has from the bubble edge, so a multi-file
+     stack reads as evenly spaced rather than as rows pushed apart. */
+  gap: var(--cometchat-file-bubble-container-gap, var(--cometchat-spacing-1, 4px));
   transition: background-color 0.2s ease, border-color 0.2s ease;
   box-sizing: border-box;
+}
+
+/* The multi-file variant tightens ALL padding to 4px — each row already sits on its own tinted
+   surface, so it needs less inset from the bubble edge than a single (surface-less) file row. This
+   overrides both the base padding above and its padding-bottom. */
+.cometchat-file-bubble__container--multi {
+  padding: var(--cometchat-padding-1, 4px);
 }
 
 /* ============================================
@@ -111,6 +125,10 @@
   align-items: center;
   gap: var(--cometchat-file-bubble-file-item-gap, var(--cometchat-spacing-3, 12px));
   width: 100%;
+  /* border-box, because the multi-file variant adds padding to this row. With content-box the row
+     would measure 100% + padding, overflow the bubble, and have its right corners (and their
+     border-radius) clipped by the bubble's `overflow: hidden`. */
+  box-sizing: border-box;
 }
 
 /* ============================================
@@ -177,7 +195,14 @@
 }
 
 
+/* A plain :focus also fires on mouse click, which left the ring sitting on the button after
+   every download. Scope the indicator to :focus-visible so it shows for keyboard focus only —
+   clicking leaves no ring, tabbing still does. */
 .cometchat-file-bubble__download:focus {
+  outline: none;
+}
+
+.cometchat-file-bubble__download:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
 }
@@ -227,7 +252,7 @@
 
 /* Sender-specific download link styling */
 
-.cometchat-file-bubble--sender .cometchat-file-bubble__download:focus {
+.cometchat-file-bubble--sender .cometchat-file-bubble__download:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--cometchat-static-white);
 }
@@ -238,7 +263,7 @@
 }
 
 /* Receiver-specific download link styling */
-.cometchat-file-bubble--receiver .cometchat-file-bubble__download:focus {
+.cometchat-file-bubble--receiver .cometchat-file-bubble__download:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--cometchat-primary-color);
 }
@@ -251,33 +276,94 @@
  * +N indicator button for multiple files
  * @see Requirements 3.4, 3.5
  */
-.cometchat-file-bubble__expand-indicator {
-  display: inline-flex;
+/* A SINGLE file is transparent and inherits the bubble's own surface; only MULTIPLE files each get
+   a tint so the stack reads as separate items. Incoming tints the text colour, outgoing tints white
+   so the row reads against the primary-coloured bubble. */
+.cometchat-file-bubble__container--multi .cometchat-file-bubble__file-item {
+  background: var(
+    --cometchat-file-bubble-multi-item-background,
+    color-mix(in srgb, var(--cometchat-text-color-primary) 6%, transparent)
+  );
+  border-radius: var(--cometchat-radius-2, 8px);
+  padding: var(--cometchat-file-bubble-multi-item-padding, 10px);
+}
+
+.cometchat-file-bubble--sender
+  .cometchat-file-bubble__container--multi
+  .cometchat-file-bubble__file-item {
+  background: var(
+    --cometchat-file-bubble-multi-item-background-outgoing,
+    color-mix(in srgb, var(--cometchat-static-white, #ffffff) 14%, transparent)
+  );
+}
+
+/* Full-width bar under the list: chevron + label, centred, on the same surface as a row. */
+.cometchat-file-bubble__expand-indicator,
+.cometchat-file-bubble__collapse-control {
+  display: flex;
   align-items: center;
   justify-content: center;
-  align-self: flex-start;
-  padding: var(--cometchat-file-bubble-expand-indicator-padding, var(--cometchat-padding-1) var(--cometchat-padding-3));
-  background: var(--cometchat-file-bubble-expand-indicator-background, var(--cometchat-primary-color));
-  color: var(--cometchat-file-bubble-expand-indicator-color, var(--cometchat-static-white));
+  gap: var(--cometchat-spacing-1, 4px);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--cometchat-file-bubble-expand-indicator-padding, var(--cometchat-spacing-2, 8px));
+  background: var(
+    --cometchat-file-bubble-expand-indicator-background,
+    color-mix(in srgb, var(--cometchat-text-color-primary) 6%, transparent)
+  );
+  color: var(--cometchat-file-bubble-expand-indicator-color, var(--cometchat-primary-color));
   border: none;
-  border-radius: var(--cometchat-file-bubble-expand-indicator-border-radius, var(--cometchat-radius-max));
-  font: var(--cometchat-file-bubble-expand-indicator-font, var(--cometchat-font-caption1-bold));
+  border-radius: var(--cometchat-file-bubble-expand-indicator-border-radius, var(--cometchat-radius-2, 8px));
+  font-size: var(--cometchat-file-bubble-expand-indicator-font-size, 13px);
+  font-weight: 600;
+  font-family: var(--cometchat-font-family, Inter, sans-serif);
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: background-color 0.2s ease;
 }
 
-.cometchat-file-bubble__expand-indicator:hover {
-  background: var(--cometchat-extended-primary-color-700);
-  transform: scale(1.05);
+/* Chevron: down to expand, up to collapse. Masked so it inherits the button's colour. */
+.cometchat-file-bubble__toggle-icon {
+  flex: none;
+  width: var(--cometchat-file-bubble-toggle-icon-size, 18px);
+  height: var(--cometchat-file-bubble-toggle-icon-size, 18px);
+  background-color: currentColor;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
-.cometchat-file-bubble__expand-indicator:focus {
+.cometchat-file-bubble--sender .cometchat-file-bubble__expand-indicator,
+.cometchat-file-bubble--sender .cometchat-file-bubble__collapse-control {
+  background: var(
+    --cometchat-file-bubble-expand-indicator-background-outgoing,
+    color-mix(in srgb, var(--cometchat-static-white, #ffffff) 14%, transparent)
+  );
+  color: var(--cometchat-file-bubble-expand-indicator-color-outgoing, var(--cometchat-static-white));
+}
+
+.cometchat-file-bubble__expand-indicator:hover,
+.cometchat-file-bubble__collapse-control:hover {
+  background: color-mix(in srgb, var(--cometchat-text-color-primary) 10%, transparent);
+}
+
+.cometchat-file-bubble--sender .cometchat-file-bubble__expand-indicator:hover,
+.cometchat-file-bubble--sender .cometchat-file-bubble__collapse-control:hover {
+  background: color-mix(in srgb, var(--cometchat-static-white, #ffffff) 22%, transparent);
+}
+
+/* focus-VISIBLE, so the ring appears for keyboard users but not on every mouse click. */
+.cometchat-file-bubble__expand-indicator:focus-visible,
+.cometchat-file-bubble__collapse-control:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--cometchat-background-color-01),
               0 0 0 4px var(--cometchat-primary-color);
 }
 
-.cometchat-file-bubble__expand-indicator:active {
+.cometchat-file-bubble__expand-indicator:active,
+.cometchat-file-bubble__collapse-control:active {
   transform: scale(0.98);
 }
 
@@ -320,38 +406,9 @@
    Element: Collapse Control
    ============================================ */
 
-/**
- * Collapse button in expanded state
- * @see Requirements 4.5, 4.6
- */
-.cometchat-file-bubble__collapse-control {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: flex-start;
-  padding: var(--cometchat-file-bubble-collapse-control-padding, var(--cometchat-padding-2) var(--cometchat-padding-3));
-  background: var(--cometchat-file-bubble-collapse-control-background, transparent);
-  color: var(--cometchat-file-bubble-collapse-control-color, var(--cometchat-primary-color));
-  border: var(--cometchat-file-bubble-collapse-control-border, 1px solid var(--cometchat-primary-color));
-  border-radius: var(--cometchat-file-bubble-collapse-control-border-radius, var(--cometchat-radius-1));
-  font: var(--cometchat-file-bubble-collapse-control-font, var(--cometchat-font-body-medium));
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.cometchat-file-bubble__collapse-control:hover {
-  background: var(--cometchat-extended-primary-color-50);
-}
-
-.cometchat-file-bubble__collapse-control:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--cometchat-background-color-01),
-              0 0 0 4px var(--cometchat-primary-color);
-}
-
-.cometchat-file-bubble__collapse-control:active {
-  background: var(--cometchat-extended-primary-color-100);
-}
+/* NOTE: the collapse control used to have its own styling here — an outlined, left-aligned pill.
+   It sat AFTER the shared rule above and, at equal specificity, silently won, so "Show less" never
+   matched "Show N more". Both are now styled by that single shared rule. */
 
 /* ============================================
    Element: Caption
@@ -361,10 +418,15 @@
  * Caption container using TextMessageBubbleComponent
  * @see Requirements 6.1, 6.2, 6.3, 6.4
  */
+/* The nested text bubble is a caption here, not a standalone message: it must not paint its own
+   surface inside the file bubble, and its padding is tightened so the text sits flush with the
+   rows above. Mirrors the React kit's CometChatFileBubble.css. */
 .cometchat-file-bubble__caption {
   display: flex;
   flex-direction: column;
   width: 100%;
+  --cometchat-text-bubble-background: transparent;
+  --cometchat-text-bubble-padding: 4px 4px 6px 4px;
 }
 
 /* ============================================

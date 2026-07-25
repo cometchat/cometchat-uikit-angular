@@ -48,6 +48,12 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
   @Input() closeOnOutsideClick = true;
   @Input() showOnHover = false;
   @Input() debounceOnHover = 500;
+  /**
+   * When true, the trigger is inert: click, keyboard, and hover no longer open the
+   * popover. Used to disable trigger controls (e.g. the composer's attachment/sticker
+   * buttons while editing a message) without unmounting them.
+   */
+  @Input() disabled = false;
   @Input() content!: TemplateRef<any>;
   @Input() disableBackgroundInteraction = false;
   @Input() useParentContainer = false;
@@ -167,7 +173,7 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
 
   onPopoverMouseEnter(): void {
     if (this.hoverTimeout) clearTimeout(this.hoverTimeout);
-    if (this.showOnHover && !this.isOpen) {
+    if (this.showOnHover && !this.isOpen && !this.disabled) {
       this.hoverTimeout = window.setTimeout(() => this.openPopover(), this.debounceOnHover);
     }
   }
@@ -181,12 +187,14 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
 
   onChildClick(event: MouseEvent): void {
     event.stopPropagation();
+    if (this.disabled) return;
     if (!this.showOnHover) this.togglePopover();
   }
 
   onChildKeydown(event: Event): void {
     event.stopPropagation();
     event.preventDefault();
+    if (this.disabled) return;
     if (!this.showOnHover) this.togglePopover();
   }
 

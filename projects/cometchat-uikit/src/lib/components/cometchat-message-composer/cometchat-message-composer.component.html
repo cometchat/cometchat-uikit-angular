@@ -262,10 +262,29 @@
 
   <!-- Reply Preview Subtitle Template -->
   <ng-template #replyPreviewSubtitleTemplate>
-    <span 
-      class="cometchat-message-composer__reply-preview-subtitle"
-      [innerHTML]="getReplyPreviewSubtitle()">
-    </span>
+    @if (getReplyPreviewMedia(); as media) {
+      <!-- Media: [icon] "3 Images" · caption -->
+      <span
+        class="cometchat-message-composer__reply-preview-subtitle cometchat-message-composer__reply-preview-subtitle--media">
+        <img
+          class="cometchat-message-composer__reply-preview-media-icon"
+          [src]="media.iconUrl"
+          alt=""
+          aria-hidden="true" />
+        <span class="cometchat-message-composer__reply-preview-media-label">{{ media.label }}</span>
+        @if (media.captionHtml) {
+          <span class="cometchat-message-composer__reply-preview-separator" aria-hidden="true">·</span>
+          <span
+            class="cometchat-message-composer__reply-preview-caption"
+            [innerHTML]="media.captionHtml"></span>
+        }
+      </span>
+    } @else {
+      <span
+        class="cometchat-message-composer__reply-preview-subtitle"
+        [innerHTML]="getReplyPreviewSubtitle()">
+      </span>
+    }
   </ng-template>
 
   <!-- Edit Preview Title Template -->
@@ -281,10 +300,29 @@
   <!-- Edit Preview Subtitle Template -->
   <!-- @see Requirements 3.9 - Shows formatted text with mentions properly displayed -->
   <ng-template #editPreviewSubtitleTemplate>
-    <span 
-      class="cometchat-message-composer__edit-preview-subtitle"
-      [innerHTML]="getEditPreviewSubtitle()">
-    </span>
+    @if (getEditPreviewMedia(); as media) {
+      <!-- Media: [icon] "3 Images" · caption -->
+      <span
+        class="cometchat-message-composer__edit-preview-subtitle cometchat-message-composer__edit-preview-subtitle--media">
+        <img
+          class="cometchat-message-composer__edit-preview-media-icon"
+          [src]="media.iconUrl"
+          alt=""
+          aria-hidden="true" />
+        <span class="cometchat-message-composer__edit-preview-media-label">{{ media.label }}</span>
+        @if (media.captionHtml) {
+          <span class="cometchat-message-composer__edit-preview-separator" aria-hidden="true">·</span>
+          <span
+            class="cometchat-message-composer__edit-preview-caption"
+            [innerHTML]="media.captionHtml"></span>
+        }
+      </span>
+    } @else {
+      <span
+        class="cometchat-message-composer__edit-preview-subtitle"
+        [innerHTML]="getEditPreviewSubtitle()">
+      </span>
+    }
   </ng-template>
 
   <!-- File Size Error Display -->
@@ -487,8 +525,13 @@
     </div>
   }
 
+  <!-- Multiple-attachment staging tray (visible only when files are staged). Both layouts render it
+       here, above the input row — in multiline that puts it between the rich-text toolbar and the
+       input. Its border-bottom (painted only when tiles are staged) separates it from the input. -->
+  <cometchat-attachment-tray></cometchat-attachment-tray>
+
   <!-- Main Input Section -->
-  <div 
+  <div
     class="cometchat-message-composer__input-section"
     [class.cometchat-message-composer__input-section--multiline]="isMultilineLayout()"
     [attr.data-layout]="currentLayoutMode()"
@@ -514,12 +557,14 @@
             [content]="attachmentMenuContent"
             [closeOnOutsideClick]="true"
             [constrainHorizontal]="true"
+            [disabled]="isInEditMode()"
             (popoverOpened)="onAttachmentPopoverOpened()"
             (popoverClosed)="onAttachmentPopoverClosed()">
             <div class="cometchat-message-composer__attachment-button-inner"
               [class.cometchat-message-composer__attachment-button-inner--active]="contentToDisplay() === 'attachments'">
               <cometchat-button
                 #attachmentButton
+                [disabled]="isInEditMode()"
                 [iconURL]="contentToDisplay() === 'attachments' ? attachmentIconUrlActive : attachmentIconUrl"
                 [hoverText]="'message_composer_add_attachment' | translate"
                 [ariaLabel]="'message_composer_add_attachment' | translate">
@@ -630,12 +675,14 @@
                   [placement]="Placement.top"
                   [content]="attachmentMenuContent"
                   [closeOnOutsideClick]="true"
+                  [disabled]="isInEditMode()"
                   (popoverOpened)="onAttachmentPopoverOpened()"
                   (popoverClosed)="onAttachmentPopoverClosed()">
                   <div class="cometchat-message-composer__attachment-button-inner"
                     [class.cometchat-message-composer__attachment-button-inner--active]="contentToDisplay() === 'attachments'">
                     <cometchat-button
                       #attachmentButton
+                      [disabled]="isInEditMode()"
                       [iconURL]="contentToDisplay() === 'attachments' ? attachmentIconUrlActive : attachmentIconUrl"
                       [hoverText]="'message_composer_add_attachment' | translate"
                       [ariaLabel]="'message_composer_add_attachment' | translate">
@@ -700,10 +747,11 @@
               @if (!hideStickersButton) {
                 <div class="cometchat-message-composer__sticker-button-wrapper">
                   <cometchat-popover [placement]="Placement.top" [content]="stickersKeyboardContent"
-                    [closeOnOutsideClick]="true" (popoverOpened)="onStickersPopoverOpened()" (popoverClosed)="onStickersPopoverClosed()">
+                    [closeOnOutsideClick]="true" [disabled]="isInEditMode()" (popoverOpened)="onStickersPopoverOpened()" (popoverClosed)="onStickersPopoverClosed()">
                     <div class="cometchat-message-composer__sticker-button-inner"
                       [class.cometchat-message-composer__sticker-button-inner--active]="contentToDisplay() === 'stickers'">
                       <cometchat-button #stickersButton
+                        [disabled]="isInEditMode()"
                         [iconURL]="contentToDisplay() === 'stickers' ? stickerIconUrlActive : stickerIconUrl"
                         [hoverText]="'message_composer_sticker_hover' | translate"
                         [ariaLabel]="'message_composer_sticker_hover' | translate">
@@ -791,10 +839,11 @@
             @if (!hideStickersButton) {
               <div class="cometchat-message-composer__sticker-button-wrapper">
                 <cometchat-popover [placement]="Placement.top" [content]="stickersKeyboardContent"
-                  [closeOnOutsideClick]="true" (popoverOpened)="onStickersPopoverOpened()" (popoverClosed)="onStickersPopoverClosed()">
+                  [closeOnOutsideClick]="true" [disabled]="isInEditMode()" (popoverOpened)="onStickersPopoverOpened()" (popoverClosed)="onStickersPopoverClosed()">
                   <div class="cometchat-message-composer__sticker-button-inner"
                     [class.cometchat-message-composer__sticker-button-inner--active]="contentToDisplay() === 'stickers'">
                     <cometchat-button #stickersButton
+                      [disabled]="isInEditMode()"
                       [iconURL]="contentToDisplay() === 'stickers' ? stickerIconUrlActive : stickerIconUrl"
                       [hoverText]="'message_composer_sticker_hover' | translate"
                       [ariaLabel]="'message_composer_sticker_hover' | translate">
@@ -872,7 +921,11 @@
       role="region"
       [attr.aria-label]="'message_composer_drop_files' | translate">
       <div class="cometchat-message-composer__drop-zone-content">
-        <span class="cometchat-message-composer__drop-zone-icon">📁</span>
+        <span
+          class="cometchat-message-composer__drop-zone-icon"
+          aria-hidden="true"
+          [style.-webkit-mask-image]="'url(' + uploadIconUrl + ')'"
+          [style.mask-image]="'url(' + uploadIconUrl + ')'"></span>
         <span class="cometchat-message-composer__drop-zone-text">
           {{ 'message_composer_drop_files_here' | translate }}
         </span>

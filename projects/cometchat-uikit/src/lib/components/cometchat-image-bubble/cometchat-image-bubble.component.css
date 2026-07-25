@@ -15,7 +15,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--cometchat-spacing-2);
+  /* Take the bubble's width (as the React kit does) instead of shrinking to fit. Without it this
+     block is shrink-to-fit, so the container/grid below — which are width:100% — have nothing to
+     resolve against and collapse onto the image's INTRINSIC size: a tiny source image rendered a
+     tiny tile. With a real width the tiles size from the grid and object-fit:cover upscales small
+     images to fill them. */
+  width: 100%;
   max-width: 100%;
+  /* Height ceiling for EVERY layout (single, 2-up, 3-up, 2x2, overflow), matching the React kit,
+     which puts the same cap on its root. With overflow:hidden below it is a real backstop: nothing
+     — however tall the source media — can push an image bubble past this. */
+  max-height: var(--cometchat-image-bubble-max-height, 350px);
   position: relative;
   /* Overflow containment - Requirements 2.4, 2.5, 2.6, 2.7, 2.8 */
   overflow: hidden;
@@ -80,7 +90,13 @@
 
 .cometchat-image-bubble--single .cometchat-image-bubble__image-wrapper {
   aspect-ratio: auto;
-  max-height: var(--cometchat-image-bubble-single-max-height, 400px);
+  max-height: var(--cometchat-image-bubble-single-max-height, 350px);
+  /* The one absolute size in this chain, and it has to stay. Everything above — block, container,
+     grid — is width:100%/content-sized, so with nothing concrete to resolve against a tiny source
+     image (say 8x8) collapses the whole column onto its intrinsic size and renders as a dot.
+     Width ONLY: the height follows the image's aspect ratio. A min-height would hold the wrapper
+     taller than a short image and its background would show as a band of empty space beneath. */
+  min-width: var(--cometchat-image-bubble-single-min-width, 240px);
 }
 
 /**
@@ -105,6 +121,30 @@
  */
 .cometchat-image-bubble--overflow .cometchat-image-bubble__container {
   max-width: var(--cometchat-image-bubble-overflow-max-width, 400px);
+}
+
+/* Multi-image layouts need ONE absolute number somewhere, or they collapse: the grid is width:100%
+   of this container and each tile is 1fr of the grid, so with only a max-width the whole chain
+   resolves off the images' intrinsic size and a tiny source renders a few pixels wide. A FLOOR
+   rather than a fixed width, so normally-sized images still drive the grid up to the max above and
+   only the degenerate case is caught. It sits on the container (not the tiles) because a per-tile
+   floor would multiply — two 240px tiles would overflow the container. Single images are untouched. */
+.cometchat-image-bubble--grid .cometchat-image-bubble__container,
+.cometchat-image-bubble--grid-2x2 .cometchat-image-bubble__container,
+.cometchat-image-bubble--overflow .cometchat-image-bubble__container {
+  min-width: var(--cometchat-image-bubble-grid-min-width, 240px);
+}
+
+/* The SQUARE layouts (3-up, 2x2, overflow) are exactly as tall as they are wide, so honouring the
+   root's height cap means capping their WIDTH to the same number — otherwise max-height would clip
+   the bottom row instead of sizing it. The 2-up is only half as tall as it is wide, so it is left
+   alone and keeps the full width. Must stay AFTER the per-layout max-width rules above so it wins
+   over them (and over a batch override, which would otherwise push the width back past the cap). */
+.cometchat-image-bubble--grid-2x2 .cometchat-image-bubble__container,
+.cometchat-image-bubble--overflow .cometchat-image-bubble__container,
+.cometchat-image-bubble--grid
+  .cometchat-image-bubble__container:has(.cometchat-image-bubble__grid--three-col) {
+  max-width: var(--cometchat-image-bubble-max-height, 350px);
 }
 
 /* ============================================
@@ -140,11 +180,19 @@
 }
 
 /**
- * Three-column grid for 3 images
- * @see Requirements 3.1, 3.3
+ * 3-image grid: one large image on the left + two stacked on the right (square overall).
  */
 .cometchat-image-bubble__grid--three-col {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 1 / 1;
+}
+.cometchat-image-bubble__grid--three-col > .cometchat-image-bubble__image-wrapper:first-child {
+  grid-row: 1 / span 2;
+}
+/* Cells fill their grid track (the grid, not the cell, drives the shape). */
+.cometchat-image-bubble__grid--three-col .cometchat-image-bubble__image-wrapper {
+  aspect-ratio: auto;
 }
 
 /**
@@ -178,6 +226,23 @@
   cursor: pointer;
   background: var(--cometchat-background-color-02);
   transition: opacity 0.2s ease;
+}
+
+/* Same fix as the video grid: a portrait media element stretched the square tile because a grid
+   item's default `min-height: auto` (its content's min-content size) overrides the wrapper's
+   `aspect-ratio`. Take the grid <img> OUT OF FLOW so it can't contribute any size, and pin the tile's
+   min-width/height to 0 so the aspect-ratio is the sole driver. Scoped to __grid so the SINGLE image
+   is untouched — it must stay in flow to drive its own natural height (capped by max-height). The
+   container's min-width floor (above) keeps the grid from collapsing now that the in-flow <img> no
+   longer contributes width; in a fixed-width (batch) bubble the container width already comes from the
+   ancestor, so the tiles stay full-width squares. */
+.cometchat-image-bubble__grid .cometchat-image-bubble__image-wrapper {
+  min-width: 0;
+  min-height: 0;
+}
+.cometchat-image-bubble__grid .cometchat-image-bubble__image {
+  position: absolute;
+  inset: 0;
 }
 
 .cometchat-image-bubble__image-wrapper:hover {
@@ -214,6 +279,20 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* Unsupported / unreachable media: getImageSrc() swaps the tile's src to the "unsupported file"
+   glyph. Show it small and centered on a neutral tile instead of stretching the icon edge-to-edge. */
+.cometchat-image-bubble__image[src$="unsupported.svg"] {
+  object-fit: contain;
+  padding: 28%;
+  box-sizing: border-box;
+  background: var(--cometchat-background-color-02);
+}
+/* The single-image wrapper is aspect-ratio:auto (it sizes to the photo). With no photo to size to,
+   pin a square so the tile doesn't collapse onto the tiny glyph. Grid tiles are already square. */
+.cometchat-image-bubble__image-wrapper:has(.cometchat-image-bubble__image[src$="unsupported.svg"]) {
+  aspect-ratio: 1 / 1;
 }
 
 /**
@@ -340,10 +419,15 @@
  * Caption container using TextMessageBubbleComponent
  * @see Requirements 10.1, 10.3
  */
+/* The nested text bubble is a caption here, not a standalone message: it must not paint its own
+   surface inside the media bubble, and its padding is tightened so the text sits flush with the
+   image edges. Mirrors the React kit's CometChatImageBubble.css. */
 .cometchat-image-bubble__caption {
   display: flex;
   flex-direction: column;
   width: 100%;
+  --cometchat-text-bubble-background: transparent;
+  --cometchat-text-bubble-padding: 4px 4px 6px 4px;
 }
 
 /* ============================================

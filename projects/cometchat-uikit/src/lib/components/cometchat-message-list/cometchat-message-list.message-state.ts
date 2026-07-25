@@ -2,6 +2,7 @@ import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
 import {CometChatSoundManager} from '../../resources/CometChatSoundManager/CometChatSoundManager';
 import {CometChatLogger} from '../../utils/CometChatLogger';
+import {getBatchId} from '../../utils/message-metadata-utils';
 
 export function handleNewMessagesImpl(ctx: any, currentMessages: CometChat.BaseMessage[]): void {
   if (currentMessages.length === 0 || ctx.previousMessages.length === 0) {
@@ -79,6 +80,22 @@ export function playMessageSoundImpl(ctx: any): void {
   }
 }
 
+/**
+ * Stable @for track key for a message row. It intentionally keys ONLY on a durable identity —
+ * muid first (the client-assigned id that a sent message keeps from its optimistic state through
+ * server confirmation), falling back to the server id for messages we never sent optimistically.
+ *
+ * It must NOT embed volatile fields (readAt/deliveredAt/editedAt/batch position). Every receipt,
+ * confirmation, and edit already replaces the message with a fresh object reference and re-renders
+ * the bubble through its OnPush @Input bindings — so baking those into the key adds nothing except a
+ * changed key, which makes Angular destroy and rebuild the whole bubble subtree. That recreation
+ * silently discards transient in-bubble UI state (an open fullscreen viewer, an expanded audio/file
+ * list, an open options menu) the instant a receipt lands.
+ */
+function messageTrackKey(message: CometChat.BaseMessage): string {
+  return `msg-${message.getMuid?.() || message.getId()}`;
+}
+
 export function computeMessagesWithDateSeparatorsImpl(ctx: any): any[] {
   const messages = ctx.messages();
   const idCounts = new Map<number, number>();
@@ -90,12 +107,21 @@ export function computeMessagesWithDateSeparatorsImpl(ctx: any): any[] {
   if (duplicates.length > 0) {
     CometChatLogger.warn('CometChatMessageList', 'DUPLICATE message IDs in messages array:', duplicates, 'total messages:', messages.length);
   }
+  // Batch grouping (multi-attachment): consecutive messages sharing metadata.batchId.
+  const batchFlags = computeBatchFlagsImpl(messages);
   if (messages.length === 0 || ctx.hideDateSeparator) {
-    return messages.map((msg: CometChat.BaseMessage) => ({
-      type: 'message' as const,
-      message: msg,
-      key: `msg-${msg.getId() || msg.getMuid()}-rc${msg.getReplyCount() || 0}-r${msg.getReadAt() || 0}-d${msg.getDeliveredAt() || 0}-del${msg.getDeletedAt() || 0}-e${msg.getEditedAt() || 0}`,
-    }));
+    return messages.map((msg: CometChat.BaseMessage) => {
+      const bf = batchFlags.get(msg);
+      const isFirstInBatch = bf?.isFirstInBatch ?? true;
+      const isLastInBatch = bf?.isLastInBatch ?? true;
+      return {
+        type: 'message' as const,
+        message: msg,
+        isFirstInBatch,
+        isLastInBatch,
+        key: messageTrackKey(msg),
+      };
+    });
   }
   const result: any[] = [];
   let lastDate: string | null = null;
@@ -109,13 +135,48 @@ export function computeMessagesWithDateSeparatorsImpl(ctx: any): any[] {
       });
       lastDate = messageDate;
     }
+    const bf = batchFlags.get(message);
+    const isFirstInBatch = bf?.isFirstInBatch ?? true;
+    const isLastInBatch = bf?.isLastInBatch ?? true;
     result.push({
       type: 'message',
       message,
-      key: `msg-${message.getId() || message.getMuid()}-rc${message.getReplyCount() || 0}-r${message.getReadAt() || 0}-d${message.getDeliveredAt() || 0}-del${message.getDeletedAt() || 0}-e${message.getEditedAt() || 0}`,
+      isFirstInBatch,
+      isLastInBatch,
+      key: messageTrackKey(message),
     });
   }
   return result;
+}
+
+/** Read the composer-set `metadata.batchId` from a message (or null). */
+export function getBatchIdImpl(message: CometChat.BaseMessage): string | null {
+  return getBatchId(message);
+}
+
+/**
+ * First/last-in-batch flags. A batch is a run of CONSECUTIVE messages sharing the
+ * same `metadata.batchId`. Messages without a batchId are their own group
+ * (isFirstInBatch = isLastInBatch = true). Exported for tests.
+ */
+export function computeBatchFlagsImpl(
+  messages: CometChat.BaseMessage[],
+): Map<CometChat.BaseMessage, { isFirstInBatch: boolean; isLastInBatch: boolean }> {
+  const flags = new Map<CometChat.BaseMessage, { isFirstInBatch: boolean; isLastInBatch: boolean }>();
+  for (let i = 0; i < messages.length; i++) {
+    const batchId = getBatchIdImpl(messages[i]);
+    if (!batchId) {
+      flags.set(messages[i], { isFirstInBatch: true, isLastInBatch: true });
+      continue;
+    }
+    const prev = i > 0 ? getBatchIdImpl(messages[i - 1]) : null;
+    const next = i < messages.length - 1 ? getBatchIdImpl(messages[i + 1]) : null;
+    flags.set(messages[i], {
+      isFirstInBatch: batchId !== prev,
+      isLastInBatch: batchId !== next,
+    });
+  }
+  return flags;
 }
 
 export function getReactionFingerprintImpl(message: CometChat.BaseMessage): string {

@@ -129,6 +129,18 @@ export class GroupChatComponent {
 ></cometchat-message-composer>
 ```
 
+### Multiple Attachments in a Single Message
+
+When you attach files (via the attachment menu, clipboard paste, or drag-and-drop), the composer shows a **staging tray** of tiles above the input:
+
+- Each file uploads independently with a per-tile **progress ring**, and **cancel** / **remove** / **retry** controls.
+- The **Send** button enables only once **all** staged files have finished uploading.
+- On send, all attachments are delivered as **one `MediaMessage`**, with the composer text used as a shared **caption**.
+- While files are staged, the microphone is hidden and the Send button takes its place; **voice notes are always sent as a separate message**.
+- `maxAttachments` (count) and `maxFileSize` / `allowedFileTypes` are validated before upload; the count limit also uses the app's configured maximum.
+
+This behaviour is built into `CometChatMessageComposer` — no additional configuration is required. It relies on `@cometchat/chat-sdk-javascript` `4.1.12-beta` or later.
+
 ## Layout Modes
 
 The CometChatMessageComposer supports two layout modes to accommodate different UI requirements and screen sizes.

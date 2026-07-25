@@ -36,7 +36,9 @@ describe('MessageComposerService', () => {
 
   beforeEach(() => {
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({});
+    // MessageComposerService is component-scoped (@Injectable() provided by the composer), not
+    // providedIn:'root', so it must be listed as an explicit provider here to be injectable in isolation.
+    TestBed.configureTestingModule({ providers: [MessageComposerService] });
     service = TestBed.inject(MessageComposerService);
     service.cleanup();
   });

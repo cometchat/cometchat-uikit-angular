@@ -627,8 +627,18 @@ function createComponent(overrides?: {
     getDefaultFormatters: vi.fn().mockReturnValue([]),
     getFormatters: vi.fn().mockReturnValue([]),
   };
+  // Mirrors HtmlSanitizerService's surface. `sanitize` alone was not enough: any subtitle that
+  // takes the markdown path calls escapeUserHtml + sanitizeWithConfig, and would throw here.
   (comp as any).htmlSanitizer = {
     sanitize: vi.fn((html: string) => html),
+    sanitizeWithConfig: vi.fn((html: string) => html),
+    escapeUserHtml: vi.fn((text: string) =>
+      text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;'),
+    ),
   };
   (comp as any).subtitleService = {
     getSubtitle: vi.fn().mockReturnValue(null),
@@ -828,6 +838,112 @@ describe('CometChatConversationItemComponent', () => {
       const component = createComponent({ conversation: conv });
       // Should return the "start conversation" localized string
       expect(component.subtitleText).toBeTruthy();
+    });
+
+    // ---- Media previews: count + caption + voice note (React parity) ----
+    /** A MediaMessage stand-in; the SDK constructor cannot express attachments/captions here. */
+    const mediaMessage = (over: {
+      type?: string;
+      names?: string[];
+      caption?: string;
+      audioType?: string;
+    }) =>
+      ({
+        getId: () => 42,
+        getType: () => over.type ?? 'image',
+        getCategory: () => 'message',
+        getDeletedAt: () => undefined,
+        getEditedAt: () => 0,
+        getAttachments: () => (over.names ?? ['a.jpg']).map((n) => ({ getName: () => n })),
+        getCaption: () => over.caption ?? '',
+        getData: () => undefined,
+        getMetadata: () => (over.audioType ? { audioType: over.audioType } : null),
+        getMentionedUsers: () => [],
+        getSender: () => createMockUser(),
+      }) as any;
+
+    const subtitleFor = (msg: any) => {
+      const conv = createMockConversation({ lastMessage: msg, conversationWith: createMockUser() });
+      return createComponent({ conversation: conv }).subtitleText;
+    };
+
+    it('shows a plain type label for one attachment with no caption', () => {
+      expect(subtitleFor(mediaMessage({ type: 'image' }))).toBe('Image');
+      expect(subtitleFor(mediaMessage({ type: 'file', names: ['doc.pdf'] }))).toBe('File');
+    });
+
+    it('counts and pluralizes several attachments', () => {
+      expect(subtitleFor(mediaMessage({ type: 'image', names: ['a', 'b', 'c'] }))).toBe('3 Images');
+      expect(subtitleFor(mediaMessage({ type: 'audio', names: ['a', 'b'] }))).toBe('2 Audio Files');
+    });
+
+    it('appends the caption after a middot', () => {
+      expect(subtitleFor(mediaMessage({ type: 'image', caption: 'nice trip' }))).toBe(
+        'Image · nice trip',
+      );
+      expect(
+        subtitleFor(mediaMessage({ type: 'video', names: ['a', 'b'], caption: 'nice trip' })),
+      ).toBe('2 Videos · nice trip');
+    });
+
+    it('previews a voice note as "Voice Note", ignoring count and caption', () => {
+      expect(
+        subtitleFor(
+          mediaMessage({ type: 'audio', audioType: 'voice_note', names: ['a', 'b'], caption: 'hi' }),
+        ),
+      ).toBe('Voice Note');
+      // ...and the legacy camelCase tag still routes there.
+      expect(subtitleFor(mediaMessage({ type: 'audio', audioType: 'voiceNote' }))).toBe('Voice Note');
+    });
+
+    it('does not treat a plain audio message as a voice note', () => {
+      expect(subtitleFor(mediaMessage({ type: 'audio' }))).toBe('Audio');
+    });
+
+    it('a plain caption is rendered as text, not HTML', () => {
+      const conv = createMockConversation({
+        lastMessage: mediaMessage({ type: 'image', caption: 'nice trip' }),
+        conversationWith: createMockUser(),
+      });
+      expect(createComponent({ conversation: conv }).subtitleHasHtml).toBe(false);
+    });
+
+    it('a markdown caption switches the subtitle to the sanitized-HTML path', () => {
+      const conv = createMockConversation({
+        lastMessage: mediaMessage({ type: 'image', names: ['a', 'b'], caption: '**bold**' }),
+        conversationWith: createMockUser(),
+      });
+      const component = createComponent({ conversation: conv });
+      // NOTE: markdown -> <b> is done by the registered text formatters, which this spec stubs out
+      // as an empty list. What matters here is that the caption takes the HTML branch and that the
+      // label is still joined to it.
+      expect(component.subtitleHasHtml).toBe(true);
+      expect(component.subtitleText).toContain('2 Images · ');
+    });
+
+    it('a markdown-link caption takes the same HTML branch it is reported as', () => {
+      // Regression: `isHtml` was derived by a separate predicate that special-cased markdown links
+      // as "not HTML", while the renderer took its markdown branch and (via the link formatter)
+      // emitted an <a>. The subtitle then went through {{ }} interpolation and the user saw the
+      // raw anchor markup as text. As above, formatters are stubbed out here, so what is asserted
+      // is the branch agreement — not the anchor itself.
+      const conv = createMockConversation({
+        lastMessage: mediaMessage({ type: 'image', caption: '[click](http://x.com)' }),
+        conversationWith: createMockUser(),
+      });
+      const component = createComponent({ conversation: conv });
+      expect(component.subtitleHasHtml).toBe(true);
+      expect(component.subtitleText).toContain('Image · ');
+    });
+
+    it('raw HTML in a caption is escaped, never injected', () => {
+      const conv = createMockConversation({
+        lastMessage: mediaMessage({ type: 'image', caption: '**x** <script>alert(1)</script>' }),
+        conversationWith: createMockUser(),
+      });
+      const component = createComponent({ conversation: conv });
+      expect(component.subtitleHasHtml).toBe(true);
+      expect(component.subtitleText).not.toContain('<script');
     });
   });
 

@@ -119,11 +119,13 @@ export function emitErrorImpl(self: any, error: unknown): void {
       details: '',
     });
   }
-  self.announceAssertive(
-    CometChatLocalize.getLocalizedString('message_composer_error_occurred') +
-      ': ' +
-      exception.message
-  );
+  const label = CometChatLocalize.getLocalizedString('message_composer_error_occurred');
+  self.announceAssertive(label + ': ' + exception.message);
+  // Show it. `error` is an @Output, so unless the integrator binds it the failure is invisible —
+  // a rejected send just left its bubble pending with no explanation. Screen readers were already
+  // being told (above); this gives sighted users the same information. Prefer the SDK/API message,
+  // which is written for humans (e.g. a moderation or permission refusal explains the reason).
+  self.toast?.error((exception.message || '').trim() || label, { duration: 4000 });
   self.error.emit(exception);
 }
 

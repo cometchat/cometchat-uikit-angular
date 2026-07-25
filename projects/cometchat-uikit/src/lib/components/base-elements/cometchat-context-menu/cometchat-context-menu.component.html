@@ -12,7 +12,6 @@
             <div
               #topMenuItemRef
               class="cometchat-menu-list__main-menu-item"
-              [class.cometchat-menu-list__main-menu-item--destructive]="getItemId(item) === 'delete'"
               [title]="getItemTitle(item)"
               [attr.aria-label]="getItemTitle(item)"
               [attr.aria-selected]="focusedTopMenuIndex === i"
@@ -113,7 +112,6 @@
           #menuItemRef
           [id]="getItemId(item)"
           class="cometchat-menu-list__sub-menu-list-item"
-          [class.cometchat-menu-list__sub-menu-list-item--destructive]="getItemId(item) === 'delete'"
           [title]="getItemTitle(item)"
           [attr.aria-label]="getItemTitle(item)"
           [attr.aria-selected]="focusedItemIndex === i"

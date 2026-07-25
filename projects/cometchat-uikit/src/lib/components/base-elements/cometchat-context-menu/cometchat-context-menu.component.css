@@ -46,15 +46,6 @@
   background: var(--cometchat-context-menu-main-menu-item-background-hover, var(--cometchat-white-hover));
 }
 
-/* Destructive modifier for delete/danger top menu items */
-.cometchat-menu-list__main-menu-item--destructive {
-  background: transparent;
-}
-
-.cometchat-menu-list__main-menu-item--destructive .cometchat-menu-list__main-menu-item-icon {
-  background: var(--cometchat-error-color, #F44336);
-}
-
 .cometchat-menu-list__main-menu-item:focus-visible {
   outline: var(--cometchat-context-menu-main-menu-item-outline-focus, 2px solid var(--cometchat-primary-color, #3399FF));
   outline-offset: var(--cometchat-context-menu-main-menu-item-outline-offset-focus, 2px);

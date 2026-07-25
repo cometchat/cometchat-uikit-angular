@@ -19,6 +19,8 @@ import {CometChatLinkDialogComponent, type LinkData,} from '../base-elements/com
 import {CometChatLinkPopoverComponent} from '../base-elements/cometchat-link-popover/cometchat-link-popover.component';
 import {CometChatErrorBoundaryComponent} from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
 import {MessageComposerService, MentionSuggestion} from '../../services/message-composer.service';
+import {VoiceRecordingCoordinatorService} from '../../services/voice-recording-coordinator.service';
+import {CometChatToastService} from '../base-elements/cometchat-toast/cometchat-toast.service';
 import {RichTextFormatState, RichTextMetadata, SelectionState,} from '../../services/rich-text-editor.interfaces';
 import {RichTextEditorService} from '../../services/rich-text-editor.service';
 import {RichTextEditor} from '../../services/rich-text-editor.class';
@@ -31,7 +33,7 @@ import {TranslatePipe} from '../../resources/CometChatLocalize/translate.pipe';
 import {CometChatSoundManager} from '../../resources/CometChatSoundManager/CometChatSoundManager';
 import {CometChatUIKit} from '../../cometchat-uikit';
 import {CometChatLogger} from '../../utils/CometChatLogger';
-import {EnterKeyBehavior, Placement} from '../../Enums/Enums';
+import {EnterKeyBehavior, Placement, MessageStatus} from '../../Enums/Enums';
 import {CometChatMentionsFormatter} from '../../formatters/cometchat-mentions-formatter';
 import {CometChatTextFormatter} from '../../formatters/cometchat-text-formatter';
 import {CometChatMessageComposerAction, CometChatActionsView} from '../../modals';
@@ -53,11 +55,14 @@ import {announcePoliteImpl, announceAssertiveImpl, announceReplyModeActivatedImp
 import {syncLegacyPopoverSignalsImpl, toggleEmojiKeyboardImpl, toggleAttachmentMenuImpl, toggleVoiceRecordingImpl, toggleStickersKeyboardImpl, toggleAIImpl, sendStickerMessageImpl} from './cometchat-message-composer.popover-utils';
 import {handleAttachmentOptionClickImpl, handleAttachmentClickImpl, handleFullscreenViewerCloseImpl, handleFullscreenViewerPreviousImpl, handleFullscreenViewerNextImpl, getCurrentFullscreenAttachmentImpl, handleRemoveAttachmentImpl, handleAttachmentButtonClickImpl} from './cometchat-message-composer.attachment-handlers';
 import {focusTextInputImpl, focusAttachmentButtonImpl, focusEmojiButtonImpl, focusStickersButtonImpl, focusVoiceButtonImpl, insertTextAtCursorImpl} from './cometchat-message-composer.focus-utils';
-import {getReplyPreviewTitleImpl, getReplyPreviewSubtitleImpl, getEditPreviewTitleImpl, getEditPreviewSubtitleImpl, enterReplyModeImpl, exitReplyModeImpl, onReplyPreviewCloseImpl, onEditPreviewCloseImpl, openPollModalImpl, closePollModalImpl, onPollCreatedImpl, resetComposerStateImpl} from './cometchat-message-composer.reply-edit-utils';
+import {getReplyPreviewTitleImpl, getReplyPreviewSubtitleImpl, getEditPreviewTitleImpl, getEditPreviewSubtitleImpl, getMediaPreviewPartsImpl, MediaPreviewParts, enterReplyModeImpl, exitReplyModeImpl, onReplyPreviewCloseImpl, onEditPreviewCloseImpl, openPollModalImpl, closePollModalImpl, onPollCreatedImpl, resetComposerStateImpl} from './cometchat-message-composer.reply-edit-utils';
 import {createCollaborativeDocumentImpl, createCollaborativeWhiteboardImpl} from './cometchat-message-composer.collab-utils';
 import {handleEmojiSelectImpl, handleEmojiKeyboardCloseImpl, handleActionSheetItemClickImpl, handleActionSheetCloseImpl, handleStickerSelectImpl, handleStickersKeyboardCloseImpl, handleVoiceRecordingClickImpl, toggleFixedToolbarImpl, closeAllPopupsImpl, emitErrorImpl, handleSendImpl, focusRichTextEditorImpl, getFileSizeErrorMessageImpl} from './cometchat-message-composer.event-handlers';
 import {initializeTextFormattersImpl, configureTextFormattersImpl, forwardKeyEventToFormattersImpl, updateFormatterCaretPositionImpl, playOutgoingMessageSoundImpl, getMediaMessageTypeImpl, handleRichTextUpdateImpl, onEmojiPopoverOpenedImpl, onEmojiPopoverClosedImpl, onAttachmentPopoverOpenedImpl, onAttachmentPopoverClosedImpl, onVoiceRecorderPopoverOpenedImpl, onVoiceRecorderPopoverClosedImpl, onStickersPopoverOpenedImpl, onStickersPopoverClosedImpl} from './cometchat-message-composer.formatter-utils';
 import {setupConstructorEffectsImpl, ngOnInitImpl as composerNgOnInitImpl, ngOnChangesImpl as composerNgOnChangesImpl, buildAttachmentMenuOptionsImpl} from './cometchat-message-composer.lifecycle-utils';
+import {CometChatAttachmentTrayComponent} from '../cometchat-attachment-tray';
+import {MediaUploadTrayService, detectAttachmentType} from '../../services/media-upload-tray.service';
+import {stampBatchMetadata, markMessageFailed} from '../../utils/message-metadata-utils';
 
 export const MENTIONS_LIMIT = 10;
 
@@ -106,12 +111,13 @@ export interface FileSizeError {
     CometChatLinkDialogComponent,
     CometChatLinkPopoverComponent,
     CometChatErrorBoundaryComponent,
+    CometChatAttachmentTrayComponent,
     TranslatePipe,
   ],
+  providers: [MediaUploadTrayService, MessageComposerService],
   templateUrl: './cometchat-message-composer.component.html',
   styleUrls: ['./cometchat-message-composer.component.css', '../../services/rich-text-editor.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [MessageComposerService],
 })
 export class CometChatMessageComposerComponent
   implements OnInit, OnDestroy, OnChanges, AfterViewInit
@@ -125,6 +131,15 @@ export class CometChatMessageComposerComponent
   private cdr = inject(ChangeDetectorRef);
   private hostElementRef = inject(ElementRef);
   private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, { optional: true });
+  /** Composer-scoped staging tray for multi-attachment upload (provided above). */
+  readonly mediaUploadTray = inject(MediaUploadTrayService);
+  /** Root-scoped: keeps this composer's recorder from running alongside another composer's. */
+  readonly voiceCoordinator = inject(VoiceRecordingCoordinatorService);
+  /** Surfaces errors visually. Injected defensively so the composer still works when constructed
+   *  outside Angular DI (unit tests), matching MediaUploadTrayService. */
+  readonly toast: CometChatToastService | null = (() => {
+    try { return inject(CometChatToastService); } catch { return null; }
+  })();
   private textFormattersExplicitlySet = signal(false); private disableSoundForMessageExplicitlySet = signal(false); private customSoundForMessageExplicitlySet = signal(false);
   private _textFormatters = signal<CometChatTextFormatter[]>([]); private _disableSoundForMessage = signal(false); private _customSoundForMessage = signal('');
   effectiveTextFormatters = computed(() => { if (this.textFormattersExplicitlySet()) return this._textFormatters(); return this.globalConfig?.textFormatters ?? []; });
@@ -147,6 +162,8 @@ export class CometChatMessageComposerComponent
   /** @note kept for future attachment preview/queue support; active flow sends selected files directly. */
   @Input() enableDragDrop = true;
   @Input() hideAttachmentButton = false;
+  @Input({ transform: booleanAttribute }) enableMultipleAttachments = true;    //multi attachment test prop
+
   @Input() hideImageAttachmentOption = false; @Input() hideVideoAttachmentOption = false; @Input() hideAudioAttachmentOption = false; @Input() hideFileAttachmentOption = false; @Input() hidePollsOption = false;
   @Input() hideCollaborativeDocumentOption = false; @Input() hideCollaborativeWhiteboardOption = false; @Input() hideEmojiKeyboardButton = false; @Input() hideVoiceRecordingButton = false; @Input() hideStickersButton = false;
   @Input() hideLiveReaction = false; @Input() hideSendButton = false; @Input() disableMentions = false; @Input() disableMentionAll = false; @Input() mentionAllLabel = '';
@@ -197,7 +214,11 @@ export class CometChatMessageComposerComponent
   fileSizeError = signal<FileSizeError | null>(null); uniqueMentionCount = signal<number>(0); showMentionsCountWarning = signal<boolean>(false);
   private plainTextMentionUids = new Set<string>(); private mentionedUsersMap = new Map<string, CometChat.User>(); private skipNextMentionCheck = false;
   messageToReplySignal = signal<CometChat.BaseMessage | null>(null); textMessageToEdit = signal<CometChat.TextMessage | null>(null); isEditMode = signal<boolean>(false);
-  canSend = computed(() => this.composerText().trim().length > 0 || this.attachments().length > 0 || this.isRecording()); showVoiceButton = computed(() => !this.composerText().trim().length && !this.isRecording());
+  // True only while a staged batch is mid-send. A multi-attachment batch is delivered one
+  // MediaMessage at a time and the tray is cleared only once the LAST lands, so without this the
+  // button stays enabled for the whole (long) send and a second click re-sends the entire batch.
+  isSendingStaged = signal<boolean>(false);
+  canSend = computed(() => this.isSendingStaged() ? false : (this.mediaUploadTray.hasTiles() ? this.mediaUploadTray.canSend() : (this.composerText().trim().length > 0 || this.attachments().length > 0 || this.isRecording()))); showVoiceButton = computed(() => !this.composerText().trim().length && !this.isRecording() && !this.mediaUploadTray.hasTiles());
   isInReplyMode = computed(() => !!this.parentMessageId); isInQuotedReplyMode = computed(() => !!this.messageToReplySignal()); isInEditMode = computed(() => !!this.messageToEdit || !!this.textMessageToEdit());
   hasAttachments = computed(() => this.attachments().length > 0); attachmentCount = computed(() => this.attachments().length); canAddMoreAttachments = computed(() => this.attachments().length < this.maxAttachments);
   protected shouldShowToolbar = computed(() => { if (!this.enableRichText) return false; if (this.isMobileView() && this.showBubbleMenuOnSelection && this.isFixedToolbarShown()) return true; return !this.hideRichTextToolbar; });
@@ -210,8 +231,8 @@ export class CometChatMessageComposerComponent
   }
   ngOnInit(): void { try { composerNgOnInitImpl(this as any); } catch (error) { this.handleLifecycleError(error, 'ngOnInit'); } }
   ngAfterViewInit(): void { try { this.initializeRichTextEditor(); this.initializeTextFormatters(); } catch (error) { this.handleLifecycleError(error, 'ngAfterViewInit'); } }
-  ngOnChanges(changes: SimpleChanges): void { try { composerNgOnChangesImpl(this as any, changes); } catch (error) { CometChatLogger.error('CometChatMessageComposer', 'Error in ngOnChanges:', error); } }
-  ngOnDestroy(): void { try { if (this.boundResizeHandler) { window.removeEventListener('resize', this.boundResizeHandler); this.boundResizeHandler = null; } if (this.typingTimeout) { clearTimeout(this.typingTimeout); this.typingTimeout = undefined; } this.endTypingIndicator(); this.destroyRichTextEditor(); this.messageComposerService.cleanup(); } catch (error) { CometChatLogger.error('CometChatMessageComposer', 'Error during cleanup:', error); } }
+  ngOnChanges(changes: SimpleChanges): void { try { composerNgOnChangesImpl(this as any, changes); if (changes['user'] || changes['group']) { this.mediaUploadTray.reset(); } } catch (error) { CometChatLogger.error('CometChatMessageComposer', 'Error in ngOnChanges:', error); } }
+  ngOnDestroy(): void { try { if (this.boundResizeHandler) { window.removeEventListener('resize', this.boundResizeHandler); this.boundResizeHandler = null; } if (this.typingTimeout) { clearTimeout(this.typingTimeout); this.typingTimeout = undefined; } this.endTypingIndicator(); this.destroyRichTextEditor(); this.messageComposerService.cleanup(); this.mediaUploadTray.reset(); this.voiceCoordinator.release(this); } catch (error) { CometChatLogger.error('CometChatMessageComposer', 'Error during cleanup:', error); } }
   private handleLifecycleError(error: unknown, hook: string): void { const err = error instanceof Error ? error : new Error(String(error)); CometChatLogger.error('CometChatMessageComposer', `Error in ${hook}:`, err); this.composerError.set(err); this.error.emit(err as CometChat.CometChatException); }
   handleRetryClick(): void {
     this.composerError.set(null);
@@ -274,6 +295,21 @@ export class CometChatMessageComposerComponent
     if (this.customRichTextEditor && this.enableRichText) { this.richTextEditorService.setContent(this.customRichTextEditor, newText); }
   }
   private syncLegacyPopoverSignals(): void { syncLegacyPopoverSignalsImpl(this as any); }
+
+  /**
+   * Stop this composer's recording because another composer claimed the microphone. Clearing
+   * `contentToDisplay` and re-syncing drops `isRecording`, which swaps the template back off the
+   * recorder branch — unmounting <cometchat-media-recorder>, whose ngOnDestroy stops the recorder
+   * and releases the mic stream. Called by VoiceRecordingCoordinatorService, never directly.
+   */
+  stopRecordingForCoordinator(): void {
+    if (!this.isRecording()) { return; }
+    this.contentToDisplay.set('none');
+    this.syncLegacyPopoverSignals();
+    this.recordingDuration.set(0);
+    this.announceRecordingStopped();
+    this.cdr.markForCheck();
+  }
   toggleEmojiKeyboard(): void { toggleEmojiKeyboardImpl(this as any); }
   toggleAttachmentMenu(): void { toggleAttachmentMenuImpl(this as any); }
   toggleVoiceRecording(): void { toggleVoiceRecordingImpl(this as any); }
@@ -319,6 +355,14 @@ export class CometChatMessageComposerComponent
   }
   getEditPreviewTitle(): string { return getEditPreviewTitleImpl(); }
   getEditPreviewSubtitle(): string { return getEditPreviewSubtitleImpl(this as any); }
+  /** `[icon] N Images · caption` parts for the edit banner; null for text messages. */
+  getEditPreviewMedia(): MediaPreviewParts | null {
+    return getMediaPreviewPartsImpl(this as any, this.getCurrentEditMessage(), 'edit');
+  }
+  /** Same, for the reply banner. */
+  getReplyPreviewMedia(): MediaPreviewParts | null {
+    return getMediaPreviewPartsImpl(this as any, this.messageToReplySignal(), 'reply');
+  }
   private formatEditPreviewText(message: CometChat.TextMessage): string { return formatEditPreviewTextImpl(this as any, message); }
   private convertMarkdownToHtml(text: string): string { return convertMarkdownToHtmlImpl(text); }
   onEditPreviewClose(): void { onEditPreviewCloseImpl(this as any); }
@@ -358,7 +402,122 @@ export class CometChatMessageComposerComponent
   }
   handleKeydown(event: KeyboardEvent): void { handleKeydownImpl(this as any, event); }
   handleKeyup(event: KeyboardEvent): void { handleKeyupImpl(this as any, event); }
-  async handleSend(): Promise<void> { return handleSendImpl(this as any); }
+  async handleSend(): Promise<void> {
+    if (this.mediaUploadTray.hasTiles()) {
+      await this.sendStagedMessage();
+      return;
+    }
+    return handleSendImpl(this as any);
+  }
+
+  /**
+   * Send the staged attachments as a BATCH: one MediaMessage per attachment type
+   * (order: images -> videos -> audios -> files), each tagged with a shared
+   * `metadata.batchId`. The caption (composer text) goes on the LAST message only.
+   * Voice notes are sent separately (via the recorder), not here.
+   */
+  private async sendStagedMessage(): Promise<void> {
+    // Re-entrancy guard: a batch is sent one message at a time and the tray clears only after the
+    // last lands, so a second Send (button double-tap, or Enter while the button hasn't re-rendered
+    // yet) would otherwise re-send the whole batch. Ignore any send that arrives while one is running.
+    if (this.isSendingStaged()) { return; }
+    const receiver = this.getReceiver();
+    if (!receiver) { return; }
+    const tiles = this.mediaUploadTray.getSuccessfulTiles();
+    if (tiles.length === 0) { return; }
+    this.isSendingStaged.set(true);
+
+    const receiverId = receiver instanceof CometChat.User ? receiver.getUid() : receiver.getGuid();
+    const receiverType = receiver instanceof CometChat.User ? CometChat.RECEIVER_TYPE.USER : CometChat.RECEIVER_TYPE.GROUP;
+    const caption = this.composerText().trim();
+    const quoted = this.messageToReplySignal();
+    // Prefer the SDK's batch id (the one the upload request owns and the presigns were scoped to)
+    // so the grouping key matches the batch the files were actually uploaded in.
+    const batchId = this.mediaUploadTray.getBatchId() ?? CometChatUIKitUtility.ID();
+
+    // Partition by the STAGED kind, preserving the display order. Grouping on the tile (not on
+    // attachment.getMimeType()) is what lets the "File" picker keep an MP4 as a file message.
+    const order: Array<'image' | 'video' | 'audio' | 'file'> = ['image', 'video', 'audio', 'file'];
+    const groups = order
+      .map((type) => ({
+        type,
+        items: tiles.filter((t) => t.type === type).map((t) => t.attachment as CometChat.Attachment),
+      }))
+      .filter((g) => g.items.length > 0);
+    if (groups.length === 0) { return; }
+
+    const messages = groups.map((g, i) => {
+      // Attachments are ALREADY uploaded (via the tray's upload request). Construct the message
+      // with NO file in the file slot — passing an array/File there sets message.files, which makes
+      // the SDK's hasPreUploadedAttachments() return false and attempt a (never-completing) upload.
+      // With no file + setAttachments(), the SDK takes the pre-uploaded path and actually sends.
+      const message = new CometChat.MediaMessage(receiverId, null as unknown as object, this.getMediaMessageType(g.type), receiverType);
+      message.setAttachments(g.items);
+      message.setMuid(CometChatUIKitUtility.ID());
+      message.setSentAt(CometChatUIKitUtility.getUnixTimestamp());
+      if (this.parentMessageId) { message.setParentMessageId(this.parentMessageId); }
+      if (quoted) { message.setQuotedMessage(quoted); message.setQuotedMessageId(quoted.getId()); }
+      // Merges rather than overwrites, so any metadata the SDK/app already set survives.
+      // Caption goes on the LAST message of the batch only.
+      const isLast = i === groups.length - 1;
+      stampBatchMetadata(message, {
+        batchId,
+        ...(isLast && caption ? { caption } : {}),
+      });
+      return message;
+    });
+
+    try {
+      // Optimistic hand-off: emit every pending bubble and clear the composer/tray up front, so the
+      // whole batch lands in the message list and LEAVES the preview the instant Send is clicked.
+      // The old code cleared in `finally` — after every (sequential) send round-trip resolved — which
+      // left the tiles lingering in the composer through the whole upload and made the batch trickle
+      // into the list one bubble at a time. Each pending bubble now flips to success/error below as
+      // its own send settles. This mirrors the optimistic clear the text/single-media path already does.
+      for (const message of messages) {
+        CometChatMessageEvents.ccMessageSent.next({ message, status: MessageStatus.inprogress });
+      }
+      this.clearComposer();
+      this.mediaUploadTray.clearAll();
+      if (quoted) { this.exitReplyMode(); }
+
+      let last: CometChat.BaseMessage | undefined;
+      for (const message of messages) {
+        let sent: CometChat.BaseMessage | undefined;
+        try {
+          sent = (await CometChat.sendMediaMessage(message)) as CometChat.BaseMessage | undefined;
+        } catch (sendErr) {
+          // Mark this message as failed (instead of leaving it stuck "in progress") then bubble up.
+          markMessageFailed(message, sendErr);
+          CometChatMessageEvents.ccMessageSent.next({ message, status: MessageStatus.error });
+          throw sendErr;
+        }
+        // CometChat.sendMediaMessage() swallows internal errors and returns undefined (no throw).
+        // Guard against that so the bubble doesn't get stuck "in progress" silently.
+        if (!sent) {
+          const noResult = new Error('CometChat.sendMediaMessage returned no message (SDK swallowed an internal error). Check that attachments are pre-uploaded and the message has no file set.');
+          markMessageFailed(message, noResult);
+          CometChatMessageEvents.ccMessageSent.next({ message, status: MessageStatus.error });
+          throw noResult;
+        }
+        CometChatMessageEvents.ccMessageSent.next({ message: sent, status: MessageStatus.success });
+        last = sent;
+      }
+      if (last) { this.sendButtonClick.emit(last); }
+      this.playOutgoingMessageSound();
+      this.announceMessageSent();
+    } catch (error) {
+      // Route through emitError (not error.emit) so a failure is logged, announced and toasted like
+      // every other composer error — the bare @Output is silent unless an integrator binds it. A
+      // rejected batch is already represented by its own error bubble in the list (markMessageFailed
+      // drives the error tick + reason); the composer/tray were cleared optimistically above, so
+      // there is nothing to restore here.
+      this.emitError(error);
+    } finally {
+      // Re-enable Send. The clear now happens up front, not here.
+      this.isSendingStaged.set(false);
+    }
+  }
   private async handleEditMessage(newText: string, messageToEdit: CometChat.BaseMessage): Promise<void> { return handleEditMessageImpl(this as any, newText, messageToEdit); }
   private async handleSendNewMessage(receiver: CometChat.User | CometChat.Group, text: string, attachments: AttachmentFile[]): Promise<void> { return handleSendNewMessageImpl(this as any, receiver, text, attachments); }
   private buildMessageMetadata(): Record<string, unknown> | undefined { return buildMessageMetadataImpl(this as any); }
@@ -485,7 +644,33 @@ export class CometChatMessageComposerComponent
   handleDrop(event: DragEvent): void { handleDropImpl(this as any, event); }
   handlePaste(event: ClipboardEvent): void { handlePasteImpl(this as any, event); }
   handleFileInputChange(event: Event): void { handleFileInputChangeImpl(this as any, event); }
-  private processFiles(files: File[]): void { processFilesImpl(this as any, files); }
+  /** Drop-zone glyph, masked so it takes the overlay's text colour. */
+  readonly uploadIconUrl = 'assets/upload.svg';
+
+  /**
+   * The attachment-menu option that opened the file dialog. Consumed (and cleared) by the very
+   * next `processFiles`, so it can never leak into a later drag-drop or paste.
+   */
+  pendingPickerKind?: 'image' | 'video' | 'audio' | 'file';
+
+  private processFiles(files: File[]): void {
+    const pickerKind = this.pendingPickerKind;
+    this.pendingPickerKind = undefined;
+    if (this.enableMultipleAttachments) {
+      this.mediaUploadTray.setValidationConfig({ allowedFileTypes: this.allowedFileTypes, maxFileSize: this.maxFileSize });
+      // The SDK presign endpoint needs the recipient (uid/guid + user/group) for role-based access,
+      // plus the thread parent so a thread upload is scoped to that thread.
+      const receiver = this.getReceiver();
+      if (receiver) {
+        const receiverId = receiver instanceof CometChat.User ? receiver.getUid() : receiver.getGuid();
+        const receiverType = receiver instanceof CometChat.User ? CometChat.RECEIVER_TYPE.USER : CometChat.RECEIVER_TYPE.GROUP;
+        this.mediaUploadTray.setReceiver(receiverId, receiverType, this.parentMessageId);
+      }
+      void this.mediaUploadTray.stage(files, pickerKind);
+    } else {
+      processFilesImpl(this as any, files); // deprecated single-attachment path
+    }
+  }
   private async sendFilesDirectly(files: File[]): Promise<void> { return sendFilesDirectlyImpl(this as any, files); }
   handleRemoveAttachment(attachment: AttachmentFile): void { handleRemoveAttachmentImpl(this as any, attachment); }
   private getFileType(file: File): 'image' | 'video' | 'audio' | 'file' { return getFileTypeUtil(file); }

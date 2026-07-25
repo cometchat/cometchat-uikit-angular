@@ -99,6 +99,86 @@ describe('extractMediaAttachments', () => {
     expect(extractMediaAttachments(msg, 'image', 'Test')).toEqual([]);
     expect(errorSpy).toHaveBeenCalled();
   });
+
+  /**
+   * The message-level thumbnail sources describe a single image. Applying them to a batch gave every
+   * attachment the same displayUrl, so the grid rendered one picture repeated instead of the
+   * distinct images that were sent.
+   */
+  describe('message-level thumbnails vs batches', () => {
+    const thumbGenMeta = {
+      '@injected': { extensions: { 'thumbnail-generation': { url_medium: 'https://cdn/med.jpg', url_small: 'https://cdn/small.jpg' } } },
+    };
+
+    it('uses the thumbnail-generation extension for a SINGLE image attachment', () => {
+      const msg = createMockMediaMessage({
+        attachments: [{ url: 'https://example.com/a.jpg', metadata: {} }],
+        getMetadata: () => thumbGenMeta,
+      });
+      expect(extractMediaAttachments(msg, 'image', 'Test')[0].displayUrl).toBe('https://cdn/med.jpg');
+    });
+
+    it('gives each image in a BATCH its own displayUrl, not the shared extension thumbnail', () => {
+      const msg = createMockMediaMessage({
+        attachments: [
+          { url: 'https://example.com/a.jpg', metadata: {} },
+          { url: 'https://example.com/b.jpg', metadata: {} },
+          { url: 'https://example.com/c.jpg', metadata: {} },
+        ],
+        getMetadata: () => thumbGenMeta,
+      });
+
+      const urls = extractMediaAttachments(msg, 'image', 'Test').map((a) => a.displayUrl);
+      expect(urls).toEqual([
+        'https://example.com/a.jpg',
+        'https://example.com/b.jpg',
+        'https://example.com/c.jpg',
+      ]);
+      expect(new Set(urls).size).toBe(3); // all distinct — no repeated tile
+    });
+
+    it('gives each video in a BATCH its own displayUrl (url_small is single-attachment only)', () => {
+      const msg = createMockMediaMessage({
+        attachments: [
+          { url: 'https://example.com/a.mp4', metadata: {} },
+          { url: 'https://example.com/b.mp4', metadata: {} },
+        ],
+        getMetadata: () => thumbGenMeta,
+      });
+
+      const urls = extractMediaAttachments(msg, 'video', 'Test').map((a) => a.displayUrl);
+      expect(urls).toEqual(['https://example.com/a.mp4', 'https://example.com/b.mp4']);
+    });
+
+    it('does not spread a message-level thumbnail across a batch', () => {
+      const msg = createMockMediaMessage({
+        attachments: [
+          { url: 'https://example.com/a.jpg', metadata: {} },
+          { url: 'https://example.com/b.jpg', metadata: {} },
+        ],
+        getMetadata: () => ({ thumbnail: 'https://cdn/shared-thumb.jpg' }),
+      });
+
+      const result = extractMediaAttachments(msg, 'image', 'Test');
+      expect(result.map((a) => a.displayUrl)).toEqual(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+      expect(result.every((a) => a.thumbnail === undefined)).toBe(true);
+    });
+
+    it('still prefers a per-attachment thumbnail inside a batch', () => {
+      const msg = createMockMediaMessage({
+        attachments: [
+          { url: 'https://example.com/a.jpg', thumbnail: 'https://cdn/a-thumb.jpg', metadata: {} },
+          { url: 'https://example.com/b.jpg', thumbnail: 'https://cdn/b-thumb.jpg', metadata: {} },
+        ],
+        getMetadata: () => thumbGenMeta,
+      });
+
+      expect(extractMediaAttachments(msg, 'image', 'Test').map((a) => a.displayUrl)).toEqual([
+        'https://cdn/a-thumb.jpg',
+        'https://cdn/b-thumb.jpg',
+      ]);
+    });
+  });
 });
 
 describe('extractMediaCaption', () => {

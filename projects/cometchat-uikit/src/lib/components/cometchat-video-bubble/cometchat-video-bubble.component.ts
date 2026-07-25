@@ -37,6 +37,9 @@ export type { MediaAttachment, MediaLayoutType } from '../../modals/MediaAttachm
  * and fullscreen player integration.
  *
  * @see Requirements 18.2, 18.6
+ * @deprecated Prefer {@link CometChatVideosBubbleComponent}, which the message bubble now renders
+ * for every video message. This bubble stays public for direct use and remains the internal
+ * primitive that the new bubble delegates to.
  */
 @Component({
   selector: 'cometchat-video-bubble',
@@ -90,6 +93,20 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
   protected senderName = '';
   protected senderAvatarUrl = '';
   protected failedThumbnails = new Set<number>();
+  /**
+   * Indices parked between a failed thumbnail attempt and its retry. While parked the <video> is not
+   * rendered, so re-adding it mounts a fresh element that re-requests the source.
+   */
+  protected reloadingThumbnails = new Set<number>();
+  /** Failed thumbnail attempts so far, per index. */
+  private thumbnailRetryCounts = new Map<number, number>();
+
+  /**
+   * A just-sent video routinely 403s for a moment before the CDN serves it, so the FIRST failure is
+   * not proof the media is broken. Retry once before falling back to the blank placeholder.
+   */
+  private static readonly MAX_THUMBNAIL_RETRIES = 1;
+  private static readonly THUMBNAIL_RETRY_DELAY_MS = 700;
 
   readonly MessageBubbleAlignment = MessageBubbleAlignment;
 
@@ -146,6 +163,12 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
     const result = determineMediaLayout(this.attachments.length);
     this.layoutType = result.layoutType;
     this.overflowCount = result.overflowCount;
+    // Reset per message. Without this a thumbnail that failed once — e.g. against a pending
+    // message's URL, before the CDN began serving it — stayed blank for the life of the component,
+    // even after the sent message arrived with a perfectly good URL.
+    this.failedThumbnails = new Set<number>();
+    this.reloadingThumbnails = new Set<number>();
+    this.thumbnailRetryCounts.clear();
     this.cdr.markForCheck();
   }
 
@@ -246,7 +269,87 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
     return attachment.url || index.toString();
   }
 
-  protected onThumbnailError(index: number): void {
+  /**
+   * Duration-badge fallback. `attachment.duration` only exists when the backend put it in metadata,
+   * which most messages don't. The thumbnail `<video preload="metadata">` already fetches the file
+   * header, so read the real duration off it rather than downloading anything extra — the React kit
+   * does the same via its `useVideoDuration` hook. Backend metadata always wins when present.
+   */
+  protected onThumbnailMetadata(index: number, event: Event): void {
+    const attachment = this.attachments[index];
+    if (!attachment || attachment.duration) {
+      return;
+    }
+    const duration = (event.target as HTMLVideoElement | null)?.duration;
+    if (typeof duration === 'number' && Number.isFinite(duration) && duration > 0) {
+      attachment.duration = duration;
+      this.cdr.markForCheck();
+    }
+  }
+
+  protected onThumbnailError(index: number, attachment: MediaAttachment): void {
+    // A <video> keeps showing its `poster=` image when the media itself fails to load/decode (403,
+    // unsupported codec, expired URL). So only fall back to the blank placeholder when there is NO
+    // backend poster to preserve — otherwise we'd throw away a perfectly good poster and show a gray
+    // box, which would be a regression vs the old <img [src]="displayUrl">.
+    if (this.getThumbnailPoster(attachment)) {
+      return;
+    }
+    // Don't take the first failure as final — a freshly-sent video 403s briefly before the CDN
+    // serves it. Park the element, remount it shortly after so a new <video> re-requests the source,
+    // and only fall back to the blank placeholder once that retry has failed too.
+    const attempts = this.thumbnailRetryCounts.get(index) ?? 0;
+    if (attempts < CometChatVideoBubbleComponent.MAX_THUMBNAIL_RETRIES) {
+      this.thumbnailRetryCounts.set(index, attempts + 1);
+      this.reloadingThumbnails = new Set(this.reloadingThumbnails).add(index);
+      this.cdr.markForCheck();
+      this.pendingTimers.push(
+        setTimeout(() => {
+          const next = new Set(this.reloadingThumbnails);
+          next.delete(index);
+          this.reloadingThumbnails = next;
+          this.cdr.markForCheck();
+        }, CometChatVideoBubbleComponent.THUMBNAIL_RETRY_DELAY_MS)
+      );
+      return;
+    }
     this.failedThumbnails.add(index);
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Whether the first-frame <video> should be mounted for this index — i.e. it has not been given up
+   * on and is not parked awaiting a retry (that gap is what lets the retry mount a fresh element).
+   */
+  protected shouldShowThumbnail(index: number): boolean {
+    return !this.failedThumbnails.has(index) && !this.reloadingThumbnails.has(index);
+  }
+
+  /**
+   * Builds the <video> src used to paint a video's FIRST FRAME as the tile thumbnail.
+   *
+   * An <img> cannot decode a video file — that is why the old `<img [src]="url">` tiles were blank
+   * whenever the backend had no generated poster (the img fired an error and fell back to the empty
+   * placeholder). A <video> element paints the frame natively; the `#t=0.1` media fragment tells the
+   * browser to seek to 0.1s and render that frame (supported in Chrome/Firefox/Safari 15+), so we get
+   * a real preview even with no poster — as long as the video URL is reachable in the browser.
+   */
+  protected getThumbnailVideoSrc(attachment: MediaAttachment): string {
+    const src = attachment.url ?? '';
+    if (!src) {
+      return '';
+    }
+    // Media fragments live after any query string; don't double-append if already present.
+    return src.includes('#t=') ? src : `${src}#t=0.1`;
+  }
+
+  /**
+   * Returns a real backend-generated poster (from the Thumbnail Generation extension) when one exists,
+   * so the tile shows it immediately while the video's own first frame decodes. Returns null when the
+   * only `displayUrl` we have is the video file itself (which is NOT a usable poster image).
+   */
+  protected getThumbnailPoster(attachment: MediaAttachment): string | null {
+    const poster = attachment.displayUrl;
+    return poster && poster !== attachment.url ? poster : null;
   }
 }

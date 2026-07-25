@@ -20,7 +20,40 @@ export interface MessageOpsContext {
   updateMessageReactions: (id: number, reactions: CometChat.ReactionCount[]) => boolean;
 }
 
+/**
+ * The subset of the service needed to tell whether a message is already listed.
+ * Kept separate so the fetch helpers can reuse the check without depending on
+ * the full message-ops surface.
+ */
+export interface MessageLookupContext {
+  messageIdMap: Map<number, CometChat.BaseMessage>;
+  messageMuidMap: Map<string, CometChat.BaseMessage>;
+  normalizeMessageId: (id: string | number) => number;
+}
+
+/**
+ * Reports whether a message is already in the list.
+ *
+ * Matches on muid first so a message added optimistically is recognised when the
+ * server copy of it arrives, then falls back to id. Both lookups are guarded:
+ * a message that has not been sent yet carries a muid but no usable id, and
+ * treating those absent ids as equal would collapse distinct pending messages
+ * into one. Negative ids are sentinels (the streaming placeholder) and are
+ * matched by muid rather than id.
+ */
+export function isDuplicateMessageImpl(ctx: MessageLookupContext, message: CometChat.BaseMessage): boolean {
+  const muid = message.getMuid?.();
+  if (muid && ctx.messageMuidMap.has(muid)) { return true; }
+  const rawId = message.getId();
+  if (!rawId) { return false; }
+  const messageId = ctx.normalizeMessageId(rawId);
+  return messageId > 0 && ctx.messageIdMap.has(messageId);
+}
+
 export function addMessageImpl(ctx: MessageOpsContext, message: CometChat.BaseMessage): void {
+  // A message can be pushed at us more than once — a socket re-delivery after a
+  // reconnect, or a re-emitted event — and appending it again renders it twice.
+  if (isDuplicateMessageImpl(ctx, message)) { return; }
   ctx.allMessagesSignal.update((current: CometChat.BaseMessage[]) => [...current, message]);
   ctx.messagesSignal.update((current: CometChat.BaseMessage[]) => [...current, message]);
   const messageId = ctx.normalizeMessageId(message.getId());

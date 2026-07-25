@@ -1,0 +1,332 @@
+/* CometChatAudiosBubble — WhatsApp-style audio rows (interim; final design @Pradeep).
+ * BEM + design tokens. */
+
+:host { display: block; width: 100%; }
+
+/* No padding here on purpose: the message bubble's body already pads its content, and each row
+   adds its own inset. A third layer just pushed a single (transparent) row away from the bubble
+   edge for no reason. Matches the React kit, whose root also has none. */
+.cometchat-audios-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2);
+  /* Same shared cap as the other per-type batch bubbles, so a batch lines up. */
+  width: 100%;
+  max-width: var(--cometchat-multi-attachment-width, 400px);
+  box-sizing: border-box;
+}
+
+/* Row-to-row gap matches the inset each row already has from the bubble edge, so the stack reads as
+   evenly spaced rather than as rows pushed apart. */
+.cometchat-audios-bubble__container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-audios-bubble-container-gap, var(--cometchat-spacing-1, 4px));
+  width: 100%;
+}
+
+/* A SINGLE row is transparent and inherits the bubble's own surface — a second surface inside a
+   one-item bubble reads as a box-in-a-box. Only when there are MULTIPLE rows does each get its own
+   tint, so the stack reads as separate items. (Same rule as the React kit and the files bubble.) */
+.cometchat-audios-bubble__item {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-2-5, 10px);
+  min-width: var(--cometchat-audios-bubble-min-width, 240px);
+  box-sizing: border-box;
+  padding: var(--cometchat-spacing-2-5, 10px);
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: transparent;
+}
+
+/* Incoming tints the text colour; outgoing tints white so the row reads against the
+   primary-coloured bubble. */
+.cometchat-audios-bubble__container--multi .cometchat-audios-bubble__item {
+  background: var(
+    --cometchat-audios-bubble-item-background,
+    color-mix(in srgb, var(--cometchat-text-color-primary) 6%, transparent)
+  );
+}
+
+.cometchat-audios-bubble--sender
+  .cometchat-audios-bubble__container--multi
+  .cometchat-audios-bubble__item {
+  background: var(
+    --cometchat-audios-bubble-item-background-outgoing,
+    color-mix(in srgb, var(--cometchat-static-white, #ffffff) 14%, transparent)
+  );
+}
+
+/* Unsupported row — not a playable audio file, so it reads as a file item (icon + name + download)
+   instead of a dead player. The glyph is bare, rendered exactly like the file bubble's file-type
+   icons: no surface, no radius — just a contained 40px image that lines up with the play disc. */
+.cometchat-audios-bubble__file-icon {
+  width: var(--cometchat-audios-bubble-file-icon-size, 40px);
+  height: var(--cometchat-audios-bubble-file-icon-size, 40px);
+  flex-shrink: 0;
+  object-fit: contain;
+}
+/* In the file layout the name is the flexible element that pushes the download to the far edge. */
+.cometchat-audios-bubble__name--file {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Per-row download. Incoming uses the highlight (primary) icon colour; outgoing goes white so it
+   reads against the primary-coloured bubble. */
+.cometchat-audios-bubble__download {
+  flex: none;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-audios-bubble-download-size, 20px);
+  height: var(--cometchat-audios-bubble-download-size, 20px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cometchat-audios-bubble__download-icon {
+  width: 100%;
+  height: 100%;
+  background-color: var(--cometchat-audios-bubble-download-color, var(--cometchat-icon-color-highlight));
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-audios-bubble--sender .cometchat-audios-bubble__download-icon {
+  background-color: var(--cometchat-audios-bubble-download-color-outgoing, var(--cometchat-static-white, #ffffff));
+}
+
+.cometchat-audios-bubble__download:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) solid
+    var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: 2px;
+}
+
+/* "Show N more" / "Show less" — a full-width bar under the rows: chevron + label, centred. */
+.cometchat-audios-bubble__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cometchat-spacing-1, 4px);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--cometchat-audios-bubble-toggle-padding, var(--cometchat-spacing-2, 8px));
+  border: none;
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(
+    --cometchat-audios-bubble-toggle-background,
+    color-mix(in srgb, var(--cometchat-text-color-primary) 6%, transparent)
+  );
+  color: var(--cometchat-audios-bubble-toggle-color, var(--cometchat-primary-color));
+  font-size: var(--cometchat-audios-bubble-toggle-font-size, 13px);
+  font-weight: 600;
+  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Chevron: down to expand, up to collapse. Masked so it inherits the button's colour. */
+.cometchat-audios-bubble__toggle-icon {
+  flex: none;
+  width: var(--cometchat-audios-bubble-toggle-icon-size, 18px);
+  height: var(--cometchat-audios-bubble-toggle-icon-size, 18px);
+  background-color: currentColor;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-audios-bubble--sender .cometchat-audios-bubble__toggle {
+  background: var(
+    --cometchat-audios-bubble-toggle-background-outgoing,
+    color-mix(in srgb, var(--cometchat-static-white, #ffffff) 14%, transparent)
+  );
+  color: var(--cometchat-audios-bubble-toggle-color-outgoing, var(--cometchat-static-white, #ffffff));
+}
+
+.cometchat-audios-bubble__toggle:hover {
+  background: color-mix(in srgb, var(--cometchat-text-color-primary) 10%, transparent);
+}
+
+.cometchat-audios-bubble--sender .cometchat-audios-bubble__toggle:hover {
+  background: color-mix(in srgb, var(--cometchat-static-white, #ffffff) 22%, transparent);
+}
+
+.cometchat-audios-bubble__toggle:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) solid
+    var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: 2px;
+}
+
+/* Play / pause button — a white disc with a primary glyph in BOTH directions, matching the React
+   kit. It deliberately does NOT invert for incoming: a white disc reads against the neutral bubble
+   and the primary-coloured one alike, so one treatment covers both (React sets the same colours on
+   its --sender and --receiver rules). 32px disc + 1.05 hover scale are React's values too. */
+.cometchat-audios-bubble__play {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cometchat-audios-bubble-play-size, 32px);
+  height: var(--cometchat-audios-bubble-play-size, 32px);
+  padding: 0;
+  border: none;
+  border-radius: var(--cometchat-radius-max);
+  background-color: var(--cometchat-audios-bubble-play-background, var(--cometchat-static-white, #ffffff));
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.cometchat-audios-bubble__play:hover {
+  transform: scale(1.05);
+}
+
+/* React draws its glyphs as CSS shapes (a border triangle / two bars, both ~12px tall); these are
+   Material SVGs masked into a box, and the two icons sit at different scales inside their 24 viewBox
+   (play ~37% of the box, pause ~54%), so no single box size reproduces both exactly. 24-in-32 is the
+   conventional pairing and puts pause almost on React's 12px; the play triangle reads a touch
+   smaller, which is inherent to the asset rather than a sizing mistake. */
+.cometchat-audios-bubble__play-icon {
+  width: var(--cometchat-audios-bubble-play-icon-size, 24px);
+  height: var(--cometchat-audios-bubble-play-icon-size, 24px);
+  background-color: var(--cometchat-audios-bubble-play-icon-color, var(--cometchat-primary-color));
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.cometchat-audios-bubble__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-2, 8px);
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-audios-bubble__name {
+  font: var(--cometchat-font-body-medium);
+  color: var(--cometchat-audios-bubble-name-color, var(--cometchat-text-color-primary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cometchat-audios-bubble--sender .cometchat-audios-bubble__name {
+  color: var(--cometchat-audios-bubble-name-color-outgoing, var(--cometchat-static-white, #ffffff));
+}
+
+/* Seek bar: a 6px flat track with a 16px white knob. The track carries NO border — the native
+   range control draws one by default, so every part is reset explicitly. */
+.cometchat-audios-bubble__slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: var(--cometchat-audios-bubble-slider-height, 6px);
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: var(
+    --cometchat-audios-bubble-slider-track,
+    color-mix(in srgb, var(--cometchat-text-color-primary) 14%, transparent)
+  );
+  cursor: pointer;
+}
+
+.cometchat-audios-bubble--sender .cometchat-audios-bubble__slider {
+  background: var(
+    --cometchat-audios-bubble-slider-track-outgoing,
+    color-mix(in srgb, var(--cometchat-static-white, #ffffff) 30%, transparent)
+  );
+}
+
+.cometchat-audios-bubble__slider::-webkit-slider-runnable-track {
+  height: var(--cometchat-audios-bubble-slider-height, 6px);
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: transparent;
+}
+
+.cometchat-audios-bubble__slider::-moz-range-track {
+  height: var(--cometchat-audios-bubble-slider-height, 6px);
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: transparent;
+}
+
+.cometchat-audios-bubble__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--cometchat-audios-bubble-slider-thumb-size, 16px);
+  height: var(--cometchat-audios-bubble-slider-thumb-size, 16px);
+  border-radius: 50%;
+  background: var(--cometchat-static-white, #ffffff);
+  border: 1px solid var(--cometchat-border-color-default);
+  box-shadow: var(--cometchat-shadow-xs, 0 1px 2px rgba(16, 24, 40, 0.05));
+  cursor: pointer;
+  /* Centre the knob on the 6px track. */
+  margin-top: calc(
+    (
+        var(--cometchat-audios-bubble-slider-height, 6px) -
+          var(--cometchat-audios-bubble-slider-thumb-size, 16px)
+      ) / 2
+  );
+}
+
+.cometchat-audios-bubble__slider::-moz-range-thumb {
+  width: var(--cometchat-audios-bubble-slider-thumb-size, 16px);
+  height: var(--cometchat-audios-bubble-slider-thumb-size, 16px);
+  border-radius: 50%;
+  background: var(--cometchat-static-white, #ffffff);
+  border: 1px solid var(--cometchat-border-color-default);
+  box-shadow: var(--cometchat-shadow-xs, 0 1px 2px rgba(16, 24, 40, 0.05));
+  cursor: pointer;
+}
+
+/* Elapsed / total, BELOW the seek bar. */
+.cometchat-audios-bubble__duration {
+  font: var(--cometchat-font-caption1-regular);
+  color: var(--cometchat-audios-bubble-duration-color, var(--cometchat-text-color-tertiary));
+  font-variant-numeric: tabular-nums;
+}
+
+.cometchat-audios-bubble--sender .cometchat-audios-bubble__duration {
+  color: var(
+    --cometchat-audios-bubble-duration-color-outgoing,
+    color-mix(in srgb, var(--cometchat-static-white, #ffffff) 80%, transparent)
+  );
+}
+
+/* Container only — typography, wrapping and mention/link styling come from the nested
+   cometchat-text-bubble, exactly as on the image / video / file bubbles. */
+.cometchat-audios-bubble__caption {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 2px;
+  /* Caption, not a standalone message: no surface of its own, and the inset matches the audio row
+     above it. Same values as the React kit's CometChatAudioBubble.css. */
+  --cometchat-text-bubble-background: transparent;
+  --cometchat-text-bubble-padding: 4px 4px 6px 8px;
+}
+
+.cometchat-audios-bubble__play:focus-visible,
+.cometchat-audios-bubble__slider:focus-visible {
+  outline: var(--cometchat-focus-ring-width, 2px) solid
+    var(--cometchat-focus-ring-color, var(--cometchat-primary-color));
+  outline-offset: 2px;
+}

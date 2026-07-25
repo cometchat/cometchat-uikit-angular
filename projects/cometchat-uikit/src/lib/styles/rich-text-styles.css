@@ -100,6 +100,16 @@ code.cometchat-rich-text__code {
     padding-left: var(--cometchat-padding-8);
     margin: 0;
 }
+/* ProseMirror wraps every line in a <p>, which carries the UA default ~1em top/bottom margin. In
+   plain mode the `--plain *` reset zeroes it, but rich-text mode had no equivalent — so editing a
+   populated caption showed a 14px band above and below the text. Zero it; consecutive paragraphs
+   keep a small gap so multi-paragraph content doesn't collapse into one block. */
+.cometchat-rich-text-editor__content p{
+    margin: 0;
+}
+.cometchat-rich-text-editor__content p + p{
+    margin-top: var(--cometchat-spacing-1);
+}
 /* Nested ordered list cycling in composer: decimal → lower-alpha → lower-roman */
 .cometchat-rich-text-editor__content ol ol {
     list-style-type: lower-alpha;

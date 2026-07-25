@@ -20,6 +20,8 @@ import {FormatterConfigService} from '../../services/formatter-config.service';
 import {HtmlSanitizerService} from '../../services/html-sanitizer.service';
 import {ConversationSubtitleService} from '../../services/conversation-subtitle.service';
 import {stripRichTextFormatting} from '../../utils/util';
+import {getMediaCaption} from '../../utils/message-metadata-utils';
+import {getMediaPreview, isMediaPreviewType} from '../../utils/message-preview-utils';
 import {CometChatUIKitConstants} from '../../constants';
 import {getConversationAvatarImage, getConversationAvatarName, getConversationUserStatus, getConversationGroupType, getReceiptStatus, isURL, hasMarkdownLink, getConversationAccessibleLabel,} from './cometchat-conversation-item.utils';
 import {CometChatLogger} from '../../utils/CometChatLogger';
@@ -184,10 +186,11 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     }
     switch (messageType) {
       case 'text': { const tm = this.lastMessage as CometChat.TextMessage; const rt = tm.getText() || ''; if (this.hasMarkdownLink(rt)) return rt.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); if (this.isURL(rt)) return rt; return this.formatLastMessageSubtitle(); }
-      case 'image': return CometChatLocalize.getLocalizedString('conversation_subtitle_image');
-      case 'video': return CometChatLocalize.getLocalizedString('conversation_subtitle_video');
-      case 'audio': return CometChatLocalize.getLocalizedString('conversation_subtitle_audio');
-      case 'file': return CometChatLocalize.getLocalizedString('conversation_subtitle_file');
+      case 'image':
+      case 'video':
+      case 'audio':
+      case 'file':
+        return this.getMediaSubtitle().text;
       case 'extension_poll': return CometChatLocalize.getLocalizedString('conversation_subtitle_poll');
       case 'extension_sticker': return CometChatLocalize.getLocalizedString('conversation_subtitle_sticker');
       case 'extension_document': return CometChatLocalize.getLocalizedString('conversation_subtitle_collaborative_document');
@@ -241,32 +244,89 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   private isURL(text: string): boolean { return isURL(text); }
   private hasMarkdownLink(text: string): boolean { return hasMarkdownLink(text); }
   private formatLastMessageSubtitle(): string {
-    const textMessage = this.lastMessage as CometChat.TextMessage; const rawText = textMessage.getText() || ''; const mentionedUsers = textMessage.getMentionedUsers() || [];
-    if (!rawText) {
-      // Fallback: no text — try metadata as last resort
+    const textMessage = this.lastMessage as CometChat.TextMessage;
+    return this.formatSubtitleSource(textMessage.getText() || '', textMessage.getMentionedUsers() || []);
+  }
+
+  /** Memo for {@link getMediaSubtitle}; both subtitle getters run on every change detection. */
+  private mediaSubtitleMemo?: { key: string; text: string; isHtml: boolean };
+
+  /**
+   * Subtitle for an image/video/audio/file message: the type label with an attachment count, and
+   * the caption when there is one — e.g. "3 Images · nice trip". Voice notes read "Voice Note".
+   *
+   * `text` and `isHtml` are produced together and memoized, because `subtitleText` and
+   * `subtitleHasHtml` are independent getters: computing the caption twice risks them disagreeing
+   * about whether the string is HTML, which would render raw markup or escape real markup.
+   */
+  private getMediaSubtitle(): { text: string; isHtml: boolean } {
+    const message = this.lastMessage!;
+    const caption = getMediaCaption(message);
+    const key = `${message.getId()}|${message.getEditedAt?.() ?? 0}|${caption}`;
+    if (this.mediaSubtitleMemo?.key === key) {
+      return this.mediaSubtitleMemo;
+    }
+
+    let isHtml = false;
+    const text = getMediaPreview(message, 'conversation', {
+      formatCaption: (raw: string) => {
+        if (!raw.trim()) return '';
+        const mentioned = (message as CometChat.TextMessage).getMentionedUsers?.() ?? [];
+        const rendered = this.renderSubtitleSource(raw, mentioned, false);
+        isHtml = rendered.isHtml;
+        return rendered.text;
+      },
+      // Once the caption is HTML, the label shares the same string and must be escaped too.
+      formatLabel: (label: string) => (isHtml ? this.htmlSanitizer.escapeUserHtml(label) : label),
+    });
+
+    this.mediaSubtitleMemo = { key, text, isHtml };
+    return this.mediaSubtitleMemo;
+  }
+
+  /**
+   * Render arbitrary message text (a text message's body, or a media message's caption) for the
+   * subtitle: rich-text metadata wins, then markdown -> sanitized HTML, else plain text with SDK
+   * mention tags resolved.
+   *
+   * Reports `isHtml` alongside the string instead of leaving callers to re-derive it from the raw
+   * input: a predicate that disagreed with the branch actually taken here would either print markup
+   * as literal text or hand unescaped text to `[innerHTML]`.
+   */
+  private renderSubtitleSource(rawText: string, mentionedUsers: CometChat.User[], isMessageBody = true): { text: string; isHtml: boolean } {
+    const textMessage = this.lastMessage as CometChat.TextMessage;
+    // `metadata.richText` describes the message BODY. A media caption is not the body, so the
+    // pre-rendered HTML must not be substituted for it.
+    if (isMessageBody) {
       try {
         const metadata = textMessage.getMetadata?.() as Record<string, any> | undefined;
         const richText = metadata?.['richText'] as { html?: string; hasFormatting?: boolean } | undefined;
-        if (richText?.html && richText?.hasFormatting) { const sanitized = this.sanitizeSubtitleHtml(richText.html); if (sanitized) return sanitized; }
-      } catch {}
-      return '';
+        if (richText?.html && richText?.hasFormatting) { const sanitized = this.sanitizeSubtitleHtml(richText.html); if (sanitized) return { text: sanitized, isHtml: true }; }
+      } catch {
+      }
     }
     if (/(\*\*|(?<!\*)\*(?!\*|\s)|__|~~|`|_(?=[^\s_])|^>\s.+|^&gt;\s.+|^ *[-*]\s|^ *\d+\.\s)/m.test(rawText) || this.hasMarkdownLink(rawText)) { const escaped = this.htmlSanitizer.escapeUserHtml(rawText); const formatters = this.getFormattersForSubtitle(); let formattedText = escaped;
       for (const formatter of formatters) { try { if (formatter instanceof CometChatMentionsFormatter) { if (this.hasSdkMentionTags(rawText) && formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.formatSdkMentions(formattedText, mentionedUsers); }
           } else if (formatter.id !== 'tiptap-formatter') { if (formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.format(formattedText); }
           } } catch {} }
-      return this.sanitizeSubtitleHtml(formattedText); }
+      return { text: this.sanitizeSubtitleHtml(formattedText), isHtml: true }; }
     const plainText = stripRichTextFormatting(rawText); const formatters = this.getFormattersForSubtitle();
-    if (!formatters || formatters.length === 0) { return this.formatPlainMentions(plainText, mentionedUsers); }
+    if (!formatters || formatters.length === 0) { return { text: this.formatPlainMentions(plainText, mentionedUsers), isHtml: false }; }
     const hasSdkMentions = this.hasSdkMentionTags(plainText); const hasCustomFormatters = formatters.some(f => !(f instanceof CometChatMentionsFormatter) && f.id !== 'tiptap-formatter');
-    if (!hasSdkMentions && !hasCustomFormatters) { return plainText; }
-    const hasMentionsFormatter = formatters.some(f => f instanceof CometChatMentionsFormatter); if (!hasMentionsFormatter && !hasCustomFormatters) { return this.formatPlainMentions(plainText, mentionedUsers); }
+    if (!hasSdkMentions && !hasCustomFormatters) { return { text: plainText, isHtml: false }; }
+    const hasMentionsFormatter = formatters.some(f => f instanceof CometChatMentionsFormatter); if (!hasMentionsFormatter && !hasCustomFormatters) { return { text: this.formatPlainMentions(plainText, mentionedUsers), isHtml: false }; }
     const escapedText = this.htmlSanitizer.escapeUserHtml(plainText); let formattedText = escapedText;
     for (const formatter of formatters) { try { if (formatter instanceof CometChatMentionsFormatter) { if (hasSdkMentions && formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.formatSdkMentions(formattedText, mentionedUsers); }
         } else if (formatter.id !== 'tiptap-formatter') { if (formatter.shouldFormat(formattedText, this.lastMessage)) { formattedText = formatter.format(formattedText); }
         } } catch (error) { CometChatLogger.error('CometChatConversationItem', 'Formatter error:', error); } }
-    return this.sanitizeSubtitleHtml(formattedText);
+    return { text: this.sanitizeSubtitleHtml(formattedText), isHtml: true };
   }
+
+  /** {@link renderSubtitleSource} for callers that only need the rendered string. */
+  private formatSubtitleSource(rawText: string, mentionedUsers: CometChat.User[], isMessageBody = true): string {
+    return this.renderSubtitleSource(rawText, mentionedUsers, isMessageBody).text;
+  }
+
   private getFormattersForSubtitle(): CometChatTextFormatter[] {
     const effectiveFormatters = this.effectiveTextFormatters();
     const formatters =
@@ -284,7 +344,14 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   }
   get subtitleHasHtml(): boolean {
     if (!this.lastMessage || this.lastMessage.getDeletedAt()) return false;
-    if (this.lastMessage.getType() !== 'text' || this.lastMessage.getCategory() !== 'message') return false;
+    if (this.lastMessage.getCategory() !== 'message') return false;
+    // These win over the type switch in `subtitleText`, and both yield plain text.
+    if (this.isAgentConversation) return false;
+    const typeKey = `${this.lastMessage.getType()}_${this.lastMessage.getCategory()}`;
+    if (this.subtitleService.getSubtitle(typeKey, this.lastMessage) !== null) return false;
+    // A media caption goes through the same markdown/mention pipeline as a text body.
+    if (isMediaPreviewType(this.lastMessage.getType())) return this.getMediaSubtitle().isHtml;
+    if (this.lastMessage.getType() !== 'text') return false;
     const textMessage = this.lastMessage as CometChat.TextMessage; const rawText = textMessage.getText() || '';
     if (!rawText) {
       // Fallback: no text — check metadata

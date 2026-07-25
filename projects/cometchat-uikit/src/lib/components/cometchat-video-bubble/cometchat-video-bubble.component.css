@@ -75,7 +75,18 @@
  * Single video layout
  * @see Requirements 6.1, 6.2
  */
+/* Single needs a CONCRETE width for the same reason the multi-video layouts below do: the tile's
+   thumbnail is out of flow, so nothing inside gives the width:100% chain anything to resolve
+   against. In a shrink-to-fit bubble the whole chain then collapsed onto the wrapper's 200px
+   min-width — which is why a lone video rendered at 200x113 while an image in the same slot filled
+   the bubble. (The image bubble gets away without this: its <img> stays in flow and carries an
+   intrinsic width.) */
+.cometchat-video-bubble--single {
+  width: 100%;
+}
+
 .cometchat-video-bubble--single .cometchat-video-bubble__container {
+  width: var(--cometchat-video-bubble-single-width, 320px);
   max-width: var(--cometchat-video-bubble-single-max-width, 400px);
 }
 
@@ -134,6 +145,22 @@
   width: 100%;
 }
 
+/* Multi-video layouts need a CONCRETE width. The tiles are blank (failed/403 thumbnails are removed,
+   leaving a zero-size placeholder), so unlike the image grid — whose <img width="150"> gives the grid
+   intrinsic size — the video grid has nothing to size to and collapses. Give it a fixed, responsive
+   width so it renders at a proper size regardless of whether thumbnails load. Tunable via the var. */
+.cometchat-video-bubble--grid,
+.cometchat-video-bubble--grid-2x2,
+.cometchat-video-bubble--overflow {
+  width: 100%;
+}
+.cometchat-video-bubble--grid .cometchat-video-bubble__container,
+.cometchat-video-bubble--grid-2x2 .cometchat-video-bubble__container,
+.cometchat-video-bubble--overflow .cometchat-video-bubble__container {
+  width: var(--cometchat-video-bubble-grid-width, 320px);
+  max-width: 100%;
+}
+
 /**
  * Two-column grid for 2 videos
  * @see Requirements 7.1, 7.3
@@ -143,11 +170,30 @@
 }
 
 /**
- * Three-column grid for 3 videos
- * @see Requirements 7.1, 7.3
+ * 3-video grid: one large tile on the left + two stacked on the right (square overall) — matches
+ * the image bubble grid.
  */
 .cometchat-video-bubble__grid--three-col {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 1 / 1;
+}
+.cometchat-video-bubble__grid--three-col > .cometchat-video-bubble__video-wrapper:first-child {
+  grid-row: 1 / span 2;
+}
+
+/* In a grid, video tiles are square like image tiles (a single video keeps its 16:9). The 3-video
+   layout's cells fill their track instead. Ordered so the three-col rule wins. */
+.cometchat-video-bubble__grid .cometchat-video-bubble__video-wrapper {
+  aspect-ratio: 1 / 1;
+  /* A grid item's default `min-height: auto` is its content's min-content size; a tall (portrait)
+     video's intrinsic height then overrides the aspect-ratio and stretches the tile. Pin it to 0 so
+     the aspect-ratio is the sole height driver (belt-and-suspenders with the out-of-flow thumbnail). */
+  min-width: 0;
+  min-height: 0;
+}
+.cometchat-video-bubble__grid--three-col .cometchat-video-bubble__video-wrapper {
+  aspect-ratio: auto;
 }
 
 /**
@@ -213,16 +259,34 @@
    ============================================ */
 
 .cometchat-video-bubble__thumbnail {
+  /* Absolutely positioned so the <video> is OUT OF FLOW and can never contribute to the wrapper's
+     height. A raw <video> reports its own (here: portrait) intrinsic size once it decodes, and an
+     in-flow replaced element's min-content height overrides the wrapper's `aspect-ratio` (a grid
+     item's `min-height: auto` yields to it) — so a thin, tall video stretched the tile the moment its
+     first frame loaded, but only after a reload/convo-switch when it decoded before layout settled.
+     Taking it out of flow makes the wrapper's aspect-ratio the sole height driver. The wrapper is
+     `position: relative`, so inset:0 fills it exactly. */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  /* The thumbnail is a <video> painting the first frame — a raw <video> is black until it decodes,
+     so match the placeholder background; and let clicks fall through to the wrapper (which owns the
+     click/keydown handlers that open the player). */
+  background: var(--cometchat-background-color-03);
+  pointer-events: none;
 }
 
 /**
  * Placeholder shown when thumbnail fails to load
  */
 .cometchat-video-bubble__thumbnail-placeholder {
+  /* Out of flow for the same reason as the thumbnail: the wrapper's aspect-ratio is the only thing
+     that should set the tile's height. */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -235,12 +299,10 @@
  * Video icon inside the placeholder
  * Uses a CSS triangle (play icon shape) as a simple fallback indicator
  */
+/* Hidden: the play overlay already sits on top of the placeholder, so the extra triangle here just
+   produced an ugly double-triangle on failed (403) thumbnails. */
 .cometchat-video-bubble__placeholder-icon {
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 10px 0 10px 18px;
-  border-color: transparent transparent transparent var(--cometchat-icon-color-secondary);
+  display: none;
 }
 
 /**
@@ -289,6 +351,19 @@
 .cometchat-video-bubble__video-wrapper:hover .cometchat-video-bubble__play-overlay {
   background: var(--cometchat-video-bubble-play-overlay-background-hover, var(--cometchat-overlay-background-heavy));
   transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Grid tiles are smaller than a single video; scale the play button with the tile (clamped) so it
+   stays a clear-but-not-overwhelming affordance on each video frame. */
+.cometchat-video-bubble__grid .cometchat-video-bubble__play-overlay {
+  width: clamp(28px, 30%, 48px);
+  height: clamp(28px, 30%, 48px);
+  backdrop-filter: none;
+}
+
+.cometchat-video-bubble__grid .cometchat-video-bubble__play-icon {
+  border-width: 6px 0 6px 10px;
+  margin-left: 2px;
 }
 
 /* ============================================
@@ -353,10 +428,12 @@
  * Overflow tile showing 4th video with overlay
  * @see Requirements 8.3, 8.4
  */
+/* Square, like the sibling grid tiles — the overflow grid's `1fr` rows are sized by those squares,
+   so a 16:9 tile here would leave the bottom of its cell empty. */
 .cometchat-video-bubble__overflow-tile {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: var(--cometchat-radius-2);
   cursor: pointer;
@@ -439,10 +516,15 @@
  * Caption container using TextMessageBubbleComponent
  * @see Requirements 10.2, 10.4
  */
+/* The nested text bubble is a caption here, not a standalone message: it must not paint its own
+   surface inside the media bubble, and its padding is tightened so the text sits flush with the
+   video edges. Mirrors the React kit's CometChatVideoBubble.css. */
 .cometchat-video-bubble__caption {
   display: flex;
   flex-direction: column;
   width: 100%;
+  --cometchat-text-bubble-background: transparent;
+  --cometchat-text-bubble-padding: 4px 4px 6px 4px;
 }
 
 /* ============================================

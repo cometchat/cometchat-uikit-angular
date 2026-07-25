@@ -78,12 +78,68 @@
   white-space: nowrap;
 }
 
+/* [thread] "You:" [type glyph] text — laid out in a row so only the text ellipsises. */
 .cometchat-search-messages__list-item-subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-1, 4px);
   font: var(--cometchat-font-body-regular);
   color: var(--cometchat-text-color-secondary, #727272);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cometchat-search__messages-subtitle-sender {
+  flex-shrink: 0;
+}
+
+/* Only the text is allowed to shrink; min-width:0 lets it actually do so inside the flex row. */
+.cometchat-search__messages-list-item-subtitle-content {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inline media glyph, between the sender prefix and the text. Independent of the LEADING view —
+   images and videos have no leading icon but do get this one. */
+.cometchat-search__messages-subtitle-icon,
+.cometchat-search__messages-subtitle-icon-thread {
+  height: var(--cometchat-search-subtitle-icon-size, 16px);
+  width: var(--cometchat-search-subtitle-icon-size, 16px);
+  display: inline-flex;
+  flex-shrink: 0;
+  background: var(--cometchat-icon-color-secondary, #a1a1a1);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-search__messages-subtitle-icon-thread {
+  align-items: center;
+  justify-content: center;
+  -webkit-mask: url("../../../assets/conversations_thread.svg") center center no-repeat;
+  mask: url("../../../assets/conversations_thread.svg") center center no-repeat;
+}
+
+.cometchat-search__messages-subtitle-icon--image {
+  -webkit-mask: url("../../../assets/conversations_image-message.svg") center center no-repeat;
+  mask: url("../../../assets/conversations_image-message.svg") center center no-repeat;
+}
+
+.cometchat-search__messages-subtitle-icon--video {
+  -webkit-mask: url("../../../assets/conversations_video-message.svg") center center no-repeat;
+  mask: url("../../../assets/conversations_video-message.svg") center center no-repeat;
+}
+
+.cometchat-search__messages-subtitle-icon--audio {
+  -webkit-mask: url("../../../assets/conversations_audio-message.svg") center center no-repeat;
+  mask: url("../../../assets/conversations_audio-message.svg") center center no-repeat;
+}
+
+.cometchat-search__messages-subtitle-icon--file {
+  -webkit-mask: url("../../../assets/conversations_file-message.svg") center center no-repeat;
+  mask: url("../../../assets/conversations_file-message.svg") center center no-repeat;
 }
 
 .cometchat-search-messages__see-more {
@@ -306,9 +362,11 @@
   background: transparent;
 }
 
+/* The stacked-sheets illustration is drawn at 40px, as in the React kit — at 32px the fanned
+   sheets behind the front page collapse into a smudge. */
 .cometchat-search__messages-leading-view-file-icon {
-  height: 32px;
-  width: 32px;
+  height: var(--cometchat-search-file-icon-size, 40px);
+  width: var(--cometchat-search-file-icon-size, 40px);
   object-fit: contain;
 }
 
@@ -352,6 +410,21 @@
   height: auto;
   object-fit: contain;
   border-radius: var(--cometchat-radius-2, 8px);
+}
+
+/* "+N" badge over an image/video thumbnail when the message carries several attachments. The
+   subtitle deliberately omits the count for those types, so this is the only place it appears. */
+.cometchat-search__messages-trailing-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: var(--cometchat-radius-2, 8px);
+  font: var(--cometchat-font-body-bold, 700 14px/20px sans-serif);
+  color: var(--cometchat-static-white, #fff);
+  pointer-events: none;
 }
 
 .cometchat-search__messages-trailing-view-date {

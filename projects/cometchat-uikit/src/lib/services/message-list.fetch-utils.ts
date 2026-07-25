@@ -8,6 +8,27 @@ import {CometChatUIKit} from '../cometchat-uikit';
 import {CometChatUIKitUtility} from '../CometChatUIKitUtility';
 import {ErrorCallback} from './message-composer.service';
 import {flushPendingSentMessages} from './message-list.sent-handler';
+import {isDuplicateMessageImpl} from './message-list.message-ops';
+
+/**
+ * Drops messages the list already holds, and any repeated within the batch itself.
+ *
+ * A fetch can overlap what is already on screen: messages that arrive live do not
+ * come through a fetch, so a re-fetch anchored on an older cursor — as happens on
+ * reconnect — returns messages that were already appended in real time.
+ */
+function excludeAlreadyListed(ctx: FetchContext, messages: CometChat.BaseMessage[]): CometChat.BaseMessage[] {
+  const seenIds = new Set<number>();
+  return messages.filter(message => {
+    if (isDuplicateMessageImpl(ctx, message)) { return false; }
+    const rawId = message.getId();
+    if (!rawId) { return true; }
+    const messageId = ctx.normalizeMessageId(rawId);
+    if (seenIds.has(messageId)) { return false; }
+    seenIds.add(messageId);
+    return true;
+  });
+}
 
 export interface FetchContext {
   messagesRequest: CometChat.MessagesRequest | null;
@@ -49,8 +70,14 @@ export async function fetchPreviousMessagesImpl(ctx: FetchContext): Promise<bool
     const messages: CometChat.BaseMessage[] = await ctx.messagesRequest.fetchPrevious();
     if (generation !== ctx.fetchGeneration) return false;
     if (messages && messages.length > 0) {
-      ctx.allMessagesSignal.update(current => [...messages, ...current]);
-      ctx.messagesSignal.update(current => [...messages, ...current]);
+      // Cursors and the has-more result track what the server returned, not what
+      // survived deduplication, so paging stays correct even if the whole page
+      // was already on screen.
+      const newMessages = excludeAlreadyListed(ctx, messages);
+      if (newMessages.length > 0) {
+        ctx.allMessagesSignal.update(current => [...newMessages, ...current]);
+        ctx.messagesSignal.update(current => [...newMessages, ...current]);
+      }
       const oldestMessage = messages[0];
       const isFirstFetch = ctx.prevMessageIdSignal() === 0;
       ctx.prevMessageIdSignal.set(oldestMessage.getId());
@@ -60,7 +87,7 @@ export async function fetchPreviousMessagesImpl(ctx: FetchContext): Promise<bool
         // Rebuild nextMessagesRequest with the anchor ID so fetchNext() has the required MessageId
         ctx.nextMessagesRequest = ctx.buildNextMessagesRequest(newestMessage.getId());
       }
-      for (const message of messages) {
+      for (const message of newMessages) {
         const messageId = ctx.normalizeMessageId(message.getId());
         ctx.messageIdMap.set(messageId, message);
         const muid = message.getMuid?.();
@@ -95,12 +122,17 @@ export async function fetchNextMessagesImpl(ctx: FetchContext): Promise<boolean>
     const messages: CometChat.BaseMessage[] = await ctx.nextMessagesRequest.fetchNext();
     if (generation !== ctx.fetchGeneration) return false;
     if (messages && messages.length > 0) {
-      ctx.allMessagesSignal.update(current => [...current, ...messages]);
-      ctx.messagesSignal.update(current => [...current, ...messages]);
+      // On reconnect this request is rebuilt from the stored cursor and re-runs,
+      // so it commonly returns messages that already arrived over the socket.
+      const newMessages = excludeAlreadyListed(ctx, messages);
+      if (newMessages.length > 0) {
+        ctx.allMessagesSignal.update(current => [...current, ...newMessages]);
+        ctx.messagesSignal.update(current => [...current, ...newMessages]);
+      }
       const newestMessage = messages[messages.length - 1];
       ctx.nextMessageIdSignal.set(newestMessage.getId());
       if (ctx.prevMessageIdSignal() === 0) { const oldestMessage = messages[0]; ctx.prevMessageIdSignal.set(oldestMessage.getId()); }
-      for (const message of messages) {
+      for (const message of newMessages) {
         const messageId = ctx.normalizeMessageId(message.getId());
         ctx.messageIdMap.set(messageId, message);
         const muid = message.getMuid?.();

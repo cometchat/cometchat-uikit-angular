@@ -68,6 +68,171 @@ function defaultCtx(overrides: Partial<MessageOptionsContext> = {}): MessageOpti
   };
 }
 
+// ---------------------------------------------------------------------------
+// Multi-attachment: captioned-media Copy/Edit + moderation (React parity)
+// ---------------------------------------------------------------------------
+
+const ME = { getUid: () => 'me' } as any;
+
+function ctx(over: Partial<MessageOptionsContext> = {}): MessageOptionsContext {
+  return {
+    loggedInUser: ME,
+    group: null,
+    hideReactionOption: false,
+    hideReplyOption: false,
+    hideReplyInThreadOption: false,
+    hideCopyMessageOption: false,
+    hideEditMessageOption: false,
+    hideDeleteMessageOption: false,
+    hideTranslateMessageOption: false,
+    hideMessageInfoOption: false,
+    hideFlagMessageOption: false,
+    hideMessagePrivatelyOption: false,
+    showMarkAsUnreadOption: false,
+    additionalOptions: [],
+    ...over,
+  } as MessageOptionsContext;
+}
+
+function mkMessage(over: { type?: string; caption?: string; ownedByMe?: boolean; moderationStatus?: string } = {}): any {
+  const message: any = {
+    getType: () => over.type ?? 'image',
+    getCategory: () => 'message',
+    getDeletedAt: () => undefined,
+    getSender: () => ({ getUid: () => (over.ownedByMe === false ? 'other' : 'me') }),
+    getCaption: () => over.caption ?? '',
+    getData: () => undefined,
+    getMetadata: () => null,
+  };
+  if (over.moderationStatus !== undefined) {
+    message.getModerationStatus = () => over.moderationStatus;
+  }
+  return message;
+}
+
+const ids = (message: any, c = ctx()) => getMessageOptionsImpl(c, message).map(o => o.id);
+
+describe('getMessageOptionsImpl — Copy/Edit on captioned media (React parity)', () => {
+  it('offers Copy and Edit on a media message WITH a caption', () => {
+    const options = ids(mkMessage({ type: 'image', caption: 'nice trip' }));
+    expect(options).toContain('copy');
+    expect(options).toContain('edit');
+  });
+
+  it('offers neither on a media message WITHOUT a caption', () => {
+    const options = ids(mkMessage({ type: 'image', caption: '' }));
+    expect(options).not.toContain('copy');
+    expect(options).not.toContain('edit');
+  });
+
+  it('treats a blank-only caption as no caption', () => {
+    const options = ids(mkMessage({ type: 'image', caption: '   ' }));
+    expect(options).not.toContain('copy');
+    expect(options).not.toContain('edit');
+  });
+
+  it('applies to every media type', () => {
+    for (const type of ['image', 'video', 'audio', 'file']) {
+      const options = ids(mkMessage({ type, caption: 'hi' }));
+      expect(options, type).toContain('copy');
+      expect(options, type).toContain('edit');
+    }
+  });
+
+  it('Edit stays sender-only; Copy does not', () => {
+    const notMine = mkMessage({ type: 'image', caption: 'hi', ownedByMe: false });
+    const options = ids(notMine);
+    expect(options).toContain('copy');
+    expect(options).not.toContain('edit');
+  });
+
+  it('still honours the hide flags', () => {
+    const message = mkMessage({ type: 'image', caption: 'hi' });
+    expect(ids(message, ctx({ hideCopyMessageOption: true }))).not.toContain('copy');
+    expect(ids(message, ctx({ hideEditMessageOption: true }))).not.toContain('edit');
+  });
+
+  it('does not leak Translate onto media (text-only, as before)', () => {
+    expect(ids(mkMessage({ type: 'image', caption: 'hi' }))).not.toContain('translate');
+    expect(ids(mkMessage({ type: 'text', caption: '' }))).toContain('translate');
+  });
+
+  it('text messages keep Copy and Edit regardless of caption', () => {
+    const options = ids(mkMessage({ type: 'text' }));
+    expect(options).toContain('copy');
+    expect(options).toContain('edit');
+  });
+});
+
+describe('getMessageOptionsImpl — disapproved collapses to Delete + Copy (React parity)', () => {
+  const M = CometChatUIKitConstants.moderationStatus;
+  const PARTICIPANT = CometChatUIKitConstants.groupMemberScope.participant;
+  const group = (scope: string) => ({ getScope: () => scope }) as any;
+
+  it('a disapproved text message (mine) yields EXACTLY Delete + Copy — nothing else', () => {
+    const options = ids(mkMessage({ type: 'text', moderationStatus: M.disapproved }));
+    expect(options.sort()).toEqual(['copy', 'delete']);
+  });
+
+  it('strips every other action (react / reply / thread / translate / info / flag / mark-unread)', () => {
+    const options = ids(
+      mkMessage({ type: 'text', moderationStatus: M.disapproved }),
+      ctx({ showMarkAsUnreadOption: true }),
+    );
+    for (const gone of ['react', 'reply', 'replyInThread', 'edit', 'translate', 'info', 'flagMessage', 'markAsUnread']) {
+      expect(options, gone).not.toContain(gone);
+    }
+  });
+
+  it('Copy appears only for text — captioned media disapproved gives Delete only', () => {
+    const options = ids(mkMessage({ type: 'image', caption: 'hi', moderationStatus: M.disapproved }));
+    expect(options).toEqual(['delete']);
+    expect(options).not.toContain('copy');
+  });
+
+  it('Copy is not sender-gated — a disapproved text from someone else still offers Copy', () => {
+    const options = ids(mkMessage({ type: 'text', ownedByMe: false, moderationStatus: M.disapproved }));
+    expect(options).toContain('copy');
+  });
+
+  describe('Delete visibility mirrors React (isSentByMe || (!isParticipant && group))', () => {
+    it('shown for my own message (no group)', () => {
+      expect(ids(mkMessage({ type: 'text', moderationStatus: M.disapproved }))).toContain('delete');
+    });
+
+    it('hidden for another user in a 1:1 (not mine, no group)', () => {
+      const options = ids(mkMessage({ type: 'image', ownedByMe: false, moderationStatus: M.disapproved }));
+      expect(options).not.toContain('delete');
+    });
+
+    it('shown for another user when I am a non-participant (moderator/admin) in a group', () => {
+      const c = ctx({ group: group('admin') });
+      const options = ids(mkMessage({ type: 'image', ownedByMe: false, moderationStatus: M.disapproved }), c);
+      expect(options).toContain('delete');
+    });
+
+    it('hidden for another user when I am only a participant in a group', () => {
+      const c = ctx({ group: group(PARTICIPANT) });
+      const options = ids(mkMessage({ type: 'image', ownedByMe: false, moderationStatus: M.disapproved }), c);
+      expect(options).not.toContain('delete');
+    });
+  });
+
+  it('honours hideDeleteMessageOption / hideCopyMessageOption', () => {
+    const message = mkMessage({ type: 'text', moderationStatus: M.disapproved });
+    expect(ids(message, ctx({ hideDeleteMessageOption: true }))).not.toContain('delete');
+    expect(ids(message, ctx({ hideCopyMessageOption: true }))).not.toContain('copy');
+  });
+
+  it('does NOT restrict approved / pending / unmoderated messages', () => {
+    for (const status of [M.approved, M.pending, M.unmoderated]) {
+      const options = ids(mkMessage({ type: 'text', moderationStatus: status }));
+      expect(options, String(status)).toContain('edit');
+      expect(options, String(status)).toContain('react');
+    }
+  });
+});
+
 describe('cometchat-message-list.option-builders', () => {
 
   // ==================== Deleted messages ====================

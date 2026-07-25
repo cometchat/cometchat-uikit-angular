@@ -8,20 +8,27 @@ export function handleAttachmentOptionClickImpl(self: any, optionId: string): vo
   self.syncLegacyPopoverSignals();
   const fileInput = self.fileInputRef?.nativeElement;
   if (!fileInput) { CometChatLogger.warn('CometChatMessageComposer', 'File input element not found'); return; }
+  // Remember which picker opened the dialog. The chosen option — not the file's MIME type —
+  // decides the staged kind, so a video picked via "File" sends as a file message. The change
+  // handler consumes and clears it; drag-drop / paste never set it and stay MIME-derived.
   switch (optionId) {
     case CometChatUIKitConstants.ComposerAttachmentOption.image:
+      self.pendingPickerKind = 'image';
       fileInput.accept = 'image/*';
       fileInput.click();
       break;
     case CometChatUIKitConstants.ComposerAttachmentOption.video:
+      self.pendingPickerKind = 'video';
       fileInput.accept = 'video/*';
       fileInput.click();
       break;
     case CometChatUIKitConstants.ComposerAttachmentOption.audio:
+      self.pendingPickerKind = 'audio';
       fileInput.accept = 'audio/*';
       fileInput.click();
       break;
     case CometChatUIKitConstants.ComposerAttachmentOption.file:
+      self.pendingPickerKind = 'file';
       fileInput.accept = '*/*';
       fileInput.click();
       break;
