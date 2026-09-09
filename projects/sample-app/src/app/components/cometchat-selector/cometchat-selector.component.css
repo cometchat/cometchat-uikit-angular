@@ -186,6 +186,11 @@
   mask-image: url('../../../assets/new-chat.svg');
 }
 
+.cometchat-selector__context-menu-icon--saved {
+  -webkit-mask-image: url('../../../assets/bookmark.svg');
+  mask-image: url('../../../assets/bookmark.svg');
+}
+
 .cometchat-selector__context-menu-icon--logout {
   -webkit-mask-image: url('../../../assets/logout.svg');
   mask-image: url('../../../assets/logout.svg');

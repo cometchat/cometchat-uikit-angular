@@ -56,6 +56,18 @@ export class CometChatThreadedMessagesComponent implements OnInit, OnDestroy {
   /** Parent message ID for the UIKit list and composer */
   protected parentMessageId = computed(() => this.parentMessage()?.getId());
 
+  /**
+   * Reply to scroll to when the thread is opened from somewhere else — a pinned
+   * or saved row pointing at a reply rather than at a root message. The main
+   * conversation list can never satisfy that jump: it drops thread replies
+   * entirely, keeping only the parent's reply count, so the target only exists
+   * in here.
+   */
+  protected goToMessageId = computed(() => {
+    const id = this.navigationService.goToMessageId();
+    return id !== null ? String(id) : undefined;
+  });
+
   /** Reply count from the parent message */
   protected replyCount = computed(() =>
     this.parentMessage()?.getReplyCount?.() ?? 0

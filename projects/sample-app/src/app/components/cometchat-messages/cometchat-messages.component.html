@@ -16,9 +16,11 @@
       #messageHeader
       [showBackButton]="showBackButton()"
       [showSearchOption]="true"
+      [showPinnedMessagesOption]="true"
       (backClick)="onBackClick()"
       (itemClick)="onHeaderItemClick()"
       (searchClick)="onSearchClick()"
+      (pinnedMessagesClick)="onPinnedMessagesClick()"
     ></cometchat-message-header>
   </div>
 

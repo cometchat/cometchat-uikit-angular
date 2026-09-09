@@ -58,6 +58,30 @@ export interface GlobalConfig {
   /** Hide avatar across components */
   hideAvatar?: boolean;
   /**
+   * Enable the thread follow/unfollow surfaces — the control in the thread
+   * header and the `Follow thread` option in the message action sheet.
+   *
+   * Defaults to **off**: there is no capability flag on the app settings a
+   * client could feature-detect from, so whether the backend has the threads
+   * endpoints deployed is something only the integrator knows. When off,
+   * neither surface renders and no thread request is made, whatever the
+   * per-component `hideThreadSubscription*` flags say.
+   */
+  enableThreadSubscription?: boolean;
+  /**
+   * Force the Pin / Save surfaces on or off, overriding the app-level feature
+   * flags the Chat SDK reports.
+   *
+   * Leave unset in production: the SDK's `isPinMessageEnabled()` /
+   * `isSaveMessageEnabled()` read the app's own settings, which is the right
+   * source of truth. This exists because those flags are provisioned
+   * server-side — so before they are turned on for an app there is no way to
+   * develop or demo against the feature at all, and "flag off" is
+   * indistinguishable from "not built".
+   */
+  enablePinMessage?: boolean;
+  enableSaveMessage?: boolean;
+  /**
    * Custom session settings object for call components (call buttons, call logs, etc.).
    * Pass a plain v5 SessionSettings object — the v4 CallSettingsBuilder is no longer used.
    * @example

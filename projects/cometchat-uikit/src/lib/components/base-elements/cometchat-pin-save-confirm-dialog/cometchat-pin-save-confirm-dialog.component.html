@@ -1,0 +1,10 @@
+<div class="cometchat-pin-save-confirm-dialog">
+  <cometchat-confirm-dialog
+    [title]="title"
+    [messageText]="messageText"
+    [confirmButtonText]="confirmButtonText"
+    [cancelButtonText]="cancelButtonText"
+    (confirmClick)="confirmClick.emit()"
+    (cancelClick)="cancelClick.emit()">
+  </cometchat-confirm-dialog>
+</div>

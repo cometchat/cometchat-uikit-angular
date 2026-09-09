@@ -56,7 +56,7 @@ export function updateLocalReadStatusImpl(ctx: ReadOpsContext, messageIds: numbe
   ctx.messagesSignal.update(updateMessages);
 }
 
-export async function markInitialMessagesAsReadImpl(ctx: ReadOpsContext, messages: CometChat.BaseMessage[], loggedInUser: CometChat.User | null, markAsRead: (msg: CometChat.BaseMessage) => Promise<void>): Promise<void> {
+export async function markInitialMessagesAsReadImpl(ctx: ReadOpsContext, messages: CometChat.BaseMessage[], loggedInUser: CometChat.User | null, markAsRead: (msg: CometChat.BaseMessage) => Promise<void>, markConversationAsRead?: () => Promise<void>): Promise<void> {
   if (messages.length === 0 || !loggedInUser) { return; }
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
@@ -67,11 +67,42 @@ export async function markInitialMessagesAsReadImpl(ctx: ReadOpsContext, message
         const messageId = msg.getId();
         if (messageId) { updateLocalReadStatusImpl(ctx, [messageId]); }
         CometChatMessageEvents.ccMessageRead.next(msg);
+        // Clear the count on the SERVER as well, so it does not reappear on the
+        // next load — the receipt above only says "read up to this message".
+        // Last and optional, so it cannot undo the local state already set.
+        void markConversationAsRead?.();
         break;
       } catch (error) {
         CometChatLogger.error('MessageListService', 'Error marking messages as read on initial load:', error);
       }
     }
+  }
+}
+
+/**
+ * Tell the SERVER the whole conversation is read.
+ *
+ * Distinct from `markAsRead`, which sends a per-message receipt over the
+ * websocket: this is an HTTP call that clears the conversation's unread count
+ * server-side, so the count stays cleared across reloads and devices rather
+ * than only in this session. The React kit calls both; Angular was only ever
+ * sending the receipt, which is why a badge could come back on refresh.
+ *
+ * Failures are logged, not thrown — the receipt has already gone out and the
+ * local count is already cleared, so a rejection here must not surface as a
+ * broken interaction.
+ */
+export async function markConversationAsReadImpl(
+  conversationWith: string,
+  conversationType: string
+): Promise<void> {
+  if (!conversationWith || !conversationType) { return; }
+  try {
+    await CometChat.markConversationAsRead(conversationWith, conversationType);
+  } catch (error) {
+    CometChatLogger.error('MessageListService', 'markConversationAsRead failed', {
+      conversationWith, conversationType, error,
+    });
   }
 }
 

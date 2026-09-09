@@ -6,10 +6,13 @@
       (backClick)="onBackClick()"
     ></cometchat-thread-header>
 
-    <!-- Thread Message List (includes parent message via parentMessageId) -->
+    <!-- Thread Message List. Takes the whole parent message, not just its id:
+         the list scopes off the derived id, and reads the thread's subscription
+         state off the object so a realtime reply can inherit it. -->
     <div class="cometchat-threaded-messages__list">
       <cometchat-message-list
-        [parentMessageId]="parentMessageId()"
+        [parentMessage]="message"
+        [goToMessageId]="goToMessageId()"
         [hideReplyInThreadOption]="true"
       ></cometchat-message-list>
     </div>

@@ -19,6 +19,8 @@ import {CometChatLinkDialogComponent, type LinkData,} from '../base-elements/com
 import {CometChatLinkPopoverComponent} from '../base-elements/cometchat-link-popover/cometchat-link-popover.component';
 import {CometChatErrorBoundaryComponent} from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
 import {MessageComposerService, MentionSuggestion} from '../../services/message-composer.service';
+import {ThreadSubscriptionService} from '../../services/thread-subscription.service';
+import {writeThreadSubscribed} from '../../utils/thread-subscription-utils';
 import {VoiceRecordingCoordinatorService} from '../../services/voice-recording-coordinator.service';
 import {CometChatToastService} from '../base-elements/cometchat-toast/cometchat-toast.service';
 import {RichTextFormatState, RichTextMetadata, SelectionState,} from '../../services/rich-text-editor.interfaces';
@@ -123,6 +125,7 @@ export class CometChatMessageComposerComponent
   implements OnInit, OnDestroy, OnChanges, AfterViewInit
 {
   private messageComposerService = inject(MessageComposerService);
+  private threadSubscription = inject(ThreadSubscriptionService);
   private richTextEditorService = inject(RichTextEditorService);
   private chatStateService = inject(ChatStateService);
   private formatterConfigService = inject(FormatterConfigService);
@@ -182,6 +185,17 @@ export class CometChatMessageComposerComponent
   @Input() headerView?: TemplateRef<unknown>; @Input() footerView?: TemplateRef<unknown>; @Input() sendButtonView?: TemplateRef<unknown>;
   @Input() auxiliaryButtonView?: TemplateRef<unknown>; @Input() secondaryButtonView?: TemplateRef<unknown>; @Input() attachmentIconView?: TemplateRef<unknown>;
   @Input() voiceRecordingIconView?: TemplateRef<unknown>; @Input() emojiIconView?: TemplateRef<unknown>; @Input() errorView?: TemplateRef<any>;
+  /**
+   * Buttons rendered at the trailing end of the rich-text formatting toolbar,
+   * after the built-in groups and an automatically-inserted separator.
+   *
+   * Intended for controls that drive a custom formatter from `textFormatters` —
+   * the template context carries a `composer` handle so the button can act on the
+   * text being typed. Wrap several buttons in one element. Rendered in both the
+   * toolbar and the selection bubble menu, and only while the rich-text editor
+   * and its toolbar are enabled.
+   */
+  @Input() toolbarTrailingView?: TemplateRef<unknown>;
   @Input() listItemTemplate: TemplateRef<any> | null = null; @Input() emptyStateTemplate: TemplateRef<any> | null = null; @Input() errorStateTemplate: TemplateRef<any> | null = null; @Input() loadingStateTemplate: TemplateRef<any> | null = null;
   @Input({ transform: booleanAttribute }) hideError = false;
   @Output() textChange = new EventEmitter<string>(); @Output() sendButtonClick = new EventEmitter<CometChat.BaseMessage>(); @Output() error = new EventEmitter<CometChat.CometChatException>();
@@ -455,7 +469,13 @@ export class CometChatMessageComposerComponent
       message.setAttachments(g.items);
       message.setMuid(CometChatUIKitUtility.ID());
       message.setSentAt(CometChatUIKitUtility.getUnixTimestamp());
-      if (this.parentMessageId) { message.setParentMessageId(this.parentMessageId); }
+      if (this.parentMessageId) {
+        message.setParentMessageId(this.parentMessageId);
+        // Sending in a thread subscribes the sender; seed the optimistic bubble
+        // so its own action sheet is right from the first render. The mirror to
+        // the other surfaces follows once the batch lands.
+        writeThreadSubscribed(message, true);
+      }
       if (quoted) { message.setQuotedMessage(quoted); message.setQuotedMessageId(quoted.getId()); }
       // Merges rather than overwrites, so any metadata the SDK/app already set survives.
       // Caption goes on the LAST message of the batch only.
@@ -467,6 +487,9 @@ export class CometChatMessageComposerComponent
       return message;
     });
 
+    // Captured before any send leaves, so a batch that lands after a logout is
+    // not mirrored into the next user's session.
+    const capturedSession = this.threadSubscription.captureSession();
     try {
       // Optimistic hand-off: emit every pending bubble and clear the composer/tray up front, so the
       // whole batch lands in the message list and LEAVES the preview the instant Send is clicked.
@@ -500,9 +523,14 @@ export class CometChatMessageComposerComponent
           CometChatMessageEvents.ccMessageSent.next({ message, status: MessageStatus.error });
           throw noResult;
         }
+        writeThreadSubscribed(sent, true);
         CometChatMessageEvents.ccMessageSent.next({ message: sent, status: MessageStatus.success });
         last = sent;
       }
+      // Case 4 — the batch was a threaded reply, so the server subscribed the
+      // sender. Mirrored once for the whole batch: it is one thread, and the
+      // event is idempotent for the surfaces listening.
+      if (this.parentMessageId) { this.threadSubscription.mirrorSubscribed(this.parentMessageId, capturedSession); }
       if (last) { this.sendButtonClick.emit(last); }
       this.playOutgoingMessageSound();
       this.announceMessageSent();
@@ -684,6 +712,17 @@ export class CometChatMessageComposerComponent
     // The composerText signal maintains the current content
   }
   get templateContext(): { user?: CometChat.User; group?: CometChat.Group } { return { user: this.currentUser() || undefined, group: this.currentGroup() || undefined }; }
+
+  /**
+   * Context handed to {@link toolbarTrailingView}.
+   *
+   * Carries the composer itself, because a template cannot otherwise reach the
+   * editor: a custom formatting button needs to apply its format to the current
+   * selection, which only the composer's rich-text editor can do.
+   */
+  get toolbarTrailingContext(): { user?: CometChat.User; group?: CometChat.Group; composer: CometChatMessageComposerComponent } {
+    return { ...this.templateContext, composer: this };
+  }
   handleToolbarBold(): void { handleToolbarBoldImpl(this as any); }
   handleToolbarItalic(): void { handleToolbarItalicImpl(this as any); }
   handleToolbarUnderline(): void { handleToolbarUnderlineImpl(this as any); }

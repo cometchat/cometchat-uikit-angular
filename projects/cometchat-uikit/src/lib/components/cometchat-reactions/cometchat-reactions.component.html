@@ -49,15 +49,25 @@
       (popoverOpened)="onMoreListPopoverOpened()"
       (popoverClosed)="onMoreListPopoverClosed()">
 
+      <!-- While the list is open, `forceShowReactionList` keeps this mounted so
+           removing a reaction cannot yank the popover out from under the user.
+           Once the overflow reaches zero there is nothing left to count, so the
+           chip collapses to an invisible anchor rather than announcing "+0" —
+           it still has to exist for the open popover to position against. -->
       <button
         class="cometchat-reactions__more-reaction"
+        [class.cometchat-reactions__more-reaction--empty]="moreCount() === 0"
         type="button"
         aria-haspopup="dialog"
+        [attr.aria-hidden]="moreCount() === 0 ? 'true' : null"
+        [attr.tabindex]="moreCount() === 0 ? -1 : null"
         [attr.aria-label]="'+' + moreCount() + ' ' + ('accessibility_more_reactions' | translate)"
         [attr.aria-expanded]="forceShowReactionList()"
         (click)="updateMoreListPlacement()"
         (keydown)="onMoreReactionsKeyDown($event)">
-        <span class="cometchat-reactions__more-reaction-count" aria-hidden="true">+{{ moreCount() }}</span>
+        @if (moreCount() > 0) {
+          <span class="cometchat-reactions__more-reaction-count" aria-hidden="true">+{{ moreCount() }}</span>
+        }
       </button>
     </cometchat-popover>
 

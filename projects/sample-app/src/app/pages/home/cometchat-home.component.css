@@ -280,3 +280,12 @@
   z-index: 10;
   background: var(--cometchat-background-color-01, #fff);
 }
+
+/* The saved-messages panel ships as a 400px right drawer. Here it stands in for
+   the conversation list, so it fills this column instead — and the border that
+   separated it from a chat on its left would now draw down the app's own edge,
+   so it goes. Both are the component's own variables; no fork. */
+.cometchat-home__saved-overlay {
+  --cometchat-saved-messages-width: 100%;
+  --cometchat-saved-messages-border: none;
+}

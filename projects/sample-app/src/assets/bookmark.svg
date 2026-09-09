@@ -1,8 +1,19 @@
+<!--
+  Bookmark, outlined — Save message.
+
+  Used for the Save action in the Organise submenu and for "Saved messages" in
+  the chat-header menu. The filled counterpart lives in bookmark_filled.svg and
+  marks a message that IS saved; outline is the action, solid is the state, the
+  same split as keep.svg / keep_filled.svg.
+
+  The supplied artwork is 14x17. It is wrapped rather than used as-is because
+  menu icons mask into a 24x24 box with `mask-size: contain` — a 14x17 source
+  would scale to the FULL 24px height and read larger than its neighbours. The
+  transform re-centres it at the 18px glyph height the rest of the set occupies.
+  `fill` is inert under a mask; the colour comes from the theme token.
+-->
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<mask id="mask0_740_8491" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-<rect width="24" height="24" fill="#D9D9D9"/>
-</mask>
-<g mask="url(#mask0_740_8491)">
-<path d="M12 17.4615L8.03075 19.1652C7.42825 19.4229 6.85583 19.3736 6.3135 19.0173C5.77117 18.6609 5.5 18.1597 5.5 17.5135V5.30775C5.5 4.80258 5.675 4.375 6.025 4.025C6.375 3.675 6.80258 3.5 7.30775 3.5H16.6923C17.1974 3.5 17.625 3.675 17.975 4.025C18.325 4.375 18.5 4.80258 18.5 5.30775V17.5135C18.5 18.1597 18.2288 18.6609 17.6865 19.0173C17.1442 19.3736 16.5718 19.4229 15.9693 19.1652L12 17.4615Z" fill="#141414"/>
+<g transform="translate(4.59, 3) scale(1.0588)">
+<path d="M6.871 14.8L2.2125 16.7875C1.682 17.0152 1.18067 16.9733 0.7085 16.6618C0.236167 16.3501 0 15.9058 0 15.329V1.58325C0 1.15608 0.157167 0.785418 0.4715 0.471251C0.785667 0.157084 1.15633 0 1.5835 0H12.15C12.5772 0 12.9478 0.157084 13.262 0.471251C13.5763 0.785418 13.7335 1.15608 13.7335 1.58325V15.329C13.7335 15.9058 13.4973 16.3501 13.025 16.6618C12.5528 16.9733 12.0542 17.0152 11.5292 16.7875L6.871 14.8ZM6.86675 13.0805L12.15 15.3333V1.58325H1.5835V15.3333L6.86675 13.0805ZM6.86675 1.58325H1.5835H12.15H6.86675Z" fill="#252B37"/>
 </g>
 </svg>

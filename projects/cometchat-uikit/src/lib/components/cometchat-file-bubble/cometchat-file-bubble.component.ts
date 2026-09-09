@@ -28,6 +28,7 @@ import { LiveAnnouncerService } from '../../services/live-announcer.service';
 import { CometChatLogger } from '../../utils/CometChatLogger';
 import { triggerMediaDownload } from '../../utils/media-download';
 import { getFileType, getFileIcon, formatFileSize, resolveFileExtension } from './cometchat-file-bubble.types';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 
 /**
  * CometChatFileBubbleComponent renders file/document message attachments.
@@ -52,6 +53,12 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
 
   /** LEFT for incoming, RIGHT for outgoing. @see Requirements 1.2, 2.7, 2.8 */
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
+  /**
+   * Formatters applied to the caption's text. Passed straight through to the
+   * text bubble that renders it, which owns the formatting itself — this bubble
+   * only forwards what the caller supplied.
+   */
+  @Input() textFormatters?: CometChatTextFormatter[];
 
   /** Reference to the collapse button for focus management. @see Requirements 4.8, 7.9 */
   @ViewChild('collapseButton') collapseButton?: ElementRef<HTMLButtonElement>;

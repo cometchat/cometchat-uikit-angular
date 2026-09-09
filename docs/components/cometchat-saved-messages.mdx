@@ -1,0 +1,194 @@
+---
+title: "CometChatSavedMessages"
+description: "A panel component listing the messages the logged-in user has saved, across every conversation"
+---
+The `CometChatSavedMessages` component lists the messages the logged-in user has saved, newest first, gathered from every conversation they take part in. Saving is private: a saved message is visible only to the user who saved it, and no one else in the conversation is told.
+
+## Overview
+
+The Saved Messages panel provides:
+
+- **Cross-conversation list**: Every save the user has made, regardless of which chat it came from
+- **Conversation-style rows**: Each row shows the source conversation's avatar and name, with the speaker named in the subtitle — the same shape the conversation list uses
+- **Rich previews**: Media messages name their type behind a matching icon, captions win over type labels, and thread replies are marked
+- **Inline unsave**: A per-row unsave control, behind a confirmation dialog
+- **Paged loading**: 30 rows per page, fetching the next page as you scroll
+- **Live updates**: Saves and unsaves made elsewhere in the app are reflected without a refetch
+- **Focus Trap**: Traps keyboard focus within the panel for modal-like behavior
+
+<Info>
+  **Live Preview** — default saved messages panel.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-saved-messages--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-saved-messages--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Saved Messages — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Simple Saved Messages Panel
+
+The panel is scoped to the logged-in user, so it takes no conversation input.
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatSavedMessagesComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-saved-demo',
+  standalone: true,
+  imports: [CometChatSavedMessagesComponent],
+  template: `
+    <cometchat-saved-messages
+      (messageClick)="onMessageClick($event)"
+      (closeClick)="onClose()">
+    </cometchat-saved-messages>
+  `
+})
+export class SavedDemoComponent {
+  /** Open the source conversation and jump to the message. */
+  onMessageClick(message: CometChat.BaseMessage): void {
+    console.log('open', message.getConversationId?.(), message.getId());
+  }
+
+  onClose(): void {
+    console.log('Panel closed');
+  }
+}
+```
+
+### Read-Only Panel
+
+Hide the unsave control when the panel is used purely for navigation.
+
+```typescript expandable
+@Component({
+  selector: 'app-saved-readonly-demo',
+  standalone: true,
+  imports: [CometChatSavedMessagesComponent],
+  template: `
+    <cometchat-saved-messages
+      [hideUnsaveMessageOption]="true"
+      (messageClick)="onMessageClick($event)">
+    </cometchat-saved-messages>
+  `
+})
+export class SavedReadonlyDemoComponent {
+  onMessageClick(message: CometChat.BaseMessage): void {}
+}
+```
+
+### Custom Empty State
+
+```typescript expandable
+@Component({
+  selector: 'app-saved-empty-demo',
+  standalone: true,
+  imports: [CometChatSavedMessagesComponent],
+  template: `
+    <cometchat-saved-messages [emptyView]="empty"></cometchat-saved-messages>
+
+    <ng-template #empty>
+      <div class="my-empty">Nothing saved yet — tap Save on any message.</div>
+    </ng-template>
+  `
+})
+export class SavedEmptyDemoComponent {}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `hideUnsaveMessageOption` | `boolean` | `false` | Hides the per-row unsave control, making the list read-only |
+| `hideCloseButton` | `boolean` | `false` | Hides the close button, for hosts that supply their own chrome |
+| `headerView` | `TemplateRef<unknown>` | `undefined` | Replaces the default header row |
+| `emptyView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in empty state |
+| `errorView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in error state |
+| `loadingView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in loading shimmer |
+| `messagesRequestBuilder` | `CometChat.MessagesRequestBuilder` | `undefined` | Custom request builder. Used as supplied apart from `setSaved`, which is re-asserted. Do not scope it to a uid/guid — saves span conversations |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeClick` | `void` | Emitted when the panel close button is clicked or Escape is pressed with no dialog open |
+| `messageClick` | `CometChat.BaseMessage` | Emitted when a row is tapped. The host opens the source conversation and jumps to the message |
+| `error` | `CometChat.CometChatException` | Emitted when fetching or unsaving fails |
+
+## Behavior
+
+### Privacy
+
+`savedAt` is per-viewer: it is only ever populated on the acting user's own copy of a message. Saving a message therefore tells no one, and this panel never shows another user's saves.
+
+### Row identity
+
+A saved message is shown under the conversation it came from — a group's name and icon, or the other party in a one-on-one — with the speaker named in the subtitle. Source names are resolved once and cached, and the raw id shows until a name arrives, so a row is never withheld waiting on it.
+
+### Confirmation
+
+Unsaving asks for confirmation; saving does not.
+
+### Pagination
+
+The first page is 30 rows and the next is fetched as the list nears its end. A page that yields nothing new stops further loading, so a repeated page cannot spin.
+
+## Customization
+
+### CSS Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--cometchat-saved-messages-width` | `400px` | Panel width |
+| `--cometchat-saved-messages-height` | `100%` | Panel height |
+| `--cometchat-saved-messages-background` | `--cometchat-background-color-01` | Panel background |
+| `--cometchat-saved-messages-border` | `1px solid --cometchat-border-color-light` | Leading edge border |
+| `--cometchat-saved-messages-header-padding` | `12px 16px` | Header padding |
+| `--cometchat-saved-messages-title-font` | `--cometchat-font-heading4-medium` | Header title font |
+| `--cometchat-saved-messages-avatar-size` | `48px` | Row avatar size |
+| `--cometchat-saved-messages-row-padding` | `8px 16px` | Row padding |
+| `--cometchat-saved-messages-row-gap` | `--cometchat-spacing-3` | Gap between avatar, body and trailing control |
+| `--cometchat-saved-messages-row-background-hover` | `--cometchat-background-color-02` | Row hover background |
+| `--cometchat-saved-messages-row-title-font` | `--cometchat-font-heading4-medium` | Source conversation name font |
+| `--cometchat-saved-messages-row-sender-font` | `--cometchat-font-body-medium` | Sender prefix font |
+| `--cometchat-saved-messages-row-preview-font` | `--cometchat-font-body-regular` | Preview text font |
+| `--cometchat-saved-messages-preview-icon-size` | `16px` | Media-type icon size |
+| `--cometchat-saved-messages-preview-icon-color` | `--cometchat-icon-color-secondary` | Media-type icon colour |
+| `--cometchat-saved-messages-thread-icon-size` | `12px` | Thread-reply marker size |
+| `--cometchat-saved-messages-thread-icon-opacity` | `0.7` | Thread-reply marker opacity |
+| `--cometchat-saved-messages-empty-icon-width` | `65px` | Empty-state illustration width |
+| `--cometchat-saved-messages-empty-subtitle-gap` | `--cometchat-margin-2` | Gap between headline and explanation |
+| `--cometchat-saved-messages-dialog-overlay-background` | `--cometchat-overlay-background` | Confirmation dialog scrim |
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Escape** dismisses the confirmation dialog if one is open, otherwise the panel
+- **Tab** cycles within the panel; focus does not escape to the page behind it
+- **Enter** / **Space** on a row activates it, as a click does
+
+### Focus Management
+
+Focus is trapped on open and released on destroy, so the panel behaves as a modal surface while it is up.
+
+### Screen Reader Support
+
+- The panel is a labelled `region`
+- Rows are exposed as buttons
+- Loading, empty and error states are announced via `role="status"`
+- Media-type icons, thread markers and illustrations are `aria-hidden`; the preview text carries the meaning
+
+## Related Components
+
+- [CometChatPinnedMessages](/ui-kit/angular/components/cometchat-pinned-messages) — the conversation-wide counterpart
+- [CometChatConversations](/ui-kit/angular/components/cometchat-conversations) — whose row shape this panel follows
+- [CometChatMessageList](/ui-kit/angular/components/cometchat-message-list) — where messages are saved from

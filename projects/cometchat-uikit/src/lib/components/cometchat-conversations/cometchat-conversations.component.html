@@ -148,8 +148,7 @@
           [trailingView]="selectionMode !== SelectionMode.none ? selectionControlTemplate : effectiveTrailingView"
           (itemClick)="handleConversationClick($event)"
           (itemSelect)="handleConversationSelect($event)"
-          (contextMenuOpen)="handleContextMenuOpen($event)"
-          (contextMenuOptionClick)="handleContextMenuOptionClick($event)">
+          (contextMenuOpen)="handleContextMenuOpen($event)">
         </cometchat-conversation-item>
       }
     </div>
@@ -176,6 +175,15 @@
   </ng-template>
 
   <!-- ==================== Delete Confirmation Dialog ==================== -->
+  <!-- Unpin Conversation Confirmation. Pinning is not gated. -->
+  @if (pendingUnpinConversation()) {
+    <cometchat-pin-save-confirm-dialog
+      action="unpin-conversation"
+      (confirmClick)="confirmUnpinConversation()"
+      (cancelClick)="cancelUnpinConversation()">
+    </cometchat-pin-save-confirm-dialog>
+  }
+
   @if (showDeleteConfirmDialog()) {
     <div class="cometchat-conversations__dialog-overlay" 
          (click)="handleDeleteCancel()"

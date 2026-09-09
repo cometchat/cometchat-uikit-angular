@@ -1,0 +1,16 @@
+<!--
+  Saved marker for the message bubble's meta row — the filled counterpart to the
+  outlined bookmark.svg the menus use. Outline is the action, solid is the state.
+
+  Kept on its own 9x11 canvas rather than padded onto the shared 24x24 icon
+  grid, the same as pin_indicator.svg beside it: this is masked into a small
+  fixed box in the meta row, not into the 24x24 slot of a menu row, so the tight
+  canvas is what makes it size to match the pin.
+
+  Rendered as a CSS mask, so the fill below is ignored — the colour comes from
+  the consuming rule, which is what lets the one asset be white on an outgoing
+  bubble and grey on an incoming one.
+-->
+<svg width="9" height="11" viewBox="0 0 9 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4.33333 9.30767L1.68717 10.4435C1.2855 10.6153 0.903889 10.5824 0.542333 10.3448C0.180778 10.1073 0 9.77311 0 9.34233V1.20517C0 0.868389 0.116667 0.583333 0.35 0.35C0.583333 0.116667 0.868389 0 1.20517 0H7.4615C7.79828 0 8.08333 0.116667 8.31667 0.35C8.55 0.583333 8.66667 0.868389 8.66667 1.20517V9.34233C8.66667 9.77311 8.48589 10.1073 8.12433 10.3448C7.76278 10.5824 7.38117 10.6153 6.9795 10.4435L4.33333 9.30767Z" fill="#535862"/>
+</svg>

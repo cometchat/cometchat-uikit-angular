@@ -102,7 +102,7 @@ export class CometChatUIKit {
     if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
     CometChatLocalize.setCurrentLanguage(CometChatLocalize.getBrowserLanguage());
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.5' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.2.1' };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
           CometChat.getLoggedinUser()
@@ -159,7 +159,7 @@ export class CometChatUIKit {
     // This is the SDK's file-based init path which sets
     // integrationSource = "ai-agent" for telemetry.
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.0.5' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.2.1' };
 
       CometChat.initFromSettings(settings)
         .then(() => {
@@ -237,6 +237,17 @@ export class CometChatUIKit {
         );
         const user = CometChatUIKit.getLoggedInUser();
         if (user) {
+          // Required: without this the Calls SDK initialises but never establishes a
+          // session, so every call fails.
+          //
+          // Known interaction, not yet fixed: `loginWithAuthToken` ends in the Calls
+          // SDK's `saveUser()`, which writes the `${appId}:common_store/user` key the
+          // Chat SDK owns and `CometChat.onStorageEvent` watches. A background tab
+          // sees that write and the Chat SDK's own login write as two separate storage
+          // events, and opens a WebSocket for each — the first torn down mid-handshake
+          // by the second. The write is unconditional, so it happens even with no
+          // cached user. Fixing it belongs in the Calls SDK or in how the two SDKs
+          // share that key; disabling this call is not a fix, it just removes calling.
           await CometChatUIKitCalls.loginWithAuthToken(user.getAuthToken()).catch(
             (error: CometChat.CometChatException) => { CometChatLogger.error('CometChatUIKit', 'CometChatUIKitCalls login failed:', error); }
           );

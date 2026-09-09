@@ -2,6 +2,7 @@ import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
 import { CometChatVideoBubbleComponent } from '../cometchat-video-bubble/cometchat-video-bubble.component';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 
 /**
  * CometChatVideosBubble — receive-side bubble for a (multi-)video message (Phase 2).
@@ -18,6 +19,7 @@ import { CometChatVideoBubbleComponent } from '../cometchat-video-bubble/cometch
     [message]="message"
     [alignment]="alignment"
     [disableInteraction]="disableInteraction"
+      [textFormatters]="textFormatters"
   ></cometchat-video-bubble>`,
   // All four batch bubbles share one width via --cometchat-multi-attachment-width, so every message
   // in a batch lines up. Defaults to 400px, matching the React kit's container cap; set the token to
@@ -41,5 +43,10 @@ import { CometChatVideoBubbleComponent } from '../cometchat-video-bubble/cometch
 export class CometChatVideosBubbleComponent {
   @Input({ required: true }) message!: CometChat.MediaMessage;
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
+  /**
+   * Formatters applied to the caption's text. Forwarded to the bubble this one
+   * delegates to, which renders the caption — nothing is applied here.
+   */
+  @Input() textFormatters?: CometChatTextFormatter[];
   @Input() disableInteraction = false;
 }

@@ -199,6 +199,14 @@ export class CometChatMessagesComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Pinned messages are per-conversation, so this opens beside the active chat. */
+  onPinnedMessagesClick(): void {
+    this.navigationService.showPinnedMessagesPanel();
+    if (this.navigationService.isMobile()) {
+      this.navigationService.navigateToSidePanel();
+    }
+  }
+
   /** Thread reply click → show thread panel */
   onThreadRepliesClick(message: CometChat.BaseMessage): void {
     this.navigationService.showThreadPanel(message);

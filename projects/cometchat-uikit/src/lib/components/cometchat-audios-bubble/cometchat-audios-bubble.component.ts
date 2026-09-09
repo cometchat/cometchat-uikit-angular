@@ -16,6 +16,7 @@ import { CometChatTextBubbleComponent } from '../cometchat-text-bubble/cometchat
 import { getMediaCaption } from '../../utils/message-metadata-utils';
 import { triggerMediaDownload } from '../../utils/media-download';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 
 interface AudioRowState {
   currentTime: number;
@@ -42,6 +43,12 @@ interface AudioRowState {
 export class CometChatAudiosBubbleComponent implements OnChanges {
   @Input({ required: true }) message!: CometChat.MediaMessage;
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
+  /**
+   * Formatters applied to the caption's text. Passed straight through to the
+   * text bubble that renders it, which owns the formatting itself — this bubble
+   * only forwards what the caller supplied.
+   */
+  @Input() textFormatters?: CometChatTextFormatter[];
 
   /** True for outgoing (right-aligned) messages. Enum-safe comparison for the template. */
   protected get isSender(): boolean {

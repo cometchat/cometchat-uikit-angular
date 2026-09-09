@@ -110,6 +110,39 @@ export function dedupeConversations(conversations: CometChat.Conversation[]): Co
   return result;
 }
 
+/**
+ * Lifts pinned conversations above unpinned ones, keeping the order within each
+ * block untouched.
+ *
+ * The list is otherwise ordered by recency, and every promotion path — a new
+ * message, `moveConversationToTop`, `addConversationToTop` — puts the touched
+ * conversation at index 0 regardless of pin state. Without this, one message in
+ * any unpinned chat pushes the whole pinned block down, which is exactly what
+ * pinning is meant to prevent.
+ *
+ * Applied as a view over the stored list rather than on insert, so no mutation
+ * path can forget it and the stored order stays purely recency-based.
+ *
+ * The partition is STABLE: recency still decides the order among pinned chats
+ * and among unpinned ones, so a pinned chat with a new message still rises to
+ * the top of its block. An unpinned list is returned unchanged, so the common
+ * case allocates nothing and keeps its array identity.
+ */
+export function orderPinnedFirst(
+  conversations: CometChat.Conversation[]
+): CometChat.Conversation[] {
+  const pinned: CometChat.Conversation[] = [];
+  const rest: CometChat.Conversation[] = [];
+
+  for (const conv of conversations) {
+    // Presence of `pinnedAt` IS the boolean; `isPinned()` covers a personal pin
+    // and an admin-global one alike.
+    (conv.isPinned?.() ? pinned : rest).push(conv);
+  }
+
+  return pinned.length ? [...pinned, ...rest] : conversations;
+}
+
 // ─── Conversation Update Settings ────────────────────────────────────────────
 
 export function isAMessage(message: unknown): message is CometChat.BaseMessage {

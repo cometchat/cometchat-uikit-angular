@@ -580,6 +580,34 @@ right: 6px;
 }
 
 /* Unread Badge */
+/* Pin marker + unread badge, side by side under the timestamp. */
+.cometchat-conversation-item__tail-markers {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--cometchat-conversations-tail-markers-gap, var(--cometchat-spacing-1, 4px));
+  /* Match the badge's height so a pinned-but-read row does not sit at a
+     different height from an unread one. */
+  min-height: var(--cometchat-conversations-badge-height, 20px);
+}
+
+/* Pinned marker.
+   FILLED, not the outlined keep.svg the menus use: here the pin reports a state
+   that is already true, and a solid glyph reads as a status at a glance, where
+   an outline reads as something you could click. Masked rather than drawn so it
+   follows the theme's icon colour in both light and dark. */
+.cometchat-conversation-item__pin {
+  display: block;
+  flex-shrink: 0;
+  width: var(--cometchat-conversations-pin-width, 16px);
+  height: var(--cometchat-conversations-pin-height, 16px);
+  background: var(--cometchat-conversations-pin-color, var(--cometchat-icon-color-secondary, #a1a1a1));
+  -webkit-mask: url('../../assets/keep_filled.svg') center center no-repeat;
+  mask: url('../../assets/keep_filled.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
 .cometchat-conversation-item__badge {
   display: flex;
   align-items: center;

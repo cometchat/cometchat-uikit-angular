@@ -4,7 +4,7 @@
  * Covers: isRecoverableError, getUserFriendlyErrorMessage, createEnhancedError,
  *         getConversationEntityId, findConversationIndex, isAMessage,
  *         shouldLastMessageAndUnreadCountBeUpdated, getTypingIndicatorKey,
- *         applyReceiptToConversations.
+ *         applyReceiptToConversations, orderPinnedFirst.
  *
  * @module services/conversations.utils
  */
@@ -12,6 +12,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
+  orderPinnedFirst,
   isRecoverableError,
   getUserFriendlyErrorMessage,
   createEnhancedError,
@@ -227,3 +228,55 @@ describe('conversations.utils', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// orderPinnedFirst
+// ---------------------------------------------------------------------------
+describe('orderPinnedFirst', () => {
+  /** A conversation whose pinned state and identity are both inspectable. */
+  function conv(id: string, pinned = false): CometChat.Conversation {
+    return { id, isPinned: () => pinned } as unknown as CometChat.Conversation;
+  }
+  const ids = (list: CometChat.Conversation[]) => list.map(c => (c as unknown as { id: string }).id);
+
+  it('lifts pinned conversations above the rest', () => {
+    const list = [conv('a'), conv('b', true), conv('c'), conv('d', true)];
+    expect(ids(orderPinnedFirst(list))).toEqual(['b', 'd', 'a', 'c']);
+  });
+
+  it('keeps the server order within each block', () => {
+    // Recency still decides inside a block, so a pinned chat with a new message
+    // rises to the top of the pinned group rather than the whole list.
+    const list = [conv('p1', true), conv('p2', true), conv('u1'), conv('u2')];
+    expect(ids(orderPinnedFirst(list))).toEqual(['p1', 'p2', 'u1', 'u2']);
+  });
+
+  it('returns the SAME array when nothing is pinned', () => {
+    // Identity matters: the common case must not allocate, and callers compare
+    // by reference to decide whether anything moved.
+    const list = [conv('a'), conv('b')];
+    expect(orderPinnedFirst(list)).toBe(list);
+  });
+
+  it('returns a new array when something is pinned', () => {
+    const list = [conv('a'), conv('b', true)];
+    expect(orderPinnedFirst(list)).not.toBe(list);
+  });
+
+  it('handles an all-pinned list', () => {
+    const list = [conv('a', true), conv('b', true)];
+    expect(ids(orderPinnedFirst(list))).toEqual(['a', 'b']);
+  });
+
+  it('handles an empty list', () => {
+    const list: CometChat.Conversation[] = [];
+    expect(orderPinnedFirst(list)).toBe(list);
+  });
+
+  it('treats a conversation without isPinned as unpinned', () => {
+    // An older SDK has no isPinned(); the optional call must not throw.
+    const list = [{ id: 'legacy' } as unknown as CometChat.Conversation, conv('p', true)];
+    expect(ids(orderPinnedFirst(list))).toEqual(['p', 'legacy']);
+  });
+});
+

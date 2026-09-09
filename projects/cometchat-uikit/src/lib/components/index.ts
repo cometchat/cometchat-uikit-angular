@@ -55,6 +55,8 @@ export * from './cometchat-message-bubble';
 export * from './cometchat-message-list';
 export * from './base-elements/cometchat-thread-view';
 export * from './cometchat-thread-header';
+export * from './cometchat-pinned-messages';
+export * from './cometchat-saved-messages';
 export * from './base-elements/cometchat-typing-indicator';
 export * from './base-elements/cometchat-smart-replies';
 export * from './base-elements/cometchat-conversation-starter';

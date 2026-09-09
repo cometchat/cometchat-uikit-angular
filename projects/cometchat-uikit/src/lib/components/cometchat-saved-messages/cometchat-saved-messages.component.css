@@ -1,0 +1,451 @@
+/**
+ * CometChatSavedMessages Styles
+ *
+ * BEM Structure:
+ * - Block: .cometchat-saved-messages
+ * - Elements: __header, __title, __close, __close-icon, __list, __row,
+ *             __row-body, __row-sender, __row-preview, __row-trailing,
+ *             __unsave, __unsave-icon, __state, __retry
+ *
+ * Every colour maps to a semantic theme token, never a literal, so the panel
+ * follows light and dark without a second stylesheet.
+ */
+
+/*
+ * The host must carry the height itself: a custom element defaults to
+ * `display: inline`, so the panel's `height: 100%` would resolve against an
+ * auto-height parent and collapse to its content — which left the empty state
+ * sitting under the header instead of centred in the drawer.
+ */
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.cometchat-saved-messages {
+  display: flex;
+  flex-direction: column;
+  /* Containing block for the confirm overlay, which dims this panel only. */
+  position: relative;
+  /* 400px drawer per the design; the host decides where it sits. */
+  width: var(--cometchat-saved-messages-width, 400px);
+  height: var(--cometchat-saved-messages-height, 100%);
+  box-sizing: border-box;
+  background: var(--cometchat-saved-messages-background, var(--cometchat-background-color-01, #fff));
+  border-left: var(--cometchat-saved-messages-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+}
+
+/* ==================== Header ==================== */
+.cometchat-saved-messages__header {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-saved-messages-header-gap, var(--cometchat-spacing-3, 12px));
+  padding: var(--cometchat-saved-messages-header-padding, var(--cometchat-padding-3, 12px) var(--cometchat-padding-4, 16px));
+  border-bottom: var(--cometchat-saved-messages-header-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+}
+
+.cometchat-saved-messages__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--cometchat-saved-messages-title-font, var(--cometchat-font-heading3-bold));
+  color: var(--cometchat-saved-messages-title-color, var(--cometchat-text-color-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cometchat-saved-messages__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-saved-messages-close-width, 32px);
+  height: var(--cometchat-saved-messages-close-height, 32px);
+  padding: var(--cometchat-saved-messages-close-padding, 0);
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: transparent;
+  cursor: pointer;
+}
+
+.cometchat-saved-messages__close:hover {
+  background: var(--cometchat-saved-messages-close-background-hover, var(--cometchat-background-color-04));
+}
+
+/* The glyph itself picks up the brand colour on hover, as it does in the kit's
+   other panel headers. */
+.cometchat-saved-messages__close:hover .cometchat-saved-messages__close-icon {
+  background-color: var(--cometchat-saved-messages-close-icon-color-hover, var(--cometchat-icon-color-highlight));
+}
+
+.cometchat-saved-messages__close:focus-visible,
+.cometchat-saved-messages__row:focus-visible,
+.cometchat-saved-messages__unsave:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+.cometchat-saved-messages__close-icon {
+  display: block;
+  width: var(--cometchat-saved-messages-close-icon-width, 24px);
+  height: var(--cometchat-saved-messages-close-icon-height, 24px);
+  background-color: var(--cometchat-saved-messages-close-icon-color, var(--cometchat-icon-color-primary));
+  -webkit-mask: url('../../assets/close.svg') center center no-repeat;
+  mask: url('../../assets/close.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ==================== Rows ==================== */
+.cometchat-saved-messages__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Scroll without a visible bar, matching the other lists in the kit. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* The panel is narrow: a wide bubble (long link, code block, big attachment)
+     must clip rather than introduce a horizontal scrollbar. */
+  overflow-x: hidden;
+}
+
+.cometchat-saved-messages__list::-webkit-scrollbar {
+  display: none;
+}
+
+.cometchat-saved-messages__row {
+  transition: background-color 120ms ease-out;
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-saved-messages-row-gap, var(--cometchat-spacing-3, 12px));
+  width: 100%;
+  padding: var(--cometchat-saved-messages-row-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-4, 16px));
+  border-bottom: var(--cometchat-saved-messages-row-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+  background: transparent;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.cometchat-saved-messages__row:hover {
+  background: var(--cometchat-saved-messages-row-background-hover, var(--cometchat-extended-primary-color-100));
+}
+
+/* Leading slot, sized exactly as the conversation list's. */
+.cometchat-saved-messages__row-leading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-saved-messages-avatar-size, 48px);
+  height: var(--cometchat-saved-messages-avatar-size, 48px);
+}
+
+.cometchat-saved-messages__avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.cometchat-saved-messages__row-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: var(--cometchat-saved-messages-row-body-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* Title: the source conversation, styled as the conversation list's title. */
+.cometchat-saved-messages__row-title {
+  font: var(--cometchat-saved-messages-row-title-font, var(--cometchat-font-heading4-medium));
+  color: var(--cometchat-saved-messages-row-title-color, var(--cometchat-text-color-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Subtitle: "Sender: message", matching the conversation list's subtitle row. */
+.cometchat-saved-messages__row-subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-saved-messages-row-subtitle-gap, var(--cometchat-spacing-1, 4px));
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cometchat-saved-messages__row-sender {
+  font: var(--cometchat-saved-messages-row-sender-font, var(--cometchat-font-body-medium));
+  color: var(--cometchat-saved-messages-row-sender-color, var(--cometchat-text-color-secondary));
+  flex-shrink: 0;
+}
+
+.cometchat-saved-messages__row-preview {
+  font: var(--cometchat-saved-messages-row-preview-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-saved-messages-row-preview-color, var(--cometchat-text-color-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cometchat-saved-messages__row-trailing {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--cometchat-saved-messages-row-trailing-gap, var(--cometchat-spacing-2, 8px));
+}
+
+.cometchat-saved-messages__unsave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-saved-messages-unsave-width, 32px);
+  height: var(--cometchat-saved-messages-unsave-height, 32px);
+  padding: 0;
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: transparent;
+  cursor: pointer;
+}
+
+.cometchat-saved-messages__unsave:hover {
+  background: var(--cometchat-saved-messages-unsave-background-hover, var(--cometchat-background-color-04));
+}
+
+/*
+ * Unsave is revealed on hover so the resting list stays quiet.
+ *
+ * Gated on `hover: hover` because a touch device never hovers — there the
+ * control stays visible, or it could never be reached at all. `visibility`
+ * rather than `display` keeps the row from reflowing as it appears, and also
+ * takes the hidden button out of the tab order so focus cannot land on
+ * something invisible. `focus-within` brings it back for keyboard users, who
+ * would otherwise have no way to unsave.
+ */
+@media (hover: hover) {
+  .cometchat-saved-messages__unsave {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 120ms ease;
+  }
+
+  .cometchat-saved-messages__row:hover .cometchat-saved-messages__unsave,
+  .cometchat-saved-messages__row:focus-within .cometchat-saved-messages__unsave {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.cometchat-saved-messages__unsave-icon {
+  display: block;
+  width: var(--cometchat-saved-messages-unsave-icon-width, 20px);
+  height: var(--cometchat-saved-messages-unsave-icon-height, 20px);
+  background-color: var(--cometchat-saved-messages-unsave-icon-color, var(--cometchat-icon-color-secondary));
+  -webkit-mask: url('../../assets/bookmark_remove.svg') center center no-repeat;
+  mask: url('../../assets/bookmark_remove.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ==================== States ==================== */
+.cometchat-saved-messages__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cometchat-saved-messages-state-gap, var(--cometchat-spacing-3, 12px));
+  flex: 1;
+  padding: var(--cometchat-saved-messages-state-padding, var(--cometchat-padding-5, 20px));
+  text-align: center;
+  font: var(--cometchat-saved-messages-state-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-saved-messages-state-color, var(--cometchat-text-color-secondary));
+}
+
+/* Empty state: illustration, then the headline, then the explanation. Centred
+   in the panel because there is no list to align to. */
+.cometchat-saved-messages__state--empty {
+  /* Gap is off so the two distances here can differ: the icon stands further
+     from the headline than the headline does from its explanation. Each is set
+     on the element it belongs to rather than inferred from a shared gap. */
+  gap: 0;
+}
+
+/* A CSS mask, not an <img>, so the illustration follows the theme instead of
+   staying a light grey that would glare on a dark panel. Sized to the artwork's
+   own 65x80 — a squarer box would letterbox it and shift it off centre. */
+.cometchat-saved-messages__empty-icon {
+  margin-bottom: var(--cometchat-saved-messages-empty-icon-gap, 20px);
+  width: var(--cometchat-saved-messages-empty-icon-width, 65px);
+  height: var(--cometchat-saved-messages-empty-icon-height, 80px);
+  background-color: var(--cometchat-saved-messages-empty-icon-color, var(--cometchat-neutral-color-300));
+  -webkit-mask: url('../../assets/saved_messages_empty.svg') center center no-repeat;
+  mask: url('../../assets/saved_messages_empty.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-saved-messages__empty-title {
+  margin: 0;
+  font: var(--cometchat-saved-messages-empty-title-font, var(--cometchat-font-heading4-bold));
+  color: var(--cometchat-saved-messages-empty-title-color, var(--cometchat-text-color-primary));
+}
+
+.cometchat-saved-messages__empty-subtitle {
+  margin: var(--cometchat-saved-messages-empty-subtitle-gap, var(--cometchat-margin-2, 8px)) 0 0;
+  max-width: var(--cometchat-saved-messages-empty-subtitle-max-width, 260px);
+  font: var(--cometchat-saved-messages-empty-subtitle-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-saved-messages-empty-subtitle-color, var(--cometchat-text-color-secondary));
+}
+
+
+.cometchat-saved-messages__retry {
+  padding: var(--cometchat-saved-messages-retry-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  border: 1px solid var(--cometchat-border-color-light, #f5f5f5);
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(--cometchat-saved-messages-retry-background, var(--cometchat-background-color-01, #fff));
+  color: var(--cometchat-saved-messages-retry-color, var(--cometchat-text-color-primary));
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 767px) {
+  .cometchat-saved-messages {
+    width: var(--cometchat-saved-messages-width-mobile, 100%);
+    border-left: none;
+  }
+}
+
+/* ==================== Confirm dialog ==================== */
+/* Absolute, not fixed: the dialog belongs to this panel and dims it alone. */
+.cometchat-saved-messages__dialog-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--cometchat-saved-messages-dialog-overlay-z-index, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-saved-messages-dialog-overlay-background, var(--cometchat-overlay-background));
+}
+
+/* ==================== Shimmer ==================== */
+/* Row-shaped, matching the loaded list: avatar plus two lines of text. */
+.cometchat-saved-messages__shimmer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-saved-messages-shimmer-gap, var(--cometchat-spacing-3, 12px));
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--cometchat-saved-messages-shimmer-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-4, 16px));
+}
+
+.cometchat-saved-messages__shimmer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-3, 12px);
+}
+
+.cometchat-saved-messages__shimmer-avatar,
+.cometchat-saved-messages__shimmer-title,
+.cometchat-saved-messages__shimmer-subtitle {
+  background: var(--cometchat-shimmer-gradient-color);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.cometchat-saved-messages__shimmer-avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: var(--cometchat-radius-max, 1000px);
+}
+
+.cometchat-saved-messages__shimmer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-1, 4px);
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-saved-messages__shimmer-title {
+  width: 45%;
+  height: 14px;
+  border-radius: var(--cometchat-radius-1, 4px);
+}
+
+.cometchat-saved-messages__shimmer-subtitle {
+  width: 70%;
+  height: 12px;
+  border-radius: var(--cometchat-radius-1, 4px);
+}
+
+/*
+ * Declared locally, as the message list and conversations each do: Angular does
+ * not scope keyframe names, but it does not guarantee another component's
+ * stylesheet is loaded either, and the panel can render on its own.
+ */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ==================== Preview icons ==================== */
+/*
+ * Masked so they take the theme's icon colour, exactly as the conversation list
+ * and search results do — same assets, same token.
+ */
+.cometchat-saved-messages__row-preview-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--cometchat-saved-messages-preview-icon-size, 16px);
+  height: var(--cometchat-saved-messages-preview-icon-size, 16px);
+  background-color: var(--cometchat-saved-messages-preview-icon-color, var(--cometchat-icon-color-secondary));
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-saved-messages__row-preview-icon--image {
+  -webkit-mask: url('../../assets/conversations_image-message.svg') center center no-repeat;
+  mask: url('../../assets/conversations_image-message.svg') center center no-repeat;
+}
+
+.cometchat-saved-messages__row-preview-icon--video {
+  -webkit-mask: url('../../assets/conversations_video-message.svg') center center no-repeat;
+  mask: url('../../assets/conversations_video-message.svg') center center no-repeat;
+}
+
+.cometchat-saved-messages__row-preview-icon--audio {
+  -webkit-mask: url('../../assets/conversations_audio-message.svg') center center no-repeat;
+  mask: url('../../assets/conversations_audio-message.svg') center center no-repeat;
+}
+
+.cometchat-saved-messages__row-preview-icon--file {
+  -webkit-mask: url('../../assets/conversations_file-message.svg') center center no-repeat;
+  mask: url('../../assets/conversations_file-message.svg') center center no-repeat;
+}
+
+/* Thread marker: dimmed, because it qualifies the row rather than labelling it. */
+.cometchat-saved-messages__row-thread-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--cometchat-saved-messages-thread-icon-size, 12px);
+  height: var(--cometchat-saved-messages-thread-icon-size, 12px);
+  opacity: var(--cometchat-saved-messages-thread-icon-opacity, 0.7);
+  background-color: var(--cometchat-saved-messages-thread-icon-color, var(--cometchat-icon-color-secondary));
+  -webkit-mask: url('../../assets/conversations_thread.svg') center center no-repeat;
+  mask: url('../../assets/conversations_thread.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+

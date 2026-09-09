@@ -5,6 +5,7 @@
  * - Default menu with overflow items
  * - Default menu items configuration
  * - Custom positioning (top, right, bottom, left)
+ * - Nested "Organise" group with its flyout closed, open, and flipped at a viewport edge
  * - All variants showcase
  *
  * @module components/cometchat-context-menu
@@ -14,7 +15,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatContextMenuComponent } from './cometchat-context-menu.component';
-import { CometChatOption } from '../../../modals';
+import { CometChatActionsIcon, CometChatOption } from '../../../modals';
 import { Placement } from '../../../Enums/Enums';
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 
@@ -46,6 +47,46 @@ const MOCK_EXTENDED_MENU_ITEMS = [
   ...MOCK_MENU_ITEMS,
   createMockOption('forward', 'Forward', '/assets/forward.svg'),
   createMockOption('pin', 'Pin', '/assets/keep.svg'),
+];
+
+/** Creates a leaf action that lives inside a group's flyout. */
+function createNestedAction(id: string, title: string, iconURL: string): CometChatActionsIcon {
+  return new CometChatActionsIcon({ id, title, iconURL, onClick: () => {} });
+}
+
+/**
+ * Creates the "Organise" group that gathers Pin and Save into one row.
+ *
+ * `children` is the whole mechanism — an item carrying them opens a flyout
+ * instead of acting, so its own onClick never runs and it never emits
+ * optionClick. Nesting is one level deep by design.
+ */
+function createOrganiseGroup(children: CometChatActionsIcon[]): CometChatActionsIcon {
+  return new CometChatActionsIcon({
+    id: 'organise',
+    title: 'Organise',
+    iconURL: '/assets/archive.svg',
+    onClick: () => {},
+    children,
+  });
+}
+
+/**
+ * Message options as the list builds them for a message that is neither pinned
+ * nor saved.
+ *
+ * Each nested action is a single direction rather than a toggle: the presence
+ * of the pin/save timestamp is what decides whether the flyout offers Pin or
+ * Unpin, so there is never a pair and never an unknown state to render.
+ */
+const MOCK_ORGANISE_MENU_ITEMS = [
+  createMockOption('reply', 'Reply', '/assets/reply.svg'),
+  createMockOption('copy', 'Copy', '/assets/content_copy.svg'),
+  createOrganiseGroup([
+    createNestedAction('pinMessage', 'Pin', '/assets/keep.svg'),
+    createNestedAction('saveMessage', 'Save', '/assets/bookmark.svg'),
+  ]),
+  createMockOption('delete', 'Delete', '/assets/delete.svg'),
 ];
 
 // ============================================
@@ -309,6 +350,147 @@ export const CustomPositioning: Story = {
   },
 };
 
+/** Overflow menu open, with the nested "Organise" group sitting closed. */
+export const OrganiseFlyoutClosed: Story = {
+  args: {
+    data: MOCK_ORGANISE_MENU_ITEMS,
+    topMenuSize: 2,
+    placement: Placement.bottom,
+    useParentContainer: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div data-cometchat-container
+           class="cometchat-context-menu-story__container"
+           style="position:relative; width:100%; height:320px; box-sizing:border-box; padding: var(--cometchat-padding-5, 20px); display:flex; align-items:flex-start; justify-content:flex-start; overflow:visible;">
+        <cometchat-context-menu
+          [data]="data"
+          [topMenuSize]="topMenuSize"
+          [placement]="placement"
+          [useParentContainer]="useParentContainer"
+          (optionClick)="optionClick($event)">
+        </cometchat-context-menu>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
+    if (moreButton) {
+      moreButton.click();
+      await new Promise(r => setTimeout(r, 500));
+    }
+  },
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        story:
+          'The overflow menu opened on a message that offers Pin and Save. Organise takes a single row with a chevron and nothing else — its flyout stays shut until the row is hovered or activated, so two related actions cost one line in an already long menu.',
+      },
+    },
+  },
+};
+
+/** The "Organise" flyout open, showing the Pin and Save actions nested inside it. */
+export const OrganiseFlyoutOpen: Story = {
+  args: {
+    data: MOCK_ORGANISE_MENU_ITEMS,
+    topMenuSize: 2,
+    placement: Placement.bottom,
+    useParentContainer: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div data-cometchat-container
+           class="cometchat-context-menu-story__container"
+           style="position:relative; width:100%; height:320px; box-sizing:border-box; padding: var(--cometchat-padding-5, 20px); display:flex; align-items:flex-start; justify-content:flex-start; overflow:visible;">
+        <cometchat-context-menu
+          [data]="data"
+          [topMenuSize]="topMenuSize"
+          [placement]="placement"
+          [useParentContainer]="useParentContainer"
+          (optionClick)="optionClick($event)">
+        </cometchat-context-menu>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
+    if (moreButton) {
+      moreButton.click();
+      await new Promise(r => setTimeout(r, 500));
+    }
+    // The open menu is moved to document.body to escape clipping ancestors, so
+    // it is no longer a descendant of canvasElement.
+    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]') as HTMLElement;
+    if (group) {
+      group.click();
+      await new Promise(r => setTimeout(r, 500));
+    }
+  },
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        story:
+          'The same menu with the Organise row activated, so its flyout is open to the right of the list. Choosing Pin or Save emits optionClick with that child; the group row itself never emits and never closes the menu.',
+      },
+    },
+  },
+};
+
+/** The "Organise" flyout against the right edge, where it has to move to stay on screen. */
+export const OrganiseFlyoutAtViewportEdge: Story = {
+  args: {
+    data: MOCK_ORGANISE_MENU_ITEMS,
+    topMenuSize: 2,
+    placement: Placement.bottom,
+    useParentContainer: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div data-cometchat-container
+           class="cometchat-context-menu-story__container"
+           style="position:relative; width:100%; height:320px; box-sizing:border-box; padding: var(--cometchat-padding-5, 20px); display:flex; align-items:flex-start; justify-content:flex-end; overflow:visible;">
+        <cometchat-context-menu
+          [data]="data"
+          [topMenuSize]="topMenuSize"
+          [placement]="placement"
+          [useParentContainer]="useParentContainer"
+          (optionClick)="optionClick($event)">
+        </cometchat-context-menu>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
+    if (moreButton) {
+      moreButton.click();
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]') as HTMLElement;
+    if (group) {
+      group.click();
+      await new Promise(r => setTimeout(r, 500));
+    }
+  },
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        story:
+          'The same menu pushed against the right edge of the canvas, where a flyout opening rightwards would run off screen. Placement is decided from the rendered flyout rather than a width breakpoint, so it opens leftwards when the left side can hold it and is nudged back by hand when neither side can — either way its right edge lands inside the window.',
+      },
+    },
+  },
+};
+
 // ============================================
 // Showcase
 // ============================================
@@ -457,5 +639,151 @@ export const TestMenuItemsRender: Story = {
       const menuItems = canvasElement.querySelectorAll('[role="menuitem"], .cometchat-context-menu__option, [class*="context-menu"] [class*="option"]');
       expect(menuItems.length).toBeGreaterThan(0);
     }
+  },
+};
+
+/** Verifies an item with children renders as a group whose flyout is closed. */
+export const TestOrganiseGroupRendersClosed: Story = {
+  args: {
+    data: MOCK_ORGANISE_MENU_ITEMS,
+    topMenuSize: 2,
+    placement: Placement.bottom,
+    useParentContainer: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div data-cometchat-container
+           class="cometchat-context-menu-story__container"
+           style="position:relative; width:100%; height:320px; box-sizing:border-box; padding: var(--cometchat-padding-5, 20px); display:flex; align-items:flex-start; justify-content:flex-start; overflow:visible;">
+        <cometchat-context-menu
+          [data]="data"
+          [topMenuSize]="topMenuSize"
+          [placement]="placement"
+          [useParentContainer]="useParentContainer"
+          (optionClick)="optionClick($event)">
+        </cometchat-context-menu>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
+    expect(moreButton).not.toBeNull();
+
+    moreButton.click();
+    await new Promise(r => setTimeout(r, 500));
+
+    // The open menu is portaled to document.body, so it is no longer inside canvasElement.
+    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]');
+    expect(group).not.toBeNull();
+    expect(group!.getAttribute('aria-haspopup')).toBe('menu');
+    expect(group!.getAttribute('aria-expanded')).toBe('false');
+
+    const chevron = group!.querySelector('.cometchat-menu-list__group-chevron, [class*="group-chevron"]');
+    expect(chevron).not.toBeNull();
+
+    // The flyout is not in the DOM at all until the group is activated.
+    expect(group!.querySelector('[class*="group-flyout"]')).toBeNull();
+  },
+};
+
+/** Verifies activating the group opens a flyout holding its two children. */
+export const TestOrganiseFlyoutOpensChildren: Story = {
+  args: {
+    data: MOCK_ORGANISE_MENU_ITEMS,
+    topMenuSize: 2,
+    placement: Placement.bottom,
+    useParentContainer: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div data-cometchat-container
+           class="cometchat-context-menu-story__container"
+           style="position:relative; width:100%; height:320px; box-sizing:border-box; padding: var(--cometchat-padding-5, 20px); display:flex; align-items:flex-start; justify-content:flex-start; overflow:visible;">
+        <cometchat-context-menu
+          [data]="data"
+          [topMenuSize]="topMenuSize"
+          [placement]="placement"
+          [useParentContainer]="useParentContainer"
+          (optionClick)="optionClick($event)">
+        </cometchat-context-menu>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
+    expect(moreButton).not.toBeNull();
+
+    moreButton.click();
+    await new Promise(r => setTimeout(r, 500));
+
+    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]') as HTMLElement;
+    expect(group).not.toBeNull();
+
+    group.click();
+    await new Promise(r => setTimeout(r, 500));
+
+    const flyout = document.querySelector('.cometchat-menu-list__group-flyout, [class*="group-flyout"]') as HTMLElement;
+    expect(flyout).not.toBeNull();
+    expect(flyout.querySelectorAll('[role="menuitem"]').length).toBe(2);
+    expect(flyout.textContent!.trim()).toContain('Pin');
+    expect(flyout.textContent!.trim()).toContain('Save');
+
+    // Opening a group is the whole interaction — it must not close the menu.
+    expect(group.getAttribute('aria-expanded')).toBe('true');
+  },
+};
+
+/** Verifies the flyout stays on screen when opened against the right edge. */
+export const TestOrganiseFlyoutStaysOnScreen: Story = {
+  args: {
+    data: MOCK_ORGANISE_MENU_ITEMS,
+    topMenuSize: 2,
+    placement: Placement.bottom,
+    useParentContainer: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div data-cometchat-container
+           class="cometchat-context-menu-story__container"
+           style="position:relative; width:100%; height:320px; box-sizing:border-box; padding: var(--cometchat-padding-5, 20px); display:flex; align-items:flex-start; justify-content:flex-end; overflow:visible;">
+        <cometchat-context-menu
+          [data]="data"
+          [topMenuSize]="topMenuSize"
+          [placement]="placement"
+          [useParentContainer]="useParentContainer"
+          (optionClick)="optionClick($event)">
+        </cometchat-context-menu>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await new Promise(r => setTimeout(r, 500));
+    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
+    expect(moreButton).not.toBeNull();
+
+    moreButton.click();
+    await new Promise(r => setTimeout(r, 500));
+
+    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]') as HTMLElement;
+    expect(group).not.toBeNull();
+
+    group.click();
+    await new Promise(r => setTimeout(r, 500));
+
+    const flyout = document.querySelector('.cometchat-menu-list__group-flyout, [class*="group-flyout"]') as HTMLElement;
+    expect(flyout).not.toBeNull();
+
+    // Flipping left and shifting back by hand are both valid answers here —
+    // which one applies depends on the canvas width, so assert the invariant
+    // they share rather than one of the two.
+    const moved =
+      flyout.classList.contains('cometchat-menu-list__group-flyout--flip') || !!flyout.style.left;
+    expect(moved).toBe(true);
+    expect(Math.round(flyout.getBoundingClientRect().right)).toBeLessThanOrEqual(window.innerWidth);
   },
 };

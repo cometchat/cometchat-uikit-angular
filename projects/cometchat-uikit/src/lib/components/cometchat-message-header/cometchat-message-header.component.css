@@ -448,10 +448,38 @@
   mask-image: url('../../assets/ai_conversation_summary.svg');
 }
 
-/* Overflow Menu Styles */
+/*
+ * Overflow Menu
+ *
+ * The trigger is a context-menu, whose default is a floating white chip — 24px,
+ * rounded, filled, with a drop shadow. That reads correctly hovering over a
+ * message bubble, which is what it was built for, but in the header it sat
+ * beside two bare 36px icons as a smaller, paler, outlined pill.
+ *
+ * Retuned to match the header's own menu-button, which is also what the React
+ * kit does: a 36px transparent hit area with a 24px glyph in the primary icon
+ * colour, and hover recolouring the glyph rather than filling a background.
+ *
+ * Custom properties rather than ::ng-deep — they inherit through the component
+ * boundary, so the context-menu's own tokens do the work and nothing here
+ * depends on its internal class names.
+ */
 .cometchat-message-header__overflow-menu {
   display: flex;
   align-items: center;
+
+  --cometchat-context-menu-divider-width: var(--cometchat-message-header-menu-button-width, 36px);
+  --cometchat-context-menu-divider-height: var(--cometchat-message-header-menu-button-height, 36px);
+  --cometchat-context-menu-divider-background: transparent;
+  --cometchat-context-menu-divider-background-hover: transparent;
+  --cometchat-context-menu-divider-box-shadow: none;
+  --cometchat-context-menu-divider-icon-width: 24px;
+  --cometchat-context-menu-divider-icon-height: 24px;
+  --cometchat-context-menu-divider-icon-background: var(--cometchat-icon-color-primary);
+}
+
+.cometchat-message-header__overflow-menu:hover {
+  --cometchat-context-menu-divider-icon-background: var(--cometchat-primary-color);
 }
 
 /* ==================== Auxiliary Buttons Section ==================== */

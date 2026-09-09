@@ -97,6 +97,18 @@ export class CometChatMessageBubbleComponent
 {
   @Input({ required: true }) message!: CometChat.BaseMessage;
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.right;
+  /**
+   * Which palette the bubble wears, when that has to differ from which SIDE it
+   * sits on. Defaults to following `alignment`, which is what a conversation
+   * wants — your messages on the right, in your colour.
+   *
+   * A list of messages is not a dialogue, though: the pinned panel runs every
+   * entry down the left so the eye is not hunting for each author, while still
+   * showing your own in your colour. `alignment` alone cannot express that,
+   * because it decides the side, the palette and where the options sit all at
+   * once.
+   */
+  @Input() variant?: 'incoming' | 'outgoing';
   @Input() group: CometChat.Group | null = null;
   @Input() options: (CometChatActionsIcon | CometChatActionsView)[] = [];
   @Input() quickOptionsCount = 2;
@@ -179,7 +191,28 @@ export class CometChatMessageBubbleComponent
   get messageId(): string | number { if (!this.message) return ''; return this.message.getId() || this.message.getMuid() || ''; }
   get messageType(): string { if (!this.message) return ''; return this.message.getType() || ''; }
   get messageCategory(): string { if (!this.message) return ''; return this.message.getCategory() || ''; }
-  get bubbleClassName(): string { switch (this.alignment) { case MessageBubbleAlignment.left: return 'cometchat-message-bubble-incoming'; case MessageBubbleAlignment.right: return 'cometchat-message-bubble-outgoing'; case MessageBubbleAlignment.center: return 'cometchat-message-bubble-action'; default: return 'cometchat-message-bubble-outgoing'; } }
+  /**
+   * The alignment the PALETTE follows — `variant` when a host has pinned it,
+   * otherwise the side the bubble sits on. An action bubble is neither, so
+   * `center` is passed through untouched.
+   */
+  get colourAlignment(): MessageBubbleAlignment {
+    if (!this.variant || this.alignment === MessageBubbleAlignment.center) return this.alignment;
+    return this.variant === 'outgoing' ? MessageBubbleAlignment.right : MessageBubbleAlignment.left;
+  }
+  /**
+   * Wearing the outgoing colour while sitting on the left.
+   *
+   * The outgoing class carries the palette AND three layout rules — pull to the
+   * right, align to the end, options before the body — which are wrong for a
+   * bubble in the left column. The modifier this flag applies puts those three
+   * back; nothing else about the class needs undoing.
+   */
+  get isColourOnlyOutgoing(): boolean {
+    return this.alignment === MessageBubbleAlignment.left
+      && this.colourAlignment === MessageBubbleAlignment.right;
+  }
+  get bubbleClassName(): string { switch (this.colourAlignment) { case MessageBubbleAlignment.left: return 'cometchat-message-bubble-incoming'; case MessageBubbleAlignment.right: return 'cometchat-message-bubble-outgoing'; case MessageBubbleAlignment.center: return 'cometchat-message-bubble-action'; default: return 'cometchat-message-bubble-outgoing'; } }
   get bubbleTypeClassName(): string {
     if (!this.message) return '';
     // Developer card type is arbitrary, so key the bubble-type class by
@@ -220,7 +253,7 @@ export class CometChatMessageBubbleComponent
   }
   get sender(): CometChat.User | null { if (!this.message) return null; return this.message.getSender() || this.loggedInUser || null; }
   get isOutgoing(): boolean { if (!this.message || !this.loggedInUser) return false; const sender = this.message.getSender(); if (!sender) return true; return sender.getUid() === this.loggedInUser.getUid(); }
-  get isOutgoingStyle(): boolean { return this.alignment === MessageBubbleAlignment.right; }
+  get isOutgoingStyle(): boolean { return this.colourAlignment === MessageBubbleAlignment.right; }
   get isDeleted(): boolean { if (!this.message) return false; return !!this.message.getDeletedAt(); }
   get quotedMessage(): CometChat.BaseMessage | null {
     if (!this.message) return null;
@@ -261,6 +294,18 @@ export class CometChatMessageBubbleComponent
     return null;
   }
   get isEdited(): boolean { if (!this.message) return false; return !!this.message.getEditedAt() && this.message.getType() == CometChatUIKitConstants.MessageTypes.text && this.message.getCategory() == CometChatUIKitConstants.MessageCategory.message; }
+
+  /**
+   * Pinned and saved indicators. The presence of the timestamp IS the boolean —
+   * the backend omits these fields entirely when unset, so there is no separate
+   * flag and an absent value means "not pinned"/"not saved", never zero.
+   *
+   * `pinnedAt` is conversation-wide, so everyone sees the pin marker.
+   * `savedAt` is per-viewer, so the bookmark shows only to the user who saved
+   * it — the field simply is not present in anyone else's copy.
+   */
+  get isPinned(): boolean { return !!this.message?.getPinnedAt?.() && !this.isDeleted; }
+  get isSaved(): boolean { return !!this.message?.getSavedAt?.() && !this.isDeleted; }
   get actionMessageText(): string {
     if (!this.message) { return ''; }
     const category = this.messageCategory;

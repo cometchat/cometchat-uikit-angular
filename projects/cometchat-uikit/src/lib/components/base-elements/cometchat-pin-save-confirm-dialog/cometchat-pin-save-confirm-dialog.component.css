@@ -1,0 +1,47 @@
+/*
+ * Unpin / unsave confirmation, retuned away from the dialog's delete defaults.
+ *
+ * The confirm dialog hard-codes a red trash icon and a red submit button — it
+ * was built for Delete. Unpinning removes a marker, not the message, so it gets
+ * no alarm icon and the primary colour rather than the destructive one.
+ *
+ * Done with custom properties rather than ::ng-deep: they inherit through the
+ * component boundary, so the dialog's own tokens do the work and nothing here
+ * depends on its internal class names.
+ */
+.cometchat-pin-save-confirm-dialog {
+  /* The overlay itself, absorbed from the four hosts that each declared their
+     own. Absolute rather than fixed so it covers the panel it belongs to, which
+     is what every one of those hosts did. */
+  position: absolute;
+  inset: 0;
+  z-index: var(--cometchat-pin-save-confirm-dialog-z-index, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-pin-save-confirm-dialog-overlay-background, var(--cometchat-overlay-background));
+
+  --cometchat-confirm-dialog-icon-wrapper-display: none;
+  /* Text runs along the leading edge, not centred. `stretch` lets the content
+     block fill the dialog so the left edge lands on the padding rather than
+     wherever the longest line happens to centre. `start` rather than `left`
+     keeps it correct under RTL. The button row is unchanged — its children are
+     already `flex: 1`, so they stay equal-width side by side. */
+  --cometchat-confirm-dialog-align-items: stretch;
+  --cometchat-confirm-dialog-title-text-align: start;
+  --cometchat-confirm-dialog-description-text-align: start;
+
+  /* Title -> subtext, and subtext -> buttons.
+     The second is the DIALOG's own gap, but the button row adds `8px 0` of its
+     own padding on top of it, so the gap alone would read as 28. Zeroing that
+     padding makes the 20 here the distance actually seen; the dialog's 20px
+     padding still holds the buttons off the bottom edge. */
+  /* Design calls this 3xl; the kit's scale is numeric, and 3xl is 24px. */
+  --cometchat-confirm-dialog-padding: var(--cometchat-padding-6, 24px);
+  --cometchat-confirm-dialog-content-gap: 4px;
+  --cometchat-confirm-dialog-gap: 20px;
+  --cometchat-confirm-dialog-button-group-padding: 0;
+  --cometchat-confirm-dialog-submit-button-background: var(--cometchat-primary-color);
+  --cometchat-confirm-dialog-submit-button-background-hover: var(--cometchat-primary-color);
+  --cometchat-confirm-dialog-submit-button-background-active: var(--cometchat-primary-color);
+}

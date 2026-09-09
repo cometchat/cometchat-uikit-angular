@@ -104,7 +104,8 @@
         left: positionStyle['left'] || 'auto',
         position: positionStyle['position'] || null,
         display: showSubMenu ? 'flex' : 'none',
-        'z-index': disableBackgroundInteraction && showSubMenu ? '1000' : '1001'
+        'z-index': disableBackgroundInteraction && showSubMenu ? '1000' : '1001',
+        overflow: openGroupId ? 'visible' : null
       }"
     >
       <ng-container *ngFor="let item of subMenu; let i = index; trackBy: trackByItem">
@@ -112,12 +113,16 @@
           #menuItemRef
           [id]="getItemId(item)"
           class="cometchat-menu-list__sub-menu-list-item"
+          [class.cometchat-menu-list__sub-menu-list-item--group]="hasChildren(item)"
           [title]="getItemTitle(item)"
           [attr.aria-label]="getItemTitle(item)"
           [attr.aria-selected]="focusedItemIndex === i"
+          [attr.aria-haspopup]="hasChildren(item) ? 'menu' : null"
+          [attr.aria-expanded]="hasChildren(item) ? (openGroupId === getItemId(item)) : null"
           role="menuitem"
           tabindex="0"
           (click)="onMenuItemClick(item, $event)"
+          (mouseenter)="hasChildren(item) ? openGroup(item) : closeGroup()"
         >
           <div
             *ngIf="item.iconURL"
@@ -127,6 +132,45 @@
           <label class="cometchat-menu-list__sub-menu-item-title cometchat-menu-list__sub-menu-item-title-{{ getItemId(item) }}">
             {{ getItemTitle(item) }}
           </label>
+
+          <!-- A group opens its own list rather than acting, so it shows a
+               chevron and no result on click-through. -->
+          <span
+            *ngIf="hasChildren(item)"
+            class="cometchat-menu-list__group-chevron"
+            aria-hidden="true"
+          ></span>
+
+          <div
+            *ngIf="hasChildren(item) && openGroupId === getItemId(item)"
+            #groupFlyoutRef
+            class="cometchat-menu-list__group-flyout"
+            [class.cometchat-menu-list__group-flyout--flip]="groupFlyoutFlipped"
+            [style.left.px]="groupFlyoutShift"
+            role="menu"
+            [attr.aria-label]="getItemTitle(item)"
+          >
+            <div
+              *ngFor="let child of childrenOf(item); trackBy: trackByItem"
+              [id]="getItemId(child)"
+              class="cometchat-menu-list__sub-menu-list-item"
+              [title]="getItemTitle(child)"
+              [attr.aria-label]="getItemTitle(child)"
+              role="menuitem"
+              tabindex="0"
+              (click)="onMenuItemClick(child, $event)"
+              (keydown)="onGroupChildKeydown($event, child)"
+            >
+              <div
+                *ngIf="child.iconURL"
+                class="cometchat-menu-list__sub-menu-list-item-icon cometchat-menu-list__sub-menu-list-item-icon-{{ getItemId(child) }}"
+                [ngStyle]="getIconStyle(child)"
+              ></div>
+              <label class="cometchat-menu-list__sub-menu-item-title cometchat-menu-list__sub-menu-item-title-{{ getItemId(child) }}">
+                {{ getItemTitle(child) }}
+              </label>
+            </div>
+          </div>
         </div>
       </ng-container>
     </div>

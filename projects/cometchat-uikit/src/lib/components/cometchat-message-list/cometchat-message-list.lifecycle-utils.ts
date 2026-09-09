@@ -29,6 +29,9 @@ export function ngOnInitImpl(self: any): void {
   });
   self.initializeFormatters();
   self.subscribeToMessageEvents();
+  self.subscribeToThreadEvents();
+  self.subscribeToPinSaveEvents();
+  void self.resolvePinSaveFlags();
   if (!self.user && !self.group) {
     self.propsProvided = false;
     self.subscribeToChatStateService();
@@ -60,7 +63,19 @@ export function ngOnChangesImpl(self: any, changes: SimpleChanges): void {
   if ((userChange && !userChange.firstChange) || (groupChange && !groupChange.firstChange)) {
     self.handleConversationChange();
   }
-  if (changes['parentMessageId'] && !changes['parentMessageId'].firstChange) {
+  const parentMessageChange = changes['parentMessage'];
+  if (parentMessageChange && !parentMessageChange.firstChange) {
+    // Re-passed on every parent update, not just a thread switch: the object
+    // carries the thread's current subscription flag, and a re-fetch swaps it
+    // for a new one whose value is authoritative.
+    self.messageListService.setParentMessage(self.parentMessage ?? null);
+  }
+  const threadChanged =
+    (changes['parentMessageId'] && !changes['parentMessageId'].firstChange) ||
+    (parentMessageChange &&
+      !parentMessageChange.firstChange &&
+      parentMessageChange.previousValue?.getId?.() !== parentMessageChange.currentValue?.getId?.());
+  if (threadChanged) {
     self.handleParentMessageIdChange();
   }
   const conversationAlsoChanged =

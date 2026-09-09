@@ -1,5 +1,5 @@
 
-import { Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ContentChild, ChangeDetectionStrategy, OnInit, OnDestroy, signal, computed, Signal, inject, ElementRef, booleanAttribute, Optional, DestroyRef } from '@angular/core';
+import { Component, ChangeDetectorRef, Input, Output, EventEmitter, TemplateRef, ViewChild, ContentChild, ChangeDetectionStrategy, OnInit, OnDestroy, signal, computed, Signal, inject, ElementRef, booleanAttribute, Optional, DestroyRef } from '@angular/core';
 import { safeEffect } from '../../utils/safe-effect';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
@@ -10,6 +10,7 @@ import { CometChatPaginatedListComponent } from '../cometchat-paginated-list/com
 import { CometChatConversationItemComponent } from '../cometchat-conversation-item/cometchat-conversation-item.component';
 import { CometChatSearchBarComponent } from '../base-elements/cometchat-search-bar/cometchat-search-bar.component';
 import { CometChatConfirmDialogComponent } from '../base-elements/cometchat-confirm-dialog/cometchat-confirm-dialog.component';
+import { CometChatPinSaveConfirmDialogComponent } from '../base-elements/cometchat-pin-save-confirm-dialog/cometchat-pin-save-confirm-dialog.component';
 import { CometChatCheckboxComponent } from '../base-elements/cometchat-checkbox/cometchat-checkbox.component';
 import { CometChatRadioButtonComponent } from '../base-elements/cometchat-radio-button/cometchat-radio-button.component';
 import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-error-boundary/cometchat-error-boundary.component';
@@ -18,6 +19,8 @@ import { CometChatTemplatesService } from '../../services/templates.service';
 import { ChatStateService } from '../../services/chat-state.service';
 import { FormatterConfigService } from '../../services/formatter-config.service';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
+import { CometChatToastService } from '../base-elements/cometchat-toast/cometchat-toast.service';
+import { PinSaveService } from '../../services/pin-save.service';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
 import { CometChatMessageEvents } from '../../events/CometChatMessageEvents';
 import { CometChatConversationEvents } from '../../events/CometChatConversationEvents';
@@ -27,17 +30,21 @@ import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe'
 import { CometChatLogger } from '../../utils/CometChatLogger';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { CometChatUIKitConstants } from '../../constants';
+import { CometChatUIKit } from '../../cometchat-uikit';
 import { SelectionMode, Placement } from '../../Enums/Enums';
 import { CometChatOption } from '../../modals/CometChatOption';
 import { CalendarObject } from '../../resources/CometChatLocalize/localization.interfaces';
 import { ConversationSlots } from '../../interfaces/conversation-slots.interface';
 import { SelectionState } from '../../modals/SelectionState';
+import { CometChatPinSaveEvents } from '../../events/CometChatPinSaveEvents';
 export type { SelectionState } from '../../modals/SelectionState';
 
 @Component({
   selector: 'cometchat-conversations',
   standalone: true,
-  imports: [CommonModule, CometChatPaginatedListComponent, CometChatConversationItemComponent, CometChatSearchBarComponent, CometChatConfirmDialogComponent, CometChatCheckboxComponent, CometChatRadioButtonComponent, CometChatErrorBoundaryComponent, TranslatePipe],
+  imports: [
+    CometChatPinSaveConfirmDialogComponent,
+    CommonModule, CometChatPaginatedListComponent, CometChatConversationItemComponent, CometChatSearchBarComponent, CometChatConfirmDialogComponent, CometChatCheckboxComponent, CometChatRadioButtonComponent, CometChatErrorBoundaryComponent, TranslatePipe],
   templateUrl: './cometchat-conversations.component.html',
   styleUrls: ['./cometchat-conversations.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +52,13 @@ export type { SelectionState } from '../../modals/SelectionState';
 export class CometChatConversationsComponent implements OnInit, OnDestroy {
   readonly shimmerList = CometChatUIKitConstants.shimmerList;
 
+  // Optional: `ChangeDetectorRef` only resolves when Angular instantiates the
+  // component, and several suites construct this class directly to exercise its
+  // logic. A required inject would make every one of those fail on construction
+  // — for the sake of one markForCheck after a pin toggle.
+  private cdr = inject(ChangeDetectorRef, { optional: true });
+  private toast = inject(CometChatToastService, { optional: true });
+  private pinSave = inject(PinSaveService, { optional: true });
   private conversationsService = inject(ConversationsService);
   private templatesService = inject(CometChatTemplatesService);
   private chatStateService = inject(ChatStateService);
@@ -67,6 +81,8 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   @Input({ transform: booleanAttribute })
   set hideError(value: boolean) { this._hideError.set(value); this.hideErrorExplicitlySet.set(true); }
   get hideError(): boolean { return this._hideError(); }
+  /** Hides the Pin conversation entry from the row menu. */
+  @Input({ transform: booleanAttribute }) hidePinConversation = false;
   @Input({ transform: booleanAttribute }) hideDeleteConversation = false;
   @Input({ transform: booleanAttribute })
   set hideUserStatus(value: boolean) { this._hideUserStatus.set(value); this.hideUserStatusExplicitlySet.set(true); }
@@ -187,6 +203,13 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
     safeEffect(() => { this.hasMore.set(this.conversationsService.hasMore()); });
   }
   ngOnInit(): void {
+    void this.pinSave
+      ?.isPinConversationEnabled()
+      .then((enabled: boolean) => {
+        this.conversationPinEnabled.set(enabled);
+        this.cdr?.markForCheck();
+      })
+      .catch(() => undefined);
     try {
       this.initializeLoggedInUser().then(() => {
         // Reconfigure formatters with the now-resolved logged-in user
@@ -196,6 +219,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
       this.initializeService();
       this.setupSearchDebouncing();
       this.subscribeToMessagesReadEvents();
+      this.subscribeToConversationPinEvents();
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       CometChatLogger.error('CometChatConversations', 'Error in ngOnInit:', err);
@@ -234,7 +258,12 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   }
   handleConversationSelect(event: { conversation: CometChat.Conversation; selected: boolean }): void { this.select.emit(event); }
   handleContextMenuOpen(conversation: CometChat.Conversation): void { this.contextMenuOpen.emit(conversation); }
-  handleContextMenuOptionClick(event: { option: CometChatOption; conversation: CometChat.Conversation }): void { if (event.option.id === 'delete') this.handleDeleteConversationClick(event.conversation); if (event.option.onClick) event.option.onClick(); }
+  /**
+   * NOTE: `CometChatContextMenu` already invokes the chosen option's `onClick`.
+   * Invoking it again here ran every handler TWICE — invisible for Delete,
+   * which just reopened the same dialog, but it pinned and instantly unpinned a
+   * conversation, so the toggle looked like it did nothing.
+   */
   handleSelection(conversation: CometChat.Conversation, event?: MouseEvent): void {
     const id = this.getConversationId(conversation); const convs = this.conversations();
     const idx = convs.findIndex(c => this.getConversationId(c) === id);
@@ -348,10 +377,20 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
     }, 1000);
   }
   announceConversationDeleted(): void { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_conversation_deleted'), 'polite'); }
+  /**
+   * Announce a conversation that was not in the list before.
+   *
+   * Scans the whole list for the same reason the sound does: with pinned
+   * conversations sorted to the top, a new conversation does not necessarily
+   * arrive at index 0.
+   */
   private detectAndAnnounceNewConversation(current: CometChat.Conversation[], previous: CometChat.Conversation[]): void {
     if (!current.length || !previous.length) return;
-    const first = current[0]; const firstId = this.getConversationId(first);
-    if (!previous.some(c => this.getConversationId(c) === firstId)) { const name = first.getConversationWith().getName(); if (name) this.announceNewConversation(name); }
+    const previousIds = new Set(previous.map(c => this.getConversationId(c)));
+    const added = current.find(c => !previousIds.has(this.getConversationId(c)));
+    if (!added) return;
+    const name = added.getConversationWith().getName();
+    if (name) this.announceNewConversation(name);
   }
   private focusItemAtIndex(index: number): void {
     setTimeout(() => {
@@ -369,16 +408,197 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
     const index = Array.from(itemsContainer.children).indexOf(paginatedListItem);
     if (index !== -1 && this.focusedIndex() !== index) this.focusedIndex.set(index);
   }
+  /**
+   * Does the installed SDK support pinning a conversation?
+   *
+   * The package's peer range still admits builds without it, and calling a
+   * missing method throws synchronously. Without this check the option renders,
+   * the call rejects, and the user gets an error toast for something that was
+   * never available — the same reasoning as PinSaveService.isSupported().
+   */
+  private isConversationPinSupported(): boolean {
+    const sdk = CometChat as unknown as Record<string, unknown>;
+    if (typeof sdk['pinConversation'] !== 'function' || typeof sdk['unpinConversation'] !== 'function') {
+      return false;
+    }
+    // The SDK exposing the method is not the same as the app's plan including
+    // it. Resolved once and read synchronously here, because the option list is
+    // built during change detection and cannot await.
+    return this.conversationPinEnabled();
+  }
+
+  /**
+   * The app-level conversation-pin flag, resolved once.
+   *
+   * Starts false so the option never flashes in before the answer arrives —
+   * an option that rejects on click is worse than one that appears a moment late.
+   */
+  private readonly conversationPinEnabled = signal(false);
+
   getContextMenuOptions(conversation: CometChat.Conversation): CometChatOption[] {
     if (this.options) return this.options(conversation);
     const opts: CometChatOption[] = [];
+    // Pin sits above Delete: the safe, reversible action comes first, and the
+    // destructive one stays last where it is harder to hit by accident.
+    if (!this.hidePinConversation && this.isConversationPinSupported()) {
+      const isPinned = this.isConversationPinned(conversation);
+      opts.push(new CometChatOption({
+        id: 'pinConversation',
+        title: CometChatLocalize.getLocalizedString(isPinned ? 'conversation_unpin' : 'conversation_pin'),
+        iconURL: isPinned ? 'assets/keep_off.svg' : 'assets/keep.svg',
+        onClick: () => this.requestPinConversation(conversation),
+      }));
+    }
     if (!this.hideDeleteConversation) opts.push(new CometChatOption({ id: 'delete', title: CometChatLocalize.getLocalizedString('conversation_delete_icon_hover'), iconURL: 'assets/delete.svg', onClick: () => this.handleDeleteConversationClick(conversation) }));
     return opts;
   }
+
+  /**
+   * Whether this conversation is pinned.
+   *
+   * The presence of `pinnedAt` IS the boolean, exactly as for messages — an
+   * unpinned conversation carries no key at all. `isPinned()` covers both a
+   * personal pin and an admin-global one (`pinnedBy === "app_system"`).
+   */
+  isConversationPinned(conversation: CometChat.Conversation): boolean {
+    return !!conversation.isPinned?.();
+  }
+
+  /**
+   * Toggle a conversation's pin.
+   *
+   * The cap is server-owned and arrives in `errorParams.limit`; the SDK's own
+   * typings warn never to enforce it client-side, because it is
+   * tenant-overridable. So a rejection is read, not predicted.
+   */
+  /** The conversation awaiting unpin confirmation, or null. */
+  pendingUnpinConversation = signal<CometChat.Conversation | null>(null);
+
+  /**
+   * Pinning runs straight away; unpinning asks first.
+   *
+   * A pin is a deliberate arrangement of the list — losing one by a misplaced
+   * click means finding the conversation again to restore it, whereas an
+   * accidental pin is undone from the same menu it was made in.
+   */
+  requestPinConversation(conversation: CometChat.Conversation): void {
+    if (this.isConversationPinned(conversation)) {
+      this.pendingUnpinConversation.set(conversation);
+      this.cdr?.markForCheck();
+      return;
+    }
+    void this.handlePinConversationClick(conversation);
+  }
+
+  confirmUnpinConversation(): void {
+    const conversation = this.pendingUnpinConversation();
+    this.pendingUnpinConversation.set(null);
+    if (conversation) void this.handlePinConversationClick(conversation);
+  }
+
+  cancelUnpinConversation(): void {
+    this.pendingUnpinConversation.set(null);
+    this.cdr?.markForCheck();
+  }
+
+  async handlePinConversationClick(conversation: CometChat.Conversation): Promise<void> {
+    const wasPinned = this.isConversationPinned(conversation);
+
+    const entity = conversation.getConversationWith();
+    const type = conversation.getConversationType();
+    const id =
+      type === CometChatUIKitConstants.MessageReceiverType.group
+        ? (entity as CometChat.Group).getGuid()
+        : (entity as CometChat.User).getUid();
+
+    const method = wasPinned ? 'unpinConversation' : 'pinConversation';
+
+    try {
+      const updated = wasPinned
+        ? await CometChat.unpinConversation(id, type)
+        : await CometChat.pinConversation(id, type);
+      // The SDK answers with the UPDATED conversation, and the list is still
+      // holding the pre-toggle object — whose `isPinned()` is now stale. Swap it
+      // in, or the row's pin marker and the menu's Pin/Unpin title both keep
+      // describing the state the conversation was in before the call.
+      if (updated) this.conversationsService.replaceConversation(updated);
+      // Tell everyone else. The list this component owns is already updated
+      // above, but an integrator's own sidebar has no other way to learn of a
+      // pin made here, and the SDK does not echo a change back to the device
+      // that made it.
+      const changed = updated ?? conversation;
+      if (wasPinned) {
+        CometChatPinSaveEvents.publishConversationUnpinned({ conversation: changed });
+      } else {
+        CometChatPinSaveEvents.publishConversationPinned({ conversation: changed });
+      }
+      this.announcePinResult(!wasPinned);
+    } catch (error) {
+      CometChatLogger.error('CometChatConversations', 'Failed to toggle conversation pin:', error);
+      void this.reportConversationPinFailure(error);
+    }
+  }
+
+  /**
+   * Tell the user why a conversation pin was refused.
+   *
+   * The number comes from the app's settings. The rejection itself carries no
+   * readable cap — there is no longer an SDK helper for it, and the figure is
+   * tenant-overridable, so generic copy is correct when the setting is absent
+   * rather than a guess pulled out of the error's prose.
+   */
+  private async reportConversationPinFailure(error: unknown): Promise<void> {
+    if (this.pinnedConversationsLimit === undefined) {
+      try {
+        // Feature-detected: older builds in the peer range lack this, and
+        // calling a missing method throws synchronously.
+        const read = (CometChat as unknown as Record<string, undefined | (() => Promise<number | null>)>)[
+          'getPinnedConversationsLimit'
+        ];
+        this.pinnedConversationsLimit = typeof read === 'function' ? ((await read()) ?? null) : null;
+      } catch {
+        this.pinnedConversationsLimit = null;
+      }
+    }
+    const limit = this.pinnedConversationsLimit;
+
+    this.toast?.error(
+      limit !== null
+        ? CometChatLocalize.getLocalizedString('conversation_pin_limit_error').replace('{limit}', String(limit))
+        : CometChatLocalize.getLocalizedString('pin_save_generic_error')
+    );
+  }
+
+  /** The app's configured cap on pinned conversations; read once. */
+  private pinnedConversationsLimit: number | null | undefined;
+
+  private announcePinResult(nowPinned: boolean): void {
+    this.toast?.info(
+      CometChatLocalize.getLocalizedString(nowPinned ? 'conversation_pinned_toast' : 'conversation_unpinned_toast')
+    );
+    this.cdr?.markForCheck();
+  }
+  /**
+   * Play the incoming-message sound for a conversation that just received one.
+   *
+   * Scans the whole list rather than index 0: pinned conversations sort to the
+   * top, so a pinned chat sitting first would otherwise mean no sound ever
+   * played for a message arriving anywhere else.
+   */
   private handleSoundNotification(current: CometChat.Conversation[], previous: CometChat.Conversation[]): void {
     if (this.effectiveDisableSoundForMessages() || !current.length) return;
-    const first = current[0]; const msg = first.getLastMessage();
-    if (!msg || !this.shouldPlaySound() || !this.isNewMessage(first, previous) || this.isConversationActive(first) || this.isMessageFromLoggedInUser(msg)) return;
+    if (!this.shouldPlaySound()) return;
+    const changed = current.find(conversation => {
+      const msg = conversation.getLastMessage();
+      return (
+        !!msg &&
+        this.isNewMessage(conversation, previous) &&
+        !this.isConversationActive(conversation) &&
+        !this.isMessageFromLoggedInUser(msg)
+      );
+    });
+    if (!changed) return;
+    // One sound per batch, however many conversations changed at once.
     this.playMessageSound();
   }
   private shouldPlaySound(): boolean { return Date.now() - this.lastSoundPlayedAt >= this.SOUND_THROTTLE_INTERVAL; }
@@ -402,9 +622,33 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
     };
   }
   trackByConversation(_index: number, conversation: CometChat.Conversation): string { return this.getConversationId(conversation); }
+  /**
+   * The conversation a message belongs to.
+   *
+   * For a group that is the receiver. For a 1-1 it is the OTHER party, which
+   * the receiver alone does not give: read events are only ever raised for
+   * messages this user RECEIVED, so the receiver is always this user, and
+   * looking the conversation up by that id finds nothing — the unread badge
+   * then never clears. Groups were unaffected, which is why this only showed
+   * on one-to-one chats.
+   */
+  private conversationIdOf(message: CometChat.BaseMessage): string {
+    const receiver = message.getReceiver();
+    if (receiver instanceof CometChat.Group) return receiver.getGuid();
+
+    const me = CometChatUIKit.getLoggedInUser()?.getUid();
+    const senderUid = message.getSender()?.getUid();
+    if (me && senderUid === me) {
+      return receiver instanceof CometChat.User
+        ? receiver.getUid()
+        : (receiver as any)?.uid || (receiver as any)?.guid || '';
+    }
+    return senderUid || '';
+  }
+
   private subscribeToMessagesReadEvents(): void {
     CometChatMessageEvents.ccMessageRead.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((msg: CometChat.BaseMessage) => {
-      try { const r = msg.getReceiver(); const id = r instanceof CometChat.User ? r.getUid() : r instanceof CometChat.Group ? r.getGuid() : (r as any)?.uid || (r as any)?.guid || ''; if (id) this.conversationsService.updateConversationReadStatus(id, msg); }
+      try { const id = this.conversationIdOf(msg); if (id) this.conversationsService.updateConversationReadStatus(id, msg); }
       catch (e) { CometChatLogger.error('CometChatConversations', 'Error handling message read event:', e); }
     });
     CometChatConversationEvents.ccUpdateConversation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((conv: CometChat.Conversation) => {
@@ -412,5 +656,28 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
       catch (e) { CometChatLogger.error('CometChatConversations', 'Error handling ccUpdateConversation event:', e); }
     });
   }
+  /**
+   * A conversation pin is private to the user but syncs across their devices,
+   * and an admin can pin one globally. Either way the change arrives here rather
+   * than through this component, so the row has to be swapped in — its own
+   * `isPinned()` is otherwise stale until the next fetch.
+   *
+   * Subscribes to the merged views, so this also covers a pin made from another
+   * surface in the same app.
+   */
+  private subscribeToConversationPinEvents(): void {
+    const swap = ({ conversation }: { conversation: CometChat.Conversation }) => {
+      if (!conversation) return;
+      this.conversationsService.replaceConversation(conversation);
+      this.cdr?.markForCheck();
+    };
+    CometChatPinSaveEvents.conversationPinned$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(swap);
+    CometChatPinSaveEvents.conversationUnpinned$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(swap);
+  }
+
   handleRetryClick(): void { this.conversationsService.clearError(); this.conversationsService.fetchConversations(this.conversationsRequestBuilder); }
 }

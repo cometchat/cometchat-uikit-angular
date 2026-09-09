@@ -19,7 +19,7 @@ import {
   getConversationEntityId, findConversationIndex,
   isAMessage, shouldLastMessageAndUnreadCountBeUpdated,
   applyReceiptToConversations, getTypingIndicatorKey,
-  dedupeConversations,
+  dedupeConversations, orderPinnedFirst,
 } from './conversations.utils';
 import {
   setupUIEventSubscriptions, setupCallEventSubscriptions,
@@ -52,14 +52,21 @@ export class ConversationsService {
   private allConversationsSignal = signal<CometChat.Conversation[]>([]);
 
   // ==================== Public Signal API ====================
-  readonly conversations = this.conversationsSignal.asReadonly();
+  /**
+   * The conversation list as the UI should show it: pinned chats first.
+   *
+   * Ordering lives here rather than in the mutation methods so that no insert
+   * path can bypass it — the stored signal stays purely recency-ordered and
+   * this view applies the pin rule once, for every reader.
+   */
+  readonly conversations = computed(() => orderPinnedFirst(this.conversationsSignal()));
   readonly loadingState = this.loadingStateSignal.asReadonly();
   readonly errorState = this.errorStateSignal.asReadonly();
   readonly activeConversation = this.activeConversationSignal.asReadonly();
   readonly typingIndicators = this.typingIndicatorsSignal.asReadonly();
 
   // ==================== Observable API (backward compat) ====================
-  readonly conversations$: Observable<CometChat.Conversation[]> = toObservable(this.conversationsSignal);
+  readonly conversations$: Observable<CometChat.Conversation[]> = toObservable(this.conversations);
   readonly loadingState$: Observable<boolean> = toObservable(this.loadingStateSignal);
   readonly errorState$: Observable<Error | null> = toObservable(this.errorStateSignal);
   readonly activeConversation$: Observable<CometChat.Conversation | null> = toObservable(this.activeConversationSignal);

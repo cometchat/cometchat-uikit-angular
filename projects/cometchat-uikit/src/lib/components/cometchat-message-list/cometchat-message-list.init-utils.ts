@@ -7,6 +7,9 @@ export function initializeServiceImpl(self: any): void {
   if (self.user) { self.messageListService.setUser(self.user); } else if (self.group) { self.messageListService.setGroup(self.group); }
   if (self.isAgentChat) { self.messageListService.setIsAgentChat(true); }
   if (self.parentMessageId) { self.messageListService.setParentMessageId(self.parentMessageId); }
+  // Subscription state only — the scoping id above is derived from the same
+  // message when the caller passes one.
+  self.messageListService.setParentMessage(self.parentMessage ?? null);
   if (self.messagesRequestBuilder) { self.messageListService.setMessagesRequestBuilder(self.messagesRequestBuilder); }
   if (self.hideGroupActionMessages) { self.messageListService.setHideGroupActionMessages(self.hideGroupActionMessages); }
   if (self.isAgentChat && !self.parentMessageId) {

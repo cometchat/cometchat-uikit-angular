@@ -97,6 +97,70 @@ describe('message-list.sent-handler', () => {
       expect(ctx.addMessage).not.toHaveBeenCalled();
     });
 
+    // -----------------------------------------------------------------------
+    // Auto-subscribe on send
+    //
+    // Sending a message subscribes its author to that message's thread
+    // server-side, and a top-level message is the root of its own thread. The
+    // send response does not carry the flag back, so the handler stamps it.
+    // -----------------------------------------------------------------------
+
+    /** A sent message carrying a local thread-subscription flag, as the SDK's does. */
+    function makeSubscribable(parentMessageId: number | null = null) {
+      let subscribed = false;
+      const msg = makeTextMessage();
+      (msg as any).getParentMessageId = () => parentMessageId;
+      (msg as any).isThreadSubscribed = () => subscribed;
+      (msg as any).setThreadSubscribed = (value: boolean) => {
+        subscribed = value;
+      };
+      return msg;
+    }
+
+    it('stamps a top-level send subscribed — the author follows their own thread', () => {
+      const msg = makeSubscribable();
+      handleSentMessageImpl(makeCtx(), { message: msg, status: MessageStatus.success } as any);
+      expect((msg as any).isThreadSubscribed()).toBe(true);
+    });
+
+    it('stamps a threaded reply subscribed too', () => {
+      const msg = makeSubscribable(42);
+      handleSentMessageImpl(
+        makeCtx({ parentMessageId: 42 }),
+        { message: msg, status: MessageStatus.success } as any
+      );
+      expect((msg as any).isThreadSubscribed()).toBe(true);
+    });
+
+    it('stamps while the send is still in flight, so the bubble reads right at once', () => {
+      const msg = makeSubscribable();
+      handleSentMessageImpl(makeCtx(), { message: msg, status: MessageStatus.inprogress } as any);
+      expect((msg as any).isThreadSubscribed()).toBe(true);
+    });
+
+    it('leaves a failed send alone — it created no thread', () => {
+      const msg = makeSubscribable();
+      handleSentMessageImpl(makeCtx(), { message: msg, status: MessageStatus.error } as any);
+      expect((msg as any).isThreadSubscribed()).toBe(false);
+    });
+
+    it('stamps even when the message is for another conversation', () => {
+      // The author is subscribed whichever list happens to observe the send.
+      const msg = makeSubscribable();
+      handleSentMessageImpl(
+        makeCtx({ isMessageForCurrentConversation: vi.fn().mockReturnValue(false) }),
+        { message: msg, status: MessageStatus.success } as any
+      );
+      expect((msg as any).isThreadSubscribed()).toBe(true);
+    });
+
+    it('is a no-op on a Chat SDK without the thread flag', () => {
+      const msg = makeTextMessage();
+      expect(() =>
+        handleSentMessageImpl(makeCtx(), { message: msg, status: MessageStatus.success } as any)
+      ).not.toThrow();
+    });
+
     it('should handle thread reply for current conversation when parentMessageId is set', () => {
       const msg = makeTextMessage(1);
       (msg as any).getParentMessageId = () => 99;

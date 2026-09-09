@@ -198,6 +198,16 @@
         (keydown.space)="handleToolbarBlockquote(); $event.preventDefault()">
         <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--blockquote"></span>
       </button>
+
+      <!-- Consumer buttons, behind the same separator the built-in groups use, so
+           they read as part of the menu rather than bolted on. Nothing is
+           rendered when the slot is unset, leaving the menu exactly as it was.
+           The context carries a `composer` handle so a button here can act on the
+           text being typed — typically to drive a custom `textFormatters` entry. -->
+      @if (toolbarTrailingView) {
+        <span class="cometchat-message-composer__toolbar-separator" aria-hidden="true"></span>
+        <ng-container *ngTemplateOutlet="toolbarTrailingView; context: toolbarTrailingContext"></ng-container>
+      }
     </div>
   }
 
@@ -522,6 +532,14 @@
         (keydown.space)="handleToolbarBlockquote(); $event.preventDefault()">
         <span class="cometchat-message-composer__toolbar-icon cometchat-message-composer__toolbar-icon--blockquote"></span>
       </button>
+
+      <!-- Consumer buttons — see the bubble menu above for the rationale. Rendered
+           in both toolbars so a slot filled once appears wherever the built-in
+           formatting controls do. -->
+      @if (toolbarTrailingView) {
+        <span class="cometchat-message-composer__toolbar-separator" aria-hidden="true"></span>
+        <ng-container *ngTemplateOutlet="toolbarTrailingView; context: toolbarTrailingContext"></ng-container>
+      }
     </div>
   }
 

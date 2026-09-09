@@ -136,6 +136,64 @@
   background: var(--cometchat-border-color-light);
 }
 
+/* ==================== Top-bar Actions ==================== */
+.cometchat-thread-header__top-bar-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--cometchat-thread-header-top-bar-actions-gap, var(--cometchat-spacing-1, 4px));
+}
+
+/* ==================== Follow / Unfollow Control ==================== */
+/* Icon-only, sized to match the close button beside it. */
+.cometchat-thread-header__subscription-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-thread-header-subscription-button-width, 32px);
+  height: var(--cometchat-thread-header-subscription-button-height, 32px);
+  padding: var(--cometchat-thread-header-subscription-button-padding, 0);
+  border: var(--cometchat-thread-header-subscription-button-border, none);
+  border-radius: var(--cometchat-thread-header-subscription-button-border-radius, var(--cometchat-radius-max, 1000px));
+  background: var(--cometchat-thread-header-subscription-button-background, transparent);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cometchat-thread-header__subscription-button:hover {
+  background: var(--cometchat-thread-header-subscription-button-background-hover, var(--cometchat-background-color-04));
+}
+
+.cometchat-thread-header__subscription-button:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+.cometchat-thread-header__subscription-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Both states share the neutral icon colour of the close button beside them —
+   the slash through the bell is what distinguishes them, not a tint. State is
+   also carried by aria-label and aria-pressed, so nothing rests on colour. */
+.cometchat-thread-header__subscription-icon {
+  display: block;
+  flex-shrink: 0;
+  width: var(--cometchat-thread-header-subscription-icon-width, 24px);
+  height: var(--cometchat-thread-header-subscription-icon-height, 24px);
+  background-color: var(--cometchat-thread-header-subscription-icon-color, var(--cometchat-icon-color-primary));
+  -webkit-mask: url('../../assets/thread_notifications_off.svg') center center no-repeat;
+  mask: url('../../assets/thread_notifications_off.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-thread-header__subscription-icon--following {
+  -webkit-mask-image: url('../../assets/thread_notifications.svg');
+  mask-image: url('../../assets/thread_notifications.svg');
+}
+
 /* ==================== Responsive Design ==================== */
 
 @media (max-width: 991px) {

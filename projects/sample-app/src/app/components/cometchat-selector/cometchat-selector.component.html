@@ -75,6 +75,19 @@
           <span class="cometchat-selector__context-menu-icon cometchat-selector__context-menu-icon--chat" aria-hidden="true"></span>
           {{ 'selector_create_conversation' | translate }}
         </button>
+        <!--
+          Saved messages lives here, in the app chrome, rather than in a chat
+          header: a save is per-user and spans every conversation, so hanging it
+          off one conversation would misrepresent what it contains.
+        -->
+        <button
+          class="cometchat-selector__context-menu-item"
+          role="menuitem"
+          (click)="onSavedMessages()"
+        >
+          <span class="cometchat-selector__context-menu-icon cometchat-selector__context-menu-icon--saved" aria-hidden="true"></span>
+          {{ 'selector_saved_messages' | translate }}
+        </button>
         <button
           class="cometchat-selector__context-menu-item cometchat-selector__context-menu-item--danger"
           role="menuitem"

@@ -217,8 +217,12 @@
 
             <!-- Search/Summary Menu Section - Requirements 7.1, 8.1, 8.2, 8.3, 8.4 -->
             <div class="cometchat-message-header__menu-buttons">
-              <!-- Search Button Only (when showSearchOption is true and showConversationSummaryButton is false) -->
-              @if (showSearchOption && !showConversationSummaryButton) {
+              <!-- Inline only while search is the ONE overflow-eligible action.
+                   The moment a second one exists they all move into the ⋮, so an
+                   action is never both a bare icon and a menu entry. Testing the
+                   overflow rule itself rather than naming its siblings keeps this
+                   correct as actions are added. -->
+              @if (showSearchOption && !shouldShowOverflowMenu()) {
                 <button
                   type="button"
                   class="cometchat-message-header__menu-button cometchat-message-header__menu-button--search"
@@ -235,8 +239,8 @@
                 </button>
               }
 
-              <!-- Summary Button Only (when showConversationSummaryButton is true and showSearchOption is false) -->
-              @if (showConversationSummaryButton && !showSearchOption) {
+              <!-- Same rule as search: a lone action stays a bare icon. -->
+              @if (showConversationSummaryButton && !shouldShowOverflowMenu()) {
                 <button
                   type="button"
                   class="cometchat-message-header__menu-button cometchat-message-header__menu-button--summary"
@@ -258,6 +262,7 @@
                 <cometchat-context-menu
                   class="cometchat-message-header__overflow-menu"
                   [data]="getOverflowMenuOptions()"
+                  [placement]="overflowMenuPlacement"
                   [topMenuSize]="1"
                   [moreIconHoverText]="'message_header_more_options' | translate"
                   [closeOnOutsideClick]="true"

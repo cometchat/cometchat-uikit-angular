@@ -33,19 +33,49 @@
       }
     </div>
 
-    <div class="cometchat-thread-header__close-button-wrapper">
-      <button
-        type="button"
-        class="cometchat-thread-header__close-button"
-        [attr.aria-label]="closeButtonAriaLabel"
-        tabindex="0"
-        (click)="onCloseClick()"
-        (keydown)="onCloseKeydown($event)">
-        <span 
-          class="cometchat-thread-header__close-button-icon"
-          aria-hidden="true">
-        </span>
-      </button>
+    <!--
+      Top-bar actions. The control is icon-only, so the tooltip and the
+      accessible name are one and the same string — "Unsubscribe from thread"
+      on a subscribed thread, "Subscribe to thread" otherwise. Keeping them
+      identical is what stops the hover text and the screen-reader name from
+      drifting apart.
+    -->
+    <div class="cometchat-thread-header__top-bar-actions">
+      @if (trailingView) {
+        <ng-container *ngTemplateOutlet="trailingView"></ng-container>
+      } @else if (showThreadSubscription) {
+        <button
+          type="button"
+          class="cometchat-thread-header__subscription-button"
+          [class.cometchat-thread-header__subscription-button--following]="isFollowingThread"
+          [attr.title]="threadSubscriptionLabel"
+          [attr.aria-label]="threadSubscriptionLabel"
+          [attr.aria-pressed]="isFollowingThread"
+          tabindex="0"
+          (click)="onThreadSubscriptionClick()"
+          (keydown)="onThreadSubscriptionKeydown($event)">
+          <span
+            class="cometchat-thread-header__subscription-icon"
+            [class.cometchat-thread-header__subscription-icon--following]="isFollowingThread"
+            aria-hidden="true">
+          </span>
+        </button>
+      }
+
+      <div class="cometchat-thread-header__close-button-wrapper">
+        <button
+          type="button"
+          class="cometchat-thread-header__close-button"
+          [attr.aria-label]="closeButtonAriaLabel"
+          tabindex="0"
+          (click)="onCloseClick()"
+          (keydown)="onCloseKeydown($event)">
+          <span
+            class="cometchat-thread-header__close-button-icon"
+            aria-hidden="true">
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -57,6 +87,7 @@
         [alignment]="parentMessageAlignment"
         [threadView]="emptyThreadView"
         [options]="[]"
+        [textFormatters]="textFormatters"
         [disableInteraction]="true">
       </cometchat-message-bubble>
     </div>

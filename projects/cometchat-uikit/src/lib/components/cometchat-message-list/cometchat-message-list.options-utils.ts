@@ -16,6 +16,7 @@ export const MESSAGE_OPTION_IDS = {
   DELETE: 'delete',
   REPLY: 'reply',
   REPLY_IN_THREAD: 'replyInThread',
+  THREAD_SUBSCRIPTION: 'threadSubscription',
   COPY: 'copy',
   TRANSLATE: 'translate',
   REACT: 'react',

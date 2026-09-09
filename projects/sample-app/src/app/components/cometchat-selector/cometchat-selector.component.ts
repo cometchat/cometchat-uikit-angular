@@ -175,6 +175,16 @@ export class CometChatSelectorComponent implements OnInit {
     }
   }
 
+  /**
+   * Opens the user-level saved-messages list over the conversation list.
+   * No mobile navigation: it replaces this very column, so the user is already
+   * looking at the right panel.
+   */
+  onSavedMessages(): void {
+    this.showContextMenu.set(false);
+    this.navigationService.openSavedMessages();
+  }
+
   onLogout(): void {
     this.showContextMenu.set(false);
     this.authService.logout();

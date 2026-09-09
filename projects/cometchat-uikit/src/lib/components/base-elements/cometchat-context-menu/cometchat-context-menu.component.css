@@ -18,7 +18,7 @@
   position: var(--cometchat-context-menu-menu-position, fixed);
   overflow: var(--cometchat-context-menu-menu-overflow, hidden);
   z-index: var(--cometchat-context-menu-menu-z-index, 1001); /* Higher than context menu section (100) and dialog (1000) */
-  width: var(--cometchat-context-menu-menu-width, 160px);
+  width: var(--cometchat-context-menu-menu-width, 205px);
   padding: var(--cometchat-context-menu-menu-padding, 0px);
   flex-direction: var(--cometchat-context-menu-menu-flex-direction, column);
   align-items: var(--cometchat-context-menu-menu-align-items, flex-start);
@@ -112,6 +112,11 @@
   display: var(--cometchat-context-menu-menu-item-icon-display, flex);
   width: var(--cometchat-context-menu-menu-item-icon-width, 24px);
   height: var(--cometchat-context-menu-menu-item-icon-height, 24px);
+  /* Hold the declared 24px square: this is a flex item next to a label that can
+     be long enough to consume the row, and without this the icon is the thing
+     that gives way — it shrinks below 24px while the title ellipsises. The main
+     menu item icon above already pins this; the sub-menu one was missing it. */
+  flex-shrink: var(--cometchat-context-menu-menu-item-icon-flex-shrink, 0);
   justify-content: var(--cometchat-context-menu-menu-item-icon-justify-content, center);
   align-items: var(--cometchat-context-menu-menu-item-icon-align-items, center);
   background: var(--cometchat-context-menu-menu-item-icon-background, var(--cometchat-icon-color-secondary, #a1a1a1));
@@ -187,4 +192,52 @@
   z-index: var(--cometchat-context-menu-overlay-z-index, 999);
   background-color: var(--cometchat-context-menu-overlay-background, transparent);
   pointer-events: var(--cometchat-context-menu-overlay-pointer-events, auto);
+}
+
+/* ==================== Nested groups ("Organise ▸") ==================== */
+/* A group item anchors its own flyout, so it needs a positioning context. */
+.cometchat-menu-list__sub-menu-list-item--group {
+  position: relative;
+}
+
+.cometchat-menu-list__group-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: var(--cometchat-context-menu-group-chevron-width, 16px);
+  height: var(--cometchat-context-menu-group-chevron-height, 16px);
+  background-color: var(--cometchat-context-menu-group-chevron-color, var(--cometchat-icon-color-secondary));
+  -webkit-mask: url('../../../assets/chevron_right.svg') center center no-repeat;
+  mask: url('../../../assets/chevron_right.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Opens to the right of the parent item, matching the design. The parent list
+   is fixed-position, so this rides along with it. */
+.cometchat-menu-list__group-flyout {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: var(--cometchat-context-menu-group-flyout-min-width, 180px);
+  padding: var(--cometchat-context-menu-group-flyout-padding, 0px);
+  border-radius: var(--cometchat-context-menu-menu-border-radius, var(--cometchat-radius-2, 8px));
+  border: var(--cometchat-context-menu-menu-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+  background: var(--cometchat-context-menu-menu-background, var(--cometchat-background-color-01, #fff));
+  box-shadow: var(--cometchat-context-menu-menu-box-shadow, 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03));
+}
+
+/*
+ * Near the right edge there is no room to the right, so the flyout opens to the
+ * left instead. Applied from a measurement of the rendered flyout, not a width
+ * breakpoint: a menu opened near the right edge of a WIDE window overflows just
+ * as it does on a narrow one, so a `max-width` query missed exactly the case
+ * that clips — a short message bubble sitting far right.
+ */
+.cometchat-menu-list__group-flyout--flip {
+  left: auto;
+  right: 100%;
 }

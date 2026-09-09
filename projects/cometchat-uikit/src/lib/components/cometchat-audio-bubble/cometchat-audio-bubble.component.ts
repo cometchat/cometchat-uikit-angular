@@ -34,6 +34,7 @@ import { WaveSurfer } from './wavesurfer';
 import { MediaControlsService } from '../../services/media-controls.service';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
 import { CometChatLogger } from '../../utils/CometChatLogger';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import {
   resolveWaveSurferColors,
   createWaveSurferInstance,
@@ -90,6 +91,12 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
 
   @Input({ required: true }) message!: CometChat.MediaMessage;
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
+  /**
+   * Formatters applied to the caption's text. Passed straight through to the
+   * text bubble that renders it, which owns the formatting itself — this bubble
+   * only forwards what the caller supplied.
+   */
+  @Input() textFormatters?: CometChatTextFormatter[];
 
   @Output() playStateChange = new EventEmitter<{ isPlaying: boolean; attachment: AudioAttachment }>();
   @Output() downloadStart = new EventEmitter<AudioAttachment>();

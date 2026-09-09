@@ -18,6 +18,7 @@ import { Subject, Subscription } from 'rxjs';
 
 import { CometChatCallEvents } from './CometChatCallEvents';
 import { CometChatConversationEvents } from './CometChatConversationEvents';
+import { CometChatThreadEvents } from './CometChatThreadEvents';
 import { CometChatGroupEvents } from './CometChatGroupEvents';
 import { CometChatMessageEvents } from './CometChatMessageEvents';
 import { CometChatUIEvents } from './CometChatUIEvents';
@@ -32,6 +33,8 @@ import { CometChatUserEvents } from './CometChatUserEvents';
 const REACT_SUBJECTS: Record<string, string[]> = {
   CometChatCallEvents: ['ccOutgoingCall', 'ccCallAccepted', 'ccCallRejected', 'ccCallEnded'],
   CometChatConversationEvents: ['ccConversationDeleted'],
+  // The thread channel React ships alongside its own follow/unfollow surfaces.
+  CometChatThreadEvents: ['ccThreadSubscriptionChanged'],
   CometChatGroupEvents: [
     'ccGroupCreated',
     'ccGroupDeleted',
@@ -100,6 +103,7 @@ const REMOVED_SUBJECTS = ['ccEditMessage', 'ccUnreadCountChanged'];
 const ANGULAR_EVENT_CLASSES: Record<string, any> = {
   CometChatCallEvents,
   CometChatConversationEvents,
+  CometChatThreadEvents,
   CometChatGroupEvents,
   CometChatMessageEvents,
   CometChatUIEvents,

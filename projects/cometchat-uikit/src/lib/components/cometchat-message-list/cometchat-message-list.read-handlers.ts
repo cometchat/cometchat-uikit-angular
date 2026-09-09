@@ -39,6 +39,15 @@ export async function handleRealtimeMessageReceiptImpl(ctx: any, message: CometC
     }
     try {
       await ctx.messageListService.markAsRead(message);
+      // The receipt above marks this ONE message over the websocket. Clearing
+      // the conversation's unread count on the server needs the HTTP call too,
+      // or the badge returns on reload and on the user's other devices — which
+      // is exactly the case a message arriving while you are already at the
+      // bottom produces.
+      //
+      // Deliberately last, and optional: local state is already correct, so a
+      // server-side extra must not be able to undo it.
+      void ctx.messageListService.markConversationAsRead?.();
     } catch (error) {
       CometChatLogger.error('CometChatMessageList', 'Error marking message as read:', error);
     }
@@ -61,6 +70,13 @@ export async function markMessagesReadOnScrollToBottomImpl(ctx: any): Promise<vo
     ctx.messageListService.updateLocalReadStatus(messageIds);
     ctx.notifyUnreadCountChange(0);
     ctx.notifyMessagesRead(latestMessage);
+    // The receipt above marks up to ONE message over the websocket; this clears
+    // the conversation's unread count on the server so it stays cleared across
+    // reloads and devices. Both are needed — see markConversationAsRead.
+    //
+    // Deliberately last, and optional: the local state is already correct by
+    // this point, so a server-side extra must not be able to undo it.
+    void ctx.messageListService.markConversationAsRead?.();
   } catch (error) {
     CometChatLogger.error(
       'CometChatMessageList',

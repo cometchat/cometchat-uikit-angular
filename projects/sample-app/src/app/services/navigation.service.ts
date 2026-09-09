@@ -16,7 +16,7 @@ export class NavigationService implements OnDestroy {
 
   // ── Side panel state ──
   sidePanelView = signal<
-    'none' | 'user-details' | 'group-details' | 'add-members' | 'banned-members' | 'transfer-ownership' | 'search' | 'call-log-details'
+    'none' | 'user-details' | 'group-details' | 'add-members' | 'banned-members' | 'transfer-ownership' | 'search' | 'call-log-details' | 'pinned-messages'
   >('none');
 
   // ── Thread state ──
@@ -112,13 +112,77 @@ export class NavigationService implements OnDestroy {
     }
   }
 
+  /** Opens the pinned-messages panel for the active conversation. */
+  showPinnedMessagesPanel(): void {
+    this.closeThreadPanel();
+    this.sidePanelView.set('pinned-messages');
+    if (this.isMobile()) this.mobilePanel.set('side-panel');
+  }
+
+  /**
+   * Whether the saved-messages list covers the conversation list.
+   *
+   * It lives in the LEFT column rather than the right side panel because it is
+   * a way of choosing what to look at, like the conversation list it replaces —
+   * not a detail of the conversation already open. Tapping a row also has to
+   * open a chat in the centre panel, which a right-panel surface would end up
+   * sitting beside rather than revealing.
+   */
+  readonly showSavedMessages = signal(false);
+
+  /** Opens the user-level saved-messages list over the conversation list. */
+  openSavedMessages(): void {
+    this.closeSidePanel();
+    this.closeThreadPanel();
+    this.showSavedMessages.set(true);
+    if (this.isMobile()) this.mobilePanel.set('selector');
+  }
+
+  closeSavedMessages(): void {
+    this.showSavedMessages.set(false);
+  }
+
   // ── Thread methods ──
 
-  /** Opens the thread panel for a given parent message. */
-  showThreadPanel(message: CometChat.BaseMessage): void {
+  /**
+   * Whether the open thread was reached from one of the left-column lists —
+   * search results or saved messages.
+   *
+   * Such a thread replaces the message list instead of sitting beside it. The
+   * list stays on the left as the context the user is working from, and the
+   * reply they picked does not appear in the main list at all — it only
+   * contributes to the parent's reply count — so the conversation behind the
+   * thread would show them nothing they asked for.
+   *
+   * A pinned row counts too. The panel it was opened from lives in the right
+   * column and the thread takes that column over, so leaving the conversation
+   * behind it in place would show the reader a list the reply they picked is
+   * not even in — the main list keeps only the parent's reply count.
+   */
+  readonly threadFromList = signal(false);
+
+  /**
+   * Opens the thread panel for a given parent message.
+   *
+   * `goToMessageId` is set here rather than by the caller, and defaults to
+   * clearing it. It is a one-shot instruction to the message list, but the
+   * signal outlives the jump it was set for — so a thread opened later, from
+   * anywhere, used to inherit the last pinned/saved/search target and fetch
+   * around a message that has nothing to do with it. A brand-new thread would
+   * then show a message despite having no replies at all.
+   *
+   * Set BEFORE the panel opens: the list reads it as it initialises, so a
+   * later assignment lands after the fetch it was meant to steer.
+   */
+  showThreadPanel(
+    message: CometChat.BaseMessage,
+    options: { fromList?: boolean; goToMessageId?: number | null } = {}
+  ): void {
     this.closeSidePanel();
+    this.goToMessageId.set(options.goToMessageId ?? null);
     this.threadMessage.set(message);
     this.showThread.set(true);
+    this.threadFromList.set(options.fromList ?? false);
   }
 
   /** Closes the thread panel and clears the thread message. */
@@ -126,6 +190,7 @@ export class NavigationService implements OnDestroy {
     const wasOpen = this.showThread();
     this.threadMessage.set(null);
     this.showThread.set(false);
+    this.threadFromList.set(false);
     if (wasOpen && this.isMobile() && this.mobilePanel() === 'side-panel') {
       this.mobilePanel.set('messages');
     }
@@ -155,6 +220,7 @@ export class NavigationService implements OnDestroy {
     this.sidePanelView.set('none');
     this.threadMessage.set(null);
     this.showThread.set(false);
+    this.threadFromList.set(false);
     this.selectedCallLog.set(null);
     this.mobilePanel.set('selector');
     this.goToMessageId.set(null);

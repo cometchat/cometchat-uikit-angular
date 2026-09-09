@@ -27,6 +27,7 @@ import {
 import { CometChatTextBubbleComponent } from '../cometchat-text-bubble/cometchat-text-bubble.component';
 import { CometChatFullScreenViewerComponent } from '../base-elements/cometchat-fullscreen-viewer/cometchat-fullscreen-viewer.component';
 import { CometChatLogger } from '../../utils/CometChatLogger';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 
 /**
  * CometChatImageBubbleComponent renders image messages with single/multi-image layouts,
@@ -50,6 +51,12 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
 
   /** LEFT for incoming, RIGHT for outgoing. @see Requirements 1.5, 13.1, 13.2 */
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
+  /**
+   * Formatters applied to the caption's text. Passed straight through to the
+   * text bubble that renders it, which owns the formatting itself — this bubble
+   * only forwards what the caller supplied.
+   */
+  @Input() textFormatters?: CometChatTextFormatter[];
 
   /** When true, disables click-to-open fullscreen viewer. @default false */
   @Input() disableInteraction = false;

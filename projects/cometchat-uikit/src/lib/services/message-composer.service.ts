@@ -1,8 +1,10 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { Subject, debounceTime, switchMap, of, catchError } from 'rxjs';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { isMediaMessage } from '../utils/message-metadata-utils';
+import { toThreadId, writeThreadSubscribed } from '../utils/thread-subscription-utils';
+import { ThreadSubscriptionService } from './thread-subscription.service';
 import type { ErrorCallback, MentionSuggestion, PollCreatePayload, CollaborativePayload } from './message-composer.types';
 import {
   handleComposerError,
@@ -97,6 +99,41 @@ export class MessageComposerService {
     handleComposerError(error, context, this.errorCallback);
   }
 
+  private readonly threadSubscription = inject(ThreadSubscriptionService);
+
+  // ==================== Thread subscription (Case 4) ====================
+
+  /**
+   * Seed the outgoing copy of a threaded reply as subscribed.
+   *
+   * Sending in a thread subscribes the sender server-side, but the optimistic
+   * bubble is rendered from this object long before any response comes back —
+   * without the stamp its own action sheet would read "Follow thread" on a
+   * thread the user has just joined. Purely local; no server write.
+   */
+  private seedOutgoingThreadReply(message: CometChat.BaseMessage): void {
+    if (toThreadId(message.getParentMessageId?.())) {
+      writeThreadSubscribed(message, true);
+    }
+  }
+
+  /**
+   * Mirror the auto-subscribe a threaded send earned — Case 4.
+   *
+   * The server has already made the write, so this never calls
+   * `subscribeToThread`: it stamps the confirmed message (whose own flag would
+   * otherwise read `false` on a socket echo) and publishes the flip so the
+   * thread header and every open action sheet agree without a refetch.
+   */
+  private mirrorThreadReplySent(sent: CometChat.BaseMessage | null, capturedSession: number): void {
+    const parentMessageId = toThreadId(sent?.getParentMessageId?.());
+    if (!parentMessageId) return;
+    writeThreadSubscribed(sent, true);
+    // The session token was captured before the send left, so a reply that lands
+    // after a logout is not mirrored into whoever logged in next.
+    this.threadSubscription.mirrorSubscribed(parentMessageId, capturedSession);
+  }
+
   // ==================== Message Sending ====================
 
   async sendTextMessage(
@@ -119,7 +156,11 @@ export class MessageComposerService {
         if (parentMessageId) textMessage.setParentMessageId(parentMessageId);
         if (quotedMessage) { textMessage.setQuotedMessage(quotedMessage); textMessage.setQuotedMessageId(quotedMessage.getId()); }
       }
-      return (await CometChat.sendMessage(textMessage)) as CometChat.TextMessage;
+      this.seedOutgoingThreadReply(textMessage);
+      const capturedSession = this.threadSubscription.captureSession();
+      const sent = (await CometChat.sendMessage(textMessage)) as CometChat.TextMessage;
+      this.mirrorThreadReplySent(sent, capturedSession);
+      return sent;
     } catch (error) { this.handleError(error, 'Error sending text message'); return null; }
     finally { this.isSendingSignal.set(false); }
   }
@@ -145,7 +186,11 @@ export class MessageComposerService {
         if (parentMessageId) mediaMessage.setParentMessageId(parentMessageId);
         if (quotedMessage) { mediaMessage.setQuotedMessage(quotedMessage); mediaMessage.setQuotedMessageId(quotedMessage.getId()); }
       }
-      return (await CometChat.sendMediaMessage(mediaMessage)) as CometChat.MediaMessage;
+      this.seedOutgoingThreadReply(mediaMessage);
+      const capturedSession = this.threadSubscription.captureSession();
+      const sent = (await CometChat.sendMediaMessage(mediaMessage)) as CometChat.MediaMessage;
+      this.mirrorThreadReplySent(sent, capturedSession);
+      return sent;
     } catch (error) { this.handleError(error, 'Error sending media message'); return null; }
     finally { this.isSendingSignal.set(false); }
   }
@@ -191,7 +236,11 @@ export class MessageComposerService {
         if (parentMessageId) customMessage.setParentMessageId(parentMessageId);
         if (quotedMessage) { customMessage.setQuotedMessage(quotedMessage); customMessage.setQuotedMessageId(quotedMessage.getId()); }
       }
-      return (await CometChat.sendCustomMessage(customMessage)) as CometChat.CustomMessage;
+      this.seedOutgoingThreadReply(customMessage);
+      const capturedSession = this.threadSubscription.captureSession();
+      const sent = (await CometChat.sendCustomMessage(customMessage)) as CometChat.CustomMessage;
+      this.mirrorThreadReplySent(sent, capturedSession);
+      return sent;
     } catch (error) { this.handleError(error, 'Error sending sticker message'); return null; }
     finally { this.isSendingSignal.set(false); }
   }

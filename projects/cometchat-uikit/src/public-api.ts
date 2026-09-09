@@ -37,6 +37,16 @@ export type {
   IGroupMemberUnBanned,
   IOwnershipChanged,
 } from './lib/events/CometChatGroupEvents';
+export { CometChatThreadEvents } from './lib/events/CometChatThreadEvents';
+export type { IThreadSubscriptionChanged } from './lib/events/CometChatThreadEvents';
+export { CometChatPinSaveEvents } from './lib/events/CometChatPinSaveEvents';
+export type {
+  IPinSaveChanged,
+  IPinChanged,
+  ISaveChanged,
+  IConversationPinSaveChanged,
+  IConversationPinChanged,
+} from './lib/events/CometChatPinSaveEvents';
 export { CometChatUserEvents } from './lib/events/CometChatUserEvents';
 export { CometChatUIEvents } from './lib/events/CometChatUIEvents';
 export type {

@@ -9,7 +9,7 @@ import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {CometChatUIEvents} from '../../events/CometChatUIEvents';
 import {CometChatGroupEvents, IGroupMemberAdded, IGroupMemberKickedBanned, IGroupMemberJoined, IOwnershipChanged, IGroupLeft,} from '../../events/CometChatGroupEvents';
 import {CometChatUIKit} from '../../cometchat-uikit';
-import {PanelAlignment} from '../../Enums/Enums';
+import {PanelAlignment, Placement} from '../../Enums/Enums';
 
 import {CometChatAvatarComponent} from '../base-elements/cometchat-avatar/cometchat-avatar.component';
 import {CometChatDateComponent} from '../base-elements/cometchat-date/cometchat-date.component';
@@ -67,7 +67,10 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
   @Input({ transform: booleanAttribute })
   set hideVideoCallButton(value: boolean) { this._hideVideoCallButton.set(value); this.hideVideoCallButtonExplicitlySet.set(true); }
   get hideVideoCallButton(): boolean { return this._hideVideoCallButton(); }
-  @Input() showSearchOption = false; @Input() showConversationSummaryButton = false; @Input() callSettingsBuilder: typeof CometChatUIKitCalls.CallSettingsBuilder = undefined;
+  @Input() showSearchOption = false; @Input() showConversationSummaryButton = false;
+  /** Adds "Pinned messages" / "Saved messages" to the overflow menu. */
+  @Input({ transform: booleanAttribute }) showPinnedMessagesOption = false;
+  @Input() callSettingsBuilder: typeof CometChatUIKitCalls.CallSettingsBuilder = undefined;
   @Input() summaryGenerationMessageCount = 1000; @Input() enableAutoSummaryGeneration = false; @Input() lastActiveAtDateTimeFormat?: CalendarObject;
   @Input() headerView?: TemplateRef<any>; @Input() itemView?: TemplateRef<{ user?: CometChat.User; group?: CometChat.Group }>;
   @Input() leadingView?: TemplateRef<{ user?: CometChat.User; group?: CometChat.Group }>; @Input() titleView?: TemplateRef<{ user?: CometChat.User; group?: CometChat.Group }>;
@@ -82,6 +85,8 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
   @Output() backClick = new EventEmitter<void>(); @Output() itemClick = new EventEmitter<CometChat.User | CometChat.Group>(); @Output() searchClick = new EventEmitter<void>();
   @Output() conversationSummaryClick = new EventEmitter<{ messageCount: number }>(); @Output() error = new EventEmitter<CometChat.CometChatException>();
   @Output() voiceCallClick = new EventEmitter<CometChat.User | CometChat.Group>(); @Output() videoCallClick = new EventEmitter<CometChat.User | CometChat.Group>();
+  /** The host opens its pinned/saved panel — the header only asks for it. */
+  @Output() pinnedMessagesClick = new EventEmitter<void>();
 
   protected currentUser = signal<CometChat.User | null>(null); protected currentGroup = signal<CometChat.Group | null>(null); private propsProvided = signal<boolean>(false);
 
@@ -91,7 +96,24 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
 
   isUserConversation = computed(() => this.userSignal() !== null); isGroupConversation = computed(() => this.groupSignal() !== null);
   isTyping = computed(() => this.typingIndicatorSignal() !== null); shouldShowBackButton = computed(() => this.showBackButton);
-  shouldShowOverflowMenu = computed(() => this.showSearchOption && this.showConversationSummaryButton);
+  /**
+   * The overflow menu hangs BELOW its button.
+   *
+   * Left unset it defaults to `Placement.left`, which is the "open to the side"
+   * branch — the menu lands beside the trigger, top-aligned with it, rather
+   * than under it. `bottom` anchors it to the button's lower edge and only
+   * flips upward when there is not room below.
+   */
+  readonly overflowMenuPlacement = Placement.bottom;
+
+  shouldShowOverflowMenu = computed(
+    () =>
+      [
+        this.showSearchOption,
+        this.showConversationSummaryButton,
+        this.showPinnedMessagesOption,
+      ].filter(Boolean).length > 1
+  );
 
   effectiveHideUserStatus = computed(() => { if (this.hideUserStatusExplicitlySet()) return this._hideUserStatus(); if (this.globalConfig?.hideUserStatus !== undefined) return this.globalConfig.hideUserStatus; return false; });
 
@@ -286,6 +308,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     const opts: CometChatOption[] = [];
     if (this.showSearchOption) opts.push(new CometChatOption({ id: 'search', title: CometChatLocalize.getLocalizedString('search_title'), iconURL: 'assets/search.svg', onClick: () => this.handleSearchClick() }));
     if (this.showConversationSummaryButton) opts.push(new CometChatOption({ id: 'summary', title: CometChatLocalize.getLocalizedString('ai_conversation_summary_title'), iconURL: 'assets/ai_conversation_summary.svg', onClick: () => this.handleSummaryClick() }));
+    if (this.showPinnedMessagesOption) opts.push(new CometChatOption({ id: 'pinnedMessages', title: CometChatLocalize.getLocalizedString('pinned_messages_menu'), iconURL: 'assets/keep.svg', onClick: () => this.pinnedMessagesClick.emit() }));
     return opts;
   }
   handleOverflowMenuOptionClick(option: ContextMenuItem): void {

@@ -38,6 +38,7 @@
   "calls_recording": "录音",
   "calls_play_recording": "播放",
   "selector_create_conversation": "创建对话",
+  "selector_saved_messages": "已保存的消息",
   "selector_logout": "退出登录",
   "details_delete_group": "删除群组",
   "details_banned_members": "被禁成员",

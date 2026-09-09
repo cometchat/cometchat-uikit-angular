@@ -208,17 +208,31 @@
   } @else {
     <div class="cometchat-conversation-item__trailing">
       <!-- Show context menu on hover/focus (replaces tail view) - same behavior for desktop and mobile -->
-      @if ((isHovered || isFocused) && contextMenuOptions && contextMenuOptions.length > 0) {
+      <!--
+        `isMenuOpen` keeps this mounted once the dropdown is showing. The
+        dropdown portals to document.body, so reaching for it takes the pointer
+        off the row — without this, `isHovered` flips false, Angular destroys
+        the menu component, and the options vanish before they can be clicked.
+      -->
+      @if ((isHovered || isFocused || isMenuOpen) && contextMenuOptions && contextMenuOptions.length > 0) {
         <div class="cometchat-conversation-item__context-menu">
           @if (slots && slots.contextMenuTrigger) {
             <ng-container *ngTemplateOutlet="slots.contextMenuTrigger; context: slotContext"></ng-container>
           } @else {
+            <!--
+              topMenuSize 1 keeps EVERY option inside the ⋮ dropdown. At 2 the
+              menu promotes the first option to a bare inline icon, which was
+              invisible-by-accident while Delete was the only entry (nothing
+              left to promote) and pulled Pin out of the list the moment a
+              second option existed.
+            -->
             <cometchat-context-menu
               [data]="contextMenuOptions"
               [placement]="Placement.left"
-              [topMenuSize]="2"
+              [topMenuSize]="1"
               [closeOnOutsideClick]="true"
               (optionClick)="handleContextMenuOptionClick($any($event))"
+              (openChange)="isMenuOpen = $event"
               class="cometchat-conversation-item__menu">
             </cometchat-context-menu>
           }
@@ -251,9 +265,20 @@
             }
           </div>
           
+          <!--
+            Pin marker and unread badge share one row under the timestamp, so a
+            conversation that is BOTH pinned and unread shows both rather than
+            one of them displacing the other or stacking into a third line.
+          -->
+          @if (isPinned || unreadCount > 0) {
+          <div class="cometchat-conversation-item__tail-markers">
+          @if (isPinned) {
+            <!-- aria-hidden: "Pinned" is already announced in the row's aria-label. -->
+            <span class="cometchat-conversation-item__pin" aria-hidden="true"></span>
+          }
           <!-- Unread badge (aria-hidden since count is in aria-label) -->
           @if (unreadCount > 0) {
-            <div class="cometchat-conversation-item__badge" 
+            <div class="cometchat-conversation-item__badge"
                  aria-hidden="true"
                  (click)="handleBadgeClick($event)">
               @if (slots && slots.unreadBadge) {
@@ -272,6 +297,8 @@
                 </span>
               }
             </div>
+          }
+          </div>
           }
         </div>
       }

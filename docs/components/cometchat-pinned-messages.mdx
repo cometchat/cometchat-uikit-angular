@@ -1,0 +1,211 @@
+---
+title: "CometChatPinnedMessages"
+description: "A panel component listing the pinned messages of a one-on-one or group conversation"
+---
+The `CometChatPinnedMessages` component lists every message pinned in a conversation, newest pin first. Pins are global — everyone in the conversation sees the same list — so the panel is a shared, always-current view of what the conversation has singled out.
+
+## Overview
+
+The Pinned Messages panel provides:
+
+- **Conversation-scoped list**: Pass either a `user` or a `group`; the panel fetches that conversation's pins
+- **Real message bubbles**: Each row renders the actual message bubble, so media, polls and formatted text look as they do in the chat
+- **Pinned-by attribution**: Each row is labelled with who pinned it and when
+- **Inline unpin**: A per-row unpin control, behind a confirmation dialog
+- **Row options**: Save, Copy, Info, Translate and Report under a three-dot menu
+- **Message information**: Opens over the panel, without leaving it
+- **Permission-aware**: In groups, only the owner, admins and moderators see unpin
+- **Live updates**: Edits, deletions, reactions and pin changes are reflected without a refetch
+- **Focus Trap**: Traps keyboard focus within the panel for modal-like behavior
+
+<Info>
+  **Live Preview** — default pinned messages panel.
+  [Open in Storybook ↗](https://storybook.cometchat.io/angular/?path=/story/components-messages-pinned-messages--default)
+</Info>
+
+<iframe
+  src="https://storybook.cometchat.io/angular/iframe.html?id=components-messages-pinned-messages--default&viewMode=story&shortcuts=false&singleStory=true"
+  className="w-full rounded-xl"
+  loading="lazy"
+  style={{height: "700px", border: "1px solid #e0e0e0"}}
+  title="CometChat Pinned Messages — Default"
+  allow="clipboard-write"
+></iframe>
+
+## Basic Usage
+
+### Group Pinned Messages
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatPinnedMessagesComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-pinned-demo',
+  standalone: true,
+  imports: [CometChatPinnedMessagesComponent],
+  template: `
+    <cometchat-pinned-messages
+      [group]="group"
+      (messageClick)="onMessageClick($event)"
+      (closeClick)="onClose()">
+    </cometchat-pinned-messages>
+  `
+})
+export class PinnedDemoComponent {
+  group!: CometChat.Group;
+
+  /** Jump the main message list to the tapped message. */
+  onMessageClick(message: CometChat.BaseMessage): void {
+    console.log('scroll to', message.getId());
+  }
+
+  onClose(): void {
+    console.log('Panel closed');
+  }
+}
+```
+
+### One-on-One Pinned Messages
+
+Pass `user` instead of `group`. The two are mutually exclusive — set exactly one.
+
+```typescript expandable
+@Component({
+  selector: 'app-pinned-dm-demo',
+  standalone: true,
+  imports: [CometChatPinnedMessagesComponent],
+  template: `
+    <cometchat-pinned-messages
+      [user]="user"
+      (closeClick)="onClose()">
+    </cometchat-pinned-messages>
+  `
+})
+export class PinnedDmDemoComponent {
+  user!: CometChat.User;
+
+  onClose(): void {}
+}
+```
+
+### Handling Forwarded Options
+
+Info, Translate and Report each need a surface the host owns, so the panel forwards them rather than half-acting.
+
+```typescript expandable
+@Component({
+  selector: 'app-pinned-options-demo',
+  standalone: true,
+  imports: [CometChatPinnedMessagesComponent],
+  template: `
+    <cometchat-pinned-messages
+      [group]="group"
+      (messageOptionClick)="onOptionClick($event)">
+    </cometchat-pinned-messages>
+  `
+})
+export class PinnedOptionsDemoComponent {
+  group!: CometChat.Group;
+
+  onOptionClick(event: { option: ContextMenuItem; message: CometChat.BaseMessage }): void {
+    console.log(event.option.id, event.message.getId());
+  }
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `user` | `CometChat.User` | `undefined` | Scopes the list to a one-on-one conversation. Mutually exclusive with `group` |
+| `group` | `CometChat.Group` | `undefined` | Scopes the list to a group. Mutually exclusive with `user` |
+| `hideCloseButton` | `boolean` | `false` | Hides the close button, for hosts that supply their own chrome |
+| `headerView` | `TemplateRef<unknown>` | `undefined` | Replaces the default header row |
+| `emptyView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in empty state |
+| `errorView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in error state |
+| `loadingView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in loading shimmer |
+| `messagesRequestBuilder` | `CometChat.MessagesRequestBuilder` | `undefined` | Custom request builder. Used as supplied apart from `setPinned` and the conversation scope, which are re-asserted |
+| `quickOptionsCount` | `number` | `2` | How many options sit outside the overflow menu as bare icons |
+| `hideUnpinMessageOption` | `boolean` | `false` | Hides Unpin. Role gating still wins — see [Permissions](#permissions) |
+| `hideSaveMessageOption` | `boolean` | `false` | Hides Save |
+| `hideUnsaveMessageOption` | `boolean` | `false` | Hides Unsave |
+| `hideMessageInfoOption` | `boolean` | `false` | Hides Message Information |
+| `hideTranslateMessageOption` | `boolean` | `false` | Hides Translate |
+| `hideCopyMessageOption` | `boolean` | `false` | Hides Copy |
+| `hideFlagMessageOption` | `boolean` | `false` | Hides Report |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `closeClick` | `void` | Emitted when the panel close button is clicked or Escape is pressed with no overlay open |
+| `messageClick` | `CometChat.BaseMessage` | Emitted when a row is tapped. Clicks landing on a control inside the row — a menu, an audio player, a link — are not forwarded |
+| `messageOptionClick` | `{ option: ContextMenuItem; message: CometChat.BaseMessage }` | Emitted for options the panel cannot complete on its own: Info, Translate and Report |
+| `error` | `CometChat.CometChatException` | Emitted when fetching or unpinning fails |
+
+## Behavior
+
+### Permissions
+
+In a group, unpin is offered to the owner, admins and moderators only — the same gate the delete option uses. Ownership is read from the group's owner uid rather than the member scope, because the owner's scope arrives as `admin` on the wire. In a one-on-one conversation the option is offered and the server is the backstop.
+
+Unpin is deliberately **not** restricted to whoever pinned the message.
+
+### Confirmation
+
+Unpinning asks for confirmation; pinning does not. Pinning is trivially reversible and a dialog for it would only be friction, whereas unpinning removes something the whole conversation can see.
+
+### Rendering large lists
+
+The panel renders 30 rows at a time and extends the window as you scroll, so a conversation with hundreds of pins does not pay to build every bubble up front.
+
+## Customization
+
+### CSS Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--cometchat-pinned-messages-width` | `400px` | Panel width |
+| `--cometchat-pinned-messages-height` | `100%` | Panel height |
+| `--cometchat-pinned-messages-background` | `--cometchat-background-color-01` | Panel background |
+| `--cometchat-pinned-messages-border` | `1px solid --cometchat-border-color-light` | Leading edge border |
+| `--cometchat-pinned-messages-header-padding` | `12px 16px` | Header padding |
+| `--cometchat-pinned-messages-title-font` | `--cometchat-font-heading4-medium` | Header title font |
+| `--cometchat-pinned-messages-item-padding` | `8px 16px` | Row padding |
+| `--cometchat-pinned-messages-item-background-hover` | `--cometchat-background-color-02` | Row hover background |
+| `--cometchat-pinned-messages-entry-name-font` | `--cometchat-font-caption1-medium` | "Pinned by" name font |
+| `--cometchat-pinned-messages-entry-date-font` | `--cometchat-font-caption1-regular` | Pin timestamp font |
+| `--cometchat-pinned-messages-empty-icon-size` | `120px` | Empty-state illustration size |
+| `--cometchat-pinned-messages-empty-title-font` | `--cometchat-font-heading4-bold` | Empty-state headline font |
+| `--cometchat-pinned-messages-empty-subtitle-gap` | `--cometchat-margin-2` | Gap between headline and explanation |
+| `--cometchat-pinned-messages-info-panel-width` | `90%` | Message-information overlay width |
+| `--cometchat-pinned-messages-info-panel-max-width` | `420px` | Message-information overlay maximum width |
+| `--cometchat-pinned-messages-info-panel-shadow` | `--cometchat-shadow-sm` | Message-information overlay shadow |
+| `--cometchat-pinned-messages-dialog-overlay-background` | `--cometchat-overlay-background` | Confirmation dialog scrim |
+
+## Accessibility
+
+### Keyboard Navigation
+
+- **Escape** dismisses the topmost layer only: the information overlay first, then the confirmation dialog, then the panel itself
+- **Tab** cycles within the panel; focus does not escape to the page behind it
+- **Enter** / **Space** on a row activates it, as a click does
+
+### Focus Management
+
+Focus is trapped on open and released on destroy, so the panel behaves as a modal surface while it is up.
+
+### Screen Reader Support
+
+- The panel is a labelled `region`
+- Rows are exposed as buttons
+- Loading, empty and error states are announced via `role="status"`
+- Decorative glyphs — pin markers, media icons, illustrations — are `aria-hidden`
+
+## Related Components
+
+- [CometChatSavedMessages](/ui-kit/angular/components/cometchat-saved-messages) — the per-user counterpart
+- [CometChatMessageInformation](/ui-kit/angular/components/cometchat-message-information) — opened from a row's Info option
+- [CometChatMessageList](/ui-kit/angular/components/cometchat-message-list) — where messages are pinned from

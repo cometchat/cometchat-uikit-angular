@@ -1,0 +1,154 @@
+<div class="cometchat cometchat-saved-messages" tabindex="-1" (keydown)="onPanelKeydown($event)" role="region" [attr.aria-label]="title">
+
+  @if (headerView) {
+    <ng-container *ngTemplateOutlet="headerView"></ng-container>
+  } @else {
+    <div class="cometchat-saved-messages__header">
+      <h2 class="cometchat-saved-messages__title">{{ title }}</h2>
+      @if (!hideCloseButton) {
+        <button
+          type="button"
+          class="cometchat-saved-messages__close"
+          [attr.aria-label]="'close' | translate"
+          (click)="closeClick.emit()">
+          <span class="cometchat-saved-messages__close-icon" aria-hidden="true"></span>
+        </button>
+      }
+    </div>
+  }
+
+  @switch (state()) {
+    @case (States.loading) {
+      @if (loadingView) {
+        <ng-container *ngTemplateOutlet="loadingView"></ng-container>
+      } @else {
+        <!-- Conversation-row skeleton: this panel renders rows, not bubbles. -->
+        <div
+          class="cometchat-saved-messages__shimmer"
+          role="status"
+          [attr.aria-label]="'loading' | translate">
+          @for (i of shimmerList; track i) {
+            <div class="cometchat-saved-messages__shimmer-row">
+              <div class="cometchat-saved-messages__shimmer-avatar"></div>
+              <div class="cometchat-saved-messages__shimmer-body">
+                <div class="cometchat-saved-messages__shimmer-title"></div>
+                <div class="cometchat-saved-messages__shimmer-subtitle"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @case (States.error) {
+      @if (errorView) {
+        <ng-container *ngTemplateOutlet="errorView"></ng-container>
+      } @else {
+        <div class="cometchat-saved-messages__state">
+          <p>{{ 'pin_save_generic_error' | translate }}</p>
+          <button type="button" class="cometchat-saved-messages__retry" (click)="retry()">
+            {{ 'error_boundary_retry' | translate }}
+          </button>
+        </div>
+      }
+    }
+
+    @case (States.empty) {
+      @if (emptyView) {
+        <ng-container *ngTemplateOutlet="emptyView"></ng-container>
+      } @else {
+        <div class="cometchat-saved-messages__state cometchat-saved-messages__state--empty" role="status">
+          <div class="cometchat-saved-messages__empty-icon" aria-hidden="true"></div>
+          <p class="cometchat-saved-messages__empty-title">{{ 'saved_messages_empty' | translate }}</p>
+          <p class="cometchat-saved-messages__empty-subtitle">
+            {{ 'saved_messages_empty_subtitle' | translate }}
+          </p>
+        </div>
+      }
+    }
+
+    @default {
+      <ul class="cometchat-saved-messages__list" (scroll)="onListScroll($event)">
+        @for (row of visibleRows(); track row.message.getId()) {
+          <li>
+            @if (itemView) {
+              <!-- The list semantics stay ours; everything inside the row is the
+                   host's, interaction included. -->
+              <ng-container
+                *ngTemplateOutlet="itemView; context: { $implicit: row.message, message: row.message }">
+              </ng-container>
+            } @else {
+            <div
+              class="cometchat-saved-messages__row"
+              role="button"
+              tabindex="0"
+              (click)="onRowClick(row, $event)"
+              (keydown)="onRowKeydown($event, row)">
+              <!-- Identified by the conversation it came from, exactly as the
+                   conversation list does it: the source's avatar and name, with
+                   the speaker named in the subtitle. The raw id shows until the
+                   name resolves — a row is never withheld waiting on it. -->
+              <div class="cometchat-saved-messages__row-leading" aria-hidden="true">
+                <cometchat-avatar
+                  [image]="row.sourceAvatar"
+                  [name]="sourceLabel(row)"
+                  class="cometchat-saved-messages__avatar">
+                </cometchat-avatar>
+              </div>
+
+              <div class="cometchat-saved-messages__row-body">
+                <span class="cometchat-saved-messages__row-title">{{ sourceLabel(row) }}</span>
+                <span class="cometchat-saved-messages__row-subtitle">
+                  <!-- A thread reply is marked so it is clear the message lives
+                       inside a thread rather than the main conversation. -->
+                  @if (isThreadReply(row)) {
+                    <span class="cometchat-saved-messages__row-thread-icon" aria-hidden="true"></span>
+                  }
+                  @if (senderPrefix(row); as prefix) {
+                    <span class="cometchat-saved-messages__row-sender">{{ prefix }}</span>
+                  }
+                  <!-- Media glyph, same set the conversation list uses. `none`
+                       renders nothing: the icon only earns its place when the
+                       text alone would be ambiguous. -->
+                  @if (previewIcon(row); as icon) {
+                    @if (icon !== 'none') {
+                      <span
+                        class="cometchat-saved-messages__row-preview-icon cometchat-saved-messages__row-preview-icon--{{ icon }}"
+                        aria-hidden="true"></span>
+                    }
+                  }
+                  <span class="cometchat-saved-messages__row-preview">{{ preview(row) }}</span>
+                </span>
+              </div>
+
+              <div class="cometchat-saved-messages__row-trailing">
+                @if (!hideUnsaveMessageOption) {
+                  <button
+                    type="button"
+                    class="cometchat-saved-messages__unsave"
+                    [attr.aria-label]="'message_list_option_unsave_message' | translate"
+                    [attr.title]="'message_list_option_unsave_message' | translate"
+                    (click)="unsave(row, $event)">
+                    <span class="cometchat-saved-messages__unsave-icon" aria-hidden="true"></span>
+                  </button>
+                }
+              </div>
+            </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  <!-- Unsave confirmation. The shared pin/save dialog, which owns its overlay
+       and its own retuning away from the Delete defaults. -->
+  @if (pendingUnsave()) {
+    <cometchat-pin-save-confirm-dialog
+      action="unsave"
+      (confirmClick)="confirmUnsave()"
+      (cancelClick)="cancelUnsave()">
+    </cometchat-pin-save-confirm-dialog>
+  }
+
+</div>

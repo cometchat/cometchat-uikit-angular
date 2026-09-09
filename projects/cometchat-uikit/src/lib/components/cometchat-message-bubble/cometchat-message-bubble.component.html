@@ -49,6 +49,7 @@
       <div
         class="cometchat-message-bubble"
         [class]="bubbleClassName"
+        [class.cometchat-message-bubble--align-left]="isColourOnlyOutgoing"
         [class.cometchat-message-bubble--multi-attachment]="isBatchBubble"
         [id]="'message-' + messageId">
       
@@ -83,6 +84,7 @@
                 [placement]="contextMenuPlacement"
                 [disableBackgroundInteraction]="true"
                 [useParentContainer]="true"
+                [anchorToHost]="true"
                 (optionClick)="onOptionClick($event)">
               </cometchat-context-menu>
             </div>
@@ -151,7 +153,7 @@
                       @case ('text') {
                         <cometchat-text-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment"
+                          [alignment]="colourAlignment"
                           [textFormatters]="effectiveTextFormatters()"
                           [translatedTextOverride]="translatedText">
                         </cometchat-text-bubble>
@@ -159,40 +161,40 @@
                       @case ('images-batch') {
                         <cometchat-images-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment"
+                          [alignment]="colourAlignment"
                           [disableInteraction]="disableInteraction">
                         </cometchat-images-bubble>
                       }
                       @case ('videos-batch') {
                         <cometchat-videos-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment"
+                          [alignment]="colourAlignment"
                           [disableInteraction]="disableInteraction">
                         </cometchat-videos-bubble>
                       }
                       @case ('audios-batch') {
                         <cometchat-audios-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment">
+                          [alignment]="colourAlignment">
                         </cometchat-audios-bubble>
                       }
                       @case ('voice-note') {
                         <cometchat-voice-note-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment">
+                          [alignment]="colourAlignment">
                         </cometchat-voice-note-bubble>
                       }
                       @case ('files-batch') {
                         <cometchat-files-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment">
+                          [alignment]="colourAlignment">
                         </cometchat-files-bubble>
                       }
                       @case ('poll') {
                         <!-- Poll Bubble - Requirement 3.1 -->
                         <cometchat-poll-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment"
+                          [alignment]="colourAlignment"
                           [loggedInUser]="loggedInUser || undefined"
                           [disableInteraction]="disableInteraction">
                         </cometchat-poll-bubble>
@@ -208,7 +210,7 @@
                         <!-- Document Bubble - Requirement 3.3 -->
                         <cometchat-collaborative-document-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment"
+                          [alignment]="colourAlignment"
                           [disableInteraction]="disableInteraction">
                         </cometchat-collaborative-document-bubble>
                       }
@@ -216,7 +218,7 @@
                         <!-- Whiteboard Bubble - Requirement 3.4 -->
                         <cometchat-collaborative-whiteboard-bubble
                           [message]="$any(message)"
-                          [alignment]="alignment"
+                          [alignment]="colourAlignment"
                           [disableInteraction]="disableInteraction">
                         </cometchat-collaborative-whiteboard-bubble>
                       }
@@ -279,6 +281,37 @@
                         <span class="cometchat-message-bubble__status-info-view-helper-text">
                           {{ 'message_list_action_edited' | translate }}
                         </span>
+                      }
+                      <!-- Saved, then pinned, then the timestamp — every pair
+                           divided by a dot: `saved • pinned • 4:56 pm`. Saved
+                           leads because it is the private, per-viewer state;
+                           the pin, which everyone in the conversation sees,
+                           sits nearer the timestamp it qualifies.
+
+                           The glyph carries the meaning visually; the accessible
+                           name carries it for screen readers, since an icon
+                           alone announces nothing. Each dot is decorative and
+                           hidden from them, and only renders with content on
+                           BOTH sides of it, so it can never dangle. -->
+                      @if (isSaved) {
+                        <span
+                          class="cometchat-message-bubble__saved-indicator"
+                          role="img"
+                          [attr.aria-label]="'message_saved_indicator' | translate">
+                        </span>
+                      }
+                      @if (isSaved && isPinned) {
+                        <span class="cometchat-message-bubble__meta-separator" aria-hidden="true"></span>
+                      }
+                      @if (isPinned) {
+                        <span
+                          class="cometchat-message-bubble__pinned-indicator"
+                          role="img"
+                          [attr.aria-label]="'message_pinned_indicator' | translate">
+                        </span>
+                      }
+                      @if ((isPinned || isSaved) && !hideTimestamp) {
+                        <span class="cometchat-message-bubble__meta-separator" aria-hidden="true"></span>
                       }
                       @if (!hideTimestamp) {
                         <cometchat-date [timestamp]="message.getSentAt()" [calendarObject]="calendarObject"></cometchat-date>

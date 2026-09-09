@@ -13,6 +13,22 @@ export class CometChatActionsIcon extends CometChatActions {
   onClick: (id: number) => void;
 
   /**
+   * Nested actions, rendered as a flyout when the user opens this item.
+   *
+   * An item with children is a GROUP: it opens its own list rather than
+   * performing an action, so its `onClick` is never called. Used to gather
+   * related actions — "Organise ▸" holding Pin and Save — without lengthening
+   * the top-level menu.
+   *
+   * One level only. A child carrying its own children is not rendered as a
+   * further flyout, because a menu that nests arbitrarily is unusable with a
+   * keyboard and impossible to place on a small screen.
+   *
+   * @type {CometChatActionsIcon[] | undefined}
+   */
+  children?: CometChatActionsIcon[];
+
+  /**
    * Creates an instance of CometChatActionsIcon.
    */
   constructor(options: {
@@ -40,8 +56,16 @@ export class CometChatActionsIcon extends CometChatActions {
      * @type {(id: number) => void}
      */
     onClick: (id: number) => void;
+
+    /**
+     * Nested actions. Supplying these makes the item a group that opens a
+     * flyout instead of performing an action.
+     * @type {CometChatActionsIcon[]}
+     */
+    children?: CometChatActionsIcon[];
   }) {
     super(options);
     this.onClick = options.onClick;
+    this.children = options.children;
   }
 }

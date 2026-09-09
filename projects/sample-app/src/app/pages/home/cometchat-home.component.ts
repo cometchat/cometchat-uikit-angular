@@ -43,6 +43,10 @@ import { CometChatMessagesComponent } from '../../components/cometchat-messages/
 import { CometChatUserDetailsComponent } from '../../components/cometchat-user-details/cometchat-user-details.component';
 import { CometChatGroupDetailsComponent } from '../../components/cometchat-group-details/cometchat-group-details.component';
 import { CometChatThreadedMessagesComponent } from '../../components/cometchat-threaded-messages/cometchat-threaded-messages.component';
+import {
+  CometChatPinnedMessagesComponent,
+  CometChatSavedMessagesComponent,
+} from '@cometchat/chat-uikit-angular';
 import { CometChatCreateGroupComponent } from '../../components/cometchat-create-group/cometchat-create-group.component';
 import { CometChatJoinGroupComponent } from '../../components/cometchat-join-group/cometchat-join-group.component';
 import { CometChatNewChatComponent } from '../../components/cometchat-new-chat/cometchat-new-chat.component';
@@ -66,7 +70,7 @@ import { CometChatToastContainerComponent } from '../../components/cometchat-toa
 @Component({
   selector: 'cometchat-home',
   standalone: true,
-  imports: [CommonModule, CometChatIncomingCallComponent, CometChatTabsComponent, CometChatSelectorComponent, CometChatEmptyStateComponent, CometChatMessagesComponent, CometChatUserDetailsComponent, CometChatGroupDetailsComponent, CometChatThreadedMessagesComponent, CometChatCreateGroupComponent, CometChatJoinGroupComponent, CometChatNewChatComponent, CometChatAddMembersComponent, CometChatBannedMembersComponent, CometChatTransferOwnershipComponent, CometChatCallLogDetailsComponent, CometChatToastContainerComponent, TranslatePipe, CometChatSearchComponent],
+  imports: [CommonModule, CometChatIncomingCallComponent, CometChatTabsComponent, CometChatSelectorComponent, CometChatEmptyStateComponent, CometChatMessagesComponent, CometChatUserDetailsComponent, CometChatGroupDetailsComponent, CometChatThreadedMessagesComponent, CometChatPinnedMessagesComponent, CometChatSavedMessagesComponent, CometChatCreateGroupComponent, CometChatJoinGroupComponent, CometChatNewChatComponent, CometChatAddMembersComponent, CometChatBannedMembersComponent, CometChatTransferOwnershipComponent, CometChatCallLogDetailsComponent, CometChatToastContainerComponent, TranslatePipe, CometChatSearchComponent],
   templateUrl: './cometchat-home.component.html',
   styleUrls: ['./cometchat-home.component.css'],
 })
@@ -109,7 +113,170 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
   /** Whether the search overlay is visible */
   protected showSearchOverlay = signal(false);
 
+  /** Whether the saved-messages overlay covers the conversation list. */
+  protected showSavedMessagesOverlay = this.navigationService.showSavedMessages;
+
+  protected closeSavedMessages(): void {
+    this.navigationService.closeSavedMessages();
+  }
+
   /** Active uid for scoped search (right panel) */
+  /** The pinned panel is per-conversation, so it needs the active entity. */
+  protected activeUser = computed(() => this.chatStateService.activeUser());
+  protected activeGroup = computed(() => this.chatStateService.activeGroup());
+
+  protected closeSidePanel(): void {
+    this.navigationService.closeSidePanel();
+  }
+
+  /**
+   * Tapping a pinned row scrolls the conversation to that message. A pin is
+   * conversation-scoped, so the chat is already the right one — but the message
+   * may be far up the history, hence the same jump the saved rows use.
+   *
+   * The panel STAYS OPEN, the way search results and saved messages do. Pins
+   * are a list to work down; closing it on the first tap means reopening it for
+   * every one after that. Nothing is lost by leaving it — the jump happens in
+   * the centre column, which the panel does not occupy.
+   *
+   * The one exception is a pinned thread reply: the thread needs this column
+   * and takes it, which `showThreadPanel` handles for us.
+   */
+  protected onPinnedMessageClick(message: CometChat.BaseMessage): void {
+    this.goToMessage(message, true);
+  }
+
+  /**
+   * A saved row can belong to ANY conversation, so opening it means switching
+   * conversation first, then jumping to the message.
+   */
+  protected onSavedMessageClick(message: CometChat.BaseMessage): void {
+    // The list stays open, the way search results do. Saved messages are a
+    // place to work through — reading one should not cost the reader the list
+    // they were working down, and the row only ever opens the centre or right
+    // column, never the left one the list occupies.
+    this.goToMessage(message, true);
+  }
+
+  /**
+   * Open the conversation a message belongs to and scroll it into view.
+   *
+   * `goToMessageId` MUST be set before the active user/group changes: the
+   * conversation-change handler reads it as it runs, so setting it afterwards
+   * lands too late and the list opens at the bottom instead. That ordering is
+   * why this mirrors the search flow rather than simply awaiting both.
+   */
+  private goToMessage(message: CometChat.BaseMessage, fromList = false): void {
+    const messageId = message?.getId?.();
+    if (!messageId) return;
+
+    // A pinned or saved THREAD REPLY cannot be reached in the main list: the
+    // list drops any message carrying a parentMessageId, keeping only the
+    // parent's reply count, so scrolling to it there would silently land on
+    // nothing. Open the thread that owns it instead.
+    const parentId = message.getParentMessageId?.();
+    if (parentId) {
+      void this.openThreadAndJump(message, parentId, messageId, fromList);
+      return;
+    }
+
+    Promise.resolve()
+      .then(() => this.navigationService.setGotoMessageId(messageId))
+      .then(() => this.openConversationFor(message));
+
+    if (this.navigationService.isMobile()) {
+      this.navigationService.navigateToMessages();
+    }
+  }
+
+  /**
+   * Make the conversation a message belongs to the active one.
+   *
+   * A chat that is ALREADY open is left alone. Re-announcing it counts as a
+   * conversation change to every message list listening, which throws away the
+   * loaded history and refetches — for a pinned row, whose chat is by
+   * definition the one already open, that would happen on every single tap now
+   * that the panel stays put.
+   */
+  private openConversationFor(message: CometChat.BaseMessage): void {
+    if (message.getReceiverType() === CometChat.RECEIVER_TYPE.GROUP) {
+      const group = message.getReceiver() as CometChat.Group;
+      if (this.chatStateService.getActiveGroup()?.getGuid() !== group.getGuid()) {
+        this.chatStateService.setActiveGroup(group);
+      }
+      void this.selectConversationInList(group.getGuid(), CometChat.RECEIVER_TYPE.GROUP);
+      return;
+    }
+    // In a 1-1 the "other" party depends on who sent it: for my own saved
+    // message the receiver is the peer, for theirs it is the sender. Picking
+    // the wrong one opens a chat with myself.
+    const me = CometChatUIKit.getLoggedInUser();
+    const sender = message.getSender();
+    const receiver = message.getReceiver() as CometChat.User;
+    const peer = me && sender?.getUid() === me.getUid() ? receiver : sender;
+    if (!peer) return;
+    if (this.chatStateService.getActiveUser()?.getUid() !== peer.getUid()) {
+      this.chatStateService.setActiveUser(peer);
+    }
+    void this.selectConversationInList(peer.getUid(), CometChat.RECEIVER_TYPE.USER);
+  }
+
+  /**
+   * Give the conversation list the selection to match.
+   *
+   * Opening a chat this way sets the active USER or GROUP; the list highlights
+   * by CONVERSATION, and nothing ever pointed it at one. The chat opened
+   * correctly but the list sat behind it with nothing selected — which only
+   * becomes visible once the saved-messages overlay is closed again.
+   *
+   * Resolved from the SDK rather than looked up in the rows already fetched: a
+   * saved message can come from a chat far enough down the list that its page
+   * has not been loaded. Best-effort — a failure costs the highlight, not the
+   * chat, which is already open by the time this resolves.
+   */
+  private async selectConversationInList(id: string, type: string): Promise<void> {
+    if (!id) return;
+    try {
+      const conversation = await CometChat.getConversation(id, type);
+      if (conversation) this.chatStateService.syncActiveConversation(conversation);
+    } catch {
+      // No conversation yet (nothing has been exchanged), or the read failed.
+    }
+  }
+
+  /**
+   * Open the thread a reply belongs to, then scroll to the reply.
+   *
+   * The row carries only the parent's ID, never the parent itself — the thread
+   * panel needs the whole message to render its header, so it is fetched. If
+   * that fetch fails (deleted parent, lost access) the conversation is still
+   * opened, which is a better outcome than a dead click.
+   */
+  private async openThreadAndJump(
+    reply: CometChat.BaseMessage,
+    parentId: number,
+    replyId: number,
+    fromList = false
+  ): Promise<void> {
+    this.openConversationFor(reply);
+
+    let parent: CometChat.BaseMessage;
+    try {
+      parent = await CometChat.getMessageDetails(parentId);
+    } catch {
+      // Conversation is open; the thread simply cannot be reached.
+      return;
+    }
+
+    // The reply is handed to the panel rather than left in the shared signal:
+    // it belongs to THIS thread, and a thread opened later must not inherit it.
+    this.navigationService.showThreadPanel(parent, { fromList, goToMessageId: replyId });
+
+    if (this.navigationService.isMobile()) {
+      this.navigationService.navigateToMessages();
+    }
+  }
+
   protected activeUid = computed(() => this.chatStateService.activeUser()?.getUid() ?? '');
 
   /** Active guid for scoped search (right panel) */
@@ -153,6 +320,20 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
   }): void {
     const message = event.message;
     const messageId = message.getId();
+
+    // A thread reply is never in the main list — the list keeps only the
+    // parent's reply count — so jumping to it there would land on nothing.
+    // Open the thread that owns it, which then takes over the message list's
+    // space so the result stays readable next to the search results.
+    const parentId = message.getParentMessageId?.();
+    if (parentId) {
+      void this.openThreadAndJump(message, parentId, messageId, true);
+      return;
+    }
+
+    // A plain result belongs in the conversation, so any thread left open from
+    // an earlier result would otherwise keep covering it.
+    this.navigationService.closeThreadPanel();
 
     // Determine the conversation target from the message
     const receiverType = message.getReceiverType();
@@ -236,6 +417,24 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
 
   /** Whether call log details is the active side panel (hides center panel) */
   protected isCallLogDetailsActive = computed(() => this.sidePanelView() === 'call-log-details');
+
+  /**
+   * Whether the right panel takes over the space the message list would fill,
+   * leaving two columns instead of three.
+   *
+   * Two surfaces want this: call-log details, which has no conversation behind
+   * it at all, and a thread opened from one of the message lists (search
+   * results, saved messages, pinned messages), where the conversation behind
+   * the thread is not what the user asked to see — the reply they picked does
+   * not even appear in it, only the parent's reply count does. Mobile is
+   * excluded: there the panels replace one another rather than sitting side by
+   * side.
+   */
+  protected isRightPanelExpanded = computed(
+    () =>
+      !this.isMobile() &&
+      (this.isCallLogDetailsActive() || (this.showThread() && this.navigationService.threadFromList()))
+  );
 
   /**
    * Reactively attach/detach the SDK MessageListener for delivery marking.

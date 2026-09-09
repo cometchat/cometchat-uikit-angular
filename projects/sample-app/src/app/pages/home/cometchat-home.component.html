@@ -30,6 +30,21 @@
         </cometchat-search>
       </div>
     }
+
+    <!-- ═══ Saved Messages (left panel, over the conversation list) ═══
+         Not the right-hand side panel: saved messages are user-level and
+         cross-conversation, so they belong where you pick a conversation, not
+         beside the one that happens to be open. Tapping a row opens its chat in
+         the centre panel, which the right panel could not do without covering
+         the result. -->
+    @if (showSavedMessagesOverlay()) {
+      <div class="cometchat-home__search-overlay cometchat-home__saved-overlay">
+        <cometchat-saved-messages
+          (closeClick)="closeSavedMessages()"
+          (messageClick)="onSavedMessageClick($event)">
+        </cometchat-saved-messages>
+      </div>
+    }
   </nav>
 
   <!-- ═══ Resize Handle: Left ↔ Center ═══ -->
@@ -48,7 +63,7 @@
     tabindex="-1"
     #centerPanel
     class="cometchat-home__center-panel"
-    [class.cometchat-home__center-panel--hidden]="(isMobile() && mobilePanel() !== 'messages') || (!isMobile() && isCallLogDetailsActive())"
+    [class.cometchat-home__center-panel--hidden]="(isMobile() && mobilePanel() !== 'messages') || isRightPanelExpanded()"
   >
     @if (showNewChat()) {
       <cometchat-new-chat></cometchat-new-chat>
@@ -62,7 +77,7 @@
   <!-- ═══ Right Panel: Side Panel / Thread ═══ -->
   @if (showRightPanel()) {
     <!-- ═══ Resize Handle: Center ↔ Right ═══ -->
-    @if (!isMobile() && !isCallLogDetailsActive()) {
+    @if (!isMobile() && !isRightPanelExpanded()) {
       <div
         class="cometchat-home__resize-handle"
         [class.cometchat-home__resize-handle--active]="resizingPanel() === 'right'"
@@ -76,15 +91,23 @@
       #rightPanel
       class="cometchat-home__right-panel"
       [class.cometchat-home__right-panel--hidden]="isMobile() && mobilePanel() !== 'side-panel'"
-      [class.cometchat-home__right-panel--expanded]="!isMobile() && isCallLogDetailsActive()"
-      [style.width]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? rightPanelWidth() + 'px' : null"
-      [style.flex]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? '0 0 ' + rightPanelWidth() + 'px' : null"
-      [style.min-width]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? rightPanelWidth() + 'px' : null"
-      [style.max-width]="!isMobile() && rightPanelWidth() && !isCallLogDetailsActive() ? 'none' : null"
+      [class.cometchat-home__right-panel--expanded]="isRightPanelExpanded()"
+      [style.width]="!isMobile() && rightPanelWidth() && !isRightPanelExpanded() ? rightPanelWidth() + 'px' : null"
+      [style.flex]="!isMobile() && rightPanelWidth() && !isRightPanelExpanded() ? '0 0 ' + rightPanelWidth() + 'px' : null"
+      [style.min-width]="!isMobile() && rightPanelWidth() && !isRightPanelExpanded() ? rightPanelWidth() + 'px' : null"
+      [style.max-width]="!isMobile() && rightPanelWidth() && !isRightPanelExpanded() ? 'none' : null"
     >
       <!-- Side panel views (mutually exclusive with thread) -->
       @if (showThread()) {
         <cometchat-threaded-messages></cometchat-threaded-messages>
+      } @else if (sidePanelView() === 'pinned-messages') {
+        <!-- Per-conversation: scoped to whichever chat is open. -->
+        <cometchat-pinned-messages
+          [user]="activeUser() || undefined"
+          [group]="activeGroup() || undefined"
+          (closeClick)="closeSidePanel()"
+          (messageClick)="onPinnedMessageClick($event)">
+        </cometchat-pinned-messages>
       } @else {
         <!-- Group details stays alive while add-members is shown -->
         @if (sidePanelView() === 'group-details' || sidePanelView() === 'add-members') {

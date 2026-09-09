@@ -34,6 +34,21 @@ export function handleOptionClickImpl(self: any, option: ContextMenuItem, messag
     case CometChatUIKitConstants.MessageOption.replyInThread:
       self.threadRepliesClick.emit(message);
       break;
+    case CometChatUIKitConstants.MessageOption.threadSubscription:
+      self.toggleThreadSubscription(message);
+      break;
+    case CometChatUIKitConstants.MessageOption.pinMessage:
+      self.requestPinSave('pin', message);
+      break;
+    case CometChatUIKitConstants.MessageOption.unpinMessage:
+      self.requestPinSave('unpin', message);
+      break;
+    case CometChatUIKitConstants.MessageOption.saveMessage:
+      self.requestPinSave('save', message);
+      break;
+    case CometChatUIKitConstants.MessageOption.unsaveMessage:
+      self.requestPinSave('unsave', message);
+      break;
     case CometChatUIKitConstants.MessageOption.markAsUnread:
       self.markMessageAsUnread(message);
       break;

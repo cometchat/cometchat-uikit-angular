@@ -101,6 +101,8 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   readonly Placement = Placement;
 
   isHovered = false;
+  /** True while this row's context-menu dropdown is open — see the template. */
+  isMenuOpen = false;
 
   constructor(
     private formatterConfig: FormatterConfigService,
@@ -146,6 +148,17 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   get unreadCount(): number {
     if (this.isAgentConversation) return 0;
     return this.conversation.getUnreadMessageCount() || 0;
+  }
+  /**
+   * Whether to mark this row as pinned.
+   *
+   * The presence of the timestamp IS the boolean — an unpinned conversation
+   * carries no key at all, so this is never "pinned at 0". `isPinned()` covers
+   * both a personal pin and an app-wide one, and is guarded because an older
+   * Chat SDK build does not expose it.
+   */
+  get isPinned(): boolean {
+    return !!this.conversation?.isPinned?.();
   }
   get lastMessage(): CometChat.BaseMessage | undefined {
     return this.conversation.getLastMessage();
@@ -439,7 +452,12 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     };
   }
   get accessibleLabel(): string {
-    return getConversationAccessibleLabel(this.conversationWith, this.subtitleText, this.unreadCount);
+    const label = getConversationAccessibleLabel(this.conversationWith, this.subtitleText, this.unreadCount);
+    // The pin marker itself is aria-hidden, so the state has to reach a screen
+    // reader through the row's own label — otherwise pinned and unpinned rows
+    // are indistinguishable without sight.
+    if (!this.isPinned) return label;
+    return `${label}, ${CometChatLocalize.getLocalizedString('conversation_pinned_status')}`;
   }
   private getPlainSubtitleText(): string {
     const text = this.subtitleText;

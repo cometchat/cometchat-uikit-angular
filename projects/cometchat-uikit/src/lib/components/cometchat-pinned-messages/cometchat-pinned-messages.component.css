@@ -1,0 +1,428 @@
+/**
+ * CometChatPinnedMessages Styles
+ *
+ * BEM Structure:
+ * - Block: .cometchat-pinned-messages
+ * - Elements: __header, __title, __close, __close-icon, __list, __row,
+ *             __row-body, __row-sender, __row-preview, __row-trailing,
+ *             __unpin, __unpin-icon, __state, __retry
+ *
+ * Every colour maps to a semantic theme token, never a literal, so the panel
+ * follows light and dark without a second stylesheet.
+ */
+
+/*
+ * The host must carry the height itself: a custom element defaults to
+ * `display: inline`, so the panel's `height: 100%` would resolve against an
+ * auto-height parent and collapse to its content — which left the empty state
+ * sitting under the header instead of centred in the drawer.
+ */
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.cometchat-pinned-messages {
+  display: flex;
+  flex-direction: column;
+  /* Containing block for the confirm overlay, which dims this panel only. */
+  position: relative;
+  /* Fills whatever the host gives it, as the thread panel does. A fixed 400px
+     stayed 400px when the drawer was dragged wider, leaving the list stranded
+     against a band of empty panel. The host owns the width. */
+  width: var(--cometchat-pinned-messages-width, 100%);
+  height: var(--cometchat-pinned-messages-height, 100%);
+  box-sizing: border-box;
+  background: var(--cometchat-pinned-messages-background, var(--cometchat-background-color-01, #fff));
+  border-left: var(--cometchat-pinned-messages-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+}
+
+/* ==================== Header ==================== */
+.cometchat-pinned-messages__header {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-pinned-messages-header-gap, var(--cometchat-spacing-3, 12px));
+  padding: var(--cometchat-pinned-messages-header-padding, var(--cometchat-padding-3, 12px) var(--cometchat-padding-4, 16px));
+  border-bottom: var(--cometchat-pinned-messages-header-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+}
+
+.cometchat-pinned-messages__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--cometchat-pinned-messages-title-font, var(--cometchat-font-heading3-bold));
+  color: var(--cometchat-pinned-messages-title-color, var(--cometchat-text-color-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cometchat-pinned-messages__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--cometchat-pinned-messages-close-width, 32px);
+  height: var(--cometchat-pinned-messages-close-height, 32px);
+  padding: var(--cometchat-pinned-messages-close-padding, 0);
+  border: none;
+  border-radius: var(--cometchat-radius-max, 1000px);
+  background: transparent;
+  cursor: pointer;
+}
+
+.cometchat-pinned-messages__close:hover {
+  background: var(--cometchat-pinned-messages-close-background-hover, var(--cometchat-background-color-04));
+}
+
+/* The glyph itself picks up the brand colour on hover, as it does in the kit's
+   other panel headers. */
+.cometchat-pinned-messages__close:hover .cometchat-pinned-messages__close-icon {
+  background-color: var(--cometchat-pinned-messages-close-icon-color-hover, var(--cometchat-icon-color-highlight));
+}
+
+.cometchat-pinned-messages__close:focus-visible,
+.cometchat-pinned-messages__item:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color);
+  outline-offset: 2px;
+}
+
+.cometchat-pinned-messages__close-icon {
+  display: block;
+  width: var(--cometchat-pinned-messages-close-icon-width, 24px);
+  height: var(--cometchat-pinned-messages-close-icon-height, 24px);
+  background-color: var(--cometchat-pinned-messages-close-icon-color, var(--cometchat-icon-color-primary));
+  -webkit-mask: url('../../assets/close.svg') center center no-repeat;
+  mask: url('../../assets/close.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ==================== Rows ==================== */
+.cometchat-pinned-messages__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Scroll without a visible bar, matching the other lists in the kit. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* The panel is narrow: a wide bubble (long link, code block, big attachment)
+     must clip rather than introduce a horizontal scrollbar. */
+  overflow-x: hidden;
+}
+
+.cometchat-pinned-messages__list::-webkit-scrollbar {
+  display: none;
+}
+
+/* One pinned message. The horizontal padding is what keeps the avatar and the
+   bubble off the panel edge; the bubble brings its own internal spacing. */
+.cometchat-pinned-messages__item {
+  transition: background-color 120ms ease-out;
+  display: block;
+  padding: var(--cometchat-pinned-messages-item-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-2, 8px));
+  cursor: pointer;
+}
+
+.cometchat-pinned-messages__item:hover {
+  background: var(--cometchat-pinned-messages-item-background-hover, var(--cometchat-extended-primary-color-100));
+}
+
+/*
+ * Reaching into the bubble needs ::ng-deep.
+ *
+ * Emulated encapsulation scopes this stylesheet to elements carrying THIS
+ * component's `_ngcontent` attribute, and the bubble's internals carry the
+ * bubble's own — so plain selectors here never matched and every rule below was
+ * silently inert. Each is confined to `__item`, so nothing leaks to bubbles
+ * outside this panel.
+ */
+
+/*
+ * Every entry runs down the left, including your own — the bubble is given
+ * `alignment: left` with `variant: outgoing`, so it wears your colour without
+ * taking your side. The row reversal, the right-hand pull and the option order
+ * are all handled there; nothing needs undoing from out here.
+ */
+
+/*
+ * No bubble may outgrow the column.
+ *
+ * `min-width` beats `max-width` in CSS, and the bubble defaults to
+ * `fit-content` — which for a code block is its longest unbroken line and for a
+ * video its intrinsic width. Either runs off the right edge, and drags the
+ * hover controls beside it out of view too. Capping the floor at the container
+ * keeps the original intent (never collapse an image grid to thumbnails)
+ * without letting it exceed the space there is.
+ *
+ * The thread panel needs none of this because it has no avatar column: its
+ * bubble gets the full panel width, so `fit-content` and the space available
+ * happen to coincide. Here the avatar and its gap take ~56px out of the row.
+ */
+.cometchat-pinned-messages__item ::ng-deep .cometchat-message-bubble {
+  max-width: 100%;
+  min-width: min(fit-content, 100%);
+}
+
+/* A flex item will not shrink below its content unless told it may. Without
+   this the message body holds the row open at its natural width and pushes the
+   options off the edge, even though the bubble around them is capped. */
+.cometchat-pinned-messages__item ::ng-deep .cometchat-message-bubble__body-wrapper,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-message-bubble__body-container {
+  min-width: 0;
+}
+
+/*
+ * Media sizes itself for the conversation, which is wider than this panel.
+ *
+ * An image or video bubble is built around a 400px cap AND a min-width floor
+ * (240px for a single image, the same for a grid) so a small or slow-loading
+ * source cannot collapse the layout to a thumbnail. In the message list that
+ * floor is comfortably inside the column; here the avatar and its gap take
+ * ~56px out of a ~400px panel, so the media runs straight past the right edge
+ * and drags the hover controls out of view with it.
+ *
+ * The floor is dropped and the cap tied to the row instead. `min-width: 0` is
+ * what actually does the work — a min-width beats a max-width in CSS, so
+ * capping alone would leave the overflow exactly where it was.
+ */
+.cometchat-pinned-messages__item ::ng-deep .cometchat-image-bubble,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-image-bubble__container,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-image-bubble__grid,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-image-bubble__image-wrapper,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-video-bubble,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-video-bubble__container,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-video-bubble__grid,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-video-bubble__video-wrapper,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-audio-bubble,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-file-bubble,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-message-bubble__body-content-view {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* The elements the sources themselves render into. `object-fit` keeps a
+   downscaled tile from stretching. */
+.cometchat-pinned-messages__item ::ng-deep .cometchat-image-bubble__image,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-video-bubble__thumbnail,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-image-bubble video,
+.cometchat-pinned-messages__item ::ng-deep .cometchat-video-bubble video {
+  max-width: 100%;
+  object-fit: cover;
+}
+
+/* A multi-attachment bubble is given a fixed width for a consistent batch
+   layout, which is wider than this column. */
+.cometchat-pinned-messages__item ::ng-deep .cometchat-message-bubble--multi-attachment {
+  width: auto;
+  max-width: 100%;
+}
+
+/* Author and date above the bubble, on one line: `Sam Wilson • 30/07/26`. */
+.cometchat-pinned-messages__entry-name {
+  font: var(--cometchat-pinned-messages-entry-name-font, var(--cometchat-font-body-medium));
+  color: var(--cometchat-pinned-messages-entry-name-color, var(--cometchat-primary-color));
+}
+
+/* A drawn circle rather than a "•" glyph, whose size and baseline shift with the
+   font — the same reason the bubble's own meta row draws its separator. */
+.cometchat-pinned-messages__entry-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--cometchat-pinned-messages-entry-dot-size, 3px);
+  height: var(--cometchat-pinned-messages-entry-dot-size, 3px);
+  border-radius: 50%;
+  background-color: var(--cometchat-pinned-messages-entry-date-color, var(--cometchat-text-color-secondary));
+}
+
+.cometchat-pinned-messages__entry-date {
+  font: var(--cometchat-pinned-messages-entry-date-font, var(--cometchat-font-caption1-regular));
+  color: var(--cometchat-pinned-messages-entry-date-color, var(--cometchat-text-color-secondary));
+}
+
+/* ==================== States ==================== */
+.cometchat-pinned-messages__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cometchat-pinned-messages-state-gap, var(--cometchat-spacing-3, 12px));
+  flex: 1;
+  padding: var(--cometchat-pinned-messages-state-padding, var(--cometchat-padding-5, 20px));
+  text-align: center;
+  font: var(--cometchat-pinned-messages-state-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-pinned-messages-state-color, var(--cometchat-text-color-secondary));
+}
+
+/* Empty state: illustration, then the headline, then the explanation. Centred
+   in the panel because there is no list to align to. */
+.cometchat-pinned-messages__state--empty {
+  /* Gap is off so the two distances here can differ: the icon stands further
+     from the headline than the headline does from its explanation. Each is set
+     on the element it belongs to rather than inferred from a shared gap. */
+  gap: 0;
+}
+
+/* A CSS mask, not an <img>, so the illustration follows the theme instead of
+   staying a light grey that would glare on a dark panel. */
+.cometchat-pinned-messages__empty-icon {
+  margin-bottom: var(--cometchat-pinned-messages-empty-icon-gap, 20px);
+  width: var(--cometchat-pinned-messages-empty-icon-size, 120px);
+  height: var(--cometchat-pinned-messages-empty-icon-size, 120px);
+  background-color: var(--cometchat-pinned-messages-empty-icon-color, var(--cometchat-neutral-color-300));
+  -webkit-mask: url('../../assets/pinned_messages_empty.svg') center center no-repeat;
+  mask: url('../../assets/pinned_messages_empty.svg') center center no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.cometchat-pinned-messages__empty-title {
+  margin: 0;
+  font: var(--cometchat-pinned-messages-empty-title-font, var(--cometchat-font-heading4-bold));
+  color: var(--cometchat-pinned-messages-empty-title-color, var(--cometchat-text-color-primary));
+}
+
+.cometchat-pinned-messages__empty-subtitle {
+  margin: var(--cometchat-pinned-messages-empty-subtitle-gap, var(--cometchat-margin-2, 8px)) 0 0;
+  max-width: var(--cometchat-pinned-messages-empty-subtitle-max-width, 260px);
+  font: var(--cometchat-pinned-messages-empty-subtitle-font, var(--cometchat-font-body-regular));
+  color: var(--cometchat-pinned-messages-empty-subtitle-color, var(--cometchat-text-color-secondary));
+}
+
+
+.cometchat-pinned-messages__retry {
+  padding: var(--cometchat-pinned-messages-retry-padding, var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px));
+  border: 1px solid var(--cometchat-border-color-light, #f5f5f5);
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(--cometchat-pinned-messages-retry-background, var(--cometchat-background-color-01, #fff));
+  color: var(--cometchat-pinned-messages-retry-color, var(--cometchat-text-color-primary));
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 767px) {
+  .cometchat-pinned-messages {
+    width: var(--cometchat-pinned-messages-width-mobile, 100%);
+    border-left: none;
+  }
+}
+
+/* ==================== Confirm dialog ==================== */
+/*
+ * Same overlay geometry the message list uses. `absolute`, not `fixed`: the
+ * dialog belongs to this panel, so it dims the panel rather than the whole app.
+ * The panel is the containing block because it is the nearest positioned
+ * ancestor via `:host`.
+ */
+.cometchat-pinned-messages__dialog-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--cometchat-pinned-messages-dialog-overlay-z-index, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-pinned-messages-dialog-overlay-background, var(--cometchat-overlay-background));
+}
+
+/* ==================== Message Information overlay ==================== */
+/*
+ * Sits above the confirm overlay's band so Info opened from a row is never
+ * painted under it. Absolute, like the confirm dialog: this belongs to the
+ * panel, not the app.
+ */
+.cometchat-pinned-messages__info-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--cometchat-pinned-messages-info-overlay-z-index, 120);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cometchat-pinned-messages-info-overlay-background, var(--cometchat-overlay-background));
+}
+
+.cometchat-pinned-messages__info-panel {
+  width: var(--cometchat-pinned-messages-info-panel-width, 90%);
+  max-width: var(--cometchat-pinned-messages-info-panel-max-width, 420px);
+  max-height: var(--cometchat-pinned-messages-info-panel-max-height, 80%);
+  overflow: hidden;
+  border-radius: var(--cometchat-radius-4, 16px);
+  background: var(--cometchat-background-color-01, #fff);
+  box-shadow: var(--cometchat-pinned-messages-info-panel-shadow, var(--cometchat-shadow-sm));
+}
+
+/* ==================== Shimmer ==================== */
+/*
+ * Fills the panel rather than sitting in a short strip at the top, and mirrors
+ * the loaded row's shape so the transition into real content does not jump.
+ * `shimmer` is the kit's shared keyframe, defined once in the message list.
+ */
+.cometchat-pinned-messages__shimmer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-pinned-messages-shimmer-gap, var(--cometchat-spacing-3, 12px));
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--cometchat-pinned-messages-shimmer-padding, var(--cometchat-padding-2, 8px));
+}
+
+.cometchat-pinned-messages__shimmer-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cometchat-spacing-2, 8px);
+}
+
+.cometchat-pinned-messages__shimmer-avatar,
+.cometchat-pinned-messages__shimmer-header,
+.cometchat-pinned-messages__shimmer-bubble {
+  background: var(--cometchat-shimmer-gradient-color);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.cometchat-pinned-messages__shimmer-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--cometchat-radius-max, 1000px);
+}
+
+.cometchat-pinned-messages__shimmer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cometchat-spacing-1, 4px);
+  flex: 1;
+  min-width: 0;
+}
+
+.cometchat-pinned-messages__shimmer-header {
+  width: 40%;
+  height: 12px;
+  border-radius: var(--cometchat-radius-1, 4px);
+}
+
+.cometchat-pinned-messages__shimmer-bubble {
+  width: 70%;
+  height: 48px;
+  border-radius: var(--cometchat-radius-3, 12px);
+}
+
+/*
+ * Declared locally, as the message list and conversations each do: Angular does
+ * not scope keyframe names, but it does not guarantee another component's
+ * stylesheet is loaded either, and the panel can render on its own.
+ */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

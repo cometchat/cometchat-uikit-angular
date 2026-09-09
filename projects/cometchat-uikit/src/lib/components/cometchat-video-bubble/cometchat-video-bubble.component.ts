@@ -28,6 +28,7 @@ import { CometChatTextBubbleComponent } from '../cometchat-text-bubble/cometchat
 import { CometChatFullScreenViewerComponent } from '../base-elements/cometchat-fullscreen-viewer/cometchat-fullscreen-viewer.component';
 import { MediaControlsService } from '../../services/media-controls.service';
 import { formatVideoDuration, cleanupPipResources } from './cometchat-video-bubble.utils';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 
 // Re-export types for backward compatibility
 export type { MediaAttachment, MediaLayoutType } from '../../modals/MediaAttachment';
@@ -62,6 +63,12 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
 
   /** LEFT for incoming, RIGHT for outgoing messages. */
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
+  /**
+   * Formatters applied to the caption's text. Passed straight through to the
+   * text bubble that renders it, which owns the formatting itself — this bubble
+   * only forwards what the caller supplied.
+   */
+  @Input() textFormatters?: CometChatTextFormatter[];
 
   /** When true, disables click-to-open fullscreen viewer. */
   @Input() disableInteraction = false;

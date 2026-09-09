@@ -1,0 +1,173 @@
+<div class="cometchat cometchat-pinned-messages" tabindex="-1" (keydown)="onPanelKeydown($event)" role="complementary" [attr.aria-label]="title">
+
+  @if (headerView) {
+    <ng-container *ngTemplateOutlet="headerView"></ng-container>
+  } @else {
+    <div class="cometchat-pinned-messages__header">
+      <!-- The count is inline in the title rather than a separate badge. -->
+      <h2 class="cometchat-pinned-messages__title">{{ title }}</h2>
+      @if (!hideCloseButton) {
+        <button
+          type="button"
+          class="cometchat-pinned-messages__close"
+          [attr.aria-label]="'close' | translate"
+          (click)="closeClick.emit()">
+          <span class="cometchat-pinned-messages__close-icon" aria-hidden="true"></span>
+        </button>
+      }
+    </div>
+  }
+
+  @switch (state()) {
+    @case (States.loading) {
+      @if (loadingView) {
+        <ng-container *ngTemplateOutlet="loadingView"></ng-container>
+      } @else {
+        <!-- Transcript-shaped skeleton: this panel renders bubbles, so the
+             placeholder is an avatar, a header line and a bubble — every row
+             left-aligned, exactly as the loaded list is. -->
+        <div
+          class="cometchat-pinned-messages__shimmer"
+          role="status"
+          [attr.aria-label]="'loading' | translate">
+          @for (i of shimmerList; track i) {
+            <div class="cometchat-pinned-messages__shimmer-row">
+              <div class="cometchat-pinned-messages__shimmer-avatar"></div>
+              <div class="cometchat-pinned-messages__shimmer-body">
+                <div class="cometchat-pinned-messages__shimmer-header"></div>
+                <div class="cometchat-pinned-messages__shimmer-bubble"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @case (States.error) {
+      @if (errorView) {
+        <ng-container *ngTemplateOutlet="errorView"></ng-container>
+      } @else {
+        <div class="cometchat-pinned-messages__state">
+          <p>{{ 'pin_save_generic_error' | translate }}</p>
+          <button type="button" class="cometchat-pinned-messages__retry" (click)="retry()">
+            {{ 'error_boundary_retry' | translate }}
+          </button>
+        </div>
+      }
+    }
+
+    @case (States.empty) {
+      @if (emptyView) {
+        <ng-container *ngTemplateOutlet="emptyView"></ng-container>
+      } @else {
+        <div class="cometchat-pinned-messages__state cometchat-pinned-messages__state--empty" role="status">
+          <div class="cometchat-pinned-messages__empty-icon" aria-hidden="true"></div>
+          <p class="cometchat-pinned-messages__empty-title">{{ 'pinned_messages_empty' | translate }}</p>
+          <p class="cometchat-pinned-messages__empty-subtitle">
+            {{ 'pinned_messages_empty_subtitle' | translate }}
+          </p>
+        </div>
+      }
+    }
+
+    @default {
+      <!-- Full bubbles, not compact rows: a pinned message is read here, so it
+           should look exactly as it does in the conversation.
+
+           Unlike the conversation, every entry runs down the LEFT: this is a
+           list of pins, not a dialogue, so mirroring your own messages to the
+           right would only make the column harder to scan. Each carries its own
+           author and date instead of date dividers, because the list is ordered
+           by when things were PINNED, which day-grouping by sent time cuts
+           across. -->
+      <div class="cometchat-pinned-messages__list" (scroll)="onListScroll($event)">
+        @for (message of visibleMessages(); track message.getId()) {
+          @if (itemView) {
+            <!-- A host that replaces the row owns its interaction too: the click
+                 and keyboard handlers below belong to the default row, so they go
+                 with it rather than wrapping someone else's markup. -->
+            <ng-container
+              *ngTemplateOutlet="itemView; context: { $implicit: message, message: message }">
+            </ng-container>
+          } @else {
+          <div
+            class="cometchat-pinned-messages__item"
+            role="button"
+            tabindex="0"
+            (click)="onRowClick(message, $event)"
+            (keydown)="onRowKeydown($event, message)">
+            <!-- quickOptionsCount keeps the first N options as bare icons and
+                 folds the rest into the ⋮, as the thread view does.
+
+                 Receipts and the reply count are both off: this is a reference
+                 list, not a place delivery state matters, and "1 Reply" is an
+                 invitation to open a thread the panel has no way to show. -->
+            <cometchat-message-bubble
+              [message]="message"
+              [alignment]="rowAlignment"
+              [variant]="variantOf(message)"
+              [leadingView]="pinnedAvatar"
+              [headerView]="pinnedHeader"
+              [options]="optionsFor(message)"
+              [quickOptionsCount]="quickOptionsCount"
+              [textFormatters]="textFormatters"
+              [hideReceipts]="true"
+              [hideThreadView]="true"
+              [hideTimestamp]="false"
+              (optionClick)="onBubbleOption($event, message)">
+            </cometchat-message-bubble>
+          </div>
+          }
+        }
+      </div>
+
+      <!-- Supplied rather than left to the bubble's defaults, because the bubble
+           only draws an avatar and a sender name for INCOMING messages; passing
+           these makes your own pins carry them too. -->
+      <ng-template #pinnedAvatar let-message>
+        <cometchat-avatar
+          [image]="senderAvatar(message)"
+          [name]="senderName(message)">
+        </cometchat-avatar>
+      </ng-template>
+
+      <ng-template #pinnedHeader let-message>
+        <span class="cometchat-pinned-messages__entry-name">{{ displayName(message) }}</span>
+        <span class="cometchat-pinned-messages__entry-dot" aria-hidden="true"></span>
+        <cometchat-date
+          class="cometchat-pinned-messages__entry-date"
+          [timestamp]="message.getSentAt()"
+          [calendarObject]="entryDateFormat">
+        </cometchat-date>
+      </ng-template>
+    }
+  }
+
+  <!-- Unpin / Unsave confirmation. Only the removing directions ask; pin and
+       save act straight away. Same dialog the message list and conversations
+       use, retuned by the --pin-save modifier on the overlay. -->
+  @if (pendingPinSave(); as pending) {
+    <cometchat-pin-save-confirm-dialog
+      [action]="pending.action"
+      (confirmClick)="confirmPinSave()"
+      (cancelClick)="cancelPinSave()">
+    </cometchat-pin-save-confirm-dialog>
+  }
+
+  <!-- Message Information — same overlay shape the message list uses, so Info
+       looks the same wherever it is opened from. Scoped to this panel. -->
+  @if (messageInfoTarget(); as infoMessage) {
+    <div
+      class="cometchat-pinned-messages__info-overlay"
+      role="presentation"
+      (click)="closeMessageInfo()">
+      <div class="cometchat-pinned-messages__info-panel" (click)="$event.stopPropagation()">
+        <cometchat-message-information
+          [message]="infoMessage"
+          (closeClick)="closeMessageInfo()">
+        </cometchat-message-information>
+      </div>
+    </div>
+  }
+
+</div>

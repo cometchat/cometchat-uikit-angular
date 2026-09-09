@@ -99,6 +99,17 @@
   margin-left: auto;
 }
 
+/* Your own message, wearing its colour but sitting in the left column — what a
+   LIST of messages wants (the pinned panel) as opposed to a dialogue.
+
+   The outgoing class carries the palette and, incidentally, the pull to the
+   right; only that pull is undone here. The options are put back after the body
+   further down, next to the rule that placed them before it. */
+.cometchat-message-bubble-outgoing.cometchat-message-bubble--align-left {
+  align-items: flex-start;
+  margin-left: 0;
+}
+
 .cometchat-message-bubble-action {
   align-items: center;
   margin: 0 auto;
@@ -144,6 +155,13 @@
 /* Requirement 2.2: Options appear on LEFT side for sender messages */
 .cometchat-message-bubble-outgoing .cometchat-message-bubble__options {
   order: 1;
+}
+
+/* Left-column own message: the options belong on the outboard side, as they do
+   for every other bubble in that column. Left there, they would sit between the
+   avatar and the message and shove the bubble across. */
+.cometchat-message-bubble-outgoing.cometchat-message-bubble--align-left .cometchat-message-bubble__options {
+  order: 3;
 }
 
 /* Options menu.
@@ -433,7 +451,7 @@
 .cometchat-message-bubble__status-info-view {
   display: flex;
   align-items: center;
-  gap: var(--cometchat-message-bubble-status-info-gap, var(--cometchat-spacing-1));
+  gap: var(--cometchat-message-bubble-status-info-gap, var(--cometchat-spacing-2, 8px));
   justify-content: flex-end;
   white-space: nowrap;
 }
@@ -830,4 +848,76 @@
 .cometchat-message-bubble__audio-call {
   background: transparent;
   padding: 0;
+}
+
+/* ==================== Pinned / Saved Indicators ==================== */
+/* Meta-row markers, sized and coloured to sit with the timestamp beside them so
+   they read as metadata rather than as actions. Both are CSS masks, so one
+   asset serves both bubble sides — the colour comes from these rules. */
+.cometchat-message-bubble__pinned-indicator,
+.cometchat-message-bubble__saved-indicator {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--cometchat-message-bubble-meta-indicator-width, 8px);
+  height: var(--cometchat-message-bubble-meta-indicator-height, 13px);
+  /* Incoming bubbles are light, so the marker takes the caption colour.
+     `#535862` is not a token in this kit; --cometchat-text-color-secondary is
+     the semantic role that means it, and carries the right value in dark mode
+     too rather than staying dark-on-dark. */
+  background-color: var(--cometchat-message-bubble-meta-indicator-color, var(--cometchat-text-color-secondary, #535862));
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Outgoing bubbles are filled with the brand colour, where the caption grey
+   would all but disappear — hence white. */
+.cometchat-message-bubble__wrapper--outgoing .cometchat-message-bubble__pinned-indicator,
+.cometchat-message-bubble__wrapper--outgoing .cometchat-message-bubble__saved-indicator {
+  background-color: var(--cometchat-message-bubble-meta-indicator-color-outgoing, var(--cometchat-text-color-white, #ffffff));
+}
+
+/* Height matched to the saved bookmark so the two markers sit level. The width
+   follows from it: the artwork is 8×13, so at 11px tall it draws 6.77px wide,
+   and 7px is the nearest whole box that keeps `contain` from letterboxing it
+   into the row's 4px gap. Keeping the old 8px box would have reintroduced
+   exactly the dead space the saved indicator was just sized out of. */
+.cometchat-message-bubble__pinned-indicator {
+  width: var(--cometchat-message-bubble-pinned-indicator-width, 7px);
+  height: var(--cometchat-message-bubble-pinned-indicator-height, 11px);
+  -webkit-mask: url('../../assets/pin_indicator.svg') center center no-repeat;
+  mask: url('../../assets/pin_indicator.svg') center center no-repeat;
+}
+
+/* The dot between the markers and the timestamp.
+   Drawn as a shape rather than a "•" glyph: a bullet character sits on the text
+   baseline and its size and vertical position vary per font, which is exactly
+   the misalignment this row cannot afford. A circle with `align-self: center`
+   lands on the row's centre line the same way in every font. */
+.cometchat-message-bubble__meta-separator {
+  display: inline-block;
+  flex-shrink: 0;
+  align-self: center;
+  width: var(--cometchat-message-bubble-meta-separator-size, 3px);
+  height: var(--cometchat-message-bubble-meta-separator-size, 3px);
+  border-radius: 50%;
+  background-color: var(--cometchat-message-bubble-meta-indicator-color, var(--cometchat-text-color-secondary, #535862));
+}
+
+.cometchat-message-bubble__wrapper--outgoing .cometchat-message-bubble__meta-separator {
+  background-color: var(--cometchat-message-bubble-meta-indicator-color-outgoing, var(--cometchat-text-color-white, #ffffff));
+}
+
+/* Filled bookmark: the saved marker is the user's own, so it reads as active.
+   Explicitly the FILLED asset — bookmark.svg is the outlined action icon the
+   menus use, and an outline here would read as a button rather than a state. */
+/* Sized to the artwork's own 9×11, not a rounder 12×13. `mask-size: contain`
+   preserves aspect ratio, so a box wider than the glyph letterboxes it —
+   ~0.7px of dead space on each side, which pushed the dot beyond the row's 4px
+   gap while the pin, whose box matches its 8×13 artwork exactly, sat at 4px.
+   Matching the box to the artwork makes both indicators sit 4px from the dot. */
+.cometchat-message-bubble__saved-indicator {
+  width: var(--cometchat-message-bubble-saved-indicator-width, 9px);
+  height: var(--cometchat-message-bubble-saved-indicator-height, 11px);
+  -webkit-mask: url('../../assets/bookmark_filled.svg') center center no-repeat;
+  mask: url('../../assets/bookmark_filled.svg') center center no-repeat;
 }

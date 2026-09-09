@@ -844,10 +844,14 @@ export function uninstallSearchSDKMock(): void {
 
 // ── Search wrapper component for Storybook ────────────────────────────────
 
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { SearchConversationsService } from '../../projects/cometchat-uikit/src/lib/services/search-conversations.service';
 import { SearchMessagesService } from '../../projects/cometchat-uikit/src/lib/services/search-messages.service';
-import { CometChatSearchComponent } from '../../projects/cometchat-uikit/src/lib/components/cometchat-search/cometchat-search.component';
+import {
+  CometChatSearchComponent,
+  type SearchConversationClickEvent,
+  type SearchMessageClickEvent,
+} from '../../projects/cometchat-uikit/src/lib/components/cometchat-search/cometchat-search.component';
 import { CometChatSearchFilter, CometChatSearchScope, States } from '../../projects/cometchat-uikit/src/lib/Enums/Enums';
 
 /**
@@ -875,7 +879,11 @@ import { CometChatSearchFilter, CometChatSearchScope, States } from '../../proje
       [hideUserStatus]="hideUserStatus"
       [hideReceipts]="hideReceipts"
       [conversationsRequestBuilder]="mockConvBuilder"
-      [messagesRequestBuilder]="mockMsgBuilder">
+      [messagesRequestBuilder]="mockMsgBuilder"
+      (backClick)="backClick.emit()"
+      (conversationClick)="conversationClick.emit($event)"
+      (messageClick)="messageClick.emit($event)"
+      (searchError)="searchError.emit($event)">
     </cometchat-search>
   `,
 })
@@ -891,6 +899,13 @@ export class CometChatSearchStoryWrapperComponent implements OnChanges {
   @Input() forceState: 'loaded' | 'loading' | 'empty' | 'error' = 'loaded';
   @Input() mockConversations: CometChat.Conversation[] = [];
   @Input() mockMessages: CometChat.BaseMessage[] = [];
+
+  // Forwarded so the story's argTypes describe events that exist on the type
+  // Storybook checks — the wrapper, not the component it renders.
+  @Output() backClick = new EventEmitter<void>();
+  @Output() conversationClick = new EventEmitter<SearchConversationClickEvent>();
+  @Output() messageClick = new EventEmitter<SearchMessageClickEvent>();
+  @Output() searchError = new EventEmitter<CometChat.CometChatException>();
 
   readonly defaultFilters = [
     CometChatSearchFilter.Audio,

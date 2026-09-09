@@ -27,11 +27,15 @@ function makeGroup(guid: string): CometChat.Group {
   return new CometChat.Group(guid, `Group ${guid}`, CometChat.GROUP_TYPE.PUBLIC, '');
 }
 
-function makeTextMessage(senderUid: string, opts: { deletedAt?: number } = {}): CometChat.BaseMessage {
+function makeTextMessage(
+  senderUid: string,
+  opts: { deletedAt?: number; parentMessageId?: number } = {}
+): CometChat.BaseMessage {
   const msg = new CometChat.TextMessage('receiver1', 'Hello', CometChat.RECEIVER_TYPE.USER);
   msg.setSender(makeUser(senderUid));
   (msg as any).getType = () => 'text';
   (msg as any).getCategory = () => CometChatUIKitConstants.MessageCategory.message;
+  (msg as any).getParentMessageId = () => opts.parentMessageId ?? 0;
   if (opts.deletedAt) {
     (msg as any).deletedAt = opts.deletedAt;
     (msg as any).getDeletedAt = () => opts.deletedAt;
@@ -54,6 +58,14 @@ function defaultCtx(overrides: Partial<MessageOptionsContext> = {}): MessageOpti
     hideReactionOption: false,
     hideReplyOption: false,
     hideReplyInThreadOption: false,
+    hideThreadSubscriptionOption: false,
+    threadSubscriptionEnabled: false,
+    hidePinMessageOption: false,
+    hideUnpinMessageOption: false,
+    hideSaveMessageOption: false,
+    hideUnsaveMessageOption: false,
+    pinMessageEnabled: false,
+    saveMessageEnabled: false,
     hideCopyMessageOption: false,
     hideEditMessageOption: false,
     hideDeleteMessageOption: false,
@@ -81,6 +93,14 @@ function ctx(over: Partial<MessageOptionsContext> = {}): MessageOptionsContext {
     hideReactionOption: false,
     hideReplyOption: false,
     hideReplyInThreadOption: false,
+    hideThreadSubscriptionOption: false,
+    threadSubscriptionEnabled: false,
+    hidePinMessageOption: false,
+    hideUnpinMessageOption: false,
+    hideSaveMessageOption: false,
+    hideUnsaveMessageOption: false,
+    pinMessageEnabled: false,
+    saveMessageEnabled: false,
     hideCopyMessageOption: false,
     hideEditMessageOption: false,
     hideDeleteMessageOption: false,
@@ -302,6 +322,36 @@ describe('cometchat-message-list.option-builders', () => {
       const options = getMessageOptionsImpl(ctx, msg);
       const ids = options.map(o => o.id);
       expect(ids).not.toContain(CometChatUIKitConstants.MessageOption.replyInThread);
+    });
+
+    it('should exclude it on a message that is already a thread reply', () => {
+      // CometChat has no nested threads, so the action has nowhere to go — it
+      // would either reopen the thread being read or root a second one at a
+      // reply. Matches the React kit, which filters the same case.
+      const options = getMessageOptionsImpl(
+        defaultCtx(),
+        makeTextMessage('other', { parentMessageId: 55 })
+      );
+      expect(options.map(o => o.id)).not.toContain(
+        CometChatUIKitConstants.MessageOption.replyInThread
+      );
+    });
+
+    it('still offers Reply (quote) on a thread reply — only the thread action goes', () => {
+      const options = getMessageOptionsImpl(
+        defaultCtx(),
+        makeTextMessage('other', { parentMessageId: 55 })
+      );
+      expect(options.map(o => o.id)).toContain(CometChatUIKitConstants.MessageOption.replyMessage);
+    });
+
+    it('tolerates a message with no getParentMessageId at all', () => {
+      const msg = makeTextMessage('other');
+      delete (msg as any).getParentMessageId;
+      expect(() => getMessageOptionsImpl(defaultCtx(), msg)).not.toThrow();
+      expect(getMessageOptionsImpl(defaultCtx(), msg).map(o => o.id)).toContain(
+        CometChatUIKitConstants.MessageOption.replyInThread
+      );
     });
   });
 

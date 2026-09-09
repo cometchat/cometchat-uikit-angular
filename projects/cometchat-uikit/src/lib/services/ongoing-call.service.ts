@@ -177,7 +177,8 @@ export class OngoingCallService {
       const sessionID = this._sessionID();
       this.registerSessionEventListeners(sessionID, onError);
       const sessionSettings = this.getCallSettings(sessionID, onError);
-      const tokenResponse = await CometChatUIKitCalls.generateToken(sessionID);
+      const loggedInUser = CometChatUIKit.getLoggedInUser();
+      const tokenResponse = await CometChatUIKitCalls.generateToken(sessionID, loggedInUser?.getAuthToken());
       await CometChatUIKitCalls.joinSession(tokenResponse.token, sessionSettings, callScreenFrame);
       this._isCallActive.set(true);
     } catch (error) {

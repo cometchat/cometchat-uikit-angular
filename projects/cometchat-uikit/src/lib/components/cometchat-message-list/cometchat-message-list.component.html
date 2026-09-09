@@ -165,6 +165,12 @@
                 [componentName]="'MessageBubble:' + item.message.getType()"
                 [fallbackView]="bubbleFallback"
                 (error)="onBubbleError($event)">
+                <!-- A batch shows its time and receipt once, on the last message, so the
+                     others hide the whole meta row. Pin and save are per-MESSAGE though —
+                     you pin the image grid, not the batch — so a marked message keeps its
+                     row and shows the glyph alone; hideTimestamp and hideReceipts still
+                     suppress the parts that belong to the batch. Without the extra test,
+                     pinning anything but the last attachment looked like nothing happened. -->
                 <cometchat-message-bubble
                   [message]="item.message"
                   [alignment]="getMessageAlignment(item.message)"
@@ -172,7 +178,7 @@
                   [hideAvatar]="effectiveHideAvatar() || item.isFirstInBatch === false"
                   [reserveLeadingSpace]="item.isFirstInBatch === false"
                   [hideTimestamp]="hideTimestamp || (isAgentChat && getMessageAlignment(item.message) !== MessageBubbleAlignment.right) || item.isLastInBatch === false"
-                  [hideStatusInfoView]="(isAgentChat && getMessageAlignment(item.message) !== MessageBubbleAlignment.right) || item.isLastInBatch === false"
+                  [hideStatusInfoView]="shouldHideStatusInfoView(item)"
                   [hideSenderName]="isAgentChat || item.isFirstInBatch === false"
                   [hideModerationView]="effectiveHideModerationView()"
                   [textFormatters]="activeFormatters"
@@ -303,6 +309,16 @@
         (cancelClick)="handleDeleteCancel()">
       </cometchat-confirm-dialog>
     </div>
+  }
+
+  <!-- Unpin / Unsave Confirmation. Only the removing half of each pair asks;
+       pinning and saving run straight away. -->
+  @if (pendingPinSave(); as pending) {
+    <cometchat-pin-save-confirm-dialog
+      [action]="pending.action"
+      (confirmClick)="confirmPinSave()"
+      (cancelClick)="cancelPinSave()">
+    </cometchat-pin-save-confirm-dialog>
   }
 
   <!-- Flag Message Dialog -->

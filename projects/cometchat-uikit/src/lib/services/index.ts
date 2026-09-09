@@ -73,3 +73,6 @@ export { SearchConversationsService } from './search-conversations.service';
 
 export { NotificationUnreadCountService } from './notification-unread-count.service';
 export type { NotificationUnreadCountOptions } from './notification-unread-count.service';
+export { ThreadSubscriptionService } from './thread-subscription.service';
+export { PinSaveService } from './pin-save.service';
+export type { PinSaveAction } from './pin-save.service';

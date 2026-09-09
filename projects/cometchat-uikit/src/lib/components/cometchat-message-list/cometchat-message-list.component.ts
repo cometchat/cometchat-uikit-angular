@@ -1,7 +1,12 @@
 
 import {Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, OnChanges, AfterViewInit, SimpleChanges, signal, computed, Signal, inject, DestroyRef, booleanAttribute, Injector,} from '@angular/core';
+import {
+  CometChatPinSaveConfirmDialogComponent,
+  PinSaveConfirmMessageAction,
+} from '../base-elements/cometchat-pin-save-confirm-dialog/cometchat-pin-save-confirm-dialog.component';
 import { safeEffect } from '../../utils/safe-effect';
 import {CommonModule} from '@angular/common';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CometChat} from '@cometchat/chat-sdk-javascript';
 
 import {CometChatMessageBubbleComponent} from '../cometchat-message-bubble/cometchat-message-bubble.component';
@@ -26,6 +31,12 @@ import {ListNavigationService} from '../../services/list-navigation.service';
 import {LiveAnnouncerService} from '../../services/live-announcer.service';
 import {FocusTrapService} from '../../services/focus-trap.service';
 import {COMETCHAT_GLOBAL_CONFIG, GlobalConfig} from '../../services/global-config.service';
+import {ThreadSubscriptionService} from '../../services/thread-subscription.service';
+import {stampThreadSubscription} from '../../utils/thread-subscription-utils';
+import {PinSaveService, PinSaveAction} from '../../services/pin-save.service';
+import {applyPinSaveFrom} from '../../utils/pin-save-utils';
+import {CometChatThreadEvents, IThreadSubscriptionChanged} from '../../events/CometChatThreadEvents';
+import {CometChatPinSaveEvents} from '../../events/CometChatPinSaveEvents';
 import {isSenderMessage as isSenderMessageUtil, isReceiverMessage as isReceiverMessageUtil, getLatestReceiverMessage as getLatestReceiverMessageUtil, getConversationId as getConversationIdUtil, getConversationType as getConversationTypeUtil, isMessageForCurrentConversation as isMessageForCurrentConversationUtil} from './cometchat-message-list.receipt-utils';
 import {getMessagePreview as getMessagePreviewUtil, isMediaMessage as isMediaMessageUtil} from './cometchat-message-list.options-utils';
 import {highlightAndScrollToElement as highlightAndScrollToElementUtil} from './cometchat-message-list.scroll-utils';
@@ -79,6 +90,7 @@ export interface MessageListItem {
   selector: 'cometchat-message-list',
   standalone: true,
   imports: [
+    CometChatPinSaveConfirmDialogComponent,
     CommonModule,
     CometChatMessageBubbleComponent,
     CometChatDateComponent,
@@ -112,6 +124,8 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   private liveAnnouncer = inject(LiveAnnouncerService);
   private focusTrapService = inject(FocusTrapService);
   private conversationsService = inject(ConversationsService);
+  private threadSubscription = inject(ThreadSubscriptionService);
+  private pinSave = inject(PinSaveService);
   private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, {
     optional: true,
   });
@@ -133,7 +147,30 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   private _hideModerationView = signal(false);
   @Input() user?: CometChat.User;
   @Input() group?: CometChat.Group;
-  @Input() parentMessageId?: number;
+  /**
+   * The thread's parent message, for thread mode.
+   *
+   * Preferred over {@link parentMessageId}: the id alone cannot answer "is this
+   * thread followed right now", and a reply arriving over the socket carries no
+   * subscription flag of its own — it has to inherit the parent's. The id used
+   * for scoping is derived from this when it is present.
+   */
+  @Input() parentMessage?: CometChat.BaseMessage;
+  /**
+   * Parent message id, for thread mode.
+   *
+   * @deprecated Pass {@link parentMessage} instead — the id is derived from it.
+   * Still honoured when `parentMessage` is absent, so existing callers keep
+   * working; they just opt out of realtime subscription state on replies.
+   */
+  @Input()
+  set parentMessageId(value: number | undefined) {
+    this.parentMessageIdInput = value;
+  }
+  get parentMessageId(): number | undefined {
+    return this.parentMessage?.getId() ?? this.parentMessageIdInput;
+  }
+  private parentMessageIdInput?: number;
   @Input({ transform: booleanAttribute }) isAgentChat = false;
   @Input({ transform: booleanAttribute }) loadLastAgentConversation = false;
   @Input() messagesRequestBuilder?: CometChat.MessagesRequestBuilder;
@@ -172,6 +209,15 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   set hideError(value: boolean) { this._hideError.set(value); this.hideErrorExplicitlySet.set(true); }
   get hideError(): boolean { return this._hideError(); }
   @Input({ transform: booleanAttribute }) hideReplyInThreadOption = false;
+  /**
+   * Hide the `Follow thread` / `Unfollow thread` option without turning the
+   * feature off — for apps that want the thread-header control only.
+   */
+  @Input({ transform: booleanAttribute }) hideThreadSubscriptionOption = false;
+  @Input({ transform: booleanAttribute }) hidePinMessageOption = false;
+  @Input({ transform: booleanAttribute }) hideUnpinMessageOption = false;
+  @Input({ transform: booleanAttribute }) hideSaveMessageOption = false;
+  @Input({ transform: booleanAttribute }) hideUnsaveMessageOption = false;
   @Input({ transform: booleanAttribute }) hideTranslateMessageOption = false;
   @Input({ transform: booleanAttribute }) hideEditMessageOption = false;
   @Input({ transform: booleanAttribute }) hideDeleteMessageOption = false;
@@ -221,6 +267,8 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   @Output() conversationStarterClick = new EventEmitter<string>();
   @Output() messagePrivatelyClick = new EventEmitter<{ message: CometChat.BaseMessage; user: CometChat.User }>();
   @Output() replyClick = new EventEmitter<CometChat.BaseMessage>();
+  /** Emitted whenever a thread's subscription changes, whoever caused it. */
+  @Output() threadSubscriptionChange = new EventEmitter<IThreadSubscriptionChanged>();
   @ViewChild('listContainer') listContainer?: ElementRef<HTMLElement>;
   @ViewChild('scrollTopAnchor') scrollTopAnchor?: ElementRef<HTMLElement>;
   @ViewChild('scrollBottomAnchor') scrollBottomAnchor?: ElementRef<HTMLElement>;
@@ -403,7 +451,170 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
     return this.messageSentAtDateTimeFormat || this.getDefaultMessageDateFormat();
   }
   getMessageAlignment(message: CometChat.BaseMessage): MessageBubbleAlignment { return getMessageAlignmentImpl(this as any, message); }
+
+  /**
+   * Should this bubble hide its timestamp/receipt footer?
+   *
+   * Two rules combine. In an agent chat only the user's own side carries a
+   * footer. In a batch, only the last bubble does — except when the bubble is
+   * pinned or saved, because those indicators live in the footer and hiding it
+   * would hide the very badge that explains why the message is marked.
+   *
+   * The pin/save calls stay optional: messages reach here from mocks and from
+   * SDK versions predating the accessors.
+   */
+  shouldHideStatusInfoView(item: MessageListItem): boolean {
+    const message = item.message;
+    if (!message) return false;
+
+    if (this.isAgentChat && this.getMessageAlignment(message) !== MessageBubbleAlignment.right) {
+      return true;
+    }
+    const marked = message.isPinned?.() || message.isSaved?.();
+    return item.isLastInBatch === false && !marked;
+  }
   getMessageOptions(message: CometChat.BaseMessage): CometChatActionsIcon[] { return getMessageOptionsImpl(this as any, message); }
+
+  // ==================== Thread Subscription ====================
+
+  /**
+   * The feature gate. Off by default and read from global config only — there
+   * is no capability flag on app settings to feature-detect from, so only the
+   * integrator knows whether the threads endpoints are live for their app.
+   */
+  get threadSubscriptionEnabled(): boolean { return !!this.globalConfig?.enableThreadSubscription && this.threadSubscription.isSupported(); }
+
+  /**
+   * Handles the `threadSubscription` sheet option. The service resolves a reply
+   * to its parent thread, so choosing the option on a reply toggles the thread
+   * being read rather than minting a subscription rooted at the reply.
+   */
+  toggleThreadSubscription(message: CometChat.BaseMessage): void { this.threadSubscription.toggle(message); }
+
+  // ==================== Pin / Save ====================
+
+  /**
+   * App-level flags, resolved once and then read synchronously by the option
+   * builder. They start false so a sheet opened before the flags resolve omits
+   * the options rather than offering something the app has turned off.
+   */
+  pinMessageEnabled = false;
+  saveMessageEnabled = false;
+
+  /**
+   * An explicit global-config value wins over the SDK's app-level flag. The
+   * flags are provisioned server-side, so without an override there is no way
+   * to develop against the feature before they are switched on.
+   */
+  private async resolvePinSaveFlags(): Promise<void> {
+    const pinOverride = this.globalConfig?.enablePinMessage;
+    const saveOverride = this.globalConfig?.enableSaveMessage;
+    this.pinMessageEnabled = pinOverride ?? (await this.pinSave.isPinEnabled());
+    this.saveMessageEnabled = saveOverride ?? (await this.pinSave.isSaveEnabled());
+    this.cdr.markForCheck();
+  }
+
+  /** The unpin/unsave awaiting confirmation, or null. One at a time. */
+  // Narrowed to the removing half of each pair: only those ask before acting, so
+  // the type now says what `requestPinSave` already enforced by hand — and the
+  // shared confirm dialog accepts exactly these.
+  pendingPinSave = signal<{ action: PinSaveConfirmMessageAction; message: CometChat.BaseMessage } | null>(null);
+
+  /**
+   * Entry point from the action sheet.
+   *
+   * Pinning and saving run immediately: they add something, and the same menu
+   * undoes them in one click. Removing is confirmed, because the pin is
+   * conversation-wide — taking it away acts for everyone in the chat, not just
+   * the person who tapped — and because a save can be the only remaining
+   * pointer to a message buried far up the history.
+   */
+  requestPinSave(action: PinSaveAction, message: CometChat.BaseMessage): void {
+    if (action === 'unpin' || action === 'unsave') {
+      this.pendingPinSave.set({ action, message });
+      this.cdr.markForCheck();
+      return;
+    }
+    void this.runPinSave(action, message);
+  }
+
+  confirmPinSave(): void {
+    const pending = this.pendingPinSave();
+    this.pendingPinSave.set(null);
+    if (pending) void this.runPinSave(pending.action, pending.message);
+  }
+
+  cancelPinSave(): void {
+    this.pendingPinSave.set(null);
+    this.cdr.markForCheck();
+  }
+
+  private async runPinSave(action: PinSaveAction, message: CometChat.BaseMessage): Promise<void> {
+    // The service surfaces the toast, publishes on the bus and reverts on
+    // failure; a null result means it failed, so there is nothing to swap in.
+    await this.pinSave.run(action, message);
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Keep bubbles current when a pin or save happens anywhere — another user
+   * pinning in this conversation, or this user saving on another device.
+   *
+   * The three pin/save attributes are PATCHED onto the row already on screen
+   * rather than the row being swapped for the event's message. A pin/save
+   * payload describes that one change and is not a complete message: the save
+   * response carries no quoted message, so swapping it in erased the reply
+   * preview from a bubble that had one — it came back only on the refetch a
+   * conversation switch triggers. Reactions and moderation state were exposed to
+   * the same loss.
+   *
+   * Patching still has to CLEAR on unpin/unsave, which is why all three keys are
+   * always passed: `applyPinSave` writes whatever it is given, including
+   * `undefined`, where copying only truthy values would leave a stale marker.
+   */
+  private subscribeToPinSaveEvents(): void {
+    const refresh = ({ message }: { message: CometChat.BaseMessage }) => {
+      const id = message?.getId?.();
+      if (!id) return;
+      const held = this.messageListService.getMessageById(id);
+      const target = held ?? message;
+      if (held) applyPinSaveFrom(held, message);
+      // Re-set even when the object is unchanged by identity: the service emits a
+      // new array, which is what makes the list's computeds recompute. Identity
+      // is preserved, so `trackBy` keeps the DOM node and any open viewer with it.
+      this.messageListService.updateMessageById(id, target);
+      this.cdr.markForCheck();
+    };
+    // Merged views: a bubble has to redraw on this user's own optimistic flip as
+    // well as on someone else's confirmed one.
+    CometChatPinSaveEvents.pinned$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(refresh);
+    CometChatPinSaveEvents.unpinned$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(refresh);
+    CometChatPinSaveEvents.saved$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(refresh);
+    CometChatPinSaveEvents.unsaved$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(refresh);
+  }
+
+  /**
+   * Keep the list in agreement when the state changes elsewhere — the thread
+   * header, or an auto-subscribe the backend performed when the user replied.
+   *
+   * Re-rendering alone is not enough: the option's title is read off the message
+   * object, so the flag is written onto every held message belonging to that
+   * thread. That keeps the source of truth coherent for a direct read and for a
+   * bubble that remounts before the next fetch.
+   */
+  private subscribeToThreadEvents(): void {
+    CometChatThreadEvents.ccThreadSubscriptionChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ parentMessageId, subscribed }) => {
+        stampThreadSubscription(
+          [this.parentMessage, ...this.messageListService.messages()],
+          parentMessageId,
+          subscribed
+        );
+        this.threadSubscriptionChange.emit({ parentMessageId, subscribed });
+        this.cdr.markForCheck();
+      });
+  }
   private setupIntersectionObservers(): void { setupIntersectionObserversImpl(this as any); }
   private async handleScrollToTop(): Promise<void> { return handleScrollToTopImpl(this as any); }
   private handleScrollToBottom(): void { handleScrollToBottomImpl(this as any); }

@@ -38,6 +38,24 @@ import {
 } from './cometchat-context-menu.utils';
 
 /**
+ * Width to position against before the dropdown has been laid out and can be
+ * measured, used only when `--cometchat-context-menu-menu-width` cannot be
+ * resolved. The stylesheet is the source of truth — see resolveMenuWidth.
+ */
+const DEFAULT_MENU_WIDTH = 205;
+
+/** Breathing room kept between a nested flyout and the viewport edge. */
+const GROUP_FLYOUT_EDGE_MARGIN = 8;
+
+/**
+ * Width to assume when the flyout has not been laid out yet.
+ *
+ * Matches the `min-width` the stylesheet guarantees, so a decision made before
+ * layout is the same one a measurement would produce for the narrowest flyout.
+ */
+const GROUP_FLYOUT_MIN_WIDTH = 180;
+
+/**
  * CometChatContextMenu displays menu data in a required format.
  * Accepts a data array and topMenuSize to specify how many items are visible by default.
  */
@@ -59,11 +77,31 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
   @Input() useParentContainer = false;
   @Input() useParentHeight = false;
   @Input() forceStaticPlacement = false;
+  /**
+   * Anchor the dropdown to this component's own box instead of to the "…"
+   * button inside it.
+   *
+   * The "…" is the LAST control in a hover column that also holds the quick
+   * options, so anchoring to it opens the dropdown a full column-width away
+   * from whatever the column belongs to. Hosts that sit their column flush
+   * against their content — the message bubble — set this so the dropdown lands
+   * against the content instead, overlapping the quick options rather than
+   * clearing them.
+   */
+  @Input() anchorToHost = false;
 
   @Output() optionClick = new EventEmitter<ContextMenuItem>();
+  /**
+   * Fires when the dropdown opens or closes. A host that renders this menu only
+   * on hover needs it: the dropdown portals to document.body, so reaching for
+   * it moves the pointer off the host, and without this the host unmounts the
+   * menu before anything in it can be clicked.
+   */
+  @Output() openChange = new EventEmitter<boolean>();
 
   @ViewChild('moreButtonRef') moreButtonRef!: ElementRef<HTMLDivElement>;
   @ViewChild('subMenuRef') subMenuRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('groupFlyoutRef') groupFlyoutRef?: ElementRef<HTMLDivElement>;
   @ViewChildren('menuItemRef') menuItemRefs!: QueryList<ElementRef<HTMLDivElement>>;
   @ViewChildren('topMenuItemRef') topMenuItemRefs!: QueryList<ElementRef<HTMLDivElement>>;
 
@@ -74,6 +112,7 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
   focusedTopMenuIndex = -1;
 
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly hostRef: ElementRef<HTMLElement> = inject(ElementRef);
   private parentViewRef: HTMLElement | null = null;
   private resizeTimeoutRef: ReturnType<typeof setTimeout> | null = null;
   private boundHandleClickOutside: (event: MouseEvent) => void;
@@ -174,6 +213,9 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
 
   private closeSubMenu(): void {
     this.showSubMenu = false;
+    this.openChange.emit(false);
+    // A flyout cannot outlive the list it hangs off.
+    this.openGroupId = null;
     // Move sub-menu back from document.body to its original parent
     if (this.subMenuRef?.nativeElement && this.originalSubMenuParent) {
       this.originalSubMenuParent.appendChild(this.subMenuRef.nativeElement);
@@ -198,10 +240,36 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
     return this.data.length > this.topMenu.length;
   }
 
+  /**
+   * The menu's width before it has been measured.
+   *
+   * Read from `--cometchat-context-menu-menu-width` so the stylesheet stays the
+   * single source of truth: the constant below is only a last resort for when
+   * the property cannot be resolved. Hard-coding it here meant a theme that
+   * retuned the width silently pushed a left-opening menu off by the
+   * difference, with nothing but a comment to catch it.
+   */
+  private resolveMenuWidth(): number {
+    const el = this.subMenuRef?.nativeElement ?? this.moreButtonRef?.nativeElement;
+    if (!el) return DEFAULT_MENU_WIDTH;
+    try {
+      const raw = getComputedStyle(el).getPropertyValue('--cometchat-context-menu-menu-width');
+      const parsed = Number.parseFloat(raw);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_MENU_WIDTH;
+    } catch {
+      return DEFAULT_MENU_WIDTH;
+    }
+  }
+
   private handleClickOutside(event: MouseEvent): void {
     if (this.moreButtonRef?.nativeElement &&
         !this.moreButtonRef.nativeElement.contains(event.target as Node)) {
-      this.showSubMenu = false;
+      // Route through closeSubMenu rather than clearing the flag directly: it
+      // also emits `openChange(false)`, clears `openGroupId` and returns the
+      // flyout to its original parent. Skipping it left hosts that track
+      // `openChange` believing the menu was still open — a conversation row
+      // would keep its trailing menu trigger visible for good.
+      this.closeSubMenu();
       this.cdr.detectChanges();
     }
   }
@@ -216,6 +284,7 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
   handleMenuClick(event?: Event): void {
     if (event) event.stopPropagation();
     this.showSubMenu = !this.showSubMenu;
+    this.openChange.emit(this.showSubMenu);
 
     if (this.showSubMenu) {
       document.dispatchEvent(new CustomEvent('cometchat-context-menu-open', {
@@ -248,9 +317,124 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
 
   onMenuItemClick(item: ContextMenuItem, event?: Event): void {
     if (event) event.stopPropagation();
+    // A group holds actions rather than being one: opening it is the whole
+    // interaction, so it must not close the menu or emit a selection.
+    //
+    // Opens rather than toggles. Pointer input reaches a group by hovering it,
+    // which has already opened the flyout by the time the click lands — so a
+    // toggle here would close what the hover just opened and read as the click
+    // doing nothing at all.
+    if (this.hasChildren(item)) {
+      this.openGroup(item);
+      return;
+    }
     this.closeSubMenu();
+    this.closeGroup();
     this.optionClick.emit(item);
     if ('onClick' in item && typeof item.onClick === 'function') item.onClick(0);
+  }
+
+  // ==================== Nested groups ====================
+
+  /** Id of the group whose flyout is open, or null. One at a time. */
+  openGroupId: string | null = null;
+
+  hasChildren(item: ContextMenuItem): boolean {
+    return !!(item as CometChatActionsIcon).children?.length;
+  }
+
+  childrenOf(item: ContextMenuItem): CometChatActionsIcon[] {
+    return (item as CometChatActionsIcon).children ?? [];
+  }
+
+  /** True when the flyout opens to the LEFT because the right edge has no room. */
+  groupFlyoutFlipped = false;
+
+  /**
+   * Inline `left` for the flyout, in px from the anchor, when neither side of
+   * the menu can hold it — a narrow window, where flipping just swaps which
+   * edge does the clipping. Null whenever a side fits and CSS can place it.
+   */
+  groupFlyoutShift: number | null = null;
+
+  openGroup(item: ContextMenuItem): void {
+    this.openGroupId = this.getItemId(item);
+    // Measure from the default side, then decide; starting flipped would make
+    // the measurement describe a position we are trying to choose.
+    this.groupFlyoutFlipped = false;
+    this.groupFlyoutShift = null;
+    this.cdr.detectChanges();
+    this.alignGroupFlyout();
+  }
+
+  /**
+   * Flip the flyout to the left when opening right would run off screen.
+   *
+   * Which side has room depends on where the MENU sits, not on how wide the
+   * window is — a menu near the right edge of a wide window overflows exactly
+   * as it would on a narrow one. So this measures the rendered flyout instead
+   * of relying on a width breakpoint, and only flips when the left side can
+   * actually hold it, since flipping into a clipped left edge fixes nothing.
+   */
+  private alignGroupFlyout(): void {
+    const flyout = this.groupFlyoutRef?.nativeElement;
+    const anchor = flyout?.parentElement;
+    if (!flyout || !anchor) return;
+
+    // `offsetWidth` is 0 while any ancestor is still `display: none`, and the
+    // submenu this flyout lives in is exactly that until it opens. A zero makes
+    // every overflow test below pass trivially, so the flyout stayed on the
+    // right and was clipped — fall back to the width the stylesheet guarantees.
+    const width = flyout.offsetWidth || GROUP_FLYOUT_MIN_WIDTH;
+    const rect = anchor.getBoundingClientRect();
+    const roomRight = window.innerWidth - GROUP_FLYOUT_EDGE_MARGIN - rect.right;
+    const roomLeft = rect.left - GROUP_FLYOUT_EDGE_MARGIN;
+
+    // Right if it fits, then left. If neither does — a narrow window, where the
+    // menu leaves under a flyout's width on either side — flipping only swaps
+    // which edge clips, so place it by hand instead: pull it back until its
+    // right edge sits inside the window. `left` is relative to the anchor.
+    let flipped = false;
+    let shift: number | null = null;
+    if (roomRight >= width) {
+      flipped = false;
+    } else if (roomLeft >= width) {
+      flipped = true;
+    } else {
+      const clampedLeft = Math.max(
+        GROUP_FLYOUT_EDGE_MARGIN,
+        Math.min(rect.right, window.innerWidth - GROUP_FLYOUT_EDGE_MARGIN - width)
+      );
+      shift = Math.round(clampedLeft - rect.left);
+    }
+
+    if (flipped === this.groupFlyoutFlipped && shift === this.groupFlyoutShift) return;
+    this.groupFlyoutFlipped = flipped;
+    this.groupFlyoutShift = shift;
+    this.cdr.detectChanges();
+  }
+
+  closeGroup(): void {
+    if (this.openGroupId === null) return;
+    this.openGroupId = null;
+    this.groupFlyoutFlipped = false;
+    this.groupFlyoutShift = null;
+    this.cdr.detectChanges();
+  }
+
+
+  /** Enter and Space activate a child; Escape returns to the parent list. */
+  onGroupChildKeydown(event: KeyboardEvent, child: ContextMenuItem): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.onMenuItemClick(child, event);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeGroup();
+    }
   }
 
   onMoreButtonMouseEnter(): void {
@@ -293,7 +477,7 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
     if (this.useParentHeight) { this.setMenuHeight(); return; }
 
     const height = this.subMenuRef?.nativeElement?.clientHeight || 48 * this.subMenu.length;
-    const width = this.subMenuRef?.nativeElement?.clientWidth || 160;
+    const width = this.subMenuRef?.nativeElement?.clientWidth || this.resolveMenuWidth();
     const rect = this.moreButtonRef?.nativeElement?.getBoundingClientRect();
     if (!rect) return;
 
@@ -303,6 +487,7 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
     this.positionStyle = calculateContextMenuPosition(
       rect, { width, height }, null, availablePlacement, 'viewport', this.forceStaticPlacement, this.useParentHeight
     );
+    this.applyHostAnchor(this.positionStyle, width, null);
     this.cdr.detectChanges();
   }
 
@@ -310,7 +495,7 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
     if (!this.moreButtonRef?.nativeElement || !this.parentViewRef) return;
 
     const height = this.subMenuRef?.nativeElement?.clientHeight || 48 * this.data.length;
-    const width = this.subMenuRef?.nativeElement?.clientWidth || 160;
+    const width = this.subMenuRef?.nativeElement?.clientWidth || DEFAULT_MENU_WIDTH;
     const rect = this.moreButtonRef.nativeElement.getBoundingClientRect();
     const parentViewRect = this.parentViewRef.getBoundingClientRect();
     if (!rect || !parentViewRect) return;
@@ -332,8 +517,41 @@ export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterVi
       }
     }
 
+    this.applyHostAnchor(positionStyle, width, parentViewRect);
+
     this.positionStyle = positionStyle;
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Re-anchor the dropdown horizontally to the edge of this component's own box
+   * that faces the content it belongs to. See `anchorToHost`.
+   *
+   * Vertical placement is left exactly as computed — the flip between above and
+   * below still depends on the room available, and only the sideways offset was
+   * ever wrong.
+   */
+  private applyHostAnchor(
+    style: Record<string, string>,
+    width: number,
+    parentRect: DOMRect | null
+  ): void {
+    if (!this.anchorToHost) return;
+    const host = this.hostRef?.nativeElement?.getBoundingClientRect();
+    if (!host) return;
+
+    const padding = 10;
+    // `placement` is what the HOST asked for, not what the available room
+    // settled on, so it still says which side of the content this column sits
+    // on: `left` means the menu opens leftwards, i.e. the column is to the
+    // content's left and its RIGHT edge is the one touching it.
+    let left = this.placement === Placement.left ? host.right - width : host.left;
+
+    const min = parentRect ? parentRect.left + padding : padding;
+    const max = (parentRect ? parentRect.right : window.innerWidth) - width - padding;
+    left = Math.max(min, Math.min(left, max));
+
+    style['left'] = `${left}px`;
   }
 
   private setMenuHeight(): void {

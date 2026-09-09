@@ -33,6 +33,22 @@
   transition: var(--cometchat-reactions-item-transition, background-color 0.2s ease, border-color 0.2s ease);
 }
 
+/*
+ * Zero overflow: the chip has nothing to say, so it takes no space and shows
+ * no border or background — but it is NOT `display: none`, because an open
+ * popover is anchored to it and would lose its position if it left the layout.
+ * Hidden from the accessibility tree and the tab order in the same state.
+ */
+.cometchat-reactions__more-reaction--empty {
+  width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+
 /* Hover state for reaction items */
 .cometchat-reactions__reaction:hover,
 .cometchat-reactions__more-reaction:hover {

@@ -15,16 +15,18 @@ import {setupMessageListener as setupMsgListener, setupGroupListener as setupGrp
 import {fetchPreviousMessagesImpl, fetchNextMessagesImpl, fetchMessagesAroundIdImpl, handleReceiptImpl} from './message-list.fetch-utils';
 import {addMessageImpl, updateMessageByIdImpl, updateMessageByMuidImpl, deleteMessageImpl, editMessageImpl, removeMessageImpl, getMessageByIdImpl, updateReplyCountImpl, updateMessageReactionsImpl, deduplicateMessagesImpl, clearMessagesImpl, clearMessagesAndStateImpl} from './message-list.message-ops';
 import {addReactionImpl, removeReactionImpl, fetchReactionsImpl} from './message-list.reaction-ops';
-import {markAsReadImpl, updateLocalReadStatusImpl, markInitialMessagesAsReadImpl, markAsDeliveredImpl, markAsUnreadImpl, getMessagesInRangeImpl, getTotalMessageCountImpl} from './message-list.read-ops';
+import {markAsReadImpl, updateLocalReadStatusImpl, markInitialMessagesAsReadImpl, markConversationAsReadImpl, markAsDeliveredImpl, markAsUnreadImpl, getMessagesInRangeImpl, getTotalMessageCountImpl} from './message-list.read-ops';
 import {handleTypingStartedImpl, handleTypingEndedImpl, clearTypingIndicatorImpl, isTypingIndicatorForCurrentConversationImpl} from './message-list.typing-utils';
 import {translateMessageImpl, getCachedTranslationImpl, clearTranslationCacheImpl, flagMessageImpl} from './message-list.translation-utils';
 import {setupSentMessageListenerImpl, setupEditedMessageListenerImpl, handleSentMessageImpl, updateSentMessageByMuidImpl, updateSentMessageReplyCountImpl, handleEditedMessageImpl} from './message-list.sent-handler';
 import {buildMessagesRequestImpl, buildNextMessagesRequestImpl, getDefaultMessageTypesImpl, getDefaultMessageCategoriesImpl} from './message-list.request-builder';
 import {isMessageForCurrentConversationImpl, isThreadReplyForCurrentConversationImpl, handleGroupActionImpl, handleCallActionImpl, handleReconnectionImpl} from './message-list.conversation-utils';
+import {ThreadSubscriptionService} from './thread-subscription.service';
 
 export class MessageListService {
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
+  private threadSubscription = inject(ThreadSubscriptionService);
 
   private messageListenerId = `message_list_${Date.now()}`; private groupListenerId = `message_list_group_${Date.now()}`;
   private callListenerId = `message_list_call_${Date.now()}`; private connectionListenerId = `message_list_connection_${Date.now()}`;
@@ -44,6 +46,14 @@ export class MessageListService {
   private typingTimeoutsMap = new Map<string, ReturnType<typeof setTimeout>>(); private messageIdMap = new Map<number, CometChat.BaseMessage>(); private messageMuidMap = new Map<string, CometChat.BaseMessage>();
 
   private currentUser: CometChat.User | null = null; private currentGroup: CometChat.Group | null = null; private parentMessageId: number | null = null;
+  /**
+   * The thread's parent message in a thread view, when the caller has it.
+   *
+   * Held as a whole message rather than an id because it is the authority on
+   * whether the thread is followed — a reply arriving over the socket carries no
+   * subscription flag and has to inherit the parent's.
+   */
+  private parentMessage: CometChat.BaseMessage | null = null;
   private isAgentChatMode = false; private messagesRequestBuilder: CometChat.MessagesRequestBuilder | null = null; private hideGroupActionMessages = false;
   private messagesRequest: CometChat.MessagesRequest | null = null; private nextMessagesRequest: CometChat.MessagesRequest | null = null; private errorCallback: ErrorCallback | null = null;
   private customMessageTypes: Set<string> = new Set(); private customMessageCategories: Set<string> = new Set(); private replacedMessageTypes: Set<string> | null = null; private replacedMessageCategories: Set<string> | null = null;
@@ -200,6 +210,14 @@ export class MessageListService {
       this.nextMessagesRequest = this.buildNextMessagesRequest();
     }
   }
+  /**
+   * Hand the list the thread's parent message. Purely for subscription state —
+   * scoping still runs off `parentMessageId`, which the caller derives from the
+   * same message — so this never rebuilds the request.
+   */
+  setParentMessage(parentMessage: CometChat.BaseMessage | null): void {
+    this.parentMessage = parentMessage;
+  }
   updateParentMessageIdInPlace(parentMessageId: number): void {
     this.parentMessageId = parentMessageId;
     if (this.currentUser || this.currentGroup) { this.messagesRequest = this.buildMessagesRequest(); this.nextMessagesRequest = this.buildNextMessagesRequest(); }
@@ -287,10 +305,32 @@ export class MessageListService {
   async removeReaction(messageId: number, emoji: string): Promise<void> { return removeReactionImpl(this as any, messageId, emoji); }
   async fetchReactions(messageId: number, builder?: CometChat.ReactionsRequestBuilder): Promise<CometChat.Reaction[]> { return fetchReactionsImpl(this as any, messageId, builder); }
   async markAsRead(message: CometChat.BaseMessage): Promise<void> { return markAsReadImpl(this as any, message); }
+  /**
+   * Clear the conversation's unread count on the SERVER.
+   *
+   * Skipped inside a thread: a thread is not a conversation of its own, and
+   * reading replies must not mark the parent chat read — the same guard React
+   * applies via `parentMessageId`.
+   */
+  async markConversationAsRead(): Promise<void> {
+    if (this.parentMessageId) { return; }
+    if (this.currentGroup) {
+      return markConversationAsReadImpl(
+        this.currentGroup.getGuid(),
+        CometChatUIKitConstants.MessageReceiverType.group
+      );
+    }
+    if (this.currentUser) {
+      return markConversationAsReadImpl(
+        this.currentUser.getUid(),
+        CometChatUIKitConstants.MessageReceiverType.user
+      );
+    }
+  }
   async markInitialMessagesAsRead(): Promise<void> {
     const messages = this.messagesSignal();
     const loggedInUser = CometChatUIKit.getLoggedInUser();
-    return markInitialMessagesAsReadImpl(this as any, messages, loggedInUser, (msg) => this.markAsRead(msg));
+    return markInitialMessagesAsReadImpl(this as any, messages, loggedInUser, (msg) => this.markAsRead(msg), () => this.markConversationAsRead());
   }
   updateLocalReadStatus(messageIds: number[]): void { updateLocalReadStatusImpl(this as any, messageIds); }
   async markAsDelivered(message: CometChat.BaseMessage): Promise<void> { return markAsDeliveredImpl(this as any, message); }
@@ -310,9 +350,17 @@ export class MessageListService {
   handleNewMessage(message: CometChat.BaseMessage): void {
     if (!this.parentMessageId && message.getParentMessageId() && !this.isAgentChatMode) {
       if (this.isThreadReplyForCurrentConversation(message)) { this.updateSentMessageReplyCount(message); }
+      // The reply is not displayed here, so nothing is stamped — but a reply that
+      // mentions the logged-in user subscribes them, and the surfaces that ARE
+      // mounted (the parent's action sheet) have to hear about it.
+      this.applyIncomingReplySubscription(message);
       return;
     }
     if (!this.isMessageForCurrentConversation(message)) { return; }
+    // A socket-delivered reply carries no subscription flag. In a thread view we
+    // hold the authoritative parent, so reconcile before the message is added and
+    // rendered — otherwise the bubble reads un-followed inside a followed thread.
+    this.applyIncomingReplySubscription(message);
     // In agent chat mode without parentMessageId: don't add incoming messages
     // if the list is empty (user hasn't sent anything in this session yet).
     // This prevents stale AI responses from a previous session appearing in a new chat.
@@ -320,6 +368,21 @@ export class MessageListService {
       return;
     }
     this.addMessage(message);
+  }
+  /**
+   * Reconcile a realtime reply's subscription flag against the held parent.
+   *
+   * A no-op for anything that isn't a thread reply, and harmless without a
+   * logged-in user — a mention can only match a uid we know.
+   */
+  private applyIncomingReplySubscription(message: CometChat.BaseMessage): void {
+    const loggedInUserUid = CometChatUIKit.getLoggedInUser()?.getUid() ?? '';
+    if (!loggedInUserUid) return;
+    this.threadSubscription.applyIncomingReply({
+      reply: message,
+      parentMessage: this.parentMessage,
+      loggedInUserUid,
+    });
   }
   private isThreadReplyForCurrentConversation(message: CometChat.BaseMessage): boolean { return isThreadReplyForCurrentConversationImpl(this as any, message); }
   handleMessageEdited(message: CometChat.BaseMessage): void {

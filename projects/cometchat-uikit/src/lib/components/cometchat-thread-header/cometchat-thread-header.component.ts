@@ -15,6 +15,8 @@ import {
   OnDestroy,
   OnChanges,
   SimpleChanges,
+  TemplateRef,
+  booleanAttribute,
   inject,
   DestroyRef,
 } from '@angular/core';
@@ -27,8 +29,21 @@ import { CometChatMessageBubbleComponent } from '../cometchat-message-bubble/com
 import { MessageBubbleAlignment, MessageStatus } from '../../Enums/Enums';
 import { CometChatUIKit } from '../../cometchat-uikit';
 import { CometChatMessageEvents, IMessages } from '../../events/CometChatMessageEvents';
+import { CometChatThreadEvents } from '../../events/CometChatThreadEvents';
+import { ThreadSubscriptionService } from '../../services/thread-subscription.service';
+import { toThreadId, writeThreadSubscribed } from '../../utils/thread-subscription-utils';
+import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
+import { LiveAnnouncerService } from '../../services/live-announcer.service';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 
 const MAX_PREVIEW_LENGTH = 50;
+
+/** Payload of {@link CometChatThreadHeaderComponent.threadSubscriptionChange}. */
+export interface IThreadSubscriptionChange {
+  parentMessageId: number;
+  /** Whether the logged-in user now follows this thread. */
+  subscribed: boolean;
+}
 
 @Component({
   selector: 'cometchat-thread-header',
@@ -41,17 +56,37 @@ const MAX_PREVIEW_LENGTH = 50;
 export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChanges {
   private cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly threadSubscription = inject(ThreadSubscriptionService);
+  private readonly liveAnnouncer = inject(LiveAnnouncerService);
+  private readonly globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, {
+    optional: true,
+  });
   private messageListenerId = '';
   private processedMessageIds = new Set<number>();
 
   @Input() parentMessage!: CometChat.BaseMessage;
   @Input() replyCount = 0;
+  /**
+   * Hide the follow/unfollow control without turning the feature off — for apps
+   * that want the action-sheet entry point only.
+   */
+  @Input({ transform: booleanAttribute }) hideThreadSubscriptionToggle = false;
+
+  /**
+   * Formatters applied to the parent message's text. Handed to the bubble that
+   * renders it, which owns the formatting — the header only forwards them.
+   */
+  @Input() textFormatters?: CometChatTextFormatter[];
+  /** Replaces the trailing area of the reply-count row, follow control included. */
+  @Input() trailingView?: TemplateRef<unknown>;
 
   protected internalReplyCount = 0;
 
   @Output() closeClick = new EventEmitter<void>();
   /** @deprecated Use closeClick instead. */
   @Output() backClick = new EventEmitter<void>();
+  /** Emitted on every change to this thread's subscription, whoever caused it. */
+  @Output() threadSubscriptionChange = new EventEmitter<IThreadSubscriptionChange>();
 
   get messagePreview(): string {
     if (!this.parentMessage) return '';
@@ -90,6 +125,102 @@ export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChan
   get ariaLabel(): string {
     const count = this.internalReplyCount > 999 ? '999+' : this.internalReplyCount.toString();
     return CometChatLocalize.getLocalizedString('accessibility_thread_header').replace('{preview}', this.messagePreview).replace('{count}', count);
+  }
+
+  // ==================== Thread Subscription ====================
+
+  /**
+   * The follow control renders only when the integrator has opted into the
+   * feature and has not hidden this particular surface — and never once the
+   * server has told us the thread is gone.
+   *
+   * Renders in a 1:1 thread as well as a group one: a subscription is what
+   * decides whether replies reach you, and unsubscribing genuinely silences
+   * them in a 1:1 too. The message option is gated the same way.
+   */
+  get showThreadSubscription(): boolean {
+    return (
+      !!this.globalConfig?.enableThreadSubscription &&
+      this.threadSubscription.isSupported() &&
+      !this.hideThreadSubscriptionToggle &&
+      !!this.parentMessage &&
+      !this.threadSubscription.isUnavailable(this.parentMessage.getId())
+    );
+  }
+
+  /**
+   * Read straight off the parent message — the server stamps the viewer's flag
+   * on every fetched message in the thread, and a change made anywhere is
+   * written back onto this object before the re-render (see
+   * {@link subscribeToThreadEvents}). A re-fetch hands us a new object whose
+   * flag is authoritative, which is how a fetched value overrides a local mirror.
+   */
+  get isFollowingThread(): boolean {
+    return this.threadSubscription.isFollowing(this.parentMessage);
+  }
+
+  /**
+   * Names the action the click performs, not the current state: on a subscribed
+   * thread, clicking unsubscribes. Used for both the tooltip and the accessible
+   * name — one string, so a voice-control user can say what the tooltip showed
+   * them (WCAG 2.5.3).
+   */
+  get threadSubscriptionLabel(): string {
+    return CometChatLocalize.getLocalizedString(
+      this.isFollowingThread ? 'thread_subscription_unsubscribe' : 'thread_subscription_subscribe'
+    );
+  }
+
+  /**
+   * Toggle following for this thread. The control stays enabled in every state,
+   * including `UNKNOWN`: a disabled control on a deep-linked thread is a dead
+   * end, and following something you already follow is idempotent server-side.
+   */
+  onThreadSubscriptionClick(): void {
+    if (!this.parentMessage) return;
+    // The service publishes the flip on the thread event bus, and this
+    // component's own bus subscription is what stamps the parent message and
+    // emits `threadSubscriptionChange` — so a local toggle and one made on the
+    // action sheet are announced through the same path.
+    const subscribed = this.threadSubscription.toggle(this.parentMessage);
+    // Announce the outcome, not the label: the label names the *next* action,
+    // which read backwards to a screen reader after the state had changed.
+    this.liveAnnouncer.announce(
+      CometChatLocalize.getLocalizedString(
+        subscribed
+          ? 'thread_subscription_subscribed_toast'
+          : 'thread_subscription_unsubscribed_toast'
+      )
+    );
+    this.cdr.markForCheck();
+  }
+
+  onThreadSubscriptionKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.onThreadSubscriptionClick();
+    }
+  }
+
+  /**
+   * Keeps this control in agreement with the action-sheet option and with
+   * changes the server made on its own — replying to a thread, or being
+   * mentioned in one, auto-subscribes the user, and the toggle has to show that
+   * without a refetch.
+   *
+   * Stamps the parent message before re-rendering: the control reads its state
+   * off that object, so a `markForCheck` alone would re-render against the
+   * pre-flip value.
+   */
+  private subscribeToThreadEvents(): void {
+    CometChatThreadEvents.ccThreadSubscriptionChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ parentMessageId, subscribed }) => {
+        if (toThreadId(parentMessageId) !== toThreadId(this.parentMessage?.getId())) return;
+        writeThreadSubscribed(this.parentMessage, subscribed);
+        this.threadSubscriptionChange.emit({ parentMessageId, subscribed });
+        this.cdr.markForCheck();
+      });
   }
 
   get closeButtonAriaLabel(): string { return CometChatLocalize.getLocalizedString('accessibility_close_thread'); }
@@ -173,8 +304,12 @@ export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChan
 
   ngOnInit(): void {
     this.internalReplyCount = this.replyCount || this.parentMessage?.getReplyCount?.() || 0;
-    this.messageListenerId = `thread_header_${Date.now()}`;
+    // CometChat.addListener overwrites by observer id, so two headers alive at
+    // once — a thread opening over another — would leave one silently dead.
+    // A random suffix keeps both registrations, matching the list components.
+    this.messageListenerId = `thread_header_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     this.subscribeToMessageEvents();
+    this.subscribeToThreadEvents();
     this.attachSdkListener();
   }
 

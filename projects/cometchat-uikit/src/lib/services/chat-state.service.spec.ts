@@ -33,6 +33,7 @@ import {
   fetchTestConversation,
 } from '../test-setup';
 import { ChatStateService } from './chat-state.service';
+import { ConversationsService } from './conversations.service';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 describe('ChatStateService', () => {
@@ -229,6 +230,46 @@ describe('ChatStateService', () => {
 
     it('should handle undefined gracefully without throwing', () => {
       expect(() => service.setActiveConversation(undefined as any)).not.toThrow();
+    });
+
+    it('should point the conversation list at the same conversation', () => {
+      // The list highlights by conversation and reads it from the conversations
+      // service. Without this, a chat opened through here left the list showing
+      // nothing selected behind it.
+      if (testConversations.length === 0) return;
+      const conversations = TestBed.inject(ConversationsService);
+      const conv = testConversations[0];
+
+      service.setActiveConversation(conv);
+
+      expect(conversations.activeConversation()).toBe(conv);
+    });
+  });
+
+  // ==================== syncActiveConversation ====================
+
+  describe('syncActiveConversation', () => {
+    it('should give the conversation list its selection', () => {
+      if (testConversations.length === 0) return;
+      const conversations = TestBed.inject(ConversationsService);
+      const conv = testConversations[0];
+
+      service.syncActiveConversation(conv);
+
+      expect(service.activeConversation()).toBe(conv);
+      expect(conversations.activeConversation()).toBe(conv);
+    });
+
+    it('should NOT re-announce the entity', () => {
+      // This is for the direction where the chat is already open. Re-announcing
+      // the user counts as a conversation change to every message list, which
+      // reloads history and discards the jump the caller had just lined up.
+      if (testConversations.length === 0) return;
+      service.setActiveUser(testUser);
+
+      service.syncActiveConversation(testConversations[0]);
+
+      expect(service.getActiveUser()).toBe(testUser);
     });
   });
 

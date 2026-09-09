@@ -120,6 +120,27 @@ export class ChatStateService {
       this.activeUserSignal.set(null);
       this.activeGroupSignal.set(null);
     }
+
+    // The conversation list highlights by conversation, and it reads that from
+    // the conversations service — so a caller that opens a chat through this
+    // method (a search result, a notification) would otherwise leave the list
+    // showing no selection behind the chat it just opened.
+    this.conversationsService.setActiveConversation(conversation);
+  }
+
+  /**
+   * Point the conversation list at the chat that is ALREADY open.
+   *
+   * The counterpart to `setActiveConversation`, for the other direction: the
+   * entity was set first — opening the chat a saved message or a search result
+   * belongs to — and only the list's selection is missing. Going back through
+   * `setActiveConversation` would re-announce the user/group, and every message
+   * list treats that as a conversation change and reloads, discarding the jump
+   * the caller had just lined up.
+   */
+  syncActiveConversation(conversation: CometChat.Conversation | null): void {
+    this.activeConversationSignal.set(conversation);
+    this.conversationsService.setActiveConversation(conversation);
   }
 
   // ==================== Getters (Snapshot Values) ====================

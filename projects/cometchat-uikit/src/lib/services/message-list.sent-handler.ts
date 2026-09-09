@@ -3,6 +3,7 @@ import {CometChatMessageEvents, IMessages} from '../events/CometChatMessageEvent
 import {MessageStatus} from '../Enums/Enums';
 import {CometChatUIKitUtility} from '../CometChatUIKitUtility';
 import {CometChatLogger} from '../utils/CometChatLogger';
+import {writeThreadSubscribed} from '../utils/thread-subscription-utils';
 
 /**
  * Queue of sent-message events received while the message list was still loading.
@@ -30,6 +31,18 @@ export function setupEditedMessageListenerImpl(ctx: any): void {
 
 export function handleSentMessageImpl(ctx: any, data: IMessages): void {
   const { message, status } = data;
+  // Sending a message subscribes its author to that message's thread server-side,
+  // and a top-level message is the root of its own thread — so this applies to
+  // every send, not just a reply. The send response does not carry the flag back,
+  // so stamp the outgoing object here: this handler is the one point every send
+  // passes through, whatever its type and whichever composer surface produced it,
+  // and `ccMessageSent` only ever carries the logged-in user's own messages.
+  // Runs before the thread-reply and conversation checks below, because the
+  // author is subscribed regardless of which list happens to be observing.
+  // A failed send created no thread, so it is left alone.
+  if (status !== MessageStatus.error) {
+    writeThreadSubscribed(message, true);
+  }
   if (
     !ctx.parentMessageId &&
     message.getParentMessageId() &&

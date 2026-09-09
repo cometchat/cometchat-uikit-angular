@@ -37,6 +37,7 @@
   "calls_recording": "録音",
   "calls_play_recording": "再生",
   "selector_create_conversation": "会話を作成",
+  "selector_saved_messages": "保存したメッセージ",
   "selector_logout": "ログアウト",
   "details_delete_group": "グループを削除",
   "details_banned_members": "禁止されたメンバー",

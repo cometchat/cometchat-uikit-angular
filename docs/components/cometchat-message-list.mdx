@@ -373,7 +373,8 @@ This section provides a complete reference of all @Input properties, @Output eve
 |----------|------|---------|-------------|
 | `user` | `CometChat.User` | `undefined` | User object for 1-on-1 conversations. Either `user` or `group` must be provided. |
 | `group` | `CometChat.Group` | `undefined` | Group object for group conversations. Either `user` or `group` must be provided. |
-| `parentMessageId` | `number` | `undefined` | Parent message ID for displaying thread replies. When set, the component shows only replies to this message. |
+| `parentMessage` | `CometChat.BaseMessage` | `undefined` | The thread's parent message. When set, the component shows only replies to it. Preferred over `parentMessageId` — the scoping id is derived from this, and the object also carries the thread's subscription state, which a reply arriving in real time has no flag of its own to read. |
+| `parentMessageId` | `number` | `undefined` | **Deprecated — pass `parentMessage` instead.** Still honoured when `parentMessage` is absent, so existing callers keep working; they just opt out of realtime thread-subscription state on replies. |
 | `messagesRequestBuilder` | `CometChat.MessagesRequestBuilder` | `undefined` | Custom request builder for advanced message filtering and pagination configuration. |
 | `reactionsRequestBuilder` | `CometChat.ReactionsRequestBuilder` | `undefined` | Custom request builder for configuring how reactions are fetched. |
 | `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Array of text formatters for processing message text content (mentions, links, custom patterns). |
@@ -2213,7 +2214,7 @@ Thread view allows users to have focused conversations around a specific message
 
 #### Basic Thread View Implementation
 
-Display thread replies by setting the `parentMessageId` input:
+Display thread replies by passing the thread's parent message:
 
 ```typescript expandable
 import { Component, Input, OnInit } from '@angular/core';
@@ -2233,10 +2234,10 @@ import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
       </div>
 
       <!-- Thread Message List -->
-      @if (user && parentMessageId) {
+      @if (user && parentMessage) {
         <cometchat-message-list
           [user]="user"
-          [parentMessageId]="parentMessageId"
+          [parentMessage]="parentMessage"
           [scrollToBottomOnNewMessages]="true"
           (error)="onError($event)"
         ></cometchat-message-list>
@@ -2272,7 +2273,7 @@ import { CometChatMessageListComponent } from '@cometchat/chat-uikit-angular';
   `]
 })
 export class ThreadViewComponent implements OnInit {
-  @Input() parentMessageId!: number;
+  @Input() parentMessage!: CometChat.BaseMessage;
   @Input() user?: CometChat.User;
   @Input() group?: CometChat.Group;
 
