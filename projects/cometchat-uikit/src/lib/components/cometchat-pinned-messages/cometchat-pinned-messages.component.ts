@@ -25,6 +25,7 @@ import { merge } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { cachedByLanguage } from '../../resources/CometChatLocalize/localize-helpers';
 import { CometChatDateComponent } from '../base-elements/cometchat-date/cometchat-date.component';
 import { CometChatMessageBubbleComponent } from '../cometchat-message-bubble/cometchat-message-bubble.component';
 import { CometChatAvatarComponent } from '../base-elements/cometchat-avatar/cometchat-avatar.component';
@@ -764,8 +765,17 @@ export class CometChatPinnedMessagesComponent implements OnInit, OnChanges, Afte
     }
   }
 
-  /** The date beside each author, short because it sits inline with the name. */
-  entryDateFormat: CalendarObject = { today: 'DD/MM/YY', yesterday: 'DD/MM/YY', otherDays: 'DD/MM/YY' };
+  /** The date beside each author, in the locale's own field order. */
+  private readonly buildEntryDateFormat = cachedByLanguage<CalendarObject>(() => {
+    const date = CometChatLocalize.getDatePattern();
+    return { today: date, yesterday: date, otherDays: date };
+  });
+
+  get entryDateFormat(): CalendarObject {
+    return this.buildEntryDateFormat(
+      `${CometChatLocalize.getCurrentLanguage()}|${CometChatLocalize.getDateLocaleLanguage()}`
+    );
+  }
 
   /** Your own pins say "You", as the conversation list does for your messages. */
   displayName(message: CometChat.BaseMessage): string {

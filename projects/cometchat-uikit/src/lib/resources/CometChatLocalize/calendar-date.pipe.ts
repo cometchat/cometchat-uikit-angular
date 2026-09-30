@@ -4,19 +4,26 @@ import { CalendarObject } from './localization.interfaces';
 
 /**
  * Default calendar configuration for date formatting.
+ *
+ * Built per call rather than held as a constant: the clock, the field order and
+ * the relative-time wording all follow the active language, and a constant
+ * froze them at English and a 12-hour clock for every locale.
  */
-const DEFAULT_CALENDAR: CalendarObject = {
-  today: 'h:mm A',
-  yesterday: '[Yesterday]',
-  lastWeek: 'dddd',
-  otherDays: 'DD/MM/YYYY',
-  relativeTime: {
-    minute: '%d minute ago',
-    minutes: '%d minutes ago',
-    hour: '%d hour ago',
-    hours: '%d hours ago',
-  },
-};
+function defaultCalendar(): CalendarObject {
+  const t = (key: string) => CometChatLocalize.getLocalizedString(key);
+  return {
+    today: CometChatLocalize.getTimePattern(),
+    yesterday: `[${t('yesterday')}]`,
+    lastWeek: 'dddd',
+    otherDays: CometChatLocalize.getDatePattern(),
+    relativeTime: {
+      minute: t('message_header_minute_ago'),
+      minutes: t('message_header_minutes_ago'),
+      hour: t('message_header_hour_ago'),
+      hours: t('message_header_hours_ago'),
+    },
+  };
+}
 
 /**
  * Angular pipe for formatting dates with localization and relative time support.
@@ -83,8 +90,13 @@ export class CalendarDatePipe implements PipeTransform {
       return '';
     }
 
-    // Use provided calendar object or fall back to stored/default
-    const calendar = calendarObject || CometChatLocalize.getCalendarObject() || DEFAULT_CALENDAR;
+    // Use provided calendar object or fall back to stored/default. The global
+    // object is `{}` for a language with no entry, which is truthy — without the
+    // key check that empty object won, and every date fell through to DD/MM/YYYY.
+    const globalCalendar = CometChatLocalize.getCalendarObject();
+    const calendar =
+      calendarObject ||
+      (globalCalendar && Object.keys(globalCalendar).length > 0 ? globalCalendar : defaultCalendar());
 
     return CometChatLocalize.formatDate(timestamp, calendar);
   }
@@ -103,12 +115,17 @@ export class CalendarDatePipe implements PipeTransform {
 export class ConversationDatePipe implements PipeTransform {
   private calendarDatePipe = new CalendarDatePipe();
 
-  private conversationCalendar: CalendarObject = {
-    today: 'h:mm A',
-    yesterday: '[Yesterday]',
-    lastWeek: 'ddd',
-    otherDays: 'DD/MM/YY',
-  };
+  /** The compact conversation-list format, in the active locale. */
+  private get conversationCalendar(): CalendarObject {
+    return {
+      today: CometChatLocalize.getTimePattern(),
+      yesterday: `[${CometChatLocalize.getLocalizedString('yesterday')}]`,
+      lastWeek: 'ddd',
+      // The conversation list wants a compact date, but still in the reader's
+      // field order — a two-digit year is the only thing fixed here.
+      otherDays: CometChatLocalize.getDatePattern().replace('YYYY', 'YY'),
+    };
+  }
 
   transform(value: number | Date | string | null | undefined): string {
     return this.calendarDatePipe.transform(value, this.conversationCalendar);
@@ -128,12 +145,16 @@ export class ConversationDatePipe implements PipeTransform {
 export class MessageDatePipe implements PipeTransform {
   private calendarDatePipe = new CalendarDatePipe();
 
-  private messageCalendar: CalendarObject = {
-    today: 'h:mm A',
-    yesterday: '[Yesterday] h:mm A',
-    lastWeek: 'dddd h:mm A',
-    otherDays: 'MMM D, YYYY h:mm A',
-  };
+  /** The message-bubble format, in the active locale. */
+  private get messageCalendar(): CalendarObject {
+    const time = CometChatLocalize.getTimePattern();
+    return {
+      today: time,
+      yesterday: `[${CometChatLocalize.getLocalizedString('yesterday')}] ${time}`,
+      lastWeek: `dddd ${time}`,
+      otherDays: `${CometChatLocalize.getDatePattern('monthName')} ${time}`,
+    };
+  }
 
   transform(value: number | Date | string | null | undefined): string {
     return this.calendarDatePipe.transform(value, this.messageCalendar);

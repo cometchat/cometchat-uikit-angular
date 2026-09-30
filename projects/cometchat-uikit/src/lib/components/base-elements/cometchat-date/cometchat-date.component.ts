@@ -41,13 +41,19 @@ export class CometChatDateComponent implements OnInit, OnDestroy, OnChanges {
   /** Configuration for date formatting (optional; falls back to global then hardcoded defaults) */
   @Input() calendarObject?: CalendarObject;
 
-  /** Hardcoded fallback CalendarObject used when no Input and no global CalendarObject is set */
-  private static readonly FALLBACK_CALENDAR: CalendarObject = {
-    today: 'hh:mm A',
-    yesterday: '[Yesterday]',
-    lastWeek: 'dddd',
-    otherDays: 'DD/MM/YYYY',
-  };
+  /**
+   * Fallback CalendarObject used when there is no Input and no global CalendarObject.
+   * Built per call rather than held in a static so it follows the active language:
+   * as a constant it pinned every locale to a 12-hour clock and an English "Yesterday".
+   */
+  private getFallbackCalendar(): CalendarObject {
+    return {
+      today: CometChatLocalize.getTimePattern(),
+      yesterday: `[${CometChatLocalize.getLocalizedString('yesterday')}]`,
+      lastWeek: 'dddd',
+      otherDays: CometChatLocalize.getDatePattern(),
+    };
+  }
 
   /** Cached formatted date string to prevent change detection issues */
   formattedDate = '';
@@ -82,7 +88,7 @@ export class CometChatDateComponent implements OnInit, OnDestroy, OnChanges {
    * Resolves the effective CalendarObject using the fallback chain:
    * 1. Component @Input (highest priority)
    * 2. Global CalendarObject from CometChatLocalize
-   * 3. Hardcoded FALLBACK_CALENDAR
+   * 3. The active locale's own defaults (see getFallbackCalendar)
    */
   private getEffectiveCalendarObject(): CalendarObject {
     if (this.calendarObject) {
@@ -92,7 +98,7 @@ export class CometChatDateComponent implements OnInit, OnDestroy, OnChanges {
     if (global && Object.keys(global).length > 0) {
       return global;
     }
-    return CometChatDateComponent.FALLBACK_CALENDAR;
+    return this.getFallbackCalendar();
   }
 
   /**
@@ -168,14 +174,14 @@ export class CometChatDateComponent implements OnInit, OnDestroy, OnChanges {
       return '';
     }
     const date = new Date(this.timestamp * 1000);
-    // Format: "January 15, 2026 at 3:45 PM"
-    return date.toLocaleString('en-US', {
+    // Announce in the active locale. Hard-coding 'en-US' here read every message
+    // date out in English, and forced AM/PM on locales that use a 24-hour clock.
+    return date.toLocaleString(CometChatLocalize.getDateLocaleLanguage(), {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
     });
   }
 }

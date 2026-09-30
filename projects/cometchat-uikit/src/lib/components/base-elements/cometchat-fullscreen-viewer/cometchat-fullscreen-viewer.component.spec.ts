@@ -17,6 +17,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from '../../../testing';
 import { CometChatFullScreenViewerComponent } from './cometchat-fullscreen-viewer.component';
 
+import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 describe('CometChatFullScreenViewerComponent', () => {
   let fixture: ComponentFixture<CometChatFullScreenViewerComponent>;
   let component: CometChatFullScreenViewerComponent;
@@ -991,6 +992,32 @@ describe('CometChatFullScreenViewerComponent', () => {
       component.currentIndex = 0;
       expect(component.canNavigatePrev).toBe(false);
       expect(component.canNavigateNext).toBe(false);
+    });
+  });
+
+  describe('getDateFormat (ENG-39096)', () => {
+    /**
+     * The viewer builds a "<date> at <time>" pattern, then merges the global
+     * calendar object over it. Once getCalendarObject() started returning a
+     * full object for every locale, that merge overwrote all three keys: the
+     * pattern was built and discarded, full_screen_viewer_at never rendered,
+     * and the header lost its time.
+     */
+    it('keeps its own date-and-time pattern when no global object was set', () => {
+      CometChatLocalize.init({ language: 'de-DE', fallbackLanguage: 'en-US' });
+      const format = (component as any).getDateFormat();
+      const at = CometChatLocalize.getLocalizedString('full_screen_viewer_at');
+      for (const branch of ['today', 'yesterday', 'otherDays'] as const) {
+        expect(format[branch], branch).toContain(at);
+        expect(format[branch], branch).toContain(CometChatLocalize.getTimePattern());
+      }
+    });
+
+    it('still lets an explicitly configured global object win', () => {
+      CometChatLocalize.init({ language: 'de', fallbackLanguage: 'de' });
+      CometChatLocalize.setGlobalCalendarObject({ today: 'YYYY', yesterday: 'YYYY', otherDays: 'YYYY' });
+      expect((component as any).getDateFormat().otherDays).toBe('YYYY');
+      CometChatLocalize.init({ language: 'en-US', fallbackLanguage: 'en-US' });
     });
   });
 });

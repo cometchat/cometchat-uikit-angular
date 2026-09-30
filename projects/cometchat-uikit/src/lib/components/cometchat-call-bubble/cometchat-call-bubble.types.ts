@@ -3,6 +3,7 @@
  */
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 
 /**
  * Possible call status values from CometChat.Call.getStatus().
@@ -67,23 +68,24 @@ export function normalizeCallStatus(rawStatus: string | undefined | null): CallB
 
 /**
  * Formats the call timestamp as a readable date/time string.
- * Format: "DD MMM, hh:mm A" (e.g., "28 Feb, 01:15 PM")
+ *
+ * Routed through CometChatLocalize so the month abbreviation comes from the
+ * `month_*_short` keys and the time follows the active locale's own pattern —
+ * 24-hour in most locales, 12-hour with AM/PM only where that is the convention.
+ * Previously this was hand-rolled with English month names and a fixed AM/PM,
+ * so every locale rendered US-style ("17 Sep, 02:51 PM").
  */
 export function formatCallDateTime(timestamp: number): string {
-  const timestampMs = timestamp > 9999999999 ? timestamp : timestamp * 1000;
-  const date = new Date(timestampMs);
-
-  const day = date.getDate();
-  const month = MONTH_NAMES[date.getMonth()];
-
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-  const hoursStr = hours.toString().padStart(2, '0');
-
-  return `${day} ${month}, ${hoursStr}:${minutes} ${ampm}`;
+  const seconds = timestamp > 9999999999 ? Math.floor(timestamp / 1000) : timestamp;
+  // The locale's own time pattern (HH:mm for most, hh:mm A where AM/PM is the norm).
+  const timePattern = CometChatLocalize.getTimePattern();
+  const pattern = `DD MMM, ${timePattern}`;
+  return CometChatLocalize.formatDate(seconds, {
+    today: pattern,
+    yesterday: pattern,
+    lastWeek: pattern,
+    otherDays: pattern,
+  });
 }
 
 /**

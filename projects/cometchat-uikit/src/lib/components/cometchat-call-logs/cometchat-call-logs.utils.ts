@@ -13,13 +13,22 @@ import { sanitizeCalendarObject } from '../../utils/util';
 export function buildCallLogDateFormat(
   componentCalendarFormat: CalendarObject | null
 ): CalendarObject {
+  // A call log always shows the day alongside the time, but the time itself
+  // follows the locale's own clock: hard-coding 'hh:mm A' printed 19:17 as
+  // "07:17 午後" in Japanese and every other 24-hour locale.
+  const pattern = `DD MMM, ${CometChatLocalize.getTimePattern()}`;
   const defaultFormat: CalendarObject = {
-    yesterday: 'DD MMM, hh:mm A',
-    otherDays: 'DD MMM, hh:mm A',
-    today: 'DD MMM, hh:mm A',
+    yesterday: pattern,
+    otherDays: pattern,
+    today: pattern,
   };
 
-  const globalCalendarFormat = sanitizeCalendarObject(CometChatLocalize.getCalendarObject());
+  // Only an explicitly configured global CalendarObject overrides the default.
+  // The per-language defaults are time-only ('HH:mm'), so merging them here
+  // dropped the date from the call log entirely.
+  const globalCalendarFormat = CometChatLocalize.hasCustomCalendarObject()
+    ? sanitizeCalendarObject(CometChatLocalize.getCalendarObject())
+    : {};
   const componentFormat = sanitizeCalendarObject(componentCalendarFormat);
 
   return { ...defaultFormat, ...globalCalendarFormat, ...componentFormat };
@@ -73,7 +82,14 @@ export function buildCallLogAriaLabel(
   parts.push(CometChatLocalize.getLocalizedString(statusKey));
 
   if (call?.initiatedAt) {
-    parts.push(new Date(call.initiatedAt * 1000).toLocaleString());
+    // Announce in the active locale; toLocaleString() with no arguments falls
+    // back to the browser's locale, which need not be the one the kit renders.
+    parts.push(
+      new Date(call.initiatedAt * 1000).toLocaleString(CometChatLocalize.getDateLocaleLanguage(), {
+        dateStyle: 'long',
+        timeStyle: 'short',
+      })
+    );
   }
 
   return parts.join(', ');

@@ -29,6 +29,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { ensureSdkReady, sdkCleanup, flushPromises } from '../../testing';
 import { CometChatMessageInformationComponent } from './cometchat-message-information.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -521,12 +522,17 @@ describe('CometChatMessageInformationComponent', () => {
     });
 
     describe('effectiveDateFormat', () => {
+      // ENG-39096: the default now follows the active locale's clock and field
+      // order, so it is asserted against those rather than against en-US literals.
       it('should return default format when dateTimeFormat is not set', () => {
         const format = component.effectiveDateFormat;
+        const time = CometChatLocalize.getTimePattern();
         expect(format).toBeTruthy();
-        expect(format.today).toBe('hh:mm A');
-        expect(format.yesterday).toBe('[Yesterday] hh:mm A');
-        expect(format.otherDays).toBe('DD/MM/YYYY hh:mm A');
+        expect(format.today).toBe(time);
+        expect(format.yesterday).toBe(
+          `[${CometChatLocalize.getLocalizedString('yesterday')}] ${time}`
+        );
+        expect(format.otherDays).toBe(`${CometChatLocalize.getDatePattern()} ${time}`);
       });
 
       it('should return custom format when dateTimeFormat is set', () => {

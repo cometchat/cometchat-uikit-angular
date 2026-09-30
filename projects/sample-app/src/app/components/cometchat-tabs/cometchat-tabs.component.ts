@@ -1,6 +1,6 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CometChatLocalize } from '@cometchat/chat-uikit-angular';
+import { CometChatLocalize, TranslatePipe } from '@cometchat/chat-uikit-angular';
 import { AppStateService } from '../../services/app-state.service';
 
 /**
@@ -45,7 +45,7 @@ interface Tab {
 @Component({
   selector: 'cometchat-tabs',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './cometchat-tabs.component.html',
   styleUrls: ['./cometchat-tabs.component.css'],
 })

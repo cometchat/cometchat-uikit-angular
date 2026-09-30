@@ -69,6 +69,36 @@ const HTML_HARDCODED_PATTERNS = [
   /(?:title|placeholder|aria-label|alt|aria-placeholder)\s*=\s*"([A-Za-z][A-Za-z\s]{2,})"/g,
 ];
 
+/**
+ * Text-bearing attributes whose value reaches a user or a screen reader.
+ * Anything bound to one of these must go through `| translate`.
+ */
+const TEXT_ATTRIBUTES =
+  'aria-label|aria-description|aria-roledescription|aria-valuetext|aria-placeholder|title|placeholder|alt';
+
+/**
+ * A text attribute bound to a bare string literal, e.g.
+ * `[attr.aria-label]="'Selected users'"`.
+ *
+ * The general heuristics below skip any line containing a property binding, so
+ * this whole class of hardcoded label went unreported until ENG-39096 — the
+ * users list shipped an English `aria-label` to all 19 languages. This pattern
+ * is checked on its own and deliberately bypasses those filters.
+ */
+const HTML_BOUND_TEXT_ATTR = new RegExp(
+  `\\[(?:attr\\.)?(?:${TEXT_ATTRIBUTES})\\]\\s*=\\s*"\\s*'([^']{2,})'\\s*"`,
+  'g'
+);
+
+/**
+ * Values that are ARIA/DOM vocabulary rather than prose, so a literal is correct.
+ * `aria-label="polite"` is not a thing, but keeping this list makes the rule
+ * safe to apply to every text attribute without hand-tuning per attribute.
+ */
+const NON_PROSE_ATTR_VALUES = new Set([
+  'polite', 'assertive', 'off', 'on', 'true', 'false', 'none', 'auto',
+]);
+
 /** Lines in HTML that are clearly not hardcoded user strings. */
 function isHtmlFalsePositive(line: string, match: string): boolean {
   const trimmed = line.trim();
@@ -128,6 +158,29 @@ const TS_HARDCODED_PATTERNS = [
   // Strings passed to methods that display text (not console, not import)
   /(?:setTitle|setMessage|setSubtitle|setLabel|setPlaceholder|setDescription|showToast|showError|showWarning|showSuccess)\s*\(\s*['"`]([A-Z][a-z]{2,}[^'"`]{0,80})['"`]/g,
 ];
+
+/**
+ * Rules applied to the whole file rather than line by line.
+ *
+ * Both of these calls are routinely wrapped across several lines by the
+ * formatter, so a per-line scan silently misses them — which is how
+ * `setAttribute('aria-label', … || 'Rich text editor')` survived every earlier
+ * sweep. Comments are stripped before these run.
+ */
+const TS_MULTILINE_PATTERNS = [
+  // Screen-reader announcements. The rich text editor announced "Bold applied"
+  // and "Undo" in English to every language because nothing looked here.
+  /(?:announceToScreenReader|announce)\s*\(\s*['"`]([A-Z][a-z]{2,}[^'"`]{0,80})['"`]/g,
+  // A text attribute written straight onto a DOM node, which no template scan sees.
+  /setAttribute\s*\(\s*['"`](?:aria-label|aria-placeholder|aria-description|title|alt|placeholder)['"`]\s*,[\s\S]{0,200}?['"`]([A-Z][a-z]{2,}[^'"`]{0,80})['"`]\s*\)/g,
+];
+
+/** Blanks out comments so their prose never trips the scanners. */
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (_m, lead) => lead);
+}
 
 function isTsFalsePositive(line: string, match: string): boolean {
   const trimmed = line.trim();
@@ -207,6 +260,20 @@ describe('Property 10: No hardcoded user-visible strings', () => {
             }
           }
         }
+
+        // Bound text attributes are checked separately: isHtmlFalsePositive()
+        // waves through every line that contains a property binding, which is
+        // exactly the shape this rule is looking for.
+        HTML_BOUND_TEXT_ATTR.lastIndex = 0;
+        let bound: RegExpExecArray | null;
+        while ((bound = HTML_BOUND_TEXT_ATTR.exec(line)) !== null) {
+          const value = bound[1].trim();
+          if (!/[A-Za-z]{2,}/.test(value)) continue;
+          if (NON_PROSE_ATTR_VALUES.has(value.toLowerCase())) continue;
+          // An id reference (aria-labelledby-style) or a localization key, not prose.
+          if (/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(value)) continue;
+          violations.push({ file: relPath(file), line: idx + 1, match: value });
+        }
       });
     }
 
@@ -234,6 +301,16 @@ describe('Property 10: No hardcoded user-visible strings', () => {
     for (const file of [...tsComponentFiles, ...tsServiceFiles]) {
       const content = fs.readFileSync(file, 'utf-8');
       const lines = content.split('\n');
+
+      const stripped = stripComments(content);
+      for (const pattern of TS_MULTILINE_PATTERNS) {
+        pattern.lastIndex = 0;
+        let mm: RegExpExecArray | null;
+        while ((mm = pattern.exec(stripped)) !== null) {
+          const lineNo = stripped.slice(0, mm.index).split('\n').length;
+          violations.push({ file: relPath(file), line: lineNo, match: mm[1].trim() });
+        }
+      }
 
       lines.forEach((line, idx) => {
         for (const pattern of TS_HARDCODED_PATTERNS) {

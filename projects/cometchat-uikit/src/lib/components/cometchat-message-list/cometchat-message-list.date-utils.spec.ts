@@ -15,6 +15,7 @@ import {
   getDateSeparatorKey,
   isSameDay,
 } from './cometchat-message-list.date-utils';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 
 describe('cometchat-message-list.date-utils', () => {
 
@@ -27,7 +28,8 @@ describe('cometchat-message-list.date-utils', () => {
       expect(typeof fmt.yesterday).toBe('string');
       expect(typeof fmt.today).toBe('string');
       expect(fmt.lastWeek).toBe('dddd');
-      expect(fmt.otherDays).toBe('DD/MM/YYYY');
+      // ENG-39096: the fallback now follows the locale's own field order.
+      expect(fmt.otherDays).toBe(CometChatLocalize.getDatePattern());
     });
 
     it('should return a new object on each call (not a singleton)', () => {
@@ -52,7 +54,8 @@ describe('cometchat-message-list.date-utils', () => {
       expect(typeof fmt.yesterday).toBe('string');
       expect(typeof fmt.today).toBe('string');
       expect(fmt.lastWeek).toBe('dddd');
-      expect(fmt.otherDays).toBe('DD/MM/YYYY');
+      // ENG-39096: the fallback now follows the locale's own field order.
+      expect(fmt.otherDays).toBe(CometChatLocalize.getDatePattern());
     });
 
     it('should match the separator format structure', () => {
@@ -72,7 +75,8 @@ describe('cometchat-message-list.date-utils', () => {
       expect(typeof fmt.yesterday).toBe('string');
       expect(typeof fmt.today).toBe('string');
       expect(fmt.lastWeek).toBe('dddd');
-      expect(fmt.otherDays).toBe('DD/MM/YYYY');
+      // ENG-39096: the fallback now follows the locale's own field order.
+      expect(fmt.otherDays).toBe(CometChatLocalize.getDatePattern());
     });
 
     it('should return a new object on each call', () => {

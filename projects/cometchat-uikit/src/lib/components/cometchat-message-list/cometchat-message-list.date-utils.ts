@@ -19,7 +19,7 @@ export function getDefaultSeparatorDateFormat(): CalendarObject {
     yesterday: CometChatLocalize.getLocalizedString('yesterday'),
     today: CometChatLocalize.getLocalizedString('today'),
     lastWeek: 'dddd',
-    otherDays: 'DD/MM/YYYY'
+    otherDays: CometChatLocalize.getDatePattern()
   };
 }
 
@@ -32,7 +32,7 @@ export function getDefaultStickyDateFormat(): CalendarObject {
     yesterday: CometChatLocalize.getLocalizedString('yesterday'),
     today: CometChatLocalize.getLocalizedString('today'),
     lastWeek: 'dddd',
-    otherDays: 'DD/MM/YYYY'
+    otherDays: CometChatLocalize.getDatePattern()
   };
 }
 
@@ -45,7 +45,7 @@ export function getDefaultMessageDateFormat(): CalendarObject {
     yesterday: CometChatLocalize.getLocalizedString('yesterday'),
     today: CometChatLocalize.getLocalizedString('today'),
     lastWeek: 'dddd',
-    otherDays: 'DD/MM/YYYY'
+    otherDays: CometChatLocalize.getDatePattern()
   };
 }
 

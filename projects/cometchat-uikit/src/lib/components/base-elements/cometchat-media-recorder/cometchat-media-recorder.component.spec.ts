@@ -500,8 +500,10 @@ describe('CometChatMediaRecorderComponent', () => {
       expect(component.durationAriaLabel).toBe('2 minutes 5 seconds');
     });
 
-    it('should provide durationAriaLabel as 0 minutes 0 seconds at start', () => {
-      expect(component.durationAriaLabel).toBe('0 minutes 0 seconds');
+    // ENG-39096: the label is now built with Intl unit formatting so it reads in
+    // the active locale, which also drops the zero minutes it used to announce.
+    it('should provide durationAriaLabel as 0 seconds at start', () => {
+      expect(component.durationAriaLabel).toBe('0 seconds');
     });
   });
 

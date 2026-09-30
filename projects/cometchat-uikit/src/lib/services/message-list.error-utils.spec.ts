@@ -18,6 +18,7 @@ import {
   delay,
 } from './message-list.error-utils';
 
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 describe('message-list.error-utils', () => {
 
   // ==================== isRecoverableError ====================
@@ -128,65 +129,67 @@ describe('message-list.error-utils', () => {
 
   describe('getUserFriendlyErrorMessage', () => {
     it('should return generic message for null error', () => {
-      const msg = getUserFriendlyErrorMessage(null, 'fetching messages');
-      expect(msg).toContain('fetching messages');
+      // ENG-39096: these messages are localized now, so the internal English
+      // `context` fragment is no longer interpolated into what the user sees.
+      const msg = getUserFriendlyErrorMessage(null);
+      expect(msg).toBe(CometChatLocalize.getLocalizedString('error_generic_retry'));
     });
 
     it('should return network message for network errors', () => {
-      const msg = getUserFriendlyErrorMessage(new Error('network disconnected'), 'loading');
+      const msg = getUserFriendlyErrorMessage(new Error('network disconnected'));
       expect(msg.toLowerCase()).toContain('internet');
     });
 
     it('should return timeout message for timeout errors', () => {
-      const msg = getUserFriendlyErrorMessage(new Error('request timed out'), 'loading');
+      const msg = getUserFriendlyErrorMessage(new Error('request timed out'));
       expect(msg.toLowerCase()).toContain('timed out');
     });
 
     it('should return unauthorized message for auth errors', () => {
-      const msg = getUserFriendlyErrorMessage(new Error('unauthorized'), 'loading');
+      const msg = getUserFriendlyErrorMessage(new Error('unauthorized'));
       expect(msg.toLowerCase()).toContain('not authorized');
     });
 
     it('should return not found message for 404 errors', () => {
-      const msg = getUserFriendlyErrorMessage(new Error('not found'), 'loading');
+      const msg = getUserFriendlyErrorMessage(new Error('not found'));
       expect(msg.toLowerCase()).toContain('not found');
     });
 
     it('should return rate limit message for 429 errors', () => {
-      const msg = getUserFriendlyErrorMessage(new Error('too many requests'), 'loading');
+      const msg = getUserFriendlyErrorMessage(new Error('too many requests'));
       expect(msg.toLowerCase()).toContain('too many requests');
     });
 
     it('should return service unavailable message for 503 errors', () => {
-      const msg = getUserFriendlyErrorMessage(new Error('service unavailable'), 'loading');
+      const msg = getUserFriendlyErrorMessage(new Error('service unavailable'));
       expect(msg.toLowerCase()).toContain('unavailable');
     });
 
     it('should return generic message for unknown errors', () => {
-      const msg = getUserFriendlyErrorMessage(new Error('something weird'), 'sending message');
-      expect(msg).toContain('sending message');
+      const msg = getUserFriendlyErrorMessage(new Error('something weird'));
+      expect(msg).toBe(CometChatLocalize.getLocalizedString('error_generic_retry'));
     });
 
     it('should handle string errors', () => {
-      const msg = getUserFriendlyErrorMessage('network error', 'loading');
+      const msg = getUserFriendlyErrorMessage('network error');
       expect(msg.toLowerCase()).toContain('internet');
     });
 
     it('should handle CometChat exception objects with message field', () => {
       const err = { message: 'network failure', code: 'NET_ERR' };
-      const msg = getUserFriendlyErrorMessage(err, 'loading');
+      const msg = getUserFriendlyErrorMessage(err);
       expect(msg.toLowerCase()).toContain('internet');
     });
 
     it('should handle objects with code field', () => {
       const err = { code: 'UNKNOWN_CODE' };
-      const msg = getUserFriendlyErrorMessage(err, 'loading');
-      expect(msg).toContain('loading');
+      const msg = getUserFriendlyErrorMessage(err);
+      expect(msg).toBe(CometChatLocalize.getLocalizedString('error_generic_retry'));
     });
 
     it('should handle objects with details field', () => {
       const err = { details: 'timeout occurred' };
-      const msg = getUserFriendlyErrorMessage(err, 'loading');
+      const msg = getUserFriendlyErrorMessage(err);
       expect(msg.toLowerCase()).toContain('timed out');
     });
   });

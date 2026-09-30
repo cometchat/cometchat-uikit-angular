@@ -128,7 +128,7 @@
       <button
         type="button"
         class="cometchat-text-bubble__read-more-button"
-        [attr.aria-label]="isExpanded ? 'Show less' : 'Read more'"
+        [attr.aria-label]="(isExpanded ? 'text_bubble_show_less' : 'text_bubble_read_more') | translate"
         [attr.aria-expanded]="isExpanded"
         (click)="toggleReadMore()"
         (keydown.enter)="toggleReadMore()"

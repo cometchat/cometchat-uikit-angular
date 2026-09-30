@@ -3,7 +3,6 @@
 import {Component, Input, Output, EventEmitter, OnInit, OnChanges, OnDestroy, AfterViewInit, SimpleChanges, TemplateRef, ChangeDetectionStrategy, ChangeDetectorRef, inject, ViewChild, ElementRef, computed, signal, booleanAttribute, DestroyRef,} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {CometChat} from '@cometchat/chat-sdk-javascript';
-import {DatePipe} from '@angular/common';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 import {TranslatePipe} from '../../resources/CometChatLocalize/translate.pipe';
@@ -165,7 +164,7 @@ export class CometChatMessageBubbleComponent
 
   private readonly cdr = inject(ChangeDetectorRef); private readonly messageUtils = inject(MessageUtilsService);
   private readonly bubbleConfigService = inject(MessageBubbleConfigService); private readonly callButtonsService = inject(CallButtonsService);
-  private readonly datePipe = new DatePipe('en-US'); private readonly destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
   private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, { optional: true });
 
   private hideReceiptsExplicitlySet = signal(false); private hideAvatarExplicitlySet = signal(false); private textFormattersExplicitlySet = signal(false); private hideModerationViewExplicitlySet = signal(false);
@@ -373,7 +372,12 @@ export class CometChatMessageBubbleComponent
   }
   get receiptClass(): string { if (!this.message) return ''; const r = this.message.getReadAt(); const d = this.message.getDeliveredAt(); const s = this.message.getSentAt(); if (r) return 'cometchat-receipts-read'; if (d) return 'cometchat-receipts-delivered'; if (s && this.message.getId()) return 'cometchat-receipts-sent'; return 'cometchat-receipts-wait'; }
   get receiptAriaLabel(): string { if (!this.message) return ''; const r = this.message.getReadAt(); const d = this.message.getDeliveredAt(); const s = this.message.getSentAt(); if (r) return CometChatLocalize.getLocalizedString('message_status_read'); if (d) return CometChatLocalize.getLocalizedString('message_status_delivered'); if (s) return CometChatLocalize.getLocalizedString('message_status_sent'); return CometChatLocalize.getLocalizedString('message_status_sending'); }
-  get calendarObject(): CalendarObject { return this.dateFormat || { today: 'hh:mm A', yesterday: 'hh:mm A', otherDays: 'hh:mm A' }; }
+  get calendarObject(): CalendarObject {
+    if (this.dateFormat) return this.dateFormat;
+    // A bubble only ever shows a time, in the locale's own clock.
+    const time = CometChatLocalize.getTimePattern();
+    return { today: time, yesterday: time, otherDays: time };
+  }
   get replyCount(): number { if (!this.message) return 0; return this.message.getReplyCount() || 0; }
   get unreadReplyCount(): number { if (!this.message) return 0; return this.message.getUnreadRepliesCount() || 0; }
   get shouldShowThreadView(): boolean { if (this.hideThreadView) return false; if (this.isDeleted) return false; if (this.messageCategory === CometChatUIKitConstants.MessageCategory.action) return false; return this.replyCount > 0; }
@@ -497,7 +501,16 @@ export class CometChatMessageBubbleComponent
     const sentAt = this.message.getSentAt();
     if (!sentAt) { return ''; }
     const timestamp = sentAt > 9999999999 ? sentAt : sentAt * 1000;
-    return this.datePipe.transform(timestamp, 'short') || '';
+    // Angular's DatePipe formats against LOCALE_ID, which the kit never sets — it stayed
+    // en-US ("9/21/26, 2:12 PM") no matter the active language. Match CometChatDate instead,
+    // so both dates a screen reader hears in this bubble agree.
+    return new Date(timestamp).toLocaleString(CometChatLocalize.getDateLocaleLanguage(), {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
   private getReactionsSummary(): string { const reactions = this.reactions; if (!reactions?.length) return ''; const totalCount = reactions.reduce((sum, r) => sum + (r.getCount?.() || 0), 0); if (totalCount === 1) return CometChatLocalize.getLocalizedString('accessibility_one_reaction'); return CometChatLocalize.getLocalizedString('accessibility_reactions_count').replace('{count}', totalCount.toString()); }
   private getMessageTypeLabel(): string { switch (this.messageType) { case 'text': return CometChatLocalize.getLocalizedString('accessibility_message_type_text'); case 'image': return CometChatLocalize.getLocalizedString('accessibility_message_type_image'); case 'video': return CometChatLocalize.getLocalizedString('accessibility_message_type_video'); case 'audio': return CometChatLocalize.getLocalizedString('accessibility_message_type_audio'); case 'file': return CometChatLocalize.getLocalizedString('accessibility_message_type_file'); default: return CometChatLocalize.getLocalizedString('accessibility_message_type_custom'); } }

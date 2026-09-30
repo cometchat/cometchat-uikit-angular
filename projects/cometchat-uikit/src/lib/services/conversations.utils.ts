@@ -8,6 +8,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { CometChatUIKit } from '../cometchat-uikit';
 import { CometChatUIKitConstants } from '../constants';
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 
 // ─── Error Helpers ────────────────────────────────────────────────────────────
 
@@ -25,19 +26,28 @@ export function isRecoverableError(error: unknown): boolean {
 }
 
 export function getUserFriendlyErrorMessage(error: unknown, context: string): string {
-  if (!error) return 'An unknown error occurred';
+  const t = (key: string) => CometChatLocalize.getLocalizedString(key);
+  if (!error) return t('error_unknown');
   const msg = ((error as Record<string, unknown>)['message'] as string || '').toLowerCase();
-  if (msg.includes('network') || msg.includes('offline')) return 'Unable to connect. Please check your internet connection and try again.';
-  if (msg.includes('timeout')) return 'The request took too long. Please try again.';
-  if (msg.includes('auth') || msg.includes('unauthorized')) return 'Authentication failed. Please log in again.';
-  if (msg.includes('permission') || msg.includes('forbidden')) return "You don't have permission to perform this action.";
-  if (msg.includes('not found') || msg.includes('404')) return 'The requested resource was not found.';
-  if (msg.includes('server') || msg.includes('500')) return 'Server error. Please try again later.';
+  if (msg.includes('network') || msg.includes('offline')) return t('error_network_connection');
+  if (msg.includes('timeout')) return t('error_request_timeout');
+  // Two distinct meanings: "sign in again" vs "you may not do this". Collapsing
+  // both onto error_not_authorized changed what the message told the user.
+  if (msg.includes('auth') || msg.includes('unauthorized')) return t('error_authentication_failed');
+  if (msg.includes('permission') || msg.includes('forbidden')) return t('error_permission_denied');
+  if (msg.includes('not found') || msg.includes('404')) return t('error_resource_not_found');
+  if (msg.includes('server') || msg.includes('500')) return t('error_server');
   switch (context) {
-    case 'fetchConversations': return 'Failed to load conversations. Please try again.';
-    case 'deleteConversation': return 'Failed to delete conversation. Please try again.';
-    case 'fetchNextConversations': return 'Failed to load more conversations. Please try again.';
-    default: return ((error as Record<string, unknown>)['message'] as string) || 'An error occurred. Please try again.';
+    case 'fetchConversations': return t('error_load_conversations');
+    case 'deleteConversation': return t('error_delete_conversation');
+    case 'fetchNextConversations': return t('error_load_more_conversations');
+    // The SDK's message is English-only, so it is logged rather than shown —
+    // the same policy the composer's upload tray and the sample app follow.
+    default: {
+      const raw = (error as Record<string, unknown>)['message'];
+      if (raw) CometChatLogger.error('ConversationsService', 'Unmapped error:', raw);
+      return t('error_generic_retry');
+    }
   }
 }
 

@@ -1180,8 +1180,10 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
           if (!loggedInUser || bannedUser.getUid() !== loggedInUser.getUid()) return;
           if (!this.isActiveGroup(bannedFrom)) return;
 
+          // One whole sentence, not three fragments: the old concatenation read
+          // "You have been Member has been banned from the group. by an admin."
           this.toastService.showError(
-            `${CometChatLocalize.getLocalizedString('you_have_been')} ${CometChatLocalize.getLocalizedString('member_banned_toast')} ${CometChatLocalize.getLocalizedString('removed_by_admin')}`
+            CometChatLocalize.getLocalizedString('you_were_banned_by_admin')
           );
           this.chatStateService.clearActiveChat();
           this.navigationService.reset();
@@ -1198,7 +1200,7 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
           if (!this.isActiveGroup(kickedFrom)) return;
 
           this.toastService.showError(
-            `${CometChatLocalize.getLocalizedString('you_have_been')} ${CometChatLocalize.getLocalizedString('member_removed_toast')} ${CometChatLocalize.getLocalizedString('removed_by_admin')}`
+            CometChatLocalize.getLocalizedString('you_were_removed_by_admin')
           );
           this.chatStateService.clearActiveChat();
           this.navigationService.reset();

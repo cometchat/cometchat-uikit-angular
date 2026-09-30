@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@cometchat/chat-uikit-angular';
+import { TranslatePipe, CometChatLocalize } from '@cometchat/chat-uikit-angular';
 
 const CREDENTIALS_KEY = 'cometchat-credentials';
 
@@ -51,7 +51,7 @@ export class CredentialsPageComponent implements OnInit {
     this.errorMessage.set('');
 
     if (!this.appId.trim() || !this.region.trim() || !this.authKey.trim()) {
-      this.errorMessage.set('All fields are required.');
+      this.errorMessage.set(CometChatLocalize.getLocalizedString('credentials_error_required'));
       return;
     }
 

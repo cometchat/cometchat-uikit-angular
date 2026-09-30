@@ -5,6 +5,7 @@
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../utils/CometChatLogger';
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 import { markdownToHtml as markdownToHtmlUtil } from './rich-text-editor.markdown-utils';
 
 export interface MentionOpsContext {
@@ -57,7 +58,9 @@ export function insertMentionImpl(ctx: MentionOpsContext, id: string, label: str
   selection.addRange(range);
   ctx.pushToHistory();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(`Mentioned ${label}`);
+  ctx.announceToScreenReader(
+    CometChatLocalize.getLocalizedString('accessibility_mentioned_user').replace('{name}', label)
+  );
 }
 
 export function getUniqueMentionUidsImpl(ctx: MentionOpsContext): Set<string> {

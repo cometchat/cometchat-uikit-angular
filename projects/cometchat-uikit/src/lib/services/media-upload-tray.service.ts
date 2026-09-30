@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 import { CometChatUIKitUtility } from '../CometChatUIKitUtility';
+import { CometChatLogger } from '../utils/CometChatLogger';
 import { CometChatToastService } from '../components/base-elements/cometchat-toast/cometchat-toast.service';
 import type {
   AttachmentFile,
@@ -333,12 +334,12 @@ export class MediaUploadTrayService {
       });
     },
     onFileError: (fileId: string, error: CometChat.CometChatException) => {
-      const message = this.errorText(error);
+      const message = this.uploadErrorMessage(error);
       this.patchTile(fileId, { status: 'rejected', errorMessage: message });
       this.notifyError(message);
     },
     onFileFailure: (fileId: string, error: CometChat.CometChatException) => {
-      const message = this.errorText(error);
+      const message = this.uploadErrorMessage(error);
       this.patchTile(fileId, { status: 'failed', errorMessage: message });
       this.notifyError(message);
     },
@@ -699,12 +700,29 @@ export class MediaUploadTrayService {
     }
   }
 
+  /**
+   * User-facing copy for an upload error: the mapped localized string when we recognise the
+   * failure, otherwise the localized generic message. Never the SDK's own text — that is
+   * English-only, so surfacing it verbatim put English in front of every other locale.
+   */
+  private uploadErrorMessage(error: CometChat.CometChatException | undefined): string {
+    return (
+      this.errorText(error) || CometChatLocalize.getLocalizedString('message_composer_upload_failed')
+    );
+  }
+
   private errorText(error: CometChat.CometChatException | undefined): string {
     if (!error) return '';
     const anyErr = error as unknown as { code?: string; message?: string; getMessage?: () => string };
     const raw = anyErr.message ?? anyErr.getMessage?.() ?? '';
     const key = this.resolveUploadErrorKey(anyErr.code, raw);
-    if (!key) return raw;
+    if (!key) {
+      // No mapping matched. The SDK message is English-only, so showing it verbatim
+      // put English in front of every non-English user. Return empty and let the
+      // caller fall back to the localized generic copy; keep the raw text in the log.
+      if (raw) CometChatLogger.warn('MediaUploadTray', 'Unmapped upload error:', raw, anyErr.code);
+      return '';
+    }
     // Only the size string has a `{n}` MB placeholder; localizedWithMb no-ops for the rest. The
     // limit comes from the SDK message (authoritative for what it actually enforced), else the
     // composer's maxFileSize @Input.
@@ -715,7 +733,7 @@ export class MediaUploadTrayService {
   /**
    * Which localization key (if any) to show for an upload error. Prefers the SDK/server `code` via
    * {@link UPLOAD_ERROR_LOCALE_KEY}; falls back to a message-text heuristic for server errors whose
-   * code isn't statically known (the file-type rejection). Returns '' to keep the raw SDK message.
+   * code isn't statically known (the file-type rejection). Returns '' when nothing matches, so the caller shows localized generic copy.
    */
   private resolveUploadErrorKey(code: string | undefined, message: string): string {
     if (code && UPLOAD_ERROR_LOCALE_KEY[code]) {

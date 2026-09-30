@@ -7,6 +7,7 @@
  * @module services/link-manager
  * @see Requirements 4.1, 4.2, 4.3, 4.4, 4.5
  */
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 
 import { SelectionManager } from './selection-manager.class';
 import { CometChatLogger } from '../utils/CometChatLogger';
@@ -248,7 +249,7 @@ export class LinkManager {
    */
   getValidationError(url: string): string | null {
     if (!url || url.trim() === '') {
-      return 'URL cannot be empty';
+      return CometChatLocalize.getLocalizedString('message_composer_link_url_required');
     }
     return null;
   }

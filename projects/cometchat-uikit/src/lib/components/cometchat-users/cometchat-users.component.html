@@ -77,7 +77,7 @@
     <div
       class="cometchat-users__selected-preview"
       role="region"
-      [attr.aria-label]="'Selected users'"
+      [attr.aria-label]="'accessibility_selected_users' | translate"
     >
       @for (entry of selectedUsersMap | keyvalue; track trackBySelectedUser($index, entry)) {
         <div class="cometchat-users__selected-preview-chip">

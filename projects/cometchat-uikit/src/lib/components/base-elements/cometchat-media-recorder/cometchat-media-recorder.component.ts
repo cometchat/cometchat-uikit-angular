@@ -391,9 +391,11 @@ export class CometChatMediaRecorderComponent implements OnInit, OnDestroy {
 
   get recordButtonAriaPressed(): string { return this.isRecording ? 'true' : 'false'; }
 
+  /**
+   * The elapsed recording time, announced in the active locale.
+   * Hard-coded English units read "1 minutes 0 seconds" to every language.
+   */
   get durationAriaLabel(): string {
-    const mins = Math.floor(this.counter / 60);
-    const secs = this.counter % 60;
-    return `${mins} minutes ${secs} seconds`;
+    return CometChatLocalize.formatDuration(this.counter, 'long');
   }
 }

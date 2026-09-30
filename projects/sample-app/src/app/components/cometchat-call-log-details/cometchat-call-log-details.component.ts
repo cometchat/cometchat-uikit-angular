@@ -258,21 +258,18 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
     return 'cometchat-call-log-details__call-icon--incoming';
   }
 
-  /** Duration from minutes to human-readable */
+  /**
+   * Duration from minutes to human-readable, in the active language.
+   * The units came from hard-coded 'h'/'m'/'s' literals, so a Japanese or
+   * Russian reader still got English abbreviations.
+   */
   getCallDuration(call: any): string {
     try {
       const minutes = call?.getTotalDurationInMinutes?.();
-      if (!minutes) return '00:00';
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = Math.floor(minutes % 60);
-      const seconds = Math.floor((minutes - Math.floor(minutes)) * 60);
-      let result = '';
-      if (hours > 0) result += `${hours}h `;
-      if (remainingMinutes > 0) result += `${remainingMinutes}m `;
-      if (seconds >= 0) result += `${seconds}s`;
-      return result.trim() || '00:00';
+      if (!minutes) return CometChatLocalize.formatDuration(0, 'short');
+      return CometChatLocalize.formatDuration(Math.round(minutes * 60), 'short');
     } catch {
-      return '00:00';
+      return CometChatLocalize.formatDuration(0, 'short');
     }
   }
 
@@ -291,9 +288,9 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
       if (participant?.getHasJoined?.() || participant?.getJoinedAt?.()) {
         return this.getCallDuration(participant);
       }
-      return '0h 0m 0s';
+      return CometChatLocalize.formatDuration(0, 'short');
     } catch {
-      return '0h 0m 0s';
+      return CometChatLocalize.formatDuration(0, 'short');
     }
   }
 
@@ -305,12 +302,13 @@ export class CometChatCallLogDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Date format for CometChatDate */
+  /** Date format for CometChatDate: day plus the locale's own clock. */
   getDateFormat(): CalendarObject {
+    const pattern = `DD MMM, ${CometChatLocalize.getTimePattern()}`;
     return {
-      yesterday: 'DD MMM, hh:mm A',
-      otherDays: 'DD MMM, hh:mm A',
-      today: 'DD MMM, hh:mm A',
+      yesterday: pattern,
+      otherDays: pattern,
+      today: pattern,
     };
   }
 

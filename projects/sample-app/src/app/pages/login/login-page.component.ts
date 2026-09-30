@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { TranslatePipe } from '@cometchat/chat-uikit-angular';
+import { TranslatePipe, CometChatLocalize } from '@cometchat/chat-uikit-angular';
 
 interface SampleUser {
   uid: string;
@@ -55,7 +55,12 @@ export class LoginPageComponent implements OnInit {
     try {
       await this.authService.login(uid);
     } catch (error: unknown) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Login failed. Please try again.');
+      // The SDK's message is English-only; show the localized copy and keep the
+      // original in the console.
+      if (error instanceof Error) {
+        console.error('[LoginPage] login failed', error);
+      }
+      this.errorMessage.set(CometChatLocalize.getLocalizedString('login_error_failed'));
     }
  finally {
       this.loggingIn.set(false);
@@ -65,10 +70,15 @@ export class LoginPageComponent implements OnInit {
   async loginWithCustomUid(): Promise<void> {
     const uid = this.customUid.trim();
     if (!uid) {
-      this.errorMessage.set('Please enter a UID.');
+      this.errorMessage.set(CometChatLocalize.getLocalizedString('login_error_uid_required'));
       return;
     }
     await this.loginWithUser(uid);
+  }
+
+  /** Accessible label for a sample-user tile, e.g. "Log in as Andrew Joseph". */
+  loginAsLabel(name: string): string {
+    return CometChatLocalize.getLocalizedString('login_as_user').replace('{name}', name);
   }
 
   changeCredentials(): void {

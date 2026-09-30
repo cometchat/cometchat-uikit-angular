@@ -1,4 +1,4 @@
-<div class="cometchat-tabs" role="tablist" aria-label="Navigation tabs">
+<div class="cometchat-tabs" role="tablist" [attr.aria-label]="'tabs_navigation_label' | translate">
   @for (tab of tabs; track tab.id; let i = $index) {
     <button
       class="cometchat-tabs__tab"

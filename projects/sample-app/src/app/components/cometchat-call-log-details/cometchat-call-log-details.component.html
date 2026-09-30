@@ -57,7 +57,7 @@
       <span class="cometchat-call-log-details__info-duration"
         [class.cometchat-call-log-details__info-duration--disabled]="!hasCallDuration(call)"
       >
-        {{ hasCallDuration(call) ? getCallDuration(call) : '00:00' }}
+        {{ getCallDuration(call) }}
       </span>
     </div>
 
@@ -174,7 +174,7 @@
 
         @case ('history') {
           @if (callHistoryLoading()) {
-            <div class="cometchat-call-log-details__shimmer" role="status" aria-label="Loading call history">
+            <div class="cometchat-call-log-details__shimmer" role="status" [attr.aria-label]="'accessibility_loading_call_history' | translate">
               @for (item of [1, 2, 3, 4, 5]; track item) {
                 <div class="cometchat-call-log-details__shimmer-item">
                   <div class="cometchat-call-log-details__shimmer-icon"></div>

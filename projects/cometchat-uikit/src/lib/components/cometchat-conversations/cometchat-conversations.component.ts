@@ -616,9 +616,11 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   getTypingIndicator(conversation: CometChat.Conversation): CometChat.TypingIndicator | null { const ti = this.typingIndicators(); if (!ti) return null; const cw = conversation.getConversationWith(); const id = cw instanceof CometChat.User ? cw.getUid() : cw.getGuid(); return ti.get(id) || null; }
   getDefaultDateTimeFormat(): CalendarObject {
     return {
-      today: `hh:mm A`,
+      // Clock and field order follow the locale; hard-coding 'hh:mm A' and
+      // 'DD/MM/YYYY' gave every language one country's conventions.
+      today: CometChatLocalize.getTimePattern(),
       yesterday: `[${CometChatLocalize.getLocalizedString('yesterday')}]`,
-      otherDays: 'DD/MM/YYYY',
+      otherDays: CometChatLocalize.getDatePattern(),
     };
   }
   trackByConversation(_index: number, conversation: CometChat.Conversation): string { return this.getConversationId(conversation); }

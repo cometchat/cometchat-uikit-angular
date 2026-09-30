@@ -6,6 +6,7 @@
  */
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 
 // ==================== Error Classification ====================
 
@@ -95,14 +96,18 @@ export function isRetryableError(error: unknown): boolean {
 /**
  * Converts a raw error into a user-friendly message string.
  *
+ * The caller's `context` used to be interpolated into the message. It is an
+ * internal English identifier ('fetching messages'), so it cannot be shown to
+ * a reader in another language; the localized generic message is used instead
+ * and the parameter is gone. Callers pass context to the logger, not here.
+ *
  * @param error - The error to convert
- * @param context - Human-readable context (e.g., "fetching messages")
  */
-export function getUserFriendlyErrorMessage(error: unknown, context: string): string {
-  if (!error) return `An error occurred while ${context}.`;
+export function getUserFriendlyErrorMessage(error: unknown): string {
+  if (!error) return CometChatLocalize.getLocalizedString('error_generic_retry');
 
   const errorString = extractErrorString(error);
-  return getMessageFromErrorString(errorString, context);
+  return getMessageFromErrorString(errorString);
 }
 
 /**
@@ -122,29 +127,30 @@ function extractErrorString(error: unknown): string {
 /**
  * Maps an error string to a user-friendly message.
  */
-function getMessageFromErrorString(errorString: string, context: string): string {
+function getMessageFromErrorString(errorString: string): string {
   const lower = errorString.toLowerCase();
+  const t = (key: string) => CometChatLocalize.getLocalizedString(key);
 
   if (lower.includes('network') || lower.includes('internet') || lower.includes('disconnected')) {
-    return 'No internet connection. Please check your network and try again.';
+    return t('error_network_connection');
   }
   if (lower.includes('timeout') || lower.includes('timed out')) {
-    return 'The request timed out. Please try again.';
+    return t('error_request_timeout');
   }
   if (lower.includes('unauthorized') || lower.includes('auth') || lower.includes('403')) {
-    return 'You are not authorized to perform this action.';
+    return t('error_not_authorized');
   }
   if (lower.includes('not found') || lower.includes('404')) {
-    return 'The requested resource was not found.';
+    return t('error_resource_not_found');
   }
   if (lower.includes('rate limit') || lower.includes('too many requests') || lower.includes('429')) {
-    return 'Too many requests. Please wait a moment and try again.';
+    return t('error_rate_limited');
   }
   if (lower.includes('service unavailable') || lower.includes('503')) {
-    return 'The service is temporarily unavailable. Please try again later.';
+    return t('error_service_unavailable');
   }
 
-  return `An error occurred while ${context}. Please try again.`;
+  return t('error_generic_retry');
 }
 
 // ==================== Retry Delay Utilities ====================

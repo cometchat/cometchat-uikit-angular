@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CometChatSearchConversationsListComponent } from './cometchat-search-conversations-list.component';
 import { SearchConversationsService } from '../../../services/search-conversations.service';
 import { signal } from '@angular/core';
+import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 
 class MockSearchConversationsService {
   conversations = signal<any[]>([]);
@@ -153,9 +154,11 @@ describe('CometChatSearchConversationsListComponent', () => {
     it('should return search default format when no input', () => {
       component.lastMessageDateTimeFormat = undefined;
       const format = component.effectiveDateFormat;
-      expect(format.today).toBe('DD/MM/YYYY');
-      expect(format.yesterday).toBe('DD/MM/YYYY');
-      expect(format.otherDays).toBe('DD/MM/YYYY');
+      // ENG-39096: the default now follows the locale's own field order.
+      const date = CometChatLocalize.getDatePattern();
+      expect(format.today).toBe(date);
+      expect(format.yesterday).toBe(date);
+      expect(format.otherDays).toBe(date);
     });
   });
 });

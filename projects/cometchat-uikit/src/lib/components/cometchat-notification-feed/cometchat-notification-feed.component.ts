@@ -18,6 +18,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CalendarObject } from '../../resources/CometChatLocalize/localization.interfaces';
 import { NotificationFeedViewModel } from './cometchat-notification-feed-view-model';
 import { VisibilityTracker } from './cometchat-notification-feed.utils';
 import {
@@ -31,6 +32,7 @@ import { BadgeCountPipe, CardJsonPipe, CategoryUnreadCountPipe } from './cometch
 import { CometChatDateComponent } from '../base-elements/cometchat-date/cometchat-date.component';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { cachedByLanguage } from '../../resources/CometChatLocalize/localize-helpers';
 import { CometChatCardViewComponent } from '@cometchat/cards-angular';
 import type { CometChatCardAction, CometChatCardActionEvent } from '@cometchat/cards-angular';
 
@@ -285,6 +287,20 @@ export class CometChatNotificationFeedComponent implements OnInit, OnDestroy, Af
     } catch {
       return '';
     }
+  }
+
+  /** Date format for feed items. Built here rather than inline in the template so the
+   * "yesterday" label can be localized; brackets keep it literal for the formatter. */
+  private readonly buildFeedDateFormat = cachedByLanguage<CalendarObject>(() => ({
+    today: CometChatLocalize.getTimePattern(),
+    yesterday: `[${CometChatLocalize.getLocalizedString('yesterday')}]`,
+    otherDays: CometChatLocalize.getDatePattern(),
+  }));
+
+  get feedDateFormat(): CalendarObject {
+    return this.buildFeedDateFormat(
+      `${CometChatLocalize.getCurrentLanguage()}|${CometChatLocalize.getDateLocaleLanguage()}`
+    );
   }
 
   /**

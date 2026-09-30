@@ -34,7 +34,7 @@
               #moreButtonRef
               class="cometchat-menu-list__sub-menu"
               
-              [attr.aria-label]="moreIconHoverText || 'More options'"
+              [attr.aria-label]="moreIconHoverText || ('message_header_more_options' | translate)"
               [attr.aria-expanded]="showSubMenu"
               aria-haspopup="menu"
               role="button"
@@ -60,7 +60,7 @@
           <div
             #moreButtonRef
             class="cometchat-menu-list__sub-menu"
-            [attr.aria-label]="moreIconHoverText || 'More options'"
+            [attr.aria-label]="moreIconHoverText || ('message_header_more_options' | translate)"
             [attr.aria-expanded]="showSubMenu"
             aria-haspopup="menu"
             role="button"
@@ -96,7 +96,7 @@
       class="cometchat-menu-list__sub-menu-list"
       id="subMenuContext"
       role="menu"
-      [attr.aria-label]="'Submenu options'"
+      [attr.aria-label]="'accessibility_submenu_options' | translate"
       [attr.data-visible]="showSubMenu"
       (keydown)="handleKeydown($event)"
       [ngStyle]="{

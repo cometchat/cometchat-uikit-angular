@@ -4,6 +4,7 @@ import {
   CometChatMessageEvents,
   ICardActionEvent,
   ChatStateService,
+  CometChatLocalize,
 } from '@cometchat/chat-uikit-angular';
 import type { CometChatCardAction } from '@cometchat/cards-angular';
 
@@ -106,7 +107,7 @@ export class CardActionService {
           break;
       }
     } catch (err) {
-      this.toast.showError('Card action failed');
+      this.toast.showError(CometChatLocalize.getLocalizedString('card_action_failed'));
       // eslint-disable-next-line no-console
       console.error('[CardActionService] action failed', err);
     }
@@ -124,8 +125,8 @@ export class CardActionService {
   private copyToClipboard(a: Action<'copyToClipboard'>): void {
     if (a.value == null) return;
     navigator.clipboard?.writeText(a.value).then(
-      () => this.toast.showInfo('Copied to clipboard'),
-      () => this.toast.showError('Could not copy')
+      () => this.toast.showInfo(CometChatLocalize.getLocalizedString('copied_to_clipboard')),
+      () => this.toast.showError(CometChatLocalize.getLocalizedString('copy_failed'))
     );
   }
 
@@ -178,7 +179,7 @@ export class CardActionService {
       }
     }
     if (!receiverId || !receiverType) {
-      this.toast.showError('No conversation to send to');
+      this.toast.showError(CometChatLocalize.getLocalizedString('no_conversation_to_send_to'));
       return;
     }
 
@@ -209,7 +210,7 @@ export class CardActionService {
     // Initiate via the Calls flow; the app's existing call-event handling surfaces
     // the ongoing-call UI. (Reference impl — wire to the app's call screen as needed.)
     await CometChat.initiateCall(call);
-    this.toast.showInfo('Call initiated');
+    this.toast.showInfo(CometChatLocalize.getLocalizedString('call_initiated'));
   }
 
   // ── App-defined action ────────────────────────────────────────────────────
@@ -218,7 +219,9 @@ export class CardActionService {
     if (!a.callbackId) return;
     const handler = this.customCallbacks.get(a.callbackId);
     if (!handler) {
-      this.toast.showInfo(`No handler for "${a.callbackId}"`);
+      this.toast.showInfo(
+        CometChatLocalize.getLocalizedString('card_action_no_handler').replace('{id}', a.callbackId ?? '')
+      );
       return;
     }
     handler(a.payload, {

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 
 /**
  * Configuration for media playback controls
@@ -120,27 +121,14 @@ export class MediaControlsService {
 
   /**
    * Formats time in seconds for screen reader announcement.
-   * Returns a human-readable string like "2 minutes 30 seconds" or "45 seconds".
+   * Returns a human-readable string like "2 minutes 30 seconds" or "45 seconds",
+   * in the active locale ("2 minutos 30 segundos", "2分 30秒").
    *
    * @param seconds - The time in seconds to format
    * @returns string - Human-readable time string
    */
   formatTimeForAnnouncement(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-
-    if (mins === 0) {
-      return secs === 1 ? '1 second' : `${secs} seconds`;
-    }
-
-    const minuteText = mins === 1 ? '1 minute' : `${mins} minutes`;
-    const secondText = secs === 1 ? '1 second' : `${secs} seconds`;
-
-    if (secs === 0) {
-      return minuteText;
-    }
-
-    return `${minuteText} ${secondText}`;
+    return CometChatLocalize.formatDuration(seconds, 'long');
   }
 
   /**

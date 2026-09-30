@@ -17,6 +17,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageEvents } from '../../events/CometChatMessageEvents';
 import { MessageStatus } from '../../Enums/Enums';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { CometChatUIKitConstants } from '../../constants';
 
 /**
@@ -237,7 +238,8 @@ export class CometChatAIAssistantChatHistory implements OnInit {
 
   formatDate(timestampSeconds: number): string {
     const date = new Date(timestampSeconds * 1000);
-    return date.toLocaleDateString(undefined, {
+    // The kit's own language, not the browser's.
+    return date.toLocaleDateString(CometChatLocalize.getDateLocaleLanguage(), {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

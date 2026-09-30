@@ -22,6 +22,7 @@ import {
   getTypingIndicatorKey,
 } from './conversations.utils';
 
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -97,8 +98,10 @@ describe('conversations.utils', () => {
     });
 
     it('should return timeout message for timeout errors', () => {
+      // ENG-39096: the timeout wording is shared with message-list.error-utils
+      // now that both maps draw from the same localization keys.
       const msg = getUserFriendlyErrorMessage({ message: 'timeout' }, 'test');
-      expect(msg.toLowerCase()).toContain('long');
+      expect(msg).toBe(CometChatLocalize.getLocalizedString('error_request_timeout'));
     });
 
     it('should return auth message for auth errors', () => {

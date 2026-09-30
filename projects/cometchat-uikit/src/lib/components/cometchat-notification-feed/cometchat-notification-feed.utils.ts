@@ -33,9 +33,13 @@ export function groupByTimestamp(items: NotificationFeedItem[]): TimestampGroup[
     } else if (itemDay.getTime() === yesterday.getTime()) {
       label = CometChatLocalize.getLocalizedString('yesterday');
     } else if (itemDay.getTime() >= startOfWeek.getTime()) {
-      label = itemDate.toLocaleDateString(undefined, { weekday: 'long' });
+      // The kit's own language, not the browser's: `undefined` grouped a
+      // Japanese feed under English weekday and month names.
+      label = itemDate.toLocaleDateString(CometChatLocalize.getDateLocaleLanguage(), {
+        weekday: 'long',
+      });
     } else {
-      label = itemDate.toLocaleDateString(undefined, {
+      label = itemDate.toLocaleDateString(CometChatLocalize.getDateLocaleLanguage(), {
         month: 'short',
         day: 'numeric',
         year: 'numeric',

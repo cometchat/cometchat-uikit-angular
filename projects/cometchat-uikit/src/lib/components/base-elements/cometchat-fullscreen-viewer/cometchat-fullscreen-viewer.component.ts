@@ -257,14 +257,24 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
   // ── Getters ───────────────────────────────────────────────────────────────
 
   getDateFormat(): CalendarObject {
+    const pattern =
+      ` ${CometChatLocalize.getDatePattern()} [${getLocalizedString('full_screen_viewer_at')}] ` +
+      CometChatLocalize.getTimePattern();
     const defaultFormat = {
-      yesterday: ` DD/M/YYYY [${getLocalizedString('full_screen_viewer_at')}] hh:mm A`,
-      otherDays: ` DD/M/YYYY [${getLocalizedString('full_screen_viewer_at')}] hh:mm A`,
-      today: ` DD/M/YYYY [${getLocalizedString('full_screen_viewer_at')}] hh:mm A`,
+      yesterday: pattern,
+      otherDays: pattern,
+      today: pattern,
     };
     return {
       ...defaultFormat,
-      ...sanitizeCalendarObject(CometChatLocalize.getCalendarObject()),
+      // Only an explicitly configured global object may override the viewer's
+      // own "date at time" format. getCalendarObject() always returns a full
+      // object now, so spreading it unconditionally overwrote every key here —
+      // the pattern above was built and never used, and the header lost its
+      // time. Same guard as buildCallLogDateFormat.
+      ...(CometChatLocalize.hasCustomCalendarObject()
+        ? sanitizeCalendarObject(CometChatLocalize.getCalendarObject())
+        : {}),
       ...sanitizeCalendarObject(this.imageSentAtDateTimeFormat),
     };
   }
@@ -280,6 +290,8 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
   get currentFileSize(): string { return formatFileSize(this.isGalleryMode ? this.currentAttachment?.size : this.fileSize); }
   get currentFileExtension(): string { return getFileExtension(this.isGalleryMode ? (this.currentAttachment?.name || '') : this.fileName); }
   getLocalizedString(key: string): string { return getLocalizedString(key); }
+  /** Counter label with {current}/{total} substituted — the raw key must never reach the DOM. */
+  getGalleryPositionLabel(): string { return getGalleryPositionText(this.currentIndex + 1, this.attachments.length); }
   getViewerAriaLabel(): string { return getViewerAriaLabel(this.mediaType); }
   getMediaAltText(): string { return getMediaAltText(this.isGalleryMode ? this.currentAttachment?.type : this.mediaType, this.senderName, this.fileName); }
 

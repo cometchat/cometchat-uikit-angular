@@ -438,9 +438,12 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   private computeMessagesWithDateSeparators(): MessageListItem[] { return computeMessagesWithDateSeparatorsImpl(this as any) as MessageListItem[]; }
   private getReactionFingerprint(message: CometChat.BaseMessage): string { return getReactionFingerprintImpl(message); }
   private getDateString(timestamp: number): string { return getDateStringImpl(timestamp); }
-  getDefaultSeparatorDateFormat(): CalendarObject { return { today: CometChatLocalize.getLocalizedString('today'), yesterday: CometChatLocalize.getLocalizedString('yesterday'), otherDays: 'DD MMM, YYYY' }; }
-  getDefaultStickyDateFormat(): CalendarObject { return { today: CometChatLocalize.getLocalizedString('today'), yesterday: CometChatLocalize.getLocalizedString('yesterday'), otherDays: 'DD MMM, YYYY' }; }
-  getDefaultMessageDateFormat(): CalendarObject { return { today: 'hh:mm A', yesterday: 'hh:mm A', otherDays: 'hh:mm A' }; }
+  getDefaultSeparatorDateFormat(): CalendarObject { return { today: CometChatLocalize.getLocalizedString('today'), yesterday: CometChatLocalize.getLocalizedString('yesterday'), otherDays: CometChatLocalize.getDatePattern('monthName') }; }
+  getDefaultStickyDateFormat(): CalendarObject { return { today: CometChatLocalize.getLocalizedString('today'), yesterday: CometChatLocalize.getLocalizedString('yesterday'), otherDays: CometChatLocalize.getDatePattern('monthName') }; }
+  getDefaultMessageDateFormat(): CalendarObject {
+    const time = CometChatLocalize.getTimePattern();
+    return { today: time, yesterday: time, otherDays: time };
+  }
   getEffectiveSeparatorDateFormat(): CalendarObject {
     return this.separatorDateTimeFormat || this.getDefaultSeparatorDateFormat();
   }

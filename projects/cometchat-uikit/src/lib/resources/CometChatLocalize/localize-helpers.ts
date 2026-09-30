@@ -17,22 +17,46 @@ export function formatDateFromPattern(
   dateLocaleLanguage: string,
   getLocalizedString: (key: string) => string
 ): string {
+  // Text in [brackets] is literal: it must not be scanned for tokens, and it
+  // must not influence the clock. Swap each literal for a marker first, then
+  // put it back once every replacement has run.
+  //
+  // Without this, `[Ayer] HH:mm` printed 07:35 instead of 19:35 — the `A` in
+  // "Ayer" satisfied `includes('A')` and switched the formatter to 12-hour.
+  // Any localized word containing a lone D, M, H, h or m was exposed the same
+  // way, and this kit puts translated words inside date patterns in ~8 places.
+  const literals: string[] = [];
+  const MARKER = '\u0000';
+  const pattern = format.replace(/\[(.*?)\]/g, (_match, text: string) => {
+    literals.push(text);
+    return `${MARKER}${literals.length - 1}${MARKER}`;
+  });
+  const restoreLiterals = (value: string): string =>
+    value.replace(new RegExp(`${MARKER}(\\d+)${MARKER}`, 'g'), (_m, index: string) => literals[Number(index)]);
+
   const options: Intl.DateTimeFormatOptions = {
-    day: format.includes('D') ? '2-digit' : undefined,
+    day: pattern.includes('D') ? '2-digit' : undefined,
     month:
-      format.includes('MMMM') ||
-      format.includes('MMM') ||
-      format.includes('MM') ||
-      format.includes('M')
+      pattern.includes('MMMM') ||
+      pattern.includes('MMM') ||
+      pattern.includes('MM') ||
+      pattern.includes('M')
         ? '2-digit'
         : undefined,
-    year: format.includes('YYYY') ? 'numeric' : format.includes('YY') ? '2-digit' : undefined,
-    hour: format.includes('hh') ? '2-digit' : format.includes('h') ? 'numeric' : undefined,
-    minute: format.includes('mm') ? '2-digit' : format.includes('m') ? 'numeric' : undefined,
-    hour12: format.includes('A'),
-    weekday: format.includes('dddd')
+    year: pattern.includes('YYYY') ? 'numeric' : pattern.includes('YY') ? '2-digit' : undefined,
+    // HH/H are the 24-hour tokens, hh/h the 12-hour ones.
+    hour: /\b(HH|hh)\b/.test(pattern)
+      ? '2-digit'
+      : /\b[Hh]\b/.test(pattern)
+        ? 'numeric'
+        : undefined,
+    minute: pattern.includes('mm') ? '2-digit' : pattern.includes('m') ? 'numeric' : undefined,
+    // Only pass hour12 when the pattern actually asks for AM/PM; otherwise pin the cycle to
+    // h23 so midnight renders as 00 rather than 24 in locales that default to h24.
+    ...(pattern.includes('A') ? { hour12: true } : { hourCycle: 'h23' as const }),
+    weekday: pattern.includes('dddd')
       ? 'long'
-      : format.includes('ddd') || format.includes('dd')
+      : pattern.includes('ddd') || pattern.includes('dd')
         ? 'short'
         : undefined,
     timeZone: timezone,
@@ -123,6 +147,8 @@ export function formatDateFromPattern(
     if (part.type === 'hour') {
       replacements['hh'] = part.value;
       replacements['h'] = parseInt(part.value).toString();
+      replacements['HH'] = part.value;
+      replacements['H'] = parseInt(part.value).toString();
     }
     if (part.type === 'minute') {
       replacements['mm'] = part.value;
@@ -138,8 +164,8 @@ export function formatDateFromPattern(
     }
   });
 
-  return format
-    .replace(/\[(.*?)\]/g, '$1')
+  return restoreLiterals(
+    pattern
     .replace(/\bDD\b/g, replacements['DD'] || '')
     .replace(/\bD\b/g, replacements['D'] || '')
     .replace(/\bMMMM\b/g, replacements['MMMM'] || '')
@@ -148,6 +174,8 @@ export function formatDateFromPattern(
     .replace(/\bM\b/g, replacements['M'] || '')
     .replace(/\bYYYY\b/g, replacements['YYYY'] || '')
     .replace(/\bYY\b/g, replacements['YY'] || '')
+    .replace(/\bHH\b/g, replacements['HH'] || '')
+    .replace(/\bH\b/g, replacements['H'] || '')
     .replace(/\bhh\b/g, replacements['hh'] || '')
     .replace(/\bh\b/g, replacements['h'] || '')
     .replace(/\bmm\b/g, replacements['mm'] || '')
@@ -158,7 +186,8 @@ export function formatDateFromPattern(
     .replace(/\sA\s/g, ` ${replacements['A'] || 'A'} `)
     .replace(/^A\s/g, `${replacements['A'] || 'A'} `)
     .replace(/\sA$/, ` ${replacements['A'] || 'A'}`)
-    .replace(/^A$/, `${replacements['A'] || 'A'}`);
+    .replace(/^A$/, `${replacements['A'] || 'A'}`)
+  );
 }
 
 /**
@@ -263,4 +292,134 @@ export function formatDate(
     return applyPattern(calendarObject.lastWeek);
   }
   return applyPattern(calendarObject.otherDays || 'DD/MM/YYYY');
+}
+
+/** Cached `Intl.NumberFormat` instances, keyed by locale + unit + display width. */
+const UNIT_FORMATTERS = new Map<string, Intl.NumberFormat>();
+
+/**
+ * Formats a count of a time unit in the given locale, e.g. `2` + `minute` →
+ * "2 minutes" (en), "2 minutos" (es), "2分" (ja).
+ *
+ * `Intl.NumberFormat` is used rather than translation keys because plural rules
+ * differ per language — Russian and Lithuanian pick a different form for 1, 2-4
+ * and 5+, which a single "%d minutes" string cannot express.
+ *
+ * @param value - The number of units
+ * @param unit - A sanctioned Intl unit identifier ('hour' | 'minute' | 'second')
+ * @param locale - BCP 47 language tag
+ * @param unitDisplay - 'long' for "2 minutes", 'narrow' for "2m"
+ * @returns The localized unit string
+ */
+function formatTimeUnit(
+  value: number,
+  unit: 'hour' | 'minute' | 'second',
+  locale: string,
+  unitDisplay: 'long' | 'short' | 'narrow'
+): string {
+  const cacheKey = `${locale}|${unit}|${unitDisplay}`;
+  let formatter = UNIT_FORMATTERS.get(cacheKey);
+  if (!formatter) {
+    try {
+      formatter = new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay });
+    } catch {
+      // Unknown locale, or an engine without `style: 'unit'`.
+      try {
+        formatter = new Intl.NumberFormat('en-US', { style: 'unit', unit, unitDisplay });
+      } catch {
+        return unitDisplay === 'long'
+          ? `${value} ${unit}${value === 1 ? '' : 's'}`
+          : `${value}${unit.charAt(0)}`;
+      }
+    }
+    UNIT_FORMATTERS.set(cacheKey, formatter);
+  }
+  return formatter.format(value);
+}
+
+/** Clamps an arbitrary input to a whole, non-negative number of seconds. */
+function toWholeSeconds(seconds: number): number {
+  return Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+}
+
+/**
+ * Formats a duration for screen readers, e.g. "2 minutes 30 seconds".
+ * Units that are zero are dropped, so 60 reads as "1 minute" and 45 as
+ * "45 seconds". Hours are rolled into minutes, matching the previous behaviour.
+ *
+ * @param seconds - The duration in seconds
+ * @param locale - BCP 47 language tag
+ * @returns The localized duration
+ */
+export function formatDurationLong(seconds: number, locale: string): string {
+  const total = toWholeSeconds(seconds);
+  const minutes = Math.floor(total / 60);
+  const remainingSeconds = total % 60;
+
+  if (minutes === 0) {
+    return formatTimeUnit(remainingSeconds, 'second', locale, 'long');
+  }
+  if (remainingSeconds === 0) {
+    return formatTimeUnit(minutes, 'minute', locale, 'long');
+  }
+  return `${formatTimeUnit(minutes, 'minute', locale, 'long')} ${formatTimeUnit(remainingSeconds, 'second', locale, 'long')}`;
+}
+
+/**
+ * Formats a duration compactly, e.g. "1 hr 2 min 3 sec" (en), "1 時間 2 分 3 秒" (ja).
+ * Leading units that are zero are dropped; a zero duration reads as "0 sec".
+ *
+ * Uses CLDR's 'short' unit width rather than 'narrow'. Narrow is more compact in
+ * English ("1h 2m 3s"), but CLDR's narrow forms for Japanese are the Latin
+ * letters h/m/s — so a Japanese call log still read "1m 0s", which is the bug
+ * this was meant to fix. Short is correct in every locale and still compact.
+ *
+ * @param seconds - The duration in seconds
+ * @param locale - BCP 47 language tag
+ * @returns The localized duration
+ */
+export function formatDurationShort(seconds: number, locale: string): string {
+  const total = toWholeSeconds(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainingSeconds = total % 60;
+
+  const parts: string[] = [];
+  if (hours > 0) parts.push(formatTimeUnit(hours, 'hour', locale, 'short'));
+  if (hours > 0 || minutes > 0) parts.push(formatTimeUnit(minutes, 'minute', locale, 'short'));
+  parts.push(formatTimeUnit(remainingSeconds, 'second', locale, 'short'));
+
+  return parts.join(' ');
+}
+
+/**
+ * Wraps a CalendarObject factory so it rebuilds only when the language changes.
+ *
+ * A getter that returns a fresh object literal hands `<cometchat-date>` a new
+ * identity on every change-detection pass, so `ngOnChanges` fires and the date
+ * is reformatted — once per list item, per pass. The contents only ever depend
+ * on the active language, so one instance per language is enough.
+ *
+ * The key must cover every input the object depends on. These objects hold a
+ * translated word ("Yesterday") as well as date patterns, so the text language
+ * belongs in the key too: with `disableDateTimeLocalization: true` the date
+ * locale is pinned to `en-US`, and keying on that alone meant switching
+ * language never rebuilt the object and the old word stuck.
+ *
+ * The key is passed in rather than read here: this module is imported by
+ * `cometchat-localize`, so reaching back into it would be a cycle.
+ *
+ * @param build - Produces the object for the current language
+ * @returns A function that returns a stable object for a given cache key
+ */
+export function cachedByLanguage<T>(build: () => T): (language: string) => T {
+  let cachedLanguage: string | null = null;
+  let cached: T;
+  return (language: string): T => {
+    if (cachedLanguage !== language) {
+      cached = build();
+      cachedLanguage = language;
+    }
+    return cached;
+  };
 }

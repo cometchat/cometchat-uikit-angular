@@ -2,6 +2,7 @@
 
 import {RichTextEditorConfig, RichTextFormatState, SelectionState, HistoryEntry,} from './rich-text-editor.interfaces';
 import {ContentEditableManager} from './content-editable-manager.class';
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 import {SelectionManager} from './selection-manager.class';
 import {FormatManager} from './format-manager.class';
 import {HistoryManager} from './history-manager.class';
@@ -67,7 +68,10 @@ export class RichTextEditor {
     this.contentEditable.contentEditable = 'true';
     this.contentEditable.setAttribute('role', 'textbox');
     this.contentEditable.setAttribute('aria-multiline', 'true');
-    this.contentEditable.setAttribute('aria-label', config.ariaLabel || 'Rich text editor');
+    this.contentEditable.setAttribute(
+      'aria-label',
+      config.ariaLabel || CometChatLocalize.getLocalizedString('accessibility_rich_text_editor')
+    );
     this.contentEditable.setAttribute('data-placeholder', config.placeholder || '');
     this.contentEditableManager = new ContentEditableManager(this.contentEditable);
     this.contentEditableManager.initialize({
@@ -277,7 +281,7 @@ export class RichTextEditor {
       this.selectionManager.setCursorPosition(previous.cursorPosition);
       this.updateFormatState();
       this.emitUpdate();
-      this.announceToScreenReader('Undo');
+      this.announceToScreenReader(CometChatLocalize.getLocalizedString('accessibility_undo'));
       return true;
     }
     return false;
@@ -289,7 +293,7 @@ export class RichTextEditor {
       this.selectionManager.setCursorPosition(next.cursorPosition);
       this.updateFormatState();
       this.emitUpdate();
-      this.announceToScreenReader('Redo');
+      this.announceToScreenReader(CometChatLocalize.getLocalizedString('accessibility_redo'));
       return true;
     }
     return false;

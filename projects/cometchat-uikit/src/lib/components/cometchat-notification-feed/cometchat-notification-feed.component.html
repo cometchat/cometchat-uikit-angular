@@ -198,7 +198,7 @@
                 <span class="cometchat-notification-feed__item-time">
                   <cometchat-date
                     [timestamp]="item.getSentAt()"
-                    [calendarObject]="{ today: 'hh:mm A', yesterday: 'YESTERDAY', otherDays: 'DD/MM/YYYY' }"
+                    [calendarObject]="feedDateFormat"
                   ></cometchat-date>
                 </span>
               </div>

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { MediaUploadTrayService } from './media-upload-tray.service';
 
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 function mkFile(name: string, size: number, type: string): File {
   const f = new File([new Uint8Array(1)], name, { type });
   Object.defineProperty(f, 'size', { value: size });
@@ -158,7 +159,11 @@ describe('MediaUploadTrayService', () => {
     listener.onFileError(idOf(0), { message: 'too big' } as any);
     listener.onFileFailure(idOf(1), { message: 'network' } as any);
     expect(svc.tiles()[0].status).toBe('rejected');
-    expect(svc.tiles()[0].errorMessage).toBe('too big');
+    // 'too big' is not a message we can map, so the tile shows the localized generic copy
+    // rather than the SDK's English text (ENG-39429: raw SDK English leaked to every locale).
+    expect(svc.tiles()[0].errorMessage).toBe(
+      CometChatLocalize.getLocalizedString('message_composer_upload_failed')
+    );
     expect(svc.tiles()[1].status).toBe('failed');
     expect(svc.canSend()).toBe(false);
   });
@@ -284,10 +289,11 @@ describe('MediaUploadTrayService', () => {
       );
     });
 
-    it('passes an unrecognized error through verbatim', () => {
-      expect(errorText({ code: 'ERR_UPLOAD_STALLED', message: 'Upload stalled. Try again.' })).toBe(
-        'Upload stalled. Try again.',
-      );
+    it('returns empty for an unrecognized error so the caller can localize', () => {
+      // Previously this passed the SDK message through verbatim. That text is English-only,
+      // so it reached users in every locale (ENG-39429). errorText now yields '' for anything
+      // it cannot map, and uploadErrorMessage() substitutes the localized generic copy.
+      expect(errorText({ code: 'ERR_UPLOAD_STALLED', message: 'Upload stalled. Try again.' })).toBe('');
     });
   });
 

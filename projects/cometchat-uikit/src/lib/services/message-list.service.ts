@@ -273,7 +273,7 @@ export class MessageListService {
   private deduplicateMessages(messages: CometChat.BaseMessage[]): CometChat.BaseMessage[] { return deduplicateMessagesImpl(this as any, messages); }
   private isRecoverableError(error: unknown): boolean { return isRecoverableError(error); }
   private isRecoverableErrorMessage(message: string): boolean { return isRecoverableErrorMessage(message); }
-  private getUserFriendlyErrorMessage(error: unknown, context: string): string { return getUserFriendlyErrorMessage(error, context); }
+  private getUserFriendlyErrorMessage(error: unknown): string { return getUserFriendlyErrorMessage(error); }
   private delay(ms: number): Promise<void> { return delayUtil(ms); }
   private async handleErrorWithRetry(error: unknown, context: string, retryFn?: () => Promise<void>): Promise<void> {
     CometChatLogger.error('MessageListService', `Error in ${context}:`, error);
@@ -285,7 +285,7 @@ export class MessageListService {
       try { await retryFn(); this.retryAttempts.delete(context); return; } catch (retryError) { return this.handleErrorWithRetry(retryError, context, retryFn); }
     }
     this.retryAttempts.delete(context);
-    const enhancedError = new Error(this.getUserFriendlyErrorMessage(error, context));
+    const enhancedError = new Error(this.getUserFriendlyErrorMessage(error));
     (enhancedError as Error & { originalError: unknown }).originalError = error;
     (enhancedError as Error & { context: string }).context = context;
     if (this.errorCallback) this.errorCallback(error as CometChat.CometChatException);

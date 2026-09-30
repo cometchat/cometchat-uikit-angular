@@ -371,12 +371,21 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
   }
   getLastActiveDateFormat(): CalendarObject {
     if (this.lastActiveAtDateTimeFormat) return this.lastActiveAtDateTimeFormat;
+    const t = (key: string) => CometChatLocalize.getLocalizedString(key);
     return {
-      today: 'h:mm A',
-      yesterday: '[Yesterday]',
+      today: CometChatLocalize.getTimePattern(),
+      // Square brackets mark literal text. formatDateFromPattern lifts bracketed
+      // text out before it reads tokens or decides the clock, so a translated
+      // word is safe here whatever letters it contains.
+      yesterday: `[${t('yesterday')}]`,
       lastWeek: 'dddd',
-      otherDays: 'DD/MM/YYYY',
-      relativeTime: { minute: '1 min ago', minutes: '%d mins ago', hour: '1 hour ago', hours: '%d hours ago' },
+      otherDays: CometChatLocalize.getDatePattern(),
+      relativeTime: {
+        minute: t('message_header_minute_ago'),
+        minutes: t('message_header_minutes_ago'),
+        hour: t('message_header_hour_ago'),
+        hours: t('message_header_hours_ago'),
+      },
     };
   }
   getHeaderAriaLabel(): string {

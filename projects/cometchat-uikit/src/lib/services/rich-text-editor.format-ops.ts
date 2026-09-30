@@ -4,6 +4,25 @@
  */
 
 import { RichTextFormatState } from './rich-text-editor.interfaces';
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
+
+/**
+ * Builds the screen-reader announcement for a formatting toggle.
+ *
+ * The format's own name is already localized (the toolbar buttons use the same
+ * keys), so only the "applied"/"removed" frame is added here. Announcing
+ * "Bold applied" in English to every language was the previous behaviour.
+ *
+ * @param formatKey - Localization key for the format name, e.g. 'message_composer_bold'
+ * @param isApplied - Whether the format was turned on or off
+ * @returns The localized announcement
+ */
+function formatAnnouncement(formatKey: string, isApplied: boolean): string {
+  const template = CometChatLocalize.getLocalizedString(
+    isApplied ? 'accessibility_formatting_applied' : 'accessibility_formatting_removed'
+  );
+  return template.replace('{format}', CometChatLocalize.getLocalizedString(formatKey));
+}
 
 export interface FormatOpsContext {
   formatManager: any;
@@ -25,7 +44,7 @@ export function applyBoldImpl(ctx: FormatOpsContext): void {
   ctx.protectMentionsFromFormatting();
   ctx.updateFormatState();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.bold ? 'Bold applied' : 'Bold removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_bold', ctx.currentFormatState.bold));
 }
 
 export function applyItalicImpl(ctx: FormatOpsContext): void {
@@ -33,7 +52,7 @@ export function applyItalicImpl(ctx: FormatOpsContext): void {
   ctx.protectMentionsFromFormatting();
   ctx.updateFormatState();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.italic ? 'Italic applied' : 'Italic removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_italic', ctx.currentFormatState.italic));
 }
 
 export function applyUnderlineImpl(ctx: FormatOpsContext): void {
@@ -41,7 +60,7 @@ export function applyUnderlineImpl(ctx: FormatOpsContext): void {
   ctx.protectMentionsFromFormatting();
   ctx.updateFormatState();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.underline ? 'Underline applied' : 'Underline removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_underline', ctx.currentFormatState.underline));
 }
 
 export function applyStrikethroughImpl(ctx: FormatOpsContext): void {
@@ -49,7 +68,7 @@ export function applyStrikethroughImpl(ctx: FormatOpsContext): void {
   ctx.protectMentionsFromFormatting();
   ctx.updateFormatState();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.strikethrough ? 'Strikethrough applied' : 'Strikethrough removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_strikethrough', ctx.currentFormatState.strikethrough));
 }
 
 export function applyInlineCodeImpl(ctx: FormatOpsContext): void {
@@ -58,7 +77,7 @@ export function applyInlineCodeImpl(ctx: FormatOpsContext): void {
   ctx.contentEditable.querySelectorAll('code').forEach((c: Element) => ctx.convertMentionsToPlainText(c));
   ctx.updateFormatState();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.code ? 'Code formatting applied' : 'Code formatting removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_inline_code', ctx.currentFormatState.code));
 }
 
 export function applyCodeBlockImpl(ctx: FormatOpsContext): void {
@@ -71,7 +90,7 @@ export function applyCodeBlockImpl(ctx: FormatOpsContext): void {
   ctx.contentEditable.querySelectorAll('pre').forEach((p: Element) => ctx.convertMentionsToPlainText(p));
   ctx.updateFormatState();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.codeBlock ? 'Code block applied' : 'Code block removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_code_block', ctx.currentFormatState.codeBlock));
 }
 
 export function applyBlockquoteImpl(ctx: FormatOpsContext): void {
@@ -79,7 +98,7 @@ export function applyBlockquoteImpl(ctx: FormatOpsContext): void {
   ctx.formatManager.applyBlockquote();
   ctx.updateFormatState();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.blockquote ? 'Blockquote applied' : 'Blockquote removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_blockquote', ctx.currentFormatState.blockquote));
 }
 
 export function applyOrderedListImpl(ctx: FormatOpsContext): void {
@@ -104,7 +123,7 @@ export function applyOrderedListImpl(ctx: FormatOpsContext): void {
   ctx.updateFormatState();
   ctx.pushToHistory();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.orderedList ? 'Ordered list applied' : 'Ordered list removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_ordered_list', ctx.currentFormatState.orderedList));
 }
 
 export function applyBulletListImpl(ctx: FormatOpsContext): void {
@@ -126,7 +145,7 @@ export function applyBulletListImpl(ctx: FormatOpsContext): void {
   ctx.updateFormatState();
   ctx.pushToHistory();
   ctx.emitUpdate();
-  ctx.announceToScreenReader(ctx.currentFormatState.bulletList ? 'Bullet list applied' : 'Bullet list removed');
+  ctx.announceToScreenReader(formatAnnouncement('message_composer_bullet_list', ctx.currentFormatState.bulletList));
 }
 
 export function setLinkImpl(ctx: FormatOpsContext, url: string | null, text?: string): void {

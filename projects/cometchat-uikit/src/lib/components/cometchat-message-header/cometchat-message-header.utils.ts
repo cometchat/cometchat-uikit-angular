@@ -87,6 +87,6 @@ export function getLastActiveDateFormat(): CalendarObject {
     yesterday: CometChatLocalize.getLocalizedString('yesterday'),
     today: CometChatLocalize.getLocalizedString('today'),
     lastWeek: 'dddd',
-    otherDays: 'DD/MM/YYYY'
+    otherDays: CometChatLocalize.getDatePattern()
   };
 }

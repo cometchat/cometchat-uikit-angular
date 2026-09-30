@@ -126,7 +126,7 @@
                 class="cometchat-message-bubble__body-content-view"
                 [id]="'message-content-' + messageId"
                 role="region"
-                [attr.aria-label]="'Message content'">
+                [attr.aria-label]="'accessibility_message_content' | translate">
                 @if (effectiveContentView) {
                   <ng-container *ngTemplateOutlet="effectiveContentView; context: { $implicit: message }"></ng-container>
                 } @else {
@@ -224,7 +224,7 @@
                       }
                       @case ('meeting') {
                         <cometchat-call-bubble
-                        [buttonText]="'Join Call'"
+                          [buttonText]="'message_list_join_call' | translate"
                           [message]="$any(message)"
                           [alignment]="isOutgoingStyle ? 'right' : 'left'"
                           [disableInteraction]="disableInteraction"

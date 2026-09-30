@@ -1,7 +1,6 @@
 /**
  * Utility functions for CometChatMessageInformation component.
  */
-import { DatePipe } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { ReceiptInfo, MAX_PREVIEW_LENGTH } from './cometchat-message-information.types';
@@ -10,9 +9,17 @@ import { ReceiptInfo, MAX_PREVIEW_LENGTH } from './cometchat-message-information
  * Formats a Unix timestamp (seconds) for accessibility announcements.
  * Returns a human-readable medium date/time string.
  */
-export function formatTimestampForAccessibility(timestamp: number, datePipe: DatePipe): string {
+export function formatTimestampForAccessibility(timestamp: number): string {
   const date = new Date(timestamp * 1000);
-  return datePipe.transform(date, 'medium') || '';
+  // Angular's DatePipe was created with a hardcoded 'en-US', so these announcements stayed
+  // English in every locale. Format against the active language instead.
+  return date.toLocaleString(CometChatLocalize.getDateLocaleLanguage(), {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 /**
@@ -21,11 +28,10 @@ export function formatTimestampForAccessibility(timestamp: number, datePipe: Dat
  */
 export function getReceiptAriaLabel(
   receipt: ReceiptInfo,
-  type: 'delivered' | 'read',
-  datePipe: DatePipe
+  type: 'delivered' | 'read'
 ): string {
   const userName = receipt.user.getName();
-  const timestamp = formatTimestampForAccessibility(receipt.timestamp, datePipe);
+  const timestamp = formatTimestampForAccessibility(receipt.timestamp);
 
   if (type === 'read') {
     return CometChatLocalize.getLocalizedString('accessibility_read_by_user')

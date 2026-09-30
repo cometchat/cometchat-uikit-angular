@@ -364,6 +364,103 @@ function extractTypeScriptKeys(dir: string): Set<string> {
   return keys;
 }
 
+/** Load all language translation files, returning a map of lang → full record. */
+function loadAllLanguageRecords(): Map<string, Record<string, string>> {
+  const result = new Map<string, Record<string, string>>();
+  if (!fs.existsSync(RESOURCES_DIR)) return result;
+  for (const entry of fs.readdirSync(RESOURCES_DIR, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const translationPath = path.join(RESOURCES_DIR, entry.name, 'translation.json');
+    if (!fs.existsSync(translationPath)) continue;
+    result.set(
+      entry.name,
+      JSON.parse(fs.readFileSync(translationPath, 'utf-8')) as Record<string, string>
+    );
+  }
+  return result;
+}
+
+/**
+ * Every key the UI Kit can render.
+ *
+ * Matching only `getLocalizedString('key')` and `'key' | translate` is not
+ * enough — it misses every key that does not sit syntactically inside those
+ * calls. Real examples that shipped untranslated because of this:
+ *
+ *   getLocalizedString(following ? 'thread_..._unsubscribe' : 'thread_..._subscribe')
+ *   getLocalizedString(`${COPY[this.action]}_${suffix}`)
+ *   const typeKey = `accessibility_message_type_${this.messageType}`;
+ *
+ * Three rules, applied together:
+ *
+ *   1. Any string literal that exactly matches a key in the en-us dictionary.
+ *      Broad but self-limiting: a literal can only match if the key name is
+ *      genuinely written in the source. Catches ternaries, arrays, map values,
+ *      multi-line calls and variables assigned from literals.
+ *   2. Template literals in a localization context — inline in
+ *      getLocalizedString(), or assigned to a `…Key` / `…Prefix` variable —
+ *      expanded against the dictionary. The context requirement excludes
+ *      look-alikes such as `message_list_${Date.now()}`, which is a DOM id.
+ *   3. Key stems of three or more segments that prefix two or more keys,
+ *      which is how lookup maps such as COPY hold their key fragments.
+ */
+function collectReferencedKeys(): Set<string> {
+  const enDict = JSON.parse(
+    fs.readFileSync(path.join(RESOURCES_DIR, 'en-us', 'translation.json'), 'utf-8')
+  ) as Record<string, string>;
+  const enKeys = Object.keys(enDict);
+  const enSet = new Set(enKeys);
+
+  const sources = [
+    ...collectFiles(LIB_ROOT, '.ts').filter(
+      f => !f.includes('.spec.') && !f.includes('.stories.') && !f.endsWith('.backup')
+    ),
+    ...collectFiles(LIB_ROOT, '.html').filter(f => !f.includes('.spec.')),
+  ];
+
+  const keys = new Set<string>();
+
+  for (const file of sources) {
+    const src = fs.readFileSync(file, 'utf-8');
+
+    // 1. literals that are keys
+    for (const m of src.matchAll(/['"`]([a-z][a-z0-9_]{2,80})['"`]/g)) {
+      if (enSet.has(m[1])) keys.add(m[1]);
+    }
+
+    if (!file.endsWith('.ts')) continue;
+
+    // 2. template literals used as keys
+    const templates = [
+      ...src.matchAll(/getLocalizedString\(\s*`([^`]+)`/g),
+      ...src.matchAll(/\b(?:const|let|var)\s+\w*(?:Key|Prefix)\s*(?::[^=]+)?=\s*`([^`]+)`/g),
+    ];
+    for (const m of templates) {
+      const tpl = m[1];
+      if (tpl.replace(/\$\{[^}]*\}/g, '').length < 6) continue;
+      const pattern = new RegExp(
+        '^' +
+          tpl
+            .split(/\$\{[^}]*\}/)
+            .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .join('[a-z0-9_]+') +
+          '$'
+      );
+      for (const k of enKeys) if (pattern.test(k)) keys.add(k);
+    }
+
+    // 3. key stems held in lookup maps
+    for (const m of src.matchAll(/['"]([a-z][a-z0-9_]{5,80})['"]/g)) {
+      const stem = m[1];
+      if (enSet.has(stem) || stem.split('_').length < 3) continue;
+      const family = enKeys.filter(k => k.startsWith(`${stem}_`));
+      if (family.length >= 2) family.forEach(k => keys.add(k));
+    }
+  }
+
+  return keys;
+}
+
 /** Load all language translation files, returning a map of lang → key set. */
 function loadAllLanguageKeys(): Map<string, Set<string>> {
   const result = new Map<string, Set<string>>();
@@ -493,48 +590,64 @@ describe('Property 11: All localization keys exist in all language resource file
   /**
    * **Validates: Requirements 6.3**
    *
-   * Exhaustive check: enumerate ALL en-us keys and report which are missing
-   * from each language file. This test always passes but emits a detailed
-   * warning for every gap found, so the findings are visible in CI output
-   * and can be tracked as a translation backlog.
+   * GUARD (hard fail): every key the UI Kit references must resolve in every
+   * language file. A key counts as unresolved when it is absent OR holds an
+   * empty string — `getLocalizedString()` treats `''` as missing and falls
+   * through to the fallback language, so an empty value is a silent gap.
+   *
+   * Scope is deliberately the *referenced* key set rather than the whole en-us
+   * dictionary: unreferenced keys are never rendered, so requiring translations
+   * for them would block CI on work with no user-facing value.
    */
-  it('exhaustive: every en-us key exists in every language file', () => {
-    const langKeys = loadAllLanguageKeys();
-    // Read en-us keys directly from filesystem to avoid runtime state pollution
-    const enUsPath = path.join(RESOURCES_DIR, 'en-us', 'translation.json');
-    const enKeys = new Set(
-      Object.keys(JSON.parse(fs.readFileSync(enUsPath, 'utf-8')) as Record<string, string>)
-    );
+  it('every referenced key resolves in every language file', () => {
+    const records = loadAllLanguageRecords();
+    const referenced = collectReferencedKeys();
 
-    const missingByLang: Record<string, string[]> = {};
+    expect(referenced.size).toBeGreaterThan(0);
+    expect(records.size).toBeGreaterThan(0);
 
-    for (const [lang, keys] of langKeys) {
-      if (lang === 'en-us') continue;
-      const missing: string[] = [];
-      for (const key of enKeys) {
-        if (!keys.has(key)) {
-          missing.push(key);
-        }
-      }
-      if (missing.length > 0) {
-        missingByLang[lang] = missing;
+    const failures: string[] = [];
+    for (const [lang, dict] of records) {
+      const unresolved = [...referenced].filter(key => {
+        const value = dict[key];
+        return value === undefined || value === '';
+      });
+      if (unresolved.length > 0) {
+        const sample = unresolved.slice(0, 8).join(', ');
+        const more = unresolved.length > 8 ? `, …and ${unresolved.length - 8} more` : '';
+        failures.push(`  ${lang}: ${unresolved.length} unresolved — ${sample}${more}`);
       }
     }
 
-    const langCount = Object.keys(missingByLang).length;
-    if (langCount > 0) {
-      const summary = Object.entries(missingByLang)
-        .map(([lang, keys]) => `  ${lang}: ${keys.length} missing key(s) — e.g. ${keys.slice(0, 3).join(', ')}`)
-        .join('\n');
+    expect(
+      failures,
+      `Referenced localization keys must resolve in every language.\n${failures.join('\n')}`
+    ).toHaveLength(0);
+  });
+
+  /**
+   * **Validates: Requirements 6.3**
+   *
+   * Informational: en-us keys that no code path references. These are excluded
+   * from the guard above by design. Reported so the list stays visible and can
+   * be triaged for deletion rather than silently accumulating.
+   */
+  it('reports unreferenced en-us keys as a backlog (warning only)', () => {
+    const enUsPath = path.join(RESOURCES_DIR, 'en-us', 'translation.json');
+    const enKeys = Object.keys(
+      JSON.parse(fs.readFileSync(enUsPath, 'utf-8')) as Record<string, string>
+    );
+    const referenced = collectReferencedKeys();
+    const unreferenced = enKeys.filter(k => !referenced.has(k));
+
+    if (unreferenced.length > 0) {
       console.warn(
-        `[Property 11] Translation backlog — ${langCount} language file(s) missing en-us keys:\n${summary}`
+        `[Property 11] ${unreferenced.length} en-us key(s) are not referenced by any code path ` +
+          `(excluded from the completeness guard; candidates for removal).`
       );
     }
 
-    // The test documents the gap; it does not hard-fail so CI is not blocked
-    // while translations are being backfilled. The warning above is the finding.
-    // Assert structural invariant: all language dirs have a translation.json
-    expect(langKeys.size).toBeGreaterThan(0);
+    expect(Array.isArray(unreferenced)).toBe(true);
   });
 
   /**
@@ -542,6 +655,52 @@ describe('Property 11: All localization keys exist in all language resource file
    *
    * Every language directory under resources/ must contain a translation.json.
    */
+  /**
+   * **Validates: Requirements 6.3**
+   *
+   * GUARD (hard fail): every translation must carry the same `{placeholder}`
+   * set as its en-us source.
+   *
+   * The completeness guard above only checks that a key exists and is
+   * non-empty, so two real defects slipped past it:
+   *
+   *   en-gb  message_header_and_n_others  "and {{count}} others"  — double
+   *          braces, and the code replaces `{count}`, so the UI rendered
+   *          "Alice and {2} others are typing".
+   *   14 locales  audio_bubble_region  dropped `{duration}` entirely, so the
+   *          clip length was never announced to a screen reader.
+   *
+   * Both are invisible to a key-presence check and to a human skim.
+   */
+  it('every translation uses the same placeholders as its en-us source', () => {
+    const placeholders = (value: string): string[] =>
+      [...new Set(String(value).match(/\{\{?[a-zA-Z_][a-zA-Z0-9_]*\}?\}/g) ?? [])].sort();
+
+    const enUsPath = path.join(RESOURCES_DIR, 'en-us', 'translation.json');
+    const enUs = JSON.parse(fs.readFileSync(enUsPath, 'utf-8')) as Record<string, string>;
+
+    const problems: string[] = [];
+    for (const dir of fs.readdirSync(RESOURCES_DIR, { withFileTypes: true })) {
+      if (!dir.isDirectory()) continue;
+      const file = path.join(RESOURCES_DIR, dir.name, 'translation.json');
+      if (!fs.existsSync(file)) continue;
+      const translations = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, string>;
+      for (const [key, source] of Object.entries(enUs)) {
+        const translated = translations[key];
+        if (translated === undefined) continue; // absence is the other guard's job
+        const want = placeholders(source);
+        const got = placeholders(translated);
+        if (want.join('|') !== got.join('|')) {
+          problems.push(
+            `${dir.name}/${key}: en-us has [${want.join(', ')}], translation has [${got.join(', ')}] — "${translated}"`
+          );
+        }
+      }
+    }
+
+    expect(problems, `Placeholder mismatches:\n${problems.join('\n')}`).toEqual([]);
+  });
+
   it('every language directory contains a translation.json file', () => {
     if (!fs.existsSync(RESOURCES_DIR)) {
       throw new Error(`Resources directory not found: ${RESOURCES_DIR}`);

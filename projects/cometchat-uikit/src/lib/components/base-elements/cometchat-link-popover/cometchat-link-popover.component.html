@@ -36,7 +36,7 @@
       class="cometchat-link-popover__button cometchat-link-popover__button--edit"
       (click)="handleEditClick()"
       type="button"
-      [attr.aria-label]="('message_composer_edit' | translate) + ' ' + ('message_composer_link' | translate)"
+      [attr.aria-label]="'message_composer_edit_link' | translate"
     >
       {{ 'message_composer_edit' | translate }}
     </button>
@@ -46,7 +46,7 @@
       class="cometchat-link-popover__button cometchat-link-popover__button--remove"
       (click)="handleRemoveClick()"
       type="button"
-      [attr.aria-label]="('message_composer_remove' | translate) + ' ' + ('message_composer_link' | translate)"
+      [attr.aria-label]="'message_composer_remove_link' | translate"
     >
       {{ 'message_composer_remove' | translate }}
     </button>

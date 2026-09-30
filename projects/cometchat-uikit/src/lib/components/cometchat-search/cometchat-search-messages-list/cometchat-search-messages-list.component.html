@@ -72,7 +72,7 @@
 <ng-template #messageItemTpl let-message let-idx="index">
   @if (shouldShowDateSeparator(idx ?? getMessageIndex(message))) {
     <div class="cometchat-search__messages-date-separator">
-      {{ message.getSentAt() * 1000 | date:'MMMM yyyy' }}
+      {{ formatMonthSeparator(message.getSentAt()) }}
     </div>
   }
 

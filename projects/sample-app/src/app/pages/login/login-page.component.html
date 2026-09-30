@@ -5,10 +5,10 @@
 
   <div class="cometchat-login__content">
     <div class="cometchat-login__header">
-      <div class="cometchat-login__title">Sign in to CometChat</div>
+      <div class="cometchat-login__title">{{ 'login_title' | translate }}</div>
 
       <div class="cometchat-login__sample-users">
-        <div class="cometchat-login__sample-users-title">Choose a Sample User</div>
+        <div class="cometchat-login__sample-users-title">{{ 'login_choose_sample_user' | translate }}</div>
         <div class="cometchat-login__user-list">
           @for (user of sampleUsers(); track user.uid) {
             <div
@@ -17,7 +17,7 @@
               (click)="loginWithUser(user.uid)"
               role="button"
               tabindex="0"
-              [attr.aria-label]="'Login as ' + user.name"
+              [attr.aria-label]="loginAsLabel(user.name)"
               (keydown.enter)="loginWithUser(user.uid)"
               (keydown.space)="loginWithUser(user.uid); $event.preventDefault()"
             >
@@ -43,19 +43,19 @@
 
     <div class="cometchat-login__divider-section">
       <div class="cometchat-login__divider"></div>
-      <span>Or</span>
+      <span>{{ 'login_or' | translate }}</span>
       <div class="cometchat-login__divider"></div>
     </div>
 
     <div class="cometchat-login__custom-login">
       <form class="cometchat-login__form" (ngSubmit)="loginWithCustomUid()">
         <div class="cometchat-login__input-group">
-          <label class="cometchat-login__input-label" for="customUid">Enter Your UID</label>
+          <label class="cometchat-login__input-label" for="customUid">{{ 'login_uid_label' | translate }}</label>
           <input
             id="customUid"
             type="text"
             class="cometchat-login__input"
-            placeholder="Enter UID"
+            [placeholder]="'login_uid_placeholder' | translate"
             [(ngModel)]="customUid"
             name="customUid"
             autocomplete="off"
@@ -63,13 +63,13 @@
           />
         </div>
         <button type="submit" class="cometchat-login__submit-button" [disabled]="loggingIn()">
-          Continue
+          {{ 'continue_label' | translate }}
         </button>
         @if (errorMessage()) {
           <div class="cometchat-login__error" role="alert">{{ errorMessage() }}</div>
         }
         <div class="cometchat-login__note">
-          Change <span class="cometchat-login__note-link" (click)="changeCredentials()" (keydown.enter)="changeCredentials()" tabindex="0" role="link">App Credentials</span>
+          <span class="cometchat-login__note-link" (click)="changeCredentials()" (keydown.enter)="changeCredentials()" tabindex="0" role="link">{{ 'login_change_credentials' | translate }}</span>
         </div>
       </form>
     </div>

@@ -13,7 +13,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { safeEffect } from '../../../utils/safe-effect';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatSearchFilter, States } from '../../../Enums/Enums';
 import { SearchMessagesService } from '../../../services/search-messages.service';
@@ -40,7 +40,7 @@ import { stripRichTextFormatting } from '../../../utils/util';
 @Component({
   selector: 'cometchat-search-messages-list',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, DatePipe, CometChatPaginatedListComponent],
+  imports: [CommonModule, TranslatePipe, CometChatPaginatedListComponent],
   templateUrl: './cometchat-search-messages-list.component.html',
   styleUrls: ['./cometchat-search-messages-list.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -157,6 +157,38 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     }
     const receiver = message.getReceiver();
     return (receiver as CometChat.User | CometChat.Group)?.getName?.() ?? '';
+  }
+
+  /**
+   * Month/year heading above a group of search results.
+   *
+   * Uses CometChatLocalize rather than Angular's `| date` pipe: that pipe formats against
+   * LOCALE_ID, which the kit never provides, so the heading stayed English in every locale.
+   * `MMMM` resolves through the `month_*_full` keys.
+   */
+  formatMonthSeparator(sentAt: number): string {
+    if (!sentAt) return '';
+    // 'MMMM YYYY' hard-codes month-before-year, which reads backwards in
+    // ja/zh/ko — "9月 2026" instead of "2026年9月". Intl puts the two
+    // in the order the locale actually uses.
+    try {
+      return new Date(sentAt * 1000).toLocaleDateString(CometChatLocalize.getDateLocaleLanguage(), {
+        // Same timezone as every other date on screen, or the heading can
+        // disagree with the rows beneath it across a month boundary.
+        timeZone: CometChatLocalize.getTimezone(),
+        month: 'long',
+        year: 'numeric',
+      });
+    } catch {
+      // Unknown locale: fall through to the pattern formatter.
+    }
+    const pattern = 'MMMM YYYY';
+    return CometChatLocalize.formatDate(sentAt, {
+      today: pattern,
+      yesterday: pattern,
+      lastWeek: pattern,
+      otherDays: pattern,
+    });
   }
 
   shouldShowDateSeparator(index: number): boolean {
@@ -510,14 +542,23 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     return attachments?.[0]?.getUrl() || '';
   }
 
-  /** Format date for trailing view using Angular DatePipe for locale-aware formatting */
+  /**
+   * Date for the trailing view. Goes through CometChatLocalize, not Angular's DatePipe:
+   * that was constructed as `new DatePipe('en-US')`, so despite the old comment it was
+   * pinned to English. `MMM` resolves via the `month_*_short` keys and the time follows
+   * the active locale's own pattern.
+   */
   getFormattedDate(message: CometChat.BaseMessage): string {
     const sentAt = message.getSentAt();
     if (!sentAt) return '';
-    const date = new Date(sentAt * 1000);
-    // Use Angular DatePipe for locale-aware month abbreviation
-    const datePipe = new DatePipe('en-US');
-    return datePipe.transform(date, 'd MMM, hh:mm a') ?? '';
+    const timePattern = CometChatLocalize.getTimePattern();
+    const pattern = `D MMM, ${timePattern}`;
+    return CometChatLocalize.formatDate(sentAt, {
+      today: pattern,
+      yesterday: pattern,
+      lastWeek: pattern,
+      otherDays: pattern,
+    });
   }
 
   /** Check if metadata has link preview */

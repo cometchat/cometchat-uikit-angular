@@ -64,7 +64,7 @@
           *ngIf="isGalleryMode" 
           class="cometchat-fullscreen-viewer__index-display"
           aria-live="polite"
-          [attr.aria-label]="getLocalizedString('fullscreen_viewer_index')"
+          [attr.aria-label]="getGalleryPositionLabel()"
         >
           {{ currentIndex + 1 }} {{ getLocalizedString('fullscreen_viewer_of') }} {{ attachments.length }}
         </div>

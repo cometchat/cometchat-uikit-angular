@@ -7,6 +7,7 @@
  * @module services/list-manager
  * @see Requirements 3.1, 3.2, 3.3, 3.4, 3.5
  */
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 
 import { SelectionManager } from './selection-manager.class';
 
@@ -327,7 +328,8 @@ export class ListManager {
     const selection = this.selectionManager.getSelection();
     if (!selection || selection.rangeCount === 0) return;
     const range = selection.getRangeAt(0);
-    const selectedText = selection.toString() || 'List item';
+    const selectedText =
+      selection.toString() || CometChatLocalize.getLocalizedString('message_composer_list_item');
     const list = document.createElement(type);
     const listItem = document.createElement('li');
     listItem.textContent = selectedText;

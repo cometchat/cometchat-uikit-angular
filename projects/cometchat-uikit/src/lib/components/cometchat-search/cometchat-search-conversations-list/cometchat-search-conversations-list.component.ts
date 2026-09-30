@@ -19,6 +19,8 @@ import { CometChatSearchFilter, States } from '../../../Enums/Enums';
 import { SearchConversationsService } from '../../../services/search-conversations.service';
 import { CometChatOption } from '../../../modals';
 import { CalendarObject } from '../../../resources/CometChatLocalize/localization.interfaces';
+import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
+import { cachedByLanguage } from '../../../resources/CometChatLocalize/localize-helpers';
 import { CometChatTextFormatter } from '../../../formatters/cometchat-text-formatter';
 import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pipe';
 import { CometChatUIKit } from '../../../cometchat-uikit';
@@ -106,12 +108,17 @@ export class CometChatSearchConversationsListComponent implements OnInit, OnChan
     return this.service.typingIndicatorMap().get(id) ?? null;
   }
 
-  /** Default date format for search conversation results: DD/MM/YYYY */
-  readonly searchDateFormat: CalendarObject = {
-    today: 'DD/MM/YYYY',
-    yesterday: 'DD/MM/YYYY',
-    otherDays: 'DD/MM/YYYY',
-  };
+  /** Default date format for search conversation results: the locale's own date. */
+  private readonly buildSearchDateFormat = cachedByLanguage<CalendarObject>(() => {
+    const date = CometChatLocalize.getDatePattern();
+    return { today: date, yesterday: date, otherDays: date };
+  });
+
+  get searchDateFormat(): CalendarObject {
+    return this.buildSearchDateFormat(
+      `${CometChatLocalize.getCurrentLanguage()}|${CometChatLocalize.getDateLocaleLanguage()}`
+    );
+  }
 
   /** Effective date format — use input if provided, otherwise search default */
   get effectiveDateFormat(): CalendarObject {

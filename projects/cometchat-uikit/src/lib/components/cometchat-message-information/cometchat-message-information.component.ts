@@ -28,7 +28,7 @@ import {
   ElementRef,
   inject,
 } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAvatarComponent } from '../base-elements/cometchat-avatar';
 import { CometChatDateComponent } from '../base-elements/cometchat-date';
@@ -77,7 +77,6 @@ export class CometChatMessageInformationComponent implements OnInit, OnChanges, 
 
   private elementRef = inject(ElementRef);
   private focusTrapService = inject(FocusTrapService);
-  private datePipe = new DatePipe('en-US');
   private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, {
     optional: true,
   });
@@ -148,15 +147,17 @@ export class CometChatMessageInformationComponent implements OnInit, OnChanges, 
   // ==================== Computed Properties ====================
 
   get effectiveDateFormat(): CalendarObject {
+    const time = CometChatLocalize.getTimePattern();
     return this.dateTimeFormat || {
-      today: 'hh:mm A',
-      yesterday: '[Yesterday] hh:mm A',
-      otherDays: 'DD/MM/YYYY hh:mm A',
+      today: time,
+      yesterday: `[${CometChatLocalize.getLocalizedString('yesterday')}] ${time}`,
+      otherDays: `${CometChatLocalize.getDatePattern()} ${time}`,
     };
   }
 
   get messageBubbleDateFormat(): CalendarObject {
-    return { today: 'hh:mm A', yesterday: 'hh:mm A', otherDays: 'hh:mm A' };
+    const time = CometChatLocalize.getTimePattern();
+    return { today: time, yesterday: time, otherDays: time };
   }
 
   get messagePreview(): string {
@@ -342,7 +343,7 @@ export class CometChatMessageInformationComponent implements OnInit, OnChanges, 
   // ==================== Accessibility Methods ====================
 
   getReceiptAriaLabel(receipt: ReceiptInfo, type: 'delivered' | 'read'): string {
-    return getReceiptAriaLabel(receipt, type, this.datePipe);
+    return getReceiptAriaLabel(receipt, type);
   }
 
   // ==================== TrackBy Functions ====================

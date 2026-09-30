@@ -16,6 +16,7 @@ import { LinkManager } from './link-manager.class';
 import { SelectionManager } from './selection-manager.class';
 import { ensureSdkReady, sdkCleanup } from '../test-setup';
 
+import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 describe('LinkManager', () => {
   let element: HTMLDivElement;
   let selectionManager: SelectionManager;
@@ -190,24 +191,26 @@ describe('LinkManager', () => {
       expect(manager.getValidationError('https://example.com')).toBeNull();
     });
 
+    // ENG-39096: the message is localized now and reuses the composer's existing
+    // "URL is required" key rather than a second English-only string.
     it('should return error message for empty string', () => {
       const error = manager.getValidationError('');
-      expect(error).toBe('URL cannot be empty');
+      expect(error).toBe(CometChatLocalize.getLocalizedString('message_composer_link_url_required'));
     });
 
     it('should return error message for whitespace-only string', () => {
       const error = manager.getValidationError('   ');
-      expect(error).toBe('URL cannot be empty');
+      expect(error).toBe(CometChatLocalize.getLocalizedString('message_composer_link_url_required'));
     });
 
     it('should return error message for null input', () => {
       const error = manager.getValidationError(null as any);
-      expect(error).toBe('URL cannot be empty');
+      expect(error).toBe(CometChatLocalize.getLocalizedString('message_composer_link_url_required'));
     });
 
     it('should return error message for undefined input', () => {
       const error = manager.getValidationError(undefined as any);
-      expect(error).toBe('URL cannot be empty');
+      expect(error).toBe(CometChatLocalize.getLocalizedString('message_composer_link_url_required'));
     });
 
     it('should return null for non-empty URL (no format validation)', () => {
