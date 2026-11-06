@@ -88,13 +88,51 @@ const DEFAULT_FILTERS: CometChatSearchFilter[] = [
   providers: [SearchConversationsService, SearchMessagesService],
 })
 export class CometChatSearchComponent implements OnInit, OnDestroy {
-  @Input() searchIn: CometChatSearchScope[] = [];
-  @Input() searchFilters: CometChatSearchFilter[] = DEFAULT_FILTERS;
+  // searchIn, searchFilters, uid and guid feed the computed filter bar and result lists below,
+  // so they are kept in signals: a plain field would leave those computeds stale when the input
+  // changes after the first render (e.g. switching chats while an in-chat search is open).
+  private readonly searchInSignal = signal<CometChatSearchScope[]>([]);
+  private readonly searchFiltersSignal = signal<CometChatSearchFilter[]>(DEFAULT_FILTERS);
+  private readonly uidSignal = signal<string | undefined>(undefined);
+  private readonly guidSignal = signal<string | undefined>(undefined);
+
+  @Input()
+  set searchIn(value: CometChatSearchScope[]) {
+    this.searchInSignal.set(value ?? []);
+  }
+  get searchIn(): CometChatSearchScope[] {
+    return this.searchInSignal();
+  }
+
+  @Input()
+  set searchFilters(value: CometChatSearchFilter[]) {
+    this.searchFiltersSignal.set(value ?? DEFAULT_FILTERS);
+  }
+  get searchFilters(): CometChatSearchFilter[] {
+    return this.searchFiltersSignal();
+  }
+
   @Input() initialSearchFilter?: CometChatSearchFilter;
   @Input() hideBackButton = false;
   @Input() defaultSearchText?: string;
-  @Input() uid?: string;
-  @Input() guid?: string;
+
+  @Input()
+  set uid(value: string | undefined) {
+    this.uidSignal.set(value);
+    this.dropConversationFiltersWhenScoped();
+  }
+  get uid(): string | undefined {
+    return this.uidSignal();
+  }
+
+  @Input()
+  set guid(value: string | undefined) {
+    this.guidSignal.set(value);
+    this.dropConversationFiltersWhenScoped();
+  }
+  get guid(): string | undefined {
+    return this.guidSignal();
+  }
   @Input() hideGroupType = false;
   @Input() hideUserStatus = false;
   @Input() hideReceipts = false;
@@ -325,16 +363,7 @@ export class CometChatSearchComponent implements OnInit, OnDestroy {
       this.activeFilters.set([this.initialSearchFilter]);
     }
 
-    // ENG-35072: When scoped to a specific user/group (uid/guid), reset active filters
-    // to prevent conversation-scope filters from a previous global search from leaking
-    // into the message search results for this conversation.
-    if ((this.uid || this.guid) && this.activeFilters().some(f => [
-      CometChatSearchFilter.Conversations,
-      CometChatSearchFilter.Unread,
-      CometChatSearchFilter.Groups,
-    ].includes(f))) {
-      this.activeFilters.set([]);
-    }
+    this.dropConversationFiltersWhenScoped();
 
     if (this.defaultSearchText) {
       this.searchValue.set(this.defaultSearchText);
@@ -342,6 +371,22 @@ export class CometChatSearchComponent implements OnInit, OnDestroy {
     }
 
     setTimeout(() => this.searchInputRef?.nativeElement?.focus(), 100);
+  }
+
+  /**
+   * ENG-35072: When scoped to a specific user/group (uid/guid), reset active filters
+   * to prevent conversation-scope filters from a previous global search from leaking
+   * into the message search results for this conversation. Runs on init and whenever
+   * uid or guid changes.
+   */
+  private dropConversationFiltersWhenScoped(): void {
+    if ((this.uid || this.guid) && this.activeFilters().some(f => [
+      CometChatSearchFilter.Conversations,
+      CometChatSearchFilter.Unread,
+      CometChatSearchFilter.Groups,
+    ].includes(f))) {
+      this.activeFilters.set([]);
+    }
   }
 
   ngOnDestroy(): void {

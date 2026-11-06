@@ -41,6 +41,8 @@ export class GroupMembersService {
   // ==================== Private State ====================
 
   private groupMembersRequest: CometChat.GroupMembersRequest | null = null;
+  /** The builder the list was last built from (initialize or search), so a reconnect rebuilds the same list. */
+  private requestBuilder: CometChat.GroupMembersRequestBuilder | null = null;
   private currentGroup: CometChat.Group | null = null;
   private errorCallback: GroupMembersErrorCallback | null = null;
 
@@ -79,6 +81,7 @@ export class GroupMembersService {
         GroupMembersService.DEFAULT_LIMIT
       );
 
+    this.requestBuilder = effectiveBuilder;
     this.groupMembersRequest = effectiveBuilder.build();
     this.fetchNext();
   }
@@ -154,6 +157,7 @@ export class GroupMembersService {
         .setSearchKeyword(keyword);
     }
 
+    this.requestBuilder = effectiveBuilder;
     this.groupMembersRequest = effectiveBuilder.build();
     this.fetchNext();
   }
@@ -399,13 +403,15 @@ export class GroupMembersService {
    * Resets hasMore to true so pagination works again from the new first page.
    */
   private handleReconnect(): void {
-    if (!this.currentGroup || !this.initialFetchDone) return;
+    if (!this.currentGroup || !this.requestBuilder || !this.initialFetchDone) return;
     CometChatLogger.info('GroupMembersService', 'WebSocket reconnected — refreshing member list');
-    const freshRequest = new CometChat.GroupMembersRequestBuilder(this.currentGroup.getGuid())
-      .setLimit(GroupMembersService.DEFAULT_LIMIT)
-      .build();
+    // The first page of the same list: the app's builder and any active search.
+    const replaced = this.groupMembersRequest;
+    const freshRequest = this.requestBuilder.build();
     freshRequest.fetchNext()
       .then(newMembers => {
+        // Another group or a search since the reconnect owns the list now: don't show the old one.
+        if (this.groupMembersRequest !== replaced) return;
         this.membersSignal.set(newMembers);
         // Reset to true — back at page 1, more pages may exist
         this.hasMoreSignal.set(true);

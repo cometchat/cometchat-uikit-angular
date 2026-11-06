@@ -15,7 +15,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatReactionsComponent } from './cometchat-reactions.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import {
   createMockMessage,
   createMockReactions,

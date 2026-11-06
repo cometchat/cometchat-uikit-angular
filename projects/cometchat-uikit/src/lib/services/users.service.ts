@@ -44,6 +44,8 @@ export class UsersService {
   // ==================== Private State ====================
 
   private usersRequest: CometChat.UsersRequest | null = null;
+  /** What the list was last built from (initialize or search), so a reconnect rebuilds the same list. */
+  private requestArgs: Parameters<UsersService['buildRequest']> = ['', null, null, ''];
   private errorCallback: UsersErrorCallback | null = null;
   private isFetching = false;
   /** Guard: only re-fetch on reconnect after the first fetch has completed. */
@@ -98,12 +100,8 @@ export class UsersService {
     this.hasMoreSignal.set(true);
     this.isFetching = false;
 
-    this.usersRequest = this.buildRequest(
-      searchText,
-      usersRequestBuilder,
-      searchRequestBuilder,
-      usersSearchText
-    );
+    this.requestArgs = [searchText, usersRequestBuilder, searchRequestBuilder, usersSearchText];
+    this.usersRequest = this.buildRequest(...this.requestArgs);
   }
 
   /**
@@ -179,12 +177,8 @@ export class UsersService {
     this.hasMoreSignal.set(true);
     this.isFetching = false;
 
-    this.usersRequest = this.buildRequest(
-      keyword,
-      config?.usersRequestBuilder ?? null,
-      config?.searchRequestBuilder ?? null,
-      config?.usersSearchText ?? ''
-    );
+    this.requestArgs = [keyword, config?.usersRequestBuilder ?? null, config?.searchRequestBuilder ?? null, config?.usersSearchText ?? ''];
+    this.usersRequest = this.buildRequest(...this.requestArgs);
   }
 
   // ==================== Listener Management ====================
@@ -206,10 +200,13 @@ export class UsersService {
     if (!this.usersRequest || !this.initialFetchDone) return;
     CometChatLogger.info('UsersService', 'WebSocket reconnected — refreshing user list');
     // Silent refresh: don't show shimmer, don't clear the list until new data arrives.
-    // Build a fresh request to get the latest first page.
-    const freshRequest = this.buildRequest('', null, null, '');
+    // The first page of the same list: the app's usersRequestBuilder and any active search.
+    const replaced = this.usersRequest;
+    const freshRequest = this.buildRequest(...this.requestArgs);
     freshRequest.fetchNext()
       .then(newUsers => {
+        // A search or re-initialize since the reconnect owns the list now.
+        if (this.usersRequest !== replaced) return;
         this.usersSignal.set(newUsers);
         // Reset hasMore to true — we're back at page 1, more pages may exist
         this.hasMoreSignal.set(true);

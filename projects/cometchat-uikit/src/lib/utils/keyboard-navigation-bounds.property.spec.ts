@@ -61,7 +61,12 @@ const arbListNav = fc
   .filter(({ currentIndex, totalItems }) => currentIndex < totalItems);
 
 /** Arbitrary for any key string (used for key detection tests). */
-const arbKeyString = fc.string({ minLength: 1, maxLength: 15 });
+const arbKeyString = fc.oneof(
+  // Random strings almost never hit a named key, so include the keys these
+  // helpers recognise explicitly; otherwise their "true" branches go untested.
+  fc.constantFrom('ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' ', 'Escape'),
+  fc.string({ minLength: 1, maxLength: 15 })
+);
 
 /** Arbitrary for out-of-range current indices (negative or >= totalItems). */
 const arbOutOfRangeNav = fc.record({

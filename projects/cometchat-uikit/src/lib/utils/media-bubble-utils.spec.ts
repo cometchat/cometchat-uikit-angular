@@ -19,10 +19,10 @@ import {
 
 function createMockMediaMessage(overrides: Record<string, any> = {}): CometChat.MediaMessage {
   return {
-    getAttachments: () => overrides.attachments ?? null,
-    getText: () => overrides.text ?? null,
-    getData: () => overrides.data ?? null,
-    getSender: () => overrides.sender ?? null,
+    getAttachments: () => overrides['attachments'] ?? null,
+    getText: () => overrides['text'] ?? null,
+    getData: () => overrides['data'] ?? null,
+    getSender: () => overrides['sender'] ?? null,
     ...overrides,
   } as unknown as CometChat.MediaMessage;
 }

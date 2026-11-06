@@ -2,6 +2,22 @@ import * as fc from 'fast-check';
 import { CometChatAIAssistantTools } from './CometChatAIAssistantTools';
 
 /**
+ * Builds the handler map on a null prototype, matching what the class itself does.
+ *
+ * A plain `{}` cannot hold a `__proto__` key — assigning to it sets the object's
+ * prototype instead of creating an own property — so a fixture built with `{}`
+ * would disagree with the class for that name even though the class handles it
+ * correctly. fast-check generates `__proto__` deliberately, so this matters.
+ */
+function makeHandlers(names: string[]): Record<string, (...args: unknown[]) => unknown> {
+  const handlers = Object.create(null) as Record<string, (...args: unknown[]) => unknown>;
+  for (const name of names) {
+    handlers[name] = () => name;
+  }
+  return handlers;
+}
+
+/**
  * Property-based tests for CometChatAIAssistantTools
  * Feature: ai-assistant-chat
  */
@@ -19,10 +35,7 @@ describe('CometChatAIAssistantTools — Property Tests', () => {
       fc.property(
         fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 10 }),
         (names) => {
-          const handlers: Record<string, (...args: unknown[]) => unknown> = {};
-          for (const name of names) {
-            handlers[name] = () => name;
-          }
+          const handlers = makeHandlers(names);
 
           const tools = new CometChatAIAssistantTools(handlers);
 
@@ -47,10 +60,7 @@ describe('CometChatAIAssistantTools — Property Tests', () => {
       fc.property(
         fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 10 }),
         (names) => {
-          const handlers: Record<string, (...args: unknown[]) => unknown> = {};
-          for (const name of names) {
-            handlers[name] = () => name;
-          }
+          const handlers = makeHandlers(names);
 
           const tools = new CometChatAIAssistantTools(handlers);
 

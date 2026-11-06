@@ -19,7 +19,7 @@ import { Component, signal } from '@angular/core';
 import { CometChatStreamMessageBubble } from './cometchat-stream-message-bubble.component';
 import { CometChatMarkdownRenderer } from '../cometchat-markdown-renderer/cometchat-markdown-renderer.component';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ── Static preview wrappers ───────────────────────────────────────────────────
 // Since the stream bubble relies on a live streaming service, we create

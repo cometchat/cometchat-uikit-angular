@@ -89,7 +89,7 @@ function extractVarReferences(value: string): string[] {
   const regex = /var\(\s*(--cometchat-[\w-]+)/g;
   let m: RegExpExecArray | null;
   while ((m = regex.exec(value)) !== null) {
-    vars.add ? undefined : vars.push(m[1]);
+    vars.push(m[1]);
   }
   return vars;
 }
@@ -338,15 +338,16 @@ describe('Property 1: Variable category correctness — Group 1 (List Components
       'no --cometchat-spacing-* or --cometchat-margin-* in padding declarations: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('padding'));
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has padding category violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has padding category violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -356,15 +357,16 @@ describe('Property 1: Variable category correctness — Group 1 (List Components
       'no --cometchat-spacing-* or --cometchat-padding-* in margin declarations: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('margin'));
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has margin category violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has margin category violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -374,15 +376,16 @@ describe('Property 1: Variable category correctness — Group 1 (List Components
       'no --cometchat-padding-* or --cometchat-margin-* in gap declarations: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('gap'));
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has gap category violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has gap category violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -392,17 +395,16 @@ describe('Property 1: Variable category correctness — Group 1 (List Components
       'no wrong-category variables in border-radius declarations: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property === 'border-radius');
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
-            )
-            .join('\n');
-          expect.fail(
-            `${path.basename(filePath)} has border-radius category violations:\n${details}`
-          );
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has border-radius category violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -414,15 +416,16 @@ describe('Property 1: Variable category correctness — Group 1 (List Components
         const violations = auditFile(filePath).filter(
           v => v.property === 'background' || v.property === 'background-color'
         );
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has background category violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has background category violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -430,15 +433,16 @@ describe('Property 1: Variable category correctness — Group 1 (List Components
   describe('font properties must use --cometchat-font-* fallbacks', () => {
     it.each(GROUP1_FILES)('no wrong-category variables in font declarations: %s', filePath => {
       const violations = auditFile(filePath).filter(v => v.property === 'font');
-      if (violations.length > 0) {
-        const details = violations
-          .map(
-            v =>
-              `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
-          )
-          .join('\n');
-        expect.fail(`${path.basename(filePath)} has font category violations:\n${details}`);
-      }
+      const details = violations
+        .map(
+          v =>
+            `  Line ${v.line}: ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
+        )
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has font category violations:\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -448,15 +452,16 @@ describe('Property 1: Variable category correctness — Group 1 (List Components
       for (const filePath of GROUP1_FILES) {
         allViolations.push(...auditFile(filePath));
       }
-      if (allViolations.length > 0) {
-        const details = allViolations
-          .map(
-            v =>
-              `  ${v.file}:${v.line} — ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
-          )
-          .join('\n');
-        expect.fail(`Found ${allViolations.length} variable category violation(s):\n${details}`);
-      }
+      const details = allViolations
+        .map(
+          v =>
+            `  ${v.file}:${v.line} — ${v.property} uses ${v.globalVar} (expected ${v.expectedCategory})`
+        )
+        .join('\n');
+      expect(
+        allViolations,
+        `Found ${allViolations.length} variable category violation(s):\n${details}`
+      ).toHaveLength(0);
     });
   });
 });

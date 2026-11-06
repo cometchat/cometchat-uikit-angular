@@ -478,15 +478,16 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
       'declarations follow three-tier pattern (depth >= 2 for component-level vars): %s',
       filePath => {
         const violations = auditFile(filePath);
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}\n    Issue: ${v.issue}`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has three-tier chain violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}\n    Issue: ${v.issue}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has three-tier chain violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -496,15 +497,15 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
       'padding properties have depth >= 2 when using component-level vars: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('padding'));
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has padding three-tier violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v => `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has padding three-tier violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -516,17 +517,15 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
         const violations = auditFile(filePath).filter(
           v => v.property === 'background' || v.property === 'background-color'
         );
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
-            )
-            .join('\n');
-          expect.fail(
-            `${path.basename(filePath)} has background three-tier violations:\n${details}`
-          );
-        }
+        const details = violations
+          .map(
+            v => `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has background three-tier violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -536,15 +535,15 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
       'color properties have depth >= 2 when using component-level vars: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property === 'color');
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has color three-tier violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v => `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has color three-tier violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -554,15 +553,15 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
       'font properties have depth >= 2 when using component-level vars: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property === 'font');
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has font three-tier violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v => `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has font three-tier violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -572,17 +571,15 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
       'border-radius properties have depth >= 2 when using component-level vars: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property === 'border-radius');
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
-            )
-            .join('\n');
-          expect.fail(
-            `${path.basename(filePath)} has border-radius three-tier violations:\n${details}`
-          );
-        }
+        const details = violations
+          .map(
+            v => `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has border-radius three-tier violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -592,15 +589,15 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
       'gap properties have depth >= 2 when using component-level vars: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('gap'));
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has gap three-tier violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v => `  Line ${v.line}: ${v.property} (depth ${v.nestingDepth})\n    Value: ${v.value}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has gap three-tier violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -611,12 +608,13 @@ describe('Property 4: Three-tier resolution chain completeness — Group 5 (Shar
       for (const filePath of GROUP5_FILES) {
         allViolations.push(...auditFile(filePath));
       }
-      if (allViolations.length > 0) {
-        const details = allViolations
-          .map(v => `  ${v.file}:${v.line} — ${v.property} (depth ${v.nestingDepth}): ${v.issue}`)
-          .join('\n');
-        expect.fail(`Found ${allViolations.length} three-tier chain violation(s):\n${details}`);
-      }
+      const details = allViolations
+        .map(v => `  ${v.file}:${v.line} — ${v.property} (depth ${v.nestingDepth}): ${v.issue}`)
+        .join('\n');
+      expect(
+        allViolations,
+        `Found ${allViolations.length} three-tier chain violation(s):\n${details}`
+      ).toHaveLength(0);
     });
 
     it('should find var() declarations in Group 5 files (sanity check)', () => {

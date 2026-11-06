@@ -59,7 +59,7 @@ export function insertMentionImpl(ctx: MentionOpsContext, id: string, label: str
   ctx.pushToHistory();
   ctx.emitUpdate();
   ctx.announceToScreenReader(
-    CometChatLocalize.getLocalizedString('accessibility_mentioned_user').replace('{name}', label)
+    CometChatLocalize.getLocalizedString('accessibility_mentioned_user').replace('{name}', () => label)
   );
 }
 

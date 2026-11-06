@@ -357,7 +357,7 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  private announceSelectionCount(): void { const c = this.selectedUsers.size; if (c > 0) this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_items_selected').replace('{count}', c.toString()), 'polite'); }
+  private announceSelectionCount(): void { const c = this.selectedUsers.size; if (c > 0) this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_items_selected').replace('{count}', () => c.toString()), 'polite'); }
   private announceSelectionCleared(): void { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_selection_cleared'), 'polite'); }
 
   private focusNextItem(): void {

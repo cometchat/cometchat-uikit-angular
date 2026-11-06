@@ -18,6 +18,11 @@ export class SearchMessagesService {
 
   private searchRequest: CometChat.MessagesRequest | null = null;
   private isLoadingMore = false;
+  /**
+   * Which search is current. A search that resolves after a newer one started (or after a
+   * reset) is dropped, so a slow search for chat A can't show its results in chat B.
+   */
+  private generation = 0;
 
   /**
    * Initiate a message search with the given criteria.
@@ -30,6 +35,7 @@ export class SearchMessagesService {
     customBuilder?: CometChat.MessagesRequestBuilder,
     alwaysShowSeeMore = false
   ): Promise<void> {
+    const generation = ++this.generation;
     this.fetchState.set(States.loading);
     this.messages.set([]);
     this.hasMoreResults.set(false);
@@ -50,6 +56,7 @@ export class SearchMessagesService {
       );
       const limit = alwaysShowSeeMore ? 3 : 30;
       const results = await this.searchRequest.fetchPrevious();
+      if (generation !== this.generation) return;
 
       if (results.length > 0) {
         this.messages.set(results.reverse());
@@ -60,6 +67,7 @@ export class SearchMessagesService {
         this.hasMoreResults.set(false);
       }
     } catch (error) {
+      if (generation !== this.generation) return;
       this.fetchState.set(States.error);
       throw error;
     }
@@ -73,9 +81,11 @@ export class SearchMessagesService {
       return;
     }
     this.isLoadingMore = true;
+    const generation = this.generation;
 
     try {
       const results = await this.searchRequest.fetchPrevious();
+      if (generation !== this.generation) return;
       if (results.length > 0) {
         this.messages.update(prev => [...prev, ...results.reverse()]);
         const limit = 30;
@@ -90,6 +100,7 @@ export class SearchMessagesService {
 
   /** Reset all state. */
   reset(): void {
+    this.generation++;
     this.messages.set([]);
     this.fetchState.set(States.loaded);
     this.hasMoreResults.set(false);

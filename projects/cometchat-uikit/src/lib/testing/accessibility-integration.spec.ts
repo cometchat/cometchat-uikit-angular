@@ -194,13 +194,17 @@ describe('Accessibility Integration Tests', () => {
 
       await delay(10);
 
+      // Trap moved focus into the dialog
+      expect(document.activeElement).toBe(dialogButtons[0]);
+
       // Close dialog
       focusTrapService.deactivate(dialogContainer);
 
       await delay(10);
 
-      // Focus should NOT return to trigger (stays on body or last focused)
-      // The exact behavior depends on browser, but it shouldn't be the trigger
+      // Focus is NOT restored to the trigger — it stays where it was in the dialog
+      expect(document.activeElement).not.toBe(triggerButton);
+      expect(document.activeElement).toBe(dialogButtons[0]);
     });
 
     it('should focus container when initialFocus is "container"', async () => {

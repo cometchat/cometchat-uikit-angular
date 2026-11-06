@@ -50,13 +50,13 @@ function mockFetchNextReturns(data: CometChat.Conversation[]): void {
   (CometChat as any).ConversationsRequestBuilder = function MockBuilder() {
     const self: Record<string, any> = {};
     // build() returns a request whose fetchNext resolves with `data`
-    self.build = vi.fn().mockReturnValue({
+    self['build'] = vi.fn().mockReturnValue({
       fetchNext: vi.fn().mockResolvedValue(data),
     });
     // All other method calls (setLimit, setConversationType, etc.) return `self` for chaining
     return new Proxy(self, {
       get(target, prop) {
-        if (prop === 'build') return target.build;
+        if (prop === 'build') return target['build'];
         if (typeof prop === 'string') {
           if (!target[prop]) target[prop] = vi.fn().mockReturnValue(self);
           return target[prop];
@@ -701,19 +701,6 @@ describe('ConversationsService', () => {
       expect(() => service.updateConversationUnreadCount(convId, 0)).not.toThrow();
       const updated = service.findConversation(convId);
       expect(updated!.getUnreadMessageCount()).toBe(0);
-    });
-
-    it('should verify real SDK conversation objects have expected methods', async () => {
-      await service.fetchConversations();
-      const conversations = service.getConversations();
-      if (conversations.length === 0) return;
-
-      const conv = conversations[0];
-      expect(typeof conv.getConversationWith).toBe('function');
-      expect(typeof conv.getConversationType).toBe('function');
-      expect(typeof conv.getConversationId).toBe('function');
-      expect(typeof conv.getLastMessage).toBe('function');
-      expect(typeof conv.getUnreadMessageCount).toBe('function');
     });
 
     it('should verify conversation entities are real SDK User or Group objects', async () => {

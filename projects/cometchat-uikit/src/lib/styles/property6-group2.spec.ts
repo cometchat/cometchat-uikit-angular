@@ -452,14 +452,13 @@ describe('Property 6: Shared component parent-scoped overrides — Group 2 (Item
       (_label, comp) => {
         const violations = auditComponent(comp as ItemComponent);
 
-        if (violations.length > 0) {
-          const details = violations
-            .map(v => `  [${v.issue}] ${v.sharedComponent}.${v.property}: ${v.details}`)
-            .join('\n');
-          expect.fail(
-            `${(comp as ItemComponent).label} has ${violations.length} shared component override violation(s):\n${details}`
-          );
-        }
+        const details = violations
+          .map(v => `  [${v.issue}] ${v.sharedComponent}.${v.property}: ${v.details}`)
+          .join('\n');
+        expect(
+          violations,
+          `${(comp as ItemComponent).label} has ${violations.length} shared component override violation(s):\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -476,10 +475,11 @@ describe('Property 6: Shared component parent-scoped overrides — Group 2 (Item
       const violations = auditComponent(comp as ItemComponent).filter(
         v => v.sharedComponent === 'avatar'
       );
-      if (violations.length > 0) {
-        const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
-        expect.fail(`${(comp as ItemComponent).label} Avatar override violations:\n${details}`);
-      }
+      const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
+      expect(
+        violations,
+        `${(comp as ItemComponent).label} Avatar override violations:\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -494,12 +494,11 @@ describe('Property 6: Shared component parent-scoped overrides — Group 2 (Item
       const violations = auditComponent(comp as ItemComponent).filter(
         v => v.sharedComponent === 'status'
       );
-      if (violations.length > 0) {
-        const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
-        expect.fail(
-          `${(comp as ItemComponent).label} StatusIndicator override violations:\n${details}`
-        );
-      }
+      const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
+      expect(
+        violations,
+        `${(comp as ItemComponent).label} StatusIndicator override violations:\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -517,10 +516,11 @@ describe('Property 6: Shared component parent-scoped overrides — Group 2 (Item
           const violations = auditComponent(comp as ItemComponent).filter(
             v => v.sharedComponent === 'date'
           );
-          if (violations.length > 0) {
-            const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
-            expect.fail(`${(comp as ItemComponent).label} Date override violations:\n${details}`);
-          }
+          const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
+          expect(
+            violations,
+            `${(comp as ItemComponent).label} Date override violations:\n${details}`
+          ).toHaveLength(0);
         }
       );
     }
@@ -540,10 +540,11 @@ describe('Property 6: Shared component parent-scoped overrides — Group 2 (Item
           const violations = auditComponent(comp as ItemComponent).filter(
             v => v.sharedComponent === 'badge'
           );
-          if (violations.length > 0) {
-            const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
-            expect.fail(`${(comp as ItemComponent).label} Badge override violations:\n${details}`);
-          }
+          const details = violations.map(v => `  ${v.property}: ${v.details}`).join('\n');
+          expect(
+            violations,
+            `${(comp as ItemComponent).label} Badge override violations:\n${details}`
+          ).toHaveLength(0);
         }
       );
     }
@@ -556,16 +557,15 @@ describe('Property 6: Shared component parent-scoped overrides — Group 2 (Item
       for (const comp of GROUP2_COMPONENTS) {
         allViolations.push(...auditComponent(comp));
       }
-      if (allViolations.length > 0) {
-        const details = allViolations
-          .map(
-            v => `  ${v.component} → ${v.sharedComponent}.${v.property} [${v.issue}]: ${v.details}`
-          )
-          .join('\n');
-        expect.fail(
-          `Found ${allViolations.length} shared component override violation(s) across Group 2:\n${details}`
-        );
-      }
+      const details = allViolations
+        .map(
+          v => `  ${v.component} → ${v.sharedComponent}.${v.property} [${v.issue}]: ${v.details}`
+        )
+        .join('\n');
+      expect(
+        allViolations,
+        `Found ${allViolations.length} shared component override violation(s) across Group 2:\n${details}`
+      ).toHaveLength(0);
     });
   });
 });

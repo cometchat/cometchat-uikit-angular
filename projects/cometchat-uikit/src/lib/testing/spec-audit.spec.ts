@@ -34,6 +34,23 @@ const TYPE_ONLY_FILES = [
   'localization.interfaces.ts',
 ];
 
+/**
+ * Returns true when a file contains only type-level exports (interfaces / type
+ * aliases) and therefore has no runtime behaviour a spec could exercise.
+ * Any runtime export (const, function, class, enum, re-export, default) makes
+ * the file auditable.
+ */
+function isTypeOnlySource(filePath: string): boolean {
+  const content = fs.readFileSync(filePath, 'utf-8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  const hasTypeExport = /^\s*export\s+(?:declare\s+)?(?:interface|type)\s+\w+/m.test(content);
+  const hasRuntimeExport =
+    /^\s*export\s+(?:declare\s+)?(?:const|let|var|function|class|enum|abstract|async|default)\b/m.test(content) ||
+    /^\s*export\s*(?:\{|\*)/m.test(content);
+  return hasTypeExport && !hasRuntimeExport;
+}
+
 interface AuditCategory {
   name: string;
   sourceFiles: string[];
@@ -67,7 +84,7 @@ function collectSourceFiles(dir: string, pattern: RegExp, excludeDirs: string[] 
       !EXCLUDED_FILES.includes(entry.name)
     ) {
       // Exclude type-only files (interfaces, type aliases)
-      if (TYPE_ONLY_FILES.includes(entry.name)) {
+      if (TYPE_ONLY_FILES.includes(entry.name) || isTypeOnlySource(fullPath)) {
         continue;
       }
       results.push(fullPath);
@@ -146,115 +163,32 @@ describe('Spec File Completeness Audit', () => {
     buildCategory('pipe', pipeFiles),
   ];
 
-  describe('Component spec files', () => {
-    const cat = categories.find(c => c.name === 'component')!;
-    it('should find component files to audit', () => {
-      expect(cat.sourceFiles.length).toBeGreaterThan(0);
-    });
-    if (cat.gaps.length > 0) {
-      it.each(cat.gaps.map(f => [toRelative(f)]))(
-        'MISSING: %s',
-        (relativePath) => {
-          // This test intentionally fails to track gaps
-          expect(true, `Missing spec for ${relativePath}`).toBe(true);
-        }
-      );
-    }
-    it(`should have ${cat.sourceFiles.length} spec files (currently ${cat.testedFiles.length})`, () => {
-      if (cat.gaps.length > 0) {
-        console.warn(`  ⚠ ${cat.gaps.length} component(s) missing specs`);
-      }
-      // Track progress — non-blocking; components are source of truth
-      expect(true).toBe(true);
-    });
-  });
+  const CATEGORY_LABELS: Array<[string, string]> = [
+    ['component', 'Component'],
+    ['service', 'Service'],
+    ['class', 'Class'],
+    ['formatter', 'Formatter'],
+    ['event', 'Event module'],
+    ['utility', 'Utility'],
+    ['resource', 'Resource'],
+    ['pipe', 'Pipe'],
+  ];
 
-  describe('Service spec files', () => {
-    const cat = categories.find(c => c.name === 'service')!;
-    it('should find service files to audit', () => {
-      expect(cat.sourceFiles.length).toBeGreaterThan(0);
-    });
-    it(`should have ${cat.sourceFiles.length} spec files (currently ${cat.testedFiles.length})`, () => {
-      if (cat.gaps.length > 0) {
-        console.warn(`  ⚠ ${cat.gaps.length} service(s) missing specs`);
-      }
-      // Tracking only — non-blocking
-      expect(true).toBe(true);
-    });
-  });
+  for (const [name, label] of CATEGORY_LABELS) {
+    describe(`${label} spec files`, () => {
+      const cat = categories.find(c => c.name === name)!;
 
-  describe('Formatter spec files', () => {
-    const cat = categories.find(c => c.name === 'formatter')!;
-    it('should find formatter files to audit', () => {
-      expect(cat.sourceFiles.length).toBeGreaterThan(0);
-    });
-    it(`should have ${cat.sourceFiles.length} spec files (currently ${cat.testedFiles.length})`, () => {
-      if (cat.gaps.length > 0) {
-        console.warn(`  ⚠ ${cat.gaps.length} formatter(s) missing specs`);
-      }
-      // Tracking only — non-blocking
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Event module spec files', () => {
-    const cat = categories.find(c => c.name === 'event')!;
-    it('should find event files to audit', () => {
-      expect(cat.sourceFiles.length).toBeGreaterThan(0);
-    });
-    it(`should have ${cat.sourceFiles.length} spec files (currently ${cat.testedFiles.length})`, () => {
-      if (cat.gaps.length > 0) {
-        console.warn(`  ⚠ ${cat.gaps.length} event module(s) missing specs`);
-      }
-      // Tracking only — non-blocking
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Utility spec files', () => {
-    const cat = categories.find(c => c.name === 'utility')!;
-    it('should find utility files to audit', () => {
-      expect(cat.sourceFiles.length).toBeGreaterThan(0);
-    });
-    it(`should have ${cat.sourceFiles.length} spec files (currently ${cat.testedFiles.length})`, () => {
-      if (cat.gaps.length > 0) {
-        console.warn(`  ⚠ ${cat.gaps.length} utility file(s) missing specs`);
-      }
-      // Tracking only — non-blocking
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Resource spec files', () => {
-    const cat = categories.find(c => c.name === 'resource')!;
-    it('should find resource files to audit', () => {
-      expect(cat.sourceFiles.length).toBeGreaterThan(0);
-    });
-    it(`should have ${cat.sourceFiles.length} spec files (currently ${cat.testedFiles.length})`, () => {
-      if (cat.gaps.length > 0) {
-        console.warn(`  ⚠ ${cat.gaps.length} resource file(s) missing specs`);
-      }
-      // Tracking only — non-blocking
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Pipe spec files', () => {
-    const cat = categories.find(c => c.name === 'pipe')!;
-    it('should report pipe file count', () => {
-      // Pipes may be zero if none exist as standalone files
-      expect(cat.sourceFiles.length).toBeGreaterThanOrEqual(0);
-    });
-    if (cat.sourceFiles.length > 0) {
-      it(`should have ${cat.sourceFiles.length} spec files (currently ${cat.testedFiles.length})`, () => {
-        // Tracking only — non-blocking
-        if (cat.gaps.length > 0) {
-          console.warn(`  ⚠ ${cat.gaps.length} pipe(s) missing specs`);
-        }
-        expect(true).toBe(true);
+      it(`should find ${name} files to audit`, () => {
+        // An empty scan would make the completeness check below pass vacuously.
+        expect(cat.sourceFiles.length, `no ${name} source files found — scan paths are broken`).toBeGreaterThan(0);
       });
-    }
-  });
+
+      it(`every ${name} source file should have a spec file (${cat.testedFiles.length}/${cat.sourceFiles.length})`, () => {
+        const missing = cat.gaps.map(toRelative).sort();
+        expect(missing, `${missing.length} ${name} file(s) have no matching .spec.ts:\n  ${missing.join('\n  ')}\n`).toEqual([]);
+      });
+    });
+  }
 
   describe('Coverage Summary', () => {
     it('should report overall coverage', () => {
@@ -287,6 +221,8 @@ describe('Spec File Completeness Audit', () => {
           }
         }
       }
+
+      expect(totalSources, 'audit scanned zero source files').toBeGreaterThan(0);
 
       // Invariant: sources = tested + gaps
       for (const cat of categories) {

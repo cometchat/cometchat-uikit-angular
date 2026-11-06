@@ -63,7 +63,18 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
    * @private
    */
   private markdownToHtml(markdown: string): string {
-    let html = markdown;
+    // HTML tags must never be re-read as markdown: the BEM classes this formatter emits
+    // (`cometchat-rich-text__code`, `cometchat-rich-text__blockquote`) contain `__`, and tags
+    // from earlier formatters (mention `data-uid` values) may contain `_` or `*`. Left exposed,
+    // the inline regexes below pair those characters across attributes and corrupt the markup
+    // (e.g. `class="cometchat-rich-text<u>blockquote">…</u>code"`), so every tag is swapped
+    // for an opaque token while inline markdown runs and restored at the end.
+    const tags: string[] = [];
+    const mark = this.unusedPrivateUseChar(markdown);
+    const protectTags = (text: string): string =>
+      text.replace(/<\/?[a-zA-Z][^<>\n]*>/g, tag => `${mark}${tags.push(tag) - 1}${mark}`);
+
+    let html = protectTags(markdown);
 
     // Code blocks (must be processed first to avoid conflicts)
     html = html.replace(/```([\s\S]*?)```/g, (_match, code: string) => {
@@ -73,7 +84,18 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
 
     // Blockquotes (process before other inline formatting)
     // Group consecutive lines starting with > into a single blockquote
-    html = this.formatBlockquotes(html);
+    html = protectTags(this.formatBlockquotes(html));
+
+    // Links: [text](url), before the inline passes, with the new <a> tag protected like the
+    // others, so `_` and `*` in the URL are never read as markdown (`/a_b_c` used to become
+    // `/a<em>b</em>c` inside the href). The link text is still formatted.
+    html = protectTags(
+      html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    );
+
+    // Bare URLs, which the URL formatter links later: kept as typed for the same reason. A
+    // trailing `.`, `)`, `*`, `_` or `~` is left out, so `**https://x.com**` is still bold.
+    html = html.replace(/\b(?:https?:\/\/|www\.)[^\s<]*[^\s<.,;:!?'")\]*_~]/g, url => `${mark}${tags.push(url) - 1}${mark}`);
 
     // Bold: **text** (must be processed before italic to avoid conflicts)
     html = html.replace(/\*\*([^\*]+?)\*\*/g, '<strong>$1</strong>');
@@ -81,25 +103,19 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
     // Strikethrough: ~~text~~ (process before other formatting)
     html = html.replace(/~~([^~]+?)~~/g, '<s>$1</s>');
 
-    // Underline: __text__
-    html = html.replace(/__([^_]+?)__/g, '<u>$1</u>');
+    // Underline: __text__, not inside a word
+    html = html.replace(/(?<![\p{L}\p{N}_])__([^_]+?)__(?![\p{L}\p{N}_])/gu, '<u>$1</u>');
 
     // Italic: *text* (single asterisk, not preceded or followed by another asterisk)
     // Use negative lookbehind and lookahead to avoid matching ** from bold
     html = html.replace(/(?<!\*)\*([^\*\n]+?)\*(?!\*)/g, '<em>$1</em>');
 
-    // Italic: _text_ (single underscore, not preceded or followed by another underscore)
-    // Use negative lookbehind and lookahead to avoid matching __ from underline
-    html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em>$1</em>');
+    // Italic: _text_ (single underscore, not preceded or followed by another underscore), and
+    // not inside a word: as in CommonMark, `snake_case_name` stays as typed.
+    html = html.replace(/(?<![\p{L}\p{N}_])_([^_\n]+?)_(?![\p{L}\p{N}_])/gu, '<em>$1</em>');
 
     // Inline code: `code` (but not inside code blocks)
     html = html.replace(/`([^`]+?)`/g, '<code class="cometchat-rich-text__code">$1</code>');
-
-    // Links: [text](url)
-    html = html.replace(
-      /\[([^\]]+)\]\(([^\)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-    );
 
     // Ordered lists: 1. item
     html = this.formatOrderedLists(html);
@@ -107,7 +123,21 @@ export class CometChatMarkdownFormatter extends CometChatTextFormatter {
     // Unordered lists: - item or * item
     html = this.formatUnorderedLists(html);
 
-    return html;
+    // Restore the protected tags
+    return html.replace(new RegExp(`${mark}(\\d+)${mark}`, 'g'), (_match, index: string) => tags[Number(index)]);
+  }
+
+  /**
+   * Pick the delimiter for tag placeholders: a private-use character absent from the input,
+   * so a placeholder can never collide with user text and contains no markdown syntax.
+   * @param text - The text being formatted
+   * @returns A single character not present in text
+   * @private
+   */
+  private unusedPrivateUseChar(text: string): string {
+    let code = 0xe000;
+    while (text.includes(String.fromCharCode(code))) code++;
+    return String.fromCharCode(code);
   }
 
   /**

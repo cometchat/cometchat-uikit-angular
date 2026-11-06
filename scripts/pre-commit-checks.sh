@@ -2,13 +2,14 @@
 # =============================================================================
 # Pre-commit safety checks for CometChat Angular UIKit
 #
-# AUTO-FIXES and re-stages:
-#   1. Real credentials in environment.ts → replaced with placeholder keys
-#   2. debugger statements in source files → removed
-#
-# BLOCKS (must fix manually):
-#   3. console.log in UIKit library source (not tests/stories/analyzers)
-#   4. .env files accidentally staged
+# Checks only what is staged, and never edits or stages files. BLOCKS the commit on:
+#   1. Real credentials in a staged environment.ts
+#   2. debugger statements in staged source
+#   3. Direct effect() in staged library source (use safeEffect)
+#   4. console.log in staged library source
+#   5. Staged .env files
+#   6. New ESLint errors in staged files
+#   7. Secrets in staged changes (gitleaks)
 #
 # Install: npm run hooks:install
 # Bypass (emergency only): git commit --no-verify
@@ -24,16 +25,9 @@ BOLD='\033[1m'
 RESET='\033[0m'
 
 ERRORS=0
-FIXED=0
-
 error() {
   echo -e "${RED}${BOLD}[BLOCKED]${RESET} $1"
   ERRORS=$((ERRORS + 1))
-}
-
-fixed() {
-  echo -e "${CYAN}${BOLD}[AUTO-FIXED]${RESET} $1"
-  FIXED=$((FIXED + 1))
 }
 
 ok() {
@@ -46,143 +40,94 @@ section() {
 }
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
 
 echo ""
 echo -e "${BOLD}Running pre-commit checks...${RESET}"
 
+# Every check reads the STAGED content (what the commit will contain), never the working
+# tree, and never edits or stages files: a developer's local keys in environment.ts and their
+# unstaged work stay exactly as they are. A problem blocks the commit with how to fix it.
+staged() { git show ":$1" 2>/dev/null || true; }
+# Staged TypeScript/JavaScript under projects/, minus tests, stories and test helpers.
+STAGED_SOURCE=$(echo "$STAGED_FILES" | grep -E "^projects/.*\.(ts|js)$" | grep -vE "\.(spec|stories)\.(ts|js)$|/testing/" || true)
+# Code lines only: drop // and * comment lines.
+code_of() { staged "$1" | grep -vE "^[[:space:]]*(\*|//)" || true; }
+
 # =============================================================================
-# CHECK 1: environment.ts — auto-fix real credentials → placeholders
+# CHECK 1: real credentials in a staged environment.ts — BLOCK
 #
-# If any credential field has a real value (not matching its own key name),
-# replace it with the key name as the value: appId: 'appId'
-# Then re-stage the file so the fix is included in the commit.
+# The committed file keeps placeholders (appId: 'appId', ...). Real keys live only in a
+# developer's working copy or .env; staging them is blocked, the working copy is left alone.
 # =============================================================================
-section "Check 1: environment.ts credentials (auto-fix)"
+section "Check 1: environment.ts credentials"
 
-ENV_PATH="$REPO_ROOT/projects/sample-app/src/environments/environment.ts"
+ENV_REL="projects/sample-app/src/environments/environment.ts"
 
-if [ -f "$ENV_PATH" ]; then
-  NEEDS_FIX=0
-
-  # Check each credential field
-  if grep -qE "appId:\s*'[a-zA-Z0-9]{10,}'" "$ENV_PATH" && \
-     ! grep -qE "appId:\s*'appId'" "$ENV_PATH"; then
-    NEEDS_FIX=1
-  fi
-  if grep -qE "authKey:\s*'[a-f0-9]{40}'" "$ENV_PATH"; then
-    NEEDS_FIX=1
-  fi
-  if grep -qE "apiKey:\s*'[a-f0-9]{40}'" "$ENV_PATH"; then
-    NEEDS_FIX=1
-  fi
-  if grep -qE "region:\s*'(us|eu|in)'" "$ENV_PATH"; then
-    NEEDS_FIX=1
-  fi
-  if grep -qE "(userUid[0-9]*):\s*'[a-zA-Z0-9_-]{3,}'" "$ENV_PATH" && \
-     ! grep -qE "(userUid[0-9]*):\s*'userUid'" "$ENV_PATH"; then
-    NEEDS_FIX=1
-  fi
-
-  if [ $NEEDS_FIX -eq 1 ]; then
-    # Replace each credential with its key name as the value
-    # Uses perl for reliable in-place regex replacement on macOS
-    perl -i -pe "s/appId:\s*'[^']+'/appId: 'appId'/g" "$ENV_PATH"
-    perl -i -pe "s/authKey:\s*'[^']+'/authKey: 'authKey'/g" "$ENV_PATH"
-    perl -i -pe "s/apiKey:\s*'[^']+'/apiKey: 'apiKey'/g" "$ENV_PATH"
-    perl -i -pe "s/region:\s*'[^']+'/region: 'region'/g" "$ENV_PATH"
-    perl -i -pe "s/userUid2:\s*'[^']+'/userUid2: 'userUid2'/g" "$ENV_PATH"
-    perl -i -pe "s/userUid:\s*'[^']+'/userUid: 'userUid'/g" "$ENV_PATH"
-
-    # Re-stage the fixed file
-    git add "$ENV_PATH"
-    fixed "environment.ts — credentials replaced with placeholders and re-staged"
+if echo "$STAGED_FILES" | grep -qxF "$ENV_REL"; then
+  # The committed file keeps each value equal to its own key name (appId: 'appId'). Any other
+  # non-empty value, in any quotes or case, is treated as a real credential.
+  if ! staged "$ENV_REL" | node -e '
+    const s = require("fs").readFileSync(0, "utf8");
+    const real = [...s.matchAll(/\b(appId|authKey|apiKey|region)\s*:\s*([\x27"`])(.*?)\2/g)].filter((m) => m[3] && m[3] !== m[1]);
+    process.exit(real.length ? 1 : 0);'; then
+    error "$ENV_REL is staged with real credentials. Unstage it (your local copy is kept): git restore --staged $ENV_REL"
   else
-    ok "environment.ts — credentials are already placeholders"
+    ok "environment.ts — staged copy holds placeholders"
   fi
 else
-  ok "environment.ts not found — skipping"
+  ok "environment.ts not staged"
 fi
 
 # =============================================================================
-# CHECK 2: debugger statements — auto-remove from source files
-#
-# Removes any line that is solely `debugger;` or `debugger` from all
-# TypeScript/JavaScript source files (skips tests, stories, /testing/).
-# Re-stages any files that were modified.
+# CHECK 2: debugger statements in staged source — BLOCK
 # =============================================================================
-section "Check 2: debugger statements (auto-fix)"
+section "Check 2: debugger statements"
 
-DEBUGGER_FIXED=0
-
-while IFS= read -r -d '' FILE; do
-  RELATIVE="${FILE#$REPO_ROOT/}"
-  if echo "$RELATIVE" | grep -qE "\.(spec|stories)\.(ts|js)$|/testing/"; then continue; fi
-
-  if grep -qE "^\s*debugger\s*;?\s*$" "$FILE"; then
-    # Remove lines containing only 'debugger' or 'debugger;'
-    perl -i -ne 'print unless /^\s*debugger\s*;?\s*$/' "$FILE"
-    git add "$FILE"
-    fixed "$RELATIVE — debugger statement removed and re-staged"
-    DEBUGGER_FIXED=1
+DEBUGGER_FOUND=0
+for FILE in $STAGED_SOURCE; do
+  if code_of "$FILE" | grep -qE "^[[:space:]]*debugger[[:space:]]*;?[[:space:]]*$"; then
+    error "$FILE contains a debugger statement — remove it and stage the file again."
+    DEBUGGER_FOUND=1
   fi
-done < <(find "$REPO_ROOT/projects" \( -name "*.ts" -o -name "*.js" \) -not -path "*/node_modules/*" -print0 2>/dev/null)
-
-[ $DEBUGGER_FIXED -eq 0 ] && ok "No debugger statements found"
+done
+[ $DEBUGGER_FOUND -eq 0 ] && ok "No debugger statements in staged source"
 
 # =============================================================================
-# CHECK 3: Direct effect() usage in UIKit library source — BLOCK
+# CHECK 3: Direct effect() usage in staged UIKit library source — BLOCK
 #
 # Developers must use safeEffect() from utils/safe-effect.ts instead of
 # Angular's effect() directly. This ensures allowSignalWrites:true is always
 # set, making the code compatible with Angular 18–21.
-# Skips: *.spec.ts, *.stories.ts, /testing/, safe-effect.ts itself
+# Skips: safe-effect.ts itself and test-setup.ts
 # =============================================================================
 section "Check 3: Direct effect() usage (use safeEffect instead)"
 
 EFFECT_FOUND=0
-
-while IFS= read -r -d '' FILE; do
-  RELATIVE="${FILE#$REPO_ROOT/}"
-  if echo "$RELATIVE" | grep -qE "\.(spec|stories)\.ts$|/testing/|safe-effect\.ts$|test-setup\.ts$"; then
-    continue
+for FILE in $(echo "$STAGED_SOURCE" | grep -E "^projects/cometchat-uikit/src/lib/.*\.ts$" | grep -vE "safe-effect\.ts$|test-setup\.ts$" || true); do
+  CALLS=$(code_of "$FILE" | grep -E "(^|[^[:alnum:]_.])effect[[:space:]]*\(" || true)
+  if [ -n "$CALLS" ]; then
+    error "$FILE uses effect() directly — use safeEffect() from utils/safe-effect.ts instead."
+    EFFECT_FOUND=1
   fi
-
-  # Match effect( not preceded by 'safe' and not inside comments
-  if grep -vE "^\s*(\*|//)" "$FILE" | grep -qE "\beffect\s*\("; then
-    # Make sure it's not safeEffect(
-    if grep -vE "^\s*(\*|//)" "$FILE" | grep -E "\beffect\s*\(" | grep -qvE "safeEffect\s*\("; then
-      error "$RELATIVE uses effect() directly — use safeEffect() from utils/safe-effect.ts instead."
-      EFFECT_FOUND=1
-    fi
-  fi
-done < <(find "$REPO_ROOT/projects/cometchat-uikit/src/lib" -name "*.ts" -not -path "*/node_modules/*" -print0 2>/dev/null)
-
-[ $EFFECT_FOUND -eq 0 ] && ok "No direct effect() usage found in library source"
+done
+[ $EFFECT_FOUND -eq 0 ] && ok "No direct effect() usage in staged library source"
 
 # =============================================================================
-# CHECK 4: console.log in UIKit library source — BLOCK (must fix manually)
+# CHECK 4: console.log in staged UIKit library source — BLOCK
 #
-# Scans all library source files on disk.
-# Skips: *.spec.ts, *.stories.ts, CometChatLogger.ts, /testing/, /analyzers/
+# Skips: CometChatLogger.ts and test-setup.ts
 # =============================================================================
-section "Check 3: console.log in library source"
+section "Check 4: console.log in library source"
 
 CONSOLE_FOUND=0
-
-while IFS= read -r -d '' FILE; do
-  RELATIVE="${FILE#$REPO_ROOT/}"
-  if echo "$RELATIVE" | grep -qE "\.(spec|stories)\.ts$|CometChatLogger\.ts$|test-setup\.ts$|/testing/|/analyzers/"; then
-    continue
-  fi
-
-  if grep -vE "^\s*(\*|//)" "$FILE" | grep -qE "console\.log\s*\("; then
-    error "$RELATIVE contains console.log — use CometChatLogger instead."
+for FILE in $(echo "$STAGED_SOURCE" | grep -E "^projects/cometchat-uikit/src/lib/.*\.ts$" | grep -vE "CometChatLogger\.ts$|test-setup\.ts$" || true); do
+  if [ -n "$(code_of "$FILE" | grep -E "console\.log[[:space:]]*\(" || true)" ]; then
+    error "$FILE contains console.log — use CometChatLogger instead."
     CONSOLE_FOUND=1
   fi
-done < <(find "$REPO_ROOT/projects/cometchat-uikit/src/lib" -name "*.ts" -not -path "*/node_modules/*" -print0 2>/dev/null)
-
-[ $CONSOLE_FOUND -eq 0 ] && ok "No console.log in library source"
+done
+[ $CONSOLE_FOUND -eq 0 ] && ok "No console.log in staged library source"
 
 # =============================================================================
 # CHECK 5: .env files accidentally staged — BLOCK
@@ -198,14 +143,54 @@ else
 fi
 
 # =============================================================================
+# CHECK 6: ESLint on staged TypeScript and HTML — BLOCK (Stage 0, ENG-40495)
+#
+# Check only (no --fix in a hook). Errors listed in eslint-suppressions.json are
+# the existing baseline and do not block; new errors do. CI runs the same lint.
+# =============================================================================
+section "Check 6: ESLint (staged files)"
+
+LINT_FILES=$(echo "$STAGED_FILES" | grep -E "^projects/.*\.(ts|html)$" || true)
+
+# What gets linted is what is staged, with the eslint-suppressions.json baseline applied
+# (scripts/lint-staged.mjs): an unstaged edit can neither block nor excuse the commit.
+LINT_FAILED=0
+if [ -n "$LINT_FILES" ]; then
+  # shellcheck disable=SC2086
+  node "$REPO_ROOT/scripts/lint-staged.mjs" $LINT_FILES || LINT_FAILED=1
+fi
+if [ -z "$LINT_FILES" ]; then
+  ok "No staged TypeScript or HTML to lint"
+elif [ $LINT_FAILED -eq 0 ]; then
+  ok "ESLint passed on staged files"
+else
+  error "ESLint found new errors in staged files (see above)."
+fi
+
+# =============================================================================
+# CHECK 7: Secrets in staged changes — BLOCK (Stage 0, ENG-40495)
+#
+# Uses gitleaks with the repo's .gitleaks.toml (also run by CI's secret-scan job).
+# Skipped with a warning when gitleaks is not installed: brew install gitleaks.
+# =============================================================================
+section "Check 7: Secrets (gitleaks)"
+
+if command -v gitleaks > /dev/null 2>&1; then
+  if gitleaks git --staged --config "$REPO_ROOT/.gitleaks.toml" --redact --no-banner > /dev/null 2>&1; then
+    ok "No secrets in staged changes"
+  else
+    gitleaks git --staged --config "$REPO_ROOT/.gitleaks.toml" --redact --no-banner || true
+    error "Possible secret in staged changes (see above)."
+  fi
+else
+  echo -e "  ${YELLOW}⚠${RESET} gitleaks is not installed; skipped (CI still scans). Install: brew install gitleaks"
+fi
+
+# =============================================================================
 # RESULT
 # =============================================================================
 echo ""
 echo "─────────────────────────────────────────"
-
-if [ $FIXED -gt 0 ]; then
-  echo -e "${CYAN}${BOLD}Auto-fixed $FIXED issue(s) and re-staged the changes.${RESET}"
-fi
 
 if [ $ERRORS -gt 0 ]; then
   echo -e "${RED}${BOLD}Commit blocked — $ERRORS issue(s) must be fixed manually.${RESET}"
@@ -216,11 +201,7 @@ if [ $ERRORS -gt 0 ]; then
   exit 1
 fi
 
-if [ $FIXED -gt 0 ]; then
-  echo -e "${GREEN}${BOLD}All issues auto-fixed. Commit proceeding with clean files.${RESET}"
-else
-  echo -e "${GREEN}${BOLD}All pre-commit checks passed.${RESET}"
-fi
+echo -e "${GREEN}${BOLD}All pre-commit checks passed.${RESET}"
 
 echo ""
 exit 0

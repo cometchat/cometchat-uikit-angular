@@ -14,7 +14,7 @@
  * - event type isolation (subscribing to one does not receive from another)
  * - null/undefined payload handling
  */
-import { DestroyRef } from '@angular/core';
+import { DestroyRef, TemplateRef } from '@angular/core';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { Subscription } from 'rxjs';
 import { ensureSdkReady, sdkCleanup } from '../test-setup';
@@ -45,9 +45,17 @@ function createMockDestroyRef(): DestroyRef & { triggerDestroy: () => void } {
 
 // ─── Mock Helpers ────────────────────────────────────────────────────
 
+/**
+ * The bus only forwards payloads by reference, so a unique opaque object stands in for a
+ * TemplateRef (which cannot be constructed outside a view). Tests assert identity on it.
+ */
+function fakeTemplateRef(): TemplateRef<unknown> {
+  return { elementRef: { nativeElement: document.createElement('div') } } as unknown as TemplateRef<unknown>;
+}
+
 function createMockPanel(overrides: Partial<IPanel> = {}): IPanel {
   return {
-    child: overrides.child ?? document.createElement('div'),
+    child: overrides.child ?? fakeTemplateRef(),
     position: overrides.position ?? PanelAlignment.messageListFooter,
     ...overrides,
   };
@@ -65,14 +73,14 @@ function createMockActiveChatChanged(
 
 function createMockModal(overrides: Partial<IModal> = {}): IModal {
   return {
-    child: overrides.child ?? document.createElement('div'),
+    child: overrides.child ?? fakeTemplateRef(),
     ...overrides,
   };
 }
 
 function createMockDialog(overrides: Partial<IDialog> = {}): IDialog {
   return {
-    child: overrides.child ?? document.createElement('div'),
+    child: overrides.child ?? fakeTemplateRef(),
     confirmCallback: overrides.confirmCallback ?? (() => {}),
     ...overrides,
   };
@@ -87,7 +95,7 @@ function createMockOpenChat(overrides: Partial<IOpenChat> = {}): IOpenChat {
 
 function createMockShowOngoingCall(overrides: Partial<IShowOngoingCall> = {}): IShowOngoingCall {
   return {
-    child: overrides.child ?? document.createElement('div'),
+    child: overrides.child ?? fakeTemplateRef(),
     ...overrides,
   };
 }

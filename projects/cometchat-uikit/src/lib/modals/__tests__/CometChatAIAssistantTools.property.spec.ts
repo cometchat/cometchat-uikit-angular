@@ -13,10 +13,11 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
-import {
-  CometChatAIAssistantTools,
-  ICometChatAIAssistantToolsMap,
-} from '../CometChatAIAssistantTools';
+import { CometChatAIAssistantTools } from '../CometChatAIAssistantTools';
+
+/** The tool-name → handler map the constructor accepts. */
+type ICometChatAIAssistantToolsMap = ConstructorParameters<typeof CometChatAIAssistantTools>[0];
+type ToolHandler = ICometChatAIAssistantToolsMap[string];
 
 // ==================== Generators ====================
 
@@ -157,11 +158,13 @@ describe('Feature: ai-features, Property 16: AI Assistant Tools direct property 
 
         for (const name of registeredNames) {
           // Property exists and is the same reference as getAction
-          expect(tools[name]).toBe(tools.getAction(name));
+          const viaProperty = tools[name];
+          expect(viaProperty).toBe(tools.getAction(name));
+          expect(viaProperty).toBeTypeOf('function');
 
           // Calling the property invokes the handler
           const testArg = { test: name };
-          tools[name](testArg);
+          (viaProperty as ToolHandler)(testArg);
           expect(actionsMap[name]).toHaveBeenCalledWith(testArg);
         }
       }),

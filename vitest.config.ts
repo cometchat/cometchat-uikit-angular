@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 import angular from '@analogjs/vite-plugin-angular';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { DurationShardSequencer } from './scripts/ci/unit-shard-sequencer.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,26 +28,22 @@ export default defineConfig({
       },
     },
     include: ['projects/**/*.spec.ts', 'scripts/**/*.spec.ts', '.storybook/__tests__/**/*.spec.ts'],
-    exclude: [
-      '**/node_modules/**',
-      // Excluded from test runs — not yet ready for unit testing
-      '**/cometchat-link-popover/**',
-      '**/cometchat-popover/**',
-      '**/cometchat-typing-indicator/**',
-      '**/cometchat-error-boundary/**',
-    ],
+    exclude: ['**/node_modules/**'],
     setupFiles: ['./vitest.setup.mjs'],
     testTimeout: 30000,
     pool: 'forks',
     fileParallelism: false,
     sequence: {
       concurrent: false,
+      // --shard splits by recorded run time, not file count (ENG-40609).
+      sequencer: DurationShardSequencer,
     },
     reporters: ['default', ['json', { outputFile: 'test-results/vitest-full-results.json' }]],
     coverage: {
       provider: 'istanbul',
       reportOnFailure: true,
-      reporter: ['text', 'html', 'lcov', 'json-summary'],
+      // json writes coverage-final.json: per-line data for the PR gate's changed-lines check.
+      reporter: ['text', 'html', 'lcov', 'json-summary', 'json'],
       reportsDirectory: './coverage',
       include: ['projects/cometchat-uikit/src/**/*.ts'],
       exclude: [
@@ -61,8 +58,19 @@ export default defineConfig({
         '**/*.types.ts',
         // Vendored third-party audio renderer — not our code
         '**/wavesurfer/**',
-        // Internal dev/analysis tooling — not UIKit library code
-        '**/analyzers/**',
+        // Unused: extracted in ENG-34651, but each component kept its own copy of these helpers, so
+        // nothing in the library (or its public API) imports them and they are not in the package.
+        // Their tests were removed with them as dead tests; delete the files when convenient.
+        '**/cometchat-group-members.scope-utils.ts',
+        '**/cometchat-message-bubble.aria-utils.ts',
+        '**/cometchat-message-composer.toolbar-utils.ts',
+        '**/cometchat-message-bubble.call-utils.ts',
+        '**/cometchat-message-header.typing-utils.ts',
+        '**/cometchat-conversations.keyboard.ts',
+        '**/cometchat-groups.utils.ts',
+        '**/cometchat-users.section-utils.ts',
+        '**/cometchat-message-list.date-utils.ts',
+        '**/cometchat-conversations.sound-utils.ts',
         // Test infrastructure files — exist to support tests, not to be tested
         '**/test-setup.ts',
         'projects/cometchat-uikit/src/lib/testing/mock-*.ts',
@@ -74,11 +82,6 @@ export default defineConfig({
         '**/*.selection.ts',
         '**/*.sound-utils.ts',
         '**/*.announce-utils.ts',
-        // Excluded components — not yet ready for coverage measurement
-        '**/cometchat-link-popover/**',
-        '**/cometchat-popover/**',
-        '**/cometchat-typing-indicator/**',
-        '**/cometchat-error-boundary/**',
       ],
       thresholds: {
         lines: 0,

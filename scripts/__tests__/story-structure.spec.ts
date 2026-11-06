@@ -176,8 +176,13 @@ describe('Feature: storybook-coverage-audit — Story Structure', () => {
       fc.property(allStoryFileArb(), (info) => {
         const { content, isBaseElement, relativePath } = info;
 
-        // Extract the meta title — match `title: 'Something/...'` at the meta level
-        const titleMatch = content.match(
+        // Extract the meta title. Search from the `meta` declaration onwards —
+        // a story file may define mock data containing its own `title:` field
+        // (menu options, actions) above the meta object, and matching the first
+        // `title:` in the file would read that mock instead of the real title.
+        const metaStart = content.search(/(?:const|let|var)\s+meta\s*[:=]/);
+        const fromMeta = metaStart >= 0 ? content.slice(metaStart) : content;
+        const titleMatch = fromMeta.match(
           /^\s*title:\s*['"]([^'"]+)['"]/m
         );
 

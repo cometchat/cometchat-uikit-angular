@@ -441,15 +441,16 @@ describe('Property 5: Responsive variables use component-level wrappers with suf
       'responsive declarations use component-level vars with suffixes: %s',
       filePath => {
         const violations = auditFile(filePath);
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line} [${v.issue}]: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
-            )
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has responsive variable violations:\n${details}`);
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line} [${v.issue}]: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has responsive variable violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -461,17 +462,16 @@ describe('Property 5: Responsive variables use component-level wrappers with suf
         const violations = auditFile(filePath).filter(
           v => v.property.startsWith('padding') && v.issue === 'wrong_fallback_category'
         );
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
-            )
-            .join('\n');
-          expect.fail(
-            `${path.basename(filePath)} has padding fallback category violations in responsive blocks:\n${details}`
-          );
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has padding fallback category violations in responsive blocks:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -483,17 +483,16 @@ describe('Property 5: Responsive variables use component-level wrappers with suf
         const violations = auditFile(filePath).filter(
           v => v.property.startsWith('margin') && v.issue === 'wrong_fallback_category'
         );
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
-            )
-            .join('\n');
-          expect.fail(
-            `${path.basename(filePath)} has margin fallback category violations in responsive blocks:\n${details}`
-          );
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has margin fallback category violations in responsive blocks:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -505,17 +504,16 @@ describe('Property 5: Responsive variables use component-level wrappers with suf
         const violations = auditFile(filePath).filter(
           v => v.property.startsWith('gap') && v.issue === 'wrong_fallback_category'
         );
-        if (violations.length > 0) {
-          const details = violations
-            .map(
-              v =>
-                `  Line ${v.line}: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
-            )
-            .join('\n');
-          expect.fail(
-            `${path.basename(filePath)} has gap fallback category violations in responsive blocks:\n${details}`
-          );
-        }
+        const details = violations
+          .map(
+            v =>
+              `  Line ${v.line}: ${v.property} in @media ${v.mediaQuery}\n    Value: ${v.value}\n    Issue: ${v.details}`
+          )
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has gap fallback category violations in responsive blocks:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -526,15 +524,16 @@ describe('Property 5: Responsive variables use component-level wrappers with suf
       for (const filePath of ALL_CSS_FILES) {
         allViolations.push(...auditFile(filePath));
       }
-      if (allViolations.length > 0) {
-        const details = allViolations
-          .map(
-            v =>
-              `  ${v.file}:${v.line} [${v.issue}] — ${v.property} in @media ${v.mediaQuery}: ${v.details}`
-          )
-          .join('\n');
-        expect.fail(`Found ${allViolations.length} responsive variable violation(s):\n${details}`);
-      }
+      const details = allViolations
+        .map(
+          v =>
+            `  ${v.file}:${v.line} [${v.issue}] — ${v.property} in @media ${v.mediaQuery}: ${v.details}`
+        )
+        .join('\n');
+      expect(
+        allViolations,
+        `Found ${allViolations.length} responsive variable violation(s):\n${details}`
+      ).toHaveLength(0);
     });
 
     it('should find responsive @media blocks with audited declarations (sanity check)', () => {

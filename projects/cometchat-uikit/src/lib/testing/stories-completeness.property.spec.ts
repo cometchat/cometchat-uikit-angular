@@ -204,12 +204,8 @@ describe('Property 19 — Story files export required state variants', () => {
   const violations: CompletenessViolation[] = [];
 
   for (const storiesFile of storiesFiles) {
-    let source: string;
-    try {
-      source = fs.readFileSync(storiesFile, 'utf-8');
-    } catch {
-      continue;
-    }
+    // Let read errors surface instead of silently skipping a file.
+    const source = fs.readFileSync(storiesFile, 'utf-8');
 
     const exports = parseNamedExports(source);
     const componentName = componentNameFromStoriesPath(storiesFile);
@@ -231,16 +227,23 @@ describe('Property 19 — Story files export required state variants', () => {
     }
   }
 
-  if (violations.length > 0) {
-    it.each(violations.map((v) => [v.componentName, v.missingExport, path.basename(v.storiesFile)]))(
-      'VIOLATION: cometchat-%s is missing export "%s" in %s',
-      (name, missingExport, file) => {
-        console.warn(`  ⚠ cometchat-${name}: missing export "${missingExport}" in ${file}`);
-        // Minor finding — log warning but don't hard-fail the test suite
-        expect(true).toBe(true);
-      }
+  it('every known stateful component should have a story file to audit', () => {
+    // Without this, a stateful component with no story file would skip the
+    // LoadingState/EmptyState/ErrorState requirement entirely.
+    const audited = new Set(storiesFiles.map(componentNameFromStoriesPath));
+    const unaudited = [...STATEFUL_COMPONENT_NAMES].filter((n) => !audited.has(n)).sort();
+    expect(unaudited, `stateful components with no *.stories.ts: ${unaudited.join(', ')}`).toEqual([]);
+  });
+
+  it('every story file should export Default, and stateful ones LoadingState/EmptyState/ErrorState', () => {
+    const lines = violations.map(
+      (v) => `cometchat-${v.componentName}: missing "${v.missingExport}" in ${path.basename(v.storiesFile)}`
     );
-  }
+    expect(
+      lines,
+      `${lines.length} story completeness violation(s):\n  ${lines.join('\n  ')}\n`
+    ).toEqual([]);
+  });
 
   it('should report stories completeness summary and append findings', () => {
     appendFindingsToReport(violations);

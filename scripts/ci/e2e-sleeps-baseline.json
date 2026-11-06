@@ -1,0 +1,4 @@
+{
+  "count": 0,
+  "measured": "ci-sandbox-v5, 26 Oct 2026: every waitForTimeout replaced (ENG-40475). Only expectNothingFor() in e2e/helpers/wait.ts may wait a fixed time."
+}

@@ -188,7 +188,7 @@ describe('message-list.reaction-ops', () => {
   describe('fetchReactionsImpl', () => {
     it('should return reactions from SDK', async () => {
       const ctx = makeCtx();
-      const mockReactions = [new CometChat.Reaction()];
+      const mockReactions = [new CometChat.Reaction('r1', '1', '👍', 'u1', 0, new CometChat.User('u1'))];
       const mockRequest = { fetchNext: vi.fn().mockResolvedValue(mockReactions) };
       const mockBuilder = {
         setMessageId: vi.fn().mockReturnThis(),

@@ -115,10 +115,16 @@ export function hasMediaCaption(message: CometChat.BaseMessage | null | undefine
  *
  * `error` is not part of BaseMessage's public shape, hence the cast — the bubble reads it the same
  * loose way (`m.error || m.getMetadata?.()?.error`).
+ *
+ * The first reason recorded wins: the composer service marks a failed send with the SDK's own
+ * error (whose code, e.g. ERR_PERMISSION_DENIED, the bubble acts on), and the composer marks it
+ * again with a generic error just before emitting the failure, which must not overwrite it.
  */
 export function markMessageFailed(message: CometChat.BaseMessage, error: unknown): void {
+  const target = message as unknown as { error?: { code?: string; message?: string } };
+  if (target.error) return;
   const err = error as { code?: string; message?: string } | undefined;
-  (message as unknown as { error: { code?: string; message?: string } }).error = {
+  target.error = {
     code: err?.code ?? 'ERR_MESSAGE_SEND_FAILED',
     message: err?.message ?? String(error ?? ''),
   };

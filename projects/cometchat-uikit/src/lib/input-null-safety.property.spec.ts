@@ -30,6 +30,8 @@ import { vi, describe, it, expect, beforeAll, afterAll, beforeEach } from 'vites
 import * as fc from 'fast-check';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from './test-setup';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { MessageComposerService } from './services/message-composer.service';
 
 // ---- Original 8 components ----
 import { CometChatDeleteBubbleComponent } from './components/cometchat-delete-bubble/cometchat-delete-bubble.component';
@@ -110,6 +112,31 @@ interface ComponentInputDescriptor {
   name: string;
   component: any;
   inputs: string[];
+  /**
+   * Required inputs the component cannot render without (e.g. `message`,
+   * `conversation`). Applied before the first detectChanges() so the
+   * baseline render succeeds and the null/undefined mutation is what's tested.
+   */
+  requiredInputs?: () => Record<string, unknown>;
+}
+
+function makeTextMessage(): CometChat.TextMessage {
+  const msg = new CometChat.TextMessage('receiver-1', 'hello', CometChat.RECEIVER_TYPE.USER);
+  msg.setId(101);
+  msg.setSentAt(1700000000);
+  const sender = new CometChat.User('sender-1');
+  sender.setName('Sender One');
+  msg.setSender(sender);
+  return msg;
+}
+
+function makeConversation(): CometChat.Conversation {
+  const user = new CometChat.User('user-1');
+  user.setName('User One');
+  const conv = new (CometChat.Conversation as any)('conv-1', 'user', makeTextMessage(), user) as CometChat.Conversation;
+  conv.setConversationWith(user);
+  conv.setUnreadMessageCount(0);
+  return conv;
 }
 
 // ==================== Component Descriptors ====================
@@ -202,6 +229,7 @@ const COMPONENT_DESCRIPTORS: ComponentInputDescriptor[] = [
   {
     name: 'CometChatConversationItemComponent',
     component: CometChatConversationItemComponent,
+    requiredInputs: () => ({ conversation: makeConversation() }),
     inputs: [
       'isActive', 'isSelected', 'isFocused', 'tabIndex',
       'typingIndicator', 'loggedInUser', 'dateFormat',
@@ -442,6 +470,7 @@ const COMPONENT_DESCRIPTORS: ComponentInputDescriptor[] = [
   {
     name: 'CometChatMessageBubbleComponent',
     component: CometChatMessageBubbleComponent,
+    requiredInputs: () => ({ message: makeTextMessage() }),
     inputs: [
       'alignment', 'group', 'options', 'quickOptionsCount',
       'leadingView', 'headerView', 'replyView', 'contentView',
@@ -493,6 +522,7 @@ const COMPONENT_DESCRIPTORS: ComponentInputDescriptor[] = [
   {
     name: 'CometChatMessageInformationComponent',
     component: CometChatMessageInformationComponent,
+    requiredInputs: () => ({ message: makeTextMessage() }),
     inputs: ['message', 'dateTimeFormat', 'textFormatters'],
   },
   {
@@ -630,36 +660,42 @@ describe('Property 7: Input Null Safety', () => {
     TestBed.configureTestingModule({
       imports: COMPONENT_DESCRIPTORS.map(d => d.component),
     });
+    // CreatePoll injects MessageComposerService, which is normally provided by the composer host
+    TestBed.overrideComponent(CometChatCreatePollComponent, {
+      add: { providers: [MessageComposerService] },
+    });
   });
 
-  /**
-   * Helper: runs a function and returns true if it doesn't throw.
-   * Some components legitimately throw when critical inputs (e.g., message, conversation)
-   * are null because their templates access methods on those objects.
-   * These are tracked as warnings, not failures.
-   */
-  function safeRun(fn: () => void): boolean {
-    try {
-      fn();
-      return true;
-    } catch {
-      return false;
+  /** Creates the fixture and applies the descriptor's required inputs (no detectChanges yet). */
+  function createFixture(descriptor: ComponentInputDescriptor): ComponentFixture<any> {
+    const fixture = TestBed.createComponent(descriptor.component);
+    const required = descriptor.requiredInputs?.() ?? {};
+    for (const [key, value] of Object.entries(required)) {
+      fixture.componentRef.setInput(key, value);
     }
+    return fixture;
   }
 
-  /**
-   * Helper: calls detectChanges() on a fixture and returns true if it doesn't throw.
-   * Components may throw when critical inputs are null/undefined because their
-   * templates access methods on those objects. These are tracked as warnings.
-   */
-  function safeDetectChanges(fixture: ComponentFixture<any>): boolean {
-    try {
-      fixture.detectChanges();
-      return true;
-    } catch {
-      return false;
-    }
+  function describeError(e: unknown): string {
+    return e instanceof Error ? e.message.split('\n')[0].slice(0, 160) : String(e);
   }
+
+  it('every component renders with its required inputs (baseline for the null-safety properties)', () => {
+    const failures: string[] = [];
+    for (const descriptor of COMPONENT_DESCRIPTORS) {
+      let fixture: ComponentFixture<any> | null = null;
+      try {
+        fixture = createFixture(descriptor);
+        fixture.detectChanges();
+        expect(fixture.componentInstance).toBeInstanceOf(descriptor.component);
+      } catch (e) {
+        failures.push(`${descriptor.name}: ${describeError(e)}`);
+      } finally {
+        fixture?.destroy();
+      }
+    }
+    expect(failures).toEqual([]);
+  });
 
   // ---------- Core property: single input set to null ----------
 
@@ -669,28 +705,38 @@ describe('Property 7: Input Null Safety', () => {
    * For any component and any single @Input(), setting it to null
    * and calling detectChanges() does not throw.
    */
-  it('setting any single @Input() to null and calling detectChanges() does not throw', () => {
-    const violations: string[] = [];
-    fc.assert(
-      fc.property(arbComponentAndInput, ({ descriptor, inputName }) => {
-        let fixture: ComponentFixture<any> | null = null;
-        try {
-          fixture = TestBed.createComponent(descriptor.component);
-          fixture.detectChanges();
-          (fixture.componentInstance as any)[inputName] = null;
-          fixture.detectChanges();
-        } catch {
-          violations.push(`${descriptor.name}.${inputName}`);
-        } finally {
-          fixture?.destroy();
-        }
-      }),
-      { numRuns: 150 }
-    );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} component/input pairs threw on null:`, violations);
+  /**
+   * Renders the component, applies `assignments` through setInput (so OnPush
+   * components re-render and ngOnChanges fires, exactly as with a parent
+   * template binding), renders again, and returns the error message if any.
+   */
+  function renderWith(descriptor: ComponentInputDescriptor, assignments: Array<[string, unknown]>): string | null {
+    let fixture: ComponentFixture<any> | null = null;
+    try {
+      fixture = createFixture(descriptor);
+      fixture.detectChanges();
+      for (const [inputName, value] of assignments) {
+        fixture.componentRef.setInput(inputName, value);
+      }
+      fixture.detectChanges();
+      return null;
+    } catch (e) {
+      return describeError(e);
+    } finally {
+      fixture?.destroy();
     }
-    expect(true).toBe(true);
+  }
+
+  it('setting any single @Input() to null and calling detectChanges() does not throw', () => {
+    // Exhaustive over every component/input pair so the result is deterministic
+    const violations: string[] = [];
+    for (const descriptor of COMPONENT_DESCRIPTORS) {
+      for (const inputName of descriptor.inputs) {
+        const err = renderWith(descriptor, [[inputName, null]]);
+        if (err) violations.push(`${descriptor.name}.${inputName}: ${err}`);
+      }
+    }
+    expect(violations).toEqual([]);
   });
 
   // ---------- Core property: single input set to undefined ----------
@@ -703,26 +749,13 @@ describe('Property 7: Input Null Safety', () => {
    */
   it('setting any single @Input() to undefined and calling detectChanges() does not throw', () => {
     const violations: string[] = [];
-    fc.assert(
-      fc.property(arbComponentAndInput, ({ descriptor, inputName }) => {
-        let fixture: ComponentFixture<any> | null = null;
-        try {
-          fixture = TestBed.createComponent(descriptor.component);
-          fixture.detectChanges();
-          (fixture.componentInstance as any)[inputName] = undefined;
-          fixture.detectChanges();
-        } catch {
-          violations.push(`${descriptor.name}.${inputName}`);
-        } finally {
-          fixture?.destroy();
-        }
-      }),
-      { numRuns: 150 }
-    );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} component/input pairs threw on undefined:`, violations);
+    for (const descriptor of COMPONENT_DESCRIPTORS) {
+      for (const inputName of descriptor.inputs) {
+        const err = renderWith(descriptor, [[inputName, undefined]]);
+        if (err) violations.push(`${descriptor.name}.${inputName}: ${err}`);
+      }
     }
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   // ---------- Multiple inputs set to null simultaneously ----------
@@ -740,24 +773,21 @@ describe('Property 7: Input Null Safety', () => {
       fc.property(arbComponentAndMultipleInputs, ({ descriptor, inputNames }) => {
         let fixture: ComponentFixture<any> | null = null;
         try {
-          fixture = TestBed.createComponent(descriptor.component);
+          fixture = createFixture(descriptor);
           fixture.detectChanges();
           for (const inputName of inputNames) {
-            (fixture.componentInstance as any)[inputName] = null;
+            fixture.componentRef.setInput(inputName, null);
           }
           fixture.detectChanges();
-        } catch {
-          violations.push(`${descriptor.name}.[${inputNames.join(',')}]`);
+        } catch (e) {
+          violations.push(`${descriptor.name}.[${inputNames.join(',')}]: ${describeError(e)}`);
         } finally {
           fixture?.destroy();
         }
       }),
       { numRuns: 120 }
     );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} multi-null violations:`, violations);
-    }
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   // ---------- Multiple inputs set to undefined simultaneously ----------
@@ -775,24 +805,21 @@ describe('Property 7: Input Null Safety', () => {
       fc.property(arbComponentAndMultipleInputs, ({ descriptor, inputNames }) => {
         let fixture: ComponentFixture<any> | null = null;
         try {
-          fixture = TestBed.createComponent(descriptor.component);
+          fixture = createFixture(descriptor);
           fixture.detectChanges();
           for (const inputName of inputNames) {
-            (fixture.componentInstance as any)[inputName] = undefined;
+            fixture.componentRef.setInput(inputName, undefined);
           }
           fixture.detectChanges();
-        } catch {
-          violations.push(`${descriptor.name}.[${inputNames.join(',')}]`);
+        } catch (e) {
+          violations.push(`${descriptor.name}.[${inputNames.join(',')}]: ${describeError(e)}`);
         } finally {
           fixture?.destroy();
         }
       }),
       { numRuns: 120 }
     );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} multi-undefined violations:`, violations);
-    }
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   // ---------- Random mix of null/undefined across inputs ----------
@@ -813,15 +840,15 @@ describe('Property 7: Input Null Safety', () => {
         ({ descriptor, inputNames }, nullishValues) => {
           let fixture: ComponentFixture<any> | null = null;
           try {
-            fixture = TestBed.createComponent(descriptor.component);
+            fixture = createFixture(descriptor);
             fixture.detectChanges();
             inputNames.forEach((inputName, i) => {
               const value = nullishValues[i % nullishValues.length];
-              (fixture!.componentInstance as any)[inputName] = value;
+              fixture!.componentRef.setInput(inputName, value);
             });
             fixture.detectChanges();
-          } catch {
-            violations.push(`${descriptor.name}.[${inputNames.join(',')}]`);
+          } catch (e) {
+            violations.push(`${descriptor.name}.[${inputNames.join(',')}]: ${describeError(e)}`);
           } finally {
             fixture?.destroy();
           }
@@ -829,10 +856,7 @@ describe('Property 7: Input Null Safety', () => {
       ),
       { numRuns: 120 }
     );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} mixed null/undefined violations:`, violations);
-    }
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   // ---------- ALL inputs set to null at once per component ----------
@@ -845,28 +869,11 @@ describe('Property 7: Input Null Safety', () => {
    */
   it('setting ALL inputs to null at once for any component does not throw', () => {
     const violations: string[] = [];
-    fc.assert(
-      fc.property(arbComponent, descriptor => {
-        let fixture: ComponentFixture<any> | null = null;
-        try {
-          fixture = TestBed.createComponent(descriptor.component);
-          fixture.detectChanges();
-          for (const inputName of descriptor.inputs) {
-            (fixture.componentInstance as any)[inputName] = null;
-          }
-          fixture.detectChanges();
-        } catch {
-          violations.push(descriptor.name);
-        } finally {
-          fixture?.destroy();
-        }
-      }),
-      { numRuns: 100 }
-    );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} components threw on all-null:`, violations);
+    for (const descriptor of COMPONENT_DESCRIPTORS) {
+      const err = renderWith(descriptor, descriptor.inputs.map(name => [name, null] as [string, unknown]));
+      if (err) violations.push(`${descriptor.name}: ${err}`);
     }
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   // ---------- Transition: valid value → null → detectChanges ----------
@@ -878,8 +885,8 @@ describe('Property 7: Input Null Safety', () => {
    * then setting to null, and calling detectChanges() does not throw.
    * This tests the transition path (ngOnChanges with previous valid value).
    */
-  it('transitioning from valid value to null does not throw', () => {
-    const validValues: Record<string, any> = {
+  /** Representative non-null values per input name, used by the transition properties. */
+  const validValues: Record<string, any> = {
       // Avatar
       image: 'https://example.com/avatar.png',
       name: 'Test User',
@@ -1244,27 +1251,42 @@ describe('Property 7: Input Null Safety', () => {
       showSelectedUsersPreview: false,
     };
 
+  /** Sets the input to its valid value (when one is known) and renders; returns whether a value was set. */
+  function applyValidValue(fixture: ComponentFixture<any>, inputName: string): boolean {
+    const validValue = validValues[inputName];
+    if (validValue === undefined || validValue === null) return false;
+    fixture.componentRef.setInput(inputName, validValue);
+    return true;
+  }
+
+  it('validValues covers inputs with real (non-nullish) values for the transition properties', () => {
+    const covered = COMPONENT_DESCRIPTORS.flatMap(d => d.inputs).filter(
+      name => validValues[name] !== undefined && validValues[name] !== null,
+    );
+    // Guard against the transition properties silently degenerating into plain null tests
+    expect(covered.length).toBeGreaterThan(100);
+  });
+
+  it('transitioning from valid value to null does not throw', () => {
+    const violations: string[] = [];
     fc.assert(
       fc.property(arbComponentAndInput, ({ descriptor, inputName }) => {
         let fixture: ComponentFixture<any> | null = null;
         try {
-          fixture = TestBed.createComponent(descriptor.component);
-          const validValue = validValues[inputName];
-          if (validValue !== undefined) {
-            (fixture.componentInstance as any)[inputName] = validValue;
-          }
+          fixture = createFixture(descriptor);
+          applyValidValue(fixture, inputName);
           fixture.detectChanges();
-          (fixture.componentInstance as any)[inputName] = null;
+          fixture.componentRef.setInput(inputName, null);
           fixture.detectChanges();
-        } catch {
-          // Component threw on null transition — tracked as warning
+        } catch (e) {
+          violations.push(`${descriptor.name}.${inputName}: ${describeError(e)}`);
         } finally {
           fixture?.destroy();
         }
       }),
       { numRuns: 120 }
     );
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   // ---------- Transition: valid value → undefined → detectChanges ----------
@@ -1281,22 +1303,20 @@ describe('Property 7: Input Null Safety', () => {
       fc.property(arbComponentAndInput, ({ descriptor, inputName }) => {
         let fixture: ComponentFixture<any> | null = null;
         try {
-          fixture = TestBed.createComponent(descriptor.component);
+          fixture = createFixture(descriptor);
+          applyValidValue(fixture, inputName);
           fixture.detectChanges();
-          (fixture.componentInstance as any)[inputName] = undefined;
+          fixture.componentRef.setInput(inputName, undefined);
           fixture.detectChanges();
-        } catch {
-          violations.push(`${descriptor.name}.${inputName}`);
+        } catch (e) {
+          violations.push(`${descriptor.name}.${inputName}: ${describeError(e)}`);
         } finally {
           fixture?.destroy();
         }
       }),
       { numRuns: 120 }
     );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} transition-to-undefined violations:`, violations);
-    }
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   // ---------- Repeated null assignment is idempotent ----------
@@ -1316,14 +1336,14 @@ describe('Property 7: Input Null Safety', () => {
         ({ descriptor, inputName }, repeatCount) => {
           let fixture: ComponentFixture<any> | null = null;
           try {
-            fixture = TestBed.createComponent(descriptor.component);
+            fixture = createFixture(descriptor);
             fixture.detectChanges();
             for (let i = 0; i < repeatCount; i++) {
-              (fixture.componentInstance as any)[inputName] = null;
+              fixture.componentRef.setInput(inputName, null);
               fixture.detectChanges();
             }
-          } catch {
-            violations.push(`${descriptor.name}.${inputName}`);
+          } catch (e) {
+            violations.push(`${descriptor.name}.${inputName}: ${describeError(e)}`);
           } finally {
             fixture?.destroy();
           }
@@ -1331,9 +1351,6 @@ describe('Property 7: Input Null Safety', () => {
       ),
       { numRuns: 100 }
     );
-    if (violations.length > 0) {
-      console.warn(`[null-safety] ${violations.length} repeated-null violations:`, violations);
-    }
-    expect(true).toBe(true);
+    expect(violations).toEqual([]);
   });
 });

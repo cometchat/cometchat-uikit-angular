@@ -26,6 +26,8 @@ export class GroupsService {
   readonly fetchState = this.fetchStateSignal.asReadonly();
   readonly hasMore = this.hasMoreSignal.asReadonly();
 
+  /** What the list was last built from (initialize or search), so a reconnect rebuilds the same list. */
+  private requestArgs: Parameters<GroupsService['buildRequest']> = ['', null, null, ''];
   private groupsRequest: CometChat.GroupsRequest | null = null;
   private errorCallback: GroupsErrorCallback | null = null;
   private isFetching = false;
@@ -82,12 +84,8 @@ export class GroupsService {
     this.hasMoreSignal.set(true);
     this.isFetching = false;
 
-    this.groupsRequest = this.buildRequest(
-      searchText,
-      groupsRequestBuilder,
-      searchRequestBuilder,
-      groupsSearchText
-    );
+    this.requestArgs = [searchText, groupsRequestBuilder, searchRequestBuilder, groupsSearchText];
+    this.groupsRequest = this.buildRequest(...this.requestArgs);
   }
 
 
@@ -163,12 +161,8 @@ export class GroupsService {
     this.hasMoreSignal.set(true);
     this.isFetching = false;
 
-    this.groupsRequest = this.buildRequest(
-      keyword,
-      config?.groupsRequestBuilder ?? null,
-      config?.searchRequestBuilder ?? null,
-      ''
-    );
+    this.requestArgs = [keyword, config?.groupsRequestBuilder ?? null, config?.searchRequestBuilder ?? null, ''];
+    this.groupsRequest = this.buildRequest(...this.requestArgs);
   }
 
   // ==================== Listener Management ====================
@@ -206,9 +200,13 @@ export class GroupsService {
     if (!this.groupsRequest || !this.initialFetchDone) return;
     CometChatLogger.info('GroupsService', 'WebSocket reconnected — refreshing group list');
     // Silent refresh: don't show shimmer, don't clear the list until new data arrives.
-    const freshRequest = this.buildRequest('', null, null, '');
+    // The first page of the same list: the app's groupsRequestBuilder and any active search.
+    const replaced = this.groupsRequest;
+    const freshRequest = this.buildRequest(...this.requestArgs);
     freshRequest.fetchNext()
       .then(newGroups => {
+        // A search or re-initialize since the reconnect owns the list now.
+        if (this.groupsRequest !== replaced) return;
         this.groupsSignal.set(newGroups);
         // Reset hasMore to true — we're back at page 1, more pages may exist
         this.hasMoreSignal.set(true);

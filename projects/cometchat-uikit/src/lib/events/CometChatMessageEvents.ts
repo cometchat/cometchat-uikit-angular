@@ -99,8 +99,10 @@ export class CometChatMessageEvents {
   // ── Deprecated generic method ──
 
   /** @deprecated Use typed publish methods instead (e.g., publishMessageSent). */
-  static publishEvent(event: Subject<unknown>, item: unknown = null) {
-    event.next(item);
+  // Generic so strict-mode apps can pass the kit's own typed subjects (Subject<IMessages> is
+  // not assignable to Subject<unknown>); T defaults to unknown, so existing calls still compile.
+  static publishEvent<T = unknown>(event: Subject<T>, item: T | null = null) {
+    event.next(item as T);
   }
 
   // ── Typed Publish Methods (UI-level) ──

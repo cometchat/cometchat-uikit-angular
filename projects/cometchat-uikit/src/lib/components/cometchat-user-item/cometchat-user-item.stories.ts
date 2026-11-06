@@ -18,7 +18,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatUserItemComponent } from './cometchat-user-item.component';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { createMockUser } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Meta Configuration

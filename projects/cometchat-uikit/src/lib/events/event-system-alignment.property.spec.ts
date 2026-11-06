@@ -154,6 +154,10 @@ describe('Property 1: Event subject parity across all event classes', () => {
     // Angular-only subjects that are intentional additions (not in React)
     const ANGULAR_ONLY_SUBJECTS: Record<string, string[]> = {
       CometChatConversationEvents: ['ccUpdateConversation'],
+      // Card Messages shipped on Angular first — the SDK beta exposes no
+      // CATEGORY_CARD constant yet. Move this into REACT_SUBJECTS once React
+      // ships the same event, so parity is asserted rather than exempted.
+      CometChatMessageEvents: ['ccCardActionClicked'],
     };
 
     for (const [className, reactSubjects] of Object.entries(REACT_SUBJECTS)) {

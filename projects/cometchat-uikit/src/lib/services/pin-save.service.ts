@@ -355,7 +355,7 @@ export class PinSaveService implements OnDestroy {
       action === 'pin' || action === 'unpin'
         ? 'pin_message_limit_error'
         : 'save_message_limit_error';
-    return CometChatLocalize.getLocalizedString(key).replace('{limit}', String(limit));
+    return CometChatLocalize.getLocalizedString(key).replace('{limit}', () => String(limit));
   }
 
   /**

@@ -220,14 +220,13 @@ describe('Property 9: All CSS classes follow BEM naming convention', () => {
       const violations = auditFileForBemViolations(filePath).filter(v =>
         v.reason.includes('does not start with')
       );
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: "${v.invalidClass}" in selector "${v.selector}"`)
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has ${violations.length} non-cometchat class(es):\n${details}`
-        );
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: "${v.invalidClass}" in selector "${v.selector}"`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has ${violations.length} non-cometchat class(es):\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -236,14 +235,13 @@ describe('Property 9: All CSS classes follow BEM naming convention', () => {
       const violations = auditFileForBemViolations(filePath).filter(v =>
         v.reason.includes('does not match BEM')
       );
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: "${v.invalidClass}"\n    Selector: ${v.selector}\n    ${v.reason}`)
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has ${violations.length} BEM naming violation(s):\n${details}`
-        );
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: "${v.invalidClass}"\n    Selector: ${v.selector}\n    ${v.reason}`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has ${violations.length} BEM naming violation(s):\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -253,21 +251,20 @@ describe('Property 9: All CSS classes follow BEM naming convention', () => {
       for (const filePath of ALL_CSS_FILES) {
         allViolations.push(...auditFileForBemViolations(filePath));
       }
-      if (allViolations.length > 0) {
-        const byFile = allViolations.reduce(
-          (acc, v) => {
-            const base = path.basename(v.file);
-            acc[base] = (acc[base] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>
-        );
-        expect.fail(
-          `Found ${allViolations.length} BEM naming violation(s) across ${ALL_CSS_FILES.length} files.\n` +
-          `By file: ${JSON.stringify(byFile, null, 2)}\n` +
-          `First 10:\n${allViolations.slice(0, 10).map(v => `  ${path.basename(v.file)}:${v.line} — ${v.invalidClass}`).join('\n')}`
-        );
-      }
+      const byFile = allViolations.reduce(
+        (acc, v) => {
+          const base = path.basename(v.file);
+          acc[base] = (acc[base] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+      expect(
+        allViolations,
+        `Found ${allViolations.length} BEM naming violation(s) across ${ALL_CSS_FILES.length} files.\n` +
+        `By file: ${JSON.stringify(byFile, null, 2)}\n` +
+        `First 10:\n${allViolations.slice(0, 10).map(v => `  ${path.basename(v.file)}:${v.line} — ${v.invalidClass}`).join('\n')}`
+      ).toHaveLength(0);
     });
 
     it('should find class selectors to audit (sanity check)', () => {

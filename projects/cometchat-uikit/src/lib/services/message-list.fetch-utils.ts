@@ -55,7 +55,48 @@ export interface FetchContext {
   clearMessagesAndState(): void;
 }
 
-export async function fetchPreviousMessagesImpl(ctx: FetchContext): Promise<boolean> {
+/**
+ * A failed load of older or newer messages. With messages already on screen it was a page while
+ * scrolling (or a dropped connection): keep them and report the error through the log and
+ * errorCallback, but not the error view, which would replace the whole chat. A failed first load
+ * still shows the error view.
+ *
+ * Returns the fetch's "may have more" result. A failed page is not the end of the history, so
+ * with messages on screen it returns true: the scroll handlers keep hasMorePrevious/hasMoreNext
+ * on, and scrolling that way again retries (the request's cursor did not move).
+ */
+function failPageLoad(ctx: FetchContext, error: unknown, message: string): boolean {
+  ctx.loadingStateSignal.set(false);
+  const hasMessages = ctx.messagesSignal().length > 0;
+  if (!hasMessages) ctx.errorStateSignal.set(error as Error);
+  CometChatLogger.error('MessageListService', message, error);
+  if (ctx.errorCallback) { ctx.errorCallback(error as CometChat.CometChatException); }
+  return hasMessages;
+}
+
+/**
+ * The fetchPrevious() running on each request. The SDK refuses a second fetchPrevious() on a
+ * request while one is running (REQUEST_IN_PROGRESS), and several paths start one (the first
+ * load, a conversation change, scrolling to the top). Overlapping callers share the running
+ * fetch, so the refusal never reaches the list as an error and replaces messages that loaded.
+ * Keyed by request, so a new conversation (a new request) never waits on the old one.
+ */
+const previousFetchInFlight = new WeakMap<CometChat.MessagesRequest, Promise<boolean>>();
+
+export function fetchPreviousMessagesImpl(ctx: FetchContext): Promise<boolean> {
+  const request = ctx.messagesRequest;
+  const running = request ? previousFetchInFlight.get(request) : undefined;
+  if (running) { return running; }
+  if (!request) { return fetchPreviousMessagesOnce(ctx); }
+  // Cleared inside the fetch, so it is gone before anyone awaiting it resumes.
+  const fetch = (async () => {
+    try { return await fetchPreviousMessagesOnce(ctx); } finally { previousFetchInFlight.delete(request); }
+  })();
+  previousFetchInFlight.set(request, fetch);
+  return fetch;
+}
+
+async function fetchPreviousMessagesOnce(ctx: FetchContext): Promise<boolean> {
   if (!ctx.messagesRequest) {
     CometChatLogger.warn('MessageListService', 'Cannot fetch messages: No conversation context set. Call setUser() or setGroup() first.');
     return false;
@@ -102,12 +143,9 @@ export async function fetchPreviousMessagesImpl(ctx: FetchContext): Promise<bool
     return messages.length === ctx.DEFAULT_MESSAGE_LIMIT;
   } catch (error) {
     if (generation !== ctx.fetchGeneration) return false;
-    ctx.loadingStateSignal.set(false);
-    ctx.errorStateSignal.set(error as Error);
-    CometChatLogger.error('MessageListService', 'Error fetching previous messages:', error);
-    if (ctx.errorCallback) { ctx.errorCallback(error as CometChat.CometChatException); }
+    const mayHaveMore = failPageLoad(ctx, error, 'Error fetching previous messages:');
     flushPendingSentMessages(ctx);
-    return false;
+    return mayHaveMore;
   }
 }
 
@@ -144,12 +182,9 @@ export async function fetchNextMessagesImpl(ctx: FetchContext): Promise<boolean>
     return messages.length === ctx.DEFAULT_MESSAGE_LIMIT;
   } catch (error) {
     if (generation !== ctx.fetchGeneration) return false;
-    ctx.loadingStateSignal.set(false);
-    ctx.errorStateSignal.set(error as Error);
-    CometChatLogger.error('MessageListService', 'Error fetching next messages:', error);
-    if (ctx.errorCallback) { ctx.errorCallback(error as CometChat.CometChatException); }
+    const mayHaveMore = failPageLoad(ctx, error, 'Error fetching next messages:');
     flushPendingSentMessages(ctx);
-    return false;
+    return mayHaveMore;
   }
 }
 

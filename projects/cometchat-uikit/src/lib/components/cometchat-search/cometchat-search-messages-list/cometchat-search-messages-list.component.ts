@@ -546,11 +546,15 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
    * Date for the trailing view. Goes through CometChatLocalize, not Angular's DatePipe:
    * that was constructed as `new DatePipe('en-US')`, so despite the old comment it was
    * pinned to English. `MMM` resolves via the `month_*_short` keys and the time follows
-   * the active locale's own pattern.
+   * the active locale's own pattern. A messageDateTimeFormat input (CometChatSearch's
+   * messageSentAtDateTimeFormat) replaces that default.
    */
   getFormattedDate(message: CometChat.BaseMessage): string {
     const sentAt = message.getSentAt();
     if (!sentAt) return '';
+    if (this.messageDateTimeFormat) {
+      return CometChatLocalize.formatDate(sentAt, this.messageDateTimeFormat);
+    }
     const timePattern = CometChatLocalize.getTimePattern();
     const pattern = `D MMM, ${timePattern}`;
     return CometChatLocalize.formatDate(sentAt, {

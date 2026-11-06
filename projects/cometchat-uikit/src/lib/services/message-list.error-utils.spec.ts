@@ -229,18 +229,45 @@ describe('message-list.error-utils', () => {
   describe('delay', () => {
     it('should resolve after the specified time', async () => {
       vi.useFakeTimers();
-      const promise = delay(1000);
-      vi.advanceTimersByTime(1000);
-      await promise;
-      vi.useRealTimers();
+      try {
+        let resolved = false;
+        const promise = delay(1000).then(() => {
+          resolved = true;
+        });
+
+        await Promise.resolve();
+        expect(resolved).toBe(false);
+
+        await vi.advanceTimersByTimeAsync(999);
+        expect(resolved).toBe(false); // 1ms short — still pending
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(resolved).toBe(true);
+        await promise;
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
-    it('should resolve immediately for 0ms delay', async () => {
+    it('should resolve on the next timer tick (not synchronously) for 0ms delay', async () => {
       vi.useFakeTimers();
-      const promise = delay(0);
-      vi.advanceTimersByTime(0);
-      await promise;
-      vi.useRealTimers();
+      try {
+        let resolved = false;
+        const promise = delay(0).then(() => {
+          resolved = true;
+        });
+
+        // Backed by setTimeout(0): microtasks alone do not resolve it
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(resolved).toBe(false);
+
+        await vi.advanceTimersByTimeAsync(0);
+        expect(resolved).toBe(true);
+        await promise;
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should return a Promise', () => {

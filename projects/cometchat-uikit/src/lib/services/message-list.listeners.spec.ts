@@ -196,7 +196,9 @@ describe('message-list.listeners', () => {
       const host = makeHost();
       setupMessageListener(host, makeNgZone());
       const listener = captureMessageListener();
-      const event = new CometChat.ReactionEvent();
+      const event = new CometChat.ReactionEvent(
+        new CometChat.Reaction('r1', '1', '👍', 'u1', 0, new CometChat.User('u1')), 'u2', CometChat.RECEIVER_TYPE.USER, 'u1_user_u2'
+      );
       (listener as any).onMessageReactionAdded(event);
       expect(host.handleReactionEvent).toHaveBeenCalledWith(event, 'added');
     });
@@ -205,7 +207,9 @@ describe('message-list.listeners', () => {
       const host = makeHost();
       setupMessageListener(host, makeNgZone());
       const listener = captureMessageListener();
-      const event = new CometChat.ReactionEvent();
+      const event = new CometChat.ReactionEvent(
+        new CometChat.Reaction('r1', '1', '👍', 'u1', 0, new CometChat.User('u1')), 'u2', CometChat.RECEIVER_TYPE.USER, 'u1_user_u2'
+      );
       (listener as any).onMessageReactionRemoved(event);
       expect(host.handleReactionEvent).toHaveBeenCalledWith(event, 'removed');
     });

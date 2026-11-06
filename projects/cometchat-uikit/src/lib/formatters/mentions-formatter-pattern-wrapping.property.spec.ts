@@ -114,7 +114,9 @@ const arbTextWithMultipleMentions = fc
 /**
  * Arbitrary username that is a valid word-character sequence (for format() method).
  */
-const arbWordUsername = fc.stringMatching(/^[a-zA-Z]{3,12}$/);
+// "all" is the reserved channel mention (@all, see setAllMentionConfig), so it can't be a
+// user's mention name; fast-check found it with seed -941095746.
+const arbWordUsername = fc.stringMatching(/^[a-zA-Z]{3,12}$/).filter((name) => name.toLowerCase() !== 'all');
 
 // ==================== Tests ====================
 

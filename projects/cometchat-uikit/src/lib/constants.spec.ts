@@ -34,9 +34,17 @@ describe('CometChatUIKitConstants', () => {
     it('should have all expected keys', () => {
       const keys = Object.keys(CometChatUIKitConstants.MessageCategory);
       expect(keys).toEqual(
-        expect.arrayContaining(['message', 'custom', 'action', 'call', 'interactive', 'agentic'])
+        expect.arrayContaining([
+          'message',
+          'custom',
+          'action',
+          'call',
+          'interactive',
+          'agentic',
+          'card',
+        ])
       );
-      expect(keys).toHaveLength(6);
+      expect(keys).toHaveLength(7);
     });
 
     it('should have string values for all entries', () => {
@@ -163,7 +171,7 @@ describe('CometChatUIKitConstants', () => {
       expect(Object.isFrozen(CometChatUIKitConstants.MessageOption)).toBe(true);
     });
 
-    it('should have all 14 expected keys', () => {
+    it('should have all 20 expected keys', () => {
       const keys = Object.keys(CometChatUIKitConstants.MessageOption);
       expect(keys).toEqual(
         expect.arrayContaining([
@@ -171,6 +179,12 @@ describe('CometChatUIKitConstants', () => {
           'deleteMessage',
           'replyMessage',
           'replyInThread',
+          'threadSubscription',
+          'organise',
+          'pinMessage',
+          'unpinMessage',
+          'saveMessage',
+          'unsaveMessage',
           'translateMessage',
           'reactToMessage',
           'messageInformation',
@@ -183,7 +197,7 @@ describe('CometChatUIKitConstants', () => {
           'markAsUnread',
         ])
       );
-      expect(keys).toHaveLength(14);
+      expect(keys).toHaveLength(20);
     });
 
     it('should have correct string values', () => {
@@ -193,7 +207,7 @@ describe('CometChatUIKitConstants', () => {
       expect(CometChatUIKitConstants.MessageOption.replyInThread).toBe('replyInThread');
       expect(CometChatUIKitConstants.MessageOption.translateMessage).toBe('translate');
       expect(CometChatUIKitConstants.MessageOption.reactToMessage).toBe('react');
-      expect(CometChatUIKitConstants.MessageOption.messageInformation).toBe('messageInformation');
+      expect(CometChatUIKitConstants.MessageOption.messageInformation).toBe('info');
       expect(CometChatUIKitConstants.MessageOption.flagMessage).toBe('flagMessage');
       expect(CometChatUIKitConstants.MessageOption.copyMessage).toBe('copy');
       expect(CometChatUIKitConstants.MessageOption.shareMessage).toBe('share');

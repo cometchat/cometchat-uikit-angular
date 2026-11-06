@@ -205,6 +205,20 @@ describe('HtmlSanitizerService', () => {
       it('should return empty string for undefined input', () => {
         expect(service.sanitize(undefined as unknown as string)).toBe('');
       });
+
+      // Regression (fast-check counterexample " <A"): an unterminated tag is
+      // dropped by the HTML parser, leaving whitespace only. That must map to
+      // '' exactly like whitespace-only input does, otherwise sanitize() is not
+      // idempotent (sanitize(' <A') === ' ' but sanitize(' ') === '').
+      it('should return empty string when sanitization leaves only whitespace', () => {
+        expect(service.sanitize(' <A')).toBe('');
+        expect(service.sanitize('  <script>alert(1)</script> ')).toBe('');
+      });
+
+      it('should be idempotent for the " <A" counterexample', () => {
+        const once = service.sanitize(' <A');
+        expect(service.sanitize(once)).toBe(once);
+      });
     });
 
     describe('XSS prevention', () => {
@@ -304,6 +318,10 @@ describe('HtmlSanitizerService', () => {
 
     it('should return empty string for whitespace-only input', () => {
       expect(service.sanitizeWithConfig('   ', {})).toBe('');
+    });
+
+    it('should return empty string when sanitization leaves only whitespace', () => {
+      expect(service.sanitizeWithConfig(' <A', {})).toBe('');
     });
   });
 

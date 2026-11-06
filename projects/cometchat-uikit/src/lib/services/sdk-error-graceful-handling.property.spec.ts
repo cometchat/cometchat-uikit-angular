@@ -179,7 +179,7 @@ const SDK_ERROR_CASES: SdkErrorTestCase[] = [
         .mockRejectedValueOnce(
           new CometChat.CometChatException({ code: 'ERR', message: msg, details: '' })
         ),
-    call: () => CometChat.deleteMessage(-1),
+    call: () => CometChat.deleteMessage('-1'),
     restore: () => vi.mocked(CometChat.deleteMessage).mockResolvedValue({} as any),
   },
 ];

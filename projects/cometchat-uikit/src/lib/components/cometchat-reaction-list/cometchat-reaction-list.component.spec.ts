@@ -1027,11 +1027,6 @@ describe('CometChatReactionListComponent — Property Tests', () => {
   // ─── Accessibility ───
 
   describe('Accessibility', () => {
-    it('should have accessible tab navigation for reaction groups', () => {
-      const component = createComponent();
-      // Reaction list uses tab-based navigation for emoji groups
-      expect(typeof component.onTabKeyDown).toBe('function');
-    });
 
     it('should provide accessible user list per reaction', () => {
       const component = createComponent();

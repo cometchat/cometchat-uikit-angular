@@ -271,30 +271,18 @@ describe('Feature: prop-name-mismatch-fix — Bug Condition Exploration', () => 
 
     fc.assert(
       fc.property(eventBindingArb(), (binding) => {
-        const componentInfo = componentOutputsMap.get(binding.componentTag);
-
-        // Skip bindings for components we can't resolve
-        if (!componentInfo) return true;
-
-        // Skip @Input() callback properties — these are legitimate on-prefixed names
-        if (componentInfo.onPrefixedInputs.has(binding.bindingName)) return true;
-
-        // The binding should NOT be a bug condition
-        const buggy = isBugCondition(binding);
-        if (buggy) {
-          const withoutOn = binding.bindingName.slice(2);
-          const expectedName =
-            withoutOn.charAt(0).toLowerCase() + withoutOn.slice(1);
-          // Provide a descriptive error message as the counterexample
-          expect(buggy).toBe(
-            false,
-            `Bug condition found: (${binding.bindingName}) in ${binding.mdxRelative}:${binding.line} ` +
-              `on <${binding.componentTag}> should be (${expectedName}) — ` +
-              `component has @Output() ${expectedName} but NOT @Output() ${binding.bindingName}`
-          );
-        }
-
-        return !buggy;
+        // isBugCondition already treats unresolvable components and @Input()
+        // callback properties (legitimately on-prefixed) as non-bugs, so every
+        // sampled binding can be asserted directly.
+        const withoutOn = binding.bindingName.slice(2);
+        const expectedName =
+          withoutOn.charAt(0).toLowerCase() + withoutOn.slice(1);
+        expect(
+          isBugCondition(binding),
+          `Bug condition found: (${binding.bindingName}) in ${binding.mdxRelative}:${binding.line} ` +
+            `on <${binding.componentTag}> should be (${expectedName}) — ` +
+            `component has @Output() ${expectedName} but NOT @Output() ${binding.bindingName}`
+        ).toBe(false);
       }),
       { numRuns: Math.min(allEventBindings.length * 3, 500) }
     );
@@ -315,10 +303,10 @@ describe('Feature: prop-name-mismatch-fix — Bug Condition Exploration', () => 
         return `  (${b.bindingName}) → (${expectedName}) in ${b.mdxRelative}:${b.line} on <${b.componentTag}>`;
       });
 
-      expect(bugConditions).toHaveLength(
-        0,
+      expect(
+        bugConditions,
         `Found ${bugConditions.length} bug conditions:\n${summary.join('\n')}`
-      );
+      ).toHaveLength(0);
     }
 
     expect(bugConditions).toHaveLength(0);

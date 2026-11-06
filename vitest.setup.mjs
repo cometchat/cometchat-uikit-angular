@@ -130,13 +130,21 @@ vi.mock('@cometchat/chat-sdk-javascript', async (importOriginal) => {
   MockCometChat.removeLoginListener = vi.fn();
 
   // Messaging
+  //
+  // Message ids come from a monotonic counter, not Date.now(). Two messages sent
+  // in the same millisecond — which is routine in a test — would otherwise be
+  // handed identical ids, and any code that keys messages by id would correctly
+  // treat the second as a duplicate of the first.
+  let nextMockMessageId = Date.now();
+  const mintMessageId = () => ++nextMockMessageId;
+
   MockCometChat.sendMessage = vi.fn().mockImplementation(async (msg) => {
     // Simulate SDK behavior: set sentAt if not already set
     if (msg && typeof msg.setSentAt === 'function' && !msg.getSentAt()) {
       msg.setSentAt(Math.floor(Date.now() / 1000));
     }
     if (msg && typeof msg.setId === 'function' && !msg.getId()) {
-      msg.setId(Date.now());
+      msg.setId(mintMessageId());
     }
     return msg;
   });
@@ -145,7 +153,7 @@ vi.mock('@cometchat/chat-sdk-javascript', async (importOriginal) => {
       msg.setSentAt(Math.floor(Date.now() / 1000));
     }
     if (msg && typeof msg.setId === 'function' && !msg.getId()) {
-      msg.setId(Date.now());
+      msg.setId(mintMessageId());
     }
     return msg;
   });
@@ -281,7 +289,47 @@ vi.mock('@cometchat/chat-sdk-javascript', async (importOriginal) => {
 // (scripts/__tests__/ use `// @vitest-environment node`).
 // ---------------------------------------------------------------------------
 if (typeof window !== 'undefined') {
+  const vitestFns = { describe: globalThis.describe, it: globalThis.it, test: globalThis.test };
   await import('@analogjs/vitest-angular/setup-zone');
   const { setupTestBed } = await import('@analogjs/vitest-angular/setup-testbed');
   setupTestBed({ zoneless: false });
+
+  // setup-zone (@analogjs/vitest-angular 2.6.4) wraps `.skip` and `.only` like the
+  // curried `.each(table)(name, fn)`, so `describe.skip(name, fn)` returns a function
+  // nobody calls: the skipped tests vanish and the run reports 0 skipped. Restore
+  // Vitest's own `.skip` so skipped tests are registered and counted. A skipped body
+  // never runs, so it needs no zone. `.only` has the same bug and would silently run
+  // nothing, so make it fail loudly instead.
+  for (const [name, original] of Object.entries(vitestFns)) {
+    globalThis[name].skip = original.skip;
+    globalThis[name].only = () => {
+      throw new Error(`${name}.only is not supported under the Angular zone setup; run one test with \`vitest -t "<name>"\` instead.`);
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Every test must make at least one assertion. A test whose expects all sit behind
+// an `if` that the mocks never satisfy (or that has none at all) would otherwise
+// pass while checking nothing.
+// ---------------------------------------------------------------------------
+beforeEach(() => {
+  expect.hasAssertions();
+});
+
+// ---------------------------------------------------------------------------
+// CI 4 property-deep (ENG-40485): with FC_RUNS_MULTIPLIER set, every fast-check property runs
+// that many times more cases than its spec asks for, on a fresh random seed. A counterexample
+// is a real bug: fast-check prints the seed and path to replay it. Never re-run for green.
+// ---------------------------------------------------------------------------
+if (process.env.FC_RUNS_MULTIPLIER) {
+  const multiplier = Number(process.env.FC_RUNS_MULTIPLIER);
+  if (!(multiplier >= 1)) throw new Error(`FC_RUNS_MULTIPLIER must be >= 1, got ${process.env.FC_RUNS_MULTIPLIER}`);
+  vi.doMock('fast-check', async (importOriginal) => {
+    const fc = await importOriginal();
+    const deeper = (params) => ({ ...params, numRuns: Math.ceil((params?.numRuns ?? 100) * multiplier) });
+    const assert = (property, params) => fc.assert(property, deeper(params));
+    const check = (property, params) => fc.check(property, deeper(params));
+    return { ...fc, assert, check, default: { ...(fc.default ?? fc), assert, check } };
+  });
 }

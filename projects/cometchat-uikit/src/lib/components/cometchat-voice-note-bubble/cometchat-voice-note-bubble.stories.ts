@@ -16,7 +16,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatVoiceNoteBubbleComponent } from './cometchat-voice-note-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 import { createMockMessage, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────

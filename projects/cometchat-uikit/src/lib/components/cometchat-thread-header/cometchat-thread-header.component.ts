@@ -124,7 +124,7 @@ export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChan
 
   get ariaLabel(): string {
     const count = this.internalReplyCount > 999 ? '999+' : this.internalReplyCount.toString();
-    return CometChatLocalize.getLocalizedString('accessibility_thread_header').replace('{preview}', this.messagePreview).replace('{count}', count);
+    return CometChatLocalize.getLocalizedString('accessibility_thread_header').replace('{preview}', () => this.messagePreview).replace('{count}', () => count);
   }
 
   // ==================== Thread Subscription ====================

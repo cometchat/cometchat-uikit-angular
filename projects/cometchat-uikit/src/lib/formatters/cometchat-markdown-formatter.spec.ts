@@ -356,4 +356,72 @@ describe('CometChatMarkdownFormatter', () => {
       expect(formatter.getFormattedText()).toBe('');
     });
   });
+
+  // Regression: CI 4 property-deep counterexample (seed -1158923461, path "293:11:19:19:28:26").
+  // The `__` inside the formatter's own BEM classes was matched by the `__underline__` rule.
+  describe('HTML tags are not re-read as markdown', () => {
+    it('keeps class attributes intact for a fenced code block', () => {
+      expect(formatter.format('```x```')).toBe(
+        '<pre class="cometchat-rich-text__code-block"><code class="cometchat-rich-text__code">x</code></pre>'
+      );
+    });
+
+    it('does not pair the blockquote class `__` with `__` in the quoted text', () => {
+      expect(formatter.format('&gt; a__b')).toBe(
+        '<blockquote class="cometchat-rich-text__blockquote">a__b</blockquote>'
+      );
+    });
+
+    it('leaves underscores in tags from earlier formatters (mention data-uid) untouched', () => {
+      const mentions =
+        '<span class="cometchat-mentions" data-uid="a_b">@A</span> <span class="cometchat-mentions" data-uid="c_d">@C</span>';
+      expect(formatter.format(mentions)).toBe(mentions);
+    });
+
+    it('is idempotent for a blockquote holding whitespace-only inline code (">` ` ")', () => {
+      const once = formatter.format('>` ` ');
+      expect(once).toBe(
+        '<blockquote class="cometchat-rich-text__blockquote"><code class="cometchat-rich-text__code"> </code></blockquote>'
+      );
+      expect(new CometChatMarkdownFormatter().format(once)).toBe(once);
+    });
+  });
+
+  // `_` and `*` in URLs, and `_` inside words, are not markdown (#632 review).
+  describe('URLs and words keep their underscores', () => {
+    const link = (href: string, text: string) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+
+    it('keeps `_` in a link URL', () => {
+      expect(formatter.format('[d](https://x.com/a_b_c)')).toBe(link('https://x.com/a_b_c', 'd'));
+    });
+
+    it('keeps `*` and `__` in a link URL', () => {
+      expect(formatter.format('[d](https://x.com/a*b*c/__x__)')).toBe(link('https://x.com/a*b*c/__x__', 'd'));
+    });
+
+    it('still formats the link text', () => {
+      expect(formatter.format('[**bold** _it_](https://x.com/a_b)')).toBe(link('https://x.com/a_b', '<strong>bold</strong> <em>it</em>'));
+    });
+
+    it('keeps a bare URL as typed, for the URL formatter to link', () => {
+      expect(formatter.format('see https://x.com/_private_/a_b and www.y.com/c_d_e')).toBe(
+        'see https://x.com/_private_/a_b and www.y.com/c_d_e'
+      );
+    });
+
+    it('still formats markdown around a bare URL', () => {
+      expect(formatter.format('**https://x.com/a_b**')).toBe('<strong>https://x.com/a_b</strong>');
+      expect(formatter.format('_see https://x.com_')).toBe('<em>see https://x.com</em>');
+    });
+
+    it('leaves `_` inside a word alone, as CommonMark does', () => {
+      expect(formatter.format('snake_case_name')).toBe('snake_case_name');
+      expect(formatter.format('foo__bar__baz')).toBe('foo__bar__baz');
+      expect(formatter.format('café_au_lait')).toBe('café_au_lait');
+    });
+
+    it('still formats `_italic_` and `__underline__` between words', () => {
+      expect(formatter.format('an _italic_ word, (__under__)!')).toBe('an <em>italic</em> word, (<u>under</u>)!');
+    });
+  });
 });

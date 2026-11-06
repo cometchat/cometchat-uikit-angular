@@ -90,6 +90,12 @@ export class CalendarDatePipe implements PipeTransform {
       return '';
     }
 
+    // NaN, Infinity or an invalid Date would make Intl.DateTimeFormat throw
+    // "Invalid time value"; treat them like an unparseable string.
+    if (!Number.isFinite(timestamp)) {
+      return '';
+    }
+
     // Use provided calendar object or fall back to stored/default. The global
     // object is `{}` for a language with no entry, which is truthy — without the
     // key check that empty object won, and every date fell through to DD/MM/YYYY.

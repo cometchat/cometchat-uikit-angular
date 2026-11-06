@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { signal } from '@angular/core';
-import { Observable } from 'rxjs';
-import { filter, skip } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../utils/CometChatLogger';
 
@@ -58,13 +56,17 @@ export class ConnectionStateService {
 
   private readonly listenerId = `global_conn_${Date.now()}`;
 
+  /**
+   * A reconnect is a connect that follows a disconnect, taken straight from the SDK events.
+   * It is not read back from the signal: a disconnect and a reconnect delivered back to back
+   * (a laptop waking, a throttled tab) reach a signal-based observable as one unchanged value,
+   * and the reconnect would be lost.
+   */
+  private readonly reconnects = new Subject<boolean>();
+  private disconnectedSinceConnect = false;
+
   constructor() {
-    // Skip the very first emission (null → true at startup) so subscribers
-    // only fire on genuine reconnects after a disconnect.
-    this.reconnected$ = toObservable(this._connected).pipe(
-      skip(1),
-      filter((v): v is true => v === true)
-    );
+    this.reconnected$ = this.reconnects.asObservable();
 
     try {
       CometChat.addConnectionListener(
@@ -73,10 +75,15 @@ export class ConnectionStateService {
           onConnected: () => {
             CometChatLogger.info('ConnectionStateService', 'WebSocket connected');
             this._connected.set(true);
+            if (this.disconnectedSinceConnect) {
+              this.disconnectedSinceConnect = false;
+              this.reconnects.next(true);
+            }
           },
           onDisconnected: () => {
             CometChatLogger.info('ConnectionStateService', 'WebSocket disconnected');
             this._connected.set(false);
+            this.disconnectedSinceConnect = true;
           },
         })
       );

@@ -125,7 +125,10 @@ export function formatDateFromPattern(
 
   const formatter = new Intl.DateTimeFormat(dateLocaleLanguage, options);
   const parts = formatter.formatToParts(date);
-  const dayIndex = date.getDay();
+  // Weekday in the target timezone, not the host's: date.getDay() can be a day off
+  // from the date printed beside it (e.g. Pacific/Kiritimati from an IST host).
+  const weekdayInZone = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: timezone }).format(date);
+  const dayIndex = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(weekdayInZone);
 
   const replacements: Record<string, string> = {};
   parts.forEach(part => {

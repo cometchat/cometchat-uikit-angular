@@ -38,19 +38,8 @@ function makeGroup(guid: string): CometChat.Group {
 }
 
 function makeConversation(type: 'user' | 'group', id: string): CometChat.Conversation {
-  const conv = new CometChat.Conversation();
-  if (type === 'user') {
-    (conv as any).conversationWith = makeUser(id);
-    (conv as any).getConversationWith = () => makeUser(id);
-    (conv as any).conversationType = 'user';
-    (conv as any).getConversationType = () => 'user';
-  } else {
-    (conv as any).conversationWith = makeGroup(id);
-    (conv as any).getConversationWith = () => makeGroup(id);
-    (conv as any).conversationType = 'group';
-    (conv as any).getConversationType = () => 'group';
-  }
-  return conv;
+  const conversationWith = type === 'user' ? makeUser(id) : makeGroup(id);
+  return new CometChat.Conversation(`${type}_${id}`, type, undefined, conversationWith, 0, [], 0, undefined);
 }
 
 describe('conversations.utils', () => {

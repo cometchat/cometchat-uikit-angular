@@ -44,15 +44,8 @@ function makeTextMessage(id: number, senderId: string, receiverId: string): Come
 }
 
 function makeReactionEvent(emoji: string, receiverId: string, receiverType: string): CometChat.ReactionEvent {
-  const event = new CometChat.ReactionEvent();
-  (event as any).reaction = emoji;
-  (event as any).receiverId = receiverId;
-  (event as any).receiverType = receiverType;
-  // Patch getters
-  (event as any).getReceiverId = () => receiverId;
-  (event as any).getReceiverType = () => receiverType;
-  (event as any).getReaction = () => emoji;
-  return event;
+  const reaction = new CometChat.Reaction('r1', '1', emoji, 'reactor', 0, makeUser('reactor'));
+  return new CometChat.ReactionEvent(reaction, receiverId, receiverType, `conv-${receiverId}`);
 }
 
 function makeReceipt(senderId: string, receiverId: string, receiverType: string, messageId: string): CometChat.MessageReceipt {

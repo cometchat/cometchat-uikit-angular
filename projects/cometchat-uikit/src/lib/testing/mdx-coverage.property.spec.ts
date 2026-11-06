@@ -35,7 +35,24 @@ const REPORT_PATH = path.resolve(
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Returns all cometchat-{name} directory names under the components root. */
+/**
+ * Component directories re-exported from the components barrel, i.e. the ones
+ * reachable from `public-api.ts`. Internal components (composer tray pieces and
+ * similar) are not part of the integrator-facing surface, so requiring public
+ * MDX docs for them would manufacture work for code nobody can import.
+ */
+function getExportedComponentDirs(): Set<string> {
+  try {
+    const barrel = fs.readFileSync(path.join(COMPONENTS_ROOT, 'index.ts'), 'utf-8');
+    return new Set(
+      Array.from(barrel.matchAll(/from\s+'\.\/(?:[\w-]+\/)*(cometchat-[\w-]+)'/g)).map(m => m[1])
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+/** Returns the public cometchat-{name} directory names under the components root. */
 function getComponentNames(): string[] {
   let entries: fs.Dirent[];
   try {
@@ -43,8 +60,10 @@ function getComponentNames(): string[] {
   } catch {
     return [];
   }
+  const exported = getExportedComponentDirs();
   return entries
     .filter((e) => e.isDirectory() && e.name.startsWith('cometchat-'))
+    .filter((e) => exported.has(e.name))
     .map((e) => e.name.replace(/^cometchat-/, ''))
     .sort();
 }

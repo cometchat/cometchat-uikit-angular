@@ -38,26 +38,39 @@ const REPORT_PATH = path.resolve(
 // Helpers — component source parsing
 // ---------------------------------------------------------------------------
 
-/** Extract @Input() property names from a TypeScript component source string. */
+/**
+ * Decorator argument list: `()`, `('alias')`, `({ required: true })`,
+ * `({ transform: booleanAttribute })` — allows one level of nested parens.
+ */
+// Balanced parentheses up to three levels deep, so an inline transform such as
+// `@Input({ transform: (v: T[] | null) => v ?? [] })` still parses.
+const PARENS_1 = String.raw`\([^()]*\)`;
+const PARENS_2 = String.raw`\((?:[^()]|${PARENS_1})*\)`;
+const DECORATOR_ARGS = String.raw`\((?:[^()]|${PARENS_2})*\)`;
+const MEMBER_MODIFIERS = String.raw`(?:(?:public|protected|private|readonly|override|declare)\s+)*`;
+
+function collect(source: string, re: RegExp, names: Set<string>): void {
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) names.add(m[1]);
+}
+
+/**
+ * Extract input property names from a TypeScript component source string.
+ * Handles decorator inputs (`@Input() foo`, `@Input({...}) foo`, `@Input() set foo(...)`)
+ * and signal inputs (`foo = input(...)`, `foo = input.required(...)`, `foo = model(...)`).
+ */
 function parseInputs(source: string): Set<string> {
   const names = new Set<string>();
-  // Matches: @Input() propName, @Input() propName:, @Input() propName =
-  const re = /@Input\s*\(\s*(?:'[^']*'|"[^"]*")?\s*\)\s+(?:(?:public|protected|private|readonly)\s+)*(\w+)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(source)) !== null) {
-    names.add(m[1]);
-  }
+  collect(source, new RegExp(String.raw`@Input\s*${DECORATOR_ARGS}\s*${MEMBER_MODIFIERS}(?:(?:set|get)\s+)?(\w+)`, 'g'), names);
+  collect(source, new RegExp(String.raw`^\s*${MEMBER_MODIFIERS}(\w+)\s*=\s*(?:input|model)(?:\.required)?\s*[<(]`, 'gm'), names);
   return names;
 }
 
-/** Extract @Output() property names from a TypeScript component source string. */
+/** Extract output property names (`@Output() foo`, `@Output('alias') foo`, `foo = output(...)`). */
 function parseOutputs(source: string): Set<string> {
   const names = new Set<string>();
-  const re = /@Output\s*\(\s*(?:'[^']*'|"[^"]*")?\s*\)\s+(?:(?:public|protected|private|readonly)\s+)*(\w+)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(source)) !== null) {
-    names.add(m[1]);
-  }
+  collect(source, new RegExp(String.raw`@Output\s*${DECORATOR_ARGS}\s*${MEMBER_MODIFIERS}(\w+)`, 'g'), names);
+  collect(source, new RegExp(String.raw`^\s*${MEMBER_MODIFIERS}(\w+)\s*=\s*output\s*[<(]`, 'gm'), names);
   return names;
 }
 
@@ -65,45 +78,67 @@ function parseOutputs(source: string): Set<string> {
 // Helpers — MDX table parsing
 // ---------------------------------------------------------------------------
 
+/** First-column header names of tables that enumerate component inputs/outputs. */
+const API_TABLE_HEADERS = new Set(['Property', 'Input', 'Event', 'Output', 'Name']);
+
 /**
  * Parse all markdown table rows from sections matching the given heading pattern.
- * Returns the first column value (property/event name) from each data row.
+ * Returns the first column value (property/event name) from each data row of
+ * API tables (see API_TABLE_HEADERS). Sub-headings nested under a matching
+ * heading stay in scope; fenced code blocks are ignored.
  */
 function parseMdxTableNames(mdxSource: string, headingPattern: RegExp): Set<string> {
   const names = new Set<string>();
   const lines = mdxSource.split('\n');
   let inTargetSection = false;
+  /** Heading level of the section that matched; deeper sub-headings stay inside it. */
+  let targetLevel = 0;
   let inTable = false;
+  let tableIsApi = false;
+  let inCodeFence = false;
 
   for (const line of lines) {
-    // Detect section headings (## Properties, ## Events, ### Display Control Properties, etc.)
-    if (/^#{1,4}\s/.test(line)) {
-      inTargetSection = headingPattern.test(line);
+    // Ignore fenced code blocks (`# comment` lines inside them are not headings)
+    if (/^\s*```/.test(line)) {
+      inCodeFence = !inCodeFence;
+      continue;
+    }
+    if (inCodeFence) continue;
+
+    // Detect section headings (## Properties, ## Inputs, ## Events, ## Outputs,
+    // ### Display Control Properties, #### Message Result Templates, etc.)
+    const heading = /^(#{1,6})\s/.exec(line);
+    if (heading) {
+      const level = heading[1].length;
       inTable = false;
+      if (headingPattern.test(line)) {
+        if (!inTargetSection || level <= targetLevel) targetLevel = level;
+        inTargetSection = true;
+      } else if (!inTargetSection || level <= targetLevel) {
+        inTargetSection = false;
+      }
       continue;
     }
     if (!inTargetSection) continue;
 
-    // Detect table header row
-    if (/^\|/.test(line) && /\|/.test(line)) {
-      inTable = true;
-      // Skip separator rows (|---|---|)
-      if (/^\|\s*[-:]+\s*\|/.test(line)) continue;
-      // Extract first column (property/event name) — strip backticks
+    if (/^\|/.test(line)) {
       const cols = line.split('|').map((c) => c.trim());
       // cols[0] is empty (before first |), cols[1] is first column
-      if (cols.length >= 2 && cols[1]) {
-        const name = cols[1].replace(/`/g, '').trim();
-        if (name && name !== 'Property' && name !== 'Event' && name !== 'Name') {
-          names.add(name);
-        }
+      const firstCol = (cols[1] ?? '').replace(/`/g, '').trim();
+      if (!inTable) {
+        // Header row: only API tables (Property/Input/Event/Output/Name) list
+        // bindings; tables keyed by Field, Key, Variable, etc. describe other things.
+        inTable = true;
+        tableIsApi = API_TABLE_HEADERS.has(firstCol);
+        continue;
       }
+      // Skip separator rows (|---|---|)
+      if (/^\|\s*[-:]+\s*\|/.test(line)) continue;
+      if (tableIsApi && firstCol) names.add(firstCol);
       continue;
     }
     // Non-table line resets table state
-    if (inTable && !/^\|/.test(line)) {
-      inTable = false;
-    }
+    inTable = false;
   }
   return names;
 }
@@ -237,28 +272,26 @@ describe('Property 17 — MDX Inputs/Outputs tables match component source', () 
   });
 
   const violations: SyncViolation[] = [];
+  /** Components that have both an MDX page and a component .ts and were compared. */
+  const audited: string[] = [];
 
   for (const name of componentNames) {
     const mdxFile = findMdxFile(name);
     const tsFile = findComponentTs(name);
     if (!mdxFile || !tsFile) continue;
+    audited.push(name);
 
-    let mdxSource: string;
-    let tsSource: string;
-    try {
-      mdxSource = fs.readFileSync(mdxFile, 'utf-8');
-      tsSource = fs.readFileSync(tsFile, 'utf-8');
-    } catch {
-      continue;
-    }
+    // Let read errors surface instead of silently skipping a component.
+    const mdxSource = fs.readFileSync(mdxFile, 'utf-8');
+    const tsSource = fs.readFileSync(tsFile, 'utf-8');
 
     const sourceInputs = parseInputs(tsSource);
     const sourceOutputs = parseOutputs(tsSource);
 
     // MDX Properties table covers both "## Properties" and "### * Properties" headings
-    const mdxInputNames = parseMdxTableNames(mdxSource, /properties/i);
-    // MDX Events table
-    const mdxOutputNames = parseMdxTableNames(mdxSource, /events/i);
+    const mdxInputNames = parseMdxTableNames(mdxSource, /\b(?:properties|inputs)\b/i);
+    // MDX Events / Outputs table
+    const mdxOutputNames = parseMdxTableNames(mdxSource, /\b(?:events|outputs)\b/i);
 
     // Missing from MDX (source has it, MDX doesn't)
     for (const inputName of sourceInputs) {
@@ -285,16 +318,16 @@ describe('Property 17 — MDX Inputs/Outputs tables match component source', () 
     }
   }
 
-  if (violations.length > 0) {
-    it.each(violations.map((v) => [v.componentName, v.kind, v.propertyName]))(
-      'VIOLATION: cometchat-%s — %s: "%s"',
-      (name, kind, prop) => {
-        console.warn(`  ⚠ cometchat-${name}: ${kind} — "${prop}"`);
-        // Major finding — log warning; hard failures are reserved for missing MDX files
-        expect(true).toBe(true);
-      }
-    );
-  }
+  it('should pair at least one component with its MDX page', () => {
+    // If docs/components moves or is renamed, every component is skipped and
+    // the sync check below would pass vacuously.
+    expect(audited.length, `no component/MDX pairs found under ${DOCS_COMPONENTS_DIR}`).toBeGreaterThan(0);
+  });
+
+  it('MDX Properties/Events tables should match component @Input/@Output declarations', () => {
+    const lines = violations.map((v) => `cometchat-${v.componentName}: ${v.kind} "${v.propertyName}"`);
+    expect(lines, `${lines.length} MDX sync violation(s):\n  ${lines.join('\n  ')}\n`).toEqual([]);
+  });
 
   it('should report MDX sync summary and append findings', () => {
     appendFindingsToReport(violations);
@@ -303,7 +336,7 @@ describe('Property 17 — MDX Inputs/Outputs tables match component source', () 
     const stale = violations.filter((v) => v.kind.startsWith('stale')).length;
 
     console.log(`\n🔄 MDX Inputs/Outputs Sync Audit:`);
-    console.log(`  Components audited: ${componentNames.length}`);
+    console.log(`  Components audited: ${audited.length} of ${componentNames.length}`);
     console.log(`  Missing entries:    ${missing}`);
     console.log(`  Stale entries:      ${stale}`);
     console.log(`  Total violations:   ${violations.length}`);

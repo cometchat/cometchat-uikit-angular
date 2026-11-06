@@ -264,17 +264,24 @@ describe('CometChatThreadHeaderComponent', () => {
 
     it('should render sender name when parentMessage has a sender', async () => {
       const msg = createTextMessage('Hello');
-      // The sender is set by the SDK constructor; for a locally created message
-      // getSender() may be null. We test the conditional rendering logic.
+      // A locally constructed message has no sender object, so attach one.
+      const sender = new CometChat.User('superhero1');
+      sender.setName('Iron Man');
+      msg.setSender(sender);
       component.parentMessage = msg;
       await initAndDetect(fixture);
-      // The sender-name element only renders if senderName is truthy
+      expect(component.senderName).toBe('Iron Man');
       const senderEl = el.querySelector('.cometchat-thread-header__sender-name');
-      if (component.senderName) {
-        expect(senderEl).toBeTruthy();
-      } else {
-        expect(senderEl).toBeFalsy();
-      }
+      expect(senderEl).not.toBeNull();
+      expect(senderEl!.textContent).toContain('Iron Man');
+    });
+
+    it('should not render sender name when parentMessage has no sender', async () => {
+      // A locally constructed message has no sender object
+      component.parentMessage = createTextMessage('Hello');
+      await initAndDetect(fixture);
+      expect(component.senderName).toBe('');
+      expect(el.querySelector('.cometchat-thread-header__sender-name')).toBeNull();
     });
 
     it('should have aria-label attribute on the root element', async () => {

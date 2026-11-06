@@ -59,9 +59,38 @@ interface SubscribeViolation {
  *     that completes naturally (e.g. mentionSearchSubject with switchMap — the
  *     Subject itself is the source, not an external Observable)
  */
+/**
+ * Return the source text of the statement that contains the `.subscribe(` at
+ * (lineIdx, col): walk backwards over balanced brackets until reaching a `;`,
+ * or a `{`/`}` that delimits the enclosing block. Enclosing `(`/`[` (e.g.
+ * `subs.push(`, `return [`) are part of the statement and are walked through.
+ */
+function statementBefore(lines: string[], lineIdx: number, col: number): string {
+  const text = lines.slice(0, lineIdx).join('\n') + (lineIdx > 0 ? '\n' : '') + lines[lineIdx].slice(0, col);
+  let depth = 0;
+  for (let i = text.length - 1; i >= 0; i--) {
+    const ch = text[i];
+    if (ch === ')' || ch === ']') depth++;
+    else if (ch === '(' || ch === '[') depth--;
+    else if (ch === '}') {
+      if (depth <= 0) return text.slice(i + 1) + lines[lineIdx].slice(col);
+      depth++;
+    } else if (ch === '{') {
+      if (depth <= 0) return text.slice(i + 1) + lines[lineIdx].slice(col);
+      depth--;
+    } else if (ch === ';' && depth <= 0) {
+      return text.slice(i + 1) + lines[lineIdx].slice(col);
+    }
+  }
+  return text + lines[lineIdx].slice(col);
+}
+
 function analyseFile(filePath: string): SubscribeViolation[] {
+  return analyseSource(fs.readFileSync(filePath, 'utf-8'), path.relative(process.cwd(), filePath));
+}
+
+function analyseSource(src: string, fileLabel: string): SubscribeViolation[] {
   const violations: SubscribeViolation[] = [];
-  const src = fs.readFileSync(filePath, 'utf-8');
   const lines = src.split('\n');
 
   // Track whether file has any teardown mechanism at all
@@ -81,18 +110,27 @@ function analyseFile(filePath: string): SubscribeViolation[] {
 
     if (!trimmed.includes('.subscribe(')) continue;
 
-    // Build a context window: look back up to 10 lines for pipe/takeUntil
-    const contextStart = Math.max(0, i - 10);
-    const context = lines.slice(contextStart, i + 1).join('\n');
+    // Context = the full statement containing this .subscribe( call
+    const context = statementBefore(lines, i, line.indexOf('.subscribe('));
+    // Drop comments so a preceding `// note` line doesn't hide the statement start
+    const stmt = context
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split('\n')
+      .filter(l => !l.trim().startsWith('//'))
+      .join('\n')
+      .trim();
 
     // SAFE: has takeUntil or takeUntilDestroyed in the pipe chain
     if (/takeUntil\s*\(|takeUntilDestroyed/.test(context)) continue;
 
-    // SAFE: result is assigned to a variable (this.xxx = ... .subscribe( or const x = )
-    if (/(?:this\.\w+\s*=|const\s+\w+\s*=|let\s+\w+\s*=|var\s+\w+\s*=)/.test(context)) continue;
+    // SAFE: statement assigns the result (this.x = / ctx.x = / const x = / let / var)
+    if (/^(?:(?:const|let|var)\s+\w+(?:\s*:[^=]+)?|[\w$]+(?:\.[\w$]+)+)\s*=(?!=)/.test(stmt)) continue;
 
     // SAFE: pushed into an array (this.subscriptions.push(...)
-    if (/\.push\s*\(/.test(context)) continue;
+    if (/^[\w$.]+\.push\s*\(/.test(stmt)) continue;
+
+    // SAFE: returned to the caller, who owns the teardown (return x.subscribe( / return [ ... ])
+    if (/^return\b/.test(stmt)) continue;
 
     // SAFE: the subscribe is on a Subject that is the source (internal Subject piped with switchMap)
     // Detect pattern: subjectName.pipe(...switchMap...).subscribe — the Subject completes with the service
@@ -111,7 +149,7 @@ function analyseFile(filePath: string): SubscribeViolation[] {
     }
 
     violations.push({
-      file: path.relative(process.cwd(), filePath),
+      file: fileLabel,
       line: i + 1,
       snippet: trimmed.slice(0, 120),
       reason: `Bare .subscribe() without takeUntil/takeUntilDestroyed or stored Subscription. File has teardown: takeUntil=${hasTakeUntil}, unsubscribe=${hasUnsubscribe}, ngOnDestroy=${hasNgOnDestroy}, cleanup=${hasCleanup}`,
@@ -138,15 +176,34 @@ describe('Property 5: No bare Observable subscriptions without teardown', () => 
     expect(allFiles.length).toBeGreaterThan(0);
   });
 
+  it('analyser flags a bare subscription and accepts each teardown pattern', () => {
+    const bare = analyseSource(
+      ['class A {', '  init() {', '    source$.pipe(map(x => x)).subscribe(v => {', '      this.v = v;', '    });', '  }', '}'].join('\n'),
+      'bare.ts',
+    );
+    expect(bare.map(v => v.line)).toEqual([3]);
+
+    const safe = analyseSource(
+      [
+        'class B {',
+        '  init() {',
+        '    a$.pipe(takeUntil(this.destroy$)).subscribe();',
+        '    this.sub = b$.subscribe();',
+        '    ctx.sub = c$.subscribe();',
+        '    const s = d$.subscribe();',
+        '    this.subs.push(e$.subscribe());',
+        '    return [f$.subscribe(), g$.subscribe()];',
+        '  }',
+        '}',
+      ].join('\n'),
+      'safe.ts',
+    );
+    expect(safe).toEqual([]);
+  });
+
   it('all .subscribe() calls must have teardown (takeUntil, stored Subscription, or push)', () => {
-    if (allViolations.length > 0) {
-      const report = allViolations
-        .map(v => `  ${v.file}:${v.line} — ${v.snippet}`)
-        .join('\n');
-      console.warn(`⚠ Found ${allViolations.length} bare subscription(s) (tracking only):\n${report}`);
-    }
-    // Tracking only — don't hard-fail for bare subscriptions in services
-    expect(true).toBe(true);
+    const report = allViolations.map(v => `${v.file}:${v.line} — ${v.snippet}`);
+    expect(report).toEqual([]);
   });
 
   // Individual file tests for granular reporting
@@ -154,12 +211,7 @@ describe('Property 5: No bare Observable subscriptions without teardown', () => 
     const rel = path.relative(process.cwd(), file);
     it(`${rel} — no bare subscriptions`, () => {
       const violations = analyseFile(file);
-      if (violations.length > 0) {
-        const report = violations.map(v => `  line ${v.line}: ${v.snippet}`).join('\n');
-        console.warn(`⚠ Bare subscriptions in ${rel} (tracking only):\n${report}`);
-      }
-      // Tracking only — components are source of truth
-      expect(true).toBe(true);
+      expect(violations.map(v => `line ${v.line}: ${v.snippet}`)).toEqual([]);
     });
   }
 });

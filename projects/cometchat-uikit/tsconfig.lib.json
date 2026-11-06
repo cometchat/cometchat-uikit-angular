@@ -18,7 +18,6 @@
   ],
   "exclude": [
   "**/*.spec.ts",
-  "**/*.stories.ts",
-  "**/analyzers/**"
+  "**/*.stories.ts"
   ]
 }

@@ -88,13 +88,13 @@ describe('handleListKeyDown', () => {
 
   describe('Skip conditions', () => {
     it('should return false when item list is empty', () => {
-      host.itemList = [];
+      host = createMockHost<string>({ itemList: [] });
       const result = handleListKeyDown(createKeyEvent('ArrowDown'), host);
       expect(result).toBe(false);
     });
 
     it('should return false when fetch state is not loaded', () => {
-      host.fetchState = States.loading;
+      host = createMockHost<string>({ fetchState: States.loading });
       const result = handleListKeyDown(createKeyEvent('ArrowDown'), host);
       expect(result).toBe(false);
     });

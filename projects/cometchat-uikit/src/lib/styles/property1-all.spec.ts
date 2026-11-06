@@ -313,11 +313,10 @@ describe('Property 1: Variable category correctness — ALL Components (Full Swe
       'no --cometchat-spacing-* or --cometchat-margin-* in padding: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('padding'));
-        if (violations.length > 0) {
-          expect.fail(
-            `${shortName(filePath)} has padding category violations:\n${formatViolations(violations)}`
-          );
-        }
+        expect(
+          violations,
+          `${shortName(filePath)} has padding category violations:\n${formatViolations(violations)}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -327,11 +326,10 @@ describe('Property 1: Variable category correctness — ALL Components (Full Swe
       'no --cometchat-spacing-* or --cometchat-padding-* in margin: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('margin'));
-        if (violations.length > 0) {
-          expect.fail(
-            `${shortName(filePath)} has margin category violations:\n${formatViolations(violations)}`
-          );
-        }
+        expect(
+          violations,
+          `${shortName(filePath)} has margin category violations:\n${formatViolations(violations)}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -341,11 +339,10 @@ describe('Property 1: Variable category correctness — ALL Components (Full Swe
       'no --cometchat-padding-* or --cometchat-margin-* in gap: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.property.startsWith('gap'));
-        if (violations.length > 0) {
-          expect.fail(
-            `${shortName(filePath)} has gap category violations:\n${formatViolations(violations)}`
-          );
-        }
+        expect(
+          violations,
+          `${shortName(filePath)} has gap category violations:\n${formatViolations(violations)}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -353,11 +350,10 @@ describe('Property 1: Variable category correctness — ALL Components (Full Swe
   describe('border-radius must use --cometchat-radius-* fallbacks', () => {
     it.each(ALL_CSS_FILES)('no wrong-category variables in border-radius: %s', filePath => {
       const violations = auditFile(filePath).filter(v => v.property === 'border-radius');
-      if (violations.length > 0) {
-        expect.fail(
-          `${shortName(filePath)} has border-radius category violations:\n${formatViolations(violations)}`
-        );
-      }
+      expect(
+        violations,
+        `${shortName(filePath)} has border-radius category violations:\n${formatViolations(violations)}`
+      ).toHaveLength(0);
     });
   });
 
@@ -366,22 +362,20 @@ describe('Property 1: Variable category correctness — ALL Components (Full Swe
       const violations = auditFile(filePath).filter(
         v => v.property === 'background' || v.property === 'background-color'
       );
-      if (violations.length > 0) {
-        expect.fail(
-          `${shortName(filePath)} has background category violations:\n${formatViolations(violations)}`
-        );
-      }
+      expect(
+        violations,
+        `${shortName(filePath)} has background category violations:\n${formatViolations(violations)}`
+      ).toHaveLength(0);
     });
   });
 
   describe('font properties must use --cometchat-font-* fallbacks', () => {
     it.each(ALL_CSS_FILES)('no wrong-category variables in font: %s', filePath => {
       const violations = auditFile(filePath).filter(v => v.property === 'font');
-      if (violations.length > 0) {
-        expect.fail(
-          `${shortName(filePath)} has font category violations:\n${formatViolations(violations)}`
-        );
-      }
+      expect(
+        violations,
+        `${shortName(filePath)} has font category violations:\n${formatViolations(violations)}`
+      ).toHaveLength(0);
     });
   });
 
@@ -391,11 +385,10 @@ describe('Property 1: Variable category correctness — ALL Components (Full Swe
       for (const filePath of ALL_CSS_FILES) {
         allViolations.push(...auditFile(filePath));
       }
-      if (allViolations.length > 0) {
-        expect.fail(
-          `Found ${allViolations.length} variable category violation(s) across ${ALL_CSS_FILES.length} files:\n${formatViolations(allViolations)}`
-        );
-      }
+      expect(
+        allViolations,
+        `Found ${allViolations.length} variable category violation(s) across ${ALL_CSS_FILES.length} files:\n${formatViolations(allViolations)}`
+      ).toHaveLength(0);
     });
   });
 });

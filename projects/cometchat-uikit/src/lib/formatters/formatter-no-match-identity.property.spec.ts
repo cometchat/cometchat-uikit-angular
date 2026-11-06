@@ -19,6 +19,7 @@ import { CometChatUrlFormatter } from './cometchat-url-formatter';
 import { CometChatMentionsFormatter } from './cometchat-mentions-formatter';
 import { CometChatMarkdownFormatter } from './cometchat-markdown-formatter';
 import { CometChatEmojiFormatter } from './cometchat-emoji-formatter';
+import type { CometChatTextFormatter } from './cometchat-text-formatter';
 
 // ==================== Helpers ====================
 
@@ -438,7 +439,7 @@ describe('Property 9: Formatter No-Match Identity', () => {
      * All formatter subclasses must not throw when called with '', null, or '   '.
      */
 
-    const formatterFactories: Array<{ name: string; create: () => { format: (s: string | null) => string } }> = [
+    const formatterFactories: Array<{ name: string; create: () => CometChatTextFormatter }> = [
       { name: 'CometChatUrlFormatter', create: () => new CometChatUrlFormatter() },
       { name: 'CometChatMentionsFormatter', create: () => new CometChatMentionsFormatter() },
       { name: 'CometChatMarkdownFormatter', create: () => new CometChatMarkdownFormatter() },
@@ -536,10 +537,12 @@ describe('Property 9: Formatter No-Match Identity', () => {
      * because the formatter only wraps mentions that match a known user.
      */
     it('returns original text when @word patterns exist but no users are set', () => {
+      // `@all` is the reserved "mention everyone" word (on by default), formatted with or
+      // without users; it has its own property below.
       const arbWithAtWord = fc
         .tuple(
           fc.stringMatching(/^[a-zA-Z0-9 ]{1,30}$/),
-          fc.stringMatching(/^[a-zA-Z]{3,10}$/),
+          fc.stringMatching(/^[a-zA-Z]{3,10}$/).filter(name => name.toLowerCase() !== 'all'),
           fc.stringMatching(/^[a-zA-Z0-9 ]{1,30}$/)
         )
         .map(([before, name, after]) => `${before} @${name} ${after}`);
@@ -550,6 +553,26 @@ describe('Property 9: Formatter No-Match Identity', () => {
           // No users set — @word patterns won't be wrapped
           const result = formatter.format(text);
           expect(result).toBe(text);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('formats @all as a channel mention when it is enabled, and leaves it unchanged when disabled', () => {
+      const arbWithAll = fc
+        .tuple(fc.stringMatching(/^[a-zA-Z0-9 ]{0,20}$/), fc.constantFrom('all', 'All', 'ALL'), fc.stringMatching(/^[a-zA-Z0-9 ]{0,20}$/))
+        .map(([before, all, after]) => `${before} @${all} ${after}`);
+
+      fc.assert(
+        fc.property(arbWithAll, text => {
+          const enabled = new CometChatMentionsFormatter();
+          const formatted = enabled.format(text);
+          expect(formatted).toContain('data-mention-type="channel"');
+          expect(enabled.hasAllMention()).toBe(true);
+
+          const disabled = new CometChatMentionsFormatter();
+          disabled.setAllMentionConfig(false);
+          expect(disabled.format(text)).toBe(text);
         }),
         { numRuns: 100 }
       );

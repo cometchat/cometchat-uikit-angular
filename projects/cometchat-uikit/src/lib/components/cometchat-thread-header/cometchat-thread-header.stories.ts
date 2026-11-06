@@ -26,7 +26,7 @@ import { ThreadSubscriptionService } from '../../services/thread-subscription.se
 import { COMETCHAT_GLOBAL_CONFIG } from '../../services/global-config.service';
 import { CometChatThreadEvents } from '../../events/CometChatThreadEvents';
 import { createMockMessage, createMockUser } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Full-screen centered wrapper style

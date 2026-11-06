@@ -54,8 +54,8 @@ export class CallAnnouncerService {
     const typeKey = callType === 'video' ? 'video' : 'voice';
     const typeLabel = CometChatLocalize.getLocalizedString(`accessibility_${typeKey}_call`);
     const message = CometChatLocalize.getLocalizedString('accessibility_incoming_call')
-      .replace('{type}', typeLabel)
-      .replace('{name}', callerName);
+      .replace('{type}', () => typeLabel)
+      .replace('{name}', () => callerName);
 
     this.liveAnnouncer.announce(message, 'assertive', 3000);
   }
@@ -68,7 +68,7 @@ export class CallAnnouncerService {
   announceOutgoingCall(receiverName: string): void {
     const message = CometChatLocalize.getLocalizedString('accessibility_calling').replace(
       '{name}',
-      receiverName
+      () => receiverName
     );
 
     this.liveAnnouncer.announce(message, 'assertive', 2000);
@@ -141,7 +141,7 @@ export class CallAnnouncerService {
     const typeLabel = CometChatLocalize.getLocalizedString(`accessibility_${typeKey}_call`);
     const message = CometChatLocalize.getLocalizedString('accessibility_starting_call').replace(
       '{type}',
-      typeLabel
+      () => typeLabel
     );
 
     this.liveAnnouncer.announce(message, 'polite', 2000);

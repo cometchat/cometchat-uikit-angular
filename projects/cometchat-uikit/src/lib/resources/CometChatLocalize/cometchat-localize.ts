@@ -439,6 +439,17 @@ export class CometChatLocalize {
       .trim();
   }
 
+  /**
+   * Whether the platform has its own data for a locale.
+   *
+   * For a tag it does not know, Intl silently formats in the runtime's default
+   * locale instead — so the result would follow the device, not the configured
+   * fallback language.
+   */
+  private static isLocaleSupportedByPlatform(locale: string): boolean {
+    return Intl.DateTimeFormat.supportedLocalesOf([locale]).length > 0;
+  }
+
   private static calendarDefaultsFromIntl(locale: string): CalendarObject | null {
     // The derived object embeds the translated "yesterday", so the text
     // language is part of the identity — caching on the date locale alone
@@ -449,6 +460,10 @@ export class CometChatLocalize {
 
     let result: CalendarObject | null = null;
     try {
+      if (!this.isLocaleSupportedByPlatform(locale)) {
+        this.derivedCalendarCache.set(cacheKey, null);
+        return null;
+      }
       // A date whose parts are mutually unambiguous, so the order is readable.
       const sample = new Date(Date.UTC(2026, 10, 22));
       const parts = new Intl.DateTimeFormat(locale, { timeZone: 'UTC' }).formatToParts(sample);
@@ -481,6 +496,7 @@ export class CometChatLocalize {
    */
   private static monthNameDatePattern(locale: string): string | null {
     try {
+      if (!this.isLocaleSupportedByPlatform(locale)) return null;
       const sample = new Date(Date.UTC(2026, 10, 22));
       const parts = new Intl.DateTimeFormat(locale, {
         timeZone: 'UTC',

@@ -161,7 +161,9 @@ describe('ChatSdkEventInitializer', () => {
       const listener = captureMessageListener();
       const spy = vi.fn();
       const sub = CometChatMessageEvents.onMessageReactionAdded.subscribe(spy);
-      const event = new CometChat.ReactionEvent();
+      const event = new CometChat.ReactionEvent(
+        new CometChat.Reaction('r1', '1', '👍', 'u1', 0, new CometChat.User('u1')), 'u2', CometChat.RECEIVER_TYPE.USER, 'u1_user_u2'
+      );
       (listener as any).onMessageReactionAdded(event);
       expect(spy).toHaveBeenCalledWith(event);
       sub.unsubscribe();
@@ -171,7 +173,9 @@ describe('ChatSdkEventInitializer', () => {
       const listener = captureMessageListener();
       const spy = vi.fn();
       const sub = CometChatMessageEvents.onMessageReactionRemoved.subscribe(spy);
-      const event = new CometChat.ReactionEvent();
+      const event = new CometChat.ReactionEvent(
+        new CometChat.Reaction('r1', '1', '👍', 'u1', 0, new CometChat.User('u1')), 'u2', CometChat.RECEIVER_TYPE.USER, 'u1_user_u2'
+      );
       (listener as any).onMessageReactionRemoved(event);
       expect(spy).toHaveBeenCalledWith(event);
       sub.unsubscribe();

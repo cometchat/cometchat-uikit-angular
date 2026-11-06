@@ -4,7 +4,7 @@
  * Angular Version Compatibility Verification Script
  * 
  * This script verifies that the UIKit components don't use Angular version-specific
- * APIs that would break compatibility with Angular 14-21.
+ * APIs that would break compatibility with Angular 18-21 (the library's peer range).
  */
 
 const fs = require('fs');
@@ -207,13 +207,13 @@ function printResults() {
 
   if (results.passed && results.warnings.length === 0) {
     console.log(`${colors.green}✅ All checks passed! No version-specific APIs detected.${colors.reset}`);
-    console.log(`${colors.green}   The UIKit is compatible with Angular 14-21.${colors.reset}\n`);
+    console.log(`${colors.green}   The UIKit is compatible with Angular 18-21.${colors.reset}\n`);
   } else if (results.passed) {
     console.log(`${colors.yellow}⚠️  Checks passed with warnings.${colors.reset}`);
     console.log(`${colors.yellow}   Review warnings for potential compatibility improvements.${colors.reset}\n`);
   } else {
     console.log(`${colors.red}❌ Compatibility check failed!${colors.reset}`);
-    console.log(`${colors.red}   Fix errors to ensure Angular 14-21 compatibility.${colors.reset}\n`);
+    console.log(`${colors.red}   Fix errors to ensure Angular 18-21 compatibility.${colors.reset}\n`);
   }
 
   console.log(`${colors.cyan}═══════════════════════════════════════════════════════════════${colors.reset}\n`);

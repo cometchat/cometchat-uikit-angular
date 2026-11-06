@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  markMessageFailed,
   getAudioType,
   getBatchId,
   getMediaCaption,
@@ -118,5 +119,28 @@ describe('getMediaCaption / hasMediaCaption', () => {
     expect(hasMediaCaption(mkMessage({ caption: '' }))).toBe(false);
     // A text message is not "media with a caption" — it takes the text path.
     expect(hasMediaCaption(mkMessage({ type: 'text', caption: 'hi' }))).toBe(false);
+  });
+});
+
+describe('markMessageFailed', () => {
+  const message = () => ({}) as unknown as Parameters<typeof markMessageFailed>[0];
+
+  it('records the error the bubble reads', () => {
+    const m = message();
+    markMessageFailed(m, { code: 'ERR_PERMISSION_DENIED', message: 'no' });
+    expect((m as any).error).toEqual({ code: 'ERR_PERMISSION_DENIED', message: 'no' });
+  });
+
+  it('falls back to a generic code when there is no error object', () => {
+    const m = message();
+    markMessageFailed(m, undefined);
+    expect((m as any).error.code).toBe('ERR_MESSAGE_SEND_FAILED');
+  });
+
+  it('keeps the first reason: a later generic mark does not overwrite the SDK error', () => {
+    const m = message();
+    markMessageFailed(m, { code: 'ERR_PERMISSION_DENIED', message: 'no' });
+    markMessageFailed(m, undefined);
+    expect((m as any).error.code).toBe('ERR_PERMISSION_DENIED');
   });
 });

@@ -314,12 +314,9 @@ describe('Property 15: Localization Missing Key Fallback', () => {
 
         CometChatLocalize.addTranslation({ 'en-US': { [key]: value } });
 
+        // value is generated with minLength 1, so it is never empty
         const result = CometChatLocalize.getLocalizedString(key);
-        if (value === '') {
-          expect(result).toBe('');
-        } else {
-          expect(result).toBe(value);
-        }
+        expect(result).toBe(value);
 
         // Clean up after assertion
         delete translations['en-US'][key];

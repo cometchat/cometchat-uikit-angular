@@ -21,7 +21,7 @@ function formatAnnouncement(formatKey: string, isApplied: boolean): string {
   const template = CometChatLocalize.getLocalizedString(
     isApplied ? 'accessibility_formatting_applied' : 'accessibility_formatting_removed'
   );
-  return template.replace('{format}', CometChatLocalize.getLocalizedString(formatKey));
+  return template.replace('{format}', () => CometChatLocalize.getLocalizedString(formatKey));
 }
 
 export interface FormatOpsContext {

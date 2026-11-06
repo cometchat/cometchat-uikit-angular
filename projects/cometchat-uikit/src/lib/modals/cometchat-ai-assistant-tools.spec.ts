@@ -67,14 +67,4 @@ describe('CometChatAIAssistantTools', () => {
       expect(tools.getActions()).toEqual({});
     });
   });
-
-  describe('index signature (direct property access)', () => {
-    it('should allow direct property access via bracket notation', () => {
-      const tools = new CometChatAIAssistantTools({ handlerA });
-      // The index signature allows tools['handlerA'] — but getAction is the canonical API.
-      // We verify the class compiles with the index signature by accessing a known property.
-      const fn = (tools as Record<string, unknown>)['getAction'];
-      expect(typeof fn).toBe('function');
-    });
-  });
 });

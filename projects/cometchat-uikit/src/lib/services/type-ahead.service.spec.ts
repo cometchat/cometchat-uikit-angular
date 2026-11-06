@@ -248,9 +248,17 @@ describe('TypeAheadService', () => {
   describe('ngOnDestroy', () => {
     it('should clear buffer on destroy without errors', () => {
       service.handleCharacter('d', testItems, -1, config);
-      service.ngOnDestroy();
-      vi.advanceTimersByTime(600);
-      // No errors thrown — cleanup was successful
+      expect(vi.getTimerCount()).toBe(1); // buffer-reset timer pending
+
+      expect(() => service.ngOnDestroy()).not.toThrow();
+
+      // Buffer is emptied and the pending reset timer is cancelled
+      expect((service as unknown as { buffer: string }).buffer).toBe('');
+      expect(vi.getTimerCount()).toBe(0);
+      expect(() => vi.advanceTimersByTime(600)).not.toThrow();
+
+      // Next keystroke starts a fresh search: 'a' -> Alice, not 'da' (no match)
+      expect(service.handleCharacter('a', testItems, -1, config)).toBe(0);
     });
   });
 });

@@ -71,6 +71,10 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
 
   // Inject LiveAnnouncerService for accessibility announcements
   private liveAnnouncer = inject(LiveAnnouncerService);
+  // DOM lookups are scoped to this keyboard: with two keyboards open (main composer and a
+  // thread), a document-wide query focused, or trapped focus in, the wrong one.
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private destroyed = false;
 
   // Internal state using signals
   protected componentState = signal<ComponentState>('loading');
@@ -184,13 +188,14 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
     this.liveAnnouncer.announce(
       getLocalizedString('accessibility_sticker_categories_loaded').replace(
         '{count}',
-        categories.length.toString()
+        () => categories.length.toString()
       ),
       'polite'
     );
     if (this.autoFocus) {
       this.pendingTimers.push(setTimeout(() => {
-        const firstTab = document.querySelector('.cometchat-stickers-keyboard__tab') as HTMLElement;
+        if (this.destroyed) return;
+        const firstTab = this.host.nativeElement.querySelector('.cometchat-stickers-keyboard__tab') as HTMLElement;
         firstTab?.focus();
       }, 100));
     }
@@ -290,7 +295,8 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
 
     // Use setTimeout to ensure DOM is updated before focusing
     this.pendingTimers.push(setTimeout(() => {
-      const stickerElements = document.querySelectorAll(
+      if (this.destroyed) return;
+      const stickerElements = this.host.nativeElement.querySelectorAll(
         '.cometchat-stickers-keyboard__sticker-item'
       );
       const targetElement = stickerElements[newIndex] as HTMLElement;
@@ -320,7 +326,7 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
   /** Focuses a tab by index */
   private focusTab(newIndex: number): void {
     this.focusedTabIndex.set(newIndex);
-    const tabs = document.querySelectorAll('.cometchat-stickers-keyboard__tab');
+    const tabs = this.host.nativeElement.querySelectorAll('.cometchat-stickers-keyboard__tab');
     (tabs[newIndex] as HTMLElement)?.focus();
   }
 
@@ -351,7 +357,7 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
   /** Implements focus trap - cycles focus within component */
   private handleFocusTrap(event: KeyboardEvent): void {
     const focusableElements = Array.from(
-      document.querySelectorAll(STICKERS_FOCUSABLE_SELECTORS.join(','))
+      this.host.nativeElement.querySelectorAll(STICKERS_FOCUSABLE_SELECTORS.join(','))
     ) as HTMLElement[];
     if (focusableElements.length === 0) return;
     const first = focusableElements[0];
@@ -414,6 +420,8 @@ export class CometChatStickersKeyboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Set first: the stickers request can resolve after destroy and schedule a new timer.
+    this.destroyed = true;
     this.pendingTimers.forEach(t => clearTimeout(t));
     this.pendingTimers = [];
   }

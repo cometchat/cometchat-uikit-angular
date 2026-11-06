@@ -1,0 +1,12 @@
+{
+  "//": "Coverage floors for the PR gate (CI 2). Measured on ci-sandbox-v5, PR #598 (24 Oct 2026). Raise them when coverage rises; never lower them without a reviewed reason.",
+  "floors": {
+    "statements": 91.37,
+    "branches": 85.22,
+    "functions": 91.87,
+    "lines": 91.75
+  },
+  "tolerance": 0.1,
+  "raiseBy": 0.5,
+  "patchMinimum": 80
+}

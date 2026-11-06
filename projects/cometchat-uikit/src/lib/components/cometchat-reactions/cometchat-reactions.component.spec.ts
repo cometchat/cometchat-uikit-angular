@@ -1006,15 +1006,26 @@ describe('CometChatReactionsComponent — Property Tests', () => {
   it('Property 14: ARIA labels on reaction pills', () => {
     fc.assert(
       fc.property(uniqueReactionsArb, maxVisibleArb, (reactions, maxVisible) => {
+        const component = createComponent(reactions);
         const visible = computeVisibleReactions(reactions, maxVisible);
+        expect(visible.length).toBeGreaterThan(0);
 
         for (const reaction of visible) {
-          const ariaLabel = reaction.getReaction() + ' ' + reaction.getCount();
+          const ariaLabel = component.getReactionAriaLabel(reaction as unknown as CometChat.ReactionCount);
+          const templateKey = reaction.getReactedByMe()
+            ? 'accessibility_reaction_you_reacted'
+            : 'accessibility_reaction_count';
+          const template = CometChatLocalize.getLocalizedString(templateKey);
 
+          // The component's own label: the localized template with emoji and count filled in.
+          expect(template).toContain('{emoji}');
+          expect(ariaLabel).toBe(
+            template.replace('{emoji}', () => reaction.getReaction()).replace('{count}', () => String(reaction.getCount()))
+          );
           expect(ariaLabel).toContain(reaction.getReaction());
           expect(ariaLabel).toContain(String(reaction.getCount()));
-          expect(ariaLabel).toBe(`${reaction.getReaction()} ${reaction.getCount()}`);
-          expect(ariaLabel.length).toBeGreaterThan(0);
+          expect(ariaLabel).not.toContain('{emoji}');
+          expect(ariaLabel).not.toContain('{count}');
         }
       }),
       { numRuns: 100 }
@@ -1025,15 +1036,17 @@ describe('CometChatReactionsComponent — Property Tests', () => {
 
   describe('Accessibility', () => {
     it('should provide aria labels for reaction buttons', () => {
-      const component = createComponent();
+      const component = createComponent([new MockReactionCount('👍', 3, false)]);
       const reactions = component.visibleReactions();
-      if (reactions.length > 0) {
-        const label = component.getReactionAriaLabel(reactions[0]);
-        expect(label).toBeTruthy();
-        expect(label.length).toBeGreaterThan(0);
-      } else {
-        expect(component).toBeTruthy();
-      }
+      expect(reactions.length).toBe(1);
+      const label = component.getReactionAriaLabel(reactions[0]);
+      expect(label).toBe(
+        CometChatLocalize.getLocalizedString('accessibility_reaction_count')
+          .replace('{emoji}', '👍')
+          .replace('{count}', '3')
+      );
+      expect(label).toContain('👍');
+      expect(label).toContain('3');
     });
 
     it('should have focusable reaction buttons', () => {

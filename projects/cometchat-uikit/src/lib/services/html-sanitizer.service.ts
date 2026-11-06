@@ -63,7 +63,7 @@ export class HtmlSanitizerService {
     if (cached !== undefined) return cached;
 
     try {
-      const sanitized = DOMPurify.sanitize(html, this.DEFAULT_CONFIG) as string;
+      const sanitized = this.blankToEmpty(DOMPurify.sanitize(html, this.DEFAULT_CONFIG) as string);
       this.cacheResult(html, sanitized);
       return sanitized;
     } catch (error) {
@@ -77,7 +77,7 @@ export class HtmlSanitizerService {
     if (!html || html.trim() === '') return '';
 
     try {
-      return DOMPurify.sanitize(html, config) as string;
+      return this.blankToEmpty(DOMPurify.sanitize(html, config) as string);
     } catch (error) {
       CometChatLogger.error('HtmlSanitizerService', 'Sanitization with custom config failed:', error);
       return '';
@@ -117,6 +117,15 @@ export class HtmlSanitizerService {
       .replace(/'/g, '&#39;');
 
     return escaped.replace(/\x00SDKMENTION(\d+)\x00/g, (_, idx) => placeholders[parseInt(idx, 10)]);
+  }
+
+  /**
+   * Whitespace-only input short-circuits to ''. Output that becomes
+   * whitespace-only after sanitization (e.g. ' <A', where the parser drops the
+   * unterminated tag) must map to '' as well, so sanitize() stays idempotent.
+   */
+  private blankToEmpty(sanitized: string): string {
+    return sanitized.trim() === '' ? '' : sanitized;
   }
 
   private cacheResult(original: string, sanitized: string): void {

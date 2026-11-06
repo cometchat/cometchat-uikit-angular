@@ -13,6 +13,9 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from './index';
+import { CometChatMentionsFormatter } from '../formatters/cometchat-mentions-formatter';
+import { CometChatMarkdownFormatter } from '../formatters/cometchat-markdown-formatter';
+import { CometChatUrlFormatter } from '../formatters/cometchat-url-formatter';
 
 vi.mock('@cometchat/calls-sdk-javascript', () => ({
   CometChatCalls: {
@@ -112,15 +115,14 @@ describe('Integration: Formatter Pipeline', () => {
     formatterConfigService = TestBed.inject(FormatterConfigService);
   });
 
-  it('should return formatters array from getFormattersWithContext', () => {
-    const formatters = formatterConfigService.getFormattersWithContext();
-    expect(Array.isArray(formatters)).toBe(true);
-  });
-
   it('should include default formatters when no custom formatters are set', () => {
     const formatters = formatterConfigService.getFormattersWithContext();
-    // Default formatters should be present (URL, mention, etc.)
-    expect(formatters.length).toBeGreaterThanOrEqual(0);
+    // The built-in defaults: mentions, markdown and URL, in that order.
+    expect(formatters.map((f: object) => f.constructor)).toEqual([
+      CometChatMentionsFormatter,
+      CometChatMarkdownFormatter,
+      CometChatUrlFormatter,
+    ]);
   });
 
   it('should allow adding custom formatters', () => {

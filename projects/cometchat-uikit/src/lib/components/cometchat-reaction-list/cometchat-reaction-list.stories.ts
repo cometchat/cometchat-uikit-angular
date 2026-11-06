@@ -1,8 +1,9 @@
 /**
  * CometChatReactionList Storybook Stories
  *
- * Uses a wrapper component to bypass SDK fetch and set internal
- * signal state directly, allowing stories to render without live API calls.
+ * Uses a wrapper component that supplies a mock reactions request builder
+ * (so the component never calls the SDK) and sets internal signal state
+ * directly, allowing stories to render without live API calls.
  *
  * @module components/cometchat-reaction-list
  */
@@ -22,7 +23,7 @@ import {
 } from '@angular/core';
 import { CometChatReactionListComponent } from './cometchat-reaction-list.component';
 import { createMockMessage, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Mock Helpers
@@ -106,6 +107,7 @@ const SAMPLE_REACTIONS_MANY = [
   template: `
     <cometchat-reaction-list
       [message]="mockMessage"
+      [reactionsRequestBuilder]="mockRequestBuilder"
       (itemClick)="onItemClick($event)"
       (empty)="onEmpty()">
     </cometchat-reaction-list>
@@ -123,6 +125,21 @@ class ReactionListWrapperComponent implements AfterViewInit, OnChanges {
   @Output() empty = new EventEmitter<void>();
 
   mockMessage = createMockMessage('text', { id: 300, text: 'Message with reactions' });
+
+  /**
+   * Mock ReactionsRequestBuilder: the component's own fetch resolves with the
+   * story's reactions, never settles while loading, or rejects in error mode —
+   * so it can never race the story state with a real (uninitialized) SDK call.
+   */
+  mockRequestBuilder: any = {
+    build: () => ({
+      fetchNext: (): Promise<MockReaction[]> => {
+        if (this.mockLoading) return new Promise<MockReaction[]>(() => undefined);
+        if (this.mockError) return Promise.reject(new Error('Failed to fetch reactions'));
+        return Promise.resolve(this.mockReactions);
+      },
+    }),
+  };
 
   private initialized = false;
 
@@ -302,7 +319,7 @@ export const ManyReactions: Story = {
 };
 
 /** Loading shimmer state while fetching reactions. */
-export const Loading: Story = {
+export const LoadingState: Story = {
   args: { reactions: [], isLoading: true, hasError: false },
   render: (args) => ({
     props: args,
@@ -323,8 +340,30 @@ export const Loading: Story = {
   },
 };
 
+/** Empty state when the message has no reactions. */
+export const EmptyState: Story = {
+  args: { reactions: [], isLoading: false, hasError: false },
+  render: (args) => ({
+    props: args,
+    template: `
+      <storybook-reaction-list-wrapper
+        [mockReactions]="reactions"
+        [mockLoading]="isLoading"
+        [mockError]="hasError">
+      </storybook-reaction-list-wrapper>
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Empty state shown when the fetch completes with no reactions (for example after the last reaction is removed).',
+      },
+    },
+  },
+};
+
 /** Error state with retry button. */
-export const Error: Story = {
+export const ErrorState: Story = {
   args: { reactions: [], isLoading: false, hasError: true },
   render: (args) => ({
     props: args,
@@ -391,6 +430,18 @@ export const AllVariantsShowcase: Story = {
           <storybook-reaction-list-wrapper
             [mockReactions]="emptyReactions"
             [mockLoading]="true"
+            [mockError]="false">
+          </storybook-reaction-list-wrapper>
+        </div>
+
+        <!-- Empty State -->
+        <div class="cometchat-reaction-list-showcase__section" style="display: flex; flex-direction: column; gap: var(--cometchat-spacing-2);">
+          <p class="cometchat-reaction-list-showcase__section-label" style="margin: 0; font: var(--cometchat-font-body-medium); color: var(--cometchat-text-color-secondary);">
+            Empty State
+          </p>
+          <storybook-reaction-list-wrapper
+            [mockReactions]="emptyReactions"
+            [mockLoading]="false"
             [mockError]="false">
           </storybook-reaction-list-wrapper>
         </div>

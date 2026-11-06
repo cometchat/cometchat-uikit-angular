@@ -103,4 +103,63 @@ describe('SearchMessagesService', () => {
       await expect(service.loadMore()).resolves.toBeUndefined();
     });
   });
+
+  // A slow earlier search must not overwrite a newer one (#632 review).
+  describe('overlapping searches', () => {
+    /** Each buildRequest gets the next request; each request resolves when the test says so. */
+    function pendingRequests(count: number) {
+      const resolvers: ((m: unknown[]) => void)[] = [];
+      const requests = Array.from({ length: count }, () => ({
+        fetchPrevious: vi.fn(() => new Promise<unknown[]>((r) => resolvers.push(r))),
+      }));
+      vi.spyOn(service as any, 'buildRequest').mockImplementation(() => requests.shift());
+      return resolvers;
+    }
+    const msg = (id: string) => ({ id });
+
+    it("keeps chat B's results when chat A's search resolves last", async () => {
+      const resolvers = pendingRequests(2);
+      const a = service.search('hi', [], 'user-a');
+      const b = service.search('hi', [], 'user-b');
+      resolvers[1]([msg('from-B')]);
+      await b;
+      resolvers[0]([msg('from-A')]);
+      await a;
+      expect(service.messages()).toEqual([msg('from-B')]);
+      expect(service.fetchState()).toBe(States.loaded);
+    });
+
+    it("ignores an earlier search's failure once a newer one has started", async () => {
+      vi.spyOn(service as any, 'buildRequest')
+        .mockImplementationOnce(() => ({ fetchPrevious: () => Promise.reject(new Error('A failed')) }))
+        .mockImplementationOnce(() => ({ fetchPrevious: () => new Promise(() => undefined) }));
+      const a = service.search('hi', [], 'user-a');
+      void service.search('hi', [], 'user-b');
+      await expect(a).resolves.toBeUndefined();
+      expect(service.fetchState()).toBe(States.loading);
+    });
+
+    it('drops a search that resolves after reset', async () => {
+      const resolvers = pendingRequests(1);
+      const a = service.search('hi', [], 'user-a');
+      service.reset();
+      resolvers[0]([msg('late')]);
+      await a;
+      expect(service.messages()).toEqual([]);
+    });
+
+    it("drops a page of the previous search's results", async () => {
+      const resolvers = pendingRequests(3);
+      const a = service.search('hi', [], 'user-a');
+      resolvers[0](Array.from({ length: 30 }, (_, i) => msg(`a${i}`)));
+      await a;
+      const more = service.loadMore();
+      const b = service.search('hi', [], 'user-b');
+      resolvers[2]([msg('from-B')]);
+      await b;
+      resolvers[1]([msg('a-page-2')]);
+      await more;
+      expect(service.messages()).toEqual([msg('from-B')]);
+    });
+  });
 });

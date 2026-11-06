@@ -124,7 +124,13 @@ const partiallyCoveredComponentArb: fc.Arbitrary<{
     coveredInputs,
     uncoveredInputs,
   };
-});
+})
+  // An uncovered input must not appear anywhere in the story, not even inside another word:
+  // the audit counts a variant name that contains the input (`Disabled` covers `disabled`) as
+  // coverage, so `ult` was "covered" by `Default`. fast-check found it with seed -1721227076.
+  .filter(({ info, uncoveredInputs }) =>
+    uncoveredInputs.every((u) => !info.storyContent!.toLowerCase().includes(u.toLowerCase()))
+  );
 
 /** Generates any kind of ComponentDirInfo (missing, covered, or partially-covered). */
 const anyComponentArb: fc.Arbitrary<ComponentDirInfo> = fc.oneof(

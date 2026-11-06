@@ -123,9 +123,9 @@ describe('handleCallError', () => {
       const err = new Error('log test');
       handleCallError(err, 'CODE', 'CometChatCallButtons', errorEmitter);
 
-      // Logging is done via CometChatLogger.error, not console.error directly
-      // Verify the function completes without throwing
-      expect(true).toBeTruthy();
+      // Logging is done via CometChatLogger.error (spied in beforeEach)
+      expect(consoleErrorSpy).toHaveBeenCalledOnce();
+      expect(consoleErrorSpy).toHaveBeenCalledWith('CometChatCallButtons', 'Error:', err);
     });
   });
 });

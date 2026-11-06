@@ -129,35 +129,36 @@ describe('RichTextEditorService', () => {
         ce.dispatchEvent(new Event('input', { bubbles: true }));
       }));
 
-    it('should call onFocus callback when editor is focused', () =>
-      new Promise<void>(done => {
-        const config: RichTextEditorConfig = {
-          onFocus: () => {
-            expect(true).toBe(true);
-            editor.destroy();
-            done();
-          },
-        };
-        const editor = service.createEditor(config);
-        // jsdom doesn't fire focus events on contenteditable — dispatch on the inner contenteditable div
-        const ce = editor.getContentEditable();
-        ce.dispatchEvent(new FocusEvent('focus'));
-      }));
+    it('should call onFocus callback when editor is focused', () => {
+      const onFocus = vi.fn();
+      const onBlur = vi.fn();
+      const editor = service.createEditor({ onFocus, onBlur });
+      // jsdom doesn't fire focus events on contenteditable — dispatch on the inner contenteditable div
+      const ce = editor.getContentEditable();
+      ce.dispatchEvent(new FocusEvent('focus'));
 
-    it('should call onBlur callback when editor loses focus', () =>
-      new Promise<void>(done => {
-        const config: RichTextEditorConfig = {
-          onBlur: () => {
-            expect(true).toBe(true);
-            editor.destroy();
-            done();
-          },
-        };
-        const editor = service.createEditor(config);
-        // jsdom doesn't fire blur events on contenteditable — dispatch on the inner contenteditable div
-        const ce = editor.getContentEditable();
-        ce.dispatchEvent(new FocusEvent('blur'));
-      }));
+      expect(onFocus).toHaveBeenCalledTimes(1);
+      expect(onBlur).not.toHaveBeenCalled();
+      expect(editor.getElement().classList.contains('cometchat-rich-text-editor--focused')).toBe(true);
+      editor.destroy();
+    });
+
+    it('should call onBlur callback when editor loses focus', () => {
+      const onFocus = vi.fn();
+      const onBlur = vi.fn();
+      const editor = service.createEditor({ onFocus, onBlur });
+      // jsdom doesn't fire focus/blur events on contenteditable — dispatch on the inner contenteditable div
+      const ce = editor.getContentEditable();
+      ce.dispatchEvent(new FocusEvent('focus'));
+      expect(editor.getElement().classList.contains('cometchat-rich-text-editor--focused')).toBe(true);
+
+      ce.dispatchEvent(new FocusEvent('blur'));
+
+      expect(onBlur).toHaveBeenCalledTimes(1);
+      expect(onFocus).toHaveBeenCalledTimes(1);
+      expect(editor.getElement().classList.contains('cometchat-rich-text-editor--focused')).toBe(false);
+      editor.destroy();
+    });
   });
 
   // ==================== Editor Destruction ====================
@@ -726,55 +727,4 @@ describe('RichTextEditorService', () => {
   });
 
   // ==================== API Compatibility ====================
-
-  describe('API Compatibility', () => {
-    it('should have all required methods', () => {
-      // Editor lifecycle
-      expect(typeof service.createEditor).toBe('function');
-      expect(typeof service.destroyEditor).toBe('function');
-      expect(typeof service.resetFormatState).toBe('function');
-
-      // Formatting
-      expect(typeof service.toggleBold).toBe('function');
-      expect(typeof service.toggleItalic).toBe('function');
-      expect(typeof service.toggleUnderline).toBe('function');
-      expect(typeof service.toggleStrikethrough).toBe('function');
-      expect(typeof service.toggleCode).toBe('function');
-      expect(typeof service.toggleCodeBlock).toBe('function');
-      expect(typeof service.toggleBlockquote).toBe('function');
-      expect(typeof service.toggleOrderedList).toBe('function');
-      expect(typeof service.toggleBulletList).toBe('function');
-      expect(typeof service.setLink).toBe('function');
-
-      // History
-      expect(typeof service.undo).toBe('function');
-      expect(typeof service.redo).toBe('function');
-      expect(typeof service.canUndo).toBe('function');
-      expect(typeof service.canRedo).toBe('function');
-
-      // Content
-      expect(typeof service.getHTML).toBe('function');
-      expect(typeof service.getText).toBe('function');
-      expect(typeof service.setContent).toBe('function');
-      expect(typeof service.setContentWithMentions).toBe('function');
-      expect(typeof service.clearContent).toBe('function');
-      expect(typeof service.insertText).toBe('function');
-      expect(typeof service.deleteRange).toBe('function');
-      expect(typeof service.isEmpty).toBe('function');
-      expect(typeof service.hasFormatting).toBe('function');
-
-      // Mentions
-      expect(typeof service.insertMention).toBe('function');
-      expect(typeof service.getTextWithMentionFormat).toBe('function');
-      expect(typeof service.getUniqueMentionUids).toBe('function');
-
-      // Metadata
-      expect(typeof service.getFormatState).toBe('function');
-      expect(typeof service.getRichTextMetadata).toBe('function');
-
-      // Focus
-      expect(typeof service.focus).toBe('function');
-      expect(typeof service.blur).toBe('function');
-    });
-  });
 });

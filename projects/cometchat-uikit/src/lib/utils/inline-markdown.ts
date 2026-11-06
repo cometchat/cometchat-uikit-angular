@@ -9,7 +9,13 @@
  */
 export function convertInlineMarkdownToHtml(text: string): string {
   if (!text) return '';
-  let result = text;
+  // Convert links first and park them behind placeholders, so the bold/italic/underline
+  // passes can't rewrite markers inside a URL (e.g. `_` in https://example.com/a_b_c).
+  const links: string[] = [];
+  let result = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_match, label: string, url: string) => {
+    links.push(url);
+    return `[${label}]\u0000${links.length - 1}\u0000`;
+  });
   result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
   result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   result = result.replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, '<strong>$1</strong>');
@@ -17,8 +23,9 @@ export function convertInlineMarkdownToHtml(text: string): string {
   result = result.replace(/(?<!_)_(?!_)([^_]+)_(?!_)/g, '<em>$1</em>');
   result = result.replace(/~~([^~]+)~~/g, '<s>$1</s>');
   result = result.replace(
-    /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    /\[([^\]]+)\]\u0000(\d+)\u0000/g,
+    (_match, label: string, index: string) =>
+      `<a href="${links[Number(index)]}" target="_blank" rel="noopener noreferrer">${label}</a>`
   );
   return result;
 }

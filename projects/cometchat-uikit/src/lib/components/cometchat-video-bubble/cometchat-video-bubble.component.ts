@@ -208,7 +208,7 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
 
   protected getOverflowText(): string {
     const template = CometChatLocalize.getLocalizedString('video_bubble_overflow_more');
-    return template.replace('{count}', this.overflowCount.toString());
+    return template.replace('{count}', () => this.overflowCount.toString());
   }
 
   protected formatDuration(seconds: number): string {
@@ -228,12 +228,12 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
     }
     const durationText = this.mediaControlsService.formatTimeForAnnouncement(attachment.duration);
     return CometChatLocalize.getLocalizedString('accessibility_play_video')
-      .replace('{duration}', durationText);
+      .replace('{duration}', () => durationText);
   }
 
   protected getOverflowAriaLabel(): string {
     return CometChatLocalize.getLocalizedString('accessibility_show_more_videos')
-      .replace('{count}', this.overflowCount.toString());
+      .replace('{count}', () => this.overflowCount.toString());
   }
 
   protected onThumbnailKeyDown(event: KeyboardEvent, index: number): void {

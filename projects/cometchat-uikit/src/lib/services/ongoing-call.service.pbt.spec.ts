@@ -35,9 +35,8 @@ const callSettingsBuilderArb = fc.oneof(
     isAudioOnlyCall: fc.boolean(),
     customId: fc.string({ minLength: 0, maxLength: 50 }),
   }),
-  fc.string(),
-  fc.integer(),
-  fc.constant(undefined)
+  // Arbitrary plain settings objects — the declared domain is `Record<string, any> | null`.
+  fc.object({ maxDepth: 1 })
 );
 
 // ==================== Test Suite ====================
@@ -157,6 +156,13 @@ function safeString(value: unknown): string {
  * Arbitrary for random error types that SDK operations might throw.
  */
 const errorArb: fc.Arbitrary<unknown> = fc.oneof(
+  // An SDK exception is passed through unchanged (not re-wrapped)
+  fc
+    .record({
+      code: fc.string({ minLength: 1, maxLength: 20 }),
+      message: fc.string({ minLength: 1, maxLength: 50 }),
+    })
+    .map(({ code, message }) => new CometChat.CometChatException({ code, message, details: '' })),
   fc.string({ minLength: 0, maxLength: 100 }).map(msg => new Error(msg)),
   fc.string({ minLength: 1, maxLength: 100 }),
   fc
@@ -178,9 +184,14 @@ function assertWrappedError(exception: any, originalError: unknown): void {
     expect(exception).toBe(originalError);
   } else {
     expect(exception.code).toBe('ONGOING_CALL_ERROR');
-    // The error message should be a non-empty string
+    // The error message should be a non-empty string carrying the original
+    // error's text, proving it was this error (not some other failure) that
+    // was wrapped.
     expect(typeof exception.message).toBe('string');
     expect(exception.message.length).toBeGreaterThan(0);
+    const originalText =
+      originalError instanceof Error ? originalError.message : String(originalError);
+    expect(exception.message).toContain(originalText);
   }
 }
 
@@ -204,6 +215,16 @@ describe('Property 3: Error wrapping consistency', () => {
   beforeEach(() => {
     originalCcCallEnded = CometChatCallEvents.ccCallEnded;
     CometChatCallEvents.ccCallEnded = new Subject<CometChat.Call>();
+
+    // startCall uses the v5 session API (addEventListener / joinSession),
+    // which the global calls-SDK mock does not provide. Without these,
+    // startCall fails at addEventListener before reaching generateToken or
+    // the session start, and the generated error is never exercised.
+    const callsMock = mockedCalls as any;
+    callsMock.addEventListener = vi.fn().mockReturnValue(() => {});
+    callsMock.removeEventListener = vi.fn();
+    callsMock.joinSession = vi.fn().mockResolvedValue({ error: null });
+    callsMock.leaveSession = vi.fn();
 
     // Reset mock implementations to defaults
     (mockedCalls.generateToken as any).mockResolvedValue({ token: 'tok' } as any);
@@ -234,6 +255,11 @@ describe('Property 3: Error wrapping consistency', () => {
 
   afterEach(() => {
     CometChatCallEvents.ccCallEnded = originalCcCallEnded;
+    const callsMock = mockedCalls as any;
+    delete callsMock.addEventListener;
+    delete callsMock.removeEventListener;
+    delete callsMock.joinSession;
+    delete callsMock.leaveSession;
     vi.restoreAllMocks();
   });
 
@@ -247,6 +273,7 @@ describe('Property 3: Error wrapping consistency', () => {
         svc.setSessionID('sess-pbt-gen');
 
         vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+        (mockedCalls.generateToken as any).mockClear();
         (mockedCalls.generateToken as any).mockRejectedValue(generatedError as any);
 
         const onError = vi.fn();
@@ -257,6 +284,8 @@ describe('Property 3: Error wrapping consistency', () => {
           // expected — startCall re-throws
         }
 
+        // The failure came from generateToken, not an earlier step
+        expect(mockedCalls.generateToken).toHaveBeenCalledOnce();
         expect(onError).toHaveBeenCalledOnce();
         assertWrappedError(onError.mock.calls[0][0], generatedError);
       }),
@@ -267,7 +296,7 @@ describe('Property 3: Error wrapping consistency', () => {
   /**
    * Validates: Requirement 11.2
    */
-  it('errors from startSession are wrapped as CometChatException with ONGOING_CALL_ERROR code', async () => {
+  it('errors from starting the session (joinSession) are wrapped as CometChatException with ONGOING_CALL_ERROR code', async () => {
     await fc.assert(
       fc.asyncProperty(errorArb, async generatedError => {
         const svc = new OngoingCallService();
@@ -275,9 +304,11 @@ describe('Property 3: Error wrapping consistency', () => {
 
         vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
         (mockedCalls.generateToken as any).mockResolvedValue({ token: 'tok' } as any);
-        (mockedCalls.startSession as any).mockImplementation((() => {
+        // The v5 API starts the session via joinSession
+        ((mockedCalls as any).joinSession as any).mockImplementation((() => {
           throw generatedError;
         }) as any);
+        ((mockedCalls as any).joinSession as any).mockClear();
 
         const onError = vi.fn();
 
@@ -287,6 +318,8 @@ describe('Property 3: Error wrapping consistency', () => {
           // expected — startCall re-throws
         }
 
+        // The failure came from joinSession, not an earlier step
+        expect((mockedCalls as any).joinSession).toHaveBeenCalledOnce();
         expect(onError).toHaveBeenCalledOnce();
         assertWrappedError(onError.mock.calls[0][0], generatedError);
       }),

@@ -260,34 +260,32 @@ describe('Property 3: Height and width use pixel defaults — Group 3 (Message C
   describe('height/width declarations must not use --cometchat-spacing-* as fallback', () => {
     it.each(GROUP3_FILES)('no --cometchat-spacing-* in height/width fallbacks: %s', filePath => {
       const violations = auditFile(filePath).filter(v => v.issue === 'spacing_variable');
-      if (violations.length > 0) {
-        const details = violations
-          .map(
-            v =>
-              `  Line ${v.line}: ${v.property} uses ${v.innermostFallback} as innermost fallback\n    Value: ${v.value}`
-          )
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has height/width spacing variable violations:\n${details}`
-        );
-      }
+      const details = violations
+        .map(
+          v =>
+            `  Line ${v.line}: ${v.property} uses ${v.innermostFallback} as innermost fallback\n    Value: ${v.value}`
+        )
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has height/width spacing variable violations:\n${details}`
+      ).toHaveLength(0);
     });
   });
 
   describe('height/width innermost fallbacks must be pixel values or CSS keywords', () => {
     it.each(GROUP3_FILES)('all innermost fallbacks are acceptable values: %s', filePath => {
       const violations = auditFile(filePath).filter(v => v.issue === 'non_pixel_default');
-      if (violations.length > 0) {
-        const details = violations
-          .map(
-            v =>
-              `  Line ${v.line}: ${v.property} has non-pixel innermost fallback "${v.innermostFallback}"\n    Value: ${v.value}`
-          )
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has height/width non-pixel fallback violations:\n${details}`
-        );
-      }
+      const details = violations
+        .map(
+          v =>
+            `  Line ${v.line}: ${v.property} has non-pixel innermost fallback "${v.innermostFallback}"\n    Value: ${v.value}`
+        )
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has height/width non-pixel fallback violations:\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -297,17 +295,16 @@ describe('Property 3: Height and width use pixel defaults — Group 3 (Message C
       for (const filePath of GROUP3_FILES) {
         allViolations.push(...auditFile(filePath));
       }
-      if (allViolations.length > 0) {
-        const details = allViolations
-          .map(
-            v =>
-              `  ${v.file}:${v.line} — ${v.property} [${v.issue}]: innermost fallback "${v.innermostFallback}"`
-          )
-          .join('\n');
-        expect.fail(
-          `Found ${allViolations.length} height/width fallback violation(s):\n${details}`
-        );
-      }
+      const details = allViolations
+        .map(
+          v =>
+            `  ${v.file}:${v.line} — ${v.property} [${v.issue}]: innermost fallback "${v.innermostFallback}"`
+        )
+        .join('\n');
+      expect(
+        allViolations,
+        `Found ${allViolations.length} height/width fallback violation(s):\n${details}`
+      ).toHaveLength(0);
     });
 
     it('should find height/width var() declarations in Group 3 files (sanity check)', () => {

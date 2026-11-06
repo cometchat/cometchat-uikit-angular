@@ -67,12 +67,8 @@ function collectSpecFiles(dir: string): string[] {
 }
 
 function analyzeSpec(specFile: string): MockViolation | null {
-  let content: string;
-  try {
-    content = fs.readFileSync(specFile, 'utf-8');
-  } catch {
-    return null;
-  }
+  // Let read errors surface instead of silently treating the file as clean.
+  const content = fs.readFileSync(specFile, 'utf-8');
 
   const hasTestingImport = TESTING_IMPORT_PATTERN.test(content);
 
@@ -149,18 +145,44 @@ describe('Mock Consistency — spec files use testing utilities, not inline mock
     if (result) violations.push(result);
   }
 
-  if (violations.length > 0) {
-    it.each(violations.map((v) => [v.file, v.inlineCount]))(
-      'VIOLATION: %s has %d inline mock pattern(s) without testing/ import',
-      (file, count) => {
-        console.warn(
-          `  ⚠ ${file}: ${count} inline mock pattern(s) — import from testing/ instead`
-        );
-        // Minor finding — warn but don't hard-fail (tracking only)
-        expect(true).toBe(true);
-      }
-    );
-  }
+  // Spec files that already used inline mocks when this audit became enforcing. Moving them
+  // to the shared testing/ utilities is a rewrite that adds no coverage, so they are listed
+  // here instead; every other spec must follow the rule. The list can only shrink: once a
+  // file is migrated (or deleted), the second test below fails until it is removed here.
+  const KNOWN_INLINE_MOCK_SPECS = new Set([
+    'cometchat-uikit.integration.spec.ts',
+    'cometchat-uikit.property.spec.ts',
+    'components/cometchat-conversation-item/cometchat-conversation-item.component.spec.ts',
+    'components/cometchat-conversations/cometchat-conversations-component.spec.ts',
+    'components/cometchat-create-poll/cometchat-create-poll.component.spec.ts',
+    'components/cometchat-image-bubble/cometchat-image-bubble-fullscreen-integration.spec.ts',
+    'components/cometchat-incoming-call/cometchat-incoming-call.component.spec.ts',
+    'components/cometchat-message-composer/cometchat-message-composer.mentions-handler.spec.ts',
+    'components/cometchat-message-list/cometchat-message-list.event-handlers.coverage.spec.ts',
+    'components/cometchat-outgoing-call/cometchat-outgoing-call.component.spec.ts',
+    'components/cometchat-reaction-list/cometchat-reaction-list.component.spec.ts',
+    'components/cometchat-reactions/cometchat-reactions.component.spec.ts',
+    'components/cometchat-video-bubble/cometchat-video-bubble-fullscreen-integration.spec.ts',
+    'events/CometChatMessageEvents.spec.ts',
+    'services/message-list.reaction-ops.spec.ts',
+  ]);
+
+  it('no new spec file should rely on inline mocks without importing shared testing utilities', () => {
+    const lines = violations
+      .filter((v) => !KNOWN_INLINE_MOCK_SPECS.has(v.file))
+      .map((v) => `${v.file} (${v.inlineCount} inline mock patterns)`)
+      .sort();
+    expect(
+      lines,
+      `${lines.length} spec file(s) define >= ${INLINE_MOCK_THRESHOLD} inline mocks without a testing/ import:\n  ${lines.join('\n  ')}\n`
+    ).toEqual([]);
+  });
+
+  it('every listed inline-mock spec still exists and still needs its exception', () => {
+    const stillViolating = new Set(violations.map((v) => v.file));
+    const stale = [...KNOWN_INLINE_MOCK_SPECS].filter((file) => !stillViolating.has(file)).sort();
+    expect(stale, `Remove these from KNOWN_INLINE_MOCK_SPECS:\n  ${stale.join('\n  ')}\n`).toEqual([]);
+  });
 
   it('should report mock consistency summary', () => {
     appendFindingsToReport(violations);
@@ -178,7 +200,6 @@ describe('Mock Consistency — spec files use testing utilities, not inline mock
       console.log('  ✅ All spec files use shared testing utilities');
     }
 
-    // Non-blocking: report count for tracking
     expect(specFiles.length).toBeGreaterThan(0);
   });
 });

@@ -137,6 +137,16 @@ describe('MessageComposerService', () => {
       expect(errors.length).toBe(1);
     }, 15_000);
 
+    it("marks the caller's pending message failed with the send's error (ENG-40635)", async () => {
+      vi.spyOn(CometChat, 'sendMessage').mockRejectedValueOnce(
+        new CometChat.CometChatException({ code: 'ERR_NETWORK', message: 'offline' })
+      );
+      const pending = new CometChat.TextMessage(testUser.getUid(), 'pending', CometChat.RECEIVER_TYPE.USER);
+      const result = await service.sendTextMessage(testUser, 'pending', undefined, undefined, undefined, pending);
+      expect(result).toBeNull();
+      expect((pending as any).error).toMatchObject({ code: 'ERR_NETWORK', message: 'offline' });
+    }, 15_000);
+
     it('should reset isSending to false after failed send', async () => {
       vi.spyOn(CometChat, 'sendMessage').mockRejectedValueOnce(
         new CometChat.CometChatException({
@@ -235,12 +245,32 @@ describe('MessageComposerService', () => {
     });
 
     it('should handle rapid start/end typing calls without error', () => {
-      for (let i = 0; i < 5; i++) {
-        service.startTyping(testUser);
-        service.endTyping(testUser);
+      const start = vi.mocked(CometChat.startTyping);
+      const end = vi.mocked(CometChat.endTyping);
+      start.mockClear();
+      end.mockClear();
+
+      expect(() => {
+        for (let i = 0; i < 5; i++) {
+          service.startTyping(testUser);
+          service.endTyping(testUser);
+        }
+      }).not.toThrow();
+
+      // Every call reaches the SDK with an indicator for the right receiver
+      expect(start).toHaveBeenCalledTimes(5);
+      expect(end).toHaveBeenCalledTimes(5);
+      for (const [indicator] of [...start.mock.calls, ...end.mock.calls]) {
+        expect(indicator).toBeInstanceOf(CometChat.TypingIndicator);
+        expect((indicator as CometChat.TypingIndicator).getReceiverId()).toBe(testUser.getUid());
+        expect((indicator as CometChat.TypingIndicator).getReceiverType()).toBe(CometChat.RECEIVER_TYPE.USER);
       }
-      // No error thrown means success
-      expect(true).toBe(true);
+      // Calls are made in the order issued: start, end, start, end, ...
+      const order = [
+        ...start.mock.invocationCallOrder.map(n => ({ n, kind: 'start' })),
+        ...end.mock.invocationCallOrder.map(n => ({ n, kind: 'end' })),
+      ].sort((a, b) => a.n - b.n).map(e => e.kind);
+      expect(order).toEqual(Array.from({ length: 10 }, (_, i) => (i % 2 === 0 ? 'start' : 'end')));
     });
   });
 
@@ -322,12 +352,25 @@ describe('MessageComposerService', () => {
   // ==================== Error Handling ====================
 
   describe('Error Handling', () => {
-    it('should set and clear error callback', () => {
+    it('should set and clear error callback', async () => {
       const cb = vi.fn();
       service.setErrorCallback(cb);
+
+      // While set, a send failure is reported through the callback
+      vi.mocked(CometChat.sendMessage).mockRejectedValueOnce(
+        new CometChat.CometChatException({ code: 'ERR_TEST', message: 'first failure' })
+      );
+      await expect(service.sendTextMessage(new CometChat.User(''), 'fail 1')).resolves.toBeNull();
+      expect(cb).toHaveBeenCalledTimes(1);
+
+      // Once cleared, further failures no longer reach it
       service.setErrorCallback(null);
-      // No way to directly assert private field, but clearing should not throw
-      expect(true).toBe(true);
+      vi.mocked(CometChat.sendMessage).mockRejectedValueOnce(
+        new CometChat.CometChatException({ code: 'ERR_TEST', message: 'second failure' })
+      );
+      // The failure is still handled (null result), just not reported to the cleared callback
+      await expect(service.sendTextMessage(new CometChat.User(''), 'fail 2')).resolves.toBeNull();
+      expect(cb).toHaveBeenCalledTimes(1);
     });
 
     it('should replace existing error callback', async () => {
@@ -353,8 +396,10 @@ describe('MessageComposerService', () => {
       service.setErrorCallback(err => errors.push(err));
 
       // Typing errors are logged but not propagated to error callback
-      // Even if startTyping internally fails, it should not call errorCallback
-      service.startTyping(testUser);
+      vi.mocked(CometChat.startTyping).mockImplementationOnce(() => { throw new Error('typing failed'); });
+      vi.mocked(CometChat.endTyping).mockImplementationOnce(() => { throw new Error('typing failed'); });
+      expect(() => service.startTyping(testUser)).not.toThrow();
+      expect(() => service.endTyping(testUser)).not.toThrow();
       expect(errors.length).toBe(0);
     });
   });
@@ -476,11 +521,10 @@ describe('MessageComposerService', () => {
     });
 
     it('should check if a user is self mention', async () => {
-      const loggedInUser = await CometChat.getLoggedinUser();
-      if (loggedInUser) {
-        const isSelf = await service.checkIfSelfMention(loggedInUser.getUid());
-        expect(isSelf).toBe(true);
-      }
+      // The global SDK mock has no logged-in user; provide one for this check
+      vi.mocked(CometChat.getLoggedinUser).mockResolvedValueOnce(testUser);
+      const isSelf = await service.checkIfSelfMention(testUser.getUid());
+      expect(isSelf).toBe(true);
     }, 15_000);
 
     it('should return false for non-self mention', async () => {

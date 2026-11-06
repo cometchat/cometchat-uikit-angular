@@ -60,22 +60,18 @@ describe('CallAnnouncerService', () => {
       const service2 = TestBed.inject(CallAnnouncerService);
       expect(service).toBe(service2);
     });
-
-    it('should have all public announcement methods', () => {
-      expect(typeof service.announceIncomingCall).toBe('function');
-      expect(typeof service.announceOutgoingCall).toBe('function');
-      expect(typeof service.announceCallConnected).toBe('function');
-      expect(typeof service.announceCallEnded).toBe('function');
-      expect(typeof service.announceCallDeclined).toBe('function');
-      expect(typeof service.announceCallCanceled).toBe('function');
-      expect(typeof service.announceCallFailed).toBe('function');
-      expect(typeof service.announceCallInitiation).toBe('function');
-    });
   });
 
   // ==================== Call Announcement Triggers ====================
 
   describe('Call Announcement Triggers', () => {
+    it("reads caller and receiver names containing $&, $' and $$ literally", () => {
+      service.announceIncomingCall("A$&B$'C", 'audio');
+      service.announceOutgoingCall('D$$E');
+      expect(announceSpy.mock.calls[0][0] as string).toContain("A$&B$'C");
+      expect(announceSpy.mock.calls[1][0] as string).toContain('D$$E');
+    });
+
     it('should announce incoming audio call with caller name', () => {
       service.announceIncomingCall('Alice', 'audio');
 

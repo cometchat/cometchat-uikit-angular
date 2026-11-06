@@ -266,14 +266,13 @@ describe('Property 8: No hardcoded CSS values in component stylesheets', () => {
       const violations = auditFileForHardcodedValues(filePath).filter(
         v => v.type === 'hex-color'
       );
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has ${violations.length} hardcoded hex color(s):\n${details}`
-        );
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has ${violations.length} hardcoded hex color(s):\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -282,14 +281,13 @@ describe('Property 8: No hardcoded CSS values in component stylesheets', () => {
       const violations = auditFileForHardcodedValues(filePath).filter(
         v => v.type === 'rgb-color' || v.type === 'rgba-color'
       );
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has ${violations.length} hardcoded rgb/rgba color(s):\n${details}`
-        );
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has ${violations.length} hardcoded rgb/rgba color(s):\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -298,14 +296,13 @@ describe('Property 8: No hardcoded CSS values in component stylesheets', () => {
       const violations = auditFileForHardcodedValues(filePath).filter(
         v => v.type === 'hsl-color'
       );
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has ${violations.length} hardcoded hsl/hsla color(s):\n${details}`
-        );
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has ${violations.length} hardcoded hsl/hsla color(s):\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -314,14 +311,13 @@ describe('Property 8: No hardcoded CSS values in component stylesheets', () => {
       const violations = auditFileForHardcodedValues(filePath).filter(
         v => v.type === 'named-color'
       );
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: "${v.value}"\n    ${v.context}`)
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has ${violations.length} hardcoded named color(s):\n${details}`
-        );
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: "${v.value}"\n    ${v.context}`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has ${violations.length} hardcoded named color(s):\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -330,14 +326,13 @@ describe('Property 8: No hardcoded CSS values in component stylesheets', () => {
       const violations = auditFileForHardcodedValues(filePath).filter(
         v => v.type === 'bare-spacing'
       );
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
-          .join('\n');
-        expect.fail(
-          `${path.basename(filePath)} has ${violations.length} bare spacing value(s):\n${details}`
-        );
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: ${v.value}\n    ${v.context}`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has ${violations.length} bare spacing value(s):\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -347,20 +342,19 @@ describe('Property 8: No hardcoded CSS values in component stylesheets', () => {
       for (const filePath of ALL_CSS_FILES) {
         allViolations.push(...auditFileForHardcodedValues(filePath));
       }
-      if (allViolations.length > 0) {
-        const byType = allViolations.reduce(
-          (acc, v) => {
-            acc[v.type] = (acc[v.type] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>
-        );
-        expect.fail(
-          `Found ${allViolations.length} hardcoded value violation(s) across ${ALL_CSS_FILES.length} files.\n` +
-          `By type: ${JSON.stringify(byType, null, 2)}\n` +
-          `First 10:\n${allViolations.slice(0, 10).map(v => `  ${v.file}:${v.line} [${v.type}] ${v.value}`).join('\n')}`
-        );
-      }
+      const byType = allViolations.reduce(
+        (acc, v) => {
+          acc[v.type] = (acc[v.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+      expect(
+        allViolations,
+        `Found ${allViolations.length} hardcoded value violation(s) across ${ALL_CSS_FILES.length} files.\n` +
+        `By type: ${JSON.stringify(byType, null, 2)}\n` +
+        `First 10:\n${allViolations.slice(0, 10).map(v => `  ${v.file}:${v.line} [${v.type}] ${v.value}`).join('\n')}`
+      ).toHaveLength(0);
     });
   });
 });

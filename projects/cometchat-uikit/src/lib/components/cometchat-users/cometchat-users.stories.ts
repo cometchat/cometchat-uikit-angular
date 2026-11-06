@@ -15,7 +15,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { within, expect } from '@storybook/test';
+import { within, expect, waitFor } from 'storybook/test';
 import { States } from '../../Enums/Enums';
 
 import { CometChatUsersComponent } from './cometchat-users.component';
@@ -618,6 +618,29 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Toggle Verification
 // ============================================
 
+/**
+ * The users service holds its shimmer for at least 1s on the first fetch, so
+ * fixed sleeps race it. These wait on the rendered state instead.
+ */
+const LIST_SETTLE = { timeout: 5000 };
+
+/** Resolves with the user rows once the first page has rendered. */
+function waitForUserRows(canvasElement: HTMLElement): Promise<Element[]> {
+  return waitFor(() => {
+    const rows = Array.from(canvasElement.querySelectorAll('.cometchat-users__list-item-wrapper'));
+    expect(rows.length).toBeGreaterThan(0);
+    return rows;
+  }, LIST_SETTLE);
+}
+
+/** Resolves once the first fetch has finished, whatever its outcome. */
+function waitForUsersFetchSettled(canvasElement: HTMLElement): Promise<void> {
+  return waitFor(() => {
+    expect(canvasElement.querySelector('.cometchat-users')).not.toBeNull();
+    expect(canvasElement.querySelector('.cometchat-users__shimmer')).toBeNull();
+  }, LIST_SETTLE);
+}
+
 /** Verifies hideSearch=true hides the search bar. */
 export const TestHideSearch: Story = {
   render: args => ({
@@ -635,10 +658,9 @@ export const TestHideSearch: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForUserRows(canvasElement);
     // Search bar should NOT be present when hideSearch=true
-    const searchBar = canvasElement.querySelector('cometchat-search-bar');
-    expect(searchBar).toBeNull();
+    expect(canvasElement.querySelector('cometchat-search-bar')).toBeNull();
   },
 };
 
@@ -659,10 +681,10 @@ export const TestShowSearch: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    const canvas = within(canvasElement);
     // Search bar should be visible
-    const searchBar = canvasElement.querySelector('cometchat-search-bar');
-    expect(searchBar).not.toBeNull();
+    await canvas.findByRole('searchbox', { name: 'Search' }, LIST_SETTLE);
+    expect(canvasElement.querySelector('.cometchat-users__search-bar cometchat-search-bar')).not.toBeNull();
   },
 };
 
@@ -683,10 +705,11 @@ export const TestShowSectionHeader: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Section headers should be present
-    const sectionHeaders = canvasElement.querySelectorAll('.cometchat-users__section-header');
-    expect(sectionHeaders.length).toBeGreaterThan(0);
+    await waitForUserRows(canvasElement);
+    // Section headers should be present, one per initial letter
+    const headers = Array.from(canvasElement.querySelectorAll('.cometchat-users__section-header'));
+    expect(headers.length).toBeGreaterThan(0);
+    expect(headers[0]).toHaveTextContent('A');
   },
 };
 
@@ -707,10 +730,9 @@ export const TestHideSectionHeader: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForUserRows(canvasElement);
     // Section headers should NOT be present
-    const sectionHeaders = canvasElement.querySelectorAll('.cometchat-users__section-header');
-    expect(sectionHeaders.length).toBe(0);
+    expect(canvasElement.querySelectorAll('.cometchat-users__section-header')).toHaveLength(0);
   },
 };
 
@@ -731,10 +753,9 @@ export const TestHideUserStatus: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForUserRows(canvasElement);
     // Status indicators should NOT be present
-    const statusIndicators = canvasElement.querySelectorAll('.cometchat-avatar__status');
-    expect(statusIndicators.length).toBe(0);
+    expect(canvasElement.querySelectorAll('.cometchat-user-item__status')).toHaveLength(0);
   },
 };
 
@@ -754,13 +775,15 @@ export const TestEmptyState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Empty state content should be visible
-    const emptyContent = canvasElement.querySelector('.cometchat-users__empty-state-view');
-    expect(emptyContent).not.toBeNull();
+    // Empty state content should be visible and announced
+    const emptyState = await waitFor(() => {
+      const el = canvasElement.querySelector('.cometchat-users__empty-state-view');
+      expect(el).not.toBeNull();
+      return el!;
+    }, LIST_SETTLE);
+    expect(emptyState).toHaveAttribute('role', 'status');
     // No user items should be present
-    const items = canvasElement.querySelectorAll('.cometchat-users__list-item-wrapper');
-    expect(items.length).toBe(0);
+    expect(canvasElement.querySelectorAll('.cometchat-users__list-item-wrapper')).toHaveLength(0);
   },
 };
 
@@ -781,13 +804,14 @@ export const TestErrorState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Error state should be visible
-    const errorView = canvasElement.querySelector('.cometchat-users__error-state-view');
-    expect(errorView).not.toBeNull();
-    // Retry button should be present
-    const retryButton = canvasElement.querySelector('.cometchat-users__error-state-view-retry-button');
-    expect(retryButton).not.toBeNull();
+    // Error state should be visible and announced, with a retry button
+    const errorView = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLElement>('.cometchat-users__error-state-view');
+      expect(el).not.toBeNull();
+      return el!;
+    }, LIST_SETTLE);
+    expect(errorView).toHaveAttribute('role', 'alert');
+    expect(within(errorView).getByRole('button')).toHaveClass('cometchat-users__error-state-view-retry-button');
   },
 };
 
@@ -808,10 +832,10 @@ export const TestHideError: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Error state view should NOT be visible when hideError=true
-    const errorView = canvasElement.querySelector('.cometchat-users__error-state-view');
-    expect(errorView).toBeNull();
+    await waitForUsersFetchSettled(canvasElement);
+    // The fetch failed, but hideError=true suppresses the error view
+    expect(canvasElement.querySelector('.cometchat-users__error-state-view')).toBeNull();
+    expect(canvasElement.querySelectorAll('.cometchat-users__list-item-wrapper')).toHaveLength(0);
   },
 };
 
@@ -832,10 +856,9 @@ export const TestShowScrollbar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForUserRows(canvasElement);
     const root = canvasElement.querySelector('.cometchat-users');
-    expect(root).not.toBeNull();
-    expect(root!.classList.contains('cometchat-users-hide-scrollbar')).toBe(false);
+    expect(root).not.toHaveClass('cometchat-users-hide-scrollbar');
   },
 };
 
@@ -856,10 +879,9 @@ export const TestHideScrollbar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForUserRows(canvasElement);
     const root = canvasElement.querySelector('.cometchat-users');
-    expect(root).not.toBeNull();
-    expect(root!.classList.contains('cometchat-users-hide-scrollbar')).toBe(true);
+    expect(root).toHaveClass('cometchat-users-hide-scrollbar');
   },
 };
 
@@ -881,10 +903,12 @@ export const TestSingleSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Selection controls (radio buttons) should be present
-    const selectionControls = canvasElement.querySelectorAll('.cometchat-users__selection-control, input[type="radio"], .cometchat-radio-button');
-    expect(selectionControls.length).toBeGreaterThan(0);
+    const rows = await waitForUserRows(canvasElement);
+    // Every row carries a radio-style selection control
+    for (const row of rows) {
+      expect(row.querySelector('.cometchat-users__selection-control cometchat-radio-button')).not.toBeNull();
+    }
+    expect(canvasElement.querySelectorAll('cometchat-checkbox')).toHaveLength(0);
   },
 };
 
@@ -906,10 +930,12 @@ export const TestMultipleSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Selection controls (checkboxes) should be present
-    const selectionControls = canvasElement.querySelectorAll('.cometchat-users__selection-control, input[type="checkbox"], .cometchat-checkbox');
-    expect(selectionControls.length).toBeGreaterThan(0);
+    const rows = await waitForUserRows(canvasElement);
+    // Every row carries a checkbox-style selection control
+    for (const row of rows) {
+      expect(row.querySelector('.cometchat-users__selection-control cometchat-checkbox')).not.toBeNull();
+    }
+    expect(canvasElement.querySelectorAll('cometchat-radio-button')).toHaveLength(0);
   },
 };
 
@@ -931,12 +957,10 @@ export const TestNoSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForUserRows(canvasElement);
     // No selection controls should be present
-    const radioButtons = canvasElement.querySelectorAll('input[type="radio"], .cometchat-radio-button');
-    const checkboxes = canvasElement.querySelectorAll('input[type="checkbox"], .cometchat-checkbox');
-    expect(radioButtons.length).toBe(0);
-    expect(checkboxes.length).toBe(0);
+    expect(canvasElement.querySelectorAll('.cometchat-users__selection-control')).toHaveLength(0);
+    expect(canvasElement.querySelectorAll('cometchat-radio-button, cometchat-checkbox')).toHaveLength(0);
   },
 };
 
@@ -959,13 +983,9 @@ export const TestShowSelectedUsersPreview: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Component should render correctly with preview enabled
-    const root = canvasElement.querySelector('.cometchat-users');
-    expect(root).not.toBeNull();
-    // Users list items should be present
-    const items = canvasElement.querySelectorAll('.cometchat-users__list-item-wrapper');
-    expect(items.length).toBeGreaterThan(0);
+    // Component should render its rows with preview enabled
+    const rows = await waitForUserRows(canvasElement);
+    expect(rows.length).toBe(10);
   },
 };
 
@@ -986,9 +1006,9 @@ export const TestShowUserStatus: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Status indicators should be present for online users
-    const statusIndicators = canvasElement.querySelectorAll('.cometchat-avatar__status');
-    expect(statusIndicators.length).toBeGreaterThan(0);
+    await waitForUserRows(canvasElement);
+    // Every row has a status dot; the online users (every third) are marked online
+    expect(canvasElement.querySelectorAll('.cometchat-user-item__status')).toHaveLength(10);
+    expect(canvasElement.querySelectorAll('.cometchat-user-item__status--online')).toHaveLength(4);
   },
 };

@@ -150,11 +150,25 @@ describe('CometChatAIStreamingService', () => {
 
       // Stop streaming — should tear down the run
       service.stopStreamingMessage(chatId);
-
-      // After stop, the chat pipeline is torn down
-      // Verify stopStreamingMessage completed without error
       sub.unsubscribe();
-      expect(true).toBeTruthy();
+      expect(service.isStreamingFor(chatId)()).toBe(false);
+
+      // Events for the torn-down run must no longer be emitted
+      const afterStop = collectEvents(service, () => {
+        service.handleWebsocketMessage(makeContentEvent(runId, 'late'), chatId);
+        service.handleWebsocketMessage(makeEvent('run_finished', runId), chatId);
+      });
+      expect(afterStop).toEqual([]);
+
+      // The old run must be gone from the active-run set: after restarting,
+      // finishing only the new run should end streaming (run-1 must not keep it alive).
+      service.startStreamingMessage(chatId);
+      const restarted = collectEvents(service, () => {
+        service.handleWebsocketMessage(makeEvent('run_started', 'run-2'), chatId);
+        service.handleWebsocketMessage(makeEvent('run_finished', 'run-2'), chatId);
+      });
+      expect(restarted.map((e) => e.message.getType())).toEqual(['run_started', 'run_finished']);
+      expect(service.isStreamingFor(chatId)()).toBe(false);
     });
   });
 
@@ -293,16 +307,34 @@ describe('CometChatAIStreamingService', () => {
       expect(() => service.setStreamSpeed(1000)).not.toThrow();
     });
 
-    it('should apply delay to future pipelines when speed > 0', async () => {
-      service.setStreamSpeed(10);
-      const events: IAIStreamEvent[] = [];
-      const sub = service.messageStream$.subscribe((e) => events.push(e));
+    it('should apply delay to future pipelines when speed > 0', () => {
+      vi.useFakeTimers();
+      try {
+        service.setStreamSpeed(10);
+        const chatId = 'chat-delay';
+        const events: IAIStreamEvent[] = [];
+        const sub = service.messageStream$.subscribe((e) => events.push(e));
+        service.startStreamingMessage(chatId);
 
-      service.handleWebsocketMessage(makeEvent('run_started', 'run-delay'), 'chat-delay');
+        // Non-content events are processed synchronously
+        service.handleWebsocketMessage(makeEvent('run_started', 'run-delay'), chatId);
+        expect(events.map((e) => e.message.getType())).toEqual(['run_started']);
 
-      // Events are delayed — should not be synchronously available
-      // (We just verify no error is thrown and the service handles it)
-      sub.unsubscribe();
+        // Content events are held back by the configured stream speed
+        service.handleWebsocketMessage(makeContentEvent('run-delay', 'hi'), chatId);
+        expect(events.length).toBe(1);
+
+        vi.advanceTimersByTime(9);
+        expect(events.length).toBe(1);
+
+        vi.advanceTimersByTime(1);
+        expect(events.length).toBe(2);
+        expect(events[1].message.getType()).toBe('text_message_content');
+        expect(events[1].streamedContent).toBe('hi');
+        sub.unsubscribe();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

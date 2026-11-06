@@ -30,10 +30,16 @@ vi.mock('../CometChatCalls', () => ({
   _setCallsSDKForTesting: vi.fn(),
 }));
 
+// startCall() reads the chat session's logged-in user so it can forward that
+// authToken to generateToken explicitly, rather than letting the Calls SDK fall
+// back to its own separately-tracked (and possibly stale) cached token.
+const mockUIKit = {
+  callingReady: Promise.resolve(),
+  getLoggedInUser: vi.fn(() => createMockUser()),
+};
+
 vi.mock('../cometchat-uikit', () => ({
-  CometChatUIKit: {
-    callingReady: Promise.resolve(),
-  },
+  CometChatUIKit: mockUIKit,
 }));
 
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
@@ -125,6 +131,7 @@ describe('OngoingCallService', () => {
     mockCallsSDK.leaveSession = vi.fn();
     mockCallsSDK.addEventListener = vi.fn().mockReturnValue(() => {});
     mockCallsSDK.removeEventListener = vi.fn();
+    mockUIKit.getLoggedInUser = vi.fn(() => createMockUser());
 
     // Clear accumulated calls from global mocks before creating spies
     vi.mocked(CometChat.getLoggedinUser).mockClear();
@@ -430,11 +437,17 @@ describe('OngoingCallService', () => {
       expect(callOrder).toEqual(['generateToken', 'joinSession']);
     });
 
-    it('should pass only sessionID to generateToken (no authToken in v5)', async () => {
+    it("should pass the chat session's authToken to generateToken", async () => {
       service.setSessionID('sess-abc');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('sess-abc');
-      expect(mockCallsSDK.generateToken).not.toHaveBeenCalledWith('sess-abc', expect.anything());
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('sess-abc', 'mock-auth-token');
+    });
+
+    it('falls back to the Calls SDK cached token when no user is logged in', async () => {
+      mockUIKit.getLoggedInUser = vi.fn(() => null as unknown as CometChat.User);
+      service.setSessionID('sess-abc');
+      await service.startCall(frame);
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('sess-abc', undefined);
     });
 
     it('should pass generated token, session settings, and frame to joinSession', async () => {
@@ -673,14 +686,14 @@ describe('OngoingCallService', () => {
     it('should use correct sessionID for each sequential session', async () => {
       service.setSessionID('first-sess');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('first-sess');
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('first-sess', 'mock-auth-token');
 
       await service.endCall();
       expect(endCallSpy).toHaveBeenCalledWith('first-sess');
 
       service.setSessionID('second-sess');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('second-sess');
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('second-sess', 'mock-auth-token');
 
       await service.endCall();
       expect(endCallSpy).toHaveBeenCalledWith('second-sess');
@@ -796,7 +809,7 @@ describe('OngoingCallService', () => {
     it('should handle startCall with empty sessionID', async () => {
       service.setSessionID('');
       await service.startCall(frame);
-      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('');
+      expect(mockCallsSDK.generateToken).toHaveBeenCalledWith('', 'mock-auth-token');
       expect(service.isCallActive()).toBe(true);
     });
 

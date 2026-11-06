@@ -4,6 +4,7 @@ import { Subject, debounceTime, switchMap, of, catchError } from 'rxjs';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { isMediaMessage } from '../utils/message-metadata-utils';
 import { toThreadId, writeThreadSubscribed } from '../utils/thread-subscription-utils';
+import { markMessageFailed } from '../utils/message-metadata-utils';
 import { ThreadSubscriptionService } from './thread-subscription.service';
 import type { ErrorCallback, MentionSuggestion, PollCreatePayload, CollaborativePayload } from './message-composer.types';
 import {
@@ -161,7 +162,12 @@ export class MessageComposerService {
       const sent = (await CometChat.sendMessage(textMessage)) as CometChat.TextMessage;
       this.mirrorThreadReplySent(sent, capturedSession);
       return sent;
-    } catch (error) { this.handleError(error, 'Error sending text message'); return null; }
+    } catch (error) {
+      // The caller's pending message is the bubble already in the list: record why it failed on it.
+      if (message) markMessageFailed(message, error);
+      this.handleError(error, 'Error sending text message');
+      return null;
+    }
     finally { this.isSendingSignal.set(false); }
   }
 
@@ -191,7 +197,12 @@ export class MessageComposerService {
       const sent = (await CometChat.sendMediaMessage(mediaMessage)) as CometChat.MediaMessage;
       this.mirrorThreadReplySent(sent, capturedSession);
       return sent;
-    } catch (error) { this.handleError(error, 'Error sending media message'); return null; }
+    } catch (error) {
+      // The caller's pending message is the bubble already in the list: record why it failed on it.
+      if (message) markMessageFailed(message, error);
+      this.handleError(error, 'Error sending media message');
+      return null;
+    }
     finally { this.isSendingSignal.set(false); }
   }
 
@@ -241,7 +252,12 @@ export class MessageComposerService {
       const sent = (await CometChat.sendCustomMessage(customMessage)) as CometChat.CustomMessage;
       this.mirrorThreadReplySent(sent, capturedSession);
       return sent;
-    } catch (error) { this.handleError(error, 'Error sending sticker message'); return null; }
+    } catch (error) {
+      // The caller's pending message is the bubble already in the list: record why it failed on it.
+      if (message) markMessageFailed(message, error);
+      this.handleError(error, 'Error sending sticker message');
+      return null;
+    }
     finally { this.isSendingSignal.set(false); }
   }
 

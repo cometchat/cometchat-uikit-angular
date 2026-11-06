@@ -53,6 +53,41 @@ describe('MessageListService', () => {
     service.cleanup();
   });
 
+  /**
+   * Builds `count` real TextMessage instances (ids ascending from `firstId`)
+   * as the SDK would return them for one page of history.
+   */
+  function historyPage(count: number, firstId: number): CometChat.BaseMessage[] {
+    return Array.from({ length: count }, (_, i) => {
+      const m = new CometChat.TextMessage(testUser.getUid(), `history ${firstId + i}`, CometChat.RECEIVER_TYPE.USER);
+      m.setId(firstId + i);
+      m.setSender(testUser);
+      m.setSentAt(1_700_000_000 + firstId + i);
+      return m;
+    });
+  }
+
+  /**
+   * Replaces the service's current messages request (built by setUser/setGroup)
+   * with one whose fetchPrevious resolves the given pages in order, then [].
+   * The globally-mocked SDK otherwise always returns an empty history.
+   */
+  function stubHistory(...pages: CometChat.BaseMessage[][]): ReturnType<typeof vi.fn> {
+    const fetchPrevious = vi.fn();
+    for (const page of pages) fetchPrevious.mockResolvedValueOnce(page);
+    fetchPrevious.mockResolvedValue([]);
+    (service as any).messagesRequest = { fetchPrevious, fetchNext: vi.fn().mockResolvedValue([]) };
+    return fetchPrevious;
+  }
+
+  /** Same, but fetchPrevious rejects with `error`. */
+  function stubHistoryFailure(error: unknown): void {
+    (service as any).messagesRequest = {
+      fetchPrevious: vi.fn().mockRejectedValue(error),
+      fetchNext: vi.fn().mockResolvedValue([]),
+    };
+  }
+
   // ==================== Initialization ====================
 
   describe('Initialization', () => {
@@ -143,9 +178,10 @@ describe('MessageListService', () => {
 
     it('should clear existing messages when switching users', async () => {
       service.setUser(testUser);
+      stubHistory(historyPage(5, 100));
       await service.fetchPreviousMessages();
       const countBefore = service.getTotalMessageCount();
-      expect(countBefore).toBeGreaterThanOrEqual(0);
+      expect(countBefore).toBeGreaterThan(0);
 
       // Switch to a different user context
       const otherUser = await fetchTestUser('superhero2');
@@ -172,19 +208,26 @@ describe('MessageListService', () => {
   describe('fetchPreviousMessages()', () => {
     it('should fetch messages for a user conversation via real SDK', async () => {
       service.setUser(testUser);
+      const page = historyPage(5, 100);
+      const fetchPrevious = stubHistory(page);
       const hasMore = await service.fetchPreviousMessages();
 
-      expect(typeof hasMore).toBe('boolean');
-      // Real SDK should return messages for superhero1
-      expect(service.getTotalMessageCount()).toBeGreaterThanOrEqual(0);
+      expect(fetchPrevious).toHaveBeenCalledTimes(1);
+      // Fewer than a full page (30) means there is no older history
+      expect(hasMore).toBe(false);
+      expect(service.getTotalMessageCount()).toBe(5);
+      expect(service.messages()).toEqual(page);
     }, 30_000);
 
     it('should fetch messages for a group conversation via real SDK', async () => {
       service.setGroup(testGroup);
+      const fetchPrevious = stubHistory(historyPage(30, 600));
       const hasMore = await service.fetchPreviousMessages();
 
-      expect(typeof hasMore).toBe('boolean');
-      expect(service.getTotalMessageCount()).toBeGreaterThanOrEqual(0);
+      expect(fetchPrevious).toHaveBeenCalledTimes(1);
+      // A full page (30) means older history may exist
+      expect(hasMore).toBe(true);
+      expect(service.getTotalMessageCount()).toBe(30);
     }, 30_000);
 
     it('should set loadingState to false after fetch completes', async () => {
@@ -195,38 +238,53 @@ describe('MessageListService', () => {
 
     it('should populate messages signal with real BaseMessage objects', async () => {
       service.setUser(testUser);
+      stubHistory(historyPage(3, 200));
       await service.fetchPreviousMessages();
 
       const msgs = service.messages();
-      if (msgs.length > 0) {
-        const first = msgs[0];
-        // Real SDK BaseMessage objects have getId(), getType(), getSender()
-        expect(typeof first.getId()).toBe('number');
-        expect(typeof first.getType()).toBe('string');
-        expect(first.getSender()).toBeTruthy();
-      }
+      expect(msgs.length).toBeGreaterThan(0);
+      const first = msgs[0];
+      // Real SDK BaseMessage objects have getId(), getType(), getSender()
+      expect(first).toBeInstanceOf(CometChat.BaseMessage);
+      expect(first.getId()).toBe(200);
+      expect(first.getType()).toBe(CometChat.MESSAGE_TYPE.TEXT);
+      expect(first.getSender()).toBe(testUser);
     }, 30_000);
 
     it('should update prevMessageId after fetching', async () => {
       service.setUser(testUser);
+      expect(service.prevMessageId()).toBe(0);
+      stubHistory(historyPage(4, 300));
       await service.fetchPreviousMessages();
 
-      const msgs = service.messages();
-      if (msgs.length > 0) {
-        expect(service.prevMessageId()).toBeGreaterThan(0);
-      }
+      expect(service.messages()).toHaveLength(4);
+      // prevMessageId tracks the oldest message fetched so far
+      expect(service.prevMessageId()).toBe(300);
     }, 30_000);
 
     it('should support pagination — second fetch returns more or signals end', async () => {
       service.setUser(testUser);
-      const hasMore1 = await service.fetchPreviousMessages();
-      const countAfterFirst = service.getTotalMessageCount();
+      const newest = historyPage(30, 1000); // a full page -> more may exist
+      const older = historyPage(7, 900);    // a short page -> end of history
+      stubHistory(newest, older);
 
-      if (hasMore1) {
-        const hasMore2 = await service.fetchPreviousMessages();
-        const countAfterSecond = service.getTotalMessageCount();
-        expect(countAfterSecond).toBeGreaterThanOrEqual(countAfterFirst);
-      }
+      const hasMore1 = await service.fetchPreviousMessages();
+      expect(hasMore1).toBe(true);
+      expect(service.getTotalMessageCount()).toBe(30);
+      expect(service.prevMessageId()).toBe(1000);
+
+      const hasMore2 = await service.fetchPreviousMessages();
+      // Older messages are prepended and the end of history is signalled
+      expect(hasMore2).toBe(false);
+      expect(service.getTotalMessageCount()).toBe(37);
+      expect(service.messages()[0].getId()).toBe(900);
+      expect(service.messages()[36].getId()).toBe(1029);
+      expect(service.prevMessageId()).toBe(900);
+
+      // A further fetch past the end adds nothing
+      const hasMore3 = await service.fetchPreviousMessages();
+      expect(hasMore3).toBe(false);
+      expect(service.getTotalMessageCount()).toBe(37);
     }, 60_000);
 
     it('should return false when no conversation context is set', async () => {
@@ -242,9 +300,20 @@ describe('MessageListService', () => {
     it('should fetch newer messages for a user conversation', async () => {
       service.setUser(testUser);
       // First fetch previous to establish a baseline
+      stubHistory(historyPage(3, 700));
       await service.fetchPreviousMessages();
+      expect(service.nextMessageId()).toBe(702);
+
+      const newer = historyPage(2, 703);
+      const fetchNext = vi.fn().mockResolvedValue(newer);
+      (service as any).nextMessagesRequest = { fetchNext };
       const hasMore = await service.fetchNextMessages();
-      expect(typeof hasMore).toBe('boolean');
+
+      expect(fetchNext).toHaveBeenCalledTimes(1);
+      expect(hasMore).toBe(false);
+      // Newer messages are appended after the baseline
+      expect(service.messages().map(m => m.getId())).toEqual([700, 701, 702, 703, 704]);
+      expect(service.nextMessageId()).toBe(704);
     }, 30_000);
 
     it('should return false when no conversation context is set', async () => {
@@ -509,25 +578,31 @@ describe('MessageListService', () => {
   describe('markAsRead()', () => {
     it('should call SDK markAsRead without throwing for a real message', async () => {
       service.setUser(testUser);
+      stubHistory(historyPage(2, 400));
       await service.fetchPreviousMessages();
 
       const msgs = service.messages();
-      if (msgs.length > 0) {
-        // markAsRead should not throw
-        await expect(service.markAsRead(msgs[msgs.length - 1])).resolves.toBeUndefined();
-      }
+      expect(msgs).toHaveLength(2);
+      const sdkMarkAsRead = vi.mocked(CometChat.markAsRead);
+      sdkMarkAsRead.mockClear();
+      // markAsRead should not throw, and must reach the SDK with the message
+      await expect(service.markAsRead(msgs[msgs.length - 1])).resolves.toBeUndefined();
+      expect(sdkMarkAsRead).toHaveBeenCalledWith(msgs[1]);
     }, 30_000);
   });
 
   describe('markAsDelivered()', () => {
     it('should call SDK markAsDelivered without throwing for a real message', async () => {
       service.setUser(testUser);
+      stubHistory(historyPage(2, 500));
       await service.fetchPreviousMessages();
 
       const msgs = service.messages();
-      if (msgs.length > 0) {
-        await expect(service.markAsDelivered(msgs[msgs.length - 1])).resolves.toBeUndefined();
-      }
+      expect(msgs).toHaveLength(2);
+      const sdkMarkAsDelivered = vi.mocked(CometChat.markAsDelivered);
+      sdkMarkAsDelivered.mockClear();
+      await expect(service.markAsDelivered(msgs[msgs.length - 1])).resolves.toBeUndefined();
+      expect(sdkMarkAsDelivered).toHaveBeenCalledWith(msgs[1]);
     }, 30_000);
   });
 
@@ -662,14 +737,21 @@ describe('MessageListService', () => {
     it('setErrorCallback() should accept a callback', () => {
       const cb = vi.fn();
       service.setErrorCallback(cb);
-      // No direct way to assert private field, but should not throw
-      expect(true).toBe(true);
+      // An invalid conversation context is reported through the callback
+      service.setUser(null as unknown as CometChat.User);
+      expect(cb).toHaveBeenCalledTimes(1);
+      expect(cb).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('setUser: User is required') })
+      );
     });
 
     it('setErrorCallback(null) should clear the callback', () => {
-      service.setErrorCallback(vi.fn());
+      const cb = vi.fn();
+      service.setErrorCallback(cb);
       service.setErrorCallback(null);
-      expect(true).toBe(true);
+      // The cleared callback is no longer invoked on error
+      expect(() => service.setGroup(null as unknown as CometChat.Group)).not.toThrow();
+      expect(cb).not.toHaveBeenCalled();
     });
   });
 
@@ -775,19 +857,15 @@ describe('MessageListService', () => {
     it('should update errorState signal when fetchPreviousMessages SDK call rejects', async () => {
       // Set user context, then corrupt the internal request to force SDK rejection
       service.setUser(testUser);
-
-      // Override with a builder that targets a non-existent UID to trigger SDK error
-      const badBuilder = new CometChat.MessagesRequestBuilder()
-        .setLimit(30)
-        .setUID('__nonexistent_uid_that_will_fail__');
-      service.setMessagesRequestBuilder(badBuilder);
-      // Re-set user to rebuild the request with the bad builder
-      service.setUser(testUser);
+      expect(service.errorState()).toBeNull();
+      const sdkError = { code: 'ERR_UID_NOT_FOUND', message: 'uid not found' };
+      stubHistoryFailure(sdkError);
 
       const result = await service.fetchPreviousMessages();
 
       // The method should NOT throw — it returns false on error
-      expect(typeof result).toBe('boolean');
+      expect(result).toBe(false);
+      expect(service.errorState()).toBe(sdkError);
       // loadingState should be reset
       expect(service.loadingState()).toBe(false);
     }, 30_000);
@@ -797,21 +875,20 @@ describe('MessageListService', () => {
       service.setErrorCallback(err => errors.push(err));
 
       service.setUser(testUser);
-      const badBuilder = new CometChat.MessagesRequestBuilder()
-        .setLimit(30)
-        .setUID('__nonexistent_uid_that_will_fail__');
-      service.setMessagesRequestBuilder(badBuilder);
-      service.setUser(testUser);
+      // Force the real request's fetchPrevious to reject with a non-recoverable SDK error
+      const sdkError = { code: 'ERR_UID_NOT_FOUND', message: 'uid not found' };
+      stubHistoryFailure(sdkError);
 
-      await service.fetchPreviousMessages();
+      const result = await service.fetchPreviousMessages();
 
-      // If SDK rejects, errorCallback should be invoked
-      // If SDK succeeds (returns empty), errorCallback should NOT be invoked
-      // Either way, no unhandled rejection
+      expect(result).toBe(false);
+      expect(errors).toEqual([sdkError]);
+      expect(service.errorState()).toBe(sdkError);
       expect(service.loadingState()).toBe(false);
+      expect(service.messages()).toEqual([]);
     }, 30_000);
 
-    it('should update errorState when editMessage SDK call rejects', async () => {
+    it('should report the error and roll back when editMessage SDK call rejects', async () => {
       service.setUser(testUser);
 
       // Send a real message first
@@ -837,11 +914,20 @@ describe('MessageListService', () => {
       const errors: CometChat.CometChatException[] = [];
       service.setErrorCallback(err => errors.push(err));
 
-      // editMessage should catch the SDK error, update errorState, and return the original message
+      const sdkError = { code: 'ERR_MESSAGE_NOT_FOUND', message: 'not found' };
+      vi.mocked(CometChat.editMessage).mockRejectedValueOnce(sdkError);
+
+      // editMessage should catch the SDK error, report it, and return the original message
       const result = await service.editMessage(fakeMsg, 'new text');
-      expect(result).toBeTruthy();
-      // Service should remain usable — no unhandled rejection
-      expect(service.getTotalMessageCount()).toBeGreaterThanOrEqual(1);
+      expect(result).toBe(fakeMsg);
+      // The optimistic text change is rolled back
+      expect((result as CometChat.TextMessage).getText()).toBe('edited');
+      expect((service.getMessageById(-999) as CometChat.TextMessage).getText()).toBe('edited');
+      // The SDK failure is surfaced through the error callback
+      expect(errors).toEqual([sdkError]);
+      // Service should remain usable — both messages still listed
+      expect(service.getTotalMessageCount()).toBe(2);
+      expect(service.getMessageById(sent.getId())).toBe(sent);
     }, 30_000);
 
     it('should remain usable after an error — subsequent operations succeed', async () => {
@@ -883,8 +969,12 @@ describe('MessageListService', () => {
       expect(service.getTotalMessageCount()).toBe(1);
     }, 15_000);
 
-    it('should clear errorState via clearError after an error occurs', () => {
-      // Manually verify clearError resets the signal
+    it('should clear errorState via clearError after an error occurs', async () => {
+      service.setUser(testUser);
+      stubHistoryFailure({ code: 'ERR_BAD_REQUEST', message: 'bad' });
+      await service.fetchPreviousMessages();
+      expect(service.errorState()).not.toBeNull();
+
       service.clearError();
       expect(service.errorState()).toBeNull();
     });
@@ -922,16 +1012,6 @@ describe('MessageListService', () => {
       service.setGroup(testGroup);
       service.setUser(testUser);
       expect(service.getTotalMessageCount()).toBe(0);
-    });
-
-    it('should expose messages$ observable', async () => {
-      const msgs = await new Promise<CometChat.BaseMessage[]>(resolve => {
-        const sub = service.messages$.subscribe(val => {
-          resolve(val);
-          sub.unsubscribe();
-        });
-      });
-      expect(Array.isArray(msgs)).toBe(true);
     });
 
     it('should expose loadingState$ observable', async () => {

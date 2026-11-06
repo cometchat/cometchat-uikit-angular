@@ -9,6 +9,7 @@
  * @module services/message-list.sent-handler
  */
 
+import type { Subscription } from 'rxjs';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
@@ -42,6 +43,8 @@ function makeCtx(overrides: Record<string, any> = {}) {
 
   return {
     parentMessageId: null,
+    currentUser: null as { getUid: () => string } | null,
+    currentGroup: null as { getGuid: () => string } | null,
     isAgentChatMode: false,
     loadingStateSignal: vi.fn().mockReturnValue(false),
     isMessageForCurrentConversation: vi.fn().mockReturnValue(true),
@@ -52,6 +55,9 @@ function makeCtx(overrides: Record<string, any> = {}) {
     messageMuidMap,
     messageIdMap,
     normalizeMessageId: vi.fn((id: any) => String(id)),
+    // Written by setupSentMessageListenerImpl / setupEditedMessageListenerImpl.
+    ccMessageSentSubscription: undefined as Subscription | undefined,
+    ccMessageEditedSubscription: undefined as Subscription | undefined,
     ...overrides,
   };
 }
@@ -68,11 +74,20 @@ describe('message-list.sent-handler', () => {
       expect(ctx.addMessage).toHaveBeenCalledWith(msg);
     });
 
-    it('should call updateSentMessageByMuid for success status', () => {
+    it('swaps the pending bubble for the sent message on success', () => {
+      const ctx = makeCtx();
+      const msg = makeTextMessage(1);
+      ctx.messageMuidMap.set('muid-1', makeTextMessage(0, 'muid-1'));
+      handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.success });
+      expect(ctx.updateMessageByMuid).toHaveBeenCalledWith('muid-1', msg);
+      expect(ctx.addMessage).not.toHaveBeenCalled();
+    });
+
+    it('adds a sent message the list never got as pending (ENG-39944)', () => {
       const ctx = makeCtx();
       const msg = makeTextMessage(1);
       handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.success });
-      expect(ctx.updateMessageById).toHaveBeenCalled();
+      expect(ctx.addMessage).toHaveBeenCalledWith(msg);
     });
 
     it('should call updateSentMessageByMuid for error status', () => {
@@ -172,6 +187,114 @@ describe('message-list.sent-handler', () => {
       handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.success });
       // Should update reply count, not add message
       expect(ctx.addMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==================== agent chat: a confirmed send the list doesn't show ====================
+
+  describe('a confirmed send the agent chat list does not show', () => {
+    /** A sent reply in the thread under `parent`, not in the list (its in-progress event went elsewhere). */
+    function reply(parent: number | null, id = 900) {
+      const msg = makeTextMessage(id);
+      (msg as any).getParentMessageId = () => parent;
+      return msg;
+    }
+    const agentCtx = (overrides: Record<string, any> = {}) => makeCtx({ isAgentChatMode: true, ...overrides });
+
+    it('is not added to a new chat when it belongs to the previous conversation', () => {
+      // Sent in the thread under 555, then New Chat before the send returned.
+      const ctx = agentCtx({ parentMessageId: null });
+      handleSentMessageImpl(ctx, { message: reply(555), status: MessageStatus.success });
+      expect(ctx.addMessage).not.toHaveBeenCalled();
+    });
+
+    it("is added when its parent is the list's parent", () => {
+      const ctx = agentCtx({ parentMessageId: 555 });
+      const msg = reply(555);
+      handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.success });
+      expect(ctx.addMessage).toHaveBeenCalledWith(msg);
+    });
+
+    it('is added when its parent is a message the list shows (a new chat after its first message)', () => {
+      const ctx = agentCtx({ parentMessageId: null });
+      ctx.messageIdMap.set('777', makeTextMessage(777));
+      const msg = reply(777);
+      handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.success });
+      expect(ctx.addMessage).toHaveBeenCalledWith(msg);
+    });
+
+    it('is not added when it has no thread, as before the lost-event fallback', () => {
+      const ctx = agentCtx({ parentMessageId: null });
+      handleSentMessageImpl(ctx, { message: reply(null), status: MessageStatus.success });
+      expect(ctx.addMessage).not.toHaveBeenCalled();
+    });
+
+    it('is still added outside agent chat, where the conversation check decides', () => {
+      const ctx = makeCtx({ parentMessageId: 555 });
+      const msg = reply(555);
+      handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.success });
+      expect(ctx.addMessage).toHaveBeenCalledWith(msg);
+    });
+  });
+
+  // ==================== failed sends (ENG-39942) ====================
+
+  describe('a failed send', () => {
+    /** The pending message as the list holds it after the in-progress event. */
+    function pendingInList(ctx: ReturnType<typeof makeCtx>, muid = 'pending-1') {
+      const pending = makeTextMessage(0, muid);
+      (pending as any).getId = () => undefined;
+      ctx.messageMuidMap.set(muid, pending);
+      return pending;
+    }
+
+    it('reaches the bubble even though the SDK cleared its receiver ID', () => {
+      // On a failed send the SDK leaves the message without a receiver ID, so the conversation
+      // check rejects it; the muid this list holds still identifies it.
+      const ctx = makeCtx({ isMessageForCurrentConversation: vi.fn().mockReturnValue(false) });
+      const pending = pendingInList(ctx);
+      (pending as any).error = { code: 'ERR_X' };
+
+      handleSentMessageImpl(ctx, { message: pending, status: MessageStatus.error });
+
+      expect(ctx.updateMessageByMuid).toHaveBeenCalledTimes(1);
+      const [muid, shown] = ctx.updateMessageByMuid.mock.calls[0];
+      expect(muid).toBe('pending-1');
+      expect((shown as any).error).toEqual({ code: 'ERR_X' });
+    });
+
+    it('hands the list a new object, so the OnPush bubble re-renders with its error tick', () => {
+      const ctx = makeCtx();
+      const pending = pendingInList(ctx);
+
+      handleSentMessageImpl(ctx, { message: pending, status: MessageStatus.error });
+
+      const shown = ctx.updateMessageByMuid.mock.calls[0][1];
+      expect(shown).not.toBe(pending);
+      expect(Object.getPrototypeOf(shown)).toBe(Object.getPrototypeOf(pending));
+      expect(shown.getMuid()).toBe('pending-1');
+    });
+
+    it('still ignores a failed send for a message this list never showed', () => {
+      const ctx = makeCtx({ isMessageForCurrentConversation: vi.fn().mockReturnValue(false) });
+      const elsewhere = makeTextMessage(0, 'other-chat');
+
+      handleSentMessageImpl(ctx, { message: elsewhere, status: MessageStatus.error });
+
+      expect(ctx.updateMessageByMuid).not.toHaveBeenCalled();
+      expect(ctx.updateMessageById).not.toHaveBeenCalled();
+    });
+
+    it('is applied from the queue after loading, even with the receiver ID cleared', () => {
+      const ctx = makeCtx({ loadingStateSignal: vi.fn().mockReturnValue(true) });
+      const pending = pendingInList(ctx, 'queued-1');
+      handleSentMessageImpl(ctx, { message: pending, status: MessageStatus.error });
+      expect(ctx.updateMessageByMuid).not.toHaveBeenCalled();
+
+      ctx.isMessageForCurrentConversation.mockReturnValue(false);
+      flushPendingSentMessages(ctx);
+
+      expect(ctx.updateMessageByMuid).toHaveBeenCalledWith('queued-1', expect.anything());
     });
   });
 
@@ -317,16 +440,31 @@ describe('message-list.sent-handler', () => {
       const msg = makeTextMessage(1);
       handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.success });
       flushPendingSentMessages(ctx);
-      expect(ctx.updateMessageById).toHaveBeenCalled();
+      expect(ctx.addMessage).toHaveBeenCalledWith(msg);
     });
 
-    it('should skip messages not for current conversation', () => {
-      const ctx = makeCtx({ loadingStateSignal: vi.fn().mockReturnValue(true) });
-      const msg = makeTextMessage(1);
+    /** A context showing a 1:1 chat with `uid`. */
+    const chatWith = (uid: string) => ({ getUid: () => uid });
+
+    it('replays a message queued for this chat even after the SDK cleared its receiver ID (ENG-39944)', () => {
+      const ctx = makeCtx({ loadingStateSignal: vi.fn().mockReturnValue(true), currentUser: chatWith('bob') });
+      const msg = makeTextMessage(0, 'pending-1');
       handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.inprogress });
 
+      // While the send is in flight the SDK clears the receiver, so the check now says no.
       ctx.isMessageForCurrentConversation = vi.fn().mockReturnValue(false);
       flushPendingSentMessages(ctx);
+
+      expect(ctx.addMessage).toHaveBeenCalledWith(msg);
+    });
+
+    it('does not replay a queued message into another chat opened while loading', () => {
+      const ctx = makeCtx({ loadingStateSignal: vi.fn().mockReturnValue(true), currentUser: chatWith('bob') });
+      handleSentMessageImpl(ctx, { message: makeTextMessage(1), status: MessageStatus.inprogress });
+
+      ctx.currentUser = chatWith('carol');
+      flushPendingSentMessages(ctx);
+
       expect(ctx.addMessage).not.toHaveBeenCalled();
     });
   });

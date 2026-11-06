@@ -253,12 +253,13 @@ describe('Property 2: Naming convention compliance — All Components', () => {
   describe('component-level variables must start with --cometchat-{component}-', () => {
     it.each(ALL_CSS_FILES)('variables follow naming convention: %s', filePath => {
       const violations = auditFile(filePath).filter(v => v.issue === 'wrong_prefix');
-      if (violations.length > 0) {
-        const details = violations
-          .map(v => `  Line ${v.line}: ${v.varName}\n    ${v.details}`)
-          .join('\n');
-        expect.fail(`${path.basename(filePath)} has naming prefix violations:\n${details}`);
-      }
+      const details = violations
+        .map(v => `  Line ${v.line}: ${v.varName}\n    ${v.details}`)
+        .join('\n');
+      expect(
+        violations,
+        `${path.basename(filePath)} has naming prefix violations:\n${details}`
+      ).toHaveLength(0);
     });
   });
 
@@ -267,12 +268,13 @@ describe('Property 2: Naming convention compliance — All Components', () => {
       'variables have at least component + property segments: %s',
       filePath => {
         const violations = auditFile(filePath).filter(v => v.issue === 'too_few_segments');
-        if (violations.length > 0) {
-          const details = violations
-            .map(v => `  Line ${v.line}: ${v.varName}\n    ${v.details}`)
-            .join('\n');
-          expect.fail(`${path.basename(filePath)} has naming segment violations:\n${details}`);
-        }
+        const details = violations
+          .map(v => `  Line ${v.line}: ${v.varName}\n    ${v.details}`)
+          .join('\n');
+        expect(
+          violations,
+          `${path.basename(filePath)} has naming segment violations:\n${details}`
+        ).toHaveLength(0);
       }
     );
   });
@@ -283,12 +285,13 @@ describe('Property 2: Naming convention compliance — All Components', () => {
       for (const filePath of ALL_CSS_FILES) {
         allViolations.push(...auditFile(filePath));
       }
-      if (allViolations.length > 0) {
-        const details = allViolations
-          .map(v => `  ${v.file}:${v.line} [${v.issue}] — ${v.varName}: ${v.details}`)
-          .join('\n');
-        expect.fail(`Found ${allViolations.length} naming convention violation(s):\n${details}`);
-      }
+      const details = allViolations
+        .map(v => `  ${v.file}:${v.line} [${v.issue}] — ${v.varName}: ${v.details}`)
+        .join('\n');
+      expect(
+        allViolations,
+        `Found ${allViolations.length} naming convention violation(s):\n${details}`
+      ).toHaveLength(0);
     });
 
     it('should find component-level variables to audit (sanity check)', () => {

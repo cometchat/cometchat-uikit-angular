@@ -13,7 +13,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CometChatSearchComponent } from './cometchat-search.component';
 import { CometChatSearchFilter, CometChatSearchScope } from '../../Enums/Enums';
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 import { CometChatTemplatesService } from '../../services/templates.service';
 import { CometChatSearchStoryWrapperComponent } from '../../../../../../.storybook/utils/mock-services';
 import {

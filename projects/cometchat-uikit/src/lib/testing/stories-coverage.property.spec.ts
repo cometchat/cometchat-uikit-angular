@@ -128,16 +128,13 @@ describe('Property 18 — All components have Storybook story files', () => {
     }
   }
 
-  if (violations.length > 0) {
-    it.each(violations.map((v) => [v.componentName, v.expectedFile]))(
-      'VIOLATION: cometchat-%s is missing %s',
-      (name, expectedFile) => {
-        console.warn(`  ⚠ cometchat-${name}: missing story file ${expectedFile}`);
-        // Tracking only — don't hard-fail for missing stories
-        expect(true).toBe(true);
-      }
-    );
-  }
+  it('every component directory should contain a *.stories.ts file', () => {
+    const missing = violations.map((v) => `${v.componentDir}${v.expectedFile}`);
+    expect(
+      missing,
+      `${missing.length} component(s) missing Storybook story files:\n  ${missing.join('\n  ')}\n`
+    ).toEqual([]);
+  });
 
   it('should report stories coverage summary and append findings', () => {
     appendFindingsToReport(violations);

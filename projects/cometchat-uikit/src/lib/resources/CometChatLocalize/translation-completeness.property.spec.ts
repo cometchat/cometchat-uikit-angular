@@ -632,23 +632,6 @@ describe('Property 11: All localization keys exist in all language resource file
    * from the guard above by design. Reported so the list stays visible and can
    * be triaged for deletion rather than silently accumulating.
    */
-  it('reports unreferenced en-us keys as a backlog (warning only)', () => {
-    const enUsPath = path.join(RESOURCES_DIR, 'en-us', 'translation.json');
-    const enKeys = Object.keys(
-      JSON.parse(fs.readFileSync(enUsPath, 'utf-8')) as Record<string, string>
-    );
-    const referenced = collectReferencedKeys();
-    const unreferenced = enKeys.filter(k => !referenced.has(k));
-
-    if (unreferenced.length > 0) {
-      console.warn(
-        `[Property 11] ${unreferenced.length} en-us key(s) are not referenced by any code path ` +
-          `(excluded from the completeness guard; candidates for removal).`
-      );
-    }
-
-    expect(Array.isArray(unreferenced)).toBe(true);
-  });
 
   /**
    * **Validates: Requirements 6.3**

@@ -271,7 +271,9 @@ describe('message-list.read-ops', () => {
     it('should call CometChat.markMessageAsUnread when message found', async () => {
       const msg = makeMessage(1, 'user1');
       const ctx = makeCtx([msg]);
-      const mockConv = new CometChat.Conversation();
+      const mockConv = new CometChat.Conversation(
+        'user1_user_me', CometChat.RECEIVER_TYPE.USER, msg, new CometChat.User('user1'), 1, [], 0, undefined
+      );
       // Patch CometChat.markMessageAsUnread directly
       const original = (CometChat as any).markMessageAsUnread;
       (CometChat as any).markMessageAsUnread = vi.fn().mockResolvedValue(mockConv);

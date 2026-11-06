@@ -23,7 +23,8 @@ export class CometChatGroupEvents {
   // ── Deprecated generic method ──
 
   /** @deprecated Use typed publish methods instead (e.g., publishGroupCreated). */
-  static publishEvent(event: Subject<CometChat.Group>, group: CometChat.Group) {
+  // Generic so it also accepts the kit's non-Group subjects (e.g. ccGroupMemberAdded).
+  static publishEvent<T = CometChat.Group>(event: Subject<T>, group: T) {
     event.next(group);
   }
 

@@ -249,7 +249,25 @@ function createComponent(): CometChatStickersKeyboardComponent {
   // Initialize pendingTimers array (used by addOption, removeOption, fetchStickers, etc.)
   (comp as any).pendingTimers = [];
 
+  // Host element (inject(ElementRef)); DOM lookups are scoped to it.
+  (comp as any).host = { nativeElement: document.createElement('div') };
+  (comp as any).destroyed = false;
+  created.push(comp);
+
   return comp;
+}
+
+/** Every instance made by createComponent, destroyed after each test so no timer outlives it. */
+const created: CometChatStickersKeyboardComponent[] = [];
+
+/** Renders the given tab labels (and stickers) into a component's host, attached to the page. */
+function renderHost(comp: CometChatStickersKeyboardComponent, tabs: string[], stickers = 0): HTMLElement {
+  const host = (comp as any).host.nativeElement as HTMLElement;
+  host.innerHTML =
+    tabs.map((t) => `<button class="cometchat-stickers-keyboard__tab">${t}</button>`).join('') +
+    Array.from({ length: stickers }, (_, i) => `<button class="cometchat-stickers-keyboard__sticker-item">${i}</button>`).join('');
+  document.body.appendChild(host);
+  return host;
 }
 
 // ==================== Unit Tests ====================
@@ -258,7 +276,96 @@ describe('CometChatStickersKeyboardComponent', () => {
   let component: CometChatStickersKeyboardComponent;
 
   afterEach(() => {
+    for (const comp of created.splice(0)) {
+      comp.ngOnDestroy();
+      (comp as any).host.nativeElement.remove();
+    }
     vi.restoreAllMocks();
+  });
+
+  // ==================== Scoped to its own host ====================
+
+  describe('two keyboards on one page', () => {
+    let first: CometChatStickersKeyboardComponent;
+    let second: CometChatStickersKeyboardComponent;
+
+    beforeEach(() => {
+      first = createComponent();
+      second = createComponent();
+      for (const comp of [first, second]) {
+        (comp as any).stickerSets.set(createMockStickerSets());
+        (comp as any).activeCategory.set('Pack A');
+      }
+      renderHost(first, ['A1', 'A2', 'A3']);
+      renderHost(second, ['B1', 'B2', 'B3']);
+    });
+
+    it('arrow keys on the second keyboard focus its own tab, not the first keyboard\'s', () => {
+      second.onTabKeydown(new KeyboardEvent('keydown', { key: 'ArrowRight' }), 'Pack A', 0);
+      expect(document.activeElement?.textContent).toBe('B2');
+    });
+
+    it('auto-focus after loading focuses the first tab of its own keyboard', () => {
+      vi.useFakeTimers();
+      try {
+        (second as any).applyFetchedStickers(createMockStickerSets());
+        vi.runAllTimers();
+        expect(document.activeElement?.textContent).toBe('B1');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('arrow keys in the second grid focus its own sticker', () => {
+      vi.useFakeTimers();
+      try {
+        renderHost(first, ['A1'], 2);
+        renderHost(second, ['B1'], 2);
+        const sticker = createMockStickerSets()['Pack A'][0];
+        second.onStickerKeydown(new KeyboardEvent('keydown', { key: 'ArrowRight' }), sticker, 0);
+        vi.runAllTimers();
+        expect((second as any).host.nativeElement.contains(document.activeElement)).toBe(true);
+        expect(document.activeElement?.textContent).toBe('1');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe('after destroy', () => {
+    let comp: CometChatStickersKeyboardComponent;
+    let outside: HTMLButtonElement;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      comp = createComponent();
+      (comp as any).stickerSets.set(createMockStickerSets());
+      (comp as any).activeCategory.set('Pack A');
+      renderHost(comp, ['A1'], 2);
+      outside = document.createElement('button');
+      document.body.appendChild(outside);
+      outside.focus();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      outside.remove();
+    });
+
+    it('a grid-focus timer scheduled before destroy does not move focus', () => {
+      const sticker = createMockStickerSets()['Pack A'][0];
+      comp.onStickerKeydown(new KeyboardEvent('keydown', { key: 'ArrowRight' }), sticker, 0);
+      comp.ngOnDestroy();
+      vi.runAllTimers();
+      expect(document.activeElement).toBe(outside);
+    });
+
+    it('stickers that finish loading after destroy do not steal focus', () => {
+      comp.ngOnDestroy();
+      (comp as any).applyFetchedStickers(createMockStickerSets());
+      vi.runAllTimers();
+      expect(document.activeElement).toBe(outside);
+    });
   });
 
   // ==================== Instantiation (Req 4.1) ====================
@@ -826,15 +933,6 @@ describe('CometChatStickersKeyboardComponent', () => {
   // ─── Accessibility ───
 
   describe('Accessibility', () => {
-    it('should have focusable sticker items', () => {
-      const component = createComponent();
-      expect(typeof component.handleStickerClick).toBe('function');
-    });
-
-    it('should have focusable category tabs', () => {
-      const component = createComponent();
-      expect(typeof component.onCategoryClick).toBe('function');
-    });
 
     it('should provide accessible sticker labels', () => {
       const component = createComponent();

@@ -150,7 +150,7 @@ export class CometChatReactionsComponent implements AfterViewInit, OnDestroy, On
     const messageKey = isReactedByMe
       ? 'accessibility_reaction_removed'
       : 'accessibility_reaction_added';
-    const message = CometChatLocalize.getLocalizedString(messageKey).replace('{emoji}', emoji);
+    const message = CometChatLocalize.getLocalizedString(messageKey).replace('{emoji}', () => emoji);
     this.liveAnnouncer.announce(message, 'polite', 2000);
 
     this.reactionClick.emit({ reaction, message: this.message });
@@ -167,12 +167,12 @@ export class CometChatReactionsComponent implements AfterViewInit, OnDestroy, On
 
     if (isReactedByMe) {
       return CometChatLocalize.getLocalizedString('accessibility_reaction_you_reacted')
-        .replace('{emoji}', emoji)
-        .replace('{count}', count.toString());
+        .replace('{emoji}', () => emoji)
+        .replace('{count}', () => count.toString());
     }
     return CometChatLocalize.getLocalizedString('accessibility_reaction_count')
-      .replace('{emoji}', emoji)
-      .replace('{count}', count.toString());
+      .replace('{emoji}', () => emoji)
+      .replace('{count}', () => count.toString());
   }
 
   /**

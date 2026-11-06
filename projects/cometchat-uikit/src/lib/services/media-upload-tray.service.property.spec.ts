@@ -52,7 +52,9 @@ describe('computeAggregate (property)', () => {
           );
           const { loaded, total, percent } = computeAggregate(tiles);
           const expected = total > 0 ? Math.round((loaded / total) * 100) : 0;
-          return percent === expected && percent >= 0 && percent <= 100;
+          expect(percent).toBe(expected);
+          expect(percent).toBeGreaterThanOrEqual(0);
+          expect(percent).toBeLessThanOrEqual(100);
         },
       ),
     );
@@ -81,7 +83,7 @@ describe('deriveCanSend (property)', () => {
         const tiles = statuses.map((s) => tile({ status: s }));
         const inFlight = statuses.some((s) => s === 'uploading' || s === 'pending');
         const anyUploaded = statuses.some((s) => s === 'uploaded');
-        return deriveCanSend(tiles) === (!inFlight && anyUploaded);
+        expect(deriveCanSend(tiles)).toBe(!inFlight && anyUploaded);
       }),
     );
   });
@@ -102,13 +104,19 @@ describe('mimeMatches (property)', () => {
     fc.assert(
       fc.property(
         fc.constantFrom('image/png', 'image/jpeg', 'image/gif', 'image/webp'),
-        (t) => mimeMatches(t, 'image/*'),
+        (t) => {
+          expect(mimeMatches(t, 'image/*')).toBe(true);
+        },
       ),
     );
   });
 
   it('* matches anything', () => {
-    fc.assert(fc.property(fc.string(), (t) => mimeMatches(t, '*')));
+    fc.assert(
+      fc.property(fc.string(), (t) => {
+        expect(mimeMatches(t, '*')).toBe(true);
+      }),
+    );
   });
 
   it('exact and mismatch cases', () => {

@@ -16,6 +16,112 @@ import { RichTextEditor } from './rich-text-editor.class';
 import { RichTextEditorConfig } from './rich-text-editor.interfaces';
 import { ensureSdkReady, sdkCleanup } from '../test-setup';
 
+/** Selects the whole editor content, as a toolbar action on "select all" would. */
+function selectAllContent(editor: RichTextEditor): void {
+  const ce = editor.getContentEditable();
+  const sel = window.getSelection()!;
+  const range = document.createRange();
+  range.selectNodeContents(ce);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+/**
+ * Records `initialHtml` as a baseline history entry, then runs each step as a
+ * separate undoable history entry (1s apart so steps are not grouped, with the
+ * `input` event jsdom does not fire after execCommand). Returns the HTML after
+ * the baseline and after each step: [baseline, step1, step2, ...].
+ */
+function recordUndoableSteps(
+  editor: RichTextEditor,
+  initialHtml: string,
+  steps: Array<() => void>
+): string[] {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    let now = 1_000_000;
+    vi.setSystemTime(now);
+    editor.setHTML(initialHtml);
+    const ce = editor.getContentEditable();
+    ce.dispatchEvent(new Event('input'));
+    const htmls = [editor.getHTML()];
+    for (const step of steps) {
+      now += 1_000;
+      vi.setSystemTime(now);
+      selectAllContent(editor);
+      step();
+      ce.dispatchEvent(new Event('input'));
+      htmls.push(editor.getHTML());
+    }
+    return htmls;
+  } finally {
+    vi.useRealTimers();
+  }
+}
+
+/**
+ * Undoes every recorded step back to the baseline, checking each restored
+ * state, then redoes them all, checking each re-applied state.
+ */
+function expectFullUndoRedo(editor: RichTextEditor, htmls: string[]): void {
+  for (let i = htmls.length - 1; i > 0; i--) {
+    expect(editor.canUndo()).toBe(true);
+    expect(editor.undo()).toBe(true);
+    expect(editor.getHTML()).toBe(htmls[i - 1]);
+  }
+  expect(editor.canUndo()).toBe(false);
+  expect(editor.undo()).toBe(false);
+
+  for (let i = 1; i < htmls.length; i++) {
+    expect(editor.canRedo()).toBe(true);
+    expect(editor.redo()).toBe(true);
+    expect(editor.getHTML()).toBe(htmls[i]);
+  }
+  expect(editor.canRedo()).toBe(false);
+}
+
+/**
+ * Runs `apply` as its own undoable history step and hands the HTML before and
+ * after it to `check`.
+ *
+ * History only records a state when an edit is pushed (setHTML does not push),
+ * undo needs two entries, and pushes within 500ms are grouped into one. So the
+ * starting content is recorded as a baseline via an input event, then `apply`
+ * runs (on the whole content selected) more than 500ms later. Inline/block
+ * formatting relies on execCommand, which in a browser fires an `input` event
+ * that records the step; jsdom does not, so it is fired here.
+ */
+function withUndoableStep(
+  editor: RichTextEditor,
+  initialHtml: string,
+  apply: () => void,
+  check: (baselineHtml: string, changedHtml: string) => void
+): void {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(1_000_000);
+    editor.setHTML(initialHtml);
+    const ce = editor.getContentEditable();
+    ce.dispatchEvent(new Event('input'));
+    const baselineHtml = editor.getHTML();
+
+    vi.setSystemTime(1_000_000 + 1_000);
+    const sel = window.getSelection()!;
+    const range = document.createRange();
+    range.selectNodeContents(ce);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    apply();
+    ce.dispatchEvent(new Event('input'));
+    const changedHtml = editor.getHTML();
+    expect(changedHtml).not.toBe(baselineHtml);
+
+    check(baselineHtml, changedHtml);
+  } finally {
+    vi.useRealTimers();
+  }
+}
+
 describe('RichTextEditor', () => {
   let editor: RichTextEditor;
   let config: RichTextEditorConfig;
@@ -1414,55 +1520,61 @@ describe('Preservation: Link Handling (Group A)', () => {
      * This applies to all content changes including link-related operations.
      */
     it('should restore previous state on undo after content change', () => {
-      // Set initial content
-      editor.setHTML('<p>Initial content</p>');
-      const initialHtml = editor.getHTML();
+      withUndoableStep(
+        editor,
+        '<p>Initial content</p>',
+        () => editor.applyBold(),
+        (initialHtml, boldHtml) => {
+          expect(boldHtml).toMatch(/<(b|strong)\b/);
 
-      // Make a change by setting new content and applying bold
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editor.applyBold();
-
-      const boldHtml = editor.getHTML();
-      // The HTML should have changed after applying bold
-      expect(boldHtml).not.toBe(initialHtml);
-
-      // Undo should be available after a change
-      // Note: applyBold pushes to history internally
-      if (editor.canUndo()) {
-        editor.undo();
-        // After undo, content should be restored
-        expect(editor.getHTML()).not.toContain('<b>');
-      }
+          expect(editor.canUndo()).toBe(true);
+          expect(editor.undo()).toBe(true);
+          // After undo, content is restored exactly
+          expect(editor.getHTML()).toBe(initialHtml);
+          expect(editor.getHTML()).not.toMatch(/<(b|strong)\b/);
+        }
+      );
     });
 
     it('should support redo after undo', () => {
-      editor.setHTML('<p>Test content</p>');
+      // History only records a state when an edit is pushed (setHTML does not
+      // push), undo needs two entries, and pushes within 500ms are grouped
+      // into one. So: record the typed content as a baseline via an input
+      // event, then apply bold more than 500ms later as a separate step.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        vi.setSystemTime(1_000_000);
+        editor.setHTML('<p>Test content</p>');
+        const ce = editor.getContentEditable();
+        ce.dispatchEvent(new Event('input'));
+        const baselineHtml = editor.getHTML();
 
-      // Apply formatting
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editor.applyBold();
+        vi.setSystemTime(1_000_000 + 1_000);
+        const sel = window.getSelection()!;
+        const range = document.createRange();
+        range.selectNodeContents(ce);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        editor.applyBold();
+        // applyBold relies on execCommand, which in a browser fires an input
+        // event that records the history step; jsdom does not, so fire it.
+        ce.dispatchEvent(new Event('input'));
+        const boldHtml = editor.getHTML();
+        expect(boldHtml).not.toBe(baselineHtml);
+        expect(boldHtml).toMatch(/<(b|strong)\b/);
 
-      if (editor.canUndo()) {
-        editor.undo();
+        expect(editor.canUndo()).toBe(true);
+        expect(editor.undo()).toBe(true);
+        expect(editor.getHTML()).toBe(baselineHtml);
+        expect(editor.getHTML()).not.toMatch(/<(b|strong)\b/);
 
-        // After undo, redo should be available
-        if (editor.canRedo()) {
-          const beforeRedo = editor.getHTML();
-          editor.redo();
-          const afterRedo = editor.getHTML();
-          // Redo should change the content back
-          expect(afterRedo).not.toBe(beforeRedo);
-        }
+        // After undo, redo should be available and bring the bold state back
+        expect(editor.canRedo()).toBe(true);
+        expect(editor.redo()).toBe(true);
+        expect(editor.getHTML()).toBe(boldHtml);
+        expect(editor.canRedo()).toBe(false);
+      } finally {
+        vi.useRealTimers();
       }
     });
 
@@ -1477,34 +1589,33 @@ describe('Preservation: Link Handling (Group A)', () => {
       // Set content with a link
       const linkHtml =
         '<p>Visit <a href="https://example.com" class="cometchat-rich-text__link">Example</a> site</p>';
-      editor.setHTML(linkHtml);
+      withUndoableStep(
+        editor,
+        linkHtml,
+        () => editor.applyBold(),
+        (htmlWithLink, boldHtml) => {
+          expect(htmlWithLink).toContain('Example');
+          expect(htmlWithLink).toContain('href="https://example.com"');
+          expect(boldHtml).toMatch(/<(b|strong)\b/);
 
-      const htmlWithLink = editor.getHTML();
-      expect(htmlWithLink).toContain('Example');
-
-      // Apply bold to all content (this pushes to history)
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editor.applyBold();
-
-      // Undo should restore the link content
-      if (editor.canUndo()) {
-        editor.undo();
-        const restoredHtml = editor.getHTML();
-        expect(restoredHtml).toContain('Example');
-      }
+          // Undo restores the link content exactly
+          expect(editor.canUndo()).toBe(true);
+          expect(editor.undo()).toBe(true);
+          expect(editor.getHTML()).toBe(htmlWithLink);
+          expect(editor.getContentEditable().querySelector('a')?.getAttribute('href')).toBe(
+            'https://example.com'
+          );
+        }
+      );
     });
 
     it('should handle multiple undo operations (property-based)', () => {
       /**
        * **Validates: Requirements 3.6**
        *
-       * Property: For any sequence of content changes, undo should not throw
-       * and should correctly report canUndo/canRedo state.
+       * Property: For any sequence of content changes, each change is one
+       * undo step: undo walks back through every prior state exactly, canUndo
+       * is false at the baseline, and redo walks forward again.
        */
       fc.assert(
         fc.property(
@@ -1515,30 +1626,26 @@ describe('Preservation: Link Handling (Group A)', () => {
             { minLength: 1, maxLength: 5 }
           ),
           texts => {
-            // Apply a series of content changes
-            for (const text of texts) {
-              editor.setHTML(`<p>${text}</p>`);
-              const ce = editor.getContentEditable();
-              const sel = window.getSelection()!;
-              const range = document.createRange();
-              range.selectNodeContents(ce);
-              sel.removeAllRanges();
-              sel.addRange(range);
-              editor.applyBold();
+            // History persists across property runs; start each from a fresh editor.
+            editor.destroy();
+            editor.getElement().remove();
+            editor = new RichTextEditor(createEditorConfig());
+            document.body.appendChild(editor.getElement());
+            // Each step replaces the content and bolds it
+            const htmls = recordUndoableSteps(
+              editor,
+              '<p>baseline</p>',
+              texts.map(text => () => {
+                editor.setHTML(`<p>${text}</p>`);
+                selectAllContent(editor);
+                editor.applyBold();
+              })
+            );
+            for (const html of htmls.slice(1)) {
+              expect(html).toMatch(/<(b|strong)\b/);
             }
 
-            // Undo all changes - should not throw
-            let undoCount = 0;
-            while (editor.canUndo() && undoCount < 20) {
-              expect(() => editor.undo()).not.toThrow();
-              undoCount++;
-            }
-
-            // After exhausting undo, canUndo should be false
-            expect(editor.canUndo()).toBe(false);
-
-            // Clear for next iteration
-            editor.clear();
+            expectFullUndoRedo(editor, htmls);
           }
         ),
         { numRuns: 10 }
@@ -2707,55 +2814,49 @@ describe('Preservation: Code Block / Inline Code (Group B)', () => {
      * formatting operations that the code block fixes might affect.
      */
     it('should undo inline formatting on normal text', () => {
-      editor.setHTML('<p>Test content</p>');
+      withUndoableStep(
+        editor,
+        '<p>Test content</p>',
+        () => editor.applyBold(),
+        (baselineHtml, boldHtml) => {
+          const ce = editor.getContentEditable();
+          // Verify bold was applied
+          expect(boldHtml).toMatch(/<(b|strong)\b/);
 
-      // Apply bold
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editor.applyBold();
-
-      // Verify bold was applied
-      const htmlAfterBold = ce.innerHTML.toLowerCase();
-      expect(htmlAfterBold.includes('<b>') || htmlAfterBold.includes('<strong>')).toBe(true);
-
-      // Undo
-      if (editor.canUndo()) {
-        editor.undo();
-        // Text should still be present
-        expect(ce.textContent).toContain('Test content');
-      }
+          expect(editor.canUndo()).toBe(true);
+          expect(editor.undo()).toBe(true);
+          expect(editor.getHTML()).toBe(baselineHtml);
+          expect(ce.querySelector('b, strong')).toBeNull();
+          expect(ce.textContent).toContain('Test content');
+        }
+      );
     });
 
     it('should handle undo/redo cycle for blockquote on normal text', () => {
-      editor.setHTML('<p>Quoted text</p>');
+      withUndoableStep(
+        editor,
+        '<p>Quoted text</p>',
+        () => editor.applyBlockquote(),
+        (baselineHtml, quotedHtml) => {
+          const ce = editor.getContentEditable();
+          // Verify blockquote was applied
+          expect(ce.querySelector('blockquote')).not.toBeNull();
 
-      // Apply blockquote
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editor.applyBlockquote();
+          // Undo
+          expect(editor.canUndo()).toBe(true);
+          expect(editor.undo()).toBe(true);
+          expect(editor.getHTML()).toBe(baselineHtml);
+          expect(ce.querySelector('blockquote')).toBeNull();
+          expect(ce.textContent).toContain('Quoted text');
 
-      // Verify blockquote was applied
-      expect(ce.querySelector('blockquote')).toBeTruthy();
-
-      // Undo
-      if (editor.canUndo()) {
-        editor.undo();
-        expect(ce.textContent).toContain('Quoted text');
-
-        // Redo
-        if (editor.canRedo()) {
-          editor.redo();
+          // Redo
+          expect(editor.canRedo()).toBe(true);
+          expect(editor.redo()).toBe(true);
+          expect(editor.getHTML()).toBe(quotedHtml);
+          expect(ce.querySelector('blockquote')).not.toBeNull();
           expect(ce.textContent).toContain('Quoted text');
         }
-      }
+      );
     });
 
     it('should preserve undo/redo state consistency for generated format sequences (property-based)', () => {
@@ -2763,7 +2864,8 @@ describe('Preservation: Code Block / Inline Code (Group B)', () => {
        * **Validates: Requirements 3.6**
        *
        * Property: For any sequence of formatting operations on normal text,
-       * undo should not throw and canUndo/canRedo should remain consistent.
+       * each operation is one undo step: undo restores every prior state
+       * exactly and redo re-applies them, with the text preserved throughout.
        */
       const formatOps = [
         () => editor.applyBold(),
@@ -2776,39 +2878,21 @@ describe('Preservation: Code Block / Inline Code (Group B)', () => {
         fc.property(
           fc.array(fc.integer({ min: 0, max: 3 }), { minLength: 1, maxLength: 4 }),
           opIndices => {
-            editor.setHTML('<p>undo redo test</p>');
+            // History persists across property runs; start each from a fresh editor.
+            editor.destroy();
+            editor.getElement().remove();
+            editor = new RichTextEditor(createEditorConfig());
+            document.body.appendChild(editor.getElement());
+            const htmls = recordUndoableSteps(
+              editor,
+              '<p>undo redo test</p>',
+              opIndices.map(idx => () => formatOps[idx]())
+            );
 
-            const ce = editor.getContentEditable();
-            for (const idx of opIndices) {
-              const sel = window.getSelection()!;
-              const range = document.createRange();
-              range.selectNodeContents(ce);
-              sel.removeAllRanges();
-              sel.addRange(range);
-              formatOps[idx]();
-            }
-
-            // Undo all - should not throw
-            let undoCount = 0;
-            while (editor.canUndo() && undoCount < 20) {
-              expect(() => editor.undo()).not.toThrow();
-              undoCount++;
-            }
-            expect(editor.canUndo()).toBe(false);
-
-            // Redo all - should not throw
-            let redoCount = 0;
-            while (editor.canRedo() && redoCount < 20) {
-              expect(() => editor.redo()).not.toThrow();
-              redoCount++;
-            }
-            expect(editor.canRedo()).toBe(false);
+            expectFullUndoRedo(editor, htmls);
 
             // Text should still be present
-            expect(ce.textContent).toContain('undo redo test');
-
-            // Clear for next iteration
-            editor.clear();
+            expect(editor.getContentEditable().textContent).toContain('undo redo test');
           }
         ),
         { numRuns: 10 }
@@ -3716,96 +3800,88 @@ describe('Preservation: List Formatting (Group C)', () => {
      * Text content should be preserved through the undo/redo cycle.
      */
     it('should undo bullet list application', () => {
-      editor.setHTML('<p>Undo list test</p>');
+      withUndoableStep(
+        editor,
+        '<p>Undo list test</p>',
+        () => editor.applyBulletList(),
+        baselineHtml => {
+          const ce = editor.getContentEditable();
+          expect(ce.querySelector('ul')).not.toBeNull();
 
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-
-      editor.applyBulletList();
-      expect(ce.querySelector('ul')).toBeTruthy();
-
-      // Undo
-      if (editor.canUndo()) {
-        editor.undo();
-        expect(ce.textContent).toContain('Undo list test');
-      }
+          expect(editor.canUndo()).toBe(true);
+          expect(editor.undo()).toBe(true);
+          expect(editor.getHTML()).toBe(baselineHtml);
+          expect(ce.querySelector('ul')).toBeNull();
+          expect(ce.textContent).toContain('Undo list test');
+        }
+      );
     });
 
     it('should undo ordered list application', () => {
-      editor.setHTML('<p>Undo ordered test</p>');
+      withUndoableStep(
+        editor,
+        '<p>Undo ordered test</p>',
+        () => editor.applyOrderedList(),
+        baselineHtml => {
+          const ce = editor.getContentEditable();
+          expect(ce.querySelector('ol')).not.toBeNull();
 
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-
-      editor.applyOrderedList();
-      expect(ce.querySelector('ol')).toBeTruthy();
-
-      // Undo
-      if (editor.canUndo()) {
-        editor.undo();
-        expect(ce.textContent).toContain('Undo ordered test');
-      }
+          expect(editor.canUndo()).toBe(true);
+          expect(editor.undo()).toBe(true);
+          expect(editor.getHTML()).toBe(baselineHtml);
+          expect(ce.querySelector('ol')).toBeNull();
+          expect(ce.textContent).toContain('Undo ordered test');
+        }
+      );
     });
 
     it('should support redo after undoing list application', () => {
-      editor.setHTML('<p>Redo list test</p>');
+      // See 'should support redo after undo': record a baseline entry via an
+      // input event, then apply the list outside the 500ms grouping window so
+      // it is a separate, undoable step.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        vi.setSystemTime(1_000_000);
+        editor.setHTML('<p>Redo list test</p>');
+        const ce = editor.getContentEditable();
+        ce.dispatchEvent(new Event('input'));
+        expect(ce.querySelector('ul')).toBeNull();
 
-      const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
+        vi.setSystemTime(1_000_000 + 1_000);
+        const sel = window.getSelection()!;
+        const range = document.createRange();
+        range.selectNodeContents(ce);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        editor.applyBulletList();
+        expect(ce.querySelector('ul')).not.toBeNull();
 
-      editor.applyBulletList();
+        expect(editor.canUndo()).toBe(true);
+        expect(editor.undo()).toBe(true);
+        expect(ce.querySelector('ul')).toBeNull();
+        expect(ce.textContent).toContain('Redo list test');
 
-      if (editor.canUndo()) {
-        editor.undo();
-
-        if (editor.canRedo()) {
-          editor.redo();
-          // Text should still be present after redo
-          expect(ce.textContent).toContain('Redo list test');
-        }
+        expect(editor.canRedo()).toBe(true);
+        expect(editor.redo()).toBe(true);
+        // The list is back after redo, with its text intact
+        expect(ce.querySelector('ul')).not.toBeNull();
+        expect(ce.textContent).toContain('Redo list test');
+      } finally {
+        vi.useRealTimers();
       }
     });
 
     it('should not throw on undo/redo with list operations', () => {
-      editor.setHTML('<p>Safe undo test</p>');
-
+      const htmls = recordUndoableSteps(editor, '<p>Safe undo test</p>', [
+        () => editor.applyOrderedList(),
+      ]);
       const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
-      const range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
+      expect(ce.querySelector('ol')).not.toBeNull();
 
-      editor.applyOrderedList();
-
-      // Undo/redo should never throw
-      expect(() => {
-        let count = 0;
-        while (editor.canUndo() && count < 20) {
-          editor.undo();
-          count++;
-        }
-      }).not.toThrow();
-
-      expect(() => {
-        let count = 0;
-        while (editor.canRedo() && count < 20) {
-          editor.redo();
-          count++;
-        }
-      }).not.toThrow();
+      // Undo/redo walk the list step exactly, without throwing
+      expect(() => expectFullUndoRedo(editor, htmls)).not.toThrow();
+      expect(ce.querySelector('ol')).not.toBeNull();
+      expect(ce.textContent).toContain('Safe undo test');
     });
 
     it('should preserve text through undo/redo cycle for generated list operations (property-based)', () => {
@@ -3813,7 +3889,8 @@ describe('Preservation: List Formatting (Group C)', () => {
        * **Validates: Requirements 3.6**
        *
        * Property: For any plain text and list type, applying the list format
-       * then undoing/redoing should not throw and should preserve the text content.
+       * is one undo step: undo restores the plain paragraph exactly, redo
+       * restores the list, and the text content is preserved.
        */
       fc.assert(
         fc.property(
@@ -3822,43 +3899,32 @@ describe('Preservation: List Formatting (Group C)', () => {
             .string({ minLength: 1, maxLength: 30 })
             .filter(s => s.trim().length > 0 && !/[<>&]/.test(s)),
           (listType, text) => {
-            editor.setHTML(`<p>${text}</p>`);
-
+            // History persists across property runs; start each from a fresh editor.
+            editor.destroy();
+            editor.getElement().remove();
+            editor = new RichTextEditor(createEditorConfig());
+            document.body.appendChild(editor.getElement());
+            const tag = listType === 'ordered' ? 'ol' : 'ul';
+            const htmls = recordUndoableSteps(editor, `<p>${text}</p>`, [
+              () => (listType === 'ordered' ? editor.applyOrderedList() : editor.applyBulletList()),
+            ]);
             const ce = editor.getContentEditable();
-            const sel = window.getSelection()!;
-            const range = document.createRange();
-            range.selectNodeContents(ce);
-            sel.removeAllRanges();
-            sel.addRange(range);
+            expect(ce.querySelector(tag)).not.toBeNull();
 
-            // Apply list
-            if (listType === 'ordered') {
-              editor.applyOrderedList();
-            } else {
-              editor.applyBulletList();
-            }
-
-            // Undo all - should not throw
-            let undoCount = 0;
-            while (editor.canUndo() && undoCount < 20) {
-              expect(() => editor.undo()).not.toThrow();
-              undoCount++;
-            }
+            expect(editor.canUndo()).toBe(true);
+            expect(editor.undo()).toBe(true);
+            expect(editor.getHTML()).toBe(htmls[0]);
+            expect(ce.querySelector(tag)).toBeNull();
             expect(editor.canUndo()).toBe(false);
 
-            // Redo all - should not throw
-            let redoCount = 0;
-            while (editor.canRedo() && redoCount < 20) {
-              expect(() => editor.redo()).not.toThrow();
-              redoCount++;
-            }
+            expect(editor.canRedo()).toBe(true);
+            expect(editor.redo()).toBe(true);
+            expect(editor.getHTML()).toBe(htmls[1]);
+            expect(ce.querySelector(tag)).not.toBeNull();
             expect(editor.canRedo()).toBe(false);
 
             // Text should still be present
             expect(ce.textContent).toContain(text);
-
-            // Clear for next iteration
-            editor.clear();
           }
         ),
         { numRuns: 15 }
@@ -3866,31 +3932,23 @@ describe('Preservation: List Formatting (Group C)', () => {
     });
 
     it('should handle multiple list type switches with undo/redo', () => {
-      editor.setHTML('<p>Switch list types</p>');
-
+      const htmls = recordUndoableSteps(editor, '<p>Switch list types</p>', [
+        () => editor.applyBulletList(),
+        () => editor.applyOrderedList(),
+      ]);
       const ce = editor.getContentEditable();
-      const sel = window.getSelection()!;
+      expect(ce.querySelector('ol')).not.toBeNull();
+      expect(ce.querySelector('ul')).toBeNull();
 
-      // Apply bullet list
-      let range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editor.applyBulletList();
-
-      // Switch to ordered list
-      range = document.createRange();
-      range.selectNodeContents(ce);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editor.applyOrderedList();
-
-      // Undo all
-      let undoCount = 0;
-      while (editor.canUndo() && undoCount < 20) {
-        expect(() => editor.undo()).not.toThrow();
-        undoCount++;
-      }
+      // Undo: ordered -> bullet -> plain
+      expect(editor.undo()).toBe(true);
+      expect(editor.getHTML()).toBe(htmls[1]);
+      expect(ce.querySelector('ul')).not.toBeNull();
+      expect(ce.querySelector('ol')).toBeNull();
+      expect(editor.undo()).toBe(true);
+      expect(editor.getHTML()).toBe(htmls[0]);
+      expect(ce.querySelector('ul, ol')).toBeNull();
+      expect(editor.canUndo()).toBe(false);
 
       // Text should be preserved
       expect(ce.textContent).toContain('Switch list types');
@@ -6290,7 +6348,16 @@ describe('Preservation: Copy-Paste and Markdown (Group F)', () => {
         fc.property(
           fc
             .string({ minLength: 1, maxLength: 60 })
-            .filter(s => s.trim().length > 0 && !/[<>&\n\r*_`\[\]\(\)]/.test(s)),
+            // Plain text only: pasted text goes through markdownToHtml, so leave out the inline
+            // markers (* _ ` and links) and the line-start ones it turns into blocks: headings
+            // ("# "), numbered and bulleted list items ("1. ", "- "). Markdown paste has its own
+            // tests.
+            .filter(
+              s =>
+                s.trim().length > 0 &&
+                !/[<>&\n\r*_`\[\]\(\)]/.test(s) &&
+                !/^\s*(#{1,3} |\d+\. |- )/.test(s)
+            ),
           text => {
             editor.clear();
             placeCaretAtStartPF();
@@ -6434,8 +6501,10 @@ describe('Preservation: Copy-Paste and Markdown (Group F)', () => {
       editor.setHTML('<p><em>Italic text</em> here</p>');
 
       const mentionFormat = editor.getTextWithMentionFormat();
-      // Should contain markdown italic markers
-      expect(mentionFormat).toContain('*Italic text*');
+      // Italic emits `_text_`, not `*text*`: `__` is already taken by underline,
+      // so single `_` is what distinguishes the two. The renderer accepts both
+      // markers on the way back in.
+      expect(mentionFormat).toContain('_Italic text_');
     });
 
     it('should return markdown from getTextWithMentionFormat for link content', () => {

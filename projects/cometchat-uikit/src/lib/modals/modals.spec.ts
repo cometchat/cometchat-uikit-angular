@@ -123,16 +123,6 @@ describe('CometChatActionsView', () => {
     const action = new CometChatActionsView({ id: 'view-3', title: 'Test' });
     expect(action).toBeInstanceOf(CometChatActions);
   });
-
-  it('should accept a function as customView', () => {
-    const viewFactory = (_callbacks: any) => ({}) as any;
-    const action = new CometChatActionsView({
-      id: 'view-4',
-      title: 'Dynamic',
-      customView: viewFactory,
-    });
-    expect(typeof action.customView).toBe('function');
-  });
 });
 
 // ---------------------------------------------------------------------------

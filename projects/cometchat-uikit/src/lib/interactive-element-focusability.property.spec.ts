@@ -573,9 +573,14 @@ describe('Property 17: Interactive Element Focusability', () => {
           const el: HTMLElement = fixture.nativeElement;
           const interactiveElements = getInteractiveElements(el);
 
-          for (const interactiveEl of interactiveElements) {
-            expect(isElementFocusable(interactiveEl)).toBe(true);
-          }
+          // Avatar is purely presentational: it renders as an image
+          // (role="img"), so there are no interactive elements at all and
+          // therefore none that could be unfocusable.
+          expect(interactiveElements).toEqual([]);
+          const avatar = el.querySelector('.cometchat-avatar');
+          expect(avatar).not.toBeNull();
+          expect(avatar!.getAttribute('role')).toBe('img');
+          expect(avatar!.getAttribute('aria-label')).toContain(name);
 
           fixture.destroy();
         }

@@ -23,7 +23,7 @@ import {
 } from '@angular/core';
 import { CometChatStickersKeyboardComponent } from './cometchat-stickers-keyboard.component';
 import type { StickerClickEvent, StickerSet } from './cometchat-stickers-keyboard.component';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Mock Data
