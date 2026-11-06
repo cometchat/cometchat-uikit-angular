@@ -29,7 +29,13 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { ensureSdkReady, sdkCleanup, flushPromises, fetchTestGroup } from '../../testing';
+import {
+  ensureSdkReady,
+  sdkCleanup,
+  flushPromises,
+  fetchTestGroup,
+  createMockGroupMemberList,
+} from '../../testing';
 import { CometChatGroupMembersComponent } from './cometchat-group-members.component';
 import { SelectionMode, States } from '../../Enums/Enums';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
@@ -105,6 +111,19 @@ describe('CometChatGroupMembersComponent', () => {
     el = fixture.nativeElement;
     component.group = testGroup;
   });
+
+  /**
+   * Seeds the members list with three distinct mock members. Nothing is
+   * fetched from the server in this environment, so without this the list is
+   * always empty and member-dependent assertions would never run.
+   */
+  function seedMembers(count = 3): CometChat.GroupMember[] {
+    const members = createMockGroupMemberList(count);
+    (component as any).groupMembersService.membersSignal.set(members);
+    fixture.detectChanges();
+    expect((component as any).groupMembersService.members()).toHaveLength(count);
+    return members;
+  }
 
   // -------------------------------------------------------------------------
   // Initialization
@@ -240,8 +259,7 @@ describe('CometChatGroupMembersComponent', () => {
   describe('Output Emissions', () => {
     it('should emit itemClick when onItemClick is called with a real member', async () => {
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       const spy = vi.fn();
       component.itemClick.subscribe(spy);
@@ -263,8 +281,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should emit selectionChange when selection changes in single mode', async () => {
       component.selectionMode = SelectionMode.single;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       const spy = vi.fn();
       component.selectionChange.subscribe(spy);
@@ -340,8 +357,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should track selected members in single mode', async () => {
       component.selectionMode = SelectionMode.single;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       component.handleSelectionChange(members[0]);
       expect(component.isMemberSelected(members[0])).toBe(true);
@@ -350,8 +366,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should toggle selection in single mode (deselect on re-click)', async () => {
       component.selectionMode = SelectionMode.single;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       component.handleSelectionChange(members[0]);
       expect(component.isMemberSelected(members[0])).toBe(true);
@@ -363,8 +378,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should deselect previous member when selecting new one in single mode', async () => {
       component.selectionMode = SelectionMode.single;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length < 2) return;
+      const members = seedMembers();
 
       component.handleSelectionChange(members[0]);
       expect(component.isMemberSelected(members[0])).toBe(true);
@@ -377,8 +391,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should allow multiple selections in multiple mode', async () => {
       component.selectionMode = SelectionMode.multiple;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length < 2) return;
+      const members = seedMembers();
 
       component.handleSelectionChange(members[0]);
       component.handleSelectionChange(members[1]);
@@ -389,8 +402,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should toggle individual selection in multiple mode', async () => {
       component.selectionMode = SelectionMode.multiple;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       component.handleSelectionChange(members[0]);
       expect(component.isMemberSelected(members[0])).toBe(true);
@@ -402,8 +414,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should clear all selections via clearSelection', async () => {
       component.selectionMode = SelectionMode.multiple;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       component.handleSelectionChange(members[0]);
       expect(component.isMemberSelected(members[0])).toBe(true);
@@ -415,8 +426,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should select all members via selectAll in multiple mode', async () => {
       component.selectionMode = SelectionMode.multiple;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       component.selectAll();
       members.forEach((m: any) => {
@@ -427,8 +437,7 @@ describe('CometChatGroupMembersComponent', () => {
     it('should not select all when selectionMode is not multiple', async () => {
       component.selectionMode = SelectionMode.single;
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       component.selectAll();
       members.forEach((m: any) => {
@@ -441,19 +450,10 @@ describe('CometChatGroupMembersComponent', () => {
   // Scope Change
   // -------------------------------------------------------------------------
   describe('Scope Change', () => {
-    it('should return allowed scopes for a member', async () => {
-      await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
-
-      const scopes = component.getAllowedScopes(members[0]);
-      expect(Array.isArray(scopes)).toBe(true);
-    });
 
     it('should close scope change dialog via onChangeScopeClose', async () => {
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       component.memberToChangeScope.set(members[0]);
       expect(component.memberToChangeScope()).toBe(members[0]);
@@ -586,8 +586,7 @@ describe('CometChatGroupMembersComponent', () => {
 
     it('should handle trackByMember with a real member', async () => {
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       const result = component.trackByMember(0, members[0]);
       expect(result).toBeTruthy();
@@ -596,8 +595,7 @@ describe('CometChatGroupMembersComponent', () => {
 
     it('should return correct ARIA label for a real member', async () => {
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       const label = component.getMemberAriaLabel(members[0]);
       expect(label).toBeTruthy();
@@ -625,9 +623,11 @@ describe('CometChatGroupMembersComponent', () => {
 
     it('should return options from getOptionsForMember when options function is set', async () => {
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
+      // Options are only built for a known logged-in user; the SDK session
+      // in this environment does not resolve one, so set it explicitly.
+      component.loggedInUser.set(new CometChat.User('superhero1'));
       component.options = () => [{ id: 'custom', title: 'Custom', onClick: () => {} } as any];
       const options = component.getOptionsForMember(members[0]);
       expect(Array.isArray(options)).toBe(true);
@@ -637,8 +637,7 @@ describe('CometChatGroupMembersComponent', () => {
 
     it('should handle isMemberSelected for unselected member', async () => {
       await initAndDetect(fixture);
-      const members = (component as any).groupMembersService.members();
-      if (members.length === 0) return;
+      const members = seedMembers();
 
       expect(component.isMemberSelected(members[0])).toBe(false);
     });

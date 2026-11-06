@@ -117,11 +117,18 @@ describe('Property 2 — @Output() names have no "on" prefix', () => {
   }
   const violations: Violation[] = [];
 
+  // Outputs that already shipped with an "on" prefix. Renaming one breaks every
+  // integrator's template binding, so they stay until a major version.
+  const SHIPPED_PUBLIC_API: Record<string, string> = {
+    // Card Messages (ENG-36336), public since v5.0.4.
+    onCardAction: 'cometchat-card-bubble.component.ts',
+  };
+
   for (const file of allFiles) {
     const source = fs.readFileSync(file, 'utf-8');
     const outputs = extractOutputNames(source);
     for (const output of outputs) {
-      if (/^on[A-Z]/.test(output.name)) {
+      if (/^on[A-Z]/.test(output.name) && SHIPPED_PUBLIC_API[output.name] !== path.basename(file)) {
         violations.push({ file, line: output.line, name: output.name });
       }
     }

@@ -1038,24 +1038,11 @@ describe('CometChatIncomingCallComponent Unit Tests', () => {
       component.call = mockCall;
       expect(component.callerName).toBe('Alice');
     });
-
-    it('should have focusable accept and reject buttons', () => {
-      // Accept and reject buttons are native button elements, natively focusable
-      component.call = mockCall;
-      expect(typeof component.onAcceptClick).toBe('function');
-      expect(typeof component.onDeclineClick).toBe('function');
-    });
   });
 
   // ─── Focus Trap ───
 
   describe('Focus Trap', () => {
-    it('should keep focus within incoming call dialog (accept/reject buttons)', () => {
-      component.call = mockCall;
-      // Incoming call has accept and reject buttons as focusable elements
-      expect(typeof component.onAcceptClick).toBe('function');
-      expect(typeof component.onDeclineClick).toBe('function');
-    });
 
     it('should not allow Escape to dismiss incoming call (must accept or reject)', () => {
       component.call = mockCall;

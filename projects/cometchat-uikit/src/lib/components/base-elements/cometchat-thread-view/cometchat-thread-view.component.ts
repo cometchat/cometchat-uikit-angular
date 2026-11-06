@@ -292,7 +292,7 @@ export class CometChatThreadViewComponent implements OnInit, OnDestroy {
   private announceThreadOpened(): void {
     const message = CometChatLocalize.getLocalizedString('accessibility_thread_opened').replace(
       '{count}',
-      this.replyCount.toString()
+      () => this.replyCount.toString()
     );
     this.liveAnnouncer.announce(message, 'polite');
   }

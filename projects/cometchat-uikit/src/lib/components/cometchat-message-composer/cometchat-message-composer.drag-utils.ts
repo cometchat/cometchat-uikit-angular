@@ -6,6 +6,7 @@ import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKitUtility} from '../../CometChatUIKitUtility';
 import {CometChatLogger} from '../../utils/CometChatLogger';
+import {markMessageFailed} from '../../utils/message-metadata-utils';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
 import {MessageComposerService} from '../../services/message-composer.service';
 
@@ -157,9 +158,11 @@ export async function sendFilesDirectlyImpl(ctx: DragUtilsContext, files: File[]
         lastSentMessage = mediaMessage;
         CometChatMessageEvents.ccMessageSent.next({ message: mediaMessage, status: MessageStatus.success });
       } else {
+        markMessageFailed(pendingMediaMessage, undefined);
         CometChatMessageEvents.ccMessageSent.next({ message: pendingMediaMessage, status: MessageStatus.error });
       }
     } catch (error) {
+      markMessageFailed(pendingMediaMessage, error);
       CometChatMessageEvents.ccMessageSent.next({ message: pendingMediaMessage, status: MessageStatus.error });
       ctx.emitError(error);
       CometChatLogger.error('CometChatMessageComposer', 'Error sending media message:', error);

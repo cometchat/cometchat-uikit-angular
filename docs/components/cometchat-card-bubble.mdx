@@ -1,0 +1,131 @@
+---
+title: "CometChatCardBubbleComponent"
+description: "Renders a developer card message (category card) using the CometChat card renderer and forwards card actions to your app"
+---
+
+The `CometChatCardBubbleComponent` renders persisted developer **Card Messages** (`message.category === "card"`). It plays the same role as the text bubble: the surrounding message bubble supplies the container, receipts, reactions, options, reply and thread, and this component only supplies the content view, which is the rendered card.
+
+## Overview
+
+- **Render-only**: The raw payload from `message.getCard()` is passed to the `cometchat-card-view` renderer from `@cometchat/cards-angular` without transformation (a string is passed as-is; an object is `JSON.stringify`-ed)
+- **Fallback text**: If the payload is empty or missing, a single line of text is shown instead of a card
+- **Action forwarding**: Card actions are forwarded on two channels, the `onCardAction` output and the global `CometChatMessageEvents.ccCardActionClicked` event. The bubble performs no action behaviour itself
+- **Theming**: `themeMode` and `themeOverride` are passed straight to the card renderer
+- **Automatic routing**: `CometChatMessageBubble` renders this bubble for messages with category `card`
+
+## Basic Usage
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatCardBubbleComponent, CardBubbleAction } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-card-message',
+  standalone: true,
+  imports: [CometChatCardBubbleComponent],
+  template: `
+    <cometchat-card-bubble
+      [message]="cardMessage"
+      themeMode="light"
+      (onCardAction)="handleCardAction($event)"
+    ></cometchat-card-bubble>
+  `
+})
+export class CardMessageComponent {
+  cardMessage!: CometChat.CardMessage;
+
+  handleCardAction(event: CardBubbleAction): void {
+    console.log('Card action on message', event.message.getId(), event.action);
+  }
+}
+```
+
+### Handling Actions Globally
+
+Inside the message list, card bubbles are rendered for you and you cannot bind `onCardAction`. Subscribe to `ccCardActionClicked` instead:
+
+```typescript
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { CometChatMessageEvents, ICardActionEvent } from '@cometchat/chat-uikit-angular';
+
+@Component({ selector: 'app-chat', standalone: true, template: `...` })
+export class ChatComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
+
+  ngOnInit(): void {
+    CometChatMessageEvents.subscribeOnCardActionClicked((event: ICardActionEvent) => {
+      // event.action is the renderer's raw action object, forwarded untouched
+      console.log(event.message?.getId(), event.action, event.elementId);
+    }, this.destroyRef);
+  }
+}
+```
+
+<Warning>
+  Every action is emitted on **both** channels. If you render the bubble yourself and also subscribe to `ccCardActionClicked`, handle the action on one channel only, or de-duplicate using the message id.
+</Warning>
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.CardMessage` | **required** | The card message to render. Its payload is read from `getCard()` |
+| `themeMode` | `CometChatCardThemeMode` | `'auto'` | Theme mode passed to the card renderer: `'auto' \| 'light' \| 'dark'` |
+| `themeOverride` | `CometChatCardThemeOverride` | `undefined` | Optional theme overrides passed to the card renderer |
+
+`CometChatCardThemeMode` and `CometChatCardThemeOverride` are types from `@cometchat/cards-angular`.
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `onCardAction` | `CardBubbleAction` | Emitted when the user triggers an action on the card. Payload: `{ message: CometChat.CardMessage; action: unknown }`, where `action` is the renderer's raw action object |
+
+### Global Event: `ccCardActionClicked`
+
+Each card action is also published on `CometChatMessageEvents.ccCardActionClicked` (`Subject<ICardActionEvent>`):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `message` | `CometChat.BaseMessage \| null` | The owning message. For this bubble it is the `CardMessage` |
+| `action` | `unknown` | The renderer's raw action, forwarded untouched |
+| `elementId` | `string` (optional) | The renderer element id that emitted the action |
+| `cardJson` | `string` (optional) | The raw card JSON the action came from |
+
+The same event is also published for agent cards by `CometChatAIAssistantMessageBubble` (where `message` is the `AIAssistantMessage`) and `CometChatStreamMessageBubble` (where `message` can be `null` while the agent run is still streaming).
+
+## Fallback Text Behaviour
+
+The card is drawn only when the payload is non-empty. A payload is treated as empty when `getCard()` returns `null`/`undefined`, a blank string, or an object with no keys, or when `getCard()` throws.
+
+When the payload is empty, the bubble shows a single text line chosen in this order:
+
+1. `message.getFallbackText()`
+2. `message.getText()`
+3. The localized string `card_message` ("Card Message")
+
+Errors thrown by either getter are treated as an empty string.
+
+## Styling
+
+The bubble has no component-specific CSS variables. The card's own look is controlled by the renderer through `themeMode` and `themeOverride`.
+
+| Class | Element |
+|-------|---------|
+| `.cometchat-card-bubble` | Root flex column, full width |
+| `.cometchat-card-bubble__card` | The `cometchat-card-view` renderer |
+| `.cometchat-card-bubble__fallback` | Fallback text line |
+
+The fallback text uses these theme tokens:
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-font-body-regular` | Fallback text font | `400 14px/20px sans-serif` |
+| `--cometchat-text-color-primary` | Fallback text colour | `inherit` |
+
+## Related Components
+
+- **CometChatMessageBubble**: Renders this bubble for messages with category `card`
+- **CometChatAIAssistantMessageBubble**: Renders agent cards and publishes the same `ccCardActionClicked` event
+- **CometChatTextBubble**: The equivalent content view for text messages

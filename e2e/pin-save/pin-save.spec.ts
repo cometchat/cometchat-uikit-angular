@@ -1,5 +1,15 @@
-import { test, expect, Page, Locator } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import {
+  loginToApp,
+  openConversation,
+  scrollToLatestMessage,
+  conversationRow,
+  getUserName,
+  sendTextAs,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  uniqueTag,
+} from '../helpers';
 
 /**
  * E2E Tests — Pin message, Save message, Pin conversation
@@ -12,15 +22,14 @@ import { loginToApp } from '../helpers';
  *   - the confirmation dialog, which guards REMOVAL only
  *   - Pin/Unpin conversation in the conversation row menu
  *
- * REQUIRES the feature gates: `enablePinMessage` / `enableSaveMessage` via
- * COMETCHAT_GLOBAL_CONFIG, and a Chat SDK exposing the pin/save API
- * (4.1.14-beta-9+, excluding beta-10 whose typings dropped it). With a gate off
- * the options never render and the affected tests skip rather than fail — a red
- * suite should mean a regression, not a config difference.
+ * The sample app turns pin and save on (`enablePinMessage` / `enableSaveMessage`
+ * in app.config.ts), so a missing control is a failure, never a skip. Pin
+ * conversation follows the app's plan (`isPinConversationEnabled`), so it needs
+ * the feature enabled for the E2E app in the CometChat dashboard.
  *
- * Tolerant by design, matching the rest of this suite: the backend is seeded but
- * not exclusively owned, so each test guards on the state it needs being present
- * instead of asserting a fixed fixture.
+ * Every test works on a fresh message SECONDARY_USER sends to PRIMARY_USER over
+ * REST, found by its unique text, so tests never depend on each other or on
+ * whatever is already pinned or saved.
  *
  * @see ENG-37915
  */
@@ -36,54 +45,119 @@ const PINNED_PANEL = '.cometchat-pinned-messages';
 const SAVED_PANEL = '.cometchat-saved-messages';
 const PINNED_ROW = '.cometchat-pinned-messages__item';
 const SAVED_ROW = '.cometchat-saved-messages__row';
-const CONFIRM_DIALOG = '.cometchat-confirm-dialog, [class*="confirm-dialog"]';
+const CONFIRM_DIALOG = '.cometchat-pin-save-confirm-dialog';
 
-/** Open the first conversation and wait for its messages. */
-async function openFirstConversation(page: Page): Promise<boolean> {
-  const conversation = page.locator('.cometchat-conversation-item').first();
-  const hasConversation = await conversation.isVisible({ timeout: 30_000 }).catch(() => false);
-  if (!hasConversation) return false;
-  await conversation.click();
-  const bubble = page.locator('.cometchat-message-bubble').first();
-  const hasMessages = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-  if (!hasMessages) return false;
-  await page.waitForTimeout(1500);
-  return true;
+/** The list row of the most recent message containing `text`. */
+const rowWithText = (page: Page, text: string) =>
+  page.locator('cometchat-message-list .cometchat-message-list__message').filter({ hasText: text }).last();
+
+/**
+ * Send a fresh message from George to Andrew, open their chat at the latest
+ * message and return the message's row.
+ */
+async function openChatWithFreshMessage(page: Page, label: string): Promise<{ text: string; row: Locator }> {
+  // Plain words only: moderation's AI scam rule blocked "Pin-save offer <tag>".
+  const text = `Pin-save ${label} ${uniqueTag()}`;
+  await sendTextAs(SECONDARY_USER, PRIMARY_USER, text);
+  await openConversation(page, await getUserName(SECONDARY_USER));
+  await scrollToLatestMessage(page);
+  const row = rowWithText(page, text);
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  return { text, row };
 }
 
 /**
  * Open a message's action sheet and step into Organise.
  *
  * Pin and Save live behind that submenu, so every path to them goes through
- * hover → "More options" → Organise. Returns false when any step is absent,
- * which is how a disabled feature gate surfaces.
+ * hover → "More options" → Organise. Retried as a whole: the hover that reveals
+ * "More options" can be lost when the list re-renders.
  */
-async function openOrganiseMenu(page: Page, bubble: Locator): Promise<boolean> {
-  const body = bubble.locator('.cometchat-message-bubble__body').first();
-  if (!(await body.isVisible({ timeout: 5_000 }).catch(() => false))) return false;
-
-  await body.hover();
-  await page.waitForTimeout(400);
-
-  const more = bubble.getByRole('button', { name: 'More options' });
-  if (!(await more.isVisible({ timeout: 3_000 }).catch(() => false))) return false;
-  await more.click();
-  await page.waitForTimeout(400);
-
+async function openOrganiseMenu(page: Page, row: Locator): Promise<void> {
   const organise = page.getByRole('menuitem', { name: ORGANISE_GROUP });
-  if (!(await organise.isVisible({ timeout: 3_000 }).catch(() => false))) return false;
-  // A submenu opens on hover, so this reveals rather than activates.
-  await organise.hover();
-  await page.waitForTimeout(500);
-  return true;
+  await expect(async () => {
+    await closeMenus(page);
+    await row.locator('.cometchat-message-bubble__body').first().hover();
+    await row.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+    await expect(organise).toBeVisible({ timeout: 2_000 });
+    // A submenu opens on hover, so this reveals rather than activates.
+    await organise.hover();
+    const anyAction = page.getByRole('menuitem', { name: PIN_OPTION })
+      .or(page.getByRole('menuitem', { name: UNPIN_OPTION }))
+      .or(page.getByRole('menuitem', { name: SAVE_OPTION }))
+      .or(page.getByRole('menuitem', { name: UNSAVE_OPTION }));
+    await expect(anyAction.first()).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
 }
 
-/** Dismiss any open menu/overlay so the next step starts clean. */
+/** Pick `option` from a message's Organise submenu. */
+async function organise(page: Page, row: Locator, option: RegExp): Promise<void> {
+  await openOrganiseMenu(page, row);
+  const item = page.getByRole('menuitem', { name: option });
+  await expect(item).toBeVisible({ timeout: 5_000 });
+  await item.click({ force: true });
+}
+
+/**
+ * Pin or save a message from its Organise submenu and wait for the server to accept it.
+ *
+ * The bubble's marker appears optimistically, before the request returns, and is
+ * withdrawn if the server refuses (e.g. the conversation's pin cap is full) — so the
+ * marker alone cannot show that the action happened. The request's response can.
+ */
+async function organiseConfirmed(page: Page, row: Locator, action: 'pin' | 'save'): Promise<void> {
+  const endpoint = new RegExp(`/messages/\\d+/${action}$`);
+  const response = page.waitForResponse(
+    (res) => res.request().method() === 'POST' && endpoint.test(new URL(res.url()).pathname)
+  );
+  await organise(page, row, action === 'pin' ? PIN_OPTION : SAVE_OPTION);
+  const res = await response;
+  expect(res.ok(), `${action} refused by the server: ${await res.text()}`).toBe(true);
+}
+
+/**
+ * Dismiss any open message menu so the next step starts clean: Escape until neither the
+ * "More options" menu (its Organise item) nor the Organise submenu (Pin/Save items) is showing.
+ */
 async function closeMenus(page: Page): Promise<void> {
-  await page.keyboard.press('Escape').catch(() => undefined);
-  await page.waitForTimeout(300);
-  await page.keyboard.press('Escape').catch(() => undefined);
-  await page.waitForTimeout(300);
+  const open = page
+    .getByRole('menuitem', { name: ORGANISE_GROUP })
+    .or(page.getByRole('menuitem', { name: PIN_OPTION }))
+    .or(page.getByRole('menuitem', { name: UNPIN_OPTION }))
+    .or(page.getByRole('menuitem', { name: SAVE_OPTION }))
+    .or(page.getByRole('menuitem', { name: UNSAVE_OPTION }))
+    .filter({ visible: true });
+  await expect(async () => {
+    if (await open.count()) await page.keyboard.press('Escape');
+    await expect(open).toHaveCount(0, { timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+}
+
+/** Open the Pinned Messages panel from the chat header's "More options" menu. */
+async function openPinnedPanel(page: Page): Promise<Locator> {
+  const header = page.locator('cometchat-message-header');
+  const entry = page.getByRole('menuitem', { name: /^Pinned messages$/i });
+  await expect(async () => {
+    await header.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+    await expect(entry).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+  await entry.click({ force: true });
+  const panel = page.locator(PINNED_PANEL);
+  await expect(panel).toBeVisible({ timeout: 10_000 });
+  return panel;
+}
+
+/** Open the Saved Messages panel from the conversations-list menu. */
+async function openSavedPanel(page: Page): Promise<Locator> {
+  const entry = page.getByRole('menuitem', { name: /^Saved messages$/i });
+  await expect(async () => {
+    await page.getByRole('button', { name: 'CometChat Selector' }).click({ timeout: 2_000 });
+    await expect(entry).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+  await entry.click({ force: true });
+  const panel = page.locator(SAVED_PANEL);
+  await expect(panel).toBeVisible({ timeout: 10_000 });
+  return panel;
 }
 
 test.describe('Pin & Save', () => {
@@ -98,21 +172,13 @@ test.describe('Pin & Save', () => {
 
   test.describe('Organise submenu', () => {
     test('offers Pin and Save for a message', async () => {
-      test.skip(!(await openFirstConversation(page)), 'no conversation with messages available');
+      const { row } = await openChatWithFreshMessage(page, 'menu');
 
-      const bubble = page.locator('.cometchat-message-bubble').first();
-      const opened = await openOrganiseMenu(page, bubble);
-      test.skip(!opened, 'pin/save feature gate appears to be off');
+      await openOrganiseMenu(page, row);
 
-      // One of Pin/Unpin and one of Save/Unsave must be present — which one
-      // depends on the message's current state, which we do not control.
-      const pinOrUnpin = page.getByRole('menuitem', { name: PIN_OPTION })
-        .or(page.getByRole('menuitem', { name: UNPIN_OPTION }));
-      const saveOrUnsave = page.getByRole('menuitem', { name: SAVE_OPTION })
-        .or(page.getByRole('menuitem', { name: UNSAVE_OPTION }));
-
-      await expect(pinOrUnpin.first()).toBeVisible({ timeout: 5_000 });
-      await expect(saveOrUnsave.first()).toBeVisible({ timeout: 5_000 });
+      // A fresh message is neither pinned nor saved, so the verbs are fixed.
+      await expect(page.getByRole('menuitem', { name: PIN_OPTION })).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByRole('menuitem', { name: SAVE_OPTION })).toBeVisible({ timeout: 5_000 });
 
       await closeMenus(page);
     });
@@ -122,199 +188,114 @@ test.describe('Pin & Save', () => {
 
   test.describe('saving a message', () => {
     test('saving marks the bubble, and unsaving asks first', async () => {
-      test.skip(!(await openFirstConversation(page)), 'no conversation with messages available');
+      const { row } = await openChatWithFreshMessage(page, 'save');
 
-      const bubble = page.locator('.cometchat-message-bubble').first();
-      test.skip(!(await openOrganiseMenu(page, bubble)), 'pin/save feature gate appears to be off');
-
-      const save = page.getByRole('menuitem', { name: SAVE_OPTION });
-      test.skip(!(await save.isVisible({ timeout: 3_000 }).catch(() => false)),
-        'message is already saved — nothing to save');
-
-      await save.click({ force: true });
-      await page.waitForTimeout(1500);
+      await organiseConfirmed(page, row, 'save');
 
       // The bubble gains a saved marker.
-      await expect(page.locator('.cometchat-message-bubble__saved-indicator').first())
-        .toBeVisible({ timeout: 8_000 });
+      await expect(row.locator('.cometchat-message-bubble__saved-indicator')).toBeVisible({ timeout: 8_000 });
 
       // Unsaving is destructive, so it must be confirmed. Saving was not.
-      test.skip(!(await openOrganiseMenu(page, bubble)), 'menu did not reopen');
-      const unsave = page.getByRole('menuitem', { name: UNSAVE_OPTION });
-      if (await unsave.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await unsave.click({ force: true });
-        await page.waitForTimeout(800);
-        await expect(page.locator(CONFIRM_DIALOG).first()).toBeVisible({ timeout: 5_000 });
-        await closeMenus(page);
-      }
+      await organise(page, row, UNSAVE_OPTION);
+      await expect(page.locator(CONFIRM_DIALOG).first()).toBeVisible({ timeout: 5_000 });
+      await closeMenus(page);
     });
   });
 
   // ==================== Pin / Unpin ====================
 
   test.describe('pinning a message', () => {
-    test('pinning marks the bubble, and unpinning asks first', async () => {
-      test.skip(!(await openFirstConversation(page)), 'no conversation with messages available');
+    test('pinning marks the bubble, and unpinning asks first @smoke', async () => {
+      const { row } = await openChatWithFreshMessage(page, 'pin');
 
-      const bubble = page.locator('.cometchat-message-bubble').first();
-      test.skip(!(await openOrganiseMenu(page, bubble)), 'pin/save feature gate appears to be off');
+      await organiseConfirmed(page, row, 'pin');
 
-      const pin = page.getByRole('menuitem', { name: PIN_OPTION });
-      // Pin is role-gated in groups: a participant never sees it, by design.
-      test.skip(!(await pin.isVisible({ timeout: 3_000 }).catch(() => false)),
-        'Pin not offered — already pinned, or the role cannot pin here');
+      await expect(row.locator('.cometchat-message-bubble__pinned-indicator')).toBeVisible({ timeout: 8_000 });
 
-      await pin.click({ force: true });
-      await page.waitForTimeout(1500);
-
-      await expect(page.locator('.cometchat-message-bubble__pinned-indicator').first())
-        .toBeVisible({ timeout: 8_000 });
-
-      test.skip(!(await openOrganiseMenu(page, bubble)), 'menu did not reopen');
-      const unpin = page.getByRole('menuitem', { name: UNPIN_OPTION });
-      if (await unpin.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await unpin.click({ force: true });
-        await page.waitForTimeout(800);
-        await expect(page.locator(CONFIRM_DIALOG).first()).toBeVisible({ timeout: 5_000 });
-        await closeMenus(page);
-      }
+      await organise(page, row, UNPIN_OPTION);
+      await expect(page.locator(CONFIRM_DIALOG).first()).toBeVisible({ timeout: 5_000 });
+      await closeMenus(page);
     });
   });
 
   // ==================== Pinned messages panel ====================
 
   test.describe('pinned messages panel', () => {
-    /** Open it from the chat header's overflow menu. */
-    async function openPinnedPanel(): Promise<boolean> {
-      const header = page.locator('.cometchat-message-header').first();
-      if (!(await header.isVisible({ timeout: 10_000 }).catch(() => false))) return false;
+    test('opens from the header and lists a pinned message', async () => {
+      const { text, row } = await openChatWithFreshMessage(page, 'pinned panel');
+      await organiseConfirmed(page, row, 'pin');
+      await expect(row.locator('.cometchat-message-bubble__pinned-indicator')).toBeVisible({ timeout: 8_000 });
 
-      const overflow = header.getByRole('button', { name: /more|options/i }).first();
-      if (!(await overflow.isVisible({ timeout: 5_000 }).catch(() => false))) return false;
-      await overflow.click();
-      await page.waitForTimeout(500);
+      const panel = await openPinnedPanel(page);
 
-      const entry = page.getByRole('menuitem', { name: /Pinned messages/i });
-      if (!(await entry.isVisible({ timeout: 3_000 }).catch(() => false))) return false;
-      await entry.click({ force: true });
-      await page.waitForTimeout(1200);
-      return true;
-    }
-
-    test('opens from the header and shows rows or an empty state', async () => {
-      test.skip(!(await openFirstConversation(page)), 'no conversation with messages available');
-      test.skip(!(await openPinnedPanel()), 'pinned messages entry not available');
-
-      const panel = page.locator(PINNED_PANEL);
-      await expect(panel).toBeVisible({ timeout: 5_000 });
-
-      // Either state is correct; the panel must simply not be blank.
-      const rows = panel.locator(PINNED_ROW);
-      const empty = panel.locator('.cometchat-pinned-messages__empty-title');
-      const hasRows = (await rows.count()) > 0;
-      const hasEmpty = await empty.isVisible({ timeout: 3_000 }).catch(() => false);
-      expect(hasRows || hasEmpty).toBe(true);
+      await expect(panel.locator(PINNED_ROW).filter({ hasText: text })).toBeVisible({ timeout: 10_000 });
     });
 
     test('a row click is forwarded — the panel is not inert', async () => {
       // Guards the regression where the row itself is role="button" and the
       // interactive-target guard swallowed every click, leaving the panel dead.
-      test.skip(!(await openFirstConversation(page)), 'no conversation with messages available');
-      test.skip(!(await openPinnedPanel()), 'pinned messages entry not available');
+      const { text, row } = await openChatWithFreshMessage(page, 'pinned click');
+      await organiseConfirmed(page, row, 'pin');
+      await expect(row.locator('.cometchat-message-bubble__pinned-indicator')).toBeVisible({ timeout: 8_000 });
 
-      const row = page.locator(PINNED_ROW).first();
-      test.skip(!(await row.isVisible({ timeout: 3_000 }).catch(() => false)),
-        'no pinned messages to click');
+      const panel = await openPinnedPanel(page);
+      const pinnedRow = panel.locator(PINNED_ROW).filter({ hasText: text });
+      await expect(pinnedRow).toBeVisible({ timeout: 10_000 });
+      await pinnedRow.click();
 
-      await row.click();
-      await page.waitForTimeout(1200);
-
-      // The host jumps the list to the message; the panel closing is the
-      // observable effect either way.
-      const stillOpen = await page.locator(PINNED_PANEL).isVisible().catch(() => false);
-      const listVisible = await page.locator('.cometchat-message-list').isVisible().catch(() => false);
-      expect(stillOpen || listVisible).toBe(true);
+      // The host jumps the list to the message, so it must be in view.
+      await expect(rowWithText(page, text)).toBeInViewport({ timeout: 8_000 });
     });
 
     test('closes from its close button', async () => {
-      test.skip(!(await openFirstConversation(page)), 'no conversation with messages available');
-      test.skip(!(await openPinnedPanel()), 'pinned messages entry not available');
+      await openConversation(page, await getUserName(SECONDARY_USER));
+      const panel = await openPinnedPanel(page);
 
-      const close = page.locator('.cometchat-pinned-messages__close').first();
-      test.skip(!(await close.isVisible({ timeout: 3_000 }).catch(() => false)), 'close button hidden');
+      const close = panel.locator('.cometchat-pinned-messages__close').first();
+      await expect(close).toBeVisible({ timeout: 5_000 });
       await close.click();
-      await expect(page.locator(PINNED_PANEL)).toBeHidden({ timeout: 5_000 });
+      await expect(panel).toBeHidden({ timeout: 5_000 });
     });
   });
 
   // ==================== Saved messages panel ====================
 
   test.describe('saved messages panel', () => {
-    /** Open it from the conversations-list menu. */
-    async function openSavedPanel(): Promise<boolean> {
-      const menu = page.locator('.cometchat-selector__menu-wrapper button, [class*="selector"] button')
-        .filter({ hasText: /^$/ })
-        .first();
-      const trigger = (await menu.isVisible({ timeout: 3_000 }).catch(() => false))
-        ? menu
-        : page.getByRole('button', { name: /more|options|menu/i }).first();
-      if (!(await trigger.isVisible({ timeout: 5_000 }).catch(() => false))) return false;
-      await trigger.click();
-      await page.waitForTimeout(500);
+    /** Save a fresh message, then open the panel; returns the message's text and its row in the panel. */
+    async function savedRowFor(label: string): Promise<{ text: string; savedRow: Locator }> {
+      const { text, row } = await openChatWithFreshMessage(page, label);
+      await organiseConfirmed(page, row, 'save');
+      await expect(row.locator('.cometchat-message-bubble__saved-indicator')).toBeVisible({ timeout: 8_000 });
 
-      const entry = page.getByText(/Saved messages/i).first();
-      if (!(await entry.isVisible({ timeout: 3_000 }).catch(() => false))) return false;
-      await entry.click({ force: true });
-      await page.waitForTimeout(1500);
-      return true;
+      const panel = await openSavedPanel(page);
+      const savedRow = panel.locator(SAVED_ROW).filter({ hasText: text });
+      await expect(savedRow).toBeVisible({ timeout: 10_000 });
+      return { text, savedRow };
     }
 
-    test('opens and shows rows or an empty state', async () => {
-      test.skip(!(await openSavedPanel()), 'saved messages entry not available');
-
-      const panel = page.locator(SAVED_PANEL);
-      await expect(panel).toBeVisible({ timeout: 5_000 });
-
-      const rows = panel.locator(SAVED_ROW);
-      const empty = panel.locator('.cometchat-saved-messages__empty-title');
-      const hasRows = (await rows.count()) > 0;
-      const hasEmpty = await empty.isVisible({ timeout: 3_000 }).catch(() => false);
-      expect(hasRows || hasEmpty).toBe(true);
+    test('opens and lists a saved message', async () => {
+      await savedRowFor('saved panel');
     });
 
     test('a row click is forwarded — the panel is not inert', async () => {
       // Same regression guard as the pinned panel: clicking a saved row did
       // nothing at all, because the row matched its own interactive guard.
-      test.skip(!(await openSavedPanel()), 'saved messages entry not available');
+      const { text, savedRow } = await savedRowFor('saved click');
 
-      const row = page.locator(SAVED_ROW).first();
-      test.skip(!(await row.isVisible({ timeout: 3_000 }).catch(() => false)),
-        'no saved messages to click');
+      await savedRow.click();
 
-      await row.click();
-      await page.waitForTimeout(1500);
-
-      // Clicking a row opens the source conversation, so the message list must
-      // be showing afterwards.
-      await expect(page.locator('.cometchat-message-list').first())
-        .toBeVisible({ timeout: 8_000 });
+      // Clicking a row opens the source conversation at that message.
+      await expect(rowWithText(page, text)).toBeVisible({ timeout: 10_000 });
     });
 
     test('unsaving from the panel asks for confirmation', async () => {
-      test.skip(!(await openSavedPanel()), 'saved messages entry not available');
+      const { savedRow } = await savedRowFor('saved unsave');
 
-      const row = page.locator(SAVED_ROW).first();
-      test.skip(!(await row.isVisible({ timeout: 3_000 }).catch(() => false)),
-        'no saved messages to unsave');
-
-      await row.hover();
-      await page.waitForTimeout(400);
-      const unsave = row.locator('.cometchat-saved-messages__unsave').first();
-      test.skip(!(await unsave.isVisible({ timeout: 3_000 }).catch(() => false)),
-        'unsave control hidden');
-
+      await savedRow.hover();
+      const unsave = savedRow.locator('.cometchat-saved-messages__unsave').first();
+      await expect(unsave).toBeVisible({ timeout: 5_000 });
       await unsave.click();
-      await page.waitForTimeout(800);
+
       await expect(page.locator(CONFIRM_DIALOG).first()).toBeVisible({ timeout: 5_000 });
       await closeMenus(page);
     });
@@ -324,26 +305,18 @@ test.describe('Pin & Save', () => {
 
   test.describe('pinning a conversation', () => {
     test('the row menu offers Pin or Unpin', async () => {
-      const conversation = page.locator('.cometchat-conversation-item').first();
-      test.skip(!(await conversation.isVisible({ timeout: 30_000 }).catch(() => false)),
-        'no conversations available');
+      // Needs Pin conversation enabled for the app in the CometChat dashboard.
+      const conversation = conversationRow(page, await getUserName(SECONDARY_USER));
+      await expect(conversation).toBeVisible({ timeout: 30_000 });
 
-      await conversation.hover();
-      await page.waitForTimeout(400);
-
-      const menu = conversation.getByRole('button', { name: /more|options/i }).first();
-      test.skip(!(await menu.isVisible({ timeout: 3_000 }).catch(() => false)),
-        'conversation row menu not available');
-      await menu.click();
-      await page.waitForTimeout(500);
-
-      // Gated on SDK support, so absence is a valid outcome on an older build.
       const pinOrUnpin = page.getByRole('menuitem', { name: /^Pin conversation$/i })
         .or(page.getByRole('menuitem', { name: /^Unpin conversation$/i }));
-      test.skip(!(await pinOrUnpin.first().isVisible({ timeout: 3_000 }).catch(() => false)),
-        'conversation pin not supported by this SDK build');
+      await expect(async () => {
+        await conversation.hover();
+        await conversation.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+        await expect(pinOrUnpin.first()).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 15_000 });
 
-      await expect(pinOrUnpin.first()).toBeVisible();
       await closeMenus(page);
     });
   });

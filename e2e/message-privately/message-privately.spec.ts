@@ -1,5 +1,15 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import {
+  loginToApp,
+  openConversation,
+  scrollToLatestMessage,
+  getUserName,
+  createE2EGroup,
+  sendMessageAs,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  uniqueTag,
+} from '../helpers';
 
 /**
  * E2E Tests — Message Privately (Group Chat)
@@ -7,143 +17,76 @@ import { loginToApp } from '../helpers';
  * Tests the "Message Privately" action in group conversations:
  * - Option appears for other members' messages in group chat
  * - Clicking it navigates to a 1-on-1 conversation with that user
+ * - It is not offered on your own messages
  *
- * Requires a group conversation with messages from other members.
+ * Each test arranges its own group over REST, with one message from the secondary user and
+ * one from the primary user, so the incoming and outgoing bubbles always exist.
  */
 
+const mainList = (page: Page) => page.locator('cometchat-messages cometchat-message-list').first();
+const row = (page: Page, text: string) =>
+  mainList(page).locator('.cometchat-message-list__message').filter({ hasText: text }).last();
+
+/** A group with a message from each side; logs in as the primary user and opens it. */
+async function openGroupWithMessages(page: Page) {
+  const tag = uniqueTag();
+  const group = { guid: `e2e-private-${tag}`, name: `E2E Privately ${tag}` };
+  await createE2EGroup(group.guid, group.name, PRIMARY_USER, [SECONDARY_USER]);
+  const incoming = `Incoming note ${tag}`;
+  const outgoing = `Outgoing note ${tag}`;
+  const send = (sender: string, text: string) =>
+    sendMessageAs(sender, group.guid, { category: 'message', type: 'text', data: { text } }, 'group');
+  await send(SECONDARY_USER, incoming);
+  await send(PRIMARY_USER, outgoing);
+  await loginToApp(page);
+  await openConversation(page, group.name);
+  await scrollToLatestMessage(page);
+  await expect(row(page, incoming)).toBeVisible({ timeout: 30_000 });
+  await expect(row(page, outgoing)).toBeVisible({ timeout: 30_000 });
+  return { group, incoming, outgoing };
+}
+
+/** Hover a message row and open its "More options" menu. */
+async function openMoreOptions(page: Page, message: Locator) {
+  await message.locator('.cometchat-message-bubble__body').first().hover();
+  await message.getByRole('button', { name: 'More options' }).click();
+}
+
 test.describe('Message Privately', () => {
-  let page: Page;
+  test('message privately option appears for incoming messages in group', async ({ page }) => {
+    const { incoming } = await openGroupWithMessages(page);
+    const message = row(page, incoming);
+    await expect(message.locator('.cometchat-message-bubble-incoming')).toBeVisible();
 
-  test.beforeEach(async ({ page: p }) => {
-    page = p;
-    await loginToApp(page);
-    await page.waitForSelector('.cometchat-conversations', { timeout: 30_000 });
-
-    // Navigate to Groups tab and open a group
-    const groupsTab = page.locator('[data-testid="tab-groups"], button:has-text("Groups"), .cometchat-tabs__tab:has-text("Groups")').first();
-    await groupsTab.click();
-    await page.waitForSelector('cometchat-groups, .cometchat-groups', { timeout: 15_000 });
-    await page.waitForTimeout(2000);
-
-    // Click the first group
-    const firstGroup = page.locator('.cometchat-group-item, cometchat-group-item').first();
-    await firstGroup.click();
-    await page.waitForTimeout(3000);
-
-    // Handle join dialog
-    const hasJoinDialog = await page.locator('.cometchat-join-group, cometchat-join-group').isVisible().catch(() => false);
-    if (hasJoinDialog) {
-      const joinBtn = page.locator('.cometchat-join-group button').first();
-      const hasJoinBtn = await joinBtn.isVisible().catch(() => false);
-      if (hasJoinBtn) {
-        await joinBtn.click();
-        await page.waitForTimeout(2000);
-      }
-    }
-
-    // Wait for messages to load
-    await page.waitForSelector('.cometchat-message-bubble', { timeout: 15_000 });
-    await page.waitForTimeout(2000);
+    await openMoreOptions(page, message);
+    await expect(page.getByRole('menuitem', { name: 'Message Privately' })).toBeVisible();
   });
 
-  // ==================== Message Privately Option ====================
+  test('clicking message privately navigates to 1-on-1 chat', async ({ page }) => {
+    const secondaryName = await getUserName(SECONDARY_USER);
+    const { group, incoming } = await openGroupWithMessages(page);
 
-  test('message privately option appears for incoming messages in group', async () => {
-    // Find an incoming message (from another group member)
-    const incomingBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const hasIncoming = await incomingBubble.isVisible({ timeout: 5_000 }).catch(() => false);
+    await openMoreOptions(page, row(page, incoming));
+    await page.getByRole('menuitem', { name: 'Message Privately' }).click();
 
-    if (hasIncoming) {
-      const bodyArea = incomingBubble.locator('.cometchat-message-bubble__body').first();
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
-
-      const moreBtn = incomingBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        // Look for "Message Privately" option
-        const privateOption = page.getByRole('menuitem', { name: /Message Privately|Private/i });
-        const hasPrivate = await privateOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasPrivate) {
-          await expect(privateOption).toBeVisible();
-        }
-
-        // Close menu
-        await page.keyboard.press('Escape');
-      }
-    }
-  });
-
-  test('clicking message privately navigates to 1-on-1 chat', async () => {
-    const incomingBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const hasIncoming = await incomingBubble.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasIncoming) {
-      const bodyArea = incomingBubble.locator('.cometchat-message-bubble__body').first();
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
-
-      const moreBtn = incomingBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        const privateOption = page.getByRole('menuitem', { name: /Message Privately|Private/i });
-        const hasPrivate = await privateOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasPrivate) {
-          await privateOption.click({ force: true });
-          await page.waitForTimeout(3000);
-
-          // Should navigate to a 1-on-1 conversation (message header shows user, not group)
-          const header = page.locator('cometchat-message-header, .cometchat-message-header').first();
-          const hasHeader = await header.isVisible({ timeout: 10_000 }).catch(() => false);
-
-          if (hasHeader) {
-            // The subtitle should NOT show member count (it's a user chat now)
-            const memberSubtitle = page.locator('.cometchat-message-header__subtitle--members');
-            const hasMemberCount = await memberSubtitle.isVisible().catch(() => false);
-            // In a 1-on-1 chat, there's no member count subtitle
-            expect(!hasMemberCount || true).toBeTruthy();
-          }
-        }
-      }
-    }
+    // The chat now open is the 1:1 with the sender: their name, no group member count.
+    const header = page.locator('cometchat-message-header').first();
+    await expect(header.locator('.cometchat-message-header__title')).toHaveText(secondaryName, { timeout: 15_000 });
+    await expect(header).not.toContainText(group.name);
+    await expect(header.locator('.cometchat-message-header__subtitle--members')).toHaveCount(0);
+    await expect(page.locator('cometchat-messages cometchat-message-composer')).toBeVisible();
   });
 
   // ==================== Not Available for Own Messages ====================
 
-  test('message privately option does NOT appear for own messages', async () => {
-    const outgoingBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    const hasOutgoing = await outgoingBubble.isVisible({ timeout: 5_000 }).catch(() => false);
+  test('message privately option does NOT appear for own messages', async ({ page }) => {
+    const { outgoing } = await openGroupWithMessages(page);
+    const message = row(page, outgoing);
+    await expect(message.locator('.cometchat-message-bubble-outgoing')).toBeVisible();
 
-    if (hasOutgoing) {
-      const bodyArea = outgoingBubble.locator('.cometchat-message-bubble__body').first();
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
-
-      const moreBtn = outgoingBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        // "Message Privately" should NOT be available for own messages
-        const privateOption = page.getByRole('menuitem', { name: /Message Privately|Private/i });
-        const hasPrivate = await privateOption.isVisible({ timeout: 2_000 }).catch(() => false);
-        expect(hasPrivate).toBeFalsy();
-
-        // Close menu
-        await page.keyboard.press('Escape');
-      }
-    }
+    await openMoreOptions(page, message);
+    // The menu is open (it lists the options own messages do get), and Message Privately is not among them.
+    await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Message Privately' })).toHaveCount(0);
   });
 });

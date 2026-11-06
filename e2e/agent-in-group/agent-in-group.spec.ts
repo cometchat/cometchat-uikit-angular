@@ -1,5 +1,6 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page } from '../fixtures/coverage';
+import { loginToApp, sendMessageAs, conversationRow, openConversation, PRIMARY_USER } from '../helpers';
+import { E2E_TAGS, runScoped } from '../helpers/run';
 import { environment } from '../../projects/sample-app/src/environments/environment';
 
 /**
@@ -28,11 +29,9 @@ const HEADERS = { 'Content-Type': 'application/json', 'apikey': API_KEY };
 
 const AGENT_UID = process.env['E2E_AGENT_UID'] || (environment as any).agentUid;
 const AGENT_NAME = process.env['E2E_AGENT_NAME'] || (environment as any).agentName;
-const PRIMARY_USER = process.env['E2E_USER_UID'] || environment.userUid;
 
-const E2E_GROUP_GUID = 'e2e-agent-in-group-test';
+const E2E_GROUP_GUID = runScoped('agent-in-group');
 const E2E_GROUP_NAME = 'E2E Agent In Group Test';
-const E2E_TAG = 'e2e-test-data';
 
 const AGENT_RESPONSE_TIMEOUT = 120_000; // Agent can take time to respond
 
@@ -66,7 +65,7 @@ async function createGroupIfNeeded(): Promise<void> {
     guid: E2E_GROUP_GUID,
     name: E2E_GROUP_NAME,
     type: 'public',
-    tags: [E2E_TAG],
+    tags: E2E_TAGS,
   });
 }
 
@@ -76,6 +75,32 @@ async function addMemberToGroup(uid: string): Promise<void> {
   });
 }
 
+/**
+ * @mention the agent in the group over REST and wait for its reply, so the bubble tests have
+ * an agent message to look at without depending on the real-time test. The send waits for
+ * moderation, which (with the agent's own reply also moderated) is why replies take longer
+ * than they used to.
+ */
+async function seedAgentReply(): Promise<void> {
+  const mentionId = await sendMessageAs(
+    PRIMARY_USER,
+    E2E_GROUP_GUID,
+    { category: 'message', type: 'text', data: { text: `<@uid:${AGENT_UID}> What is CometChat?`, mentions: [AGENT_UID] } },
+    'group'
+  );
+  const deadline = Date.now() + AGENT_RESPONSE_TIMEOUT;
+  while (Date.now() < deadline) {
+    const res = await apiCall('GET', `/messages?receiver=${E2E_GROUP_GUID}&receiverType=group&perPage=50`);
+    const replied = (res?.data ?? []).some(
+      (m: { sender: string; receiver: string; id: string }) =>
+        m.receiver === E2E_GROUP_GUID && m.sender === AGENT_UID && Number(m.id) > Number(mentionId)
+    );
+    if (replied) return;
+    await new Promise((r) => setTimeout(r, 3_000));
+  }
+  throw new Error(`The agent did not reply in ${E2E_GROUP_GUID} within ${AGENT_RESPONSE_TIMEOUT}ms`);
+}
+
 async function deleteGroup(): Promise<void> {
   await apiCall('DELETE', `/groups/${E2E_GROUP_GUID}?permanent=true`);
 }
@@ -83,6 +108,7 @@ async function deleteGroup(): Promise<void> {
 // ─── Setup & Teardown ─────────────────────────────────────────────────────────
 
 test.beforeAll(async () => {
+  test.setTimeout(AGENT_RESPONSE_TIMEOUT + 60_000);
   if (!AGENT_UID || !AGENT_NAME) {
     throw new Error(
       'E2E_AGENT_UID and E2E_AGENT_NAME must be set in environment.ts or .env'
@@ -98,6 +124,9 @@ test.beforeAll(async () => {
   await addMemberToGroup(AGENT_UID);
 
   console.log(`[agent-e2e] Group ready: ${E2E_GROUP_GUID} with members: ${PRIMARY_USER}, ${AGENT_UID}`);
+
+  await seedAgentReply();
+  console.log('[agent-e2e] Agent replied in the group.');
 });
 
 test.afterAll(async () => {
@@ -122,16 +151,42 @@ test.describe('Agent Bubbles in Group Chat', () => {
     const groupsTab = p.locator('[data-testid="tab-groups"], button:has-text("Groups"), .cometchat-tabs__tab:has-text("Groups")').first();
     await groupsTab.click();
     await p.waitForSelector('cometchat-groups, .cometchat-groups', { timeout: 15_000 });
-    await p.waitForTimeout(2000);
 
     // Find and click our test group
     const groupItem = p.locator(`.cometchat-group-item:has-text("${E2E_GROUP_NAME}"), cometchat-group-item:has-text("${E2E_GROUP_NAME}"), .cometchat-list-item:has-text("${E2E_GROUP_NAME}")`).first();
     await expect(groupItem).toBeVisible({ timeout: 10_000 });
     await groupItem.click();
 
-    // Wait for the message composer to be ready (group is fresh/empty so no bubbles yet)
-    await p.waitForSelector('cometchat-message-composer, .cometchat-message-composer', { timeout: 15_000 });
-    await p.waitForTimeout(2000);
+    // Wait for the chat's first load: the agent reply seeded in beforeAll is shown. A message
+    // sent while the list is still loading can be dropped (ENG-40618).
+    await expect(p.locator('cometchat-message-header').first()).toContainText(E2E_GROUP_NAME, { timeout: 15_000 });
+    await expect(p.locator('cometchat-messages cometchat-ai-assistant-message-bubble').first()).toBeVisible({ timeout: 30_000 });
+  }
+
+  /**
+   * Every option the agent bubble offers on hover: its quick actions, plus the items of its
+   * "More options" menu when it has one. Menus are closed again before returning.
+   */
+  async function agentOptions(p: Page, wrapper: ReturnType<typeof getAgentBubbleWrapper>): Promise<string[]> {
+    const options = wrapper.locator('.cometchat-message-bubble__options');
+    await expect(async () => {
+      await wrapper.locator('.cometchat-message-bubble__body').first().hover();
+      await expect(options).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
+    const quick = await options
+      .locator('[role="menuitem"], button')
+      .filter({ visible: true })
+      .evaluateAll((els) => els.map((e) => (e.getAttribute('aria-label') || e.getAttribute('title') || e.textContent || '').trim()));
+    const labels = quick.filter((l) => l && l !== 'More options');
+    const more = options.getByRole('button', { name: 'More options' });
+    if (await more.count()) {
+      await more.click();
+      const items = p.locator('.cometchat-menu-list__sub-menu-list-item').filter({ visible: true });
+      await expect(items.first()).toBeVisible();
+      labels.push(...(await items.evaluateAll((els) => els.map((e) => (e.getAttribute('aria-label') || e.textContent || '').trim()))));
+      await p.keyboard.press('Escape');
+    }
+    return [...new Set(labels)];
   }
 
   /**
@@ -149,9 +204,11 @@ test.describe('Agent Bubbles in Group Chat', () => {
     await openAgentGroupConversation(page);
   });
 
-  // ==================== Real-time Agent Response (runs first to seed a bubble) ====================
+  // ==================== Real-time Agent Response ====================
 
   test('sending @mention triggers real-time agent response', async () => {
+    // Waiting for the agent can take up to AGENT_RESPONSE_TIMEOUT, past the default test timeout.
+    test.setTimeout(AGENT_RESPONSE_TIMEOUT + 60_000);
     // Find the composer
     const composer = page.locator('cometchat-message-composer').first();
     await expect(composer).toBeVisible({ timeout: 10_000 });
@@ -165,30 +222,30 @@ test.describe('Agent Bubbles in Group Chat', () => {
     // Type @ to trigger mentions dropdown
     await input.click();
     await page.keyboard.type('@');
-    await page.waitForTimeout(2000);
 
     // Wait for mentions dropdown to appear
     const mentionDropdown = page.locator('[class*="mention"], [class*="user-member-wrapper"], [class*="suggestion"], [role="listbox"]').first();
     await expect(mentionDropdown).toBeVisible({ timeout: 5_000 });
 
-    // Type partial agent name to filter
-    const partialName = AGENT_NAME.substring(0, 3);
+    // Search with the agent's first word: a space ends the mention search. The group's only
+    // members are the owner and the agent, so the agent's full name picks it below.
+    const partialName = AGENT_NAME.split(' ')[0];
     await page.keyboard.type(partialName);
-    await page.waitForTimeout(1500);
 
     // Select agent from suggestions using the mention-option class
     const agentSuggestion = page.locator(`.cometchat-message-composer__mention-option:has-text("${AGENT_NAME}")`).first();
     await expect(agentSuggestion).toBeVisible({ timeout: 5_000 });
     await agentSuggestion.click();
-    await page.waitForTimeout(500);
+    // The mention is in the composer before the rest of the message is typed after it.
+    await expect(input).toContainText(AGENT_NAME);
 
     // Type the rest of the message after the mention
     await page.keyboard.type(' What is CometChat?');
-    await page.waitForTimeout(300);
+    await expect(input).toContainText('What is CometChat?');
 
     // Send the message
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(2000);
+    await expect(input).not.toContainText('What is CometChat?');
 
     // Wait for the agent to respond (can take a while)
     await expect(async () => {
@@ -252,83 +309,20 @@ test.describe('Agent Bubbles in Group Chat', () => {
     const wrapper = getAgentBubbleWrapper(page);
     await expect(wrapper).toBeVisible({ timeout: 10_000 });
 
-    // Hover over the bubble body to trigger context menu
-    const bodyArea = wrapper.locator('.cometchat-message-bubble__body').first();
-    await bodyArea.hover();
-    await page.waitForTimeout(500);
-
-    // Options are scoped to THIS wrapper — only count visible ones inside it
-    // Quick options appear on hover within the wrapper
-    const visibleOptions = wrapper.locator('button:visible, [role="menuitem"]:visible').filter({
-      has: page.locator('[title="Copy"], [title="React"], [title="Reply"], [title*="thread"], [aria-label="Copy"], [aria-label="React"], [aria-label*="Reply"]'),
-    });
-
-    // Alternative: count action buttons that appear on hover within the bubble
-    const actionButtons = wrapper.locator('.cometchat-context-menu button:visible, .cometchat-message-bubble__options button:visible, [class*="quick-option"]:visible');
-    const actionCount = await actionButtons.count();
-
-    if (actionCount > 0) {
-      // Should only have 1 option (copy)
-      expect(actionCount).toBe(1);
-      const firstTitle = await actionButtons.first().getAttribute('title') || await actionButtons.first().textContent();
-      expect(firstTitle?.toLowerCase()).toContain('copy');
-    } else {
-      // Try more options button within this wrapper
-      const moreBtn = wrapper.locator('button[aria-label="More options"]').first();
-      const hasMore = await moreBtn.isVisible({ timeout: 2_000 }).catch(() => false);
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-        // Context menu opens — count items
-        const menuItems = page.locator('[role="menuitem"]:visible');
-        const menuCount = await menuItems.count();
-        expect(menuCount).toBe(1);
-        const itemText = await menuItems.first().textContent();
-        expect(itemText?.toLowerCase()).toContain('copy');
-      }
-    }
-
-    // Dismiss
-    await page.keyboard.press('Escape');
+    expect(await agentOptions(page, wrapper)).toEqual(['Copy']);
   });
 
   test('agent bubble does NOT show react, reply, or thread options', async () => {
     const wrapper = getAgentBubbleWrapper(page);
     await expect(wrapper).toBeVisible({ timeout: 10_000 });
 
-    // Hover to trigger options
-    const bodyArea = wrapper.locator('.cometchat-message-bubble__body').first();
-    await bodyArea.hover();
-    await page.waitForTimeout(500);
-
-    // Scope to this wrapper only — check that no react/reply/thread buttons appear
-    const reactBtn = wrapper.locator('button[title="React"], button[aria-label*="React"], button[title*="react"]');
-    await expect(reactBtn).not.toBeVisible({ timeout: 2_000 });
-
-    const replyBtn = wrapper.locator('button[title="Reply"], button[aria-label*="Reply"], button[title*="reply"]');
-    await expect(replyBtn).not.toBeVisible({ timeout: 1_000 });
-
-    const threadBtn = wrapper.locator('button[title*="thread"], button[title*="Thread"], button[aria-label*="thread"]');
-    await expect(threadBtn).not.toBeVisible({ timeout: 1_000 });
-
-    // Also check overflow menu if present
-    const moreBtn = wrapper.locator('button[aria-label="More options"]').first();
-    const hasMore = await moreBtn.isVisible({ timeout: 1_000 }).catch(() => false);
-    if (hasMore) {
-      await moreBtn.click();
-      await page.waitForTimeout(500);
-      const menuItems = page.locator('[role="menuitem"]:visible');
-      const count = await menuItems.count();
-      for (let i = 0; i < count; i++) {
-        const text = await menuItems.nth(i).textContent();
-        expect(text?.toLowerCase()).not.toContain('reply');
-        expect(text?.toLowerCase()).not.toContain('react');
-        expect(text?.toLowerCase()).not.toContain('thread');
-      }
+    const options = (await agentOptions(page, wrapper)).map((o) => o.toLowerCase());
+    expect(options.length, 'the agent bubble offers at least one option').toBeGreaterThan(0);
+    for (const option of options) {
+      expect(option).not.toContain('react');
+      expect(option).not.toContain('reply');
+      expect(option).not.toContain('thread');
     }
-
-    // Dismiss
-    await page.keyboard.press('Escape');
   });
 
   // ==================== Copy Action ====================
@@ -339,34 +333,26 @@ test.describe('Agent Bubbles in Group Chat', () => {
     const wrapper = getAgentBubbleWrapper(page);
     await expect(wrapper).toBeVisible({ timeout: 10_000 });
 
-    // Hover to show options
-    const bodyArea = wrapper.locator('.cometchat-message-bubble__body').first();
-    await bodyArea.hover();
-    await page.waitForTimeout(500);
-
-    // Find and click the copy option
-    let copyOption = wrapper.locator('button[title="Copy"], [aria-label="Copy"]').first();
-    let hasCopy = await copyOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-    if (!hasCopy) {
-      // Try overflow menu
-      const moreBtn = wrapper.locator('button[aria-label="More options"], [class*="more"]').first();
-      const hasMore = await moreBtn.isVisible({ timeout: 2_000 }).catch(() => false);
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
+    // Copy is a quick action on the bubble, or an item of its "More options" menu.
+    const options = wrapper.locator('.cometchat-message-bubble__options');
+    const quickCopy = options.locator('[role="menuitem"], button').filter({ visible: true }).and(options.locator('[aria-label="Copy"], [title="Copy"]'));
+    await expect(async () => {
+      await wrapper.locator('.cometchat-message-bubble__body').first().hover();
+      if (await quickCopy.count()) {
+        await quickCopy.first().click({ timeout: 2_000 });
+        return;
       }
-      copyOption = page.locator('[role="menuitem"]:has-text("Copy")').first();
-      hasCopy = await copyOption.isVisible({ timeout: 3_000 }).catch(() => false);
-    }
-
-    expect(hasCopy).toBeTruthy();
-    await copyOption.click();
-    await page.waitForTimeout(1000);
+      await options.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+      await page.locator('.cometchat-menu-list__sub-menu-list-item[aria-label="Copy"]').filter({ visible: true }).click({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
 
     // Verify clipboard has content
+    // textContent, not innerText: innerText is empty while the bubble isn't laid out.
+    const bubbleText = ((await wrapper.locator('cometchat-ai-assistant-message-bubble').first().textContent()) ?? '').replace(/\s+/g, ' ');
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText().then((t) => t.trim()))).not.toBe('');
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText.trim().length).toBeGreaterThan(0);
+    // The copied text is the agent's message (its first line is in the bubble).
+    expect(bubbleText).toContain(clipboardText.trim().split('\n')[0].replace(/[*_#`>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20));
   });
 
   // ==================== No Footer Copy Button in Groups ====================
@@ -384,7 +370,7 @@ test.describe('Agent Bubbles in Group Chat', () => {
   test('agent bubble shows reply preview when message has quoted message', async () => {
     // Find an agent bubble wrapper that has a reply view
     const wrapperWithReply = page.locator('.cometchat-message-bubble__wrapper:has(.cometchat-message-bubble-incoming cometchat-ai-assistant-message-bubble):has(.cometchat-message-bubble__reply-view, cometchat-message-preview)').first();
-    await wrapperWithReply.isVisible({ timeout: 5_000 }).catch(() => false);
+    await expect(wrapperWithReply).toBeVisible({ timeout: 5_000 });
 
     // The reply preview should contain text
     const replyContent = wrapperWithReply.locator('.cometchat-message-bubble__reply-view, cometchat-message-preview').first();
@@ -395,72 +381,38 @@ test.describe('Agent Bubbles in Group Chat', () => {
 
   // ==================== Conversation List Subtitle (Real-time) ====================
 
-  test('conversation list shows agent message text as subtitle in real-time', async () => {
-    // Step 1: Navigate to Chats tab
-    const chatsTab = page.locator('[data-testid="tab-chats"], button:has-text("Chats"), .cometchat-tabs__tab:has-text("Chats")').first();
-    await chatsTab.click();
-    await page.waitForSelector('.cometchat-conversation-item', { timeout: 15_000 });
-    await page.waitForTimeout(1000);
+  test('conversation list shows agent message text as subtitle in real-time @quarantine (ENG-40810)', async () => {
+    // @quarantine (ENG-40810): intermittent UI Kit defect — the agent's reply reaches the client (the Chats
+    // row previews "E2E Assistant: …") but is sometimes never rendered in the open group chat
+    // (2 of 3 runs). Not every run, so it can't be test.fail.
+    test.setTimeout(AGENT_RESPONSE_TIMEOUT + 60_000);
+    // Open the group FROM the Chats tab, so the conversation list stays mounted beside it.
+    await page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Chats' }).click();
+    const groupConvItem = conversationRow(page, E2E_GROUP_NAME);
+    await openConversation(page, E2E_GROUP_NAME);
+    // Wait for the first load to finish (the agent reply seeded in beforeAll shows) before
+    // counting and sending; a message sent while the list is still loading can be dropped.
+    const agentBubbles = page.locator('cometchat-messages cometchat-ai-assistant-message-bubble');
+    await expect(agentBubbles.first()).toBeVisible({ timeout: 30_000 });
+    const initialCount = await agentBubbles.count();
 
-    // The group should appear in conversations (earlier tests sent messages in it)
-    const groupConvItem = page.locator(`.cometchat-conversation-item:has-text("${E2E_GROUP_NAME}")`).first();
-    await expect(groupConvItem).toBeVisible({ timeout: 10_000 });
-
-    // Step 2: Open the group FROM the Chats tab (conv list stays mounted)
-    await groupConvItem.click();
-    await page.waitForSelector('cometchat-message-composer', { timeout: 15_000 });
-    await page.waitForTimeout(1000);
-
-    // Step 3: Send @mention to trigger agent response
-    const input = page.locator('cometchat-message-composer [contenteditable="true"]').first();
-    await expect(input).toBeVisible({ timeout: 5_000 });
-
-    // Type @ to trigger mentions dropdown
+    // @mention the agent. Filter with its first word: a space ends the mention search, so
+    // "E2E Assist" would close the suggestions. The agent's full name picks it.
+    const input = page.locator('cometchat-messages cometchat-message-composer [contenteditable="true"]').first();
     await input.click();
-    await page.keyboard.type('@');
-    await page.waitForTimeout(2000);
-
-    // Wait for mentions dropdown
-    const mentionDropdown = page.locator('[class*="mention"], [class*="user-member-wrapper"], [class*="suggestion"], [role="listbox"]').first();
-    await expect(mentionDropdown).toBeVisible({ timeout: 5_000 });
-
-    // Filter to agent
-    const partialName = AGENT_NAME.substring(0, 10);
-    await page.keyboard.type(partialName);
-    await page.waitForTimeout(1500);
-
-    // Select agent
-    const agentSuggestion = page.locator(`.cometchat-message-composer__mention-option:has-text("${AGENT_NAME}")`).first();
-    await expect(agentSuggestion).toBeVisible({ timeout: 5_000 });
+    await page.keyboard.type(`@${AGENT_NAME.split(' ')[0]}`);
+    const agentSuggestion = page.locator('.cometchat-message-composer__mention-option').filter({ hasText: AGENT_NAME }).first();
     await agentSuggestion.click();
-    await page.waitForTimeout(500);
-
-    // Type rest of message
-    await page.keyboard.type(' Tell me about real-time messaging');
-    await page.waitForTimeout(300);
-
-    // Send
+    await page.keyboard.type(' What can CometChat do?');
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(2000);
 
-    // Wait for agent to respond
-    const initialCount = await page.locator('cometchat-ai-assistant-message-bubble').count();
-    await expect(async () => {
-      const currentCount = await page.locator('cometchat-ai-assistant-message-bubble').count();
-      expect(currentCount).toBeGreaterThan(initialCount);
-    }).toPass({ timeout: AGENT_RESPONSE_TIMEOUT, intervals: [3_000, 5_000, 10_000] });
+    // The agent replies in the open chat…
+    await expect.poll(() => agentBubbles.count(), { timeout: AGENT_RESPONSE_TIMEOUT }).toBeGreaterThan(initialCount);
 
-    // Step 5: Check the conversation list subtitle was updated in real-time.
+    // …and the Chats row previews it in real time, prefixed with the agent's name and not as
+    // a raw message type.
     const subtitle = groupConvItem.locator('.cometchat-conversation-item__subtitle').first();
-    await expect(subtitle).toBeVisible();
-
-    const subtitleText = await subtitle.textContent();
-
-    // Subtitle should show sender name prefix like "AgentName: ..." confirming
-    expect(subtitleText?.trim().length).toBeGreaterThan(0);
-    expect(subtitleText).toContain(`${AGENT_NAME}:`);
-    // Should not be raw type string
-    expect(subtitleText?.trim()).not.toBe('assistant');
-    expect(subtitleText?.trim()).not.toBe('agentic');
+    await expect(subtitle).toContainText(`${AGENT_NAME}:`, { timeout: 15_000 });
+    await expect(subtitle).not.toHaveText(/^\s*(assistant|agentic)\s*$/);
   });
 });

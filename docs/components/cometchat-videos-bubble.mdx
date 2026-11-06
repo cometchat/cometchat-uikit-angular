@@ -1,0 +1,109 @@
+---
+title: "CometChatVideosBubbleComponent"
+description: "Renders a video message (one or many attachments, plus caption) at the shared multi-attachment width so every message in a batch lines up"
+---
+The `CometChatVideosBubbleComponent` is the bubble the message list uses for video messages. It renders a single `CometChat.MediaMessage` - its videos (grid, overflow, player) and its caption - by delegating to the single-item `cometchat-video-bubble`. What it adds on top is batch awareness: it pins all video size caps to one shared width so that consecutive messages sent together in a batch render at the same width, and relaxes the height caps so a 16:9 video fills that width.
+
+## Overview
+
+- **Default video renderer**: `CometChatMessageBubble` renders this component for every video message (its `videos-batch` content type)
+- **One message per bubble**: Each instance renders exactly one `CometChat.MediaMessage`; a batch is shown as several of these bubbles stacked in the message list
+- **Delegates rendering**: Grid, overflow, player and caption all come from `cometchat-video-bubble`; this component forwards its inputs to it
+- **Shared batch width**: Sizes the video bubble to `--cometchat-multi-attachment-width` (default `400px`)
+- **No height cap**: Sets the video bubble's max-height variables to `none` so videos fill the batch width
+- **Standalone**: Standalone Angular component with `OnPush` change detection
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVideosBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatVideosBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-videos-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.left"
+    ></cometchat-videos-bubble>
+
+    <!-- Outgoing message (right-aligned), clicks disabled -->
+    <cometchat-videos-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.right"
+      [disableInteraction]="true"
+    ></cometchat-videos-bubble>
+  `
+})
+export class ChatMessageComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The video message to render. Forwarded to `cometchat-video-bubble` |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | Bubble alignment. `left` for incoming, `right` for outgoing. Forwarded to `cometchat-video-bubble` |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters applied to the caption text. Forwarded to the delegated bubble, which renders the caption; nothing is applied by this component itself |
+| `disableInteraction` | `boolean` | `false` | When `true`, disables click interactions on the videos. Forwarded to `cometchat-video-bubble` |
+
+## Events
+
+This component declares no outputs. Events of the inner `cometchat-video-bubble` are not re-emitted. If you need them, use [`CometChatVideoBubbleComponent`](/components/cometchat-video-bubble) directly.
+
+## Customization
+
+### Batch Width
+
+The component sets these custom properties on its host, all derived from one token:
+
+```css
+:host {
+  --cometchat-batch-width: var(--cometchat-multi-attachment-width, 400px);
+  --cometchat-video-bubble-max-width: var(--cometchat-batch-width);
+  --cometchat-video-bubble-single-max-width: var(--cometchat-batch-width);
+  --cometchat-video-bubble-grid-max-width: var(--cometchat-batch-width);
+  --cometchat-video-bubble-grid-2x2-max-width: var(--cometchat-batch-width);
+  --cometchat-video-bubble-overflow-max-width: var(--cometchat-batch-width);
+  --cometchat-video-bubble-container-max-width: var(--cometchat-batch-width);
+  --cometchat-video-bubble-max-height: none;
+  --cometchat-video-bubble-single-max-height: none;
+}
+```
+
+To change the width of batch media, set `--cometchat-multi-attachment-width` on an ancestor. The same token is read by the images, files and audios bubbles, so changing it keeps every type in a batch aligned:
+
+```css
+:root {
+  /* Let batch media fill the bubble instead of capping at 400px */
+  --cometchat-multi-attachment-width: 100%;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-multi-attachment-width` | Shared width cap for all batch bubbles (images, videos, files, audios) | `400px` (fallback; not defined by the kit) |
+
+All other visual styling (grid, overflow indicator, play overlay, player) comes from `cometchat-video-bubble`. See the [Video Bubble](/components/cometchat-video-bubble) docs.
+
+## Batching and the Single-Item Bubble
+
+- **Batches**: When several videos are sent together, the composer sends one message per attachment and stamps them all with the same `metadata.batchId` (`CometChatUIKitConstants.MetadataKeys.batchId`). The caption goes only on the last message of the batch. The message list treats a run of consecutive messages that share a `batchId` as one batch and renders each message with its own `cometchat-videos-bubble`. The shared width is what makes the batch read as one group.
+- **Single-item bubble**: `CometChatVideoBubbleComponent` (`cometchat-video-bubble`) is marked `@deprecated` in favor of this component, but stays public for direct use and is the primitive this component delegates to.
+
+## Related Components
+
+- **CometChatVideoBubbleComponent**: The single-item video bubble this component delegates to
+- **CometChatImagesBubbleComponent**, **CometChatFilesBubbleComponent**, **CometChatAudiosBubbleComponent**: The other batch bubbles sharing the same width token
+- **CometChatMessageBubble**: Renders this component as the content view for video messages
+- **CometChatMessageList**: Groups consecutive messages that share a `batchId`

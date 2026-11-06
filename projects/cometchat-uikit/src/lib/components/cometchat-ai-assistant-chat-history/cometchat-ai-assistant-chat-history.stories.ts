@@ -18,7 +18,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAIAssistantChatHistory } from './cometchat-ai-assistant-chat-history.component';
 import { createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 

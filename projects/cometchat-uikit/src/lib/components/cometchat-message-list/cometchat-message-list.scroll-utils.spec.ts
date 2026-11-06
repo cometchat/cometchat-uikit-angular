@@ -33,8 +33,9 @@ function makeContainer(scrollTop = 0, scrollHeight = 1000, clientHeight = 500): 
   });
   Object.defineProperty(el, 'scrollHeight', { get: () => scrollHeight, configurable: true });
   Object.defineProperty(el, 'clientHeight', { get: () => clientHeight, configurable: true });
-  el.scrollTo = vi.fn(({ top }: ScrollToOptions) => {
-    scrollTop = top ?? scrollTop;
+  // Honour both DOM overloads: scrollTo(options) and scrollTo(x, y).
+  el.scrollTo = vi.fn((optionsOrX?: ScrollToOptions | number, y?: number) => {
+    scrollTop = typeof optionsOrX === 'number' ? (y ?? scrollTop) : (optionsOrX?.top ?? scrollTop);
   });
   return el;
 }

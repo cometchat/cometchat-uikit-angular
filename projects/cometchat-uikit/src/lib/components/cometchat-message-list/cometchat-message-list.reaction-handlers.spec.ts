@@ -37,10 +37,7 @@ function makeReactionCount(emoji: string, reactedByMe = false): CometChat.Reacti
 }
 
 function makeReaction(emoji: string): CometChat.Reaction {
-  const r = new CometChat.Reaction();
-  (r as any).reaction = emoji;
-  (r as any).getReaction = () => emoji;
-  return r;
+  return new CometChat.Reaction(`r-${emoji}`, '1', emoji, 'u1', 0, new CometChat.User('u1'));
 }
 
 function makeCtx(overrides: Partial<ReactionHandlerContext> = {}): ReactionHandlerContext {

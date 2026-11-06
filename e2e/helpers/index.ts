@@ -1,2 +1,40 @@
 export { loginToApp, getAuthConfig, TEST_USERS, type AuthConfig } from './auth';
-export { seedTestData, cleanupTestData, PRIMARY_USER, SECONDARY_USER, E2E_USER_UIDS, E2E_GROUP_GUIDS, getE2EUserUid } from './seed';
+export {
+  seedTestData,
+  cleanupTestData,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  THIRD_USER,
+  E2E_USER_UIDS,
+  E2E_GROUP_GUIDS,
+  E2E_GROUP_NAMES,
+  getE2EUserUid,
+  getE2EUserName,
+} from './seed';
+export { conversationRow, openConversation, scrollToLatestMessage, scrollMessageListToTop } from './conversation';
+export {
+  getUserName,
+  createE2EUser,
+  sendTextAs,
+  sendCustomAs,
+  deleteMessageAs,
+  addGroupMembers,
+  removeGroupMember,
+  sendMessageAs,
+  editTextAs,
+  unblockUser,
+  createE2EGroup,
+  getGroupOwner,
+  getMemberScope,
+  addReactionAs,
+  findGroupByName,
+  deleteGroup,
+  searchMessagesAs,
+  getUnreadCountAs,
+  waitForAnswerFrom,
+  uniqueTag,
+  searchableTag,
+  waitForSearchIndex,
+  waitForModeration,
+} from './rest';
+export { expectNothingFor } from './wait';

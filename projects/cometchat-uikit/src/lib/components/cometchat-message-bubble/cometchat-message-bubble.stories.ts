@@ -14,7 +14,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageBubbleComponent } from './cometchat-message-bubble.component';
 import { CometChatUIKit } from '../../cometchat-uikit';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import {
   createMockUser,
   createMockGroup,

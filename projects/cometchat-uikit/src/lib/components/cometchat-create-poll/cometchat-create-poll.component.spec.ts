@@ -953,10 +953,5 @@ describe('CometChatCreatePollComponent', () => {
       // Poll option inputs are native input elements
       expect(component.options().length).toBeGreaterThan(0);
     });
-
-    it('should have focusable create and close buttons', () => {
-      expect(typeof component.onCreateClick).toBe('function');
-      expect(typeof component.onCloseClick).toBe('function');
-    });
   });
 });

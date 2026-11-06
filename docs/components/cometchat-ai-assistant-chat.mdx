@@ -71,11 +71,16 @@ export class AiChatComponent implements OnInit {
 | `loadLastAgentConversation` | `boolean` | `false` | When `true`, automatically resumes the most recent conversation on load |
 | `showSuggestedMessages` | `boolean` | `true` | Whether to show suggestion pills above the composer |
 | `suggestedMessages` | `string[]` | `[]` | Explicit suggestion pill labels; falls back to `user.getMetadata().suggestedMessages` |
+| `showBackButton` | `boolean` | `false` | Shows the back button in the chat header. Clicking it emits `backClick` |
 | `greetingTemplate` | `TemplateRef<{ $implicit: CometChat.User }>` | `undefined` | Custom greeting template rendered before the first message |
 
 ## Events
 
-This component does not emit outputs directly — it manages all state internally and communicates with child components via signals and the `CometChatAIStreamingService`.
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `backClick` | `void` | Emitted when the header back button is clicked (shown when `showBackButton` is `true`) |
+
+Apart from `backClick`, the component manages all state internally and communicates with child components via signals and the `CometChatAIStreamingService`.
 
 ## Advanced Usage
 

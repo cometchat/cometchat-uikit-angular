@@ -70,8 +70,8 @@
 
 /* Focus state */
 .cometchat-radio-button__input:focus + .cometchat-radio-button__custom {
-  outline: var(--cometchat-radio-button-focus-outline);
-  outline-offset: var(--cometchat-radio-button-focus-outline-offset);
+  outline: var(--cometchat-radio-button-focus-outline, var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color)));
+  outline-offset: var(--cometchat-radio-button-focus-outline-offset, var(--cometchat-focus-ring-offset, 2px));
 }
 
 .cometchat-radio-button__input:focus:not(:focus-visible) + .cometchat-radio-button__custom {
@@ -79,8 +79,8 @@
 }
 
 .cometchat-radio-button__input:focus-visible + .cometchat-radio-button__custom {
-  outline: var(--cometchat-radio-button-focus-outline);
-  outline-offset: var(--cometchat-radio-button-focus-outline-offset);
+  outline: var(--cometchat-radio-button-focus-outline, var(--cometchat-focus-ring-width, 2px) var(--cometchat-focus-ring-style, solid) var(--cometchat-focus-ring-color, var(--cometchat-primary-color)));
+  outline-offset: var(--cometchat-radio-button-focus-outline-offset, var(--cometchat-focus-ring-offset, 2px));
 }
 
 /* Disabled state */
@@ -91,7 +91,7 @@
 }
 
 .cometchat-radio-button__input:disabled ~ .cometchat-radio-button__text {
-  opacity: var(--cometchat-radio-button-text-opacity-disabled);
+  opacity: var(--cometchat-radio-button-text-opacity-disabled, 1);
   cursor: not-allowed;
 }
 
@@ -108,5 +108,5 @@
 
 /* Disabled text */
 .cometchat-radio-button__input:disabled ~ .cometchat-radio-button__text {
-  color: var(--cometchat-radio-button-text-color-disabled);
+  color: var(--cometchat-radio-button-text-color-disabled, var(--cometchat-text-color-disabled));
 }

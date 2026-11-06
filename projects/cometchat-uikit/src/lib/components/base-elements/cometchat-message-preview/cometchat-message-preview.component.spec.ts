@@ -15,6 +15,7 @@
  *            14.4, 14.5, 15.7
  */
 import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from '../../../testing';
 import { CometChatMessagePreviewComponent } from './cometchat-message-preview.component';
@@ -485,7 +486,7 @@ describe('CometChatMessagePreviewComponent', () => {
         getType: () => 'custom_type',
         getDeletedAt: () => undefined,
         getSender: () => ({ getName: () => 'X' }),
-      };
+      } as unknown as CometChat.BaseMessage;
       expect(component.messageContentPreview.length).toBeGreaterThan(0);
     });
 
@@ -747,7 +748,7 @@ describe('CometChatMessagePreviewComponent', () => {
         getDeletedAt: () => undefined,
         getType: () => 'text',
         getText: () => 'Hi',
-      };
+      } as unknown as CometChat.BaseMessage;
       expect(() => component.senderName).not.toThrow();
     });
 
@@ -755,7 +756,7 @@ describe('CometChatMessagePreviewComponent', () => {
       component.message = {
         getDeletedAt: () => undefined,
         getSender: () => ({ getName: () => 'X' }),
-      };
+      } as unknown as CometChat.BaseMessage;
       expect(() => component.messageContentPreview).not.toThrow();
     });
 

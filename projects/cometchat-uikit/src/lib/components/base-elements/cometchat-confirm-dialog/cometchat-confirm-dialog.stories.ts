@@ -12,6 +12,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
+import { within, expect } from 'storybook/test';
 import { CometChatConfirmDialogComponent } from './cometchat-confirm-dialog.component';
 
 // ============================================
@@ -238,16 +239,13 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
-
-/** Verifies title prop renders in the dialog. */
+/** Verifies title prop renders in the dialog and names it (aria-labelledby). */
 export const TestTitleRenders: Story = {
   args: { title: 'Delete Conversation', messageText: 'Are you sure?', confirmButtonText: 'Delete', cancelButtonText: 'Cancel' },
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const title = canvasElement.querySelector('.cometchat-confirm-dialog__title, [class*="confirm-dialog"] [class*="title"]');
-    expect(title).not.toBeNull();
-    expect(title!.textContent!.trim()).toContain('Delete Conversation');
+    const canvas = within(canvasElement);
+    const dialog = await canvas.findByRole('dialog', { name: 'Delete Conversation' });
+    expect(dialog.querySelector('.cometchat-confirm-dialog__content-title')).toHaveTextContent('Delete Conversation');
   },
 };
 
@@ -255,32 +253,29 @@ export const TestTitleRenders: Story = {
 export const TestMessageTextRenders: Story = {
   args: { title: 'Confirm', messageText: 'This action cannot be undone.', confirmButtonText: 'Yes', cancelButtonText: 'No' },
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const message = canvasElement.querySelector('.cometchat-confirm-dialog__message, [class*="confirm-dialog"] [class*="message"], [class*="confirm-dialog"] [class*="subtitle"]');
-    expect(message).not.toBeNull();
-    expect(message!.textContent!.trim()).toContain('This action cannot be undone');
+    const canvas = within(canvasElement);
+    const message = await canvas.findByText('This action cannot be undone.');
+    expect(message).toHaveClass('cometchat-confirm-dialog__content-description');
   },
 };
 
-/** Verifies confirm button text renders correctly. */
+/** Verifies confirm button text renders on the submit button. */
 export const TestConfirmButtonText: Story = {
   args: { title: 'Confirm', messageText: 'Proceed?', confirmButtonText: 'Yes, Delete', cancelButtonText: 'Cancel' },
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const confirmBtn = canvasElement.querySelector('.cometchat-confirm-dialog__button--danger, [class*="confirm-dialog"] button[class*="danger"], [class*="confirm-dialog"] button[class*="confirm"]');
-    expect(confirmBtn).not.toBeNull();
-    expect(confirmBtn!.textContent!.trim()).toContain('Yes, Delete');
+    const canvas = within(canvasElement);
+    const confirmBtn = await canvas.findByRole('button', { name: 'Yes, Delete' });
+    expect(confirmBtn.closest('.cometchat-confirm-dialog__button-group-submit')).not.toBeNull();
   },
 };
 
-/** Verifies cancel button text renders correctly. */
+/** Verifies cancel button text renders on the cancel button. */
 export const TestCancelButtonText: Story = {
   args: { title: 'Confirm', messageText: 'Proceed?', confirmButtonText: 'OK', cancelButtonText: 'Never Mind' },
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const cancelBtn = canvasElement.querySelector('.cometchat-confirm-dialog__button--cancel, [class*="confirm-dialog"] button[class*="cancel"], [class*="confirm-dialog"] button:not([class*="danger"]):not([class*="confirm"])');
-    expect(cancelBtn).not.toBeNull();
-    expect(cancelBtn!.textContent!.trim()).toContain('Never Mind');
+    const canvas = within(canvasElement);
+    const cancelBtn = await canvas.findByRole('button', { name: 'Never Mind' });
+    expect(cancelBtn.closest('.cometchat-confirm-dialog__button-group-cancel')).not.toBeNull();
   },
 };
 
@@ -288,8 +283,10 @@ export const TestCancelButtonText: Story = {
 export const TestBothButtonsPresent: Story = {
   args: { title: 'Test', messageText: 'Test message', confirmButtonText: 'Confirm', cancelButtonText: 'Cancel' },
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const buttons = canvasElement.querySelectorAll('.cometchat-confirm-dialog button, [class*="confirm-dialog"] button');
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const canvas = within(canvasElement);
+    const dialog = await canvas.findByRole('dialog', { name: 'Test' });
+    const buttons = within(dialog).getAllByRole('button');
+    expect(buttons).toHaveLength(2);
+    expect(buttons.map(b => b.textContent?.trim())).toEqual(['Cancel', 'Confirm']);
   },
 };

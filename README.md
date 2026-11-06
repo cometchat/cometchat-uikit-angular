@@ -12,9 +12,9 @@ The CometChat Angular UI Kit provides a pre-built user interface kit that develo
 
 ## Prerequisites
 
-- Node.js >= 18
+- Node.js >= 20.19
 - npm >= 10
-- Angular >= 17 (up to Angular 21)
+- Angular >= 18 (up to Angular 21)
 - Sign up for a [CometChat](https://app.cometchat.com/) account to get your app credentials: _`App ID`_, _`Region`_, and _`Auth Key`_
 
 ## Repository Structure
@@ -113,6 +113,17 @@ For issues running the project or integrating with our UI Kits, consult our [doc
 
 The project has three test suites: **unit tests** (Vitest), **E2E tests** (Playwright), and **Storybook interaction tests**.
 
+### Check locally before you push
+
+Every CI run costs GitHub Actions minutes, so changes are proven on your machine first and a push is a change that is ready to be judged.
+
+| Command | When | What it runs |
+|---|---|---|
+| `npm run verify` | Before every push (the pre-push hook runs it for you) | Lockfile, versions, lint, type check, the unit tests related to what you changed, library build. About 1–2 min. |
+| `npm run verify:full` | Before marking a PR ready for review | The full unit suite with the coverage floors, the sample-app build and the smoke E2E. Needs the `E2E_*` keys in `.env`; `--no-e2e` skips the E2E part. |
+
+`npm install` installs the git hooks (pre-commit safety checks and the pre-push `verify`) unless you already have your own hooks; `npm run hooks:install` installs them by hand. Skip a hook once, in an emergency only, with `--no-verify`. Both commands compare against the branch yours came from (the closest of `origin/dev-v5` and `origin/master-v5`); pass `--base <ref>` (or set `VERIFY_BASE`) to choose another.
+
 ### Unit Tests (Vitest)
 
 Unit tests live alongside the source files as `*.spec.ts` files and cover individual components, services, and utilities.
@@ -139,36 +150,25 @@ End-to-end tests live in the `e2e/` directory and run against the live sample ap
 
 #### Prerequisites
 
-All credentials are read from **`projects/sample-app/src/environments/environment.ts`** — the single source of truth for the entire project. No `.env` file is required for local development.
-
-```typescript
-// projects/sample-app/src/environments/environment.ts
-export const environment = {
-  appId: 'your_app_id',
-  region: 'us',
-  authKey: 'your_auth_key',
-  apiKey: 'your_rest_api_key',   // CometChat REST API key (for E2E test data setup)
-  userUid: 'cometchat-uid-1',    // Primary E2E test user
-  userUid2: 'cometchat-uid-2',   // Secondary E2E test user
-};
-```
-
-**For CI or running against a different app**, you can override any value via environment variables (they take priority over `environment.ts`):
+E2E credentials go in a **`.env`** file at the repo root, which git ignores. Never put real keys in `projects/sample-app/src/environments/environment.ts`: that file is committed and keeps placeholders, and the pre-commit hook blocks a commit that stages real keys in it.
 
 ```sh
 cp e2e/.env.example .env
-# Then uncomment and fill in only the values you want to override
+# Then fill in E2E_APP_ID, E2E_REGION, E2E_AUTH_KEY and E2E_API_KEY (the REST API key, used to
+# create and delete test data), plus the optional values listed in the file.
 ```
+
+`npm run verify:full` writes these into the sample app for its E2E build and puts the placeholder file back afterwards. CI reads the same `E2E_*` values from the repository's secrets and variables.
 
 #### Test Data Lifecycle
 
-Before every test run, the setup automatically:
-1. **Deletes** any leftover E2E data from previous runs
-2. **Creates 30 fresh users** (`e2e-user-01` through `e2e-user-30`)
-3. **Creates 3 fresh groups** (`e2e-public-group`, `e2e-private-group`, `e2e-password-group`)
+Every run tags the data it creates with its own run ID, so several runs can share the E2E app. Before a run, the setup:
+1. **Deletes** anything this run left behind earlier
+2. **Makes sure the 30 shared filler users exist** (`e2e-user-01` through `e2e-user-30`, tagged `e2e-fixture`). They are created once and never deleted, because the app's plan allows only 100 users.
+3. **Creates this run's 3 groups** (public, private and password, named after the run)
 4. **Seeds 50+ messages** between the primary and secondary test users
 
-After every test run, all E2E-created users and groups are **permanently deleted**. The 5 permanent fixture users (`cometchat-uid-1` through `cometchat-uid-5`) are never deleted.
+After the run, the groups and users **this run** created are **permanently deleted**. The shared filler users and the permanent sample users (`cometchat-uid-1` through `cometchat-uid-5`) are never deleted.
 
 #### Running E2E Tests
 
@@ -236,6 +236,7 @@ Storybook stories live in `*.stories.ts` files alongside each component. They se
 
 | Suite | Command | What it tests |
 |---|---|---|
+| Local verify | `npm run verify` / `npm run verify:full` | The PR gate's checks, on your machine |
 | Unit (Vitest) | `npm test` | Components, services, utilities |
 | Unit (watch) | `npm run test:watch` | Same, re-runs on change |
 | E2E (Playwright) | `npm run e2e` | Full user journeys in browser |

@@ -139,7 +139,7 @@ export class CometChatChangeScopeComponent implements OnInit, AfterViewInit, OnD
       this.liveAnnouncer.announce(
         CometChatLocalize.getLocalizedString('accessibility_scope_changed').replace(
           '{scope}',
-          this.selectedValue
+          () => this.selectedValue
         ),
         'polite'
       );

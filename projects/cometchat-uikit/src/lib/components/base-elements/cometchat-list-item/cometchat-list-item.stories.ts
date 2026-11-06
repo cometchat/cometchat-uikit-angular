@@ -430,7 +430,7 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 /** Verifies title prop renders correctly. */
 export const TestTitleRenders: Story = {

@@ -111,7 +111,7 @@ cometchat-message-preview{
 .cometchat-message-composer__reply-preview-title {
   display: flex;
   flex-direction: column;
-  gap: var(--cometchat-message-composer-reply-preview-title-gap, var(--cometchat-spacing-0));
+  gap: var(--cometchat-message-composer-reply-preview-title-gap, 0);
 }
 
 .cometchat-message-composer__reply-preview-label {
@@ -248,7 +248,7 @@ cometchat-message-preview{
 .cometchat-message-composer__edit-preview-title {
   display: flex;
   flex-direction: column;
-  gap: var(--cometchat-message-composer-edit-preview-title-gap, var(--cometchat-spacing-0));
+  gap: var(--cometchat-message-composer-edit-preview-title-gap, 0);
 }
 
 .cometchat-message-composer__edit-preview-label {
@@ -1002,7 +1002,7 @@ cometchat-message-preview{
   background: var(--cometchat-message-composer-attachment-menu-background, var(--cometchat-background-color-01));
   border: var(--cometchat-message-composer-attachment-menu-border, 1px solid var(--cometchat-border-color-light));
   border-radius: var(--cometchat-message-composer-attachment-menu-border-radius, var(--cometchat-radius-2));
-  box-shadow: var(--cometchat-message-composer-attachment-menu-box-shadow, var(--cometchat-shadow-high));
+  box-shadow: var(--cometchat-message-composer-attachment-menu-box-shadow, var(--cometchat-shadow-lg));
 }
 
 /* ==================== Emoji Keyboard ==================== */
@@ -1016,7 +1016,7 @@ cometchat-message-preview{
   background: var(--cometchat-message-composer-emoji-keyboard-background, var(--cometchat-background-color-01));
   border: var(--cometchat-message-composer-emoji-keyboard-border, 1px solid var(--cometchat-border-color-light));
   border-radius: var(--cometchat-message-composer-emoji-keyboard-border-radius, var(--cometchat-radius-2));
-  box-shadow: var(--cometchat-message-composer-emoji-keyboard-box-shadow, var(--cometchat-shadow-high));
+  box-shadow: var(--cometchat-message-composer-emoji-keyboard-box-shadow, var(--cometchat-shadow-lg));
 }
 
 /* ==================== Sticker Button and Keyboard ==================== */
@@ -1050,7 +1050,7 @@ cometchat-message-preview{
   background: var(--cometchat-message-composer-stickers-keyboard-background, var(--cometchat-background-color-01));
   border: var(--cometchat-message-composer-stickers-keyboard-border, 1px solid var(--cometchat-border-color-light));
   border-radius: var(--cometchat-message-composer-stickers-keyboard-border-radius, var(--cometchat-radius-2));
-  box-shadow: var(--cometchat-message-composer-stickers-keyboard-box-shadow, var(--cometchat-shadow-high));
+  box-shadow: var(--cometchat-message-composer-stickers-keyboard-box-shadow, var(--cometchat-shadow-lg));
 }
 
 /* ==================== Inline Voice Recorder ==================== */
@@ -1139,7 +1139,7 @@ cometchat-message-preview{
   background: var(--cometchat-message-composer-mention-suggestions-background, var(--cometchat-background-color-01));
   border: var(--cometchat-message-composer-mention-suggestions-border, 1px solid var(--cometchat-border-color-light));
   border-radius: var(--cometchat-message-composer-mention-suggestions-border-radius, var(--cometchat-radius-3));
-  box-shadow: var(--cometchat-message-composer-mention-suggestions-box-shadow, var(--cometchat-shadow-high));
+  box-shadow: var(--cometchat-message-composer-mention-suggestions-box-shadow, var(--cometchat-shadow-lg));
   z-index: var(--cometchat-message-composer-mention-suggestions-z-index, 100);
   width: fit-content;
   min-width: 280px;
@@ -1564,9 +1564,12 @@ cometchat-message-preview{
 }
 
 .cometchat-message-composer__drop-zone-text {
-  font-size: var(--cometchat-message-composer-drop-zone-text-font-size, 14px);
-  font-weight: 700;
-  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  /* Whole-font hook; the existing size hook still works inside the default. Weight/size = body-bold. */
+  font: var(
+    --cometchat-message-composer-drop-zone-text-font,
+    700 var(--cometchat-message-composer-drop-zone-text-font-size, 14px) var(--cometchat-font-family, Inter, sans-serif)
+  );
+  line-height: inherit;
   color: var(--cometchat-message-composer-drop-zone-text-color, var(--cometchat-static-white, #ffffff));
 }
 .cometchat-message-composer__input-section--multiline .cometchat-message-composer__rich-text-editor{

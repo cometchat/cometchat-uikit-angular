@@ -1,151 +1,95 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import { loginToApp, openConversation, getUserName, SECONDARY_USER } from '../helpers';
 
 /**
  * E2E Tests — CometChatUserDetails (Angular)
  *
- * Tests the user details panel.
- * Requires opening a 1-on-1 conversation and clicking the header to open details.
+ * Tests the user details panel, opened from the header of the seeded 1:1 chat with the
+ * secondary user. Every assertion waits on UI state.
  *
  * @see ENG-34987
  */
 
 test.describe('CometChatUserDetails', () => {
   let page: Page;
+  let secondaryName: string;
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
+    secondaryName = await getUserName(SECONDARY_USER);
     await loginToApp(page);
-    await page.waitForSelector('.cometchat-conversations', { timeout: 30_000 });
-
-    // Open the first conversation (should be a user conversation)
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForSelector('cometchat-message-header, .cometchat-message-header', { timeout: 15_000 });
-    await page.waitForTimeout(2000);
+    await openConversation(page, secondaryName);
   });
+
+  const header = (): Locator => page.locator('cometchat-message-header').first();
+  const details = (): Locator => page.locator('cometchat-user-details');
+
+  /** Open user details by clicking the header's user info. */
+  async function openDetails() {
+    await header().locator('.cometchat-message-header__info').first().click();
+    await expect(details()).toBeVisible();
+  }
 
   // ==================== Opening User Details ====================
 
   test('user details panel opens when clicking header info', async () => {
-    // Click on the header title/avatar area to open details
-    const headerInfo = page.locator('.cometchat-message-header__title, .cometchat-message-header cometchat-avatar, .cometchat-message-header .cometchat-avatar').first();
-    await headerInfo.click();
-    await page.waitForTimeout(2000);
-
-    // User details panel should appear
-    const detailsPanel = page.locator('cometchat-user-details, .cometchat-user-details, [class*="user-details"]').first();
-    const hasDetails = await detailsPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasDetails) {
-      await expect(detailsPanel).toBeVisible();
-    }
-    // Pass — details panel may open differently in this app
-    expect(true).toBeTruthy();
+    await expect(details()).toHaveCount(0);
+    await openDetails();
+    await expect(details().locator('.cometchat-user-details__header-text')).toHaveText('User Info');
   });
 
   // ==================== User Info Display ====================
 
   test('user name and avatar display correctly', async () => {
-    const headerInfo = page.locator('.cometchat-message-header__title, .cometchat-message-header cometchat-avatar').first();
-    await headerInfo.click();
-    await page.waitForTimeout(2000);
-
-    const detailsPanel = page.locator('cometchat-user-details, .cometchat-user-details, [class*="user-details"]').first();
-    const hasDetails = await detailsPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasDetails) {
-      // Avatar should be present
-      const avatar = detailsPanel.locator('cometchat-avatar, .cometchat-avatar').first();
-      const hasAvatar = await avatar.isVisible().catch(() => false);
-
-      // Name should be present
-      const name = detailsPanel.locator('[class*="name"], [class*="title"], h2, h3').first();
-      const hasName = await name.isVisible().catch(() => false);
-
-      expect(hasAvatar || hasName).toBeTruthy();
-    }
+    await openDetails();
+    await expect(details().locator('.cometchat-user-details__content-title')).toHaveText(secondaryName);
+    // No profile picture: the avatar shows the user's initials.
+    const avatar = details().locator('.cometchat-user-details__content-avatar cometchat-avatar');
+    await expect(avatar).toBeVisible();
+    await expect(avatar.getByRole('img')).toHaveAttribute('aria-label', `Avatar for ${secondaryName}`);
+    const initials = secondaryName.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+    await expect(avatar.locator('.cometchat-avatar__text')).toHaveText(initials);
   });
 
   // ==================== Online/Offline Status ====================
 
   test('online/offline status shows in details', async () => {
-    const headerInfo = page.locator('.cometchat-message-header__title, .cometchat-message-header cometchat-avatar').first();
-    await headerInfo.click();
-    await page.waitForTimeout(2000);
-
-    const detailsPanel = page.locator('cometchat-user-details, .cometchat-user-details, [class*="user-details"]').first();
-    const hasDetails = await detailsPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasDetails) {
-      const status = detailsPanel.locator('[class*="status"], [class*="online"], [class*="offline"], [class*="subtitle"]').first();
-      const hasStatus = await status.isVisible().catch(() => false);
-
-      if (hasStatus) {
-        const text = await status.textContent();
-        expect(text?.trim()).toBeTruthy();
-      }
-    }
+    // The header's presence dot names the user's status; details show the same in words.
+    const headerStatus = header().locator('.cometchat-message-header__status-indicator');
+    await expect(headerStatus).toHaveAttribute('aria-label', /^(Online|Offline)$/);
+    const status = (await headerStatus.getAttribute('aria-label'))!;
+    await openDetails();
+    await expect(details().locator('.cometchat-user-details__content-description')).toHaveText(status);
   });
 
   // ==================== Block User ====================
 
   test('block user button is present', async () => {
-    const headerInfo = page.locator('.cometchat-message-header__title, .cometchat-message-header cometchat-avatar').first();
-    await headerInfo.click();
-    await page.waitForTimeout(2000);
-
-    const detailsPanel = page.locator('cometchat-user-details, .cometchat-user-details, [class*="user-details"]').first();
-    const hasDetails = await detailsPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasDetails) {
-      const blockBtn = detailsPanel.locator('button:has-text("Block"), [class*="block"], button[aria-label*="Block"]').first();
-      const hasBlock = await blockBtn.isVisible().catch(() => false);
-
-      if (hasBlock) {
-        await expect(blockBtn).toBeVisible();
-      }
-    }
+    await openDetails();
+    const block = details().getByRole('button').filter({ hasText: 'Block User' });
+    await expect(block).toBeVisible();
+    await expect(block).toHaveAttribute('tabindex', '0');
   });
 
   // ==================== Close/Back Button ====================
 
   test('close button closes the details panel', async () => {
-    const headerInfo = page.locator('.cometchat-message-header__title, .cometchat-message-header cometchat-avatar').first();
-    await headerInfo.click();
-    await page.waitForTimeout(2000);
-
-    const detailsPanel = page.locator('cometchat-user-details, .cometchat-user-details, [class*="user-details"]').first();
-    const hasDetails = await detailsPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasDetails) {
-      const closeBtn = detailsPanel.locator('[class*="close"], [class*="back"], button[aria-label*="Close"], button[aria-label*="Back"]').first();
-      const hasClose = await closeBtn.isVisible().catch(() => false);
-
-      if (hasClose) {
-        await closeBtn.click();
-        await page.waitForTimeout(1000);
-
-        const stillVisible = await detailsPanel.isVisible().catch(() => false);
-        expect(stillVisible).toBeFalsy();
-      }
-    }
+    await openDetails();
+    await details().getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(details()).toBeHidden();
+    // The chat stays open.
+    await expect(page.locator('cometchat-messages cometchat-message-composer')).toBeVisible();
   });
 
   // ==================== Accessibility ====================
 
   test('user details panel has proper ARIA attributes', async () => {
-    const headerInfo = page.locator('.cometchat-message-header__title, .cometchat-message-header cometchat-avatar').first();
-    await headerInfo.click();
-    await page.waitForTimeout(2000);
-
-    const detailsPanel = page.locator('cometchat-user-details, .cometchat-user-details, [class*="user-details"]').first();
-    const hasDetails = await detailsPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasDetails) {
-      const hasAriaElements = await detailsPanel.locator('[aria-label], [role], button').first().isVisible({ timeout: 2_000 }).catch(() => false);
-      expect(hasAriaElements).toBeTruthy();
-    } else {
-      expect(true).toBeTruthy();
-    }
+    await openDetails();
+    const close = details().getByRole('button', { name: 'Close', exact: true });
+    await expect(close).toHaveAttribute('tabindex', '0');
+    // The close control works from the keyboard.
+    await close.focus();
+    await page.keyboard.press('Enter');
+    await expect(details()).toBeHidden();
   });
 });

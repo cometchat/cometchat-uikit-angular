@@ -46,19 +46,23 @@ function computeParentBoundedPosition(
   return { top, left };
 }
 
-/** Returns true when the overlay rect is fully inside the container rect (with 1px tolerance). */
-function isWithinContainer(
+/** Asserts the overlay rect is fully inside the container rect (with 1px tolerance), edge by edge. */
+function expectWithinContainer(
   pos: { top: number; left: number },
   overlay: { width: number; height: number },
   container: { top: number; bottom: number; left: number; right: number }
-): boolean {
+): void {
   const tolerance = 1;
-  return (
-    pos.top >= container.top - tolerance &&
-    pos.left >= container.left - tolerance &&
-    pos.top + overlay.height <= container.bottom + tolerance &&
-    pos.left + overlay.width <= container.right + tolerance
-  );
+  expect(pos.top).toBeGreaterThanOrEqual(container.top - tolerance);
+  expect(pos.left).toBeGreaterThanOrEqual(container.left - tolerance);
+  expect(pos.top + overlay.height).toBeLessThanOrEqual(container.bottom + tolerance);
+  expect(pos.left + overlay.width).toBeLessThanOrEqual(container.right + tolerance);
+}
+
+/** Asserts both position values are finite numbers (no NaN / Infinity). */
+function expectFinitePosition(pos: { top: number; left: number }): void {
+  expect(Number.isFinite(pos.top)).toBe(true);
+  expect(Number.isFinite(pos.left)).toBe(true);
 }
 
 describe('Property 3: Overlay stays within container bounds', () => {
@@ -120,11 +124,11 @@ describe('Property 3: Overlay stays within container bounds', () => {
             overlay.width > container.right - container.left - 20 ||
             overlay.height > container.bottom - container.top - 20
           ) {
-            return true;
+            return;
           }
 
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return isWithinContainer(pos, overlay, container);
+          expectWithinContainer(pos, overlay, container);
         }
       ),
       { numRuns: 500 }
@@ -139,7 +143,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
         placementArb,
         ({ trigger, container }, overlay, placement) => {
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return isFinite(pos.top) && isFinite(pos.left);
+          expectFinitePosition(pos);
         }
       )
     );
@@ -152,7 +156,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
         overlayArb,
         ({ trigger, container }, overlay) => {
           const pos = computeParentBoundedPosition(trigger, overlay, container, 'left');
-          return pos.left >= container.left - 1;
+          expect(pos.left).toBeGreaterThanOrEqual(container.left - 1);
         }
       )
     );
@@ -165,7 +169,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
         overlayArb,
         ({ trigger, container }, overlay) => {
           const pos = computeParentBoundedPosition(trigger, overlay, container, 'top');
-          return pos.top >= container.top - 1;
+          expect(pos.top).toBeGreaterThanOrEqual(container.top - 1);
         }
       )
     );
@@ -182,10 +186,10 @@ describe('Property 3: Overlay stays within container bounds', () => {
             overlay.width > container.right - container.left - 20 ||
             overlay.height > container.bottom - container.top - 20
           ) {
-            return true;
+            return;
           }
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return pos.left + overlay.width <= container.right + 1;
+          expect(pos.left + overlay.width).toBeLessThanOrEqual(container.right + 1);
         }
       ),
       { numRuns: 200 }
@@ -203,10 +207,10 @@ describe('Property 3: Overlay stays within container bounds', () => {
             overlay.width > container.right - container.left - 20 ||
             overlay.height > container.bottom - container.top - 20
           ) {
-            return true;
+            return;
           }
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return pos.top + overlay.height <= container.bottom + 1;
+          expect(pos.top + overlay.height).toBeLessThanOrEqual(container.bottom + 1);
         }
       ),
       { numRuns: 200 }
@@ -224,7 +228,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
             overlay.width > container.right - container.left - 20 ||
             overlay.height > container.bottom - container.top - 20
           ) {
-            return true;
+            return;
           }
           const trigger = {
             top: container.top,
@@ -235,7 +239,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
             height: 20,
           };
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return isWithinContainer(pos, overlay, container);
+          expectWithinContainer(pos, overlay, container);
         }
       ),
       { numRuns: 200 }
@@ -253,7 +257,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
             overlay.width > container.right - container.left - 20 ||
             overlay.height > container.bottom - container.top - 20
           ) {
-            return true;
+            return;
           }
           const trigger = {
             top: container.bottom - 20,
@@ -264,7 +268,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
             height: 20,
           };
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return isWithinContainer(pos, overlay, container);
+          expectWithinContainer(pos, overlay, container);
         }
       ),
       { numRuns: 200 }
@@ -306,7 +310,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
             height: 20,
           };
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return isFinite(pos.top) && isFinite(pos.left);
+          expectFinitePosition(pos);
         }
       ),
       { numRuns: 200 }
@@ -346,7 +350,7 @@ describe('Property 3: Overlay stays within container bounds', () => {
             height: 10,
           };
           const pos = computeParentBoundedPosition(trigger, overlay, container, placement);
-          return isFinite(pos.top) && isFinite(pos.left);
+          expectFinitePosition(pos);
         }
       ),
       { numRuns: 100 }

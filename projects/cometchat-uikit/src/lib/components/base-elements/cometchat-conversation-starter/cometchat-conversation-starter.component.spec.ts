@@ -706,10 +706,6 @@ describe('CometChatConversationStarterComponent', () => {
   // ─── Accessibility ───
 
   describe('Accessibility', () => {
-    it('should have focusable starter suggestion buttons', () => {
-      const component = createComponent();
-      expect(typeof component.onStarterClick).toBe('function');
-    });
 
     it('should provide accessible labels for starter suggestions', () => {
       const component = createComponent();

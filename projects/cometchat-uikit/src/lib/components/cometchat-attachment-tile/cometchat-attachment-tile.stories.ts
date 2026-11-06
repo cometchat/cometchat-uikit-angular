@@ -25,10 +25,49 @@ const meta: Meta<CometChatAttachmentTileComponent> = {
   title: 'Components/CometChatAttachmentTile',
   component: CometChatAttachmentTileComponent,
   tags: ['autodocs'],
+  argTypes: {
+    tile: {
+      control: 'object',
+      description: 'The staged attachment to render: file, type, upload status and progress',
+      table: { type: { summary: 'AttachmentFile' }, category: 'Data' },
+    },
+    tileClick: {
+      action: 'tileClick',
+      description: 'Emitted when the tile is clicked',
+      table: { type: { summary: 'EventEmitter<AttachmentFile>' }, category: 'Events' },
+    },
+    cancelClick: {
+      action: 'cancelClick',
+      description: 'Emitted when an in-progress upload is cancelled',
+      table: { type: { summary: 'EventEmitter<AttachmentFile>' }, category: 'Events' },
+    },
+    removeClick: {
+      action: 'removeClick',
+      description: 'Emitted when the tile is removed from the tray',
+      table: { type: { summary: 'EventEmitter<AttachmentFile>' }, category: 'Events' },
+    },
+    retryClick: {
+      action: 'retryClick',
+      description: 'Emitted when a failed upload is retried',
+      table: { type: { summary: 'EventEmitter<AttachmentFile>' }, category: 'Events' },
+    },
+  },
 };
 export default meta;
 
 type Story = StoryObj<CometChatAttachmentTileComponent>;
+
+/** Default tile: an uploaded image attachment staged in the composer. */
+export const Default: Story = {
+  args: { tile: tile() },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A staged image attachment that has finished uploading, showing its thumbnail.',
+      },
+    },
+  },
+};
 
 export const ImageUploaded: Story = { args: { tile: tile() } };
 

@@ -1,0 +1,1561 @@
+{
+  "projects/cometchat-uikit/scripts/css-audit.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/CometChatCalls.ts": {
+    "no-var": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/CometChatUIKitUtility.ts": {
+    "no-prototype-builtins": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/boolean-attribute-transform.property.spec.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 6
+    },
+    "@angular-eslint/template/label-has-associated-control": {
+      "count": 1
+    },
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/cometchat-uikit.ts": {
+    "@typescript-eslint/no-non-null-asserted-optional-chain": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-action-sheet/cometchat-action-sheet.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-action-sheet/cometchat-action-sheet.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    },
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-avatar/cometchat-avatar.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-change-scope/cometchat-change-scope.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-confirm-dialog/cometchat-confirm-dialog.component.ts": {
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-context-menu/cometchat-context-menu.component.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-context-menu/cometchat-context-menu.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 2
+    },
+    "@angular-eslint/template/label-has-associated-control": {
+      "count": 2
+    },
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 10
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-context-menu/cometchat-context-menu.component.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-conversation-starter/cometchat-conversation-starter.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    },
+    "no-case-declarations": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-conversation-starter/cometchat-conversation-starter.stories.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-conversation-summary/cometchat-conversation-summary.stories.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-date/cometchat-date.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-dropdown/cometchat-dropdown.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-dropdown/cometchat-dropdown.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-emoji-keyboard/cometchat-emoji-keyboard.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 7
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-emoji-keyboard/cometchat-emoji-keyboard.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-error-boundary/cometchat-error-boundary.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-flag-message-dialog/cometchat-flag-message-dialog.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-fullscreen-viewer/cometchat-fullscreen-viewer.component.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-fullscreen-viewer/cometchat-fullscreen-viewer.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 23
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-fullscreen-viewer/cometchat-fullscreen-viewer.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-link-dialog/cometchat-link-dialog.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    },
+    "no-useless-escape": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-link-popover/cometchat-link-popover.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-link-popover/cometchat-link-popover.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-list-item/cometchat-list-item.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    },
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 10
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-media-recorder/cometchat-media-recorder.component.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    },
+    "@typescript-eslint/no-this-alias": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-media-recorder/cometchat-media-recorder.utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-message-preview/cometchat-message-preview.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 7
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-popover/cometchat-popover.component.html": {
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    },
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-popover/cometchat-popover.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-radio-button/cometchat-radio-button.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 2
+    },
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-smart-replies/cometchat-smart-replies.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    },
+    "no-case-declarations": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-smart-replies/cometchat-smart-replies.stories.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-toast/cometchat-toast.service.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-action-bubble/cometchat-action-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-ai-assistant-chat-history/cometchat-ai-assistant-chat-history.component.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-ai-assistant-chat-history/cometchat-ai-assistant-chat-history.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-ai-assistant-chat/cometchat-ai-assistant-chat.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-ai-assistant-message-bubble/cometchat-ai-assistant-message-bubble.component.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-ai-assistant-message-bubble/cometchat-ai-assistant-message-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-attachment-tray/cometchat-attachment-tray.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/cometchat-audio-bubble.component.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 7
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/cometchat-audio-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/cometchat-audio-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/cometchat-audio-bubble.utils.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/base-plugin.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/decoder.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/event-emitter.ts": {
+    "@typescript-eslint/consistent-indexed-object-style": {
+      "count": 1
+    },
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/player.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/renderer.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 4
+    },
+    "no-unsafe-optional-chaining": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/renderer.types.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/renderer.utils.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/timer.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/wavesurfer.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 3
+    },
+    "@typescript-eslint/prefer-for-of": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/wavesurfer.types.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 3
+    },
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audio-bubble/wavesurfer/webaudio.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-audios-bubble/cometchat-audios-bubble.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-call-bubble/cometchat-call-bubble.component.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-call-bubble/cometchat-call-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-call-buttons/cometchat-call-buttons.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    },
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-call-buttons/cometchat-call-buttons.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-call-logs/cometchat-call-logs-font-fix.property.spec.ts": {
+    "@typescript-eslint/prefer-for-of": {
+      "count": 1
+    },
+    "prefer-const": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-call-logs/cometchat-call-logs.component.html": {
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    },
+    "@angular-eslint/template/role-has-required-aria": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-call-logs/cometchat-call-logs.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-card-bubble/cometchat-card-bubble.component.ts": {
+    "@angular-eslint/no-output-on-prefix": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-collaborative-document-bubble/cometchat-collaborative-document-bubble.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-collaborative-document-bubble/cometchat-collaborative-document-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-collaborative-document-bubble/cometchat-collaborative-document-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-collaborative-whiteboard-bubble/cometchat-collaborative-whiteboard-bubble.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-collaborative-whiteboard-bubble/cometchat-collaborative-whiteboard-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-collaborative-whiteboard-bubble/cometchat-collaborative-whiteboard-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-conversation-item/cometchat-conversation-item.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-conversation-item/cometchat-conversation-item.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    },
+    "@angular-eslint/prefer-inject": {
+      "count": 2
+    },
+    "no-empty": {
+      "count": 4
+    },
+    "prefer-const": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-conversation-item/cometchat-conversation-item.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-conversations/cometchat-conversations.bug-exploration.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-conversations/cometchat-conversations.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-conversations/cometchat-conversations.component.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-conversations/cometchat-conversations.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 2
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-create-poll/cometchat-create-poll.component.html": {
+    "@angular-eslint/template/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-create-poll/cometchat-create-poll.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-create-poll/cometchat-create-poll.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-delete-bubble/cometchat-delete-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-file-bubble/cometchat-file-bubble.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 6
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-file-bubble/cometchat-file-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-file-bubble/cometchat-file-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-files-bubble/cometchat-files-bubble.stories.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-item/cometchat-group-item.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-member-item/cometchat-group-member-item.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-members/cometchat-group-members.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-members/cometchat-group-members.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-members/cometchat-group-members.scope-utils.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-members/cometchat-group-members.stories.ts": {
+    "@typescript-eslint/no-this-alias": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-members/cometchat-group-members.types.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-group-members/cometchat-group-members.utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-groups/cometchat-groups.component.coverage.spec.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-groups/cometchat-groups.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-groups/cometchat-groups.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-groups/cometchat-groups.stories.ts": {
+    "@typescript-eslint/no-this-alias": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-groups/cometchat-groups.types.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-image-bubble/cometchat-image-bubble.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 13
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-image-bubble/cometchat-image-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-image-bubble/cometchat-image-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-incoming-call/cometchat-incoming-call.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-incoming-call/cometchat-incoming-call.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-markdown-renderer/cometchat-markdown-parser.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-markdown-renderer/cometchat-markdown-parser.ts": {
+    "prefer-const": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-markdown-renderer/cometchat-markdown-renderer.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-markdown-renderer/cometchat-markdown-renderer.component.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-markdown-renderer/cometchat-markdown-renderer.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-bubble/cometchat-message-bubble.component.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 5
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-bubble/cometchat-message-bubble.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-bubble/cometchat-message-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.attachment-handlers.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.component.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 15
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.component.spec.ts": {
+    "no-useless-escape": {
+      "count": 18
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    },
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 7
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.drag-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.drag-utils.ts": {
+    "@typescript-eslint/prefer-for-of": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.edit-mode.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.formatter-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.mentions-handler.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.popover-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.send-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.send-utils.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.toolbar-handler.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-composer/cometchat-message-composer.toolbar-handler.ts": {
+    "@typescript-eslint/prefer-for-of": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-header/cometchat-message-header.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-header/cometchat-message-header.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-header/cometchat-message-header.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-information/cometchat-message-information.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    },
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 5
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.delete-handlers.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.helper-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.init-utils.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.keyboard-handler.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.keyboard-utils.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.reaction-handlers.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.read-handlers.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.read-handlers.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.scroll-handlers.ts": {
+    "@typescript-eslint/prefer-for-of": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-notification-badge/cometchat-notification-badge.component.ts": {
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-notification-badge/cometchat-notification-badge.stories.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-notification-feed/cometchat-notification-feed-view-model.ts": {
+    "@typescript-eslint/consistent-generic-constructors": {
+      "count": 1
+    },
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 3
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-notification-feed/cometchat-notification-feed.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    },
+    "@typescript-eslint/consistent-generic-constructors": {
+      "count": 1
+    },
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-notification-feed/cometchat-notification-feed.pipes.ts": {
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-notification-feed/cometchat-notification-feed.utils.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-notification-feed/cometchat-notification-feed.utils.ts": {
+    "@typescript-eslint/consistent-generic-constructors": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-ongoing-call/cometchat-ongoing-call.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-ongoing-call/cometchat-ongoing-call.stories.ts": {
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-outgoing-call/cometchat-outgoing-call.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-outgoing-call/cometchat-outgoing-call.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-paginated-list/cometchat-paginated-list.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-paginated-list/cometchat-paginated-list.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-pinned-messages/cometchat-pinned-messages.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-pinned-messages/cometchat-pinned-messages.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-pinned-messages/cometchat-pinned-messages.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-poll-bubble/cometchat-poll-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    },
+    "@typescript-eslint/class-literal-property-style": {
+      "count": 1
+    },
+    "no-prototype-builtins": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-poll-bubble/cometchat-poll-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-reaction-info/cometchat-reaction-info.stories.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-reaction-list/cometchat-reaction-list.stories.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "@typescript-eslint/no-this-alias": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-reactions/cometchat-reactions.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-reactions/cometchat-reactions.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-saved-messages/cometchat-saved-messages.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-saved-messages/cometchat-saved-messages.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-search/cometchat-search-conversations-list/cometchat-search-conversations-list.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-search/cometchat-search-messages-list/cometchat-search-messages-list.component.ts": {
+    "prefer-const": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-search/cometchat-search-messages-list/cometchat-search-messages-list.subtitle-render.spec.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-search/cometchat-search.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-search/search-filter.utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-sticker-bubble/cometchat-sticker-bubble.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-sticker-bubble/cometchat-sticker-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-stickers-keyboard/cometchat-stickers-keyboard.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-stream-message-bubble/cometchat-stream-message-bubble.stories.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-text-bubble/cometchat-text-bubble.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 3
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-text-bubble/cometchat-text-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-text-bubble/cometchat-text-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-thread-header/cometchat-thread-header.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-toolcall-argument-bubble/cometchat-toolcall-argument-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-toolcall-result-bubble/cometchat-toolcall-result-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-user-item/cometchat-user-item.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-users/cometchat-users.component.coverage.spec.ts": {
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-users/cometchat-users.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 2
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-users/cometchat-users.component.ts": {
+    "@angular-eslint/no-output-native": {
+      "count": 2
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 5
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-users/cometchat-users.stories.ts": {
+    "@typescript-eslint/no-this-alias": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-video-bubble/cometchat-video-bubble.component.html": {
+    "@angular-eslint/template/prefer-control-flow": {
+      "count": 21
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-video-bubble/cometchat-video-bubble.component.ts": {
+    "@angular-eslint/prefer-inject": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/components/cometchat-video-bubble/cometchat-video-bubble.stories.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/events/CometChatMessageEvents.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/events/CometChatThreadEvents.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/formatters/cometchat-markdown-formatter.ts": {
+    "@typescript-eslint/prefer-for-of": {
+      "count": 3
+    },
+    "no-useless-escape": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/formatters/cometchat-url-formatter.ts": {
+    "no-control-regex": {
+      "count": 1
+    },
+    "no-useless-escape": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/formatters/formatter-no-match-identity.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/formatters/formatter-round-trip.property.spec.ts": {
+    "no-useless-escape": {
+      "count": 12
+    }
+  },
+  "projects/cometchat-uikit/src/lib/input-null-safety.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/resources/CometChatLocalize/cometchat-localize.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/resources/CometChatLocalize/date-pattern-literals.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/resources/CometChatLocalize/no-hardcoded-strings.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/connection-state.service.spec.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/conversations.listeners.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/conversations.service.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/conversations.service.ts": {
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/conversations.utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/conversations.utils.ts": {
+    "@typescript-eslint/prefer-for-of": {
+      "count": 1
+    },
+    "no-prototype-builtins": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/format-manager.dom.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/format-manager.utils.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/global-config.service.spec.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/html-sanitizer.service.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/link-manager.class.ts": {
+    "no-useless-escape": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/media-controls.service.ts": {
+    "no-case-declarations": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/media-upload-tray.service.ts": {
+    "no-irregular-whitespace": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/mentions-navigation.service.ts": {
+    "no-case-declarations": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-composer.service.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.error-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.error-utils.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.fetch-utils.coverage.spec.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.listeners.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.read-ops.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.sent-handler.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.sent-handler.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.service.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.service.ts": {
+    "@typescript-eslint/consistent-generic-constructors": {
+      "count": 2
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 8
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-list.translation-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-utils.service.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/message-utils.service.ts": {
+    "no-prototype-builtins": {
+      "count": 4
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/notification-unread-count.service.ts": {
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/ongoing-call.service.spec.ts": {
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/ongoing-call.service.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 4
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.class.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "no-irregular-whitespace": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.class.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "no-useless-escape": {
+      "count": 25
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.class.ts": {
+    "no-useless-escape": {
+      "count": 2
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.custom-formatters.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.custom-formatters.ts": {
+    "no-empty": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.keydown-handler.coverage.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.markdown-detector.ts": {
+    "no-useless-escape": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.markdown-utils.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "no-control-regex": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.mention-ops-class.ts": {
+    "no-control-regex": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/rich-text-editor.mention-utils.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/services/sdk-call-error-wrapping.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/__tests__/integration.spec.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/edge-case-states.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/mdx-coverage.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/mdx-inputs-sync.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/mock-providers-services.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 3
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/sample-app-credentials.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 2
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/spec-audit.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/stories-completeness.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/testing/stories-coverage.property.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/utils/agent-message-utils.spec.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/utils/inline-markdown.ts": {
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/utils/list-keyboard-handler.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/cometchat-uikit/src/lib/utils/message-metadata-utils.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
+  "projects/sample-app/src/app/app.component.spec.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "projects/sample-app/src/app/app.routes.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/sample-app/src/app/components/cometchat-create-group/cometchat-create-group.a11y.spec.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 2
+    }
+  },
+  "projects/sample-app/src/app/components/cometchat-group-details/cometchat-group-details.component.ts": {
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/sample-app/src/app/components/cometchat-threaded-messages/cometchat-threaded-messages.component.html": {
+    "@angular-eslint/template/click-events-have-key-events": {
+      "count": 1
+    },
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "projects/sample-app/src/app/i18n/sample-app-translations.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "projects/sample-app/src/app/pages/home/cometchat-home.a11y.spec.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "unused-imports/no-unused-imports": {
+      "count": 1
+    }
+  },
+  "projects/sample-app/src/app/pages/login/login-page.a11y.spec.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 2
+    }
+  },
+  "projects/sample-app/src/main.ts": {
+    "no-empty": {
+      "count": 1
+    }
+  }
+}

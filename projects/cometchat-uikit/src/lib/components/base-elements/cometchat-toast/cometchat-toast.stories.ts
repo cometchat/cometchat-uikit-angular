@@ -336,7 +336,7 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 /** Verifies toast renders with text content. */
 export const TestTextRenders: Story = {

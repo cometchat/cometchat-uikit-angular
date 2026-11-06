@@ -19,6 +19,7 @@ import {
   announceTypingImpl,
   announceLoadingMoreImpl,
 } from './cometchat-message-list.announce-utils';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,6 +48,16 @@ describe('cometchat-message-list.announce-utils', () => {
         expect.any(String),
         'polite'
       );
+    });
+
+    it("reads a sender and preview containing $&, $' and $$ literally", () => {
+      const spy = vi.spyOn(CometChatLocalize, 'getLocalizedString').mockImplementation((key: string) =>
+        key === 'accessibility_new_message' ? 'New message from {sender}: {preview}' : key
+      );
+      const self = makeSelf();
+      announceNewMessageImpl(self, 'A$&B', "pay $$5 or $'x");
+      expect(self.liveAnnouncer.announce).toHaveBeenCalledWith("New message from A$&B: pay $$5 or $'x", 'polite');
+      spy.mockRestore();
     });
 
     it('should include sender name in the announcement', () => {

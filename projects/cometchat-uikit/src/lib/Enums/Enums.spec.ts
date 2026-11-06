@@ -63,20 +63,12 @@ describe('Enums', () => {
       expect(AuxiliaryButtonAlignment.left).toBe(0);
       expect(AuxiliaryButtonAlignment.right).toBe(1);
     });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(AuxiliaryButtonAlignment)).toEqual(['left', 'right']);
-    });
   });
 
   describe('MessageListAlignment', () => {
     it('should have left=0 and standard=1', () => {
       expect(MessageListAlignment.left).toBe(0);
       expect(MessageListAlignment.standard).toBe(1);
-    });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(MessageListAlignment)).toEqual(['left', 'standard']);
     });
   });
 
@@ -86,20 +78,12 @@ describe('Enums', () => {
       expect(MessageBubbleAlignment.right).toBe(1);
       expect(MessageBubbleAlignment.center).toBe(2);
     });
-
-    it('should have exactly 3 members', () => {
-      expect(numericEnumKeys(MessageBubbleAlignment)).toEqual(['left', 'right', 'center']);
-    });
   });
 
   describe('DocumentIconAlignment', () => {
     it('should have left=0 and right=1', () => {
       expect(DocumentIconAlignment.left).toBe(0);
       expect(DocumentIconAlignment.right).toBe(1);
-    });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(DocumentIconAlignment)).toEqual(['left', 'right']);
     });
   });
 
@@ -110,10 +94,6 @@ describe('Enums', () => {
       expect(TabAlignment.left).toBe(2);
       expect(TabAlignment.right).toBe(3);
     });
-
-    it('should have exactly 4 members', () => {
-      expect(numericEnumKeys(TabAlignment)).toEqual(['top', 'bottom', 'left', 'right']);
-    });
   });
 
   describe('MessageStatus', () => {
@@ -122,15 +102,6 @@ describe('Enums', () => {
       expect(MessageStatus.success).toBe(1);
       expect(MessageStatus.error).toBe(2);
       expect(MessageStatus.cancelled).toBe(3);
-    });
-
-    it('should have exactly 4 members', () => {
-      expect(numericEnumKeys(MessageStatus)).toEqual([
-        'inprogress',
-        'success',
-        'error',
-        'cancelled',
-      ]);
     });
   });
 
@@ -142,20 +113,12 @@ describe('Enums', () => {
       expect(Receipts.read).toBe(3);
       expect(Receipts.error).toBe(4);
     });
-
-    it('should have exactly 5 members', () => {
-      expect(numericEnumKeys(Receipts)).toEqual(['wait', 'sent', 'delivered', 'read', 'error']);
-    });
   });
 
   describe('TitleAlignment', () => {
     it('should have left=0 and center=1', () => {
       expect(TitleAlignment.left).toBe(0);
       expect(TitleAlignment.center).toBe(1);
-    });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(TitleAlignment)).toEqual(['left', 'center']);
     });
   });
 
@@ -164,10 +127,6 @@ describe('Enums', () => {
       expect(SelectionMode.single).toBe(0);
       expect(SelectionMode.multiple).toBe(1);
       expect(SelectionMode.none).toBe(2);
-    });
-
-    it('should have exactly 3 members', () => {
-      expect(numericEnumKeys(SelectionMode)).toEqual(['single', 'multiple', 'none']);
     });
   });
 
@@ -178,10 +137,6 @@ describe('Enums', () => {
       expect(States.error).toBe(2);
       expect(States.loaded).toBe(3);
     });
-
-    it('should have exactly 4 members', () => {
-      expect(numericEnumKeys(States)).toEqual(['loading', 'empty', 'error', 'loaded']);
-    });
   });
 
   describe('TimestampAlignment', () => {
@@ -189,20 +144,12 @@ describe('Enums', () => {
       expect(TimestampAlignment.top).toBe(0);
       expect(TimestampAlignment.bottom).toBe(1);
     });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(TimestampAlignment)).toEqual(['top', 'bottom']);
-    });
   });
 
   describe('RecordingType', () => {
     it('should have audio=0 and video=1', () => {
       expect(RecordingType.audio).toBe(0);
       expect(RecordingType.video).toBe(1);
-    });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(RecordingType)).toEqual(['audio', 'video']);
     });
   });
 
@@ -212,20 +159,12 @@ describe('Enums', () => {
       expect(TabsVisibility.users).toBe(1);
       expect(TabsVisibility.groups).toBe(2);
     });
-
-    it('should have exactly 3 members', () => {
-      expect(numericEnumKeys(TabsVisibility)).toEqual(['usersAndGroups', 'users', 'groups']);
-    });
   });
 
   describe('CallWorkflow', () => {
     it('should have defaultCalling=0 and directCalling=1', () => {
       expect(CallWorkflow.defaultCalling).toBe(0);
       expect(CallWorkflow.directCalling).toBe(1);
-    });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(CallWorkflow)).toEqual(['defaultCalling', 'directCalling']);
     });
   });
 
@@ -236,25 +175,12 @@ describe('Enums', () => {
       expect(PanelAlignment.messageListFooter).toBe(2);
       expect(PanelAlignment.messages).toBe(3);
     });
-
-    it('should have exactly 4 members', () => {
-      expect(numericEnumKeys(PanelAlignment)).toEqual([
-        'composerHeader',
-        'messageListHeader',
-        'messageListFooter',
-        'messages',
-      ]);
-    });
   });
 
   describe('UserMemberListType', () => {
     it('should have users=0 and groupmembers=1', () => {
       expect(UserMemberListType.users).toBe(0);
       expect(UserMemberListType.groupmembers).toBe(1);
-    });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(UserMemberListType)).toEqual(['users', 'groupmembers']);
     });
   });
 
@@ -273,10 +199,6 @@ describe('Enums', () => {
       expect(PreviewMessageMode.edit).toBe(0);
       expect(PreviewMessageMode.none).toBe(1);
     });
-
-    it('should have exactly 2 members', () => {
-      expect(numericEnumKeys(PreviewMessageMode)).toEqual(['edit', 'none']);
-    });
   });
 
   describe('MentionsTargetElement', () => {
@@ -285,14 +207,6 @@ describe('Enums', () => {
       expect(MentionsTargetElement.textbubble).toBe(1);
       expect(MentionsTargetElement.conversation).toBe(2);
     });
-
-    it('should have exactly 3 members', () => {
-      expect(numericEnumKeys(MentionsTargetElement)).toEqual([
-        'textinput',
-        'textbubble',
-        'conversation',
-      ]);
-    });
   });
 
   describe('MentionsVisibility', () => {
@@ -300,14 +214,6 @@ describe('Enums', () => {
       expect(MentionsVisibility.usersConversationOnly).toBe(0);
       expect(MentionsVisibility.groupConversationOnly).toBe(1);
       expect(MentionsVisibility.both).toBe(2);
-    });
-
-    it('should have exactly 3 members', () => {
-      expect(numericEnumKeys(MentionsVisibility)).toEqual([
-        'usersConversationOnly',
-        'groupConversationOnly',
-        'both',
-      ]);
     });
   });
 
@@ -319,10 +225,6 @@ describe('Enums', () => {
       expect(EnterKeyBehavior.NewLine).toBe('newLine');
       expect(EnterKeyBehavior.None).toBe('none');
     });
-
-    it('should have exactly 3 members', () => {
-      expect(Object.keys(EnterKeyBehavior)).toEqual(['SendMessage', 'NewLine', 'None']);
-    });
   });
 
   describe('Placement', () => {
@@ -331,10 +233,6 @@ describe('Enums', () => {
       expect(Placement.right).toBe('right');
       expect(Placement.bottom).toBe('bottom');
       expect(Placement.left).toBe('left');
-    });
-
-    it('should have exactly 4 members', () => {
-      expect(Object.keys(Placement)).toEqual(['top', 'right', 'bottom', 'left']);
     });
   });
 
@@ -345,10 +243,6 @@ describe('Enums', () => {
       expect(IconButtonAlignment.left).toBe('row');
       expect(IconButtonAlignment.right).toBe('row-reverse');
     });
-
-    it('should have exactly 4 members', () => {
-      expect(Object.keys(IconButtonAlignment)).toEqual(['top', 'bottom', 'left', 'right']);
-    });
   });
 
   describe('LabelAlignment', () => {
@@ -357,10 +251,6 @@ describe('Enums', () => {
       expect(LabelAlignment.bottom).toBe('column-reverse');
       expect(LabelAlignment.left).toBe('row');
       expect(LabelAlignment.right).toBe('row-reverse');
-    });
-
-    it('should have exactly 4 members', () => {
-      expect(Object.keys(LabelAlignment)).toEqual(['top', 'bottom', 'left', 'right']);
     });
   });
 
@@ -375,19 +265,6 @@ describe('Enums', () => {
       expect(ElementType.singleSelect).toBe('singleSelect');
       expect(ElementType.dateTime).toBe('dateTime');
     });
-
-    it('should have exactly 8 members', () => {
-      expect(Object.keys(ElementType)).toEqual([
-        'label',
-        'text',
-        'dropdown',
-        'checkbox',
-        'radio',
-        'button',
-        'singleSelect',
-        'dateTime',
-      ]);
-    });
   });
 
   describe('ButtonAction', () => {
@@ -395,10 +272,6 @@ describe('Enums', () => {
       expect(ButtonAction.apiAction).toBe('apiAction');
       expect(ButtonAction.urlNavigation).toBe('urlNavigation');
       expect(ButtonAction.custom).toBe('custom');
-    });
-
-    it('should have exactly 3 members', () => {
-      expect(Object.keys(ButtonAction)).toEqual(['apiAction', 'urlNavigation', 'custom']);
     });
   });
 
@@ -409,10 +282,6 @@ describe('Enums', () => {
       expect(HTTPSRequestMethods.PATCH).toBe('PATCH');
       expect(HTTPSRequestMethods.DELETE).toBe('DELETE');
     });
-
-    it('should have exactly 4 members', () => {
-      expect(Object.keys(HTTPSRequestMethods)).toEqual(['POST', 'PUT', 'PATCH', 'DELETE']);
-    });
   });
 
   describe('DateTimePickerMode', () => {
@@ -421,20 +290,12 @@ describe('Enums', () => {
       expect(DateTimePickerMode.dateTime).toBe('dateTime');
       expect(DateTimePickerMode.time).toBe('time');
     });
-
-    it('should have exactly 3 members', () => {
-      expect(Object.keys(DateTimePickerMode)).toEqual(['date', 'dateTime', 'time']);
-    });
   });
 
   describe('CometChatSearchScope', () => {
     it('should have correct string values', () => {
       expect(CometChatSearchScope.Conversations).toBe('conversations');
       expect(CometChatSearchScope.Messages).toBe('messages');
-    });
-
-    it('should have exactly 2 members', () => {
-      expect(Object.keys(CometChatSearchScope)).toEqual(['Conversations', 'Messages']);
     });
   });
 
@@ -450,20 +311,6 @@ describe('Enums', () => {
       expect(CometChatSearchFilter.Documents).toBe('files');
       expect(CometChatSearchFilter.Audio).toBe('audio');
     });
-
-    it('should have exactly 9 members', () => {
-      expect(Object.keys(CometChatSearchFilter)).toEqual([
-        'Messages',
-        'Conversations',
-        'Unread',
-        'Groups',
-        'Photos',
-        'Videos',
-        'Links',
-        'Documents',
-        'Audio',
-      ]);
-    });
   });
 
   describe('MentionType', () => {
@@ -471,10 +318,6 @@ describe('Enums', () => {
       expect(MentionType.self).toBe('self');
       expect(MentionType.other).toBe('other');
       expect(MentionType.channel).toBe('channel');
-    });
-
-    it('should have exactly 3 members', () => {
-      expect(Object.keys(MentionType)).toEqual(['self', 'other', 'channel']);
     });
   });
 

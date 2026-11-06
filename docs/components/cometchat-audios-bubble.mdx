@@ -1,0 +1,138 @@
+---
+title: "CometChatAudiosBubbleComponent"
+description: "Renders an audio-file message as a list of compact player rows with per-row download and an optional caption, at the shared multi-attachment width"
+---
+The `CometChatAudiosBubbleComponent` is the bubble the message list uses for audio-file messages (audio that is not a voice note). It renders a single `CometChat.MediaMessage`: one row per audio attachment, each with a play/pause button, the file name, a seek bar, an elapsed/total time label and a download button, followed by the caption. Unlike the images, videos and files bubbles, it does not delegate to its single-item counterpart; it has its own template and styles.
+
+## Overview
+
+- **Default audio-file renderer**: `CometChatMessageBubble` renders this component for every audio message that is not a voice note (its `audios-batch` content type). Voice notes go to `CometChatVoiceNoteBubbleComponent` instead
+- **One message per bubble**: Each instance renders exactly one `CometChat.MediaMessage`; a batch is shown as several of these bubbles stacked in the message list
+- **Player rows**: Each attachment gets a play/pause button, file name, seek slider (`<input type="range">`) and `mm:ss/mm:ss` time label
+- **One row plays at a time**: Starting a row pauses any other row that is playing in the same bubble
+- **Collapse after 3 rows**: Shows up to 3 rows, then a "Show N more" toggle (`bubble_show_more`) that expands to all rows, and a "Show less" toggle (`file_bubble_show_less`) to collapse again
+- **Unsupported fallback**: If a row's `<audio>` element fails to load (not a playable type or a broken link), that row switches to a file-style layout: icon, name and download button
+- **Per-row download**: Each row with a URL has a download button
+- **Caption**: The message caption is rendered with `cometchat-text-bubble`, so mentions and URLs format the same way as on the other media bubbles
+- **Standalone**: Standalone Angular component with `OnPush` change detection
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatAudiosBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatAudiosBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-audios-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.left"
+    ></cometchat-audios-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-audios-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.right"
+    ></cometchat-audios-bubble>
+  `
+})
+export class ChatMessageComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The audio message to render. Attachments are read from `message.getAttachments()`; the caption from `getCaption()`, falling back to `getData().text` |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | Bubble alignment. `right` applies the outgoing (sender) styling; any other value renders as incoming |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters applied to the caption text. Passed straight through to the `cometchat-text-bubble` that renders the caption |
+
+Unlike the other batch bubbles, this component has no `disableInteraction` input.
+
+## Events
+
+This component declares no outputs.
+
+## Customization
+
+### Styling with CSS Variables
+
+The root element has `max-width: var(--cometchat-multi-attachment-width, 400px)`, the same shared cap the images, videos and files bubbles use, so a mixed batch lines up. The component-specific variables below all have fallbacks and are not defined by the kit, so set them on `cometchat-audios-bubble` or an ancestor to override:
+
+```css
+cometchat-audios-bubble {
+  --cometchat-audios-bubble-play-background: #f0edff;
+  --cometchat-audios-bubble-play-icon-color: #6852d6;
+  --cometchat-audios-bubble-slider-height: 4px;
+  --cometchat-audios-bubble-download-color: #6852d6;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-multi-attachment-width` | Max width of the bubble (shared by all batch bubbles) | `400px` |
+| `--cometchat-audios-bubble-container-gap` | Gap between rows | `var(--cometchat-spacing-1, 4px)` |
+| `--cometchat-audios-bubble-min-width` | Minimum width of a row | `240px` |
+| `--cometchat-audios-bubble-item-background` | Row background when there are multiple rows (incoming) | 6% mix of `--cometchat-text-color-primary` |
+| `--cometchat-audios-bubble-item-background-outgoing` | Row background when there are multiple rows (outgoing) | 14% mix of `--cometchat-static-white` |
+| `--cometchat-audios-bubble-play-size` | Play/pause button size | `32px` |
+| `--cometchat-audios-bubble-play-background` | Play/pause button background | `var(--cometchat-static-white, #ffffff)` |
+| `--cometchat-audios-bubble-play-icon-size` | Play/pause icon size | `24px` |
+| `--cometchat-audios-bubble-play-icon-color` | Play/pause icon color | `var(--cometchat-primary-color)` |
+| `--cometchat-audios-bubble-name-color` / `-outgoing` | File name color | `--cometchat-text-color-primary` / `--cometchat-static-white` |
+| `--cometchat-audios-bubble-slider-height` | Seek bar track height | `6px` |
+| `--cometchat-audios-bubble-slider-thumb-size` | Seek bar knob size | `16px` |
+| `--cometchat-audios-bubble-slider-track` / `-outgoing` | Seek bar track color | 14% mix of text primary / 30% mix of static white |
+| `--cometchat-audios-bubble-duration-color` / `-outgoing` | Time label color | `--cometchat-text-color-tertiary` / 80% mix of static white |
+| `--cometchat-audios-bubble-file-icon-size` | Icon size on an unsupported (file-style) row | `40px` |
+| `--cometchat-audios-bubble-download-size` | Download button size | `20px` |
+| `--cometchat-audios-bubble-download-color` / `-outgoing` | Download icon color | `--cometchat-icon-color-highlight` / `--cometchat-static-white` |
+| `--cometchat-audios-bubble-toggle-padding` | Show more/less button padding | `var(--cometchat-spacing-2, 8px)` |
+| `--cometchat-audios-bubble-toggle-background` / `-outgoing` | Show more/less button background | 6% mix of text primary / 14% mix of static white |
+| `--cometchat-audios-bubble-toggle-color` / `-outgoing` | Show more/less button text color | `--cometchat-primary-color` / `--cometchat-static-white` |
+| `--cometchat-audios-bubble-toggle-font-size` | Show more/less font size | `14px` |
+| `--cometchat-audios-bubble-toggle-icon-size` | Show more/less chevron size | `18px` |
+
+A single row is transparent and takes the bubble's own surface; rows get their own tinted background only when the message has more than one audio attachment.
+
+### CSS Classes
+
+| Class | Element |
+|-------|---------|
+| `.cometchat-audios-bubble` | Root; `--sender` modifier when `alignment` is `right` |
+| `.cometchat-audios-bubble__container` | Row list; `--multi` modifier when there is more than one attachment |
+| `.cometchat-audios-bubble__item` | One row; `--unsupported` modifier when the audio failed to load |
+| `.cometchat-audios-bubble__play`, `__play-icon` | Play/pause button and its masked icon |
+| `.cometchat-audios-bubble__body` | Name, slider and time column |
+| `.cometchat-audios-bubble__name` | File name; `--file` modifier on unsupported rows |
+| `.cometchat-audios-bubble__slider` | Seek bar |
+| `.cometchat-audios-bubble__duration` | `mm:ss/mm:ss` time label |
+| `.cometchat-audios-bubble__file-icon` | Icon on unsupported rows |
+| `.cometchat-audios-bubble__download`, `__download-icon` | Download button and its masked icon |
+| `.cometchat-audios-bubble__toggle`, `__toggle-icon` | Show more/less button and its chevron |
+| `.cometchat-audios-bubble__caption` | Caption container around `cometchat-text-bubble` |
+
+## Batching and the Single-Item Bubble
+
+- **Batches**: When several audio files are sent together, the composer sends one message per attachment and stamps them all with the same `metadata.batchId` (`CometChatUIKitConstants.MetadataKeys.batchId`). The caption goes only on the last message of the batch. The message list treats a run of consecutive messages that share a `batchId` as one batch and renders each message with its own `cometchat-audios-bubble`.
+- **Voice notes**: Audio tagged with `metadata.audioType` as a voice note is routed to `CometChatVoiceNoteBubbleComponent`, not to this component. Audio without the tag is treated as an audio file.
+- **Single-item bubble**: `CometChatAudioBubbleComponent` (`cometchat-audio-bubble`) is marked `@deprecated` for audio files in favor of this component. It is kept as the renderer behind voice notes. This component reuses its `extractAudioAttachments` helper but not its template.
+
+## Related Components
+
+- **CometChatAudioBubbleComponent**: The single-item audio bubble (now used for voice notes)
+- **CometChatVoiceNoteBubbleComponent**: Renders recorded voice notes
+- **CometChatImagesBubbleComponent**, **CometChatVideosBubbleComponent**, **CometChatFilesBubbleComponent**: The other batch bubbles sharing the same width token
+- **CometChatTextBubbleComponent**: Renders the caption
+- **CometChatMessageBubble**: Renders this component as the content view for non-voice-note audio messages

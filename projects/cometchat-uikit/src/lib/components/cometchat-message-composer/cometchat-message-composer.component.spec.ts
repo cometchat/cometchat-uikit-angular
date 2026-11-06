@@ -26,6 +26,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { ensureSdkReady, sdkCleanup, fetchTestUser, flushPromises } from '../../testing';
 import { CometChatMessageComposerComponent } from './cometchat-message-composer.component';
@@ -242,8 +243,8 @@ describe('CometChatMessageComposerComponent', () => {
       expect(component.enableRichText).toBe(true);
     });
 
-    it('should default hideRichTextToolbar to true', () => {
-      expect(component.hideRichTextToolbar).toBe(true);
+    it('should default hideRichTextToolbar to false', () => {
+      expect(component.hideRichTextToolbar).toBe(false);
     });
 
     it('should default layout to single-line', () => {
@@ -1146,6 +1147,9 @@ describe('CometChatMessageComposerComponent', () => {
 import * as fc from 'fast-check';
 import { stripRichTextFormatting } from '../../utils/util';
 import { createMockTextMessage, createMockUser } from '../../testing';
+import { CometChatConversationItemComponent } from '../cometchat-conversation-item/cometchat-conversation-item.component';
+import { FormatterConfigService } from '../../services/formatter-config.service';
+import { HtmlSanitizerService } from '../../services/html-sanitizer.service';
 
 describe('Bug Condition Exploration: Preview and Display Formatting (Group G)', () => {
   let fixture: ComponentFixture<CometChatMessageComposerComponent>;
@@ -1437,153 +1441,133 @@ describe('Bug Condition Exploration: Preview and Display Formatting (Group G)', 
 
   // ==================== Case 2 (Req 1.14): Conversation List Subtitle Renders Formatting ====================
 
-  describe.skip('Case 2 (Req 1.14): Conversation list subtitle renders formatted text properly', () => {
+  describe('Case 2 (Req 1.14): Conversation list subtitle renders formatted text properly', () => {
     /**
      * **Validates: Requirements 1.14**
      *
-     * Property: When a formatted message appears in the conversation list
-     * subtitle, the system should display the formatted text with proper
-     * rendering — not raw markdown or unformatted text.
+     * Property: When a formatted message is the last message of a conversation,
+     * the conversation list subtitle renders the formatting (as sanitized HTML)
+     * instead of raw markdown markers or formatting-stripped plain text.
      *
-     * Bug: `formatLastMessageSubtitle` in CometChatConversationItemComponent
-     * calls `stripRichTextFormatting(rawText)` which strips ALL formatting
-     * markers to plain text. It never checks `metadata.richText.html` for
-     * the formatted version. So `**bold text**` becomes `bold text` with no
-     * visual distinction — the formatting is completely lost.
-     *
-     * Since the conversation item component requires full TestBed setup with
-     * conversation objects, we test the underlying utility function
-     * `stripRichTextFormatting` to demonstrate the bug: it strips formatting
-     * markers but produces plain text with no HTML formatting tags, meaning
-     * the subtitle cannot render formatting visually.
+     * These tests drive the real CometChatConversationItemComponent subtitle
+     * pipeline (`subtitleText` / `subtitleHasHtml`), which prefers
+     * `metadata.richText.html` and otherwise converts markdown to sanitized HTML.
      */
 
-    it.skip('should preserve bold formatting indication in subtitle (not strip to plain text)', () => {
-      // The raw text from a message sent with bold formatting
-      const rawText = '**Important update** for the team';
+    /** Builds a conversation item whose conversation's last message is `message`. */
+    function conversationItemFor(message: CometChat.BaseMessage): CometChatConversationItemComponent {
+      const item = TestBed.runInInjectionContext(
+        () =>
+          new CometChatConversationItemComponent(
+            TestBed.inject(FormatterConfigService),
+            TestBed.inject(HtmlSanitizerService)
+          )
+      );
+      const withUser = createMockUser({ uid: 'user-2', name: 'Bob' });
+      item.conversation = {
+        getConversationWith: () => withUser,
+        getLastMessage: () => message,
+        getUnreadMessageCount: () => 0,
+        isPinned: () => 0,
+      } as unknown as CometChat.Conversation;
+      return item;
+    }
 
-      // stripRichTextFormatting strips the markers, producing plain text
-      const stripped = stripRichTextFormatting(rawText);
+    /** A last message carrying only markdown in its text (no rich-text metadata). */
+    function markdownMessage(text: string): CometChat.TextMessage {
+      return createMockTextMessage({
+        text,
+        sender: createMockUser({ uid: 'user-1', name: 'Test User' }),
+      });
+    }
 
-      // Bug: stripped text is "Important update for the team" — no formatting
-      // The correct behavior would be to use metadata.richText.html instead,
-      // which contains <strong>Important update</strong> for the team
-      //
-      // We assert that the subtitle should contain some form of formatting
-      // indication (HTML tags) — this will FAIL because stripRichTextFormatting
-      // produces plain text with no HTML tags
-      const hasFormattingTags =
-        stripped.includes('<strong>') ||
-        stripped.includes('<b>') ||
-        stripped.includes('<em>') ||
-        stripped.includes('<i>');
+    it('should render bold from rich-text metadata in the subtitle (not strip to plain text)', () => {
+      const item = conversationItemFor(
+        createFormattedTextMessage(
+          '**Important update** for the team',
+          '<p><strong>Important update</strong> for the team</p>'
+        )
+      );
 
-      // This assertion confirms the bug: formatting is lost
-      expect(hasFormattingTags).toBe(true);
+      expect(item.subtitleHasHtml).toBe(true);
+      expect(item.subtitleText).toContain('<strong>Important update</strong>');
+      expect(item.subtitleText).not.toContain('**');
     });
 
-    it.skip('should preserve italic formatting indication in subtitle', () => {
-      const rawText = '*Please review* this change';
-      const stripped = stripRichTextFormatting(rawText);
+    it('should render italic markdown as <em> in the subtitle', () => {
+      const item = conversationItemFor(markdownMessage('*Please review* this change'));
 
-      // Bug: stripped text is "Please review this change" — no italic indication
-      expect(stripped.includes('<em>') || stripped.includes('<i>')).toBe(true);
+      expect(item.subtitleHasHtml).toBe(true);
+      expect(item.subtitleText).toMatch(/<(em|i)>Please review<\/(em|i)>/);
+      expect(item.subtitleText).not.toContain('*Please review*');
     });
 
-    it.skip('should preserve code formatting indication in subtitle', () => {
-      const rawText = 'Run `npm install` to set up';
-      const stripped = stripRichTextFormatting(rawText);
+    it('should render inline code markdown as <code> in the subtitle', () => {
+      const item = conversationItemFor(markdownMessage('Run `npm install` to set up'));
 
-      // Bug: stripped text is "Run npm install to set up" — no code indication
-      expect(stripped.includes('<code>')).toBe(true);
+      expect(item.subtitleHasHtml).toBe(true);
+      expect(item.subtitleText).toMatch(/<code[^>]*>npm install<\/code>/);
+      expect(item.subtitleText).not.toContain('`');
     });
 
-    it.skip('should preserve link text and URL in subtitle (not strip link syntax)', () => {
-      const rawText = 'Check [our docs](https://example.com) for details';
-      const stripped = stripRichTextFormatting(rawText);
+    it('should show link text without raw markdown link syntax in the subtitle', () => {
+      // Markdown links collapse to their visible text in the one-line subtitle
+      // (the row shows a link icon instead), so the raw `[text](url)` syntax
+      // must never reach the user.
+      const item = conversationItemFor(markdownMessage('Check [our docs](https://example.com) for details'));
 
-      // Bug: stripRichTextFormatting converts [text](url) to just "text",
-      // losing the URL entirely. The subtitle should preserve the link
-      // as an <a> tag or at minimum keep the URL visible.
-      const hasLinkTag = stripped.includes('<a ') || stripped.includes('href=');
-      const hasUrl = stripped.includes('example.com');
-
-      // At least the URL should be preserved in some form
-      expect(hasLinkTag || hasUrl).toBe(true);
+      expect(item.subtitleText).toContain('our docs');
+      expect(item.subtitleText).not.toContain('[our docs]');
+      expect(item.subtitleText).not.toContain('](https://example.com)');
     });
 
-    it.skip('should preserve formatting for generated bold text (property-based)', () => {
-      /**
-       * **Validates: Requirements 1.14**
-       *
-       * Property: For any text with bold markdown markers, the conversation
-       * list subtitle should preserve some formatting indication rather than
-       * stripping to completely plain text.
-       */
+    it('should render generated bold text as <strong> in the subtitle (property-based)', () => {
       fc.assert(
         fc.property(
           fc
             .string({ minLength: 1, maxLength: 30 })
-            .filter(s => s.trim().length > 0 && !/[<>&"'*_`\[\]\(\)\n\r\\]/.test(s)),
+            .filter(
+              s =>
+                s.trim().length > 0 &&
+                s.trim() === s &&
+                !/[<>&"'*_`\[\]\(\)\n\r\\~#]/.test(s)
+            ),
           text => {
-            const rawText = `**${text}** is highlighted`;
-            const stripped = stripRichTextFormatting(rawText);
+            const item = conversationItemFor(markdownMessage(`**${text}** is highlighted`));
 
-            // Bug: stripped is "${text} is highlighted" — completely plain
-            // Expected: some formatting indication preserved
-            const hasFormatting =
-              stripped.includes('<strong>') || stripped.includes('<b>') || stripped.includes('**');
-
-            expect(hasFormatting).toBe(true);
+            expect(item.subtitleHasHtml).toBe(true);
+            expect(item.subtitleText).toContain(`<strong>${text}</strong>`);
+            expect(item.subtitleText).not.toContain('**');
           }
         ),
         { numRuns: 15 }
       );
     });
 
-    it.skip('should not show raw markdown markers in subtitle for formatted messages (property-based)', () => {
-      /**
-       * **Validates: Requirements 1.14**
-       *
-       * Property: The conversation list subtitle should never show raw markdown
-       * markers like **, *, `, ~~, etc. to the user. If formatting is stripped,
-       * it should be replaced with proper HTML rendering.
-       *
-       * Note: This test approaches the bug from the other direction — even if
-       * we accept that stripRichTextFormatting removes markers, the subtitle
-       * rendering pipeline should use metadata.richText.html instead of raw text
-       * when available. Since we can't test the full component pipeline here,
-       * we verify that the utility at least doesn't produce raw markers AND
-       * also doesn't produce formatted HTML — confirming the gap.
-       */
+    it('should not show raw markdown markers in subtitle for formatted messages (property-based)', () => {
       fc.assert(
         fc.property(
           fc
             .string({ minLength: 1, maxLength: 20 })
-            .filter(s => s.trim().length > 0 && !/[<>&"'*_`\[\]\(\)\n\r\\]/.test(s)),
+            .filter(
+              s =>
+                s.trim().length > 0 &&
+                s.trim() === s &&
+                !/[<>&"'*_`\[\]\(\)\n\r\\~#]/.test(s)
+            ),
           text => {
-            // A message with multiple formatting types
-            const rawText = `**${text}** and _more_ with \`code\``;
-            const stripped = stripRichTextFormatting(rawText);
+            const item = conversationItemFor(markdownMessage(`**${text}** and _more_ with \`code\``));
+            const subtitle = item.subtitleText;
 
-            // stripRichTextFormatting correctly removes raw markers (good)
-            // But it also removes ALL formatting indication (bad)
-            // The result is completely plain text with no way to distinguish
-            // what was bold, italic, or code
-
-            // Verify markers are stripped (this part works)
-            expect(stripped).not.toContain(`**${text}**`);
-
-            // But the subtitle should have SOME formatting — either HTML tags
-            // from metadata.richText.html or at minimum the text content.
-            // The bug is that the pipeline never uses metadata.richText.html,
-            // so we get plain text with no formatting at all.
-            // Assert that formatted HTML IS present (this will FAIL, confirming bug)
-            const hasAnyHtmlFormatting =
-              stripped.includes('<strong>') ||
-              stripped.includes('<em>') ||
-              stripped.includes('<code>');
-            expect(hasAnyHtmlFormatting).toBe(true);
+            expect(item.subtitleHasHtml).toBe(true);
+            // No raw markers survive...
+            expect(subtitle).not.toContain('**');
+            expect(subtitle).not.toContain('_more_');
+            expect(subtitle).not.toContain('`');
+            // ...and each formatting type is rendered, not just stripped.
+            expect(subtitle).toContain(`<strong>${text}</strong>`);
+            expect(subtitle).toMatch(/<(em|i)>more<\/(em|i)>/);
+            expect(subtitle).toMatch(/<code[^>]*>code<\/code>/);
           }
         ),
         { numRuns: 15 }
@@ -1823,7 +1807,15 @@ describe('Preservation: Preview and Display (Group G)', () => {
           fc
             .string({ minLength: 1, maxLength: 80 })
             .filter(
-              s => s.trim().length > 0 && s === s.trim() && !/[<>&*_`~\[\]\(\)\n\r\\#>]/.test(s)
+              s =>
+                s.trim().length > 0 &&
+                s === s.trim() &&
+                !/[<>&*_`~\[\]\(\)\n\r\\#>]/.test(s) &&
+                // stripRichTextFormatting deliberately collapses every run of
+                // whitespace to a single space, so only text whose whitespace is
+                // already single spaces round-trips unchanged.
+                !/[^\S ]/.test(s) &&
+                !/ {2}/.test(s)
             ),
           text => {
             const result = stripRichTextFormatting(text);
@@ -1993,16 +1985,28 @@ describe('Preservation: Preview and Display (Group G)', () => {
         text: 'No metadata message',
       });
 
-      const metadata = msg.getMetadata() as Record<string, any>;
-      // Messages without explicit richText metadata should not have it
-      if (metadata) {
-        // If metadata exists but no richText key, that's fine
-        const richText = metadata['richText'];
-        // richText may or may not exist — both are valid for plain messages
-        expect(richText === undefined || richText === null || typeof richText === 'object').toBe(
-          true
-        );
-      }
+      const metadata = msg.getMetadata() as Record<string, any> | undefined;
+      // Messages without explicit richText metadata do not carry it, and
+      // reading it from absent metadata must not throw.
+      expect(() => metadata?.['richText']).not.toThrow();
+      expect(metadata?.['richText']).toBeUndefined();
     });
+  });
+  // -------------------------------------------------------------------------
+  // Send button wiring: the template's (buttonClick) binding, in both layouts (#632 review)
+  // -------------------------------------------------------------------------
+  describe('Send button', () => {
+    for (const layout of ['single-line', 'multiline'] as const) {
+      it(`sends when the send button is clicked (${layout} layout)`, async () => {
+        component.user = testUser;
+        component.layout = layout;
+        const send = vi.spyOn(component, 'handleSend').mockResolvedValue(undefined);
+        await initAndDetect(fixture);
+        const buttons = fixture.debugElement.queryAll(By.css('.cometchat-message-composer__send-button-inner cometchat-button'));
+        expect(buttons).toHaveLength(1);
+        buttons[0].triggerEventHandler('buttonClick', undefined);
+        expect(send).toHaveBeenCalledTimes(1);
+      });
+    }
   });
 });

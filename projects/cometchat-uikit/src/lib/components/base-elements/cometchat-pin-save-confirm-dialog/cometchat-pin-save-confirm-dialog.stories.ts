@@ -14,7 +14,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 import { CometChatPinSaveConfirmDialogComponent } from './cometchat-pin-save-confirm-dialog.component';
 import { CometChatConfirmDialogComponent } from '../cometchat-confirm-dialog/cometchat-confirm-dialog.component';

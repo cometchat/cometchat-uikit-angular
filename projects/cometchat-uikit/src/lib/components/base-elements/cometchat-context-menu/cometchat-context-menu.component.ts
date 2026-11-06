@@ -68,7 +68,7 @@ const GROUP_FLYOUT_MIN_WIDTH = 180;
   styleUrls: ['./cometchat-context-menu.component.css'],
 })
 export class CometChatContextMenuComponent implements OnInit, OnDestroy, AfterViewInit {
-  @Input() data: ContextMenuItem[] = [];
+  @Input({ transform: (v: ContextMenuItem[] | null | undefined): ContextMenuItem[] => v ?? [] }) data: ContextMenuItem[] = [];
   @Input() topMenuSize = 2;
   @Input() moreIconHoverText?: string;
   @Input() placement: Placement = Placement.left;

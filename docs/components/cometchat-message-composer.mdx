@@ -321,6 +321,7 @@ Both layouts work seamlessly with rich text editing:
 | `maxFileSize` | `number` | `undefined` | Maximum file size in bytes |
 | `showAttachmentPreview` | `boolean` | `true` | Show attachment preview thumbnails before sending |
 | `enableDragDrop` | `boolean` | `true` | Enable drag-and-drop file uploads |
+| `enableMultipleAttachments` | `boolean` | `true` | When `true`, selected files are staged in the attachment tray and sent together as one media message (see [Multiple Attachments](#multiple-attachments-in-a-single-message)). When `false`, falls back to the deprecated single-attachment flow |
 
 ### Hide Option Properties
 
@@ -339,6 +340,7 @@ Both layouts work seamlessly with rich text editing:
 | `hideStickersButton` | `boolean` | `false` | Hide the stickers button |
 | `hideLiveReaction` | `boolean` | `false` | Hide the live reaction button |
 | `hideSendButton` | `boolean` | `false` | Hide the send button |
+| `hideError` | `boolean` | `false` | Hide the composer's error state (the default retry view, `errorView` or `errorStateTemplate`) |
 
 
 ### Mentions Configuration Properties
@@ -355,10 +357,9 @@ Both layouts work seamlessly with rich text editing:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `enableRichText` | `boolean` | `true` | Enable rich text editing. When disabled, toolbar toggle button is hidden and pasting/adding content won't apply rich text formatting. Mentions and other formatters still work independently. |
-| `hideRichTextToolbar` | `boolean` | `false` | Hide the rich text formatting toolbar. When showToolbarToggle is enabled, the toggle overrides this setting. |
+| `enableRichText` | `boolean` | `true` | Enable rich text editing. When disabled, the formatting toolbar is not shown and pasting/adding content won't apply rich text formatting. Mentions and other formatters still work independently. |
+| `hideRichTextToolbar` | `boolean` | `false` | Hide the rich text formatting toolbar. |
 | `showBubbleMenuOnSelection` | `boolean` | `true` | Show floating bubble menu when text is selected (Web/Desktop only) |
-| `showToolbarToggle` | `boolean` | `true` | Show a toggle button to show/hide the fixed toolbar. Emits toolbarToggleClick with 'active' or 'inactive' state. |
 
 ### Other Configuration Properties
 
@@ -368,11 +369,9 @@ Both layouts work seamlessly with rich text editing:
 | `disableAutoFocusOnMobile` | `boolean` | `true` | When `true`, prevents the composer from auto-focusing on mobile devices (avoids keyboard popup on load). |
 | `disableSoundForMessage` | `boolean` | `false` | Disable sound when sending messages |
 | `customSoundForMessage` | `string` | `undefined` | Custom sound URL for message sent notification |
-| `liveReactionIcon` | `string` | `undefined` | Custom icon for live reaction button |
 | `messageToEdit` | `CometChat.BaseMessage` | `undefined` | Message to edit (enables edit mode) |
 | `messageToReply` | `CometChat.BaseMessage` | `undefined` | Message to reply to (enables reply preview) |
 | `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Array of text formatters to apply |
-| `showToolbarToggle` | `boolean` | `true` | Whether to show the toolbar toggle button for expanding/collapsing the action toolbar |
 
 
 ### Template Properties
@@ -387,6 +386,12 @@ Both layouts work seamlessly with rich text editing:
 | `attachmentIconView` | `TemplateRef<any>` | `undefined` | Custom template for the attachment icon |
 | `voiceRecordingIconView` | `TemplateRef<any>` | `undefined` | Custom template for the voice recording icon |
 | `emojiIconView` | `TemplateRef<any>` | `undefined` | Custom template for the emoji icon |
+| `toolbarTrailingView` | `TemplateRef<unknown>` | `undefined` | Buttons rendered at the trailing end of the rich-text formatting toolbar, after the built-in groups and a separator. Intended for controls that drive a custom formatter from `textFormatters`; the template context carries a `composer` handle. Rendered in both the toolbar and the selection bubble menu, only while the rich-text editor and its toolbar are enabled |
+| `errorView` | `TemplateRef<any>` | `undefined` | Custom template rendered in place of the composer when it enters its error state |
+| `errorStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `errorView`. Takes precedence over `errorView` when both are set |
+| `listItemTemplate` | `TemplateRef<any> \| null` | `null` | Accepted for API consistency with the list components; not rendered by this component |
+| `emptyStateTemplate` | `TemplateRef<any> \| null` | `null` | Accepted for API consistency with the list components; not rendered by this component |
+| `loadingStateTemplate` | `TemplateRef<any> \| null` | `null` | Accepted for API consistency with the list components; not rendered by this component |
 
 ## Events
 

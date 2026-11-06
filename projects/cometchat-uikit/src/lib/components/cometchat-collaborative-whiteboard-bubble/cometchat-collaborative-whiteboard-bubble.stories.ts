@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatCollaborativeWhiteboardBubbleComponent } from './cometchat-collaborative-whiteboard-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import {
   createMockWhiteboardMessage,
   createMockUser,

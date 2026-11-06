@@ -314,9 +314,13 @@
   color: var(--cometchat-file-bubble-expand-indicator-color, var(--cometchat-primary-color));
   border: none;
   border-radius: var(--cometchat-file-bubble-expand-indicator-border-radius, var(--cometchat-radius-2, 8px));
-  font-size: var(--cometchat-file-bubble-expand-indicator-font-size, 13px);
-  font-weight: 600;
-  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  /* Whole-font hook; the existing size hook still works inside the default. Weight/size = button-medium. */
+  font: var(
+    --cometchat-file-bubble-expand-indicator-font,
+    500 var(--cometchat-file-bubble-expand-indicator-font-size, 14px) var(--cometchat-font-family, Inter, sans-serif)
+  );
+  /* The shorthand resets line-height to normal; keep the inherited one, as before. */
+  line-height: inherit;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }

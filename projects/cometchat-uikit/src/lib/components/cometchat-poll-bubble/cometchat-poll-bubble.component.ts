@@ -268,7 +268,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
       const updatedOption = this.pollOptions.find(o => o.id === option.id) ?? option;
       this.liveAnnouncer.announce(
         CometChatLocalize.getLocalizedString('accessibility_vote_submitted')
-          .replace('{option}', option.text)
+          .replace('{option}', () => option.text)
           + ' ' + this.getOptionAriaLabel(updatedOption),
         'polite'
       );
@@ -303,7 +303,7 @@ export class CometChatPollBubbleComponent implements OnInit, OnChanges {
 
   protected get pollAriaLabel(): string {
     return CometChatLocalize.getLocalizedString('accessibility_poll_question')
-      .replace('{question}', this.pollData?.question || '');
+      .replace('{question}', () => this.pollData?.question || '');
   }
 
   protected get optionRole(): string {

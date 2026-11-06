@@ -1,0 +1,100 @@
+---
+title: "CometChatFilesBubbleComponent"
+description: "Renders a file message (one or many attachments, plus caption) at the shared multi-attachment width so every message in a batch lines up"
+---
+The `CometChatFilesBubbleComponent` is the bubble the message list uses for file messages. It renders a single `CometChat.MediaMessage` - its expandable file list and its caption - by delegating to the single-item `cometchat-file-bubble`. What it adds on top is batch awareness: it caps the file bubble at one shared width so that consecutive messages sent together in a batch render at the same width.
+
+## Overview
+
+- **Default file renderer**: `CometChatMessageBubble` renders this component for every file message (its `files-batch` content type)
+- **One message per bubble**: Each instance renders exactly one `CometChat.MediaMessage`; a batch is shown as several of these bubbles stacked in the message list
+- **Delegates rendering**: The file list, download buttons and caption all come from `cometchat-file-bubble`; this component forwards `message`, `alignment` and `textFormatters` to it
+- **Shared batch width**: Sizes the file bubble to `--cometchat-multi-attachment-width` (default `400px`)
+- **Standalone**: Standalone Angular component with `OnPush` change detection
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatFilesBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatFilesBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-files-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.left"
+    ></cometchat-files-bubble>
+
+    <!-- Outgoing message (right-aligned) -->
+    <cometchat-files-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.right"
+    ></cometchat-files-bubble>
+  `
+})
+export class ChatMessageComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The file message to render. Forwarded to `cometchat-file-bubble` |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | Bubble alignment. `left` for incoming, `right` for outgoing. Forwarded to `cometchat-file-bubble` |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters applied to the caption text. Forwarded to the delegated bubble, which renders the caption; nothing is applied by this component itself |
+| `disableInteraction` | `boolean` | `false` | Accepted for parity with the other batch bubbles. It is not forwarded and has no effect, because the file bubble has no interaction toggle |
+
+## Events
+
+This component declares no outputs. Events of the inner `cometchat-file-bubble` are not re-emitted. If you need them, use [`CometChatFileBubbleComponent`](/components/cometchat-file-bubble) directly.
+
+## Customization
+
+### Batch Width
+
+The component sets these custom properties on its host:
+
+```css
+:host {
+  --cometchat-batch-width: var(--cometchat-multi-attachment-width, 400px);
+  --cometchat-file-bubble-width: 100%;
+  --cometchat-file-bubble-container-max-width: var(--cometchat-batch-width);
+}
+```
+
+To change the width of batch media, set `--cometchat-multi-attachment-width` on an ancestor. The same token is read by the images, videos and audios bubbles, so changing it keeps every type in a batch aligned:
+
+```css
+:root {
+  --cometchat-multi-attachment-width: 320px;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-multi-attachment-width` | Shared width cap for all batch bubbles (images, videos, files, audios) | `400px` (fallback; not defined by the kit) |
+
+All other visual styling (file rows, icons, download button, show more/less) comes from `cometchat-file-bubble`. See the [File Bubble](/components/cometchat-file-bubble) docs.
+
+## Batching and the Single-Item Bubble
+
+- **Batches**: When several files are sent together, the composer sends one message per attachment and stamps them all with the same `metadata.batchId` (`CometChatUIKitConstants.MetadataKeys.batchId`). The caption goes only on the last message of the batch. The message list treats a run of consecutive messages that share a `batchId` as one batch and renders each message with its own `cometchat-files-bubble`. The shared width is what makes the batch read as one group.
+- **Single-item bubble**: `CometChatFileBubbleComponent` (`cometchat-file-bubble`) is marked `@deprecated` in favor of this component, but stays public for direct use and is the primitive this component delegates to.
+
+## Related Components
+
+- **CometChatFileBubbleComponent**: The single-item file bubble this component delegates to
+- **CometChatImagesBubbleComponent**, **CometChatVideosBubbleComponent**, **CometChatAudiosBubbleComponent**: The other batch bubbles sharing the same width token
+- **CometChatMessageBubble**: Renders this component as the content view for file messages
+- **CometChatMessageList**: Groups consecutive messages that share a `batchId`

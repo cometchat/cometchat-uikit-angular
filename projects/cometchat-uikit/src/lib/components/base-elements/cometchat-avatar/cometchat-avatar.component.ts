@@ -92,7 +92,7 @@ export class CometChatAvatarComponent implements OnChanges {
       // Use the localized template only when it actually contains the placeholder;
       // fall back to a safe default so the name is always present in the label.
       const resolved = template.includes('{name}')
-        ? template.replace('{name}', this.name)
+        ? template.replace('{name}', () => this.name)
         : `Avatar for ${this.name}`;
       return resolved;
     }

@@ -29,7 +29,7 @@ import {
 } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageInformationComponent, UserReceiptInfo } from './cometchat-message-information.component';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import { CalendarObject } from '../../resources/CometChatLocalize/localization.interfaces';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { createMockMessage, createMockUser, createMockGroup } from '../../../../../../.storybook/utils/mock-data';

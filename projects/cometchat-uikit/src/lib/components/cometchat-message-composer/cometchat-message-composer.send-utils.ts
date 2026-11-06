@@ -6,6 +6,7 @@ import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKitUtility} from '../../CometChatUIKitUtility';
 import {CometChatLogger} from '../../utils/CometChatLogger';
+import {markMessageFailed} from '../../utils/message-metadata-utils';
 import {CometChatTextFormatter} from '../../formatters/cometchat-text-formatter';
 import {MessageComposerService} from '../../services/message-composer.service';
 import {AttachmentFile} from './cometchat-message-composer.component';
@@ -142,9 +143,11 @@ export async function handleSendNewMessageImpl(
         lastSentMessage = textMessage;
         CometChatMessageEvents.ccMessageSent.next({ message: textMessage, status: MessageStatus.success });
       } else {
+        markMessageFailed(pendingTextMessage, undefined);
         CometChatMessageEvents.ccMessageSent.next({ message: pendingTextMessage, status: MessageStatus.error });
       }
     } catch (error) {
+      markMessageFailed(pendingTextMessage, error);
       CometChatMessageEvents.ccMessageSent.next({ message: pendingTextMessage, status: MessageStatus.error });
       ctx.emitError(error);
       throw error;
@@ -185,9 +188,11 @@ export async function handleSendNewMessageImpl(
         lastSentMessage = mediaMessage;
         CometChatMessageEvents.ccMessageSent.next({ message: mediaMessage, status: MessageStatus.success });
       } else {
+        markMessageFailed(pendingMediaMessage, undefined);
         CometChatMessageEvents.ccMessageSent.next({ message: pendingMediaMessage, status: MessageStatus.error });
       }
     } catch (error) {
+      markMessageFailed(pendingMediaMessage, error);
       CometChatMessageEvents.ccMessageSent.next({ message: pendingMediaMessage, status: MessageStatus.error });
       ctx.emitError(error);
       CometChatLogger.error('CometChatMessageComposer', 'Error sending media message:', error);

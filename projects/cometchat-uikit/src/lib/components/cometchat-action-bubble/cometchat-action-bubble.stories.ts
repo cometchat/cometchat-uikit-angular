@@ -11,7 +11,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatActionBubbleComponent } from './cometchat-action-bubble.component';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 const meta: Meta<CometChatActionBubbleComponent> = {
   title: 'Components/Bubbles/Action Bubble',

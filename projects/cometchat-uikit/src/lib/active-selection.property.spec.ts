@@ -224,13 +224,12 @@ const REFLECTION_DESCRIPTORS: InputReflectionDescriptor[] = [
     verify: (fixture, value) => {
       const comp = fixture.componentInstance as CometChatActionBubbleComponent;
       if (comp.messageText !== value) return false;
-      if (comp.shouldRender) {
-        const el: HTMLElement = fixture.nativeElement;
-        const textEl = el.querySelector('.cometchat-action-bubble__text');
-        if (!textEl) return false;
-        return (textEl.textContent || '').trim() === value;
-      }
-      return true;
+      // arbNonEmptyString never yields blank text, so the bubble must render
+      if (!comp.shouldRender) return false;
+      const el: HTMLElement = fixture.nativeElement;
+      const textEl = el.querySelector('.cometchat-action-bubble__text');
+      if (!textEl) return false;
+      return (textEl.textContent || '').trim() === value;
     },
   },
   {
@@ -350,11 +349,14 @@ const REFLECTION_DESCRIPTORS: InputReflectionDescriptor[] = [
     inputKey: 'type',
     arbitrary: arbToastType,
     verify: (fixture, value) => {
-      const comp = fixture.componentInstance;
-      if (!comp.text) return true; // skip if not visible
+      // setup() gives the toast text and duration 0, so it is always visible
+      // and the class must be on the rendered element; a missing toast is a
+      // failure, not a skip.
+      const comp = fixture.componentInstance as CometChatToastComponent;
+      if (comp.text !== 'Test message') return false;
       const el: HTMLElement = fixture.nativeElement;
       const toast = el.querySelector('.cometchat-toast');
-      if (!toast) return true;
+      if (!toast) return false;
       return toast.classList.contains(`cometchat-toast--${value}`);
     },
     setup: (fixture) => {
@@ -414,7 +416,7 @@ describe('Property 8: Input Reflection', () => {
 
         const result = descriptor.verify(fixture, value);
         fixture.destroy();
-        return result;
+        expect(result, `${descriptor.name}: did not reflect ${JSON.stringify(value)}`).toBe(true);
       }),
       { numRuns: 150 }
     );
@@ -439,10 +441,10 @@ describe('Property 8: Input Reflection', () => {
         expect(initials).toBe(initials.toUpperCase());
 
         const el: HTMLElement = fixture.nativeElement;
+        // No image is set, so the initials text element is rendered
         const textEl = el.querySelector('.cometchat-avatar__text');
-        if (textEl) {
-          expect((textEl.textContent || '').trim()).toBe(initials);
-        }
+        expect(textEl).not.toBeNull();
+        expect((textEl!.textContent || '').trim()).toBe(initials);
 
         fixture.destroy();
       }),
@@ -616,12 +618,12 @@ describe('Property 8: Input Reflection', () => {
         const comp = fixture.componentInstance;
         expect(comp.messageText).toBe(messageText);
 
-        if (comp.shouldRender) {
-          const el: HTMLElement = fixture.nativeElement;
-          const textEl = el.querySelector('.cometchat-action-bubble__text');
-          expect(textEl).toBeTruthy();
-          expect((textEl!.textContent || '').trim()).toBe(messageText);
-        }
+        // arbNonEmptyString never yields blank text, so the bubble renders
+        expect(comp.shouldRender).toBe(true);
+        const el: HTMLElement = fixture.nativeElement;
+        const textEl = el.querySelector('.cometchat-action-bubble__text');
+        expect(textEl).not.toBeNull();
+        expect((textEl!.textContent || '').trim()).toBe(messageText);
 
         fixture.destroy();
       }),
@@ -827,7 +829,10 @@ describe('Property 8: Input Reflection', () => {
         // Verify the new value is reflected
         const result = descriptor.verify(fixture, value2);
         fixture.destroy();
-        return result;
+        expect(
+          result,
+          `${descriptor.name}: did not reflect ${JSON.stringify(value2)} after ${JSON.stringify(value1)}`
+        ).toBe(true);
       }),
       { numRuns: 120 }
     );

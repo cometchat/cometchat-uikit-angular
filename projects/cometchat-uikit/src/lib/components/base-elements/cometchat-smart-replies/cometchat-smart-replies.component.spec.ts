@@ -919,10 +919,6 @@ describe('CometChatSmartRepliesComponent', () => {
   // ─── Accessibility ───
 
   describe('Accessibility', () => {
-    it('should have focusable reply suggestion buttons', () => {
-      const component = createComponent();
-      expect(typeof component.onReplyClick).toBe('function');
-    });
 
     it('should provide accessible labels for reply suggestions', () => {
       const component = createComponent();

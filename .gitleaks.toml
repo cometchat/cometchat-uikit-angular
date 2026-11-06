@@ -1,0 +1,25 @@
+# Secret-scan rules for CI (secret-scan job) and the pre-commit hook.
+# Gitleaks' default rules, plus CometChat's key shape: Auth Keys and REST API keys are
+# 40 lowercase hex characters, which the generic rules don't reliably catch.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "cometchat-40-hex-key"
+description = "40-character hex string (CometChat Auth Key / REST API key shape)"
+regex = '''\b[0-9a-f]{40}\b'''
+keywords = []
+
+  # Commit SHAs that pin GitHub Actions (`uses: owner/repo@<sha>`) have the same shape.
+  [[rules.allowlists]]
+  regexTarget = "line"
+  regexes = ['''uses:\s*[\w.-]+/[\w./-]+@[0-9a-f]{40}''']
+
+  # Git's all-zero object ID (an empty ref in hooks, e.g. a branch deletion) has the same shape.
+  [[rules.allowlists]]
+  regexes = ['''^0{40}$''']
+
+  # Lockfile integrity and git-dependency hashes are not credentials.
+  [[rules.allowlists]]
+  paths = ['''(^|/)package-lock\.json$''']

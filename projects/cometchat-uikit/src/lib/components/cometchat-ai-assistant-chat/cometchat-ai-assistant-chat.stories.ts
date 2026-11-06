@@ -20,7 +20,9 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAIAssistantChat } from './cometchat-ai-assistant-chat.component';
 import { createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
-import { within, expect } from '@storybook/test';
+import { PinSaveService } from '../../services/pin-save.service';
+import { createMockPinSaveService } from '../../../../../../.storybook/utils/mock-pin-save';
+import { within, expect, waitFor } from 'storybook/test';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -49,6 +51,9 @@ const meta: Meta<CometChatAIAssistantChat> = {
   decorators: [
     moduleMetadata({
       imports: [CommonModule, TranslatePipe],
+      // The embedded message list injects PinSaveService, whose real
+      // implementation reaches the uninitialised SDK; see createMockPinSaveService.
+      providers: [{ provide: PinSaveService, useFactory: () => createMockPinSaveService() }],
     }),
   ],
   argTypes: {
@@ -332,8 +337,8 @@ export const TestDefaultRendersChat: Story = {
     loadLastAgentConversation: false,
   },
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    const container = canvasElement.querySelector('.cometchat-ai-assistant-chat');
-    expect(container).not.toBeNull();
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.cometchat-ai-assistant-chat')).not.toBeNull();
+    });
   },
 };

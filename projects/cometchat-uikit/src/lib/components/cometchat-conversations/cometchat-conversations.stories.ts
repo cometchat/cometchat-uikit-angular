@@ -13,20 +13,53 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
+import { signal } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { within, expect } from '@storybook/test';
+import { within, expect, waitFor } from 'storybook/test';
 
 import { CometChatConversationsComponent } from './cometchat-conversations.component';
 import { CometChatConversationItemComponent } from '../cometchat-conversation-item/cometchat-conversation-item.component';
 import { CometChatTemplatesService } from '../../services/templates.service';
 import { ConversationsService } from '../../services/conversations.service';
+import { PinSaveService } from '../../services/pin-save.service';
 import { SelectionMode } from '../../Enums/Enums';
-import { createMockConversations } from '../../../../../../.storybook/utils/mock-data';
+import {
+  createMockConversations,
+  createMockGroup,
+  createMockMessage,
+  createMockUser,
+} from '../../../../../../.storybook/utils/mock-data';
+import { createMockPinSaveService } from '../../../../../../.storybook/utils/mock-pin-save';
 
 // ============================================
 // Mock Classes
 // ============================================
+
+/**
+ * The members of ConversationsService the component reaches for. Typing the
+ * mock against the real service means a new dependency fails `tsc` here rather
+ * than throwing "x is not a function" in the browser.
+ */
+type ConversationsServiceMock = Pick<
+  ConversationsService,
+  | 'conversations$'
+  | 'loadingState$'
+  | 'errorState$'
+  | 'activeConversation$'
+  | 'typingIndicators$'
+  | 'hasMore'
+  | 'fetchConversations'
+  | 'fetchNextConversations'
+  | 'searchConversations'
+  | 'deleteConversation'
+  | 'setActiveConversation'
+  | 'replaceConversation'
+  | 'updateConversationUnreadCount'
+  | 'updateConversationReadStatus'
+  | 'clearError'
+  | 'cleanup'
+>;
 
 /**
  * Creates a mock ConversationsService for Storybook stories.
@@ -36,7 +69,7 @@ import { createMockConversations } from '../../../../../../.storybook/utils/mock
 function createMockConversationsService(
   conversations: CometChat.Conversation[] = [],
   options?: { loading?: boolean; error?: Error | null }
-) {
+): ConversationsServiceMock {
   const conversationsSubject = new BehaviorSubject<CometChat.Conversation[]>(conversations);
   const loadingSubject = new BehaviorSubject<boolean>(options?.loading ?? false);
   const errorSubject = new BehaviorSubject<Error | null>(options?.error ?? null);
@@ -51,6 +84,8 @@ function createMockConversationsService(
     errorState$: errorSubject.asObservable(),
     activeConversation$: activeConversationSubject.asObservable(),
     typingIndicators$: typingIndicatorsSubject.asObservable(),
+    // Every page is already in the list, so there is nothing more to load.
+    hasMore: signal(false).asReadonly(),
     fetchConversations: () => {
       if (options?.error) {
         // On retry, show loading for 300ms then error again
@@ -63,15 +98,51 @@ function createMockConversationsService(
       }
       return Promise.resolve();
     },
-    fetchNextConversations: () => Promise.resolve(),
+    fetchNextConversations: () => Promise.resolve(false),
     searchConversations: () => {},
     deleteConversation: () => Promise.resolve(),
     setActiveConversation: () => {},
+    replaceConversation: () => false,
+    updateConversationUnreadCount: () => {},
+    updateConversationReadStatus: () => {},
     clearError: () => {
       errorSubject.next(null);
     },
     cleanup: () => {},
   };
+}
+
+/** The user the stories are signed in as. */
+const LOGGED_IN_USER = createMockUser({ uid: 'storybook-me', name: 'Storybook Me' });
+
+/**
+ * Conversations whose last message the signed-in user sent, so each row has a
+ * delivery receipt to show (receipts are only drawn on your own messages).
+ */
+function createConversationsSentByMe(count: number): CometChat.Conversation[] {
+  return createMockConversations(count, i => ({
+    type: 'user',
+    lastMessage: createMockMessage('text', {
+      text: `Sent message ${i + 1}`,
+      sender: LOGGED_IN_USER,
+      deliveredAt: Date.now() / 1000,
+    }),
+  }));
+}
+
+/** Alternating user and private/password group conversations. */
+function createConversationsWithGroupTypes(count: number): CometChat.Conversation[] {
+  return createMockConversations(count, i =>
+    i % 2 === 0
+      ? { type: 'user' }
+      : {
+          type: 'group',
+          conversationWith: createMockGroup({
+            guid: `group-typed-${i}`,
+            type: i % 4 === 1 ? CometChat.GROUP_TYPE.PRIVATE : CometChat.GROUP_TYPE.PASSWORD,
+          }),
+        }
+  );
 }
 
 // ============================================
@@ -85,8 +156,20 @@ const meta: Meta<CometChatConversationsComponent> = {
   decorators: [
     moduleMetadata({
       imports: [CommonModule, CometChatConversationItemComponent],
+      // The real service reaches the uninitialised SDK; see createMockPinSaveService.
+      providers: [{ provide: PinSaveService, useFactory: () => createMockPinSaveService() }],
     }),
   ],
+  // The SDK is never initialised in Storybook, so asking it for the signed-in
+  // user throws. Sign the stories in as LOGGED_IN_USER, and put the SDK back
+  // afterwards so no other story inherits the stub.
+  beforeEach: () => {
+    const original = CometChat.getLoggedinUser;
+    CometChat.getLoggedinUser = () => Promise.resolve(LOGGED_IN_USER);
+    return () => {
+      CometChat.getLoggedinUser = original;
+    };
+  },
   args: {
     hideReceipts: false,
     hideError: false,
@@ -558,6 +641,29 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Toggle Verification
 // ============================================
 
+/**
+ * Waits on rendered state rather than a fixed sleep: resolves with the
+ * conversation rows once the list has drawn them.
+ */
+const RENDER_SETTLE = { timeout: 5000 };
+
+function waitForConversationRows(canvasElement: HTMLElement): Promise<Element[]> {
+  return waitFor(() => {
+    const rows = Array.from(canvasElement.querySelectorAll('.cometchat-conversations__list-item-wrapper'));
+    expect(rows.length).toBeGreaterThan(0);
+    return rows;
+  }, RENDER_SETTLE);
+}
+
+/** Waits for the first element matching `selector` inside the canvas. */
+function waitForElement(canvasElement: HTMLElement, selector: string): Promise<HTMLElement> {
+  return waitFor(() => {
+    const el = canvasElement.querySelector<HTMLElement>(selector);
+    expect(el).not.toBeNull();
+    return el!;
+  }, RENDER_SETTLE);
+}
+
 /** Verifies hideReceipts=true hides receipt icons. */
 export const TestHideReceipts: Story = {
   decorators: [
@@ -565,7 +671,7 @@ export const TestHideReceipts: Story = {
       providers: [
         {
           provide: ConversationsService,
-          useFactory: () => createMockConversationsService(createMockConversations(5)),
+          useFactory: () => createMockConversationsService(createConversationsSentByMe(5)),
         },
         CometChatTemplatesService,
       ],
@@ -587,12 +693,47 @@ export const TestHideReceipts: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    // Wait for render
-    await new Promise(r => setTimeout(r, 1000));
-    // Receipt icons should NOT be present when hideReceipts=true
-    const receipts = canvasElement.querySelectorAll('.cometchat-conversation-item__receipt-icon');
-    expect(receipts.length).toBe(0);
+    const rows = await waitForConversationRows(canvasElement);
+    expect(rows).toHaveLength(5);
+    // Every last message is the user's own, yet no receipt is drawn
+    expect(canvasElement.querySelectorAll('.cometchat-conversation-item__receipt-icon')).toHaveLength(0);
+  },
+};
+
+/** Verifies hideReceipts=false shows a receipt on each conversation the user sent last. */
+export const TestShowReceipts: Story = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        {
+          provide: ConversationsService,
+          useFactory: () => createMockConversationsService(createConversationsSentByMe(5)),
+        },
+        CometChatTemplatesService,
+      ],
+    }),
+  ],
+  args: {
+    hideReceipts: false,
+    disableSoundForMessages: true,
+  },
+  render: args => ({
+    props: args,
+    template: `
+      <div style="width: 400px; height: 600px; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2); overflow: hidden;">
+        <cometchat-conversations
+          [hideReceipts]="false"
+          [disableSoundForMessages]="true">
+        </cometchat-conversations>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await waitForConversationRows(canvasElement);
+    // The signed-in user sent every last message, and each was delivered
+    await waitFor(() => {
+      expect(canvasElement.querySelectorAll('.cometchat-conversation-item__receipt-icon--delivered')).toHaveLength(5);
+    }, RENDER_SETTLE);
   },
 };
 
@@ -625,10 +766,9 @@ export const TestHideUserStatus: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Status indicators should NOT be present
-    const statusIndicators = canvasElement.querySelectorAll('.cometchat-avatar__status');
-    expect(statusIndicators.length).toBe(0);
+    await waitForConversationRows(canvasElement);
+    // Status indicators should NOT be present on the user conversations
+    expect(canvasElement.querySelectorAll('.cometchat-conversation-item__status')).toHaveLength(0);
   },
 };
 
@@ -639,7 +779,7 @@ export const TestHideGroupType: Story = {
       providers: [
         {
           provide: ConversationsService,
-          useFactory: () => createMockConversationsService(createMockConversations(10)),
+          useFactory: () => createMockConversationsService(createConversationsWithGroupTypes(10)),
         },
         CometChatTemplatesService,
       ],
@@ -661,10 +801,10 @@ export const TestHideGroupType: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Group type icons should NOT be present
-    const groupTypeIcons = canvasElement.querySelectorAll('.cometchat-conversation-item__group-type');
-    expect(groupTypeIcons.length).toBe(0);
+    const rows = await waitForConversationRows(canvasElement);
+    expect(rows).toHaveLength(10);
+    // Half the rows are private/password groups, yet no type icon is drawn
+    expect(canvasElement.querySelectorAll('.cometchat-conversation-item__group-type')).toHaveLength(0);
   },
 };
 
@@ -697,10 +837,10 @@ export const TestShowSearchBar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    const canvas = within(canvasElement);
     // Search bar should be visible
-    const searchInput = canvasElement.querySelector('cometchat-search-bar input, input[placeholder*="Search"], input[placeholder*="search"]');
-    expect(searchInput).not.toBeNull();
+    const search = await canvas.findByRole('searchbox', { name: 'Search' }, RENDER_SETTLE);
+    expect(search.closest('.cometchat-conversations__search-section')).not.toBeNull();
   },
 };
 
@@ -733,10 +873,9 @@ export const TestHideSearchBar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForConversationRows(canvasElement);
     // Search bar should NOT be visible
-    const searchBar = canvasElement.querySelector('cometchat-search-bar');
-    expect(searchBar).toBeNull();
+    expect(canvasElement.querySelector('cometchat-search-bar')).toBeNull();
   },
 };
 
@@ -767,13 +906,11 @@ export const TestEmptyState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
     // Empty state content should be visible
-    const emptyContent = canvasElement.querySelector('.cometchat-conversations__empty-content, [class*="empty"]');
-    expect(emptyContent).not.toBeNull();
+    const empty = await waitForElement(canvasElement, '.cometchat-conversations__empty-content');
+    expect(empty.querySelector('.cometchat-conversations__empty-title')).not.toBeNull();
     // No conversation items should be present
-    const items = canvasElement.querySelectorAll('.cometchat-conversation-item');
-    expect(items.length).toBe(0);
+    expect(canvasElement.querySelectorAll('cometchat-conversation-item')).toHaveLength(0);
   },
 };
 
@@ -804,10 +941,10 @@ export const TestLoadingState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    // Shimmer/loading elements should be present
-    const shimmer = canvasElement.querySelector('.cometchat-conversations__shimmer, [class*="shimmer"], [class*="loading"]');
-    expect(shimmer).not.toBeNull();
+    // Shimmer placeholders should be present while loading
+    const shimmer = await waitForElement(canvasElement, '.cometchat-conversations__shimmer');
+    expect(shimmer.querySelectorAll('.cometchat-conversations__shimmer-item').length).toBeGreaterThan(0);
+    expect(canvasElement.querySelectorAll('cometchat-conversation-item')).toHaveLength(0);
   },
 };
 
@@ -838,13 +975,10 @@ export const TestDefaultRendersItems: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Conversation items should be rendered
-    const items = canvasElement.querySelectorAll('.cometchat-conversation-item, cometchat-conversation-item');
-    expect(items.length).toBeGreaterThan(0);
-    // Title should be visible
-    const title = canvasElement.querySelector('.cometchat-conversations__title');
-    expect(title).not.toBeNull();
+    // Conversation items should be rendered under the title
+    const rows = await waitForConversationRows(canvasElement);
+    expect(rows).toHaveLength(5);
+    expect(canvasElement.querySelector('.cometchat-conversations__title')).not.toBeNull();
   },
 };
 
@@ -878,10 +1012,14 @@ export const TestHideError: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Error state view should NOT be visible when hideError=true
-    const errorView = canvasElement.querySelector('.cometchat-conversations__error-state-view');
-    expect(errorView).toBeNull();
+    // The list has settled into its error state (no shimmer, no rows) ...
+    await waitFor(() => {
+      expect(canvasElement.querySelector('cometchat-paginated-list')).not.toBeNull();
+      expect(canvasElement.querySelector('.cometchat-conversations__shimmer')).toBeNull();
+    }, RENDER_SETTLE);
+    expect(canvasElement.querySelectorAll('cometchat-conversation-item')).toHaveLength(0);
+    // ... but hideError=true suppresses the error view
+    expect(canvasElement.querySelector('.cometchat-conversations__error-content')).toBeNull();
   },
 };
 
@@ -915,10 +1053,10 @@ export const TestShowError: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Error state view should be visible when hideError=false
-    const errorView = canvasElement.querySelector('.cometchat-conversations__error-state-view');
-    expect(errorView).not.toBeNull();
+    // Error state view should be visible, with a retry button
+    const errorView = await waitForElement(canvasElement, '.cometchat-conversations__error-content');
+    expect(errorView.closest('[role="alert"]')).not.toBeNull();
+    expect(within(errorView).getByRole('button')).toHaveClass('cometchat-conversations__error-retry-button');
   },
 };
 
@@ -951,11 +1089,9 @@ export const TestShowScrollbar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // The root element should NOT have the hide-scrollbar class
-    const root = canvasElement.querySelector('.cometchat-conversations');
-    expect(root).not.toBeNull();
-    expect(root!.classList.contains('cometchat-conversations-hide-scrollbar')).toBe(false);
+    await waitForConversationRows(canvasElement);
+    // The list body owns the scrollbar
+    expect(canvasElement.querySelector('.cometchat-paginated-list')).toHaveClass('cometchat-paginated-list--show-scrollbar');
   },
 };
 
@@ -988,11 +1124,9 @@ export const TestHideScrollbar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // The root element should have the hide-scrollbar class
-    const root = canvasElement.querySelector('.cometchat-conversations');
-    expect(root).not.toBeNull();
-    expect(root!.classList.contains('cometchat-conversations-hide-scrollbar')).toBe(true);
+    await waitForConversationRows(canvasElement);
+    // The list body owns the scrollbar
+    expect(canvasElement.querySelector('.cometchat-paginated-list')).not.toHaveClass('cometchat-paginated-list--show-scrollbar');
   },
 };
 
@@ -1024,10 +1158,12 @@ export const TestSingleSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Selection controls (radio buttons) should be present
-    const selectionControls = canvasElement.querySelectorAll('.cometchat-conversations__selection-control, input[type="radio"], .cometchat-radio-button');
-    expect(selectionControls.length).toBeGreaterThan(0);
+    const rows = await waitForConversationRows(canvasElement);
+    // Every row carries a radio-style selection control
+    for (const row of rows) {
+      expect(row.querySelector('.cometchat-conversations__selection-control cometchat-radio-button')).not.toBeNull();
+    }
+    expect(canvasElement.querySelectorAll('cometchat-checkbox')).toHaveLength(0);
   },
 };
 
@@ -1059,10 +1195,12 @@ export const TestMultipleSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Selection controls (checkboxes) should be present
-    const selectionControls = canvasElement.querySelectorAll('.cometchat-conversations__selection-control, input[type="checkbox"], .cometchat-checkbox');
-    expect(selectionControls.length).toBeGreaterThan(0);
+    const rows = await waitForConversationRows(canvasElement);
+    // Every row carries a checkbox-style selection control
+    for (const row of rows) {
+      expect(row.querySelector('.cometchat-conversations__selection-control cometchat-checkbox')).not.toBeNull();
+    }
+    expect(canvasElement.querySelectorAll('cometchat-radio-button')).toHaveLength(0);
   },
 };
 
@@ -1094,12 +1232,10 @@ export const TestNoSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForConversationRows(canvasElement);
     // No selection controls should be present
-    const radioButtons = canvasElement.querySelectorAll('input[type="radio"], .cometchat-radio-button');
-    const checkboxes = canvasElement.querySelectorAll('input[type="checkbox"], .cometchat-checkbox');
-    expect(radioButtons.length).toBe(0);
-    expect(checkboxes.length).toBe(0);
+    expect(canvasElement.querySelectorAll('.cometchat-conversations__selection-control')).toHaveLength(0);
+    expect(canvasElement.querySelectorAll('cometchat-radio-button, cometchat-checkbox')).toHaveLength(0);
   },
 };
 
@@ -1132,13 +1268,10 @@ export const TestHideDeleteConversation: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Component should render without errors
-    const root = canvasElement.querySelector('.cometchat-conversations');
-    expect(root).not.toBeNull();
+    // Component should render its rows without errors
+    await waitForConversationRows(canvasElement);
     // Delete option should not be visible (context menu not open by default)
-    const deleteOption = canvasElement.querySelector('.cometchat-conversations__delete-option, [data-testid="delete-conversation"]');
-    expect(deleteOption).toBeNull();
+    expect(within(canvasElement).queryByRole('menuitem', { name: /delete/i })).toBeNull();
   },
 };
 
@@ -1171,12 +1304,8 @@ export const TestDisableDefaultContextMenu: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Component should render correctly with context menu disabled
-    const root = canvasElement.querySelector('.cometchat-conversations');
-    expect(root).not.toBeNull();
-    // Conversation items should still render
-    const items = canvasElement.querySelectorAll('.cometchat-conversation-item, cometchat-conversation-item');
-    expect(items.length).toBeGreaterThan(0);
+    // Conversation items should still render with the context menu disabled
+    const rows = await waitForConversationRows(canvasElement);
+    expect(rows).toHaveLength(5);
   },
 };

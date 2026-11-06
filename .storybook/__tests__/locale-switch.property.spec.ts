@@ -16,7 +16,8 @@ describe('Property 1: Locale switch updates all translated strings', () => {
       fc.property(fc.constantFrom(...availableLocales), (locale) => {
         CometChatLocalize.setCurrentLanguage(locale);
         const result = CometChatLocalize.getLocalizedString('conversation_chat_title');
-        return typeof result === 'string' && result.length > 0;
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
       })
     );
   });
@@ -25,7 +26,7 @@ describe('Property 1: Locale switch updates all translated strings', () => {
     fc.assert(
       fc.property(fc.constantFrom(...availableLocales), (locale) => {
         CometChatLocalize.setCurrentLanguage(locale);
-        return CometChatLocalize.getCurrentLanguage() === locale;
+        expect(CometChatLocalize.getCurrentLanguage()).toBe(locale);
       })
     );
   });
@@ -44,7 +45,8 @@ describe('Property 1: Locale switch updates all translated strings', () => {
         (locale, key) => {
           CometChatLocalize.setCurrentLanguage(locale);
           const result = CometChatLocalize.getLocalizedString(key);
-          return typeof result === 'string' && result.length > 0;
+          expect(typeof result).toBe('string');
+          expect(result.length).toBeGreaterThan(0);
         }
       )
     );

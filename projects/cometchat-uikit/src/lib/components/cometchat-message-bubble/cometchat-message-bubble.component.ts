@@ -109,7 +109,8 @@ export class CometChatMessageBubbleComponent
    */
   @Input() variant?: 'incoming' | 'outgoing';
   @Input() group: CometChat.Group | null = null;
-  @Input() options: (CometChatActionsIcon | CometChatActionsView)[] = [];
+  @Input({ transform: (v: (CometChatActionsIcon | CometChatActionsView)[] | null | undefined) => v ?? [] })
+  options: (CometChatActionsIcon | CometChatActionsView)[] = [];
   @Input() quickOptionsCount = 2;
   @Input() leadingView: TemplateRef<any> | null = null;
   @Input() headerView: TemplateRef<any> | null = null;
@@ -478,7 +479,7 @@ export class CometChatMessageBubbleComponent
     return parts.join(', ');
   }
   getAriaLabel(): string {
-    if (this.isDeleted) { const sn = this.sender?.getName() || CometChatLocalize.getLocalizedString('accessibility_unknown_sender'); return CometChatLocalize.getLocalizedString('accessibility_message_deleted_from').replace('{sender}', sn); }
+    if (this.isDeleted) { const sn = this.sender?.getName() || CometChatLocalize.getLocalizedString('accessibility_unknown_sender'); return CometChatLocalize.getLocalizedString('accessibility_message_deleted_from').replace('{sender}', () => sn); }
     return this.accessibleLabel;
   }
   private getContentPreview(): string {
@@ -512,7 +513,7 @@ export class CometChatMessageBubbleComponent
       minute: '2-digit',
     });
   }
-  private getReactionsSummary(): string { const reactions = this.reactions; if (!reactions?.length) return ''; const totalCount = reactions.reduce((sum, r) => sum + (r.getCount?.() || 0), 0); if (totalCount === 1) return CometChatLocalize.getLocalizedString('accessibility_one_reaction'); return CometChatLocalize.getLocalizedString('accessibility_reactions_count').replace('{count}', totalCount.toString()); }
+  private getReactionsSummary(): string { const reactions = this.reactions; if (!reactions?.length) return ''; const totalCount = reactions.reduce((sum, r) => sum + (r.getCount?.() || 0), 0); if (totalCount === 1) return CometChatLocalize.getLocalizedString('accessibility_one_reaction'); return CometChatLocalize.getLocalizedString('accessibility_reactions_count').replace('{count}', () => totalCount.toString()); }
   private getMessageTypeLabel(): string { switch (this.messageType) { case 'text': return CometChatLocalize.getLocalizedString('accessibility_message_type_text'); case 'image': return CometChatLocalize.getLocalizedString('accessibility_message_type_image'); case 'video': return CometChatLocalize.getLocalizedString('accessibility_message_type_video'); case 'audio': return CometChatLocalize.getLocalizedString('accessibility_message_type_audio'); case 'file': return CometChatLocalize.getLocalizedString('accessibility_message_type_file'); default: return CometChatLocalize.getLocalizedString('accessibility_message_type_custom'); } }
   get isMediaMessage(): boolean {
     return ['audio', 'video', 'image'].includes(this.messageType);

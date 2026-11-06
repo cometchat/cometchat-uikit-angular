@@ -31,7 +31,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { ensureSdkReady, sdkCleanup, flushPromises, fetchTestGroup } from '../../testing';
+import { ensureSdkReady, sdkCleanup, flushPromises, fetchTestGroup, createMockGroupList } from '../../testing';
 import { CometChatGroupsComponent } from './cometchat-groups.component';
 import { SelectionMode, States } from '../../Enums/Enums';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
@@ -343,37 +343,20 @@ describe('CometChatGroupsComponent', () => {
       expect(component.selectedGroups.size).toBe(1);
     });
 
-    it('should deselect previous group when selecting new one in single mode', async () => {
-      const group1 = await fetchTestGroup('supergroup');
-      // Create a second group via the groups request builder
-      const builder = new CometChat.GroupsRequestBuilder().setLimit(2).build();
-      let groups: CometChat.Group[] = [];
-      try {
-        groups = await builder.fetchNext();
-      } catch {
-        // fallback: use same group for basic test
-      }
+    it('should deselect previous group when selecting new one in single mode', () => {
+      // Two distinct groups (fetching from the SDK yields none in this environment)
+      const groups = createMockGroupList(2);
+      component.selectionMode = SelectionMode.single;
+      component.groupList = [groups[0], groups[1]];
+      fixture.detectChanges();
 
-      if (groups.length >= 2) {
-        component.selectionMode = SelectionMode.single;
-        component.groupList = [groups[0], groups[1]];
-        fixture.detectChanges();
+      component.handleSelectionChange(groups[0]);
+      expect(component.isGroupSelected(groups[0])).toBe(true);
 
-        component.handleSelectionChange(groups[0]);
-        expect(component.isGroupSelected(groups[0])).toBe(true);
-
-        component.handleSelectionChange(groups[1]);
-        expect(component.isGroupSelected(groups[0])).toBe(false);
-        expect(component.isGroupSelected(groups[1])).toBe(true);
-      } else {
-        // Fallback: at least verify single mode toggle works
-        component.selectionMode = SelectionMode.single;
-        component.groupList = [group1];
-        fixture.detectChanges();
-
-        component.handleSelectionChange(group1);
-        expect(component.isGroupSelected(group1)).toBe(true);
-      }
+      component.handleSelectionChange(groups[1]);
+      expect(component.isGroupSelected(groups[0])).toBe(false);
+      expect(component.isGroupSelected(groups[1])).toBe(true);
+      expect(component.selectedGroups.size).toBe(1);
     });
 
     it('should toggle selection in single mode (deselect on re-click)', async () => {
@@ -389,26 +372,17 @@ describe('CometChatGroupsComponent', () => {
       expect(component.isGroupSelected(group)).toBe(false);
     });
 
-    it('should allow multiple selections in multiple mode', async () => {
-      const builder = new CometChat.GroupsRequestBuilder().setLimit(5).build();
-      let groups: CometChat.Group[] = [];
-      try {
-        groups = await builder.fetchNext();
-      } catch {
-        // skip if no groups
-      }
+    it('should allow multiple selections in multiple mode', () => {
+      const groups = createMockGroupList(5);
+      component.selectionMode = SelectionMode.multiple;
+      component.groupList = groups;
+      fixture.detectChanges();
 
-      if (groups.length >= 2) {
-        component.selectionMode = SelectionMode.multiple;
-        component.groupList = groups;
-        fixture.detectChanges();
-
-        component.handleSelectionChange(groups[0]);
-        component.handleSelectionChange(groups[1]);
-        expect(component.isGroupSelected(groups[0])).toBe(true);
-        expect(component.isGroupSelected(groups[1])).toBe(true);
-        expect(component.selectedGroups.size).toBe(2);
-      }
+      component.handleSelectionChange(groups[0]);
+      component.handleSelectionChange(groups[1]);
+      expect(component.isGroupSelected(groups[0])).toBe(true);
+      expect(component.isGroupSelected(groups[1])).toBe(true);
+      expect(component.selectedGroups.size).toBe(2);
     });
 
     it('should toggle individual selection in multiple mode', async () => {
@@ -437,26 +411,19 @@ describe('CometChatGroupsComponent', () => {
       expect(component.selectedGroups.size).toBe(0);
     });
 
-    it('should select all groups via selectAll', async () => {
-      const builder = new CometChat.GroupsRequestBuilder().setLimit(5).build();
-      let groups: CometChat.Group[] = [];
-      try {
-        groups = await builder.fetchNext();
-      } catch {
-        // skip if no groups
-      }
+    it('should select all groups via selectAll', () => {
+      const groups = createMockGroupList(5);
+      component.selectionMode = SelectionMode.multiple;
+      // The first detectChanges runs ngOnInit, which resets the list; set the
+      // groups after it so selectAll has them to select.
+      fixture.detectChanges();
+      component.groupList = groups;
 
-      if (groups.length >= 2) {
-        component.selectionMode = SelectionMode.multiple;
-        component.groupList = groups;
-        fixture.detectChanges();
-
-        component.selectAll();
-        expect(component.selectedGroups.size).toBe(groups.length);
-        groups.forEach(g => {
-          expect(component.isGroupSelected(g)).toBe(true);
-        });
-      }
+      component.selectAll();
+      expect(component.selectedGroups.size).toBe(5);
+      groups.forEach(g => {
+        expect(component.isGroupSelected(g)).toBe(true);
+      });
     });
 
     it('should not select all when selectionMode is not multiple', async () => {

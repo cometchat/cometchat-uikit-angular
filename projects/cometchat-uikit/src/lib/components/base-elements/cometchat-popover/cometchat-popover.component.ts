@@ -95,6 +95,8 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
   private previouslyFocusedElement: HTMLElement | null = null;
   public focusableElements: HTMLElement[] = [];
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
+  private contentResizeObserver: ResizeObserver | null = null;
+  private contentResizeFrame: number | null = null;
   private justOpened = false;
 
   Placement = Placement;
@@ -108,6 +110,7 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
     if (this.hoverTimeout) clearTimeout(this.hoverTimeout);
     if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
     if (this.keydownListener) document.removeEventListener('keydown', this.keydownListener);
+    this.stopWatchingContentSize();
     if (this.isOpen) this.restoreFocus();
   }
 
@@ -139,6 +142,7 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
       this.isOpen = false;
       this.isPositioned = false;
       CometChatPopoverComponent.openInstances.delete(this);
+      this.stopWatchingContentSize();
       this.cleanupFocusTrap();
       this.restoreFocus();
     }
@@ -154,6 +158,7 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
     setTimeout(() => {
       setTimeout(() => {
         this.getPopoverPositionStyle();
+        this.watchContentSize();
         this.setupFocusTrap();
         this.focusFirstElement();
       }, 0);
@@ -164,6 +169,7 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
   private closePopoverInternal(emit: boolean): void {
     CometChatPopoverComponent.openInstances.delete(this);
     this.isPositioned = false;
+    this.stopWatchingContentSize();
     this.cleanupFocusTrap();
     this.restoreFocus();
     this.cdr.markForCheck();
@@ -351,6 +357,39 @@ export class CometChatPopoverComponent implements OnInit, AfterViewInit, OnDestr
     if (this.previouslyFocusedElement && typeof this.previouslyFocusedElement.focus === 'function') {
       setTimeout(() => this.previouslyFocusedElement?.focus(), 0);
     }
+  }
+
+  /**
+   * Re-position when the content changes size. Content that renders after opening (a deferred
+   * block, async data) is measured as 0 high at first, so a top-placed popover would hang below
+   * its trigger once the content grows.
+   */
+  private watchContentSize(): void {
+    if (!this.popoverRef || typeof ResizeObserver === 'undefined') return;
+    this.stopWatchingContentSize();
+    let lastHeight = this.popoverRef.nativeElement.offsetHeight;
+    let lastWidth = this.popoverRef.nativeElement.offsetWidth;
+    this.contentResizeObserver = new ResizeObserver(() => {
+      const el = this.popoverRef?.nativeElement;
+      if (!this.isOpen || !el) return;
+      if (el.offsetHeight === lastHeight && el.offsetWidth === lastWidth) return;
+      lastHeight = el.offsetHeight;
+      lastWidth = el.offsetWidth;
+      if (this.contentResizeFrame !== null) cancelAnimationFrame(this.contentResizeFrame);
+      this.contentResizeFrame = requestAnimationFrame(() => {
+        this.contentResizeFrame = null;
+        // Closed or destroyed since the resize: nothing to position.
+        if (this.isOpen) this.getPopoverPositionStyle();
+      });
+    });
+    this.contentResizeObserver.observe(this.popoverRef.nativeElement);
+  }
+
+  private stopWatchingContentSize(): void {
+    this.contentResizeObserver?.disconnect();
+    this.contentResizeObserver = null;
+    if (this.contentResizeFrame !== null) cancelAnimationFrame(this.contentResizeFrame);
+    this.contentResizeFrame = null;
   }
 
   private setupFocusTrap(): void {

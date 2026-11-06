@@ -5,6 +5,30 @@ import { withLocale } from './decorators/locale.decorator';
 const preview: Preview = {
   parameters: {
     layout: 'centered',
+    // CI 4 storybook-test-runner (ENG-40484): an axe violation fails the story's test.
+    // Rule ratchet: these rules already fail across the library (first runs, 24-25 Oct 2026: 74 of
+    // 85 story files; ENG-40611) and are tracked as accessibility debt. They are off so every OTHER rule
+    // blocks today; switch each one back on once its violations are fixed. Never add a rule here.
+    a11y: {
+      test: 'error',
+      config: {
+        rules: [
+          { id: 'color-contrast', enabled: false }, // 221 violations
+          { id: 'aria-allowed-attr', enabled: false }, // 78
+          { id: 'aria-required-children', enabled: false }, // 60
+          { id: 'aria-required-parent', enabled: false }, // 37
+          { id: 'aria-input-field-name', enabled: false }, // 24
+          { id: 'aria-prohibited-attr', enabled: false }, // 11
+          { id: 'nested-interactive', enabled: false }, // 4
+          { id: 'aria-progressbar-name', enabled: false }, // 3
+          { id: 'scrollable-region-focusable', enabled: false }, // 2
+          { id: 'button-name', enabled: false }, // 1
+          { id: 'aria-conditional-attr', enabled: false }, // 1
+          { id: 'landmark-unique', enabled: false }, // 102 (seen once the rules above were off)
+          { id: 'landmark-no-duplicate-banner', enabled: false }, // 2
+        ],
+      },
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,

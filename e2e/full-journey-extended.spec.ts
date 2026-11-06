@@ -1,22 +1,148 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp, PRIMARY_USER } from './helpers';
+import { test, expect, Page, BrowserContext } from './fixtures/coverage';
+import {
+  loginToApp,
+  openConversation,
+  conversationRow,
+  scrollToLatestMessage,
+  getUserName,
+  sendTextAs,
+  sendMessageAs,
+  sendCustomAs,
+  deleteMessageAs,
+  addReactionAs,
+  createE2EGroup,
+  deleteGroup,
+  searchMessagesAs,
+  getUnreadCountAs,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  THIRD_USER,
+  createE2EUser,
+  uniqueTag,
+} from './helpers';
+
+/**
+ * One long session as Andrew Joseph (primary user), walking through features in turn. George
+ * Alan (secondary user) is signed in alongside in a second browser for the parts that need
+ * someone on the other end: typing, read receipts and calls.
+ *
+ * Each test creates the message or group it acts on (REST, or the composer) and targets it by
+ * its unique text or id, so no test depends on whatever happens to be first in a list.
+ */
+
+// A fake microphone and camera for voice recording and calls. Must be file-level: launch
+// options can't change inside a describe group.
+test.use({
+  launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] },
+});
 
 const RUN_ID = Date.now().toString(36);
 
+// Every 1:1 step works in Andrew Joseph's chat with George Alan rather than whichever chat
+// happens to be first: other specs keep creating groups that jump to the top of the list.
+// The names are looked up in beforeAll: an isolated run (E2E_RUN_ID) uses users of its own.
+// (Locally they are Andrew Joseph and George Alan, whom the comments below call them.)
+let GEORGE = '';
+let ANDREW = '';
+
+const GROUP = { guid: `e2e-journey-${RUN_ID}`, name: `E2E Journey ${RUN_ID}` };
+
+const MEDIA_AUDIO = {
+  url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
+  name: 'e2e-audio.mp3',
+  extension: 'mp3',
+  mimeType: 'audio/mpeg',
+  size: 1024,
+};
+
+const navTab = (page: Page, name: string) => page.getByLabel('Navigation tabs').getByRole('tab', { name });
+const messageList = (page: Page) => page.locator('cometchat-message-list');
+const composer = (page: Page) => page.locator('cometchat-message-composer');
+const editor = (page: Page) => composer(page).locator('[contenteditable="true"]').first();
+
+// The list row and the bubble inside it both carry data-message-id; target the row.
+const bubble = (page: Page, messageId: string) =>
+  page.locator(`cometchat-message-list .cometchat-message-list__message[data-message-id="${messageId}"]`);
+
+/** The list row of the most recent message containing `text`. */
+const rowWithText = (page: Page, text: string) =>
+  page.locator('cometchat-message-list .cometchat-message-list__message').filter({ hasText: text }).last();
+
+/** Hover a message and open its "More options" menu. */
+async function openMessageMenu(page: Page, text: string) {
+  const row = rowWithText(page, text);
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  // The menu button only renders while the bubble is hovered, and a click while it is still
+  // appearing can be lost, so retry until the menu is open.
+  await expect(async () => {
+    await row.locator('.cometchat-message-bubble__body').first().hover();
+    await row.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+    await expect(page.getByRole('menuitem').first()).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+}
+
+/** Retry a REST call the server can refuse for a moment right after the message is created. */
+const eventually = (call: () => Promise<unknown>) => expect(async () => { await call(); }).toPass({ timeout: 20_000 });
+
+/** A custom message whose data the matching extension would normally inject server-side. */
+const sendExtension = (type: string, extension: string, injected: object) =>
+  sendMessageAs(SECONDARY_USER, PRIMARY_USER, {
+    category: 'custom',
+    type,
+    data: { customData: injected, metadata: { '@injected': { extensions: { [extension]: injected } } } },
+  });
+
 test.describe('Full App Journey — Extended', () => {
-  test.describe.configure({ mode: 'serial' });
+  test.describe.configure({ mode: 'serial', timeout: 120_000 });
+
   let page: Page;
+  let george: Page;
+  const contexts: BrowserContext[] = [];
+
+  /**
+   * Reload Andrew's window and open the chat `name` at its latest message. In a long session,
+   * messages that arrive at an open chat are sometimes never rendered (a known, intermittent UI
+   * Kit defect; they show after a reload), and switching chats reuses the cached list. So tests
+   * create their REST messages first, then load the chat fresh.
+   */
+  async function openFresh(name: string) {
+    await page.reload();
+    await expect(page.locator('.cometchat-conversations').first()).toBeVisible({ timeout: 30_000 });
+    await openConversation(page, name);
+    await scrollToLatestMessage(page);
+  }
+
+  const backToGeorge = () => openFresh(GEORGE);
+
+  /** Reload George's window and open his chat with Andrew (see openFresh for why). */
+  async function georgeOpensAndrew() {
+    await george.reload();
+    await expect(george.locator('.cometchat-conversations').first()).toBeVisible({ timeout: 30_000 });
+    await openConversation(george, ANDREW);
+  }
 
   test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext();
-    page = await context.newPage();
-    await loginToApp(page, { userUid: PRIMARY_USER });
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(2000);
+    [ANDREW, GEORGE] = await Promise.all([getUserName(PRIMARY_USER), getUserName(SECONDARY_USER)]);
+    test.setTimeout(180_000);
+    await createE2EGroup(GROUP.guid, GROUP.name, PRIMARY_USER, [SECONDARY_USER, THIRD_USER]);
+    // Put George's chat at the top of Andrew's list so its row is on the first page.
+    await sendTextAs(SECONDARY_USER, PRIMARY_USER, `Full journey start ${RUN_ID}`);
+
+    for (const uid of [PRIMARY_USER, SECONDARY_USER]) {
+      const context = await browser.newContext({
+        permissions: ['camera', 'microphone', 'clipboard-read', 'clipboard-write'],
+      });
+      contexts.push(context);
+      const p = await context.newPage();
+      await loginToApp(p, { userUid: uid });
+      if (uid === PRIMARY_USER) page = p;
+      else george = p;
+    }
   });
 
   test.afterAll(async () => {
-    await page.context().close();
+    for (const context of contexts) await context.close();
+    await deleteGroup(GROUP.guid);
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -24,61 +150,78 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('27.1 — Vote on a poll message', async () => {
-    const pollBubble = page.locator('cometchat-poll-bubble, [class*="poll-bubble"], [class*="poll"]').first();
-    const hasPoll = await pollBubble.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasPoll) {
-      const firstOption = pollBubble.getByRole('radio').first();
-      const hasOption = await firstOption.isVisible({ timeout: 3_000 }).catch(() => false);
-      if (hasOption) {
-        await firstOption.click();
-        await page.waitForTimeout(2000);
-        const voteCount = pollBubble.locator('[class*="vote"], [class*="count"]').first();
-        const hasVote = await voteCount.isVisible({ timeout: 3_000 }).catch(() => false);
-        expect(hasVote || true).toBeTruthy();
-      }
-    }
+    await backToGeorge();
+    await composer(page).getByRole('button', { name: 'Add attachment' }).click();
+    await page.locator('[class*="action-sheet"]').getByText(/poll/i).first().click();
+    const form = page.locator('cometchat-create-poll');
+    await expect(form).toBeVisible();
+    const question = `Journey poll ${RUN_ID}?`;
+    await form.getByPlaceholder('Ask question').fill(question);
+    await form.getByRole('textbox', { name: 'Options 1', exact: true }).fill('First');
+    await form.getByRole('textbox', { name: 'Options 2', exact: true }).fill('Second');
+    await form.getByRole('button', { name: 'Create' }).click();
+    await expect(form.getByText('Something went wrong. Please try again.'), 'Poll creation failed: is the Polls extension enabled in the dashboard?').toBeHidden();
+    await expect(form).toBeHidden({ timeout: 15_000 });
+
+    const poll = rowWithText(page, question).locator('cometchat-poll-bubble');
+    await expect(poll).toBeVisible({ timeout: 30_000 });
+    const first = poll.getByRole('radio', { name: /First/ });
+    await expect(first).not.toBeChecked();
+
+    await first.click();
+
+    await expect(first).toBeChecked({ timeout: 15_000 });
   });
 
   // ═══════════════════════════════════════════════════════════════
   // SECTION 28: REMOVE REACTION
   // ═══════════════════════════════════════════════════════════════
 
-  test('28.1 — Remove a reaction by clicking it again', async () => {
-    const reaction = page.locator('cometchat-reactions, .cometchat-reactions').last();
-    const hasReaction = await reaction.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasReaction) {
-      const reactionBtn = reaction.locator('button[aria-pressed="true"], button[pressed]').first();
-      const hasPressed = await reactionBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-      if (hasPressed) {
-        await reactionBtn.click();
-        await page.waitForTimeout(2000);
-        expect(true).toBeTruthy();
-      }
-    }
+  test('28.1 — Remove a reaction by clicking it again @smoke', async () => {
+    const id = await sendTextAs(SECONDARY_USER, PRIMARY_USER, `React to me ${RUN_ID}`);
+    await eventually(() => addReactionAs(SECONDARY_USER, id, '👍'));
+    await backToGeorge();
+    const reactions = bubble(page, id).locator('cometchat-reactions');
+    const pill = reactions.getByRole('button', { name: /^👍,/ });
+    await expect(pill).toHaveAccessibleName('👍, 1 reactions', { timeout: 30_000 });
+    await expect(pill).toHaveAttribute('aria-pressed', 'false');
+
+    // Clicking George's reaction adds Andrew's own…
+    await pill.click();
+    await expect(pill).toHaveAccessibleName('👍, 2 reactions, you reacted', { timeout: 15_000 });
+    await expect(pill).toHaveAttribute('aria-pressed', 'true');
+
+    // …and clicking it again removes it.
+    await pill.click();
+
+    await expect(pill).toHaveAccessibleName('👍, 1 reactions', { timeout: 15_000 });
+    await expect(pill).toHaveAttribute('aria-pressed', 'false');
   });
 
   // ═══════════════════════════════════════════════════════════════
   // SECTION 29: REACTION INFO (who reacted)
   // ═══════════════════════════════════════════════════════════════
 
-  test('29.1 — Click a reaction to see who reacted', async () => {
-    const reaction = page.locator('cometchat-reactions, .cometchat-reactions').last();
-    const hasReaction = await reaction.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasReaction) {
-      const reactionBtn = reaction.locator('button').first();
-      const hasBtn = await reactionBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-      if (hasBtn) {
-        await reactionBtn.click();
-        await page.waitForTimeout(1500);
-        const reactionInfo = page.locator('cometchat-reaction-info, cometchat-reaction-list, [class*="reaction-info"], [class*="reaction-list"]').first();
-        const hasInfo = await reactionInfo.isVisible({ timeout: 5_000 }).catch(() => false);
-        expect(hasInfo || true).toBeTruthy();
-        if (hasInfo) {
-          await page.keyboard.press('Escape');
-          await page.waitForTimeout(500);
-        }
-      }
-    }
+  test('29.1 — Hover a reaction to see who reacted', async () => {
+    // Known UI Kit defect (ENG-40637): one hover doesn't open the reaction info. This test used to
+    // move away and hover again for up to 30s, which hid that; a customer hovers once. Expected to
+    // fail until fixed (as reactions.spec.ts "hovering a reaction shows reaction info").
+    test.fail();
+    const id = await sendTextAs(PRIMARY_USER, SECONDARY_USER, `Who reacted ${RUN_ID}`);
+    await eventually(() => addReactionAs(SECONDARY_USER, id, '🎉'));
+    await backToGeorge();
+    const pill = bubble(page, id).locator('cometchat-reactions').getByRole('button', { name: /🎉, 1 reactions/ });
+    await expect(pill).toBeVisible({ timeout: 30_000 });
+
+    // One hover, as a person gives it: the info must open from it, after its short delay. The
+    // pointer starts away from the pill, so the hover is a fresh mouseenter.
+    const info = page.locator('.cometchat-reaction-info');
+    await page.mouse.move(0, 0);
+    await pill.hover();
+    await expect(info).toBeVisible({ timeout: 10_000 });
+
+    await expect(info).toContainText(GEORGE, { timeout: 15_000 });
+    await expect(info).toContainText('reacted');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -86,9 +229,16 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('30.1 — Deleted message shows "This message was deleted" bubble', async () => {
-    const deletedBubble = page.getByRole('status', { name: /This message was deleted/i }).first();
-    const hasDeleted = await deletedBubble.isVisible({ timeout: 5_000 }).catch(() => false);
-    expect(hasDeleted || true).toBeTruthy();
+    const text = `Soon deleted ${RUN_ID}`;
+    const id = await sendTextAs(SECONDARY_USER, PRIMARY_USER, text);
+    await eventually(() => deleteMessageAs(SECONDARY_USER, id));
+
+    await backToGeorge();
+
+    await expect(bubble(page, id).locator('cometchat-delete-bubble')).toContainText('This message was deleted', {
+      timeout: 30_000,
+    });
+    await expect(bubble(page, id)).not.toContainText(text);
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -96,19 +246,21 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('31.1 — Play an audio message', async () => {
-    const playBtn = page.getByRole('button', { name: 'Play audio' }).first();
-    const hasPlay = await playBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasPlay) {
-      await playBtn.click();
-      await page.waitForTimeout(2000);
-      const pauseBtn = page.getByRole('button', { name: 'Pause audio' }).first();
-      const hasPause = await pauseBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-      expect(hasPause || true).toBeTruthy();
-      if (hasPause) {
-        await pauseBtn.click();
-        await page.waitForTimeout(500);
-      }
-    }
+    const id = await sendMessageAs(SECONDARY_USER, PRIMARY_USER, {
+      category: 'message',
+      type: 'audio',
+      data: { attachments: [MEDIA_AUDIO] },
+    });
+    await backToGeorge();
+    const audio = bubble(page, id).locator('cometchat-audios-bubble');
+    await expect(audio).toBeVisible({ timeout: 30_000 });
+
+    await audio.getByRole('button', { name: 'Play audio' }).click();
+
+    const pause = audio.getByRole('button', { name: 'Pause audio' });
+    await expect(pause).toBeVisible({ timeout: 15_000 });
+    await pause.click();
+    await expect(audio.getByRole('button', { name: 'Play audio' })).toBeVisible();
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -116,35 +268,25 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('32.1 — Start voice recording, stop, and send', async () => {
-    const voiceBtn = page.getByRole('button', { name: 'Voice recording' });
-    const hasVoice = await voiceBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasVoice) {
-      // Voice recording requires microphone access — may fail in headless/CI
-      try {
-        await voiceBtn.click();
-        await page.waitForTimeout(2000);
-        const stopBtn = page.locator('[class*="stop"], [class*="recording"] button, button[aria-label*="Stop"]').first();
-        const hasStop = await stopBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasStop) {
-        await stopBtn.click();
-        await page.waitForTimeout(1000);
-        const sendBtn = page.locator('[class*="send"], button[aria-label*="Send"]').first();
-        const hasSend = await sendBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-        if (hasSend) {
-          await sendBtn.click();
-          await page.waitForTimeout(3000);
-          const audioBubble = page.locator('cometchat-audio-bubble, [class*="audio-bubble"]').last();
-          const hasAudio = await audioBubble.isVisible({ timeout: 5_000 }).catch(() => false);
-          expect(hasAudio || true).toBeTruthy();
-        }
-      } else {
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(500);
-      }
-      } catch {
-        // Voice recording failed — microphone not available in headless mode
-      }
-    }
+    await backToGeorge();
+    const newestVoiceNoteId = () =>
+      messageList(page)
+        .locator('.cometchat-message-list__message')
+        .filter({ has: page.locator('.cometchat-message-bubble__wrapper--outgoing cometchat-voice-note-bubble') })
+        .evaluateAll((rows) => Math.max(0, ...rows.map((r) => Number(r.getAttribute('data-message-id')) || 0)));
+    const before = await newestVoiceNoteId();
+
+    await composer(page).getByRole('button', { name: 'Voice recording' }).click();
+    const recorder = page.getByLabel('Voice recorder');
+    // Recording starts on its own; the Pause control shows while it runs.
+    await expect(recorder.getByRole('button', { name: 'Pause recording' })).toBeVisible({ timeout: 15_000 });
+    await expect(recorder.getByRole('timer')).not.toHaveText(/^\s*0?0:00\s*$/, { timeout: 10_000 });
+
+    // Send stops the recording and sends it as a voice note.
+    await composer(page).getByRole('button', { name: 'Send message' }).click();
+
+    await expect(recorder).toBeHidden({ timeout: 15_000 });
+    await expect.poll(newestVoiceNoteId, { timeout: 30_000 }).toBeGreaterThan(before);
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -152,40 +294,45 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('33.1 — Bold text formatting in composer', async () => {
-    const composer = page.locator('cometchat-message-composer').first();
-    const input = composer.locator('[contenteditable="true"]').first();
-    await input.click();
-    await page.keyboard.type('bold test');
-    await page.keyboard.press('Meta+a');
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(500);
-    const boldText = input.locator('strong, b, [style*="bold"]').first();
-    const hasBold = await boldText.isVisible({ timeout: 2_000 }).catch(() => false);
-    expect(hasBold || true).toBeTruthy();
-    await page.keyboard.press('Meta+a');
-    await page.keyboard.press('Backspace');
+    await backToGeorge();
+    const bold = `bold journey ${RUN_ID}`;
+    await editor(page).click();
+    await page.keyboard.press('ControlOrMeta+b');
+    await page.keyboard.type(bold);
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(editor(page).locator('strong, b').filter({ hasText: bold })).toBeVisible();
+    await page.keyboard.type(' plain');
+    await page.keyboard.press('Enter');
+
+    const sent = rowWithText(page, bold);
+    await expect(sent.locator('strong').filter({ hasText: bold })).toBeVisible({ timeout: 30_000 });
+    await expect(sent.locator('strong')).not.toContainText('plain');
+    await expect(sent).not.toContainText('**');
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // SECTION 34: CONVERSATION CONTEXT MENU — DELETE & MARK AS READ
+  // SECTION 34: CONVERSATION CONTEXT MENU — PIN & DELETE
   // ═══════════════════════════════════════════════════════════════
 
-  test('34.1 — Conversation context menu shows delete and mark as read options', async () => {
-    const chatsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Chats' });
-    await chatsTab.click();
-    await page.waitForTimeout(1000);
-    const convItem = page.locator('.cometchat-conversation-item').first();
-    await convItem.hover();
-    await page.waitForTimeout(500);
-    const contextMenu = convItem.locator('[class*="context-menu"], cometchat-context-menu').first();
-    const hasMenu = await contextMenu.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (hasMenu) {
-      const deleteOpt = contextMenu.getByRole('menuitem', { name: /delete/i }).first();
-      const markOpt = contextMenu.getByRole('menuitem', { name: /mark/i }).first();
-      const hasDelete = await deleteOpt.isVisible({ timeout: 2_000 }).catch(() => false);
-      const hasMark = await markOpt.isVisible({ timeout: 2_000 }).catch(() => false);
-      expect(hasDelete || hasMark || true).toBeTruthy();
-    }
+  test('34.1 — Conversation context menu offers Pin and Delete, and Delete asks first', async () => {
+    // The row menu has no "Mark as read" option in this UI Kit: it offers Pin/Unpin and Delete.
+    await navTab(page, 'Chats').click();
+    const row = conversationRow(page, GEORGE);
+    await expect(row).toBeVisible({ timeout: 30_000 });
+    await expect(async () => {
+      await row.hover();
+      await row.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+      await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+    await expect(page.getByRole('menuitem', { name: /^(Pin|Unpin) conversation$/ })).toBeVisible();
+
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    const dialog = page.locator('.cometchat-conversations__dialog-overlay');
+    await expect(dialog).toContainText('Delete Conversation?');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(row).toBeVisible();
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -193,83 +340,86 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('35.1 — Search result click navigates to message', async () => {
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(2000);
-    const searchBtn = page.getByRole('button', { name: 'Search' });
-    const hasSearch = await searchBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasSearch) {
-      await searchBtn.click();
-      await page.waitForTimeout(1000);
-      const searchInput = page.getByRole('searchbox', { name: 'Search' });
-      const hasInput = await searchInput.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasInput) {
-        await searchInput.fill('message');
-        await page.waitForTimeout(2000);
-        const firstResult = page.getByRole('listitem').first();
-        const hasResult = await firstResult.isVisible({ timeout: 5_000 }).catch(() => false);
-        if (hasResult) {
-          await firstResult.click();
-          await page.waitForTimeout(2000);
-          const msgList = page.locator('cometchat-message-list').first();
-          const hasList = await msgList.isVisible({ timeout: 5_000 }).catch(() => false);
-          expect(hasList || true).toBeTruthy();
-        }
-      }
-    }
+    // The search index skips words that end in a long number, so the keyword is letters only.
+    const token = `journeyfind${RUN_ID.replace(/[0-9]/g, (d) => 'qwertyuiop'[Number(d)])}`;
+    const id = await sendTextAs(SECONDARY_USER, PRIMARY_USER, `Look for ${token} here`);
+    // Push the target off the bottom so jumping to it has to scroll.
+    for (let i = 1; i <= 12; i++) await sendTextAs(SECONDARY_USER, PRIMARY_USER, `After the search target ${i} [${RUN_ID}]`);
+    // New messages take a few seconds to reach the search index.
+    await expect
+      .poll(async () => (await searchMessagesAs(PRIMARY_USER, token)).map((m) => m.id), { timeout: 60_000 })
+      .toContain(id);
+    await navTab(page, 'Chats').click();
+    await page.locator('cometchat-conversations').getByRole('searchbox').click();
+    const search = page.locator('cometchat-search').first();
+    await expect(search).toBeVisible();
+    const result = search.getByTestId(`search-message-item-${id}`);
+    // Search is debounced and results arrive async; retype until the result shows.
+    await expect(async () => {
+      await search.getByRole('searchbox').fill(token);
+      await expect(result).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
+
+    await result.click();
+
+    await expect(page.locator('cometchat-message-header')).toContainText(GEORGE);
+    const target = page.locator(`cometchat-messages .cometchat-message-list__message[data-message-id="${id}"]`);
+    await expect(target).toBeInViewport({ timeout: 15_000 });
+    await expect(target).toHaveClass(/cometchat-message-list__message--highlighted/);
+
+    // Search stays open over the side panel after a result is opened; close it.
+    await search.getByRole('button', { name: 'Back' }).click();
+    await expect(search).toBeHidden();
   });
 
   // ═══════════════════════════════════════════════════════════════
   // SECTION 36: GROUP MEMBERS — SCOPE CHANGE
   // ═══════════════════════════════════════════════════════════════
 
-  test('36.1 — Open group members and verify scope change option', async () => {
-    const groupsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Groups' });
-    await groupsTab.click();
-    await page.waitForTimeout(2000);
-    const groupItems = page.getByRole('listitem');
-    await groupItems.first().click();
-    await page.waitForTimeout(2000);
-    const detailsBtn = page.getByRole('button', { name: /Click for details/i });
-    const hasBtn = await detailsBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasBtn) {
-      await detailsBtn.click();
-      await page.waitForTimeout(2000);
-      const membersSection = page.locator('cometchat-group-members, [class*="group-members"]').first();
-      const hasMembers = await membersSection.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasMembers) {
-        const memberItem = membersSection.getByRole('listitem').first();
-        const hasMember = await memberItem.isVisible({ timeout: 3_000 }).catch(() => false);
-        if (hasMember) {
-          await memberItem.hover();
-          await page.waitForTimeout(500);
-          const moreBtn = memberItem.getByRole('button', { name: /more|options/i }).first();
-          const hasMore = await moreBtn.isVisible({ timeout: 2_000 }).catch(() => false);
-          expect(hasMore || hasMember).toBeTruthy();
-        }
-      }
+  test('36.1 — Open group members and change a member\'s scope', async () => {
+    await openFresh(GROUP.name);
+    await page.locator('cometchat-message-header .cometchat-message-header__info').first().click();
+    const details = page.locator('cometchat-group-details');
+    await expect(details).toBeVisible();
+    const member = details.locator('cometchat-group-member-item').filter({ hasText: GEORGE });
+    await expect(member).toBeVisible({ timeout: 15_000 });
+
+    await expect(async () => {
+      await member.hover();
+      await member.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+      await expect(page.getByRole('menuitem', { name: 'Change Scope' })).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+    await page.getByRole('menuitem', { name: 'Change Scope' }).click();
+    const dialog = page.locator('.cometchat-change-scope');
+    await expect(dialog).toBeVisible();
+    for (const scope of ['Admin', 'Moderator', 'Participant']) {
+      await expect(dialog.locator('.cometchat-change-scope__list-item').filter({ hasText: scope })).toBeVisible();
     }
+    await dialog.locator('.cometchat-change-scope__list-item').filter({ hasText: 'Moderator' }).locator('.cometchat-radio-button__label').click();
+    await dialog.getByRole('button', { name: 'Save' }).click();
+
+    await expect(dialog).toBeHidden({ timeout: 15_000 });
+    await expect(member).toContainText('Moderator', { timeout: 15_000 });
   });
 
   // ═══════════════════════════════════════════════════════════════
   // SECTION 37: TYPING INDICATOR
   // ═══════════════════════════════════════════════════════════════
 
-  test('37.1 — Typing in composer triggers typing indicator state', async () => {
-    const chatsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Chats' });
-    await chatsTab.click();
-    await page.waitForTimeout(1000);
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(2000);
-    const composer = page.locator('cometchat-message-composer').first();
-    const input = composer.locator('[contenteditable="true"]').first();
-    await input.click();
-    await page.keyboard.type('typing...');
-    await page.waitForTimeout(1000);
-    const typingIndicator = page.locator('cometchat-typing-indicator, [class*="typing-indicator"]').first();
-    const hasTyping = await typingIndicator.isVisible({ timeout: 3_000 }).catch(() => false);
-    expect(hasTyping || true).toBeTruthy();
-    await page.keyboard.press('Meta+a');
+  test('37.1 — Typing in composer shows "Typing..." to the other user @realtime', async () => {
+    await backToGeorge();
+    await georgeOpensAndrew();
+    const georgeHeader = george.locator('cometchat-message-header');
+    await expect(georgeHeader).not.toContainText('Typing...');
+
+    await editor(page).click();
+    await page.keyboard.type('typing in progress');
+
+    await expect(georgeHeader).toContainText('Typing...', { timeout: 15_000 });
+
+    await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.press('Backspace');
+    await expect(georgeHeader).not.toContainText('Typing...', { timeout: 15_000 });
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -277,19 +427,25 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('38.1 — Call log entry shows type and status', async () => {
-    const callsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Calls' });
-    await callsTab.click();
-    await page.waitForTimeout(2000);
-    const callLogItem = page.locator('[class*="call-log-item"], .cometchat-list-item').first();
-    const hasItem = await callLogItem.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasItem) {
-      const hasTypeIcon = await callLogItem.locator('img, svg, [class*="icon"]').first().isVisible().catch(() => false);
-      expect(hasTypeIcon || true).toBeTruthy();
-    } else {
-      const emptyState = page.locator('[role="status"], [class*="empty"]').first();
-      const hasEmpty = await emptyState.isVisible({ timeout: 3_000 }).catch(() => false);
-      expect(hasEmpty || true).toBeTruthy();
-    }
+    await backToGeorge();
+    // Make a call to log: Andrew calls George and cancels while it rings.
+    const outgoing = page.locator('cometchat-outgoing-call');
+    // The header re-renders right after the chat opens and can drop the first click.
+    await expect(async () => {
+      await page.locator('cometchat-message-header cometchat-call-buttons').getByRole('button', { name: 'Voice call' }).click({ timeout: 2_000 });
+      await expect(outgoing).toContainText(GEORGE, { timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
+    await outgoing.locator('.cometchat-outgoing-call__button').getByRole('button').click();
+    await expect(outgoing).toBeHidden({ timeout: 15_000 });
+
+    await navTab(page, 'Calls').click();
+
+    const newest = page.locator('cometchat-call-logs .cometchat-call-logs__list-item').first();
+    await expect(newest).toHaveAttribute('aria-label', new RegExp(`^${GEORGE}, voice call, Outgoing call`), {
+      timeout: 30_000,
+    });
+    await expect(newest.locator('.cometchat-call-logs__list-item-subtitle-icon-outgoing-call')).toBeVisible();
+    await expect(newest.getByRole('button', { name: `voice call ${GEORGE}` })).toBeVisible();
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -297,18 +453,18 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('39.1 — Collaborative document bubble has Open button', async () => {
-    const chatsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Chats' });
-    await chatsTab.click();
-    await page.waitForTimeout(1000);
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(2000);
-    const docBubble = page.locator('cometchat-collaborative-document-bubble, [class*="collaborative-document"]').first();
-    const hasDoc = await docBubble.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasDoc) {
-      const openBtn = docBubble.getByRole('button', { name: /open/i }).first();
-      const hasOpen = await openBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-      expect(hasOpen || true).toBeTruthy();
-    }
+    const url = `https://www.cometchat.com/e2e-doc-${RUN_ID}`;
+    const id = await sendExtension('extension_document', 'document', { document_url: url });
+    await backToGeorge();
+    const doc = bubble(page, id).locator('cometchat-collaborative-document-bubble');
+    await expect(doc).toContainText('Collaborative Document', { timeout: 30_000 });
+
+    const popup = page.waitForEvent('popup');
+    await doc.getByRole('button', { name: 'Open Document' }).click();
+
+    const opened = await popup;
+    expect(opened.url()).toContain(`e2e-doc-${RUN_ID}`);
+    await opened.close();
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -316,13 +472,18 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('40.1 — Collaborative whiteboard bubble has Open button', async () => {
-    const whiteboardBubble = page.locator('cometchat-collaborative-whiteboard-bubble, [class*="collaborative-whiteboard"]').first();
-    const hasWb = await whiteboardBubble.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasWb) {
-      const openBtn = whiteboardBubble.getByRole('button', { name: /open/i }).first();
-      const hasOpen = await openBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-      expect(hasOpen || true).toBeTruthy();
-    }
+    const url = `https://www.cometchat.com/e2e-board-${RUN_ID}`;
+    const id = await sendExtension('extension_whiteboard', 'whiteboard', { board_url: url });
+    await backToGeorge();
+    const board = bubble(page, id).locator('cometchat-collaborative-whiteboard-bubble');
+    await expect(board).toContainText('Collaborative Whiteboard', { timeout: 30_000 });
+
+    const popup = page.waitForEvent('popup');
+    await board.getByRole('button', { name: 'Open Whiteboard' }).click();
+
+    const opened = await popup;
+    expect(opened.url()).toContain(`e2e-board-${RUN_ID}`);
+    await opened.close();
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -330,44 +491,51 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('41.1 — Toast notification appears after message action', async () => {
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasBubble = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasBubble) {
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
-      const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-      if (hasMore) {
-        await moreBtn.click();
-        const copyOpt = page.getByRole('menuitem', { name: 'Copy' });
-        const hasCopy = await copyOpt.isVisible({ timeout: 3_000 }).catch(() => false);
-        if (hasCopy) {
-          await copyOpt.click({ force: true });
-          await page.waitForTimeout(1500);
-          const toast = page.locator('cometchat-toast, [class*="toast"], [role="alert"]').first();
-          const hasToast = await toast.isVisible({ timeout: 3_000 }).catch(() => false);
-          expect(hasToast || true).toBeTruthy();
-        }
-      }
-    }
+    const text = `Copy me ${RUN_ID}`;
+    await sendTextAs(PRIMARY_USER, SECONDARY_USER, text);
+    await backToGeorge();
+
+    await openMessageMenu(page, text);
+    // Take Copy from the open options sheet: it is portaled out of the row, and another row can
+    // show its own quick-action Copy at the same time.
+    await page
+      .locator('.cometchat-menu-list__sub-menu-list[data-visible="true"]')
+      .getByRole('menuitem', { name: 'Copy' })
+      .click();
+
+    await expect(page.getByText('Message copied to clipboard.')).toBeVisible({ timeout: 10_000 });
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(text);
   });
 
   // ═══════════════════════════════════════════════════════════════
   // SECTION 42: UNREAD BADGE ON CONVERSATION ITEM
   // ═══════════════════════════════════════════════════════════════
 
-  test('42.1 — Unread badge appears on conversation with unread messages', async () => {
-    // Close any open popover/overlay left by previous test (e.g. context menu)
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+  test('42.1 — Unread badge appears on conversation with unread messages @realtime', async () => {
+    // A new user of this test's own, so Andrew never has their chat open.
+    const tag = uniqueTag();
+    const sender = `e2e-unread-${tag}`;
+    const senderName = `E2E Unread ${tag}`;
+    await createE2EUser(sender, senderName);
+    // The E2E app's server never returns the first message of a new 1:1 conversation to the
+    // receiver (the client message fetch comes back empty, though the Chats row shows it), so
+    // open the conversation with a message this test doesn't look for.
+    await sendTextAs(sender, PRIMARY_USER, 'Hello there');
+    await sendTextAs(sender, PRIMARY_USER, `Unread one ${RUN_ID}`);
+    // Start from zero: opening their chat reads everything, then move back to George's.
+    await openFresh(senderName);
+    await expect(rowWithText(page, `Unread one ${RUN_ID}`)).toBeVisible({ timeout: 30_000 });
+    const badge = conversationRow(page, senderName).locator('.cometchat-conversation-item__badge');
+    await expect(badge).toBeHidden({ timeout: 30_000 });
+    await expect.poll(() => getUnreadCountAs(PRIMARY_USER, sender), { timeout: 15_000 }).toBe(0);
+    await backToGeorge();
+    // Hovering a row swaps its badge for the menu button; keep the pointer off the list.
+    await page.mouse.move(800, 30);
 
-    const chatsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Chats' });
-    await chatsTab.click({ force: true });
-    await page.waitForTimeout(2000);
-    const unreadBadge = page.locator('.cometchat-conversation-item__badge-count, [class*="badge-count"], [class*="unread"]').first();
-    const hasBadge = await unreadBadge.isVisible({ timeout: 5_000 }).catch(() => false);
-    expect(hasBadge || true).toBeTruthy();
+    await sendTextAs(sender, PRIMARY_USER, `Unread two ${RUN_ID}`);
+    await sendTextAs(sender, PRIMARY_USER, `Unread three ${RUN_ID}`);
+
+    await expect(badge).toHaveText(/^\s*2\s*$/, { timeout: 30_000 });
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -375,20 +543,21 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('43.1 — Search within groups list filters results', async () => {
-    const groupsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Groups' });
-    await groupsTab.click();
-    await page.waitForTimeout(2000);
-    const searchInput = page.getByRole('searchbox', { name: 'Search' }).first();
-    const hasSearch = await searchInput.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasSearch) {
-      await searchInput.fill('group');
-      await page.waitForTimeout(2000);
-      const results = page.getByRole('listitem');
-      const hasResults = await results.first().isVisible({ timeout: 5_000 }).catch(() => false);
-      expect(hasResults || true).toBeTruthy();
-      await searchInput.clear();
-      await page.waitForTimeout(1000);
-    }
+    await navTab(page, 'Groups').click();
+    const groups = page.locator('cometchat-groups');
+    const items = groups.locator('cometchat-group-item');
+    await expect(items.first()).toBeVisible({ timeout: 30_000 });
+
+    // Search typed before the list first renders can be ignored, so retype until it applies.
+    await expect(async () => {
+      await groups.getByRole('searchbox').fill(GROUP.name);
+      await expect(items).toHaveCount(1, { timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
+    await expect(items.first()).toContainText(GROUP.name);
+
+    await groups.getByRole('searchbox').fill(`no group matches ${RUN_ID}`);
+    await expect(items).toHaveCount(0, { timeout: 15_000 });
+    await groups.getByRole('searchbox').fill('');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -396,20 +565,20 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('44.1 — Search within users list filters results', async () => {
-    const usersTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Users' });
-    await usersTab.click();
-    await page.waitForTimeout(2000);
-    const searchInput = page.getByRole('searchbox', { name: 'Search' }).first();
-    const hasSearch = await searchInput.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasSearch) {
-      await searchInput.fill('cometchat');
-      await page.waitForTimeout(2000);
-      const results = page.getByRole('listbox', { name: 'Users list' }).getByRole('listitem');
-      const hasResults = await results.first().isVisible({ timeout: 5_000 }).catch(() => false);
-      expect(hasResults || true).toBeTruthy();
-      await searchInput.clear();
-      await page.waitForTimeout(1000);
-    }
+    await navTab(page, 'Users').click();
+    const users = page.locator('cometchat-users');
+    const items = users.locator('cometchat-user-item');
+    await expect(items.first()).toBeVisible({ timeout: 30_000 });
+
+    await expect(async () => {
+      await users.getByRole('searchbox').fill(GEORGE);
+      await expect(items).toHaveCount(1, { timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
+    await expect(items.first()).toContainText(GEORGE);
+
+    await users.getByRole('searchbox').fill(`no user matches ${RUN_ID}`);
+    await expect(items).toHaveCount(0, { timeout: 15_000 });
+    await users.getByRole('searchbox').fill('');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -417,18 +586,16 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('45.1 — Sticker message renders as sticker bubble', async () => {
-    const chatsTab = page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Chats' });
-    await chatsTab.click();
-    await page.waitForTimeout(1000);
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(2000);
-    const stickerBubble = page.locator('cometchat-sticker-bubble, [class*="sticker-bubble"]').first();
-    const hasSticker = await stickerBubble.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasSticker) {
-      const stickerImg = stickerBubble.locator('img').first();
-      const hasImg = await stickerImg.isVisible({ timeout: 3_000 }).catch(() => false);
-      expect(hasImg || true).toBeTruthy();
-    }
+    const id = await sendCustomAs(SECONDARY_USER, PRIMARY_USER, 'extension_sticker', {
+      sticker_url: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-3.webp',
+      sticker_name: 'e2e',
+    });
+    await backToGeorge();
+
+    const sticker = bubble(page, id).locator('cometchat-sticker-bubble img');
+    await expect(sticker).toBeVisible({ timeout: 30_000 });
+    // The image actually loaded, not just a broken <img>.
+    await expect.poll(() => sticker.evaluate((img: HTMLImageElement) => img.naturalWidth), { timeout: 15_000 }).toBeGreaterThan(0);
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -436,19 +603,23 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('46.1 — Scroll to bottom button appears when scrolled up', async () => {
-    const msgList = page.locator('.cometchat-message-list__list, cometchat-paginated-list').first();
-    const hasList = await msgList.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasList) {
-      await msgList.evaluate(el => { el.scrollTop = 0; });
-      await page.waitForTimeout(1000);
-      const scrollBtn = page.getByRole('button', { name: /scroll to bottom/i }).first();
-      const hasBtn = await scrollBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasBtn) {
-        await scrollBtn.click();
-        await page.waitForTimeout(1000);
-        expect(true).toBeTruthy();
-      }
-    }
+    await backToGeorge();
+    const scrollButton = page.locator('.cometchat-message-list__scroll-to-bottom');
+    const latest = messageList(page).locator('.cometchat-message-list__message').last();
+    await expect(scrollButton).toBeHidden();
+
+    // The seeded chat has more than a page of messages, so scrolling up leaves the bottom.
+    await latest.hover();
+    await expect(async () => {
+      await page.mouse.wheel(0, -1_500);
+      await expect(scrollButton).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 30_000 });
+    await expect(latest).not.toBeInViewport();
+
+    await scrollButton.locator('cometchat-button').click();
+
+    await expect(scrollButton).toBeHidden({ timeout: 15_000 });
+    await expect(messageList(page).locator('.cometchat-message-list__message').last()).toBeInViewport();
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -456,19 +627,39 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('47.1 — Date separators appear between message groups', async () => {
-    const dateSeparator = page.locator('[class*="date-separator"], time').first();
-    const hasSeparator = await dateSeparator.isVisible({ timeout: 5_000 }).catch(() => false);
-    expect(hasSeparator || true).toBeTruthy();
+    await backToGeorge();
+    // Today's messages sit under a "Today" separator.
+    const separators = messageList(page).locator('.cometchat-message-list__date-separator');
+    await expect(separators.filter({ hasText: 'Today' })).toHaveCount(1, { timeout: 15_000 });
   });
 
   // ═══════════════════════════════════════════════════════════════
   // SECTION 48: MESSAGE RECEIPTS
   // ═══════════════════════════════════════════════════════════════
 
-  test('48.1 — Sent messages show read receipts', async () => {
-    const receipt = page.locator('[class*="receipt"], img[alt*="sent"], img[alt*="delivered"], img[alt*="read"]').first();
-    const hasReceipt = await receipt.isVisible({ timeout: 5_000 }).catch(() => false);
-    expect(hasReceipt || true).toBeTruthy();
+  test('48.1 — Sent messages show read receipts @realtime @quarantine (ENG-40623)', async () => {
+    // @quarantine (ENG-40623): intermittent UI Kit defect, seen under load — George reads the
+    // message (the server records readAt) but Andrew's open chat keeps "Message delivered"; a
+    // reload shows "Message read". 0 of 6 isolated runs, 1 of 3 parallel runs, so it can't be
+    // test.fail.
+    // George is on another screen, so the message can't be read yet.
+    await navTab(george, 'Users').click();
+    // Moderation's AI rules flagged "Receipt check <id>" once (AI Platform Circumvention); keep
+    // the text plainly conversational.
+    const text = `Thanks, see you at lunch ${RUN_ID}`;
+    const id = await sendTextAs(PRIMARY_USER, SECONDARY_USER, text);
+    await backToGeorge();
+    const receipt = bubble(page, id).locator('.cometchat-receipts');
+    await expect(receipt).toHaveAttribute('aria-label', /Message (sent|delivered)/, { timeout: 30_000 });
+
+    // Delivery to George's session sometimes lags, so reload until he has the message.
+    await expect(async () => {
+      await georgeOpensAndrew();
+      await expect(george.locator('cometchat-message-list').getByText(text)).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 75_000 });
+    await scrollToLatestMessage(george);
+
+    await expect(receipt).toHaveAttribute('aria-label', 'Message read', { timeout: 30_000 });
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -476,17 +667,26 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('49.1 — Incoming call component renders when call arrives', async () => {
-    const incomingCall = page.locator('cometchat-incoming-call, [class*="incoming-call"]').first();
-    const hasIncoming = await incomingCall.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (hasIncoming) {
-      const acceptBtn = incomingCall.getByRole('button', { name: /accept/i }).first();
-      const declineBtn = incomingCall.getByRole('button', { name: /decline/i }).first();
-      const hasAccept = await acceptBtn.isVisible({ timeout: 2_000 }).catch(() => false);
-      const hasDecline = await declineBtn.isVisible({ timeout: 2_000 }).catch(() => false);
-      expect(hasAccept || hasDecline).toBeTruthy();
-      if (hasDecline) {
-        await declineBtn.click();
-        await page.waitForTimeout(1000);
+    await backToGeorge();
+    await georgeOpensAndrew();
+    await george.locator('cometchat-message-header cometchat-call-buttons').getByRole('button', { name: 'Voice call' }).click();
+    const georgeOutgoing = george.locator('cometchat-outgoing-call');
+    await expect(georgeOutgoing).toContainText(ANDREW, { timeout: 15_000 });
+
+    const incoming = page.locator('.cometchat-incoming-call');
+    try {
+      await expect(incoming).toContainText(GEORGE, { timeout: 30_000 });
+      await expect(incoming).toContainText('Incoming Call');
+      await expect(incoming.getByRole('button', { name: 'Accept' })).toBeVisible();
+
+      await incoming.getByRole('button', { name: 'Decline' }).click();
+
+      await expect(incoming).toBeHidden({ timeout: 15_000 });
+      await expect(georgeOutgoing).toBeHidden({ timeout: 30_000 });
+    } finally {
+      // Never leave a call ringing: a stuck call makes later calls fail as "busy".
+      if (await georgeOutgoing.isVisible()) {
+        await georgeOutgoing.locator('.cometchat-outgoing-call__button').getByRole('button').click();
       }
     }
   });
@@ -496,41 +696,19 @@ test.describe('Full App Journey — Extended', () => {
   // ═══════════════════════════════════════════════════════════════
 
   test('50.1 — Confirm dialog cancel button dismisses without action', async () => {
-    const composer = page.locator('cometchat-message-composer').first();
-    const input = composer.locator('[contenteditable="true"]').first();
-    await input.click();
-    const cancelTestMsg = `Cancel delete test [${RUN_ID}]`;
-    await page.keyboard.type(cancelTestMsg);
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(2000);
+    const text = `Cancel delete test [${RUN_ID}]`;
+    const id = await sendTextAs(PRIMARY_USER, SECONDARY_USER, text);
+    await backToGeorge();
+    await expect(bubble(page, id)).toContainText(text, { timeout: 30_000 });
 
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    await bodyArea.hover();
-    await page.waitForTimeout(500);
+    await openMessageMenu(page, text);
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    const dialog = page.locator('cometchat-message-list cometchat-confirm-dialog');
+    await expect(dialog).toContainText('Delete Message?');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
 
-    const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-    const hasMore = await moreBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasMore) {
-      await moreBtn.click();
-      const deleteOpt = page.getByRole('menuitem', { name: 'Delete' });
-      const hasDelete = await deleteOpt.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasDelete) {
-        await deleteOpt.click({ force: true });
-        await page.waitForTimeout(500);
-        const confirmDialog = page.locator('.cometchat-confirm-dialog, [class*="confirm-dialog"]').first();
-        const hasDialog = await confirmDialog.isVisible({ timeout: 3_000 }).catch(() => false);
-        if (hasDialog) {
-          const cancelBtn = confirmDialog.getByRole('button', { name: /cancel/i }).first();
-          const hasCancel = await cancelBtn.isVisible({ timeout: 2_000 }).catch(() => false);
-          if (hasCancel) {
-            await cancelBtn.click();
-            await page.waitForTimeout(1000);
-            const msgStillVisible = await page.locator('cometchat-message-list').getByText(cancelTestMsg).isVisible().catch(() => false);
-            expect(msgStillVisible || true).toBeTruthy();
-          }
-        }
-      }
-    }
+    await expect(dialog).toBeHidden();
+    await expect(bubble(page, id)).toContainText(text);
+    await expect(bubble(page, id).locator('cometchat-delete-bubble')).toHaveCount(0);
   });
 });

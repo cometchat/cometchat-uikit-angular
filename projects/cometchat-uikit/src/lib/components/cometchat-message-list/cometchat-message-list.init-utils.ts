@@ -46,7 +46,9 @@ export function initializeServiceImpl(self: any): void {
 }
 
 export function publishActiveChatChangedImpl(self: any): void {
-  if (!self.isFirstLoad || self.parentMessageId) { return; }
+  // A list closed while its first page was loading (the user switched tab or chat) must not
+  // announce its chat: listeners make the announced chat active again, reopening a closed chat.
+  if (self.isDestroyed || !self.isFirstLoad || self.parentMessageId) { return; }
   self.isFirstLoad = false;
   const messages = self.messages();
   const lastMessage = messages.length > 0 ? messages[messages.length - 1] : undefined;

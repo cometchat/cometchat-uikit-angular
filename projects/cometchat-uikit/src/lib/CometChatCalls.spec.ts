@@ -20,23 +20,26 @@ describe('CometChatCalls', () => {
   });
 
   describe('_setCallsSDKForTesting', () => {
-    it('should inject a mock Calls SDK', () => {
+    // The dynamic import must be awaited: previously the expectation ran in a
+    // dangling .then() after the test had finished (and after afterEach had
+    // reset the SDK to null), so it either asserted nothing or failed against
+    // a later test.
+    it('should inject a mock Calls SDK', async () => {
       const mockSDK = { init: vi.fn(), startSession: vi.fn() };
       _setCallsSDKForTesting(mockSDK);
       // Re-import dynamically to verify the module-level var was updated
       // Since ES modules are live bindings, we can just import again
-      import('./CometChatCalls').then(mod => {
-        expect(mod.CometChatUIKitCalls).toBe(mockSDK);
-      });
+      const mod = await import('./CometChatCalls');
+      expect(mod.CometChatUIKitCalls).toBe(mockSDK);
+      await expect(mod.getCometChatCalls()).resolves.toBe(mockSDK);
     });
 
-    it('should restore original value when passed null', () => {
+    it('should restore original value when passed null', async () => {
       const mockSDK = { init: vi.fn() };
       _setCallsSDKForTesting(mockSDK);
       _setCallsSDKForTesting(null);
-      import('./CometChatCalls').then(mod => {
-        expect(mod.CometChatUIKitCalls).toBeNull();
-      });
+      const mod = await import('./CometChatCalls');
+      expect(mod.CometChatUIKitCalls).toBeNull();
     });
   });
 

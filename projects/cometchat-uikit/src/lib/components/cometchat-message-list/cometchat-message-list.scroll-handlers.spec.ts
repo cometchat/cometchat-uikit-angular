@@ -9,7 +9,7 @@
  * @module components/cometchat-message-list/scroll-handlers
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
   handleScrollToTopImpl,
@@ -20,6 +20,8 @@ import {
   scrollToBottomImpl,
   scrollToMessageImpl,
   scrollToBottomWithRetryImpl,
+  scrollToBottomAfterLoadImpl,
+  scrollToMessageWithRetryImpl,
   ScrollHandlerContext,
 } from './cometchat-message-list.scroll-handlers';
 
@@ -37,7 +39,10 @@ function makeScrollContainer(scrollTop = 0, scrollHeight = 1000, clientHeight = 
   });
   Object.defineProperty(el, 'scrollHeight', { get: () => scrollHeight, configurable: true });
   Object.defineProperty(el, 'clientHeight', { get: () => clientHeight, configurable: true });
-  el.scrollTo = vi.fn(({ top }: ScrollToOptions) => { _scrollTop = top ?? _scrollTop; });
+  // Honour both DOM overloads: scrollTo(options) and scrollTo(x, y).
+  el.scrollTo = vi.fn((optionsOrX?: ScrollToOptions | number, y?: number) => {
+    _scrollTop = typeof optionsOrX === 'number' ? (y ?? _scrollTop) : (optionsOrX?.top ?? _scrollTop);
+  });
   return el;
 }
 
@@ -160,6 +165,55 @@ describe('cometchat-message-list.scroll-handlers', () => {
       });
       await handleScrollToTopImpl(ctx);
       expect(ctx.isFetchingPrevious.set).toHaveBeenCalledWith(false);
+    });
+  });
+
+  // ==================== a page for a chat that has since changed (#632 review) ====================
+
+  describe('a page that resolves after the chat changed', () => {
+    /** A service whose fetch generation moves on (another chat opened) while the page loads. */
+    function switchingService(result: boolean) {
+      let generation = 1;
+      return {
+        getFetchGeneration: vi.fn(() => generation),
+        fetchPreviousMessages: vi.fn(async () => {
+          generation++; // the user opened another chat; the service drops this page
+          return result;
+        }),
+        fetchNextMessages: vi.fn(async () => {
+          generation++;
+          return result;
+        }),
+        markAsRead: vi.fn(),
+        setUser: vi.fn(),
+        setGroup: vi.fn(),
+        fetchMessagesAroundId: vi.fn(),
+      };
+    }
+
+    it("doesn't stop history loading in the new chat", async () => {
+      const ctx = makeCtx({ messageListService: switchingService(false) });
+      await handleScrollToTopImpl(ctx);
+      expect(ctx.hasMorePrevious.set).not.toHaveBeenCalled();
+      expect(ctx.hasMorePrevious()).toBe(true);
+      expect(ctx.isFetchingPrevious()).toBe(false);
+    });
+
+    it("doesn't change the new chat's newer-messages state", async () => {
+      const ctx = makeCtx({ messageListService: switchingService(false) });
+      ctx.hasMoreNext.set(true);
+      ctx.hasMoreNext.set.mockClear();
+      handleScrollToBottomImpl(ctx);
+      await vi.waitFor(() => expect(ctx.isFetchingNext()).toBe(false));
+      expect(ctx.hasMoreNext.set).not.toHaveBeenCalled();
+    });
+
+    it('still records the result when the chat stayed the same', async () => {
+      const ctx = makeCtx({
+        messageListService: { ...switchingService(false), getFetchGeneration: vi.fn(() => 1) },
+      });
+      await handleScrollToTopImpl(ctx);
+      expect(ctx.hasMorePrevious.set).toHaveBeenCalledWith(false);
     });
   });
 
@@ -358,6 +412,60 @@ describe('cometchat-message-list.scroll-handlers', () => {
       scrollToMessageImpl(ctx, 999);
       await new Promise(r => setTimeout(r, 10));
       expect(ctx.messageListService.fetchMessagesAroundId).toHaveBeenCalledWith(999);
+      // End like a real list: destroying it stops the pending scroll retries.
+      ctx.isDestroyed = true;
+    });
+  });
+
+  // ==================== after the list is destroyed ====================
+
+  describe('after the list is destroyed', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('a scroll-to-bottom retry chain stops scrolling once destroyed', () => {
+      const container = makeScrollContainer(0, 1000, 500);
+      const ctx = makeCtx({ listContainer: { nativeElement: container } });
+      scrollToBottomWithRetryImpl(ctx, 3);
+      expect(container.scrollTop).toBe(1000);
+
+      container.scrollTop = 0;
+      ctx.isDestroyed = true;
+      vi.runAllTimers();
+      expect(container.scrollTop).toBe(0);
+    });
+
+    it('scroll-to-bottom after load does nothing once destroyed', () => {
+      const container = makeScrollContainer(0, 1000, 500);
+      const ctx = makeCtx({ listContainer: { nativeElement: container } });
+      scrollToBottomAfterLoadImpl(ctx);
+      ctx.isDestroyed = true;
+      vi.runAllTimers();
+      expect(container.scrollTop).toBe(0);
+    });
+
+    it('a pending scroll-to-message does not touch the list once destroyed', () => {
+      const container = document.createElement('div');
+      const querySelector = vi.spyOn(container, 'querySelector');
+      const ctx = makeCtx({ listContainer: { nativeElement: container } });
+      scrollToMessageWithRetryImpl(ctx, 42, 5);
+      ctx.isDestroyed = true;
+      vi.runAllTimers();
+      expect(querySelector).not.toHaveBeenCalled();
+      expect(ctx.hasMorePrevious.set).not.toHaveBeenCalled();
+    });
+
+    it('without destroy, scroll-to-message keeps retrying until the message appears', () => {
+      const container = document.createElement('div');
+      const querySelector = vi.spyOn(container, 'querySelector');
+      const ctx = makeCtx({ listContainer: { nativeElement: container } });
+      scrollToMessageWithRetryImpl(ctx, 42, 3);
+      vi.runAllTimers();
+      expect(querySelector).toHaveBeenCalledTimes(3);
     });
   });
 });

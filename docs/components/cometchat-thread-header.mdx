@@ -159,6 +159,9 @@ export class ThreadHeaderPropsComponent {
 |----------|------|---------|-------------|
 | `parentMessage` | `CometChat.BaseMessage` | **required** | The parent message of the thread. Used to display the message preview and media icon |
 | `replyCount` | `number` | `0` | The number of replies in the thread. Displayed with localized singular/plural text. When not provided, the count is automatically read from `parentMessage.getReplyCount()` |
+| `hideThreadSubscriptionToggle` | `boolean` | `false` | Hides the follow/unfollow control without turning the feature off — for apps that want the message action-sheet entry point only |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters applied to the parent message's text. Forwarded to the message bubble that renders it |
+| `trailingView` | `TemplateRef<unknown>` | `undefined` | Replaces the trailing area of the reply-count row, follow control included |
 
 ## Events
 
@@ -166,6 +169,7 @@ export class ThreadHeaderPropsComponent {
 |-------|-------------|-------------|
 | `closeClick` | `void` | Emitted when the close button is clicked, Enter/Space is pressed on the close button, or Escape is pressed while the header is focused |
 | `backClick` | `void` | **Deprecated.** Use `closeClick` instead. Emitted alongside `closeClick` for backward compatibility |
+| `threadSubscriptionChange` | `{ parentMessageId: number; subscribed: boolean }` | Emitted on every change to this thread's subscription, whoever caused it. `subscribed` is whether the logged-in user now follows the thread |
 
 ## Customization
 

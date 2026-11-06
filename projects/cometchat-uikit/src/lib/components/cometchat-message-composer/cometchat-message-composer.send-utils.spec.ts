@@ -10,6 +10,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { TestBed } from '@angular/core/testing';
+import { MessageComposerService } from '../../services/message-composer.service';
 import {
   extractMentionedUsersImpl,
   applyTextFormattersImpl,
@@ -326,6 +328,48 @@ describe('cometchat-message-composer.send-utils', () => {
       await expect(handleSendNewMessageImpl(ctx, receiver, 'Hello', [])).rejects.toThrow();
       sub.unsubscribe();
       expect(events.some(e => e.status === MessageStatus.error)).toBe(true);
+    });
+
+    // ENG-40635: the failed send is the pending message the list shows, marked with why it failed.
+    function sentEvents() {
+      const events: any[] = [];
+      const sub = CometChatMessageEvents.ccMessageSent.subscribe(e => events.push(e));
+      return { events, stop: () => sub.unsubscribe() };
+    }
+
+    it('marks the pending text failed when the service returns null (it caught the error)', async () => {
+      const ctx = makeBaseCtx({
+        messageComposerService: { sendTextMessage: vi.fn().mockResolvedValue(null), sendMediaMessage: vi.fn() } as any,
+      });
+      const { events, stop } = sentEvents();
+      await handleSendNewMessageImpl(ctx, makeUser('receiver1'), 'Hello', []);
+      stop();
+      const pending = events.find(e => e.status === MessageStatus.inprogress)?.message;
+      const failed = events.find(e => e.status === MessageStatus.error)?.message;
+      expect(failed).toBe(pending);
+      expect(failed.error).toMatchObject({ code: 'ERR_MESSAGE_SEND_FAILED' });
+    });
+
+    it("through the real service, a rejected send ends as the pending message, failed with the SDK's error", async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [MessageComposerService] });
+      const service = TestBed.inject(MessageComposerService);
+      const sendMessage = vi.spyOn(CometChat, 'sendMessage').mockRejectedValueOnce(
+        new CometChat.CometChatException({ code: 'ERR_NETWORK', message: 'offline' })
+      );
+      try {
+        const ctx = makeBaseCtx({ messageComposerService: service });
+        const { events, stop } = sentEvents();
+        await handleSendNewMessageImpl(ctx, makeUser('receiver1'), 'Hello', []);
+        stop();
+        const pending = events.find(e => e.status === MessageStatus.inprogress)?.message;
+        const failed = events.find(e => e.status === MessageStatus.error)?.message;
+        expect(failed).toBe(pending);
+        expect(failed.error).toMatchObject({ code: 'ERR_NETWORK', message: 'offline' });
+        expect(events.some(e => e.status === MessageStatus.success)).toBe(false);
+      } finally {
+        sendMessage.mockRestore();
+      }
     });
 
     it('should not call sendTextMessage when text is empty', async () => {

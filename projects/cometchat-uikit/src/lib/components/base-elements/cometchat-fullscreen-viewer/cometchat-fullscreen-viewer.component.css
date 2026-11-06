@@ -593,7 +593,7 @@
   height: 112px;
   border-radius: var(--cometchat-radius-max, 1000px);
   background: rgba(255, 255, 255, 0.08);
-  margin-bottom: var(--cometchat-spacing-2, 8px);
+  margin-bottom: var(--cometchat-margin-2, 8px);
 }
 .cometchat-fullscreen-viewer__no-preview-icon img {
   width: 44px;
@@ -622,7 +622,7 @@
   justify-content: center;
   align-self: stretch; /* full width of the no-preview block; label stays centered */
   gap: var(--cometchat-spacing-2, 8px);
-  margin-top: var(--cometchat-spacing-3, 12px);
+  margin-top: var(--cometchat-margin-3, 12px);
   padding: var(--cometchat-padding-3, 12px) var(--cometchat-padding-5, 20px);
   background-color: var(--cometchat-primary-button-background, #6852d6);
   color: var(--cometchat-primary-button-text, #ffffff);

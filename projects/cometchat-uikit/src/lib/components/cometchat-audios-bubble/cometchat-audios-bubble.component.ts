@@ -105,7 +105,7 @@ export class CometChatAudiosBubbleComponent implements OnChanges {
   protected getShowMoreLabel(): string {
     return CometChatLocalize.getLocalizedString('bubble_show_more').replace(
       '{count}',
-      String(this.remainingCount),
+      () => String(this.remainingCount),
     );
   }
 

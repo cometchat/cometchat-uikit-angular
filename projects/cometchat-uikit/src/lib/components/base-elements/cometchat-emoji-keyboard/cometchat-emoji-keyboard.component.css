@@ -98,7 +98,7 @@
 }
 
 .cometchat-emoji-keyboard__list-title {
-  font: var(--cometchat-emoji-keyboard-list-title-font, var(--cometchat-font-subtitle1-medium));
+  font: var(--cometchat-emoji-keyboard-list-title-font, var(--cometchat-font-body-regular));
   color: var(--cometchat-emoji-keyboard-list-title-color, var(--cometchat-text-color-secondary));
   margin-bottom: var(--cometchat-emoji-keyboard-list-title-margin-bottom, var(--cometchat-margin-2, 8px));
   padding: var(--cometchat-emoji-keyboard-list-title-padding, var(--cometchat-padding-1, 4px) 0);
@@ -128,7 +128,7 @@
 }
 
 .cometchat-emoji-keyboard__list-item:active {
-  background-color: var(--cometchat-emoji-keyboard-emoji-item-background-active, var(--cometchat-background-color-05));
+  background-color: var(--cometchat-emoji-keyboard-emoji-item-background-active, var(--cometchat-background-color-04));
 }
 
 /* Focus indicators for accessibility */

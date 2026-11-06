@@ -15,7 +15,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { within, expect } from '@storybook/test';
+import { within, expect, waitFor } from 'storybook/test';
 import { States } from '../../Enums/Enums';
 
 import { CometChatGroupsComponent } from './cometchat-groups.component';
@@ -603,6 +603,29 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Toggle Verification
 // ============================================
 
+/**
+ * The groups service holds its shimmer for at least 1s on the first fetch, so
+ * fixed sleeps race it. These wait on the rendered state instead.
+ */
+const LIST_SETTLE = { timeout: 5000 };
+
+/** Resolves with the group rows once the first page has rendered. */
+function waitForRows(canvasElement: HTMLElement): Promise<Element[]> {
+  return waitFor(() => {
+    const rows = Array.from(canvasElement.querySelectorAll('.cometchat-groups__list-item-wrapper'));
+    expect(rows.length).toBeGreaterThan(0);
+    return rows;
+  }, LIST_SETTLE);
+}
+
+/** Resolves once the first fetch has finished, whatever its outcome. */
+function waitForFetchSettled(canvasElement: HTMLElement): Promise<void> {
+  return waitFor(() => {
+    expect(canvasElement.querySelector('.cometchat-groups')).not.toBeNull();
+    expect(canvasElement.querySelector('.cometchat-groups__shimmer')).toBeNull();
+  }, LIST_SETTLE);
+}
+
 /** Verifies hideSearch=true hides the search bar. */
 export const TestHideSearch: Story = {
   render: args => ({
@@ -620,10 +643,9 @@ export const TestHideSearch: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForRows(canvasElement);
     // Search bar should NOT be present when hideSearch=true
-    const searchBar = canvasElement.querySelector('cometchat-search-bar');
-    expect(searchBar).toBeNull();
+    expect(canvasElement.querySelector('cometchat-search-bar')).toBeNull();
   },
 };
 
@@ -644,10 +666,10 @@ export const TestShowSearch: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    const canvas = within(canvasElement);
     // Search bar should be visible
-    const searchBar = canvasElement.querySelector('cometchat-search-bar');
-    expect(searchBar).not.toBeNull();
+    await canvas.findByRole('searchbox', { name: 'Search' }, LIST_SETTLE);
+    expect(canvasElement.querySelector('.cometchat-groups__search-bar cometchat-search-bar')).not.toBeNull();
   },
 };
 
@@ -668,10 +690,9 @@ export const TestHideGroupType: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Group type icons should NOT be present
-    const groupTypeIcons = canvasElement.querySelectorAll('.cometchat-group-item__group-type');
-    expect(groupTypeIcons.length).toBe(0);
+    await waitForRows(canvasElement);
+    // Group type icons should NOT be present, although the list has private and password groups
+    expect(canvasElement.querySelectorAll('.cometchat-group-item__type-indicator')).toHaveLength(0);
   },
 };
 
@@ -691,13 +712,15 @@ export const TestEmptyState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Empty state content should be visible
-    const emptyContent = canvasElement.querySelector('.cometchat-groups__empty-state-view');
-    expect(emptyContent).not.toBeNull();
-    // No group items should be present
-    const items = canvasElement.querySelectorAll('.cometchat-groups__list-item-wrapper');
-    expect(items.length).toBe(0);
+    // Empty state content should be visible and announced
+    const emptyState = await waitFor(() => {
+      const el = canvasElement.querySelector('.cometchat-groups__empty-state-view');
+      expect(el).not.toBeNull();
+      return el!;
+    }, LIST_SETTLE);
+    expect(emptyState).toHaveAttribute('role', 'status');
+    // No rows should be present
+    expect(canvasElement.querySelectorAll('.cometchat-groups__list-item-wrapper')).toHaveLength(0);
   },
 };
 
@@ -717,13 +740,10 @@ export const TestDefaultRendersItems: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Group items should be rendered
-    const items = canvasElement.querySelectorAll('.cometchat-groups__list-item-wrapper');
-    expect(items.length).toBeGreaterThan(0);
-    // Title should be visible
-    const title = canvasElement.querySelector('.cometchat-groups__header-title');
-    expect(title).not.toBeNull();
+    const rows = await waitForRows(canvasElement);
+    // Group items should be rendered under the header title
+    expect(rows).toHaveLength(10);
+    expect(canvasElement.querySelector('.cometchat-groups__header-title')).not.toBeNull();
   },
 };
 
@@ -744,13 +764,14 @@ export const TestErrorState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Error state should be visible
-    const errorView = canvasElement.querySelector('.cometchat-groups__error-state-view');
-    expect(errorView).not.toBeNull();
-    // Retry button should be present
-    const retryButton = canvasElement.querySelector('.cometchat-groups__error-state-view-retry-button');
-    expect(retryButton).not.toBeNull();
+    // Error state should be visible and announced, with a retry button
+    const errorView = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLElement>('.cometchat-groups__error-state-view');
+      expect(el).not.toBeNull();
+      return el!;
+    }, LIST_SETTLE);
+    expect(errorView).toHaveAttribute('role', 'alert');
+    expect(within(errorView).getByRole('button')).toHaveClass('cometchat-groups__error-state-view-retry-button');
   },
 };
 
@@ -771,10 +792,10 @@ export const TestHideError: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Error state view should NOT be visible when hideError=true
-    const errorView = canvasElement.querySelector('.cometchat-groups__error-state-view');
-    expect(errorView).toBeNull();
+    await waitForFetchSettled(canvasElement);
+    // The fetch failed, but hideError=true suppresses the error view
+    expect(canvasElement.querySelector('.cometchat-groups__error-state-view')).toBeNull();
+    expect(canvasElement.querySelectorAll('.cometchat-groups__list-item-wrapper')).toHaveLength(0);
   },
 };
 
@@ -795,10 +816,8 @@ export const TestShowScrollbar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    const root = canvasElement.querySelector('.cometchat-groups');
-    expect(root).not.toBeNull();
-    expect(root!.classList.contains('cometchat-groups-hide-scrollbar')).toBe(false);
+    await waitForRows(canvasElement);
+    expect(canvasElement.querySelector('.cometchat-groups')).not.toHaveClass('cometchat-groups-hide-scrollbar');
   },
 };
 
@@ -819,10 +838,8 @@ export const TestHideScrollbar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    const root = canvasElement.querySelector('.cometchat-groups');
-    expect(root).not.toBeNull();
-    expect(root!.classList.contains('cometchat-groups-hide-scrollbar')).toBe(true);
+    await waitForRows(canvasElement);
+    expect(canvasElement.querySelector('.cometchat-groups')).toHaveClass('cometchat-groups-hide-scrollbar');
   },
 };
 
@@ -843,10 +860,10 @@ export const TestShowGroupType: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Group type icons should be present for non-public groups
-    const groupTypeIcons = canvasElement.querySelectorAll('.cometchat-group-item__group-type');
-    expect(groupTypeIcons.length).toBeGreaterThan(0);
+    await waitForRows(canvasElement);
+    // 15 groups cycle public/private/password: public groups carry no badge
+    expect(canvasElement.querySelectorAll('.cometchat-group-item__type-indicator--private')).toHaveLength(5);
+    expect(canvasElement.querySelectorAll('.cometchat-group-item__type-indicator--password')).toHaveLength(5);
   },
 };
 
@@ -868,10 +885,12 @@ export const TestSingleSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Selection controls (radio buttons) should be present
-    const selectionControls = canvasElement.querySelectorAll('.cometchat-groups__selection-control, input[type="radio"], .cometchat-radio-button');
-    expect(selectionControls.length).toBeGreaterThan(0);
+    const rows = await waitForRows(canvasElement);
+    // Every row carries a radio-style selection control
+    for (const row of rows) {
+      expect(row.querySelector('.cometchat-groups__selection-control cometchat-radio-button')).not.toBeNull();
+    }
+    expect(canvasElement.querySelectorAll('cometchat-checkbox')).toHaveLength(0);
   },
 };
 
@@ -893,10 +912,12 @@ export const TestMultipleSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
-    // Selection controls (checkboxes) should be present
-    const selectionControls = canvasElement.querySelectorAll('.cometchat-groups__selection-control, input[type="checkbox"], .cometchat-checkbox');
-    expect(selectionControls.length).toBeGreaterThan(0);
+    const rows = await waitForRows(canvasElement);
+    // Every row carries a checkbox-style selection control
+    for (const row of rows) {
+      expect(row.querySelector('.cometchat-groups__selection-control cometchat-checkbox')).not.toBeNull();
+    }
+    expect(canvasElement.querySelectorAll('cometchat-radio-button')).toHaveLength(0);
   },
 };
 
@@ -918,11 +939,9 @@ export const TestNoSelectionMode: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 1000));
+    await waitForRows(canvasElement);
     // No selection controls should be present
-    const radioButtons = canvasElement.querySelectorAll('input[type="radio"], .cometchat-radio-button');
-    const checkboxes = canvasElement.querySelectorAll('input[type="checkbox"], .cometchat-checkbox');
-    expect(radioButtons.length).toBe(0);
-    expect(checkboxes.length).toBe(0);
+    expect(canvasElement.querySelectorAll('.cometchat-groups__selection-control')).toHaveLength(0);
+    expect(canvasElement.querySelectorAll('cometchat-radio-button, cometchat-checkbox')).toHaveLength(0);
   },
 };

@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatAudioBubbleComponent } from './cometchat-audio-bubble.component';
 import { MessageBubbleAlignment } from '../../Enums/Enums';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import { createMockMessage, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────

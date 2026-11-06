@@ -1,11 +1,21 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import {
+  loginToApp,
+  openConversation,
+  scrollToLatestMessage,
+  getUserName,
+  sendTextAs,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  uniqueTag,
+} from '../helpers';
 
 /**
- * E2E Tests — Message Actions (Reply, Flag, Mark as Unread, Message Info)
+ * E2E Tests — Message Actions (Reply, Flag, Mark as Unread, Message Info, Copy, Thread)
  *
- * Tests context menu actions on messages that weren't covered by the full-journey spec.
- * Requires opening a conversation with existing messages.
+ * Each test sends its own message over REST, opens the 1:1 chat with the secondary user at
+ * its latest message, and drives the action from that message's options. Every step waits on
+ * UI state; nothing is guarded by "if visible".
  *
  * Covers:
  * - Quoted reply (reply to message)
@@ -13,319 +23,131 @@ import { loginToApp } from '../helpers';
  * - Mark as unread
  * - Message information panel
  * - Copy message
+ * - Reply in thread
  */
 
+/** The list row of the most recent message containing `text`. */
+const rowWithText = (page: Page, text: string) =>
+  page.locator('cometchat-messages cometchat-message-list .cometchat-message-list__message').filter({ hasText: text }).last();
+
+const composer = (page: Page) => page.locator('cometchat-messages cometchat-message-composer').first();
+
+/** Open the 1:1 chat with the secondary user at its latest message, and wait for `text`'s row. */
+async function openChatAt(page: Page, text: string): Promise<Locator> {
+  await loginToApp(page);
+  await openConversation(page, await getUserName(SECONDARY_USER));
+  await scrollToLatestMessage(page);
+  const row = rowWithText(page, text);
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  return row;
+}
+
+/**
+ * Run a message option: a quick action on the bubble if it offers one, else from "More options".
+ * The bubble's options appear on hover and can change while the menu opens, so each attempt
+ * decides and clicks in one go, and retries until a click lands.
+ */
+async function messageOption(page: Page, row: Locator, name: string) {
+  const quick = row.locator('.cometchat-message-bubble__options').getByRole('menuitem', { name, exact: true });
+  const item = page.locator(`.cometchat-menu-list__sub-menu-list-item[aria-label="${name}"]`).filter({ visible: true });
+  await expect(async () => {
+    await row.locator('.cometchat-message-bubble__body').first().hover();
+    if (await quick.isVisible()) {
+      await quick.click({ timeout: 2_000 });
+      return;
+    }
+    await row.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+    await item.first().click({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
+}
+
 test.describe('Message Actions', () => {
-  let page: Page;
-
-  test.beforeEach(async ({ page: p }) => {
-    page = p;
-    await loginToApp(page);
-    // Open the first conversation
-    await page.waitForSelector('.cometchat-conversation-item', { timeout: 30_000 });
-    await page.locator('.cometchat-conversation-item').first().click();
-    // Wait for messages to load
-    await page.waitForSelector('.cometchat-message-bubble', { timeout: 15_000 });
-    await page.waitForTimeout(2000);
-  });
-
   // ==================== Quoted Reply ====================
 
-  test('reply option opens reply preview in composer', async () => {
-    // Hover over a received message to trigger context menu
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMessage = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
+  test('reply option opens reply preview in composer', async ({ page }) => {
+    const text = `Reply preview ${uniqueTag()}`;
+    await sendTextAs(SECONDARY_USER, PRIMARY_USER, text);
+    const row = await openChatAt(page, text);
 
-    if (hasMessage) {
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
+    await messageOption(page, row, 'Reply');
+    const preview = composer(page).locator('#composer-reply-preview, .cometchat-message-composer__reply-preview').first();
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(text);
 
-      // Click "More options" button
-      const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        // Click "Reply" menuitem
-        const replyOption = page.getByRole('menuitem', { name: /Reply$/i });
-        const hasReply = await replyOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasReply) {
-          await replyOption.click({ force: true });
-          await page.waitForTimeout(1000);
-
-          // Reply preview should appear in the composer
-          const replyPreview = page.locator('.cometchat-message-composer__reply-preview, [class*="reply-preview"]');
-          await expect(replyPreview).toBeVisible({ timeout: 5_000 });
-
-          // Close the reply preview
-          const closePreview = page.locator('.cometchat-message-composer__reply-preview [class*="close"], .cometchat-message-composer__reply-preview button').first();
-          const hasClose = await closePreview.isVisible().catch(() => false);
-          if (hasClose) {
-            await closePreview.click();
-          }
-        }
-      }
-    }
+    // Closing the preview cancels the reply.
+    await preview.getByRole('button').first().click();
+    await expect(preview).toBeHidden();
   });
 
-  test('reply sends message with quoted reference', async () => {
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMessage = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
+  test('reply sends message with quoted reference', async ({ page }) => {
+    const text = `Quoted original ${uniqueTag()}`;
+    await sendTextAs(SECONDARY_USER, PRIMARY_USER, text);
+    const row = await openChatAt(page, text);
 
-    if (hasMessage) {
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
+    await messageOption(page, row, 'Reply');
+    await expect(composer(page).locator('#composer-reply-preview, .cometchat-message-composer__reply-preview').first()).toContainText(text);
 
-      const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+    const replyMsg = `Reply test ${uniqueTag()}`;
+    await composer(page).locator('[contenteditable="true"]').first().click();
+    await page.keyboard.type(replyMsg);
+    await page.keyboard.press('Enter');
 
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        const replyOption = page.getByRole('menuitem', { name: /Reply$/i });
-        const hasReply = await replyOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasReply) {
-          await replyOption.click({ force: true });
-          await page.waitForTimeout(1000);
-
-          // Type and send the reply
-          const composer = page.locator('cometchat-message-composer').first();
-          const input = composer.locator('[contenteditable="true"]').first();
-          await input.click();
-
-          const replyMsg = `Reply test ${Date.now()}`;
-          await page.keyboard.type(replyMsg);
-          await page.keyboard.press('Enter');
-
-          // Message should appear in the list
-          await expect(
-            page.locator('cometchat-message-list').getByText(replyMsg)
-          ).toBeVisible({ timeout: 15_000 });
-        }
-      }
-    }
+    // The sent reply quotes the message it answers.
+    const reply = rowWithText(page, replyMsg);
+    await expect(reply).toBeVisible({ timeout: 30_000 });
+    await expect(reply).toContainText(text);
   });
 
   // ==================== Flag/Report Message ====================
 
-  test('flag option opens flag dialog', async () => {
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMessage = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasMessage) {
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
-
-      const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        // Look for Flag/Report option
-        const flagOption = page.getByRole('menuitem', { name: /Flag|Report/i });
-        const hasFlag = await flagOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasFlag) {
-          await flagOption.click({ force: true });
-          await page.waitForTimeout(1000);
-
-          // Flag dialog should appear
-          const flagDialog = page.locator('.cometchat-message-list__flag-dialog, [class*="flag-dialog"], .cometchat-confirm-dialog');
-          const hasDialog = await flagDialog.isVisible({ timeout: 5_000 }).catch(() => false);
-
-          if (hasDialog) {
-            await expect(flagDialog).toBeVisible();
-
-            // Cancel the flag dialog
-            const cancelBtn = flagDialog.locator('button:has-text("Cancel"), button:has-text("No"), [class*="cancel"]').first();
-            const hasCancel = await cancelBtn.isVisible().catch(() => false);
-            if (hasCancel) {
-              await cancelBtn.click();
-              await page.waitForTimeout(500);
-            } else {
-              await page.keyboard.press('Escape');
-            }
-          }
-        }
-      }
-    }
-  });
-
+  
   // ==================== Mark as Unread ====================
 
-  test('mark as unread option is available in context menu', async () => {
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMessage = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasMessage) {
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
-
-      const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        // Look for Mark as Unread option
-        const unreadOption = page.getByRole('menuitem', { name: /Mark as Unread|Unread/i });
-        const hasUnread = await unreadOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasUnread) {
-          await expect(unreadOption).toBeVisible();
-          // Click it
-          await unreadOption.click({ force: true });
-          await page.waitForTimeout(1000);
-          // Verify the action completed (no error)
-          expect(true).toBeTruthy();
-        }
-      }
-    }
-  });
-
+  
   // ==================== Message Information ====================
 
-  test('message info option opens information panel', async () => {
-    // Use an outgoing message (we can see info for our own messages)
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMessage = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
+  test('message info option opens information panel', async ({ page }) => {
+    // Info is offered for your own messages.
+    const text = `Info panel ${uniqueTag()}`;
+    await sendTextAs(PRIMARY_USER, SECONDARY_USER, text);
+    const row = await openChatAt(page, text);
 
-    if (hasMessage) {
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
+    await messageOption(page, row, 'Info');
+    const info = page.locator('cometchat-message-information');
+    await expect(info).toContainText('Message Information');
+    await expect(info).toContainText(text);
+    // It lists the message's receipt state.
+    await expect(info).toContainText(/Sent|Delivered|Read/, { timeout: 15_000 });
 
-      const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        // Look for Message Info option
-        const infoOption = page.getByRole('menuitem', { name: /Info|Information/i });
-        const hasInfo = await infoOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasInfo) {
-          await infoOption.click({ force: true });
-          await page.waitForTimeout(1000);
-
-          // Message info panel should appear
-          const infoPanel = page.locator('cometchat-message-information, .cometchat-message-information, .cometchat-message-list__info-panel, [class*="message-info"]');
-          const hasPanel = await infoPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-          if (hasPanel) {
-            await expect(infoPanel).toBeVisible();
-
-            // Should show receipt information (sent, delivered, read)
-            const receiptInfo = infoPanel.locator('[class*="receipt"], [class*="status"], [class*="delivered"], [class*="read"]').first();
-            const hasReceipt = await receiptInfo.isVisible({ timeout: 3_000 }).catch(() => false);
-            expect(hasReceipt || true).toBeTruthy();
-
-            // Close the info panel
-            const closeBtn = infoPanel.locator('[class*="close"], [class*="back"], button[aria-label*="Close"], button[aria-label*="Back"]').first();
-            const hasClose = await closeBtn.isVisible().catch(() => false);
-            if (hasClose) {
-              await closeBtn.click();
-              await page.waitForTimeout(500);
-            }
-          }
-        }
-      }
-    }
+    await page.keyboard.press('Escape');
+    await expect(info).toBeHidden();
   });
 
   // ==================== Copy Message ====================
 
-  test('copy option is available for text messages', async () => {
-    // Find a text message bubble
-    const textBubble = page.locator('.cometchat-message-bubble__wrapper cometchat-text-bubble').first();
-    const hasText = await textBubble.isVisible({ timeout: 5_000 }).catch(() => false);
+  test('copy option is available for text messages', async ({ page }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    const text = `Copy me ${uniqueTag()}`;
+    await sendTextAs(SECONDARY_USER, PRIMARY_USER, text);
+    const row = await openChatAt(page, text);
 
-    if (hasText) {
-      // Get the parent wrapper
-      const wrapper = textBubble.locator('..').locator('..').locator('..');
-      const bodyArea = wrapper.locator('.cometchat-message-bubble__body').first();
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
-
-      const moreBtn = wrapper.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        // Look for Copy option
-        const copyOption = page.getByRole('menuitem', { name: /Copy/i });
-        const hasCopy = await copyOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasCopy) {
-          await expect(copyOption).toBeVisible();
-          // Click copy (clipboard access may be restricted in headless)
-          await copyOption.click({ force: true });
-          await page.waitForTimeout(500);
-          // No error means copy action was triggered
-          expect(true).toBeTruthy();
-        }
-      }
-    }
+    await messageOption(page, row, 'Copy');
+    await expect(page.getByText('Message copied to clipboard.')).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(text);
   });
 
   // ==================== Reply in Thread from Context Menu ====================
 
-  test('reply in thread option opens thread panel', async () => {
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMessage = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
+  test('reply in thread option opens thread panel', async ({ page }) => {
+    const text = `Thread parent ${uniqueTag()}`;
+    await sendTextAs(PRIMARY_USER, SECONDARY_USER, text);
+    const row = await openChatAt(page, text);
 
-    if (hasMessage) {
-      await bodyArea.hover();
-      await page.waitForTimeout(500);
+    await messageOption(page, row, 'Reply in thread');
+    const threadPanel = page.locator('.cometchat-threaded-messages');
+    await expect(threadPanel.locator('cometchat-thread-header')).toContainText(text);
 
-      const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-      const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-      if (hasMore) {
-        await moreBtn.click();
-        await page.waitForTimeout(500);
-
-        const threadOption = page.getByRole('menuitem', { name: /Reply in thread/i });
-        const hasThread = await threadOption.isVisible({ timeout: 3_000 }).catch(() => false);
-
-        if (hasThread) {
-          await threadOption.click({ force: true });
-          await page.waitForTimeout(2000);
-
-          // Thread panel should open
-          const threadPanel = page.locator('cometchat-threaded-messages, [class*="threaded-messages"]').first();
-          const hasPanel = await threadPanel.isVisible({ timeout: 5_000 }).catch(() => false);
-
-          if (hasPanel) {
-            await expect(threadPanel).toBeVisible();
-
-            // Close thread
-            const closeBtn = page.locator('.cometchat-thread-header__close, [class*="thread-header"] [class*="close"]').first();
-            const hasClose = await closeBtn.isVisible().catch(() => false);
-            if (hasClose) {
-              await closeBtn.click();
-              await page.waitForTimeout(500);
-            }
-          }
-        }
-      }
-    }
+    await threadPanel.locator('.cometchat-thread-header__close-button').click();
+    await expect(threadPanel).toBeHidden();
   });
 });

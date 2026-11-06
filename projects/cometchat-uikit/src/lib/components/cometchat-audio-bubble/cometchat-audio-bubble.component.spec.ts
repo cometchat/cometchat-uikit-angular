@@ -505,11 +505,29 @@ describe('CometChatAudioBubbleComponent', () => {
       component.message = createMockAudioMessage(1);
       await initAndDetect(fixture);
 
-      const timeEl = el.querySelector('.cometchat-audio-bubble__time');
+      // jsdom cannot decode audio, so the waveform load fails and the bubble
+      // shows its error state (no time element). Drive the state explicitly.
+      const state = (component as any).getAudioState(0);
+      const render = () => {
+        (component as any).cdr.markForCheck();
+        fixture.detectChanges();
+        return el.querySelector('.cometchat-audio-bubble__time');
+      };
+
       // While loading, it shows the loading text
-      if (timeEl) {
-        expect(timeEl.textContent?.trim()).toBeTruthy();
-      }
+      state.hasError = false;
+      state.isLoading = true;
+      let timeEl = render();
+      expect(timeEl).not.toBeNull();
+      expect(timeEl!.textContent?.trim()).toBe(
+        CometChatLocalize.getLocalizedString('audio_bubble_loading')
+      );
+
+      // Once loaded with zero duration, it shows 0:00 / 0:00
+      state.isLoading = false;
+      timeEl = render();
+      expect(timeEl).not.toBeNull();
+      expect(timeEl!.textContent?.replace(/\s+/g, ' ').trim()).toBe('0:00 / 0:00');
     });
   });
 

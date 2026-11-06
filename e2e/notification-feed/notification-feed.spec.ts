@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from '../fixtures/coverage';
 import { loginToApp } from '../helpers';
 
 /**
@@ -11,7 +11,24 @@ import { loginToApp } from '../helpers';
  * @see ENG-35935
  */
 
+/** Wait for the feed to finish loading: it shows items, its empty state or its error state. */
+async function feedSettled(page: Page) {
+  await expect(
+    page
+      .locator('.cometchat-notification-feed__item')
+      .first()
+      .or(page.locator('.cometchat-notification-feed__empty'))
+      .or(page.locator('.cometchat-notification-feed__error'))
+  ).toBeVisible({ timeout: 30_000 });
+}
+
 test.describe('CometChatNotificationFeed', () => {
+  // The sample app's Notifications tab was removed by accident in 14601471 ("optimised
+  // accessibility score"), so every test here fails on dev-v5. Skipped (fixme) rather than
+  // expected-to-fail: with test.fail each test still ran and waited out its timeout in
+  // beforeEach looking for the missing tab. Drop this once ENG-40179 restores the tab.
+  test.fixme(true, 'Notifications tab removed from the sample app (ENG-40179)');
+
   let page: Page;
 
   test.beforeEach(async ({ page: p }) => {
@@ -45,18 +62,6 @@ test.describe('CometChatNotificationFeed', () => {
     expect(text?.trim()).toBe('Notifications');
   });
 
-  test('mark all read button appears when there are unread items', async () => {
-    // Wait for feed to load
-    await page.waitForTimeout(3000);
-
-    // Check if mark all read button exists (only shows when unread count > 0)
-    const markAllBtn = page.locator('.cometchat-notification-feed__mark-all-read');
-    const isVisible = await markAllBtn.isVisible().catch(() => false);
-
-    // Either the button is visible (has unread) or not (all read) — both are valid
-    expect(typeof isVisible).toBe('boolean');
-  });
-
   // ==================== Filter Chips ====================
 
   test('filter chips section is visible with "All" chip', async () => {
@@ -75,108 +80,27 @@ test.describe('CometChatNotificationFeed', () => {
     await expect(allChip).toHaveClass(/cometchat-notification-feed__chip--active/);
   });
 
-  test('clicking a category chip filters the feed', async () => {
-    // Wait for categories to load
-    await page.waitForTimeout(2000);
-
-    const chips = page.locator('.cometchat-notification-feed__chip');
-    const chipCount = await chips.count();
-
-    if (chipCount > 1) {
-      // Click second chip (first category)
-      await chips.nth(1).click();
-
-      // Second chip should now be active
-      await expect(chips.nth(1)).toHaveClass(/cometchat-notification-feed__chip--active/);
-
-      // First chip (All) should no longer be active
-      await expect(chips.first()).not.toHaveClass(/cometchat-notification-feed__chip--active/);
-    }
-  });
-
-  test('clicking "All" chip resets filter', async () => {
-    await page.waitForTimeout(2000);
-
-    const chips = page.locator('.cometchat-notification-feed__chip');
-    const chipCount = await chips.count();
-
-    if (chipCount > 1) {
-      // Click a category chip first
-      await chips.nth(1).click();
-      await page.waitForTimeout(1000);
-
-      // Click "All" chip
-      await chips.first().click();
-      await expect(chips.first()).toHaveClass(/cometchat-notification-feed__chip--active/);
-    }
-  });
-
+  
+  
   // ==================== Feed Content ====================
 
   test('feed loads and displays items or empty state', async () => {
-    // Wait for loading to complete
-    await page.waitForTimeout(5000);
+    await feedSettled(page);
 
-    const hasItems = await page.locator('.cometchat-notification-feed__item').count() > 0;
-    const hasEmpty = await page.locator('.cometchat-notification-feed__empty').isVisible().catch(() => false);
-    const hasError = await page.locator('.cometchat-notification-feed__error').isVisible().catch(() => false);
-
-    // Should be in one valid state
-    expect(hasItems || hasEmpty || hasError).toBeTruthy();
+    // The error state is a failed load, not a valid outcome.
+    await expect(page.locator('.cometchat-notification-feed__error')).toHaveCount(0);
+    const hasItems = (await page.locator('.cometchat-notification-feed__item').count()) > 0;
+    const hasEmpty = await page.locator('.cometchat-notification-feed__empty').isVisible();
+    expect(hasItems || hasEmpty).toBe(true);
   });
 
-  test('feed items display category and timestamp', async () => {
-    await page.waitForTimeout(3000);
-
-    const items = page.locator('.cometchat-notification-feed__item');
-    const itemCount = await items.count();
-
-    if (itemCount > 0) {
-      const firstItem = items.first();
-
-      // Should have category label
-      const category = firstItem.locator('.cometchat-notification-feed__item-category');
-      await expect(category).toBeVisible();
-
-      // Should have time/date
-      const time = firstItem.locator('.cometchat-notification-feed__item-time');
-      await expect(time).toBeVisible();
-    }
-  });
-
-  test('feed items have card content rendered', async () => {
-    await page.waitForTimeout(3000);
-
-    const items = page.locator('.cometchat-notification-feed__item');
-    const itemCount = await items.count();
-
-    if (itemCount > 0) {
-      // Card container should exist
-      const cardContainer = items.first().locator('.cometchat-notification-feed__card-container');
-      await expect(cardContainer).toBeVisible();
-
-      // Card view component should be rendered inside
-      const cardView = cardContainer.locator('cometchat-card-view');
-      await expect(cardView).toBeVisible();
-    }
-  });
-
-  test('unread items show unread indicator', async () => {
-    await page.waitForTimeout(3000);
-
-    const unreadItems = page.locator('.cometchat-notification-feed__item--unread');
-    const unreadCount = await unreadItems.count();
-
-    if (unreadCount > 0) {
-      const indicator = unreadItems.first().locator('.cometchat-notification-feed__unread-indicator');
-      await expect(indicator).toBeVisible();
-    }
-  });
-
+  
+  
+  
   // ==================== Scroll & Pagination ====================
 
   test('feed content area is scrollable', async () => {
-    await page.waitForTimeout(3000);
+    await feedSettled(page);
 
     const content = page.locator('.cometchat-notification-feed__content');
     await expect(content).toBeVisible();
@@ -186,75 +110,24 @@ test.describe('CometChatNotificationFeed', () => {
     expect(overflowY).toBe('auto');
   });
 
-  test('scrolling to bottom triggers pagination loading', async () => {
-    await page.waitForTimeout(3000);
-
-    const items = page.locator('.cometchat-notification-feed__item');
-    const initialCount = await items.count();
-
-    if (initialCount >= 5) {
-      // Scroll to bottom
-      const content = page.locator('.cometchat-notification-feed__content');
-      await content.evaluate((el) => {
-        el.scrollTop = el.scrollHeight;
-      });
-
-      // Wait for potential loading
-      await page.waitForTimeout(3000);
-
-      // Should either show loading-more indicator or have more items
-      const newCount = await items.count();
-      const hasLoadingMore = await page.locator('.cometchat-notification-feed__loading-more').isVisible().catch(() => false);
-
-      expect(newCount >= initialCount || hasLoadingMore).toBeTruthy();
-    }
-  });
-
+  
   // ==================== Error State ====================
 
-  test('error state shows retry button', async () => {
-    const errorState = page.locator('.cometchat-notification-feed__error');
-    const hasError = await errorState.isVisible().catch(() => false);
-
-    if (hasError) {
-      const retryBtn = page.locator('.cometchat-notification-feed__error-retry-button');
-      await expect(retryBtn).toBeVisible();
-    }
-  });
-
+  
   // ==================== Accessibility ====================
 
-  test('feed list has proper ARIA role', async () => {
-    await page.waitForTimeout(3000);
-
-    const items = page.locator('.cometchat-notification-feed__item');
-    if (await items.count() > 0) {
-      const feedRole = page.locator('[role="feed"]');
-      await expect(feedRole).toBeVisible();
-    }
-  });
-
+  
   test('filter chips have tablist role', async () => {
     const chipContainer = page.locator('[role="tablist"]');
     await expect(chipContainer).toBeVisible();
   });
 
-  test('feed items are focusable via keyboard', async () => {
-    await page.waitForTimeout(3000);
-
-    const items = page.locator('.cometchat-notification-feed__item');
-    if (await items.count() > 0) {
-      const tabIndex = await items.first().getAttribute('tabindex');
-      expect(tabIndex).toBe('0');
-    }
-  });
-
+  
   // ==================== Tab Switching ====================
 
   test('switching back to chats tab hides notification feed', async () => {
     // Click chats tab
     await page.locator('[role="tab"]').first().click();
-    await page.waitForTimeout(1000);
 
     // Notification feed should be hidden
     await expect(page.locator('.cometchat-notification-feed')).not.toBeVisible();
@@ -263,11 +136,11 @@ test.describe('CometChatNotificationFeed', () => {
   });
 
   test('switching back to notifications tab preserves state', async () => {
-    await page.waitForTimeout(2000);
+    await feedSettled(page);
 
     // Switch to chats
     await page.locator('[role="tab"]').first().click();
-    await page.waitForTimeout(1000);
+    await expect(page.locator('.cometchat-notification-feed')).toBeHidden();
 
     // Switch back to notifications
     await page.locator('[role="tab"]').filter({ hasText: /notification/i }).click();

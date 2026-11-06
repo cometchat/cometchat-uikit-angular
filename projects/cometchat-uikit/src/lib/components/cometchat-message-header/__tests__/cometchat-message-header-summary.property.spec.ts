@@ -27,6 +27,16 @@ import { PanelAlignment } from '../../../Enums/Enums';
 import { CometChatMessageHeaderComponent } from '../cometchat-message-header.component';
 import { Subscription } from 'rxjs';
 
+/**
+ * The panel configuration is an untyped bag (`Record<string, unknown>`); assert the
+ * summary callback is really present and callable before invoking it.
+ */
+function getSummaryCallback(panel: IPanel): () => Promise<unknown> {
+  const callback = panel.configuration?.['getConversationSummary'];
+  expect(callback).toBeTypeOf('function');
+  return callback as () => Promise<unknown>;
+}
+
 // ==================== Generators ====================
 
 /**
@@ -127,7 +137,7 @@ describe('Feature: ai-features, Property 2: Summary generation message count pas
         expect(capturedPanel!.position).toBe(PanelAlignment.messageListFooter);
 
         // Call the getConversationSummary callback to trigger the SDK call
-        await capturedPanel!.configuration.getConversationSummary();
+        await getSummaryCallback(capturedPanel!)();
 
         // Verify the SDK was called with the correct lastNMessages
         expect(getConversationSummarySpy).toHaveBeenCalledOnce();
@@ -184,7 +194,7 @@ describe('Feature: ai-features, Property 3: Summary receiver derivation', () => 
 
         expect(capturedPanel).not.toBeNull();
 
-        await capturedPanel!.configuration.getConversationSummary();
+        await getSummaryCallback(capturedPanel!)();
 
         expect(getConversationSummarySpy).toHaveBeenCalledOnce();
         const callArgs = getConversationSummarySpy.mock.calls[0];
@@ -224,7 +234,7 @@ describe('Feature: ai-features, Property 3: Summary receiver derivation', () => 
 
         expect(capturedPanel).not.toBeNull();
 
-        await capturedPanel!.configuration.getConversationSummary();
+        await getSummaryCallback(capturedPanel!)();
 
         expect(getConversationSummarySpy).toHaveBeenCalledOnce();
         const callArgs = getConversationSummarySpy.mock.calls[0];

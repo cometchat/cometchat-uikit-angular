@@ -19,7 +19,7 @@ import { OutgoingCallService } from '../../services/outgoing-call.service';
 import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { DialogFocusManager } from '../../services/dialog-focus-manager.service';
 import { createMockCall, createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import {
   mockCallAnnouncer,
   MockDialogFocusManager,

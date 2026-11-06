@@ -1,5 +1,14 @@
-import { test, expect, Page, Locator } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import {
+  loginToApp,
+  openConversation,
+  scrollToLatestMessage,
+  getUserName,
+  sendTextAs,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  uniqueTag,
+} from '../helpers';
 
 /**
  * E2E Tests — Thread subscription (follow / unfollow)
@@ -8,16 +17,13 @@ import { loginToApp } from '../helpers';
  * the message action sheet, and the bell control in the thread header. No
  * threads-list component exists, so nothing here exercises one.
  *
- * REQUIRES the feature gate: `enableThreadSubscription: true` must be provided
- * via COMETCHAT_GLOBAL_CONFIG in the sample app, and the Chat SDK must expose
- * the thread API (4.1.14-beta-1+). With the gate off — the shipping default —
- * neither surface renders and every test here degrades to a skip rather than a
- * failure, which is deliberate: a red suite should mean a regression, not a
- * config difference.
+ * The sample app turns the feature on (`enableThreadSubscription: true` in its
+ * app config) and the Chat SDK exposes the thread API, so both surfaces must
+ * render: a missing option or bell is a failure, never a skip.
  *
- * Tolerant by design, matching the rest of this suite: the shared backend is
- * seeded but not exclusively owned, so tests guard on the state they need being
- * present instead of asserting a fixed fixture.
+ * Each test starts from its own message: before login the secondary user sends
+ * a fresh text to the primary user over REST, so the primary user has never
+ * followed its thread and it has no replies.
  *
  * @see ENG-37617
  */
@@ -25,195 +31,174 @@ import { loginToApp } from '../helpers';
 // The action sheet names the ACTION; the header names it too, but as a tooltip.
 const FOLLOW_OPTION = /Subscribe to thread/i;
 const UNFOLLOW_OPTION = /Unsubscribe from thread/i;
+const EITHER_OPTION = /Subscribe to thread|Unsubscribe from thread/i;
 const MUTE_TOOLTIP = 'Unsubscribe from thread';
 const UNMUTE_TOOLTIP = 'Subscribe to thread';
 
 const SUBSCRIPTION_BUTTON = '.cometchat-thread-header__subscription-button';
-const THREAD_HEADER = 'cometchat-thread-header, .cometchat-thread-header';
+
+const mainList = (page: Page) => page.locator('cometchat-messages cometchat-message-list').first();
+const threadPanel = (page: Page) => page.locator('.cometchat-threaded-messages');
+const threadList = (page: Page) => threadPanel(page).locator('cometchat-message-list');
 
 /**
- * Opens a conversation that actually has messages, and proves it opened.
- *
- * Clicking `.cometchat-conversation-item` and then waiting for bubbles — what
- * the rest of this suite does — races: the click can land before the row's
- * handler is wired, leaving the empty state on screen and the wait timing out
- * 15s later. Here the message list mounting is the signal the conversation
- * opened, and a row that yields no messages is skipped rather than failed.
+ * The open action sheet. Its overflow list is portaled to <body> when it opens,
+ * so it is never inside the message row; closed sheets stay in the DOM hidden.
  */
-async function openConversationWithMessages(page: Page): Promise<boolean> {
-  await page.waitForSelector('.cometchat-conversation-item', { timeout: 30_000 });
-  const rows = page.locator('.cometchat-conversation-item');
-  // global-setup seeds fresh users and groups, so the newest rows are often
-  // empty conversations. Scan well past them rather than giving up at five.
-  const attempts = Math.min(await rows.count(), 15);
+const sheet = (page: Page) => page.locator('.cometchat-menu-list__sub-menu-list[data-visible="true"]');
 
-  for (let i = 0; i < attempts; i++) {
-    await rows.nth(i).click();
-    const opened = await page
-      .locator('cometchat-message-list, .cometchat-message-list')
-      .first()
-      .isVisible({ timeout: 8_000 })
-      .catch(() => false);
-    if (!opened) continue;
+/** The main-list row of the most recent message containing `text`. */
+const mainRow = (page: Page, text: string) =>
+  mainList(page).locator('.cometchat-message-list__message').filter({ hasText: text }).last();
 
-    const hasMessages = await page
-      .locator('.cometchat-message-bubble')
-      .first()
-      .isVisible({ timeout: 10_000 })
-      .catch(() => false);
-    if (hasMessages) {
-      await page.waitForTimeout(1500);
-      return true;
-    }
-  }
-  return false;
-}
-
-/** Opens the action sheet on a message bubble and returns whether it opened. */
-async function openMessageOptions(page: Page, bubble: Locator): Promise<boolean> {
-  // Hover the bubble ROOT: `isHovering` lives there, and it is what reveals
-  // `.cometchat-message-bubble__options`. Hovering the inner body — which the
-  // rest of this suite does — never sets it, so the trigger stays hidden.
-  if (!(await bubble.isVisible({ timeout: 5_000 }).catch(() => false))) return false;
-  await bubble.scrollIntoViewIfNeeded().catch(() => undefined);
-  await bubble.hover();
-  await page.waitForTimeout(800);
-
-  const moreBtn = bubble.getByRole('button', { name: /More options/i });
-  if (!(await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false))) return false;
-
-  await moreBtn.click();
-  await page.waitForTimeout(500);
-  return true;
+/**
+ * Opens the action sheet on a message row. The options only appear while the
+ * bubble body is hovered, and a hover that lands mid-render can be dropped, so
+ * retry until the overflow menu shows Copy (every text message has it).
+ */
+async function openMessageOptions(page: Page, row: Locator): Promise<void> {
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  await row.scrollIntoViewIfNeeded();
+  await expect(async () => {
+    await row.locator('.cometchat-message-bubble__body').first().hover();
+    await row.getByRole('button', { name: /More options/i }).click({ timeout: 2_000 });
+    await expect(sheet(page).getByRole('menuitem', { name: 'Copy' })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
 }
 
 async function closeMenu(page: Page): Promise<void> {
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(300);
+  const overlay = page.locator('.cometchat-popover__overlay');
+  if (await overlay.first().isVisible().catch(() => false)) await overlay.first().click();
+  await expect(sheet(page)).toHaveCount(0);
 }
 
-/** True when the kit surfaces are live — i.e. the integrator opted in. */
-async function subscriptionOptionAvailable(page: Page): Promise<boolean> {
-  const follow = page.getByRole('menuitem', { name: FOLLOW_OPTION });
-  const unfollow = page.getByRole('menuitem', { name: UNFOLLOW_OPTION });
-  return (
-    (await follow.isVisible({ timeout: 2_000 }).catch(() => false)) ||
-    (await unfollow.isVisible({ timeout: 2_000 }).catch(() => false))
+/** Follow the message's thread from its action sheet and wait for the title to flip. */
+async function followFromSheet(page: Page, row: Locator): Promise<void> {
+  await openMessageOptions(page, row);
+  await sheet(page).getByRole('menuitem', { name: FOLLOW_OPTION }).click({ force: true });
+  // The server's ack shows as a toast. Until then a second toggle is swallowed (one request in
+  // flight per thread), so a test that unfollows next must wait for it.
+  await expect(page.getByText(/Subscribed\. You'll be notified about new replies/i)).toBeVisible({ timeout: 15_000 });
+  // Toggle is debounced (400ms) before the request goes out; reopen until the ack lands.
+  await expect(async () => {
+    await closeMenu(page);
+    await openMessageOptions(page, row);
+    await expect(sheet(page).getByRole('menuitem', { name: UNFOLLOW_OPTION })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
+  await closeMenu(page);
+}
+
+/**
+ * Start the thread on a message via its "Reply in thread" option, and wait for the thread's
+ * first load: a reply sent before that load completes can be sent but never shown (known UI
+ * Kit defect), which would fail a test for the wrong reason.
+ */
+async function openThread(page: Page, text: string): Promise<void> {
+  const row = mainRow(page, text);
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  const parentId = await row.getAttribute('data-message-id');
+  const firstLoad = page.waitForResponse(
+    (r) => r.request().method() === 'GET' && r.url().includes(`/messages/${parentId}/thread`),
+    { timeout: 30_000 }
   );
+  await expect(async () => {
+    await row.locator('.cometchat-message-bubble__body').first().hover();
+    // A quick option on the row by default; in the overflow sheet if quick options are fewer.
+    const quick = row.getByRole('menuitem', { name: 'Reply in thread' });
+    if (await quick.count()) {
+      await quick.click({ timeout: 2_000 });
+    } else {
+      await row.getByRole('button', { name: 'More options' }).click({ timeout: 2_000 });
+      await sheet(page).getByRole('menuitem', { name: 'Reply in thread' }).click({ timeout: 2_000 });
+    }
+    await expect(threadPanel(page)).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
+  await expect(threadPanel(page).locator('cometchat-thread-header')).toContainText(text);
+  await firstLoad;
 }
 
 test.describe('Thread subscription', () => {
   let page: Page;
-  /** False when no conversation with messages could be opened — tests skip, not fail. */
-  let ready = false;
+  /** The fresh message this test acts on, sent by the secondary user. */
+  let parentText: string;
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
+    parentText = `e2e thread-subscription parent ${uniqueTag()}`;
+    await sendTextAs(SECONDARY_USER, PRIMARY_USER, parentText);
     await loginToApp(page);
-    ready = await openConversationWithMessages(page);
+    await openConversation(page, await getUserName(SECONDARY_USER));
+    await scrollToLatestMessage(page);
   });
 
   // ==================== Action sheet ====================
 
   test('offers the follow option on a message', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const bubble = page.locator('.cometchat-message-bubble').last();
-    test.skip(!(await openMessageOptions(page, bubble)), 'Message options did not open.');
-
-    if (!(await subscriptionOptionAvailable(page))) {
-      test.skip(true, 'Thread subscription gate is off, or the SDK lacks the thread API.');
-      return;
-    }
+    const row = mainRow(page, parentText);
+    await openMessageOptions(page, row);
 
     // One option id, so exactly one of the two titles is present — never both.
-    const follow = await page.getByRole('menuitem', { name: FOLLOW_OPTION }).count();
-    const unfollow = await page.getByRole('menuitem', { name: UNFOLLOW_OPTION }).count();
-    expect(follow + unfollow).toBe(1);
+    await expect(sheet(page).getByRole('menuitem', { name: EITHER_OPTION })).toHaveCount(1);
+    await expect(sheet(page).getByRole('menuitem', { name: FOLLOW_OPTION })).toBeVisible();
   });
 
   test('sits immediately after Reply in thread', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const bubble = page.locator('.cometchat-message-bubble').last();
-    test.skip(!(await openMessageOptions(page, bubble)), 'Message options did not open.');
-    if (!(await subscriptionOptionAvailable(page))) {
-      test.skip(true, 'Thread subscription gate is off.');
-      return;
-    }
+    const row = mainRow(page, parentText);
+    await openMessageOptions(page, row);
 
-    const titles = await page.getByRole('menuitem').allInnerTexts();
+    // Quick options are icon-only, so read every entry's accessible name: the
+    // row's quick options first, then the overflow sheet, in display order.
+    const labels = (items: Element[]) => items.map(item => item.getAttribute('aria-label') ?? '');
+    const titles = [
+      ...(await row.locator('.cometchat-menu-list__main-menu-item').evaluateAll(labels)),
+      ...(await sheet(page).getByRole('menuitem').evaluateAll(labels)),
+    ];
     const replyIdx = titles.findIndex(t => /Reply in thread/i.test(t));
-    test.skip(replyIdx === -1, 'Reply in thread is hidden here, so there is no anchor to sit after.');
+    expect(replyIdx).toBeGreaterThan(-1);
 
     const next = titles[replyIdx + 1] ?? '';
-    expect(next).toMatch(/Subscribe to thread|Unsubscribe from thread/i);
+    expect(next).toMatch(EITHER_OPTION);
   });
 
   test('is offered even on a message with zero replies', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    // The whole point of the option: follow before anyone has answered. Pick a
-    // bubble with no reply-count affordance.
-    const bubbles = page.locator('.cometchat-message-bubble');
-    const count = Math.min(await bubbles.count(), 8);
+    // The whole point of the option: follow before anyone has answered.
+    const row = mainRow(page, parentText);
+    await expect(row).toBeVisible({ timeout: 30_000 });
+    await expect(row.locator('cometchat-thread-view')).toHaveCount(0);
 
-    for (let i = 0; i < count; i++) {
-      const bubble = bubbles.nth(i);
-      const hasReplies = await bubble
-        .locator('[class*="reply-count"], [class*="thread-replies"]')
-        .first()
-        .isVisible({ timeout: 500 })
-        .catch(() => false);
-      if (hasReplies) continue;
-
-      if (!(await openMessageOptions(page, bubble))) continue;
-      if (!(await subscriptionOptionAvailable(page))) {
-        test.skip(true, 'Thread subscription gate is off.');
-        return;
-      }
-      expect(await subscriptionOptionAvailable(page)).toBe(true);
-      await closeMenu(page);
-      return;
-    }
+    await openMessageOptions(page, row);
+    await expect(sheet(page).getByRole('menuitem', { name: EITHER_OPTION })).toBeVisible();
+    await closeMenu(page);
   });
 
   test('title flips to Unsubscribe from thread after following', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const bubble = page.locator('.cometchat-message-bubble').last();
-    test.skip(!(await openMessageOptions(page, bubble)), 'Message options did not open.');
+    const row = mainRow(page, parentText);
+    await openMessageOptions(page, row);
 
-    const follow = page.getByRole('menuitem', { name: FOLLOW_OPTION });
-    if (!(await follow.isVisible({ timeout: 2_000 }).catch(() => false))) {
-      test.skip(true, 'Gate off, or this thread is already followed.');
-      return;
-    }
-
+    const follow = sheet(page).getByRole('menuitem', { name: FOLLOW_OPTION });
+    await expect(follow).toBeVisible();
     await follow.click({ force: true });
-    // Toggle is debounced (400ms) before the request goes out; allow the ack.
-    await page.waitForTimeout(2500);
 
-    test.skip(!(await openMessageOptions(page, bubble)), 'Could not reopen the sheet to read the flipped title.');
-    await expect(page.getByRole('menuitem', { name: UNFOLLOW_OPTION })).toBeVisible({
-      timeout: 5_000,
-    });
+    // Toggle is debounced (400ms) before the request goes out; reopen until the ack lands.
+    await expect(async () => {
+      await closeMenu(page);
+      await openMessageOptions(page, row);
+      await expect(sheet(page).getByRole('menuitem', { name: UNFOLLOW_OPTION })).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
     await closeMenu(page);
   });
 
   test('unfollowing confirms with a toast that does not promise permanence', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const bubble = page.locator('.cometchat-message-bubble').last();
-    test.skip(!(await openMessageOptions(page, bubble)), 'Message options did not open.');
+    const row = mainRow(page, parentText);
+    await followFromSheet(page, row);
 
-    const unfollow = page.getByRole('menuitem', { name: UNFOLLOW_OPTION });
-    if (!(await unfollow.isVisible({ timeout: 2_000 }).catch(() => false))) {
-      test.skip(true, 'Nothing followed to unfollow here.');
-      return;
-    }
+    await openMessageOptions(page, row);
+    await sheet(page).getByRole('menuitem', { name: UNFOLLOW_OPTION }).click({ force: true });
 
-    await unfollow.click({ force: true });
-    await page.waitForTimeout(2500);
-
-    // Copy must say replies stop, not that the user is permanently opted out —
-    // replying or being mentioned re-subscribes them.
-    await expect(page.getByText(/won.t be notified about new replies/i)).toBeVisible({
+    // Copy must say replies stop for now, not that the user is permanently opted
+    // out — replying or being mentioned re-subscribes them.
+    await expect(page.getByText(/Notifications are off until you reply or are mentioned/i)).toBeVisible({
       timeout: 6_000,
     });
   });
@@ -221,23 +206,7 @@ test.describe('Thread subscription', () => {
   // ==================== Thread header ====================
 
   test('header renders the bell in the top bar, not the reply-count row', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const threadEntry = page
-      .locator('.cometchat-message-bubble__reply-count, [class*="reply-count"], [class*="thread-replies"]')
-      .first();
-    test.skip(
-      !(await threadEntry.isVisible({ timeout: 5_000 }).catch(() => false)),
-      'No thread with replies in this conversation.'
-    );
-
-    await threadEntry.click();
-    await page.waitForSelector(THREAD_HEADER, { timeout: 10_000 });
-
-    const bell = page.locator(SUBSCRIPTION_BUTTON);
-    if (!(await bell.isVisible({ timeout: 3_000 }).catch(() => false))) {
-      test.skip(true, 'Thread subscription gate is off.');
-      return;
-    }
+    await openThread(page, parentText);
 
     // Beside the close button in the top-bar actions, per the design.
     await expect(page.locator(`.cometchat-thread-header__top-bar-actions ${SUBSCRIPTION_BUTTON}`)).toBeVisible();
@@ -245,23 +214,9 @@ test.describe('Thread subscription', () => {
   });
 
   test('bell tooltip and accessible name are the same string', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const threadEntry = page
-      .locator('.cometchat-message-bubble__reply-count, [class*="reply-count"], [class*="thread-replies"]')
-      .first();
-    test.skip(
-      !(await threadEntry.isVisible({ timeout: 5_000 }).catch(() => false)),
-      'No thread with replies in this conversation.'
-    );
-
-    await threadEntry.click();
-    await page.waitForSelector(THREAD_HEADER, { timeout: 10_000 });
-
+    await openThread(page, parentText);
     const bell = page.locator(SUBSCRIPTION_BUTTON);
-    if (!(await bell.isVisible({ timeout: 3_000 }).catch(() => false))) {
-      test.skip(true, 'Thread subscription gate is off.');
-      return;
-    }
+    await expect(bell).toBeVisible();
 
     const title = await bell.getAttribute('title');
     const ariaLabel = await bell.getAttribute('aria-label');
@@ -272,52 +227,23 @@ test.describe('Thread subscription', () => {
   });
 
   test('bell flips state, tooltip and aria-pressed together', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const threadEntry = page
-      .locator('.cometchat-message-bubble__reply-count, [class*="reply-count"], [class*="thread-replies"]')
-      .first();
-    test.skip(
-      !(await threadEntry.isVisible({ timeout: 5_000 }).catch(() => false)),
-      'No thread with replies in this conversation.'
-    );
-
-    await threadEntry.click();
-    await page.waitForSelector(THREAD_HEADER, { timeout: 10_000 });
-
+    await openThread(page, parentText);
     const bell = page.locator(SUBSCRIPTION_BUTTON);
-    if (!(await bell.isVisible({ timeout: 3_000 }).catch(() => false))) {
-      test.skip(true, 'Thread subscription gate is off.');
-      return;
-    }
+    await expect(bell).toBeVisible();
 
     const before = await bell.getAttribute('title');
     await bell.click();
-    // Optimistic, so the label flips immediately — no need to wait for the ack.
-    await page.waitForTimeout(600);
 
+    // Optimistic, so the label flips immediately — no need to wait for the ack.
+    await expect(bell).not.toHaveAttribute('title', before ?? '');
     const after = await bell.getAttribute('title');
-    expect(after).not.toBe(before);
     expect(await bell.getAttribute('aria-pressed')).toBe(String(after === MUTE_TOOLTIP));
   });
 
   test('control stays enabled in every state', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const threadEntry = page
-      .locator('.cometchat-message-bubble__reply-count, [class*="reply-count"], [class*="thread-replies"]')
-      .first();
-    test.skip(
-      !(await threadEntry.isVisible({ timeout: 5_000 }).catch(() => false)),
-      'No thread with replies in this conversation.'
-    );
-
-    await threadEntry.click();
-    await page.waitForSelector(THREAD_HEADER, { timeout: 10_000 });
-
+    await openThread(page, parentText);
     const bell = page.locator(SUBSCRIPTION_BUTTON);
-    if (!(await bell.isVisible({ timeout: 3_000 }).catch(() => false))) {
-      test.skip(true, 'Thread subscription gate is off.');
-      return;
-    }
+    await expect(bell).toBeVisible();
 
     // UNKNOWN renders as un-followed and ENABLED — a disabled control on a
     // deep-linked thread would be a dead end.
@@ -327,77 +253,32 @@ test.describe('Thread subscription', () => {
   // ==================== The two surfaces agreeing ====================
 
   test('following from the header is reflected in the in-thread action sheet', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-    const threadEntry = page
-      .locator('.cometchat-message-bubble__reply-count, [class*="reply-count"], [class*="thread-replies"]')
-      .first();
-    test.skip(
-      !(await threadEntry.isVisible({ timeout: 5_000 }).catch(() => false)),
-      'No thread with replies in this conversation.'
-    );
+    await openThread(page, parentText);
 
-    await threadEntry.click();
-    await page.waitForSelector(THREAD_HEADER, { timeout: 10_000 });
-
-    const bell = page.locator(SUBSCRIPTION_BUTTON);
-    if (!(await bell.isVisible({ timeout: 3_000 }).catch(() => false))) {
-      test.skip(true, 'Thread subscription gate is off.');
-      return;
-    }
+    // A reply inside the thread gives the in-thread sheet something to open on.
+    const replyText = `e2e thread-subscription reply ${uniqueTag()}`;
+    await threadPanel(page).locator('cometchat-message-composer [contenteditable="true"]').first().click();
+    await page.keyboard.type(replyText);
+    await page.keyboard.press('Enter');
+    const reply = threadList(page).locator('.cometchat-message-list__message').filter({ hasText: replyText }).last();
+    await expect(reply).toBeVisible({ timeout: 30_000 });
 
     // Drive the header into the followed state.
+    const bell = page.locator(SUBSCRIPTION_BUTTON);
+    await expect(bell).toBeVisible();
     if ((await bell.getAttribute('title')) === UNMUTE_TOOLTIP) {
       await bell.click();
-      await page.waitForTimeout(2500);
     }
-    expect(await bell.getAttribute('title')).toBe(MUTE_TOOLTIP);
+    await expect(bell).toHaveAttribute('title', MUTE_TOOLTIP, { timeout: 5_000 });
 
-    // A reply inside the thread offers the option too, targeting the PARENT
-    // thread — so it must already read as followed, with no refetch.
-    const reply = page.locator('.cometchat-message-bubble').last();
-    test.skip(!(await openMessageOptions(page, reply)), 'Could not open options on an in-thread reply.');
-
-    if (await subscriptionOptionAvailable(page)) {
-      await expect(page.getByRole('menuitem', { name: UNFOLLOW_OPTION })).toBeVisible({
-        timeout: 5_000,
-      });
-    }
+    // The reply offers the option too, targeting the PARENT thread — so it must
+    // already read as followed, with no refetch.
+    await openMessageOptions(page, reply);
+    await expect(sheet(page).getByRole('menuitem', { name: UNFOLLOW_OPTION })).toBeVisible({ timeout: 5_000 });
     await closeMenu(page);
   });
+
   // ==================== QA regressions ====================
-
-  /**
-   * Opens a 1:1 chat via the Users tab and proves the message list mounted.
-   *
-   * Deliberately not taken from the conversation list: a row there may be a
-   * group, and this test is only meaningful against a direct chat.
-   */
-  async function openOneToOneChat(): Promise<boolean> {
-    const usersTab = page
-      .locator('[data-testid="tab-users"], button:has-text("Users"), .cometchat-tabs__tab:has-text("Users")')
-      .first();
-    if (!(await usersTab.isVisible({ timeout: 5_000 }).catch(() => false))) return false;
-    await usersTab.click();
-
-    const list = page.locator('cometchat-users, .cometchat-users');
-    if (!(await list.first().isVisible({ timeout: 15_000 }).catch(() => false))) return false;
-
-    const rows = page.locator('.cometchat-user-item, cometchat-user-item');
-    const attempts = Math.min(await rows.count(), 8);
-    for (let i = 0; i < attempts; i++) {
-      await rows.nth(i).click();
-      const opened = await page
-        .locator('cometchat-message-list, .cometchat-message-list')
-        .first()
-        .isVisible({ timeout: 8_000 })
-        .catch(() => false);
-      if (opened) {
-        await page.waitForTimeout(1200);
-        return true;
-      }
-    }
-    return false;
-  }
 
   /**
    * The option was gated on the conversation being a group, so it never
@@ -405,26 +286,13 @@ test.describe('Thread subscription', () => {
    * thread's replies reach you, which is as true in a 1:1 as in a group.
    */
   test('is offered in a 1:1 chat, not only in a group', async () => {
-    test.skip(!(await openOneToOneChat()), 'No 1:1 chat could be opened.');
-
-    // A direct chat may legitimately be empty; send nothing, just find a bubble.
-    const bubble = page.locator('.cometchat-message-bubble').last();
-    test.skip(
-      !(await bubble.isVisible({ timeout: 8_000 }).catch(() => false)),
-      'The 1:1 chat has no messages to act on.'
-    );
-    test.skip(!(await openMessageOptions(page, bubble)), 'Message options did not open.');
-
-    if (!(await subscriptionOptionAvailable(page))) {
-      test.skip(true, 'Thread subscription gate is off, or the SDK lacks the thread API.');
-      return;
-    }
+    // beforeEach opened the 1:1 chat with the secondary user.
+    const row = mainRow(page, parentText);
+    await openMessageOptions(page, row);
 
     // Exactly one of the two titles, same as in a group — the 1:1 case is not
     // a degraded variant, it is the same control.
-    const follow = await page.getByRole('menuitem', { name: FOLLOW_OPTION }).count();
-    const unfollow = await page.getByRole('menuitem', { name: UNFOLLOW_OPTION }).count();
-    expect(follow + unfollow).toBe(1);
+    await expect(sheet(page).getByRole('menuitem', { name: EITHER_OPTION })).toHaveCount(1);
     await closeMenu(page);
   });
 
@@ -435,40 +303,26 @@ test.describe('Thread subscription', () => {
    * QA's ENG-38910. Checked on a top-level send, which is the case that was
    * missed: the composer only stamped replies.
    */
-  test('a just-sent message already reads as followed', async () => {
-    test.skip(!ready, 'No conversation with messages available to open.');
-
+  test('a just-sent message already reads as followed @quarantine (ENG-40630)', async () => {
+    // @quarantine: intermittent UI Kit defect (ENG-40630). The sent message appears, then the
+    // list sometimes jumps back to an older page and the message leaves view, so it can't be
+    // opened. Failed 1 of ~15 runs (both attempts), so it can't be test.fail.
     const composer = page.locator('cometchat-message-composer').first();
     const input = composer.locator('[contenteditable="true"]').first();
-    test.skip(
-      !(await input.isVisible({ timeout: 8_000 }).catch(() => false)),
-      'Composer is not available in this conversation.'
-    );
+    await expect(input).toBeVisible({ timeout: 8_000 });
 
-    const before = await page.locator('.cometchat-message-bubble').count();
+    const sentText = `e2e thread-subscription sent ${uniqueTag()}`;
     await input.click();
-    await page.keyboard.type(`e2e thread-subscription ${Date.now()}`);
+    await page.keyboard.type(sentText);
     await page.keyboard.press('Enter');
 
-    // Wait for the bubble to actually land rather than a fixed sleep.
-    await expect
-      .poll(() => page.locator('.cometchat-message-bubble').count(), { timeout: 15_000 })
-      .toBeGreaterThan(before);
-    await page.waitForTimeout(1200);
-
-    const sent = page.locator('.cometchat-message-bubble').last();
-    test.skip(!(await openMessageOptions(page, sent)), 'Options did not open on the sent message.');
-
-    if (!(await subscriptionOptionAvailable(page))) {
-      test.skip(true, 'Thread subscription gate is off, or the SDK lacks the thread API.');
-      return;
-    }
+    const sent = mainRow(page, sentText);
+    await expect(sent).toBeVisible({ timeout: 15_000 });
+    await openMessageOptions(page, sent);
 
     // Reads the state the server already holds, without waiting for a refetch.
-    await expect(page.getByRole('menuitem', { name: UNFOLLOW_OPTION })).toBeVisible({
-      timeout: 5_000,
-    });
-    expect(await page.getByRole('menuitem', { name: FOLLOW_OPTION }).count()).toBe(0);
+    await expect(sheet(page).getByRole('menuitem', { name: UNFOLLOW_OPTION })).toBeVisible({ timeout: 5_000 });
+    await expect(sheet(page).getByRole('menuitem', { name: FOLLOW_OPTION })).toHaveCount(0);
     await closeMenu(page);
   });
 });

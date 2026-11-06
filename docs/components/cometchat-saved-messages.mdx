@@ -113,6 +113,8 @@ export class SavedEmptyDemoComponent {}
 | `emptyView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in empty state |
 | `errorView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in error state |
 | `loadingView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in loading shimmer |
+| `itemView` | `TemplateRef<{ $implicit: CometChat.BaseMessage; message: CometChat.BaseMessage }>` | `undefined` | Replaces a whole row, along with its click and keyboard affordances. The message arrives as `$implicit` and again as `message` |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters applied to each row's text. Falls back to the global config's set when unset |
 | `messagesRequestBuilder` | `CometChat.MessagesRequestBuilder` | `undefined` | Custom request builder. Used as supplied apart from `setSaved`, which is re-asserted. Do not scope it to a uid/guid — saves span conversations |
 
 ## Events

@@ -1,0 +1,148 @@
+---
+title: "CometChatAttachmentTileComponent"
+description: "Internal presentational tile that renders one staged attachment, with its upload status, inside the message composer's attachment tray"
+---
+
+The `CometChatAttachmentTileComponent` (selector `cometchat-attachment-tile`) renders a single staged attachment in the message composer's attachment tray. It shows the file by type (an image/video square or a file/audio card), overlays the current upload status, and exposes cancel, remove, retry and open actions.
+
+<Note>
+  This is an **internal** component. It is not exported from `@cometchat/chat-uikit-angular` (it is absent from the components barrel used by `public-api.ts`), so you cannot import it into your own app. It is rendered by [`CometChatAttachmentTray`](/components/cometchat-attachment-tray), which is itself rendered by [`CometChatMessageComposer`](/components/cometchat-message-composer). This page documents its behaviour and styling hooks for theming and reference.
+</Note>
+
+## Overview
+
+- **Rendering by type**: `image` and `video` render as a square thumbnail; `file` renders as a card with a coloured file-type icon, the file name and a meta line such as `PDF · 2.4 MB`; `audio` renders as a playable card
+- **Video tiles**: Show a centred play affordance and an `mm:ss` duration badge once the duration is known
+- **Audio tiles**: Play/pause button, seekable bar and `current/duration` time; playback is enabled only after the upload succeeds, and only one tray audio tile plays at a time
+- **Upload status**: Progress ring while uploading, a retry badge when a retryable upload failed, and an error badge when the file was rejected
+- **Top-right ✕ button**: Revealed on hover/focus; cancels the upload while in flight, otherwise removes the tile
+- **Open preview**: Uploaded image and video tiles are clickable (and keyboard-activatable with Enter/Space) to open a fullscreen preview
+- **Error tooltip**: A rejected tile shows its upload error in a tooltip on hover/focus, clamped inside the composer's width
+
+## Usage in Context
+
+The tile is not used directly. The tray renders one tile per staged attachment and maps each output to `MediaUploadTrayService`:
+
+```html
+<!-- cometchat-attachment-tray.component.html (internal) -->
+@for (t of tray.tiles(); track t.fileId) {
+  <div class="cometchat-attachment-tray__item" role="listitem">
+    <cometchat-attachment-tile
+      [tile]="t"
+      (cancelClick)="tray.cancel($event)"
+      (removeClick)="tray.remove($event)"
+      (retryClick)="tray.retry($event)"
+      (tileClick)="openViewer($event)"
+    ></cometchat-attachment-tile>
+  </div>
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `tile` | `AttachmentFile` | **required** | The staged attachment to render: its file, type (`'image' \| 'video' \| 'audio' \| 'file'`), name, size, upload status, progress and optional error message |
+
+`AttachmentFile` is exported as a type from `@cometchat/chat-uikit-angular` (via the message composer). The fields the tile reads are `type`, `name`, `size`, `mimeType`, `file`, `thumbnailUrl`, `durationSec`, `uploadProgress`, `status` and `errorMessage`.
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `cancelClick` | `AttachmentFile` | Emitted when the ✕ button is clicked while the tile is in flight (`uploading` or `pending`) |
+| `removeClick` | `AttachmentFile` | Emitted when the ✕ button is clicked in any other status |
+| `retryClick` | `AttachmentFile` | Emitted when the retry badge on a `failed` tile is clicked |
+| `tileClick` | `AttachmentFile` | Emitted when an `uploaded` image or video tile is clicked or activated with Enter/Space. Not emitted for file or audio tiles |
+
+## Upload States
+
+The tile maps `tile.status` (`AttachmentTileStatus`) to a centre affordance:
+
+| Status | Affordance | What the tile shows |
+|--------|-----------|---------------------|
+| `uploading`, `pending` | Progress | Dark scrim with a progress ring. The ring spins indeterminately until `uploadProgress` is greater than `0`, then fills by percentage. The ✕ button cancels |
+| `uploaded` | None | No overlay. Image/video tiles become clickable; audio tiles become playable. The ✕ button removes |
+| `failed` | Retry | Red border, a centred retry badge, and the inline text "Tap to retry" in place of the meta line |
+| `rejected`, `error` | Error | Red border, a centred error badge, and the inline text "Upload failed". Hovering or focusing shows a tooltip with `errorMessage`, falling back to "Upload failed" |
+| `cancelled` | None | No overlay |
+
+A `rejected` tile is terminal: it has no retry control and can only be removed.
+
+## Styling with CSS Variables
+
+The tile uses component-scoped CSS variables with literal fallbacks. Some are also set in the kit's global stylesheet (`css-variables.css`); where that is the case, the global value is what you see by default.
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-attachment-tile-size` | Tile height and image/video square size | `72px` (global; fallback `54px`) |
+| `--cometchat-attachment-tile-play-size` | Video play disc size | `28px` (global; fallback `32px`) |
+| `--cometchat-attachment-tile-play-icon-size` | Video play icon size | `24px` |
+| `--cometchat-attachment-tile-card-width` | File and audio card width | `200px` |
+| `--cometchat-attachment-tile-card-height` | File card height | `62px` |
+| `--cometchat-attachment-tile-card-padding` | File card padding | `10px` |
+| `--cometchat-attachment-tile-card-gap` | Gap inside file and audio cards | `10px` |
+| `--cometchat-attachment-tile-type-icon-size` | File-type icon box size | `40px` |
+| `--cometchat-attachment-tile-type-glyph-size` | File-type icon image size | `32px` |
+| `--cometchat-attachment-tile-name-font-size` | File name font size | `12px` |
+| `--cometchat-attachment-tile-sub-font-size` | Meta line font size | `12px` |
+| `--cometchat-attachment-tile-audio-button-size` | Audio play/pause button size | `44px` |
+| `--cometchat-attachment-tile-audio-icon-size` | Audio play/pause icon size | `20px` (global; fallback `28px`) |
+| `--cometchat-attachment-tile-audio-bar-height` | Audio seek bar height | `6px` (global; fallback `4px`) |
+| `--cometchat-attachment-tile-audio-bar-track` | Audio seek bar track colour | 14% of `--cometchat-text-color-primary` |
+| `--cometchat-attachment-tile-audio-thumb-size` | Audio seek knob size | `18px` (global; fallback `10px`) |
+| `--cometchat-attachment-tile-audio-thumb-color` | Audio seek knob colour | `--cometchat-static-white` |
+| `--cometchat-attachment-tile-overlay-bg` | Scrim behind the progress ring | `rgba(0, 0, 0, 0.55)` (global; `0.65` in dark theme; fallback 75% black) |
+| `--cometchat-attachment-tile-loader-track` | Progress ring track colour | `rgba(255, 255, 255, 0.3)` (global; fallback `0.35`) |
+| `--cometchat-attachment-tile-loader-color` | Progress ring fill colour | `#ffffff` |
+| `--cometchat-attachment-tile-status-badge-size` | Retry/error badge size | `24px` |
+| `--cometchat-attachment-tile-badge-size` | ✕ button size | `22px` |
+| `--cometchat-attachment-tile-badge-offset` | ✕ button top/right offset | `-6px` |
+| `--cometchat-attachment-tile-badge-bg` | ✕ button background | Dark grey (70% black) |
+| `--cometchat-attachment-tile-badge-bg-hover` | ✕ button hover background | Darker grey (85% black) |
+| `--cometchat-attachment-tile-close-icon-size` | ✕ icon size | `12px` (global; fallback `8px`) |
+| `--cometchat-attachment-tile-tooltip-background` | Error tooltip background | `--cometchat-neutral-color-900` (light), `--cometchat-neutral-color-300` (dark) |
+| `--cometchat-attachment-tile-tooltip-color` | Error tooltip text colour | `--cometchat-static-white` |
+| `--cometchat-attachment-tile-tooltip-max-width` | Error tooltip max width | `320px` |
+| `--cometchat-attachment-tile-tooltip-padding` | Error tooltip padding | `8px 12px` |
+| `--cometchat-attachment-tile-tooltip-gap` | Gap between tooltip and tile | `8px` |
+| `--cometchat-attachment-tile-tooltip-z-index` | Error tooltip z-index | `1000` |
+
+It also consumes shared theme tokens, including `--cometchat-error-color` (error border and text), `--cometchat-primary-color` (audio button), `--cometchat-border-color-default`, `--cometchat-background-color-03` (card background), `--cometchat-text-color-primary`, `--cometchat-text-color-secondary` and `--cometchat-focus-ring-color`.
+
+```css
+cometchat-message-composer {
+  --cometchat-attachment-tile-size: 64px;
+  --cometchat-attachment-tile-card-width: 240px;
+  --cometchat-attachment-tile-loader-color: #6852d6;
+}
+```
+
+### BEM Classes
+
+| Class | Element |
+|-------|---------|
+| `.cometchat-attachment-tile` | Root; modifiers `--image`, `--video`, `--file`, `--audio`, `--uploading`, `--clickable` |
+| `.cometchat-attachment-tile__media` | Image/video square; `--error` modifier |
+| `.cometchat-attachment-tile__play`, `__duration` | Video play disc and duration badge |
+| `.cometchat-attachment-tile__card` | File/audio card; `--audio` and `--error` modifiers |
+| `.cometchat-attachment-tile__leading`, `__type-image` | File-type icon box and icon |
+| `.cometchat-attachment-tile__name`, `__sub`, `__error-text` | File name, meta line, inline status text |
+| `.cometchat-attachment-tile__audio-button`, `__audio-bar`, `__audio-status` | Audio controls |
+| `.cometchat-attachment-tile__overlay`, `__loader-ring` | Scrim and progress ring (`--indeterminate` modifier) |
+| `.cometchat-attachment-tile__status-badge` | Retry/error badge; `--retry` and `--error` modifiers |
+| `.cometchat-attachment-tile__close` | ✕ cancel/remove button |
+| `.cometchat-attachment-tile__tooltip` | Error tooltip; `--placed` modifier once positioned |
+
+## Accessibility
+
+- Clickable image/video tiles get `role="button"`, `tabindex="0"` and an `aria-label` of the file name
+- The ✕ button is labelled "cancel" while uploading and "remove" otherwise (localized)
+- The retry badge is a labelled button; the error badge has `role="img"` with a localized "Upload failed" label
+- The error tooltip uses `role="tooltip"` and also opens on keyboard focus
+- Focus rings use `--cometchat-focus-ring-width` and `--cometchat-focus-ring-color`
+
+## Related Components
+
+- [CometChatAttachmentTray](/components/cometchat-attachment-tray) — renders the tiles
+- [CometChatMessageComposer](/components/cometchat-message-composer) — hosts the tray

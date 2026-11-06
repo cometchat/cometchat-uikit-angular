@@ -125,9 +125,12 @@
 }
 
 .cometchat-attachment-tile__name {
-  font-size: var(--cometchat-attachment-tile-name-font-size, 12px);
-  font-weight: 500;
-  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  /* Whole-font hook; the existing size hook still works inside the default. Weight/size = caption1-medium. */
+  font: var(
+    --cometchat-attachment-tile-name-font,
+    500 var(--cometchat-attachment-tile-name-font-size, 12px) var(--cometchat-font-family, Inter, sans-serif)
+  );
+  line-height: inherit;
   color: var(--cometchat-text-color-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -137,8 +140,12 @@
 /* "PDF · 2.4 MB". The extension is already uppercased by the view model, so no text-transform —
    it would also uppercase the unit and give "2.4 MB" -> "2.4 MB" only by luck of the token. */
 .cometchat-attachment-tile__sub {
-  font-size: var(--cometchat-attachment-tile-sub-font-size, 11px);
-  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  /* Whole-font hook; the existing size hook still works inside the default. Weight/size = caption1-regular. */
+  font: var(
+    --cometchat-attachment-tile-sub-font,
+    400 var(--cometchat-attachment-tile-sub-font-size, 12px) var(--cometchat-font-family, Inter, sans-serif)
+  );
+  line-height: inherit;
   color: var(--cometchat-text-color-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -508,9 +515,7 @@
      make the tooltip a white patch, so the dark override below swaps it for neutral-300 (#383838). */
   background: var(--cometchat-attachment-tile-tooltip-background, var(--cometchat-neutral-color-900, #141414));
   color: var(--cometchat-attachment-tile-tooltip-color, var(--cometchat-static-white, #ffffff));
-  font-family: var(--cometchat-font-family);
-  font-size: 12px;
-  font-weight: 600;
+  font: var(--cometchat-attachment-tile-tooltip-font, var(--cometchat-font-caption1-medium));
   line-height: 18px;
   /* Multi-word API errors wrap rather than overflow; the tile itself is only 54px wide. */
   white-space: normal;

@@ -149,7 +149,7 @@ function isActiveCall(call: any, activeCall: any | null): boolean {
  */
 function buildAriaLabel(call: any, loggedInUser: { getUid(): string }): string {
   const otherParty = verifyCallUser(call, loggedInUser);
-  const name = otherParty?.getName() || '';
+  const name = otherParty?.getName?.() || '';
   const typeLabel = call.type === 'video' ? 'Video' : 'Audio';
   return `${name}, ${typeLabel} call`;
 }

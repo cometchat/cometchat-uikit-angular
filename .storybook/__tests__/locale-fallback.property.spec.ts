@@ -78,7 +78,7 @@ describe('Property 6: Locale fallback on unsupported locale', () => {
           fc.string({ minLength: 1, maxLength: 20 }).filter((s) => !availableLocales.has(s)),
           (locale) => {
             applyLocaleWithFallback(locale);
-            return CometChatLocalize.getCurrentLanguage() === 'en-US';
+            expect(CometChatLocalize.getCurrentLanguage()).toBe('en-US');
           }
         ),
         { numRuns: 100 }
@@ -98,7 +98,8 @@ describe('Property 6: Locale fallback on unsupported locale', () => {
       fc.property(unsupportedArb, (locale) => {
         applyLocaleWithFallback(locale);
         const result = CometChatLocalize.getLocalizedString('conversation_chat_title');
-        return typeof result === 'string' && result.length > 0;
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
       }),
       { numRuns: 100 }
     );

@@ -92,7 +92,10 @@ describe('CometChatFlagMessageDialogComponent', () => {
 
   function clickButton(wrapper: HTMLElement | null): void {
     const btn = wrapper?.querySelector('button');
-    btn?.click();
+    if (!btn) {
+      throw new Error('clickButton: button is not rendered');
+    }
+    btn.click();
     fixture.detectChanges();
   }
 
@@ -108,11 +111,12 @@ describe('CometChatFlagMessageDialogComponent', () => {
 
   function simulateRemarkInput(text: string): void {
     const textarea = getRemarkTextarea();
-    if (textarea) {
-      textarea.value = text;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      fixture.detectChanges();
+    if (!textarea) {
+      throw new Error('simulateRemarkInput: remark textarea is not rendered');
     }
+    textarea.value = text;
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
   }
 
   /** Set a selected reason so handleSubmitClick() doesn't bail early */
@@ -602,16 +606,29 @@ describe('CometChatFlagMessageDialogComponent', () => {
       expect(textarea?.getAttribute('aria-describedby')).toBe('remark-character-count');
     });
 
-    it('should have aria-hidden="true" on the decorative icon (if present)', () => {
+    it('should render no decorative icon when the submit button is idle', () => {
       fixture.detectChanges();
-      // The icon wrapper is optional in the current template — skip if not present
-      const icon = el.querySelector('[aria-hidden="true"]');
-      // Just verify no aria-hidden elements have interactive roles
-      if (icon) {
-        const role = icon.getAttribute('role');
-        expect(['button', 'link', 'checkbox'].includes(role ?? '')).toBe(false);
+      expect(component.isLoading()).toBe(false);
+      expect(getSubmitButtonWrapper()?.querySelector('.cometchat-button__loading-view')).toBeNull();
+      // No hidden-from-AT element may wrap any interactive control of the dialog
+      const hidden = Array.from(el.querySelectorAll('[aria-hidden="true"]'));
+      for (const h of hidden) {
+        expect(h.querySelector('button, textarea, input, [tabindex]')).toBeNull();
       }
-      expect(true).toBe(true); // always pass — icon is optional
+    });
+
+    it('should mark the decorative loading icon aria-hidden="true" when it is shown', () => {
+      component.isLoading.set(true);
+      fixture.detectChanges();
+      const icon = getSubmitButtonWrapper()?.querySelector('.cometchat-button__loading-view');
+      expect(icon).not.toBeNull();
+      expect(icon!.getAttribute('aria-hidden')).toBe('true');
+      // Decorative: no interactive role and not focusable
+      expect(['button', 'link', 'checkbox']).not.toContain(icon!.getAttribute('role') ?? '');
+      expect(icon!.hasAttribute('tabindex')).toBe(false);
+      // The loading state is still announced through screen-reader-only text
+      const srText = getSubmitButtonWrapper()?.querySelector('.cometchat-button__sr-only');
+      expect(srText?.textContent?.trim()).toBeTruthy();
     });
   });
 

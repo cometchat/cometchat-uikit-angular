@@ -19,7 +19,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 import { CometChatMessageHeaderComponent } from './cometchat-message-header.component';
 import { CallButtonsService } from '../../services/call-buttons.service';
@@ -273,6 +273,19 @@ type Story = StoryObj<CometChatMessageHeaderComponent>;
 // ============================================
 // Stories
 // ============================================
+
+/** Default message header: a 1-on-1 conversation with an online user. */
+export const Default: Story = {
+  render: headerRenderUser(onlineUser),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Default header for a 1-on-1 conversation: avatar, name, online status, back button and voice/video call buttons. All display controls are wired to the Controls panel.',
+      },
+    },
+  },
+};
 
 /** Message header for a 1-on-1 user conversation showing online status and call actions. */
 export const UserChatHeader: Story = {

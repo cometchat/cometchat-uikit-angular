@@ -61,7 +61,6 @@ function makeSelf(overrides: Record<string, any> = {}) {
     cdr: { markForCheck: vi.fn() },
     getPluralFileType: vi.fn().mockReturnValue('photos'),
     closeAllPopups: vi.fn(),
-    closeAllPopoverInstances: vi.fn(),
     ...overrides,
   };
 }

@@ -42,15 +42,17 @@
 
   <!-- ==================== Message Bubble Section ==================== -->
   <div class="cometchat-message-information__message-section">
-    <cometchat-message-bubble
-      [message]="message"
-      [alignment]="1"
-      [hideReceipts]="true"
-      [hideAvatar]="true"
-      [hideTimestamp]="false"
-      [textFormatters]="effectiveTextFormatters()"
-      [dateFormat]="messageBubbleDateFormat">
-    </cometchat-message-bubble>
+    @if (message) {
+      <cometchat-message-bubble
+        [message]="message"
+        [alignment]="1"
+        [hideReceipts]="true"
+        [hideAvatar]="true"
+        [hideTimestamp]="false"
+        [textFormatters]="effectiveTextFormatters()"
+        [dateFormat]="messageBubbleDateFormat">
+      </cometchat-message-bubble>
+    }
   </div>
 
   <!-- ==================== Content Section ==================== -->

@@ -126,6 +126,8 @@ export class PinnedOptionsDemoComponent {
 | `emptyView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in empty state |
 | `errorView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in error state |
 | `loadingView` | `TemplateRef<unknown>` | `undefined` | Replaces the built-in loading shimmer |
+| `itemView` | `TemplateRef<{ $implicit: CometChat.BaseMessage; message: CometChat.BaseMessage }>` | `undefined` | Replaces a whole row, not just its bubble — the row's click and keyboard affordances go with it. The message arrives as `$implicit` and again as `message` |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters applied to each row's text (mentions, links, markdown, or custom). Falls back to the global config's set when unset |
 | `messagesRequestBuilder` | `CometChat.MessagesRequestBuilder` | `undefined` | Custom request builder. Used as supplied apart from `setPinned` and the conversation scope, which are re-asserted |
 | `quickOptionsCount` | `number` | `2` | How many options sit outside the overflow menu as bare icons |
 | `hideUnpinMessageOption` | `boolean` | `false` | Hides Unpin. Role gating still wins — see [Permissions](#permissions) |
@@ -135,6 +137,7 @@ export class PinnedOptionsDemoComponent {
 | `hideTranslateMessageOption` | `boolean` | `false` | Hides Translate |
 | `hideCopyMessageOption` | `boolean` | `false` | Hides Copy |
 | `hideFlagMessageOption` | `boolean` | `false` | Hides Report |
+| `hideMessagePrivatelyOption` | `boolean` | `false` | Hides Message Privately (only offered in groups, on other members' messages) |
 
 ## Events
 

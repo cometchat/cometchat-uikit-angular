@@ -221,7 +221,7 @@ export class CometChatEmojiKeyboardComponent implements OnInit, AfterViewInit, O
     if (count > 0) {
       const message = getLocalizedString('accessibility_emoji_results').replace(
         '{count}',
-        count.toString()
+        () => count.toString()
       );
       this.liveAnnouncer.announce(message, 'polite');
       // Reset focus to first emoji in search results

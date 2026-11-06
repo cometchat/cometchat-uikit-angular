@@ -336,8 +336,8 @@ export class CometChatFullScreenViewerComponent implements OnInit, OnChanges, Af
     if (!this.isGalleryMode) return;
     const text =
       getLocalizedString('accessibility_gallery_position')
-        ?.replace('{current}', (this.currentIndex + 1).toString())
-        ?.replace('{total}', this.attachments.length.toString()) ||
+        ?.replace('{current}', () => (this.currentIndex + 1).toString())
+        ?.replace('{total}', () => this.attachments.length.toString()) ||
       `Image ${this.currentIndex + 1} of ${this.attachments.length}`;
     this.liveAnnouncer.announce(text, 'polite');
   }

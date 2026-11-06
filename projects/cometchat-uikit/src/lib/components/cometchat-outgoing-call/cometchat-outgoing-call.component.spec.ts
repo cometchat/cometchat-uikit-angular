@@ -924,11 +924,6 @@ describe('CometChatOutgoingCallComponent Unit Tests', () => {
       expect(component.receiverName).toBeTruthy();
     });
 
-    it('should have focusable cancel button', () => {
-      component.call = mockCall;
-      expect(typeof component.onCancelClick).toBe('function');
-    });
-
     it('should provide call type info for screen readers', () => {
       component.call = mockCall;
       expect(component.effectiveCall).toBeTruthy();

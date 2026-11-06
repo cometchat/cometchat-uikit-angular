@@ -48,7 +48,7 @@ export function getTypingText(
     ? CometChatLocalize.getLocalizedString('message_header_and_one_other')
     : CometChatLocalize.getLocalizedString('message_header_and_n_others').replace(
         '{count}',
-        othersCount.toString()
+        () => othersCount.toString()
       );
   return `${firstName} ${othersText} ${CometChatLocalize.getLocalizedString('message_header_are_typing')}`;
 }

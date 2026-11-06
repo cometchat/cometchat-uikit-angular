@@ -15,7 +15,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatConversationItemComponent } from './cometchat-conversation-item.component';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import {
   createMockConversation,
   createMockUser,

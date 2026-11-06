@@ -17,6 +17,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { CometChatMarkdownParser, MarkdownNode, parseInline } from './cometchat-markdown-parser';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { HtmlSanitizerService } from '../../services/html-sanitizer.service';
+import type { Config as DOMPurifyConfig } from 'dompurify';
 
 /**
  * Walks a MarkdownNode[] AST and produces an HTML string.
@@ -113,12 +115,12 @@ function renderNode(node: MarkdownNode, codeBlockIndex: { value: number }): stri
       return `<li class="cometchat-markdown-renderer__list-item">${inner}</li>`;
     }
     case 'link': {
-      const href = node.href ?? '#';
+      const href = safeUrl(node.href, SAFE_LINK_SCHEMES) || '#';
       const content = node.content ?? '';
       return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="cometchat-markdown-renderer__link">${content}</a>`;
     }
     case 'image': {
-      const src = node.href ?? '';
+      const src = safeUrl(node.href, SAFE_IMAGE_SCHEMES);
       const alt = node.alt ?? '';
       return `<img src="${src}" alt="${alt}" class="cometchat-markdown-renderer__image" data-img-click="${src}" />`;
     }
@@ -154,6 +156,41 @@ function renderNode(node: MarkdownNode, codeBlockIndex: { value: number }): stri
     default:
       return node.content ?? '';
   }
+}
+
+// The rendered HTML is trusted (bypassSecurityTrustHtml), so URLs from message text must
+// be limited to schemes that can't run script. Browsers ignore ASCII whitespace and control
+// characters inside a scheme ("java\tscript:"), so those are stripped before the check.
+const SAFE_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:'];
+const SAFE_IMAGE_SCHEMES = ['http:', 'https:'];
+
+/**
+ * DOMPurify allow-list for the renderer's own output: exactly the tags and attributes
+ * renderToHtml() emits, with URLs limited to the same safe schemes. A second layer behind the
+ * parser's escaping and safeUrl(), applied right before the HTML is marked as trusted.
+ */
+const MARKDOWN_SANITIZE_CONFIG: DOMPurifyConfig = {
+  ALLOWED_TAGS: [
+    'a', 'blockquote', 'br', 'button', 'code', 'del', 'div', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'hr', 'img', 'li', 'ol', 'p', 'pre', 'span', 'strong', 'table', 'tbody', 'td', 'th', 'thead', 'tr',
+    'u', 'ul',
+  ],
+  ALLOWED_ATTR: [
+    'alt', 'aria-label', 'class', 'data-code-index', 'data-copy-btn', 'data-img-click', 'href', 'rel',
+    'src', 'target', 'title',
+  ],
+  ALLOW_DATA_ATTR: false,
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+};
+
+/** Returns the URL if it is relative or uses an allowed scheme, otherwise ''. */
+function safeUrl(url: string | undefined, allowedSchemes: string[]): string {
+  if (!url) return '';
+  // eslint-disable-next-line no-control-regex
+  const compact = url.replace(/[\u0000-\u0020\u007f]/g, '').toLowerCase();
+  const scheme = compact.match(/^([a-z][a-z0-9+.-]*):/);
+  if (!scheme) return url;
+  return allowedSchemes.includes(`${scheme[1]}:`) ? url : '';
 }
 
 function escapeHtmlContent(text: string): string {
@@ -198,6 +235,7 @@ interface ParseResult {
 })
 export class CometChatMarkdownRenderer {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly htmlSanitizer = inject(HtmlSanitizerService);
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly text = input.required<string>();
@@ -223,7 +261,9 @@ export class CometChatMarkdownRenderer {
 
   /** Sanitized HTML bound via [innerHTML]. Re-runs only when text() or streaming() changes. */
   readonly renderedHtml = computed<SafeHtml>(() =>
-    this.sanitizer.bypassSecurityTrustHtml(this._parseResult().html)
+    this.sanitizer.bypassSecurityTrustHtml(
+      this.htmlSanitizer.sanitizeWithConfig(this._parseResult().html, MARKDOWN_SANITIZE_CONFIG)
+    )
   );
 
   /** Raw code content per code block — derived from the parse result. */

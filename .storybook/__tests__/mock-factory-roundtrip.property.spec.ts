@@ -23,7 +23,8 @@ describe('Property 8: Mock data factory round-trip', () => {
       fc.property(fc.constant('text' as const), (type) => {
         const message = createMockMessage(type);
         const returnedType = message.getType();
-        return typeof returnedType === 'string' && returnedType.length > 0;
+        expect(typeof returnedType).toBe('string');
+        expect(returnedType.length).toBeGreaterThan(0);
       })
     );
   });
@@ -32,14 +33,12 @@ describe('Property 8: Mock data factory round-trip', () => {
     fc.assert(
       fc.property(fc.constant('text' as const), (type) => {
         const message = createMockMessage(type);
-        return (
-          typeof message.getType === 'function' &&
-          typeof message.getMuid === 'function' &&
-          typeof message.getSentAt === 'function' &&
-          typeof message.getSender === 'function' &&
-          typeof message.getReceiverId === 'function' &&
-          typeof message.getReceiverType === 'function'
-        );
+        expect(typeof message.getType).toBe('function');
+        expect(typeof message.getMuid).toBe('function');
+        expect(typeof message.getSentAt).toBe('function');
+        expect(typeof message.getSender).toBe('function');
+        expect(typeof message.getReceiverId).toBe('function');
+        expect(typeof message.getReceiverType).toBe('function');
       })
     );
   });
@@ -58,7 +57,7 @@ describe('Property 8: Mock data factory round-trip', () => {
       fc.property(fc.constant('text' as const), (type) => {
         const m1 = createMockMessage(type);
         const m2 = createMockMessage(type);
-        return m1.getMuid() !== m2.getMuid();
+        expect(m1.getMuid()).not.toBe(m2.getMuid());
       }),
       { numRuns: 20 }
     );
@@ -69,7 +68,8 @@ describe('Property 8: Mock data factory round-trip', () => {
       fc.property(fc.constant('text' as const), (type) => {
         const message = createMockMessage(type);
         const sentAt = message.getSentAt();
-        return typeof sentAt === 'number' && sentAt > 0;
+        expect(typeof sentAt).toBe('number');
+        expect(sentAt).toBeGreaterThan(0);
       })
     );
   });
@@ -79,7 +79,8 @@ describe('Property 8: Mock data factory round-trip', () => {
       fc.property(fc.constant('text' as const), (type) => {
         const message = createMockMessage(type);
         const sender = message.getSender();
-        return typeof sender.getName() === 'string' && sender.getName().length > 0;
+        expect(typeof sender.getName()).toBe('string');
+        expect(sender.getName().length).toBeGreaterThan(0);
       })
     );
   });
@@ -93,13 +94,11 @@ describe('Property 8: Mock data factory round-trip', () => {
         }),
         ({ name, uid }) => {
           const user = createMockUser({ name, uid });
-          return (
-            typeof user.getName === 'function' &&
-            typeof user.getUid === 'function' &&
-            typeof user.getAvatar === 'function' &&
-            user.getName() === name &&
-            user.getUid() === uid
-          );
+          expect(typeof user.getName).toBe('function');
+          expect(typeof user.getUid).toBe('function');
+          expect(typeof user.getAvatar).toBe('function');
+          expect(user.getName()).toBe(name);
+          expect(user.getUid()).toBe(uid);
         }
       )
     );
@@ -114,12 +113,10 @@ describe('Property 8: Mock data factory round-trip', () => {
         }),
         ({ name, guid }) => {
           const group = createMockGroup({ name, guid });
-          return (
-            typeof group.getName === 'function' &&
-            typeof group.getGuid === 'function' &&
-            group.getName() === name &&
-            group.getGuid() === guid
-          );
+          expect(typeof group.getName).toBe('function');
+          expect(typeof group.getGuid).toBe('function');
+          expect(group.getName()).toBe(name);
+          expect(group.getGuid()).toBe(guid);
         }
       )
     );
@@ -131,11 +128,9 @@ describe('Property 8: Mock data factory round-trip', () => {
         fc.constantFrom<'user' | 'group'>('user', 'group'),
         (type) => {
           const conversation = createMockConversation(type);
-          return (
-            typeof conversation.getConversationType === 'function' &&
-            typeof conversation.getConversationId === 'function' &&
-            conversation.getConversationType() === type
-          );
+          expect(typeof conversation.getConversationType).toBe('function');
+          expect(typeof conversation.getConversationId).toBe('function');
+          expect(conversation.getConversationType()).toBe(type);
         }
       )
     );

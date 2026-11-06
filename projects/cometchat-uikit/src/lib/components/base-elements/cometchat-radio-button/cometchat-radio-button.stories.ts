@@ -247,7 +247,7 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 /** Verifies checked=true renders selected state. */
 export const TestCheckedState: Story = {

@@ -20,12 +20,13 @@ import {
   handleAttachmentButtonClickImpl,
   handleAttachmentOptionClickImpl,
 } from './cometchat-message-composer.attachment-handlers';
+import type { AttachmentFile } from './cometchat-message-composer.component';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeAttachment(id: string, type: 'image' | 'video' | 'audio' | 'file', name = `${id}.jpg`) {
+function makeAttachment(id: string, type: AttachmentFile['type'], name = `${id}.jpg`): AttachmentFile {
   return {
     id,
     type,
@@ -33,8 +34,7 @@ function makeAttachment(id: string, type: 'image' | 'video' | 'audio' | 'file', 
     file: new File(['content'], name),
     size: 1024,
     uploadProgress: 0,
-    status: 'pending' as const,
-    thumbnailUrl: null as string | null,
+    status: 'pending',
   };
 }
 
@@ -146,7 +146,8 @@ describe('cometchat-message-composer.attachment-handlers', () => {
     it('should move to next index', () => {
       const attachments = [makeAttachment('a1', 'image'), makeAttachment('a2', 'image'), makeAttachment('a3', 'image')];
       const self = makeSelf(attachments);
-      self.fullscreenViewerIndex.value = 0;
+      self.fullscreenViewerIndex.set(0);
+      self.fullscreenViewerIndex.set.mockClear();
       handleFullscreenViewerNextImpl(self);
       expect(self.fullscreenViewerIndex.set).toHaveBeenCalledWith(1);
     });
@@ -173,8 +174,9 @@ describe('cometchat-message-composer.attachment-handlers', () => {
     });
 
     it('should return undefined for out-of-bounds index', () => {
-      const self = makeSelf([]);
-      self.fullscreenViewerIndex.value = 5;
+      const self = makeSelf([makeAttachment('a1', 'image')]);
+      self.fullscreenViewerIndex.set(5);
+      expect(self.fullscreenViewerIndex()).toBe(5);
       expect(getCurrentFullscreenAttachmentImpl(self)).toBeUndefined();
     });
   });

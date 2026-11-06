@@ -181,11 +181,15 @@ export class CometChatTypingIndicatorComponent {
 
     if (users.length === 1) {
       const name = this.firstTypingUserName;
-      return CometChatLocalize.getLocalizedString('accessibility_user_is_typing').replace('{name}', name);
+      return CometChatLocalize.getLocalizedString('accessibility_user_is_typing').replace('{name}', () => name);
     } else if (users.length === 2) {
-      return CometChatLocalize.getLocalizedString('accessibility_two_users_typing')
-        .replace('{name1}', this.firstTypingUserName)
-        .replace('{name2}', this.secondTypingUserName);
+      const names: Record<string, string> = { '{name1}': this.firstTypingUserName, '{name2}': this.secondTypingUserName };
+      // One pass with a replacer: `$&`, `$'` or `$$` in a name stay literal, and a name that
+      // itself reads "{name2}" is not replaced again.
+      return CometChatLocalize.getLocalizedString('accessibility_two_users_typing').replace(
+        /\{name[12]\}/g,
+        (placeholder) => names[placeholder]
+      );
     } else {
       return CometChatLocalize.getLocalizedString('accessibility_multiple_users_typing');
     }

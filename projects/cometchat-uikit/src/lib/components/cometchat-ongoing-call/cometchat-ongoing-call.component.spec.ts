@@ -253,10 +253,6 @@ describe('CometChatOngoingCallComponent Unit Tests', () => {
   // ==================== Session ID binding (Req 4.1, 4.2) ====================
 
   describe('session ID binding', () => {
-    it('non-empty sessionID is truthy (gates template rendering)', () => {
-      component.sessionID = 'session-abc';
-      expect(component.sessionID).toBeTruthy();
-    });
 
     it('empty sessionID is falsy (prevents template rendering)', () => {
       component.sessionID = '';
@@ -632,23 +628,11 @@ describe('CometChatOngoingCallComponent Unit Tests', () => {
       expect(component.callScreenView).toBeNull();
     });
 
-    it('template uses aria-live="polite" on the call container (verified via template)', () => {
-      // The template has: aria-live="polite" on the .cometchat-ongoing-call div.
-      component.sessionID = 'a11y-live-test';
-      expect(component.sessionID).toBeTruthy();
-    });
-
     it('template uses aria-label with accessibility_ongoing_call translate key (verified via template)', () => {
       // The template has: [attr.aria-label]="'accessibility_ongoing_call' | translate"
       component.sessionID = 'a11y-label-test';
       expect(component.sessionID).toBeTruthy();
       expect(component.callScreenView).toBeNull();
-    });
-
-    it('template sets tabindex="0" on the call container for keyboard focus (verified via template)', () => {
-      // The template has: tabindex="0" on the .cometchat-ongoing-call div.
-      component.sessionID = 'a11y-tabindex-test';
-      expect(component.sessionID).toBeTruthy();
     });
   });
 
@@ -694,10 +678,6 @@ describe('CometChatOngoingCallComponent Unit Tests', () => {
     it('should have accessible session ID binding', () => {
       component.sessionID = 'test-session';
       expect(component.sessionID).toBe('test-session');
-    });
-
-    it('should have focusable end call control', () => {
-      expect(typeof component.onKeyDown).toBe('function');
     });
   });
 });

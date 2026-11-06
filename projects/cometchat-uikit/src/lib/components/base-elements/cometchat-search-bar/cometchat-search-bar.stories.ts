@@ -246,7 +246,7 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 /** Verifies search bar renders with placeholder text. */
 export const TestPlaceholderText: Story = {

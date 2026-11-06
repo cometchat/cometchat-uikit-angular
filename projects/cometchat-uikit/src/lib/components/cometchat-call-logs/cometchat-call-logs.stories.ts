@@ -4,7 +4,7 @@
  * Interactive stories demonstrating the call logs component variants:
  * - Default call logs list with mock call history
  * - Call history with multiple call types and statuses
- * - Empty logs state
+ * - Loading, empty and error states
  * - All variants showcase
  *
  * @module components/cometchat-call-logs
@@ -18,7 +18,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { CometChatCallLogsComponent } from './cometchat-call-logs.component';
 import { MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Mock Classes
@@ -164,6 +164,7 @@ class CallLogsStoryWrapperComponent implements OnInit {
   @Input() activeCall: any = null;
   @Input() showScrollbar = false;
   @Input() simulateEmpty = false;
+  @Input() simulateLoading = false;
   @Input() simulateError = false;
 
   mockRequestBuilder: any = null;
@@ -185,13 +186,24 @@ class CallLogsStoryWrapperComponent implements OnInit {
   }
 
   private buildRequestBuilder(): void {
-    if (this.simulateEmpty) {
+    if (this.simulateLoading) {
+      this.mockRequestBuilder = this.createPendingRequestBuilder();
+    } else if (this.simulateEmpty) {
       this.mockRequestBuilder = this.createEmptyRequestBuilder();
     } else if (this.simulateError || this.shouldError) {
       this.mockRequestBuilder = this.createErrorRequestBuilder();
     } else if (this.mockCallLogs.length > 0) {
       this.mockRequestBuilder = this.createDataRequestBuilder();
     }
+  }
+
+  /** fetchNext never settles, so the component stays in its loading (shimmer) state. */
+  private createPendingRequestBuilder(): any {
+    return {
+      build: () => ({
+        fetchNext: () => new Promise<any[]>(() => undefined),
+      }),
+    };
   }
 
   private createEmptyRequestBuilder(): any {
@@ -465,8 +477,35 @@ export const WithCallHistory: Story = {
   },
 };
 
+/** Loading state while the first page of call logs is being fetched. */
+export const LoadingState: Story = {
+  render: args => ({
+    props: {
+      ...args,
+      simulateLoading: true,
+    },
+    template: `
+      <div style="width: 400px; height: 600px; overflow: hidden; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-2);">
+        <cometchat-call-logs-story-wrapper
+          [showScrollbar]="showScrollbar"
+          [simulateLoading]="simulateLoading">
+        </cometchat-call-logs-story-wrapper>
+      </div>
+    `,
+  }),
+  args: { showScrollbar: false },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Loading state displayed while call logs are being fetched. The mock request never settles, so the built-in shimmer placeholder stays visible.',
+      },
+    },
+  },
+};
+
 /** Empty call logs state when no call history exists. */
-export const EmptyLogs: Story = {
+export const EmptyState: Story = {
   render: args => ({
     props: {
       ...args,
@@ -545,6 +584,18 @@ export const AllVariantsShowcase: Story = {
           </div>
         </div>
 
+        <!-- Loading State -->
+        <div class="cometchat-call-logs-showcase__section" style="display: flex; flex-direction: column; gap: var(--cometchat-spacing-2);">
+          <p class="cometchat-call-logs-showcase__section-label" style="margin: 0; font: var(--cometchat-font-body-medium); color: var(--cometchat-text-color-secondary);">
+            Loading State
+          </p>
+          <div style="width: 400px; height: 300px; overflow: hidden; border: 1px solid var(--cometchat-border-color-light); border-radius: var(--cometchat-radius-3);">
+            <cometchat-call-logs-story-wrapper
+              [simulateLoading]="true">
+            </cometchat-call-logs-story-wrapper>
+          </div>
+        </div>
+
         <!-- Empty State -->
         <div class="cometchat-call-logs-showcase__section" style="display: flex; flex-direction: column; gap: var(--cometchat-spacing-2);">
           <p class="cometchat-call-logs-showcase__section-label" style="margin: 0; font: var(--cometchat-font-body-medium); color: var(--cometchat-text-color-secondary);">
@@ -579,7 +630,7 @@ export const AllVariantsShowcase: Story = {
     docs: {
       description: {
         story:
-          'Comprehensive showcase displaying call logs variants — default list with recent calls, empty state, and error state — in a single view. All styling uses CometChat CSS variables for theme consistency.',
+          'Comprehensive showcase displaying call logs variants — default list with recent calls, loading state, empty state, and error state — in a single view. All styling uses CometChat CSS variables for theme consistency.',
       },
     },
   },

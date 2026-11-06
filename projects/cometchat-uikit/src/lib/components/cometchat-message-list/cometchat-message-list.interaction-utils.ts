@@ -62,9 +62,9 @@ export function closeMessageInfoImpl(self: any): void {
 }
 
 export async function copyMessageToClipboardImpl(self: any, message: CometChat.BaseMessage): Promise<void> {
-  const isText = message.getType() === CometChatUIKitConstants.MessageTypes.text;
-  if (!isText && !hasMediaCaption(message)) { return; }
-  // Handle agentic (AI agent) messages — extract text from elements or assistantMessageData
+  // Handle agentic (AI agent) messages — extract text from elements or assistantMessageData.
+  // Must run before the text/caption guard below: agent replies are type "assistant", so the
+  // guard would return early and Copy would do nothing.
   if (message.getCategory() === CometChatUIKitConstants.MessageCategory.agentic) {
     try {
       const text = getAgentMessageCopyText(message);
@@ -87,7 +87,8 @@ export async function copyMessageToClipboardImpl(self: any, message: CometChat.B
     return;
   }
 
-  if (message.getType() !== CometChatUIKitConstants.MessageTypes.text) { return; }
+  const isText = message.getType() === CometChatUIKitConstants.MessageTypes.text;
+  if (!isText && !hasMediaCaption(message)) { return; }
   try {
     const textMessage = message as CometChat.TextMessage;
     // Media messages carry their copyable text in the caption, not getText().

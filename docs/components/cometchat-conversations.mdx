@@ -157,6 +157,7 @@ export class ChatComponent {
 | `hideReceipts` | `boolean` | `false` | Hide message read receipts in conversation items |
 | `hideError` | `boolean` | `false` | Hide error views when errors occur |
 | `hideDeleteConversation` | `boolean` | `false` | Hide delete option in context menu |
+| `hidePinConversation` | `boolean` | `false` | Hide the Pin / Unpin option in context menu |
 | `hideUserStatus` | `boolean` | `false` | Hide online/offline status indicators |
 | `hideGroupType` | `boolean` | `false` | Hide group type icons for group conversations |
 | `showScrollbar` | `boolean` | `false` | Show/hide scrollbar in conversation list |
@@ -202,6 +203,10 @@ export class ChatComponent {
 | `titleView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for title section |
 | `subtitleView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for subtitle section (message preview) |
 | `trailingView` | `TemplateRef<{$implicit: Conversation}>` | `undefined` | Custom template for trailing section (timestamp, badges) |
+| `listItemTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `itemView`. Takes precedence over `itemView` when both are set |
+| `emptyStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `emptyView`. Takes precedence over `emptyView` when both are set |
+| `errorStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `errorView`. Takes precedence over `errorView` when both are set |
+| `loadingStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `loadingView`. Takes precedence over `loadingView` when both are set |
 
 ## Events
 

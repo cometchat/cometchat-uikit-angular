@@ -14,6 +14,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
+import { within, expect, userEvent } from 'storybook/test';
 import { CometChatPopoverComponent } from './cometchat-popover.component';
 import { Placement } from '../../../Enums/Enums';
 
@@ -402,49 +403,52 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
-
-/** Verifies popover container renders. */
+/** Verifies the popover renders its projected trigger. */
 export const TestPopoverRenders: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const popover = canvasElement.querySelector('cometchat-popover, .cometchat-popover');
-    expect(popover).not.toBeNull();
+    const canvas = within(canvasElement);
+    const trigger = await canvas.findByRole('button', { name: 'Click to toggle' });
+    expect(trigger.closest('.cometchat-popover')).not.toBeNull();
   },
 };
 
-/** Verifies popover trigger element is present. */
+/** Verifies the trigger wrapper advertises a closed dialog popup. */
 export const TestTriggerPresent: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const trigger = canvasElement.querySelector('.cometchat-popover__trigger, [class*="popover"] [class*="trigger"]');
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button', { name: 'Click to toggle' });
+    const trigger = button.closest('.cometchat-popover__button');
     expect(trigger).not.toBeNull();
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).not.toHaveAttribute('aria-controls');
   },
 };
 
-/** Verifies popover content is hidden by default. */
+/** Verifies popover content is not rendered until the trigger is clicked. */
 export const TestContentHiddenByDefault: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const content = canvasElement.querySelector('.cometchat-popover__content, [class*="popover"] [class*="content"]');
-    // Content should either not exist or be hidden
-    if (content) {
-      const isHidden = content.getAttribute('aria-hidden') === 'true' ||
-        (content as HTMLElement).style.display === 'none' ||
-        !content.classList.contains('cometchat-popover__content--visible');
-      expect(isHidden || true).toBeTruthy();
-    }
+    const canvas = within(canvasElement);
+    await canvas.findByRole('button', { name: 'Click to toggle' });
+    expect(canvas.queryByRole('dialog')).toBeNull();
+    expect(canvas.queryByText('This is popover content')).toBeNull();
   },
 };
 
-/** Verifies popover has accessible aria attributes. */
+/** Verifies opening the popover wires up its ARIA relationships. */
 export const TestAriaAttributes: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const popover = canvasElement.querySelector('cometchat-popover, .cometchat-popover');
-    expect(popover).not.toBeNull();
-    // Should have some ARIA attribute
-    const hasAria = popover!.querySelector('[aria-label], [aria-haspopup], [aria-expanded], [role]') !== null;
-    expect(hasAria || true).toBeTruthy();
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button', { name: 'Click to toggle' });
+    await userEvent.click(button);
+    const dialog = await canvas.findByRole('dialog', { name: 'Popover menu' });
+    expect(within(dialog).getByText('This is popover content')).toBeInTheDocument();
+    const trigger = button.closest('.cometchat-popover__button');
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(trigger).toHaveAttribute('aria-controls', dialog.id);
   },
 };

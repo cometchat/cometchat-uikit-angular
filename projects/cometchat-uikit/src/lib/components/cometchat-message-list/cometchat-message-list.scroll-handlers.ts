@@ -8,6 +8,8 @@ import { CometChatLogger } from '../../utils/CometChatLogger';
 import { highlightAndScrollToElement as highlightAndScrollToElementUtil } from './cometchat-message-list.scroll-utils';
 
 export interface ScrollHandlerContext {
+  /** True once the list is destroyed: deferred scroll work (frames, retries) must stop. */
+  isDestroyed?: boolean;
   listContainer: any;
   scrollTopAnchor: any;
   scrollBottomAnchor: any;
@@ -49,8 +51,13 @@ export async function handleScrollToTopImpl(ctx: ScrollHandlerContext): Promise<
   const container = ctx.listContainer?.nativeElement;
   const scrollHeightBefore = container?.scrollHeight || 0;
   const scrollTopBefore = container?.scrollTop || 0;
+  // The chat can change while the page loads (the user opens another one). The service then
+  // drops the stale page and answers false, which is not the new chat's "no more history":
+  // leave the new chat's state alone.
+  const generation = ctx.messageListService.getFetchGeneration?.();
   try {
     const hasMore = await ctx.messageListService.fetchPreviousMessages();
+    if (ctx.messageListService.getFetchGeneration?.() !== generation) return;
     ctx.hasMorePrevious.set(hasMore);
     if (container) {
       requestAnimationFrame(() => {
@@ -71,10 +78,13 @@ export function handleScrollToBottomImpl(ctx: ScrollHandlerContext): void {
   const container = ctx.listContainer?.nativeElement;
   const scrollTopBefore = container?.scrollTop || 0;
   ctx.isFetchingNext.set(true);
+  // As above: a page for a chat that has since been replaced says nothing about the new one.
+  const generation = ctx.messageListService.getFetchGeneration?.();
   ctx.messageListService.fetchNextMessages()
     .then((hasMore: boolean) => {
-      ctx.hasMoreNext.set(hasMore);
       ctx.isFetchingNext.set(false);
+      if (ctx.messageListService.getFetchGeneration?.() !== generation) return;
+      ctx.hasMoreNext.set(hasMore);
       if (container) { requestAnimationFrame(() => { container.scrollTop = scrollTopBefore; }); }
     })
     .catch((error: unknown) => {
@@ -195,12 +205,13 @@ export function scrollToBottomImpl(ctx: ScrollHandlerContext, smooth = false): v
 
 export function scrollToBottomAfterLoadImpl(ctx: ScrollHandlerContext): void {
   requestAnimationFrame(() => {
+    if (ctx.isDestroyed) return;
     setTimeout(() => { scrollToBottomWithRetryImpl(ctx, 3); }, 0);
   });
 }
 
 export function scrollToBottomWithRetryImpl(ctx: ScrollHandlerContext, retries: number): void {
-  if (!ctx.listContainer?.nativeElement) return;
+  if (ctx.isDestroyed || !ctx.listContainer?.nativeElement) return;
   const container = ctx.listContainer.nativeElement;
   container.scrollTop = container.scrollHeight;
   if (retries > 0) setTimeout(() => scrollToBottomWithRetryImpl(ctx, retries - 1), 100);
@@ -228,13 +239,19 @@ export function scrollToMessageImpl(ctx: ScrollHandlerContext, messageId: string
 }
 
 export function scrollToMessageWithRetryImpl(ctx: ScrollHandlerContext, messageId: string | number, retries: number): void {
-  if (retries <= 0 || !ctx.listContainer?.nativeElement) return;
+  if (ctx.isDestroyed || retries <= 0 || !ctx.listContainer?.nativeElement) return;
   requestAnimationFrame(() => {
+    if (ctx.isDestroyed) return;
     setTimeout(() => {
+      if (ctx.isDestroyed) return;
       const messageElement = ctx.listContainer?.nativeElement?.querySelector(`[data-message-id="${messageId}"]`);
       if (messageElement) {
         highlightAndScrollToElementUtil(messageElement);
-        setTimeout(() => { ctx.hasMorePrevious.set(true); ctx.hasMoreNext.set(true); }, 300);
+        setTimeout(() => {
+          if (ctx.isDestroyed) return;
+          ctx.hasMorePrevious.set(true);
+          ctx.hasMoreNext.set(true);
+        }, 300);
       } else if (retries > 1) {
         scrollToMessageWithRetryImpl(ctx, messageId, retries - 1);
       }

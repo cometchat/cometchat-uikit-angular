@@ -1,210 +1,167 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import { loginToApp, getUserName, SECONDARY_USER, THIRD_USER } from '../helpers';
 
 /**
  * E2E Tests — CometChatUsers (Angular)
  *
- * Tests the users list component in the sample app.
- * The users tab is accessible from the bottom tabs in the sample app.
+ * The Users tab's list: loading, rows (avatar, name, presence), search, selection, keyboard
+ * focus and ARIA. Pagination, letter headers and the empty state are in users-behavior.spec.ts. Rows are found by the run's own
+ * users' names, since every run's users share this list. Global setup keeps 30 shared filler
+ * users, so the list is always longer than one page (30).
  *
  * @see ENG-34939
  */
 
-test.describe('CometChatUsers', () => {
-  let page: Page;
+const users = (page: Page) => page.locator('cometchat-users');
+const items = (page: Page) => users(page).locator('.cometchat-user-item');
+const row = (page: Page, name: string) =>
+  items(page).filter({ has: page.locator('.cometchat-user-item__title-text', { hasText: name }) }).first();
 
-  test.beforeEach(async ({ page: p }) => {
-    page = p;
+/**
+ * Type `query` in the users search box and wait for the list request it triggers (a search,
+ * or the full list when `query` is empty) to be answered. Acting while a search is still
+ * loading hits ENG-40633, which has its own test below.
+ */
+async function searchUsers(page: Page, query: string) {
+  const answered = page.waitForResponse(
+    (r) =>
+      /\/users\?/.test(r.url()) &&
+      (query ? r.url().includes(`searchKey=${encodeURIComponent(query)}`) : !r.url().includes('searchKey=')),
+    { timeout: 30_000 }
+  );
+  await users(page).getByRole('searchbox').fill(query);
+  await answered;
+}
+
+/** Find a user by name through search and return their row. */
+async function findUser(page: Page, name: string): Promise<Locator> {
+  await searchUsers(page, name);
+  await expect(row(page, name)).toBeVisible();
+  return row(page, name);
+}
+
+test.describe('CometChatUsers', () => {
+  let secondaryName: string;
+  let thirdName: string;
+
+  test.beforeAll(async () => {
+    [secondaryName, thirdName] = await Promise.all([getUserName(SECONDARY_USER), getUserName(THIRD_USER)]);
+  });
+
+  test.beforeEach(async ({ page }) => {
     await loginToApp(page);
-    // Navigate to Users tab
-    await page.waitForSelector('.cometchat-conversations', { timeout: 30_000 });
-    // Click on the Users tab
-    const usersTab = page.locator('[data-testid="tab-users"], button:has-text("Users"), .cometchat-tabs__tab:has-text("Users")').first();
-    await usersTab.click();
-    // Wait for users list to render
-    await page.waitForSelector('cometchat-users, .cometchat-users', { timeout: 15_000 });
+    await page.getByLabel('Navigation tabs').getByRole('tab', { name: 'Users' }).click();
+    // Search typed before the list first renders is ignored (ENG-39946), so wait for it.
+    await expect(items(page).first()).toBeVisible({ timeout: 30_000 });
   });
 
   // ==================== Rendering & Loading ====================
 
-  test('users list renders and loads users on init', async () => {
-    await expect(page.locator('cometchat-users').first()).toBeVisible();
-
-    // Wait for users to load
-    await page.waitForTimeout(2000);
-
-    // Should show either users or empty state
-    const hasUsers = await page.locator('.cometchat-user-item, cometchat-user-item, .cometchat-list-item').count() > 0;
-    const hasEmptyState = await page.locator('[class*="empty"]').isVisible().catch(() => false);
-
-    expect(hasUsers || hasEmptyState).toBeTruthy();
+  test('users list renders and loads users on init @smoke', async ({ page }) => {
+    await expect(items(page).nth(1)).toBeVisible();
+    await expect(users(page).locator('.cometchat-users__shimmer')).toHaveCount(0);
   });
 
-  test('users list displays user items with avatar and name', async () => {
-    const firstUser = page.locator('.cometchat-user-item, cometchat-user-item').first();
-    const hasUser = await firstUser.isVisible().catch(() => false);
-
-    if (hasUser) {
-      // Avatar should be present
-      await expect(firstUser.locator('cometchat-avatar, .cometchat-avatar')).toBeVisible();
-
-      // Name should be present
-      const nameElement = firstUser.locator('.cometchat-user-item__title, .cometchat-list-item__title');
-      await expect(nameElement).toBeVisible();
-      const name = await nameElement.textContent();
-      expect(name?.trim()).toBeTruthy();
-    }
+  test('users list displays user items with avatar and name', async ({ page }) => {
+    const user = await findUser(page, secondaryName);
+    await expect(user.locator('cometchat-avatar')).toBeVisible();
+    await expect(user.locator('.cometchat-user-item__title-text')).toHaveText(secondaryName);
   });
 
   // ==================== Online/Offline Status ====================
 
-  test('online/offline status indicator displays correctly', async () => {
-    const statusIndicator = page.locator('.cometchat-user-item__status, .cometchat-user-item__status--online, .cometchat-user-item__status--offline').first();
-    const hasStatus = await statusIndicator.isVisible().catch(() => false);
-
-    if (hasStatus) {
-      const isOnline = await statusIndicator.evaluate(el =>
-        el.classList.contains('cometchat-user-item__status--online')
-      ).catch(() => false);
-      const isOffline = await statusIndicator.evaluate(el =>
-        el.classList.contains('cometchat-user-item__status--offline')
-      ).catch(() => false);
-
-      // Should be one or the other
-      expect(isOnline || isOffline).toBeTruthy();
+  test('online/offline status indicator displays correctly', async ({ page, browser }) => {
+    // Sign the secondary user in elsewhere, so they are online; the third user stays offline.
+    const other = await browser.newContext();
+    try {
+      await loginToApp(await other.newPage(), { userUid: SECONDARY_USER });
+      const online = await findUser(page, secondaryName);
+      await expect(online.locator('.cometchat-user-item__status')).toHaveClass(/cometchat-user-item__status--online/, {
+        timeout: 30_000,
+      });
+      const offline = await findUser(page, thirdName);
+      await expect(offline.locator('.cometchat-user-item__status')).toHaveClass(/cometchat-user-item__status--offline/);
+    } finally {
+      await other.close();
     }
   });
 
   // ==================== Search ====================
 
-  test('search bar is visible and functional', async () => {
-    const searchBar = page.locator('cometchat-users input, cometchat-search-bar input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasSearch = await searchBar.isVisible({ timeout: 3_000 }).catch(() => false);
+  test('search bar is visible and functional', async ({ page }) => {
+    // The run's third user can be found; searching the secondary user's name drops them.
+    await findUser(page, thirdName);
+    await findUser(page, secondaryName);
+    await expect(row(page, thirdName)).toHaveCount(0);
 
-    if (hasSearch) {
-      // Get initial count
-      await page.waitForTimeout(1000);
-      const initialCount = await page.locator('.cometchat-user-item, cometchat-user-item, .cometchat-list-item').count();
+    // Clearing the search brings the full list back.
+    await searchUsers(page, '');
+    await expect(items(page)).toHaveCount(30);
+  });
 
-      // Type a search query
-      await searchBar.fill('super');
-      await page.waitForTimeout(2000); // Wait for debounce + API response
+  test('clearing the search while it is still loading restores the full list', async ({ page }) => {
+    // Known UI Kit defect (ENG-40633): clearing the box while a search request is in flight sends
+    // no request for the full list, and the late search response is shown under an empty box.
+    // Expected to fail until fixed.
+    test.fail();
+    // Hold the search response until the box has been cleared.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/users\?.*searchKey=/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    const sent = page.waitForRequest(/\/users\?.*searchKey=/);
+    await users(page).getByRole('searchbox').fill(secondaryName);
+    await sent;
+    await users(page).getByRole('searchbox').fill('');
+    release();
 
-      // Results should filter (count may be same or less)
-      const filteredCount = await page.locator('.cometchat-user-item, cometchat-user-item, .cometchat-list-item').count();
-
-      // Search worked if count changed or stayed same (API may return all matching)
-      expect(filteredCount).toBeGreaterThanOrEqual(0);
-
-      // Clear search
-      await searchBar.fill('');
-      await page.waitForTimeout(2000); // Wait for list to reload
-
-      const countAfterClear = await page.locator('.cometchat-user-item, cometchat-user-item, .cometchat-list-item').count();
-      expect(countAfterClear).toBeGreaterThanOrEqual(filteredCount);
-    } else {
-      expect(true).toBeTruthy();
-    }
+    await expect(users(page).getByRole('searchbox')).toHaveValue('');
+    await expect(items(page)).toHaveCount(30, { timeout: 10_000 });
   });
 
   // ==================== Click Interaction ====================
 
-  test('clicking a user selects it', async () => {
-    const firstUser = page.locator('.cometchat-user-item, cometchat-user-item').first();
-    const hasUser = await firstUser.isVisible().catch(() => false);
-
-    if (hasUser) {
-      await firstUser.click();
-
-      // Should navigate to messages or show active state
-      await expect(
-        page.locator('cometchat-message-header, .cometchat-message-header, .cometchat-user-item--active')
-      ).toBeVisible({ timeout: 10_000 });
-    }
+  test('clicking a user selects it', async ({ page }) => {
+    const user = await findUser(page, secondaryName);
+    await user.click();
+    await expect(page.locator('cometchat-message-header').first()).toContainText(secondaryName, { timeout: 15_000 });
+    await expect(user).toHaveClass(/cometchat-user-item--active/);
   });
 
   // ==================== Pagination ====================
 
-  test('scrolling loads more users (pagination)', async () => {
-    const userItems = page.locator('.cometchat-user-item, cometchat-user-item');
-    const initialCount = await userItems.count();
-
-    if (initialCount >= 10) {
-      // Scroll to bottom of the list
-      const listContainer = page.locator('cometchat-paginated-list, .cometchat-paginated-list').first();
-      await listContainer.evaluate(el => {
-        el.scrollTop = el.scrollHeight;
-      });
-
-      // Wait for more items to load
-      await page.waitForTimeout(2000);
-
-      const newCount = await userItems.count();
-      // Should have loaded more (or same if all loaded)
-      expect(newCount).toBeGreaterThanOrEqual(initialCount);
-    }
-  });
-
+  
   // ==================== Section Headers ====================
 
-  test('alphabetical section headers display', async () => {
-    // Users list typically shows alphabetical section headers (A, B, C...)
-    const sectionHeaders = page.locator('.cometchat-users__section-header, .cometchat-users__separator');
-    const headerCount = await sectionHeaders.count();
-
-    // If users exist, there should be at least one section header
-    const userCount = await page.locator('.cometchat-user-item, cometchat-user-item').count();
-    if (userCount > 0) {
-      expect(headerCount).toBeGreaterThan(0);
-    }
-  });
-
+  
   // ==================== Keyboard Navigation ====================
 
-  test('keyboard navigation works', async () => {
-    // Keyboard navigation is an enhancement — verify the list is interactive
-    const usersList = page.locator('.cometchat-users').first();
-    await usersList.click();
+  test('keyboard navigation works', async ({ page }) => {
+    const focused = () =>
+      page.evaluate(
+        () => document.activeElement?.closest('.cometchat-paginated-list__item')?.querySelector('.cometchat-user-item__title-text')?.textContent?.trim() ?? ''
+      );
+    await users(page).getByRole('searchbox').focus();
+    await page.keyboard.press('Tab');
+    const first = await focused();
+    expect(first, 'a user row has keyboard focus').toBeTruthy();
+    // ArrowDown moves focus to the next user.
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(300);
-    // Pass — keyboard nav is best verified manually
-    expect(true).toBeTruthy();
+    await expect.poll(focused).not.toBe(first);
+    await expect.poll(focused).toBeTruthy();
   });
 
   // ==================== Accessibility ====================
 
-  test('users list has proper ARIA attributes', async () => {
-    const list = page.locator('cometchat-users').first();
-    await expect(list).toBeVisible();
-
-    // The component or its children should have accessibility attributes
-    const hasAriaLabel = await page.locator('.cometchat-users[aria-label], [role="region"][aria-label]').first().isVisible({ timeout: 2_000 }).catch(() => false);
-    expect(hasAriaLabel).toBeTruthy();
+  test('users list has proper ARIA attributes', async ({ page }) => {
+    await expect(page.getByRole('region', { name: 'Users', exact: true })).toBeVisible();
+    await expect(users(page).getByRole('listbox', { name: 'Users list' })).toBeVisible();
+    await expect(users(page).getByRole('searchbox')).toBeVisible();
+    const user = await findUser(page, secondaryName);
+    await expect(user).toHaveAttribute('aria-label', new RegExp(secondaryName));
   });
 
-  test('empty state renders when search has no results', async () => {
-    const searchBar = page.locator('cometchat-users input, cometchat-search-bar input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasSearch = await searchBar.isVisible({ timeout: 3_000 }).catch(() => false);
-
-    if (hasSearch) {
-      await searchBar.fill('zzzznonexistentuser12345');
-      await page.waitForTimeout(3000); // Wait for debounce + API response
-
-      // Check the listbox is empty (no user items) or a status/empty element is shown
-      const itemCount = await page.locator('.cometchat-user-item, cometchat-user-item, .cometchat-list-item').count();
-      const listbox = page.locator('[role="listbox"]').first();
-      const listboxChildren = await listbox.locator('> *').count().catch(() => -1);
-      const hasStatusElement = await page.locator('[role="status"]').first().isVisible().catch(() => false);
-      const hasEmptyView = await page.locator('[class*="empty"]').isVisible().catch(() => false);
-
-      // Clear search
-      await searchBar.fill('');
-      await page.waitForTimeout(1000);
-
-      // Search for nonexistent user should show empty list
-      expect(itemCount === 0 || hasEmptyView || hasStatusElement).toBeTruthy();
-    } else {
-      expect(true).toBeTruthy();
-    }
-  });
+  
 });

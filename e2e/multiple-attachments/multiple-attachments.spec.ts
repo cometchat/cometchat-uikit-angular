@@ -1,7 +1,8 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, Route } from '../fixtures/coverage';
 import path from 'path';
 import fs from 'fs';
-import { loginToApp } from '../helpers';
+import os from 'os';
+import { loginToApp, openConversation, scrollToLatestMessage, getUserName, uniqueTag, SECONDARY_USER } from '../helpers';
 
 /**
  * E2E Tests — Multiple attachments in a single message (Angular)
@@ -17,12 +18,11 @@ import { loginToApp } from '../helpers';
  *   • Local, client-only behaviour (staging tiles, removing a tile, the picker menu) is asserted
  *     HARD — it is deterministic once the composer is mounted.
  *   • Anything that needs a live CometChat round-trip (an upload finishing, a message being sent
- *     and echoed back into the list) is gated on `requireDelivered()`: we drive the real path and
- *     wait generously, and if the backend (uploads to S3, moderation, delivery) never delivers, the
- *     test SKIPS. It never passes without asserting — a green test whose receive-side checks silently
- *     did not run hides lost coverage, so a miss has to be visible in the report. Uploaded media can
- *     also render blank in this app (private-S3 403) — so receive-side assertions target the bubble
- *     STRUCTURE (element/class/count), never pixels.
+ *     and echoed back into the list) is asserted HARD too, with generous timeouts: if the backend
+ *     (uploads to S3, moderation, delivery) never delivers, the test FAILS. No test skips, so lost
+ *     coverage always shows up in the report. Uploaded media can also render blank in this app
+ *     (private-S3 403) — so receive-side assertions target the bubble STRUCTURE (element/class/count),
+ *     never pixels.
  *
  * @see ENG-36752
  */
@@ -171,42 +171,29 @@ async function dispatchFileEvent(
 /**
  * Wait until every staged upload has settled and the tray allows sending. `canSend` (and thus the
  * Send button's enabled state) flips true only once all tiles are uploaded AND none failed, so it is
- * the single authoritative "uploads done" signal. Tolerant: returns false on timeout rather than
- * throwing, because completion depends on the live backend.
+ * the single authoritative "uploads done" signal. Fails the test if the uploads never settle.
  */
-async function waitForSendEnabled(page: Page, timeout = 30_000): Promise<boolean> {
-  try {
-    await expect(sendButton(page)).toBeEnabled({ timeout });
-    return true;
-  } catch {
-    return false;
-  }
+async function waitForSendEnabled(page: Page, timeout = 45_000): Promise<void> {
+  await expect(sendButton(page), 'staged uploads did not settle').toBeEnabled({ timeout });
 }
 
 /**
  * How long to wait for a sent batch to come back down the wire and render. The shared CometChat app
  * this suite runs against delivers in ~3s when rested, but this suite sends ~25 batches back-to-back
  * and the resulting throttle pushes delivery past 45s — so the window has to be generous or real
- * coverage turns into skips for no good reason. Kept within the 180s per-test budget alongside
- * staging (≤30s) and the upload wait (≤30s).
+ * coverage turns into failures for no good reason. Kept within the 180s per-test budget alongside
+ * staging (≤30s) and the upload wait (≤45s).
  */
 const DELIVERY_TIMEOUT = 60_000;
 
 /**
- * Await a backend-dependent element before asserting anything about it, and SKIP the test if it never
- * arrives. Delivery is outside the UI's control (upload → S3 → moderation → echo), so a miss must not
- * fail the run — but it must not pass silently either: a test that reports green while its receive-side
- * assertions never executed is worse than one that reports skipped, because it hides lost coverage.
- * `test.skip()` throws, so everything after this call runs only when the element genuinely rendered.
+ * Await a backend-dependent element before asserting anything about it, and fail the test if it never
+ * arrives (upload → S3 → moderation → echo).
  */
 async function requireDelivered(locator: Locator, label: string, timeout = DELIVERY_TIMEOUT): Promise<void> {
   // NB: use expect().toBeVisible() — Locator.isVisible() ignores its timeout and returns immediately,
   // so it would false-miss any element that renders a beat after the check starts.
-  try {
-    await expect(locator.first()).toBeVisible({ timeout });
-  } catch {
-    test.skip(true, `${label} was not delivered within ${timeout}ms — backend slow or unavailable`);
-  }
+  await expect(locator.first(), `${label} was not delivered within ${timeout}ms`).toBeVisible({ timeout });
 }
 
 /** Type a caption into the composer editor (used to uniquely tag a batch for later lookup). */
@@ -215,21 +202,17 @@ async function typeCaption(page: Page, text: string): Promise<void> {
   await page.keyboard.type(text);
 }
 
-/**
- * Stage + (optionally) caption + send a batch, waiting for uploads to settle first. Returns the
- * caption tag (or ''). Tolerant: if uploads don't settle (throttle/offline) the caller decides.
- */
-async function stageAndSend(page: Page, files: string[], caption?: string): Promise<boolean> {
+/** Stage + (optionally) caption + send a batch, waiting for uploads to settle first. */
+async function stageAndSend(page: Page, files: string[], caption?: string): Promise<void> {
   await stageFiles(page, files);
   if (caption) await typeCaption(page, caption);
-  if (!(await waitForSendEnabled(page))) return false;
+  await waitForSendEnabled(page);
   await sendButton(page).click();
-  return true;
 }
 
 /**
  * Stage in-memory files (no fixture on disk) via the hidden input — used for the count-limit test
- * (many tiny files) and the oversized-file test (a >100MB buffer we must not commit).
+ * (many tiny files) and the blocked-type test (a payload with a forced MIME).
  */
 async function stageBuffers(
   page: Page,
@@ -282,29 +265,37 @@ async function dispatchDrag(page: Page, kind: 'enter' | 'leave'): Promise<void> 
 
 test.describe('Multiple attachments (ENG-36752)', () => {
   let page: Page;
+  let secondaryName: string;
+
+  test.beforeAll(async () => {
+    secondaryName = await getUserName(SECONDARY_USER);
+  });
 
   /**
-   * Open the first conversation so the composer + message list mount. The composer only paints once
-   * its first cold CometChat.getMaxAttachmentCount() resolves, which under a throttled shared backend
-   * can take well over 15s — hence the generous wait.
+   * Open the 1:1 chat with the secondary user (George Alan locally) so the composer + message list mount. The composer only paints
+   * once its first cold CometChat.getMaxAttachmentCount() resolves, which under a throttled shared
+   * backend can take well over 15s — hence the generous wait.
    */
-  async function openConversation(p: Page, composerTimeout: number): Promise<void> {
-    await p.waitForSelector('.cometchat-conversation-item', { timeout: 30_000 });
-    await p.locator('.cometchat-conversation-item').first().click();
+  async function openChat(p: Page, composerTimeout: number): Promise<void> {
+    await openConversation(p, secondaryName);
     await p.waitForSelector(SEL.composer, { timeout: composerTimeout });
+    // Wait for the chat's first load to finish: a message sent while it is still loading can be
+    // sent but never shown in the open chat (known UI Kit defect), which would fail a delivery
+    // check for the wrong reason.
+    await scrollToLatestMessage(p);
   }
 
   test.beforeEach(async ({ page: p }) => {
-    // Backend-heavy tests chain stageFiles (≤30s) + waitForSendEnabled (≤30s) + a delivery wait
-    // (≤45s); under a throttled backend that sum can exceed the default 60s test budget and hard-fail
-    // before requireDelivered can gracefully skip. Give every test headroom so throttle degrades to
-    // a skip, never a false failure. The budget also has to cover the setup retry below.
+    // Backend-heavy tests chain stageFiles (≤30s) + waitForSendEnabled (≤45s) + a delivery wait
+    // (≤60s); under a throttled backend that sum can exceed the default 60s test budget. Give every
+    // test that headroom so a slow backend isn't mistaken for a failure. The budget also has to cover
+    // the setup retry below.
     // (Healthy-backend tests still finish in a few seconds.)
     test.setTimeout(180_000);
     page = p;
     await loginToApp(page);
     try {
-      await openConversation(page, 45_000);
+      await openChat(page, 45_000);
     } catch {
       // A test that just pushed a 4-file batch can leave the backend throttled enough that the next
       // login's message-pane fetch never resolves — the sidebar renders, the composer never mounts.
@@ -312,7 +303,7 @@ test.describe('Multiple attachments (ENG-36752)', () => {
       // test's upload burst.
       console.warn('[multi-attachments] composer did not mount; retrying setup after a fresh login');
       await loginToApp(page);
-      await openConversation(page, 30_000);
+      await openChat(page, 30_000);
     }
     // Sanity: no tray should be showing before anything is staged.
     await expect(page.locator(SEL.tray)).toHaveCount(0);
@@ -419,71 +410,71 @@ test.describe('Multiple attachments (ENG-36752)', () => {
       await page.getByRole('button', { name: 'Add attachment' }).click();
 
       // Clicking the option programmatically clicks the hidden <input>, opening a file chooser.
-      const chooserPromise = page.waitForEvent('filechooser', { timeout: 5_000 }).catch(() => null);
+      const chooserPromise = page.waitForEvent('filechooser', { timeout: 5_000 });
       await page.locator(SEL.actionSheetItem).filter({ hasText: 'Attach Image' }).click();
       const chooser = await chooserPromise;
-
-      // In some headless environments the chooser event may not surface; only assert when it does.
-      if (chooser) {
-        await chooser.setFiles(IMAGE_1);
-        await expect(page.locator(SEL.tileImage)).toHaveCount(1);
-      } else {
-        console.warn('[multi-attachments] file chooser did not open; skipped menu-stage assertion');
-      }
+      await chooser.setFiles(IMAGE_1);
+      await expect(page.locator(SEL.tileImage)).toHaveCount(1);
     });
   });
 
-  // ==================== 3. Upload lifecycle (backend, tolerant) ====================
+  // ==================== 3. Upload lifecycle (backend) ====================
 
   test.describe('Upload lifecycle', () => {
     test('Send is blocked while an upload is in flight', async () => {
       // Before anything is staged and with an empty editor, Send is disabled.
       await expect(sendButton(page)).toBeDisabled();
 
-      await stageFiles(page, [IMAGE_1, IMAGE_2]);
-      // With staged tiles present, `canSend` is driven solely by the tray — Send is disabled until
-      // every upload completes. (Tiny fixtures may settle fast; this is a best-effort check.)
-      const stillUploading = await page
-        .locator(`${SEL.tile}--uploading`)
-        .first()
-        .isVisible({ timeout: 1_000 })
-        .catch(() => false);
-      if (stillUploading) {
+      // Hold every file upload (multipart POST) until the check below has run, so the tiles are
+      // reliably still uploading; tiny fixtures would otherwise settle before the check.
+      let releaseUploads!: () => void;
+      const uploadsHeld = new Promise<void>((resolve) => (releaseUploads = resolve));
+      const holdUploads = async (route: Route) => {
+        const request = route.request();
+        if (request.method() === 'POST' && (request.headers()['content-type'] ?? '').includes('multipart/form-data')) {
+          await uploadsHeld;
+        }
+        await route.fallback();
+      };
+      await page.route('**/*', holdUploads);
+      try {
+        await stageFiles(page, [IMAGE_1, IMAGE_2]);
+        // With staged tiles present, `canSend` is driven solely by the tray — Send is disabled
+        // until every upload completes.
+        await expect(page.locator(`${SEL.tile}--uploading`).first()).toBeVisible();
         await expect(sendButton(page)).toBeDisabled();
+      } finally {
+        releaseUploads();
+        await page.unroute('**/*', holdUploads);
       }
+      // Released, the uploads complete and Send enables.
+      await waitForSendEnabled(page);
     });
 
     test('staged uploads settle and enable the Send button', async () => {
       await stageFiles(page, [IMAGE_1, IMAGE_2]);
       await expect(tiles(page)).toHaveCount(2);
 
-      const enabled = await waitForSendEnabled(page);
-      if (enabled) {
-        await expect(sendButton(page)).toBeEnabled();
-        // A settled tile is no longer in the uploading state and carries no error badge.
-        await expect(page.locator(`${SEL.tile}--uploading`)).toHaveCount(0);
-        await expect(page.locator('[data-testid="attachment-tile-error"]')).toHaveCount(0);
-      } else {
-        console.warn('[multi-attachments] uploads did not settle; backend may be unavailable');
-      }
+      await waitForSendEnabled(page);
+      // A settled tile is no longer in the uploading state and carries no error badge.
+      await expect(page.locator(`${SEL.tile}--uploading`)).toHaveCount(0);
+      await expect(page.locator('[data-testid="attachment-tile-error"]')).toHaveCount(0);
     });
   });
 
-  // ==================== 4. Batched send / receive (backend, tolerant) ====================
+  // ==================== 4. Batched send / receive (backend) ====================
 
   test.describe('Sending batched attachments', () => {
     test('sending two images clears the tray and posts one images batch', async () => {
       // Tag the batch so it can be pinned by caption. Counting bubbles before/after would be the more
       // obvious way to prove "one new bubble", but the message list paints its history progressively
       // after the composer mounts, so an early count is a stale baseline.
-      const tag = `img2-${Date.now()}`;
+      const tag = `img2-${uniqueTag()}`;
       await stageFiles(page, [IMAGE_1, IMAGE_2]);
       await expect(tiles(page)).toHaveCount(2);
       await typeCaption(page, tag);
 
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await sendButton(page).click();
 
@@ -500,15 +491,13 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('a caption typed with the batch renders on the sent bubble', async () => {
-      const caption = `batch caption ${Date.now()}`;
+      const caption = `batch caption ${uniqueTag()}`;
 
       await stageFiles(page, [IMAGE_1, IMAGE_2]);
       await page.locator(SEL.editor).first().click();
       await page.keyboard.type(caption);
 
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await sendButton(page).click();
 
@@ -525,15 +514,13 @@ test.describe('Multiple attachments (ENG-36752)', () => {
       // The caption lands on the LAST message of the batch (the file), so it pins the batch as a
       // whole: once the file bubble carrying the tag has arrived, the image and video halves of the
       // same batch must be present too — if they are not, that is the bug this test exists to catch.
-      const tag = `mixed-${Date.now()}`;
+      const tag = `mixed-${uniqueTag()}`;
 
       await stageFiles(page, [IMAGE_1, VIDEO, PDF]);
       await expect(tiles(page)).toHaveCount(3);
       await typeCaption(page, tag);
 
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await sendButton(page).click();
 
@@ -546,15 +533,13 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('sending two documents posts one files bubble with multiple items', async () => {
-      const tag = `docs-${Date.now()}`;
+      const tag = `docs-${uniqueTag()}`;
       await stageFiles(page, [PDF, DOC]);
       await expect(tiles(page)).toHaveCount(2);
       await page.locator(SEL.editor).first().click();
       await page.keyboard.type(tag);
 
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await sendButton(page).click();
 
@@ -568,14 +553,12 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('a file of unknown type renders the unsupported-type icon', async () => {
-      const tag = `unk-${Date.now()}`;
+      const tag = `unk-${uniqueTag()}`;
       await stageFiles(page, [UNKNOWN]);
       await page.locator(SEL.editor).first().click();
       await page.keyboard.type(tag);
 
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'upload did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await sendButton(page).click();
 
@@ -591,13 +574,11 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('sending an audio file posts an audios batch bubble', async () => {
-      const tag = `aud-${Date.now()}`;
+      const tag = `aud-${uniqueTag()}`;
       await stageFiles(page, [AUDIO]);
       await typeCaption(page, tag);
 
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'upload did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await sendButton(page).click();
 
@@ -616,14 +597,12 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     test('a multi-type batch groups its bubbles — footer only on the last', async () => {
       // image + file → two messages sharing one batchId, rendered as two grouped bubbles. The caption
       // lands on the LAST batch message (the file), giving a unique handle on this exact batch.
-      const tag = `grp-${Date.now()}`;
+      const tag = `grp-${uniqueTag()}`;
       await stageFiles(page, [IMAGE_1, PDF]);
       await page.locator(SEL.editor).first().click();
       await page.keyboard.type(tag);
 
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await sendButton(page).click();
 
@@ -658,9 +637,7 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     test('clicking an uploaded image tile opens and closes the fullscreen viewer', async () => {
       await stageFiles(page, [IMAGE_1]);
       // A media tile becomes clickable only once its upload has succeeded.
-      if (!(await waitForSendEnabled(page))) {
-        test.skip(true, 'upload did not settle — backend unavailable');
-      }
+      await waitForSendEnabled(page);
 
       await page.locator('[data-testid="attachment-tile-open"]').first().click();
       const viewer = page.locator('.cometchat-fullscreen-viewer');
@@ -757,7 +734,7 @@ test.describe('Multiple attachments (ENG-36752)', () => {
         await expect(sendButton(page)).toBeDisabled();
 
         await page.context().setOffline(false);
-        await page.waitForTimeout(1_000);
+        await page.waitForFunction(() => navigator.onLine);
         await page.locator(SEL.retryBadge).first().click();
         // The SAME tile uploads through to success: retry badge gone, send re-enabled.
         await expect(page.locator(SEL.retryBadge)).toHaveCount(0, { timeout: 40_000 });
@@ -765,12 +742,14 @@ test.describe('Multiple attachments (ENG-36752)', () => {
       });
     }
 
-    test('a dashboard-denied file type shows a rejected tile, tooltip, and blocks send [gated: E2E_BLOCKED_MIME_TYPE]', async () => {
-      // A true server REJECTION (vs a retryable failure) requires a MIME the app's dashboard denies —
-      // app-specific, so gated like the React reference. Set E2E_BLOCKED_MIME_TYPE to that MIME.
-      const mime = process.env['E2E_BLOCKED_MIME_TYPE'];
-      test.skip(!mime, 'set E2E_BLOCKED_MIME_TYPE to a dashboard-denied MIME to run the type-rejection test');
-      await stageBuffers(page, [{ name: 'e2e-blocked.bin', mimeType: mime!, buffer: Buffer.from('blocked payload') }]);
+    test('a dashboard-denied file type shows a rejected tile, tooltip, and blocks send @quarantine (ENG-40832)', async () => {
+      // @quarantine (ENG-40832): the E2E app denies no file type yet, so the upload is accepted and
+      // there is no rejection to show. Needs a denied MIME type in the app's dashboard (image/svg+xml
+      // by default, or set E2E_BLOCKED_MIME_TYPE to the one it denies).
+
+      // A true server REJECTION (vs a retryable failure) needs a MIME type the app's dashboard denies.
+      const mime = process.env['E2E_BLOCKED_MIME_TYPE'] ?? 'image/svg+xml';
+      await stageBuffers(page, [{ name: 'e2e-blocked.svg', mimeType: mime, buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>') }]);
       // Hard rejection → the (non-retryable) error badge, no retry badge, send stays disabled.
       await expect(page.locator(SEL.errorBadge)).toBeVisible({ timeout: 25_000 });
       await expect(page.locator(SEL.retryBadge)).toHaveCount(0);
@@ -785,50 +764,61 @@ test.describe('Multiple attachments (ENG-36752)', () => {
       await expect(page.locator(SEL.tile)).toHaveCount(0);
     });
 
-    test('file size exceeded shows a rejected tile [gated: E2E_RUN_OVERSIZE]', async () => {
-      // Mirrors the React reference, which also gates this behind a supplied >100MB input. Off by
-      // default: a 100MB+ upload is heavy and throttle-prone. Enable with E2E_RUN_OVERSIZE=1.
-      test.skip(!process.env['E2E_RUN_OVERSIZE'], 'set E2E_RUN_OVERSIZE=1 to run the >100MB size-limit test');
-      const oversize = Buffer.alloc(101 * 1024 * 1024, 0); // 101 MB, never committed
-      await stageBuffers(page, [{ name: 'e2e-oversize.bin', mimeType: 'application/octet-stream', buffer: oversize }]);
-      await expect(page.locator(SEL.errorBadge)).toBeVisible({ timeout: 60_000 });
-      await expect(sendButton(page)).toBeDisabled();
+    test('file size exceeded shows a rejected tile', async () => {
+      // A 101 MB file, created per run in the OS temp dir (never committed). It is sparse, so writing
+      // it is instant; Playwright can't pass a buffer this large, so it goes in by path.
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-oversize-'));
+      const oversize = path.join(dir, 'e2e-oversize.bin');
+      fs.writeFileSync(oversize, '');
+      fs.truncateSync(oversize, 101 * 1024 * 1024);
+      try {
+        await page.locator(SEL.fileInput).first().setInputFiles(oversize);
+        await expect(page.locator(SEL.errorBadge)).toBeVisible({ timeout: 60_000 });
+        await expect(sendButton(page)).toBeDisabled();
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
     });
   });
 
   // ==================== 10. Edit option on batch messages ====================
 
   test.describe('Edit option', () => {
+    /**
+     * The open "More options" sheet. It is portaled to <body> when it opens, so it is never
+     * inside the bubble; closed sheets stay in the DOM hidden.
+     */
+    const openSheet = (p: Page) => p.locator('.cometchat-menu-list__sub-menu-list[data-visible="true"]');
+
     async function openOptions(bubbleWrapper: Locator): Promise<void> {
       await bubbleWrapper.locator(SEL.bubbleBody).first().hover();
       await bubbleWrapper.locator(SEL.moreOptions).first().click();
+      await expect(openSheet(page).getByRole('menuitem', { name: 'Delete' })).toBeVisible({ timeout: 5_000 });
     }
 
     test('edit IS offered on a captioned batch message', async () => {
-      const tag = `edit-${Date.now()}`;
-      if (!(await stageAndSend(page, [IMAGE_1, IMAGE_2], tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `edit-${uniqueTag()}`;
+      await stageAndSend(page, [IMAGE_1, IMAGE_2], tag);
       const wrapper = messageList(page)
         .locator('.cometchat-message-bubble__wrapper--outgoing')
         .filter({ hasText: tag });
       await requireDelivered(wrapper, 'captioned outgoing bubble');
       await openOptions(wrapper);
-      // Scope to THIS bubble's menu — every bubble renders its own (hidden) context menu inline.
-      await expect(wrapper.locator(SEL.editMenuItem)).toBeVisible({ timeout: 5_000 });
+      await expect(openSheet(page).getByRole('menuitem', { name: 'Edit' })).toBeVisible();
     });
 
     test('edit is NOT offered on media without a caption', async () => {
-      if (!(await stageAndSend(page, [IMAGE_1]))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
-      const wrapper = messageList(page).locator('.cometchat-message-bubble__wrapper--outgoing').last();
-      await requireDelivered(wrapper, 'outgoing media bubble');
-      // Guard: only assert when the newest outgoing bubble is genuinely caption-less (a caption
-      // renders a nested text-bubble). If accumulation raced us onto a captioned bubble, bail.
-      if ((await wrapper.locator('.cometchat-text-bubble').count()) > 0) return;
-      // A caption-less media bubble never builds an Edit option, so its own menu has none.
-      await expect(wrapper.locator(SEL.editMenuItem)).toHaveCount(0, { timeout: 3_000 });
+      await stageAndSend(page, [IMAGE_1]);
+      // This batch is the last thing sent, so it is the newest row (see 'a batch sent WITHOUT a
+      // caption' below for why the newest row is a safe anchor).
+      const lastRow = messageList(page).locator('.cometchat-message-list__message').last();
+      await requireDelivered(lastRow.locator(SEL.imagesBubble), 'outgoing media bubble');
+      const wrapper = lastRow.locator('.cometchat-message-bubble__wrapper--outgoing');
+      // Caption-less: no nested text bubble.
+      await expect(wrapper.locator('.cometchat-text-bubble')).toHaveCount(0);
+      // A caption-less media bubble never builds an Edit option.
+      await openOptions(wrapper);
+      await expect(openSheet(page).getByRole('menuitem', { name: 'Edit' })).toHaveCount(0);
     });
   });
 
@@ -836,10 +826,8 @@ test.describe('Multiple attachments (ENG-36752)', () => {
 
   test.describe('Batch send variants', () => {
     test('send a batch with all 4 media types and a caption', async () => {
-      const tag = `all4-${Date.now()}`;
-      if (!(await stageAndSend(page, [IMAGE_1, VIDEO, AUDIO, PDF], tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `all4-${uniqueTag()}`;
+      await stageAndSend(page, [IMAGE_1, VIDEO, AUDIO, PDF], tag);
       // One bubble per type, sharing the batch; the caption lands on the last (the file), so once the
       // tagged files bubble is here the other three halves of the batch must be here too — they are
       // the three rows immediately before it.
@@ -851,9 +839,7 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('a batch sent WITHOUT a caption renders no caption text', async () => {
-      if (!(await stageAndSend(page, [IMAGE_1, IMAGE_2]))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      await stageAndSend(page, [IMAGE_1, IMAGE_2]);
       // There is no caption to pin by, so anchor on the NEWEST row instead: this batch is the last
       // thing sent, and the row before it belongs to the previous test's file batch — so waiting for
       // the last row to hold an images bubble waits for exactly our message, with no fragile count
@@ -868,10 +854,8 @@ test.describe('Multiple attachments (ENG-36752)', () => {
 
   test.describe('Multi-image bubble', () => {
     test('renders a 2x2 grid for 4 images', async () => {
-      const tag = `img4-${Date.now()}`;
-      if (!(await stageAndSend(page, IMAGES_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `img4-${uniqueTag()}`;
+      await stageAndSend(page, IMAGES_4, tag);
       const bubble = taggedBubble(page, SEL.imagesBubble, tag);
       await requireDelivered(bubble, '4-image bubble');
       await expect(bubble.locator(SEL.imageGrid2x2)).toBeVisible();
@@ -880,23 +864,24 @@ test.describe('Multiple attachments (ENG-36752)', () => {
       // Read each tile's underlying attachment URL rather than the rendered <img src>: a tile shows a
       // SHARED placeholder until its image loads, and uploaded media can 403 in this app, so that swap
       // may never happen. The preloader <img> keeps the real per-attachment URL in exactly that case.
-      const urls = await bubble.locator(SEL.imageWrapper).evaluateAll((wrappers) =>
-        wrappers.map(
-          (w) =>
-            Array.from(w.querySelectorAll('img'))
-              .map((img) => img.getAttribute('src') ?? '')
-              .find((src) => src && !src.includes('image_placeholder')) ?? '',
-        ),
-      );
-      expect(urls.filter(Boolean)).toHaveLength(4);
-      expect(new Set(urls).size).toBe(4);
+      // The bubble first renders from the sent message and is then replaced by the server's copy,
+      // so read the URLs once they are set rather than at the first render.
+      const tileUrls = () =>
+        bubble.locator(SEL.imageWrapper).evaluateAll((wrappers) =>
+          wrappers.map(
+            (w) =>
+              Array.from(w.querySelectorAll('img'))
+                .map((img) => img.getAttribute('src') ?? '')
+                .find((src) => src && !src.includes('image_placeholder')) ?? '',
+          ),
+        );
+      await expect.poll(async () => (await tileUrls()).filter(Boolean).length, { timeout: 15_000 }).toBe(4);
+      expect(new Set(await tileUrls()).size).toBe(4);
     });
 
     test('clicking an image in the grid opens the fullscreen viewer', async () => {
-      const tag = `imgv-${Date.now()}`;
-      if (!(await stageAndSend(page, IMAGES_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `imgv-${uniqueTag()}`;
+      await stageAndSend(page, IMAGES_4, tag);
       const bubble = taggedBubble(page, SEL.imagesBubble, tag);
       await requireDelivered(bubble, '4-image bubble');
       await bubble.locator(SEL.imageWrapper).first().click();
@@ -910,10 +895,8 @@ test.describe('Multiple attachments (ENG-36752)', () => {
 
   test.describe('Multi-video bubble', () => {
     test('renders a grid layout for 4 videos', async () => {
-      const tag = `vid4-${Date.now()}`;
-      if (!(await stageAndSend(page, VIDEOS_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `vid4-${uniqueTag()}`;
+      await stageAndSend(page, VIDEOS_4, tag);
       const bubble = taggedBubble(page, SEL.videosBubble, tag);
       await requireDelivered(bubble, '4-video bubble');
       await expect(bubble.locator(SEL.videoGrid2x2)).toBeVisible();
@@ -921,20 +904,16 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('video tiles show a play overlay', async () => {
-      const tag = `vidp-${Date.now()}`;
-      if (!(await stageAndSend(page, VIDEOS_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `vidp-${uniqueTag()}`;
+      await stageAndSend(page, VIDEOS_4, tag);
       const bubble = taggedBubble(page, SEL.videosBubble, tag);
       await requireDelivered(bubble, '4-video bubble');
       await expect(bubble.locator(SEL.videoPlayOverlay).first()).toBeVisible();
     });
 
     test('clicking a video tile opens the fullscreen viewer', async () => {
-      const tag = `vidv-${Date.now()}`;
-      if (!(await stageAndSend(page, VIDEOS_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `vidv-${uniqueTag()}`;
+      await stageAndSend(page, VIDEOS_4, tag);
       const bubble = taggedBubble(page, SEL.videosBubble, tag);
       await requireDelivered(bubble, '4-video bubble');
       await bubble.locator(SEL.videoWrapper).first().click();
@@ -948,10 +927,8 @@ test.describe('Multiple attachments (ENG-36752)', () => {
 
   test.describe('Multi-audio bubble expand/collapse', () => {
     test('shows an expand toggle collapsed to 3 for more than 3 audios', async () => {
-      const tag = `aud4-${Date.now()}`;
-      if (!(await stageAndSend(page, AUDIOS_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `aud4-${uniqueTag()}`;
+      await stageAndSend(page, AUDIOS_4, tag);
       const bubble = taggedBubble(page, SEL.audiosBubble, tag);
       await requireDelivered(bubble, '4-audio bubble');
       await expect(bubble.locator(SEL.audiosItem)).toHaveCount(3); // COLLAPSED_MAX
@@ -959,10 +936,8 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('clicking expand reveals all audio items', async () => {
-      const tag = `aude-${Date.now()}`;
-      if (!(await stageAndSend(page, AUDIOS_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `aude-${uniqueTag()}`;
+      await stageAndSend(page, AUDIOS_4, tag);
       const bubble = taggedBubble(page, SEL.audiosBubble, tag);
       await requireDelivered(bubble, '4-audio bubble');
       await bubble.locator(SEL.audiosToggle).click();
@@ -972,10 +947,8 @@ test.describe('Multiple attachments (ENG-36752)', () => {
 
   test.describe('Multi-file bubble expand/collapse', () => {
     test('shows an expand toggle collapsed to 3 for more than 3 files', async () => {
-      const tag = `fil4-${Date.now()}`;
-      if (!(await stageAndSend(page, FILES_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `fil4-${uniqueTag()}`;
+      await stageAndSend(page, FILES_4, tag);
       const bubble = taggedBubble(page, SEL.filesBubble, tag);
       await requireDelivered(bubble, '4-file bubble');
       await expect(bubble.locator(SEL.fileItem)).toHaveCount(3); // COLLAPSED_MAX
@@ -983,10 +956,8 @@ test.describe('Multiple attachments (ENG-36752)', () => {
     });
 
     test('clicking expand reveals all file items', async () => {
-      const tag = `file-${Date.now()}`;
-      if (!(await stageAndSend(page, FILES_4, tag))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      const tag = `file-${uniqueTag()}`;
+      await stageAndSend(page, FILES_4, tag);
       const bubble = taggedBubble(page, SEL.filesBubble, tag);
       await requireDelivered(bubble, '4-file bubble');
       await bubble.locator(SEL.fileExpand).click();
@@ -998,9 +969,7 @@ test.describe('Multiple attachments (ENG-36752)', () => {
 
   test.describe('Conversation subtitle', () => {
     test('the conversation list shows the media type of the last attachment', async () => {
-      if (!(await stageAndSend(page, [IMAGE_1]))) {
-        test.skip(true, 'uploads did not settle — backend unavailable');
-      }
+      await stageAndSend(page, [IMAGE_1]);
       // The conversation we sent into surfaces its last message with the image type indicator
       // (icon + "Image" label). Assert on the type icon — robust to the sender-name prefix.
       await expect(page.locator(SEL.convSubtitleImageIcon).first()).toBeVisible({ timeout: 15_000 });

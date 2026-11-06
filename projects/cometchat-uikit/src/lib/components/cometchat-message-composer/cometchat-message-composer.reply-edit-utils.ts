@@ -158,7 +158,7 @@ export function enterReplyModeImpl(self: any, message: CometChat.BaseMessage): v
     ? CometChatLocalize.getLocalizedString('conversation_subtitle_you_message')
     : (sender?.getName() || CometChatLocalize.getLocalizedString('unknown'));
   const replyTemplate = CometChatLocalize.getLocalizedString('message_composer_replying_to');
-  self.announcePolite(replyTemplate.replace('{sender}', senderName));
+  self.announcePolite(replyTemplate.replace('{sender}', () => senderName));
   if (self.customRichTextEditor) { self.focusRichTextEditor(); } else {
     self.focusTextInput();
   }

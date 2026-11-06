@@ -22,7 +22,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 import { CometChatPinnedMessagesComponent } from './cometchat-pinned-messages.component';
 import { CometChatUIKit } from '../../cometchat-uikit';

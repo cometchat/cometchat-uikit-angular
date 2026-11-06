@@ -16,16 +16,16 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { within, expect } from '@storybook/test';
+import { within, expect, waitFor } from 'storybook/test';
 
 import { CometChatMessageListComponent } from './cometchat-message-list.component';
 import { MessageListAlignment } from '../../Enums/Enums';
 import { PinSaveService } from '../../services/pin-save.service';
 import { ThreadSubscriptionService } from '../../services/thread-subscription.service';
 import { COMETCHAT_GLOBAL_CONFIG } from '../../services/global-config.service';
-import { CometChatPinSaveEvents } from '../../events/CometChatPinSaveEvents';
 import { CometChatThreadEvents } from '../../events/CometChatThreadEvents';
 import { createMockUser, createMockMessage } from '../../../../../../.storybook/utils/mock-data';
+import { createMockPinSaveService } from '../../../../../../.storybook/utils/mock-pin-save';
 
 // ============================================
 // Mock Classes
@@ -276,55 +276,6 @@ function createMarkedMessages(baseId: number, specs: MarkedMessageSpec[]): Comet
 }
 
 /**
- * Creates a mock PinSaveService for Storybook stories.
- *
- * The real service writes to the server before anything else, so in Storybook
- * every action would fail and revert. This one applies the same optimistic
- * change locally and publishes it on the shared bus, which is what the message
- * list subscribes to — so a bubble redraws exactly as it does in an app.
- */
-function createMockPinSaveService() {
-  const now = (): number => Math.floor(Date.now() / 1000);
-
-  return {
-    isSupported: () => true,
-    isPinEnabled: async () => true,
-    isSaveEnabled: async () => true,
-    isPinConversationEnabled: async () => false,
-    isPinned: (message: CometChat.BaseMessage) => !!message?.getPinnedAt?.(),
-    isSaved: (message: CometChat.BaseMessage) => !!message?.getSavedAt?.(),
-    pinnedBy: (message: CometChat.BaseMessage) => message?.getPinnedBy?.() ?? null,
-    isSystemPin: (message: CometChat.BaseMessage) => message?.getPinnedBy?.() === 'app_system',
-    getConfiguredLimit: async () => null,
-    run: async (action: 'pin' | 'unpin' | 'save' | 'unsave', message: CometChat.BaseMessage) => {
-      switch (action) {
-        case 'pin':
-          message.setPinnedAt(now());
-          message.setPinnedBy('user-john-doe');
-          CometChatPinSaveEvents.publishMessagePinned({ message });
-          break;
-        case 'unpin':
-          // Cleared rather than zeroed — the presence of the timestamp IS the
-          // boolean, so a leftover 0 would read as pinned at the epoch.
-          message.setPinnedAt(undefined);
-          message.setPinnedBy(undefined);
-          CometChatPinSaveEvents.publishMessageUnpinned({ message });
-          break;
-        case 'save':
-          message.setSavedAt(now());
-          CometChatPinSaveEvents.publishMessageSaved({ message });
-          break;
-        case 'unsave':
-          message.setSavedAt(undefined);
-          CometChatPinSaveEvents.publishMessageUnsaved({ message });
-          break;
-      }
-      return message;
-    },
-  };
-}
-
-/**
  * Creates a mock ThreadSubscriptionService for Storybook stories.
  *
  * `toggle` publishes rather than writing the flag itself, because that is the
@@ -450,6 +401,8 @@ const meta: Meta<CometChatMessageListComponent> = {
         CometChatMessageListStoryWrapperComponent,
         CometChatMessageListMarkersStoryWrapperComponent,
       ],
+      // The real service reaches the uninitialised SDK; see createMockPinSaveService.
+      providers: [{ provide: PinSaveService, useFactory: () => createMockPinSaveService() }],
     }),
   ],
   args: {
@@ -923,6 +876,64 @@ type Story = StoryObj<CometChatMessageListComponent>;
 // Stories
 // ============================================
 
+// ============================================
+// Play helpers
+// ============================================
+
+/** Generous: the list fetches, then lays out and scrolls before it settles. */
+const RENDER_SETTLE = { timeout: 8000 };
+
+/** Resolves with the rendered message rows once the list has loaded `count` of them. */
+function waitForMessages(canvasElement: HTMLElement, count: number): Promise<Element[]> {
+  return waitFor(() => {
+    const rows = Array.from(canvasElement.querySelectorAll('.cometchat-message-list__message'));
+    expect(rows).toHaveLength(count);
+    return rows;
+  }, RENDER_SETTLE);
+}
+
+/**
+ * Hovers a message so its options appear, opens the overflow menu and returns
+ * it. The menu is captured before the click: opening portals it to
+ * document.body, out of this story's canvas, and every closed menu on the
+ * page carries the same id — so a query by id afterwards could just as easily
+ * find another one.
+ */
+async function openMessageOptions(canvasElement: HTMLElement, messageId: number): Promise<HTMLElement> {
+  const row = `[data-message-id="${messageId}"]`;
+  const body = await waitFor(() => {
+    const el = canvasElement.querySelector<HTMLElement>(`${row} .cometchat-message-bubble__body`);
+    expect(el).not.toBeNull();
+    return el!;
+  }, RENDER_SETTLE);
+
+  // Options only appear on hover.
+  body.dispatchEvent(new MouseEvent('mouseenter'));
+  const { subMenu, moreButton } = await waitFor(() => {
+    const menu = canvasElement.querySelector<HTMLElement>(`${row} #subMenuContext`);
+    const more = canvasElement.querySelector<HTMLElement>(`${row} .cometchat-menu-list__sub-menu`);
+    expect(menu).not.toBeNull();
+    expect(more).not.toBeNull();
+    return { subMenu: menu!, moreButton: more! };
+  }, RENDER_SETTLE);
+
+  moreButton.click();
+  await waitFor(() => expect(subMenu).toHaveAttribute('data-visible', 'true'));
+  return subMenu;
+}
+
+/** Opens the Organise group in an open options menu and returns its flyout. */
+async function openOrganiseGroup(subMenu: HTMLElement): Promise<HTMLElement> {
+  const group = subMenu.querySelector<HTMLElement>('#organise');
+  expect(group).not.toBeNull();
+  group!.click();
+  return waitFor(() => {
+    const flyout = subMenu.querySelector<HTMLElement>('.cometchat-menu-list__group-flyout');
+    expect(flyout).not.toBeNull();
+    return flyout!;
+  });
+}
+
 /** Default message list with a user conversation showing mixed message types. */
 export const Default: Story = {
   render: args => ({
@@ -1352,28 +1363,9 @@ export const OrganiseMessageOptions: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    // Options only appear on hover, so a static render would show none of them.
-    const body = canvasElement.querySelector('[data-message-id="7402"] .cometchat-message-bubble__body') as HTMLElement;
-    if (body) {
-      body.dispatchEvent(new MouseEvent('mouseenter'));
-      await new Promise(r => setTimeout(r, 300));
-    }
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="7402"] #subMenuContext') as HTMLElement;
-
-    const moreButton = canvasElement.querySelector('[data-message-id="7402"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    if (moreButton) {
-      moreButton.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
-    const group = subMenu?.querySelector('#organise') as HTMLElement | null;
-    if (group) {
-      group.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
+    // Options only appear on hover; open the menu and the Organise flyout.
+    const subMenu = await openMessageOptions(canvasElement, 7402);
+    await openOrganiseGroup(subMenu);
   },
   parameters: {
     docs: {
@@ -1431,27 +1423,9 @@ export const OrganiseOptionsOnAMarkedMessage: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="7502"] .cometchat-message-bubble__body') as HTMLElement;
-    if (body) {
-      body.dispatchEvent(new MouseEvent('mouseenter'));
-      await new Promise(r => setTimeout(r, 300));
-    }
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="7502"] #subMenuContext') as HTMLElement;
-
-    const moreButton = canvasElement.querySelector('[data-message-id="7502"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    if (moreButton) {
-      moreButton.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
-    const group = subMenu?.querySelector('#organise') as HTMLElement | null;
-    if (group) {
-      group.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
+    // Open the menu and the Organise flyout on the marked message.
+    const subMenu = await openMessageOptions(canvasElement, 7502);
+    await openOrganiseGroup(subMenu);
   },
   parameters: {
     docs: {
@@ -1509,27 +1483,9 @@ export const SystemPinnedMessage: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="7602"] .cometchat-message-bubble__body') as HTMLElement;
-    if (body) {
-      body.dispatchEvent(new MouseEvent('mouseenter'));
-      await new Promise(r => setTimeout(r, 300));
-    }
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="7602"] #subMenuContext') as HTMLElement;
-
-    const moreButton = canvasElement.querySelector('[data-message-id="7602"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    if (moreButton) {
-      moreButton.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
-    const group = subMenu?.querySelector('#organise') as HTMLElement | null;
-    if (group) {
-      group.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
+    // Open the menu and the Organise flyout on the system-pinned message.
+    const subMenu = await openMessageOptions(canvasElement, 7602);
+    await openOrganiseGroup(subMenu);
   },
   parameters: {
     docs: {
@@ -1587,17 +1543,8 @@ export const ThreadSubscriptionOption: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="7702"] .cometchat-message-bubble__body') as HTMLElement;
-    if (body) {
-      body.dispatchEvent(new MouseEvent('mouseenter'));
-      await new Promise(r => setTimeout(r, 300));
-    }
-    const moreButton = canvasElement.querySelector('[data-message-id="7702"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    if (moreButton) {
-      moreButton.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
+    // Open the options menu so the thread-subscription entry shows.
+    await openMessageOptions(canvasElement, 7702);
   },
   parameters: {
     docs: {
@@ -1655,17 +1602,8 @@ export const ThreadSubscriptionFollowing: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="7802"] .cometchat-message-bubble__body') as HTMLElement;
-    if (body) {
-      body.dispatchEvent(new MouseEvent('mouseenter'));
-      await new Promise(r => setTimeout(r, 300));
-    }
-    const moreButton = canvasElement.querySelector('[data-message-id="7802"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    if (moreButton) {
-      moreButton.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
+    // Open the options menu so the thread-subscription entry shows.
+    await openMessageOptions(canvasElement, 7802);
   },
   parameters: {
     docs: {
@@ -1728,17 +1666,8 @@ export const PinSaveAndThreadOptionsHidden: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="7902"] .cometchat-message-bubble__body') as HTMLElement;
-    if (body) {
-      body.dispatchEvent(new MouseEvent('mouseenter'));
-      await new Promise(r => setTimeout(r, 300));
-    }
-    const moreButton = canvasElement.querySelector('[data-message-id="7902"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    if (moreButton) {
-      moreButton.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
+    // Open the options menu to show it carries no pin, save or thread entries.
+    await openMessageOptions(canvasElement, 7902);
   },
   parameters: {
     docs: {
@@ -1796,32 +1725,15 @@ export const UnpinConfirmation: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="7012"] .cometchat-message-bubble__body') as HTMLElement;
-    if (body) {
-      body.dispatchEvent(new MouseEvent('mouseenter'));
-      await new Promise(r => setTimeout(r, 300));
-    }
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="7012"] #subMenuContext') as HTMLElement;
-
-    const moreButton = canvasElement.querySelector('[data-message-id="7012"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    if (moreButton) {
-      moreButton.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
-    const group = subMenu?.querySelector('#organise') as HTMLElement | null;
-    if (group) {
-      group.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
-    const unpin = subMenu?.querySelector('.cometchat-menu-list__group-flyout #unpinMessage') as HTMLElement | null;
-    if (unpin) {
-      unpin.click();
-      await new Promise(r => setTimeout(r, 500));
-    }
+    // Open the menu, then Organise, then choose Unpin to raise its confirmation.
+    const subMenu = await openMessageOptions(canvasElement, 7012);
+    const flyout = await openOrganiseGroup(subMenu);
+    const unpin = flyout.querySelector<HTMLElement>('#unpinMessage');
+    expect(unpin).not.toBeNull();
+    unpin!.click();
+    await waitFor(() => {
+      expect(canvasElement.querySelector('cometchat-pin-save-confirm-dialog')).not.toBeNull();
+    });
   },
   parameters: {
     docs: {
@@ -2054,10 +1966,10 @@ export const TestDefaultRendersMessages: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 3000));
-    // Message list container should be present
-    const messageList = canvasElement.querySelector('.cometchat-message-list');
-    expect(messageList).not.toBeNull();
+    // One row per mock message, none of them falling back to the error bubble
+    await waitForMessages(canvasElement, 10);
+    expect(canvasElement.querySelectorAll('cometchat-message-bubble')).toHaveLength(10);
+    expect(canvasElement.querySelector('.cometchat-message-list__bubble-error')).toBeNull();
   },
 };
 
@@ -2087,10 +1999,9 @@ export const TestHideDateSeparator: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
+    await waitForMessages(canvasElement, 10);
     // Date separators should NOT be present
-    const dateSeparators = canvasElement.querySelectorAll('.cometchat-message-list__date-separator');
-    expect(dateSeparators.length).toBe(0);
+    expect(canvasElement.querySelectorAll('.cometchat-message-list__date-separator')).toHaveLength(0);
   },
 };
 
@@ -2120,10 +2031,9 @@ export const TestHideReceipts: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    // Receipt icons should NOT be present
-    const receipts = canvasElement.querySelectorAll('.cometchat-message-bubble__status-info-view-receipt');
-    expect(receipts.length).toBe(0);
+    await waitForMessages(canvasElement, 10);
+    // Every third message is the signed-in user's own, yet none shows a receipt
+    expect(canvasElement.querySelectorAll('.cometchat-receipts')).toHaveLength(0);
   },
 };
 
@@ -2153,10 +2063,9 @@ export const TestHideAvatar: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    // Avatar elements in message bubbles should NOT be visible
-    const avatars = canvasElement.querySelectorAll('.cometchat-message-bubble__leading-view cometchat-avatar');
-    expect(avatars.length).toBe(0);
+    await waitForMessages(canvasElement, 10);
+    // Avatar elements in message bubbles should NOT be present
+    expect(canvasElement.querySelectorAll('.cometchat-message-bubble__leading-view cometchat-avatar')).toHaveLength(0);
   },
 };
 
@@ -2183,10 +2092,14 @@ export const TestEmptyState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 3000));
-    // Message list component should be present
-    const messageList = canvasElement.querySelector('.cometchat-message-list');
-    expect(messageList).not.toBeNull();
+    // The fetch returns nothing: the list leaves its loading state for the
+    // empty one, with no messages and no error
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.cometchat-message-list__container')).not.toBeNull();
+      expect(canvasElement.querySelector('.cometchat-message-list__loading')).toBeNull();
+    }, RENDER_SETTLE);
+    expect(canvasElement.querySelectorAll('.cometchat-message-list__message')).toHaveLength(0);
+    expect(canvasElement.querySelector('.cometchat-message-list__error')).toBeNull();
   },
 };
 
@@ -2214,10 +2127,14 @@ export const TestErrorState: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    // Error state should be visible
-    const errorView = canvasElement.querySelector('.cometchat-message-list__error');
-    expect(errorView).not.toBeNull();
+    // Error state should be visible, offering a retry
+    const errorView = await waitFor(() => {
+      const el = canvasElement.querySelector<HTMLElement>('.cometchat-message-list__error');
+      expect(el).not.toBeNull();
+      return el!;
+    }, RENDER_SETTLE);
+    expect(within(errorView).getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    expect(canvasElement.querySelectorAll('.cometchat-message-list__message')).toHaveLength(0);
   },
 };
 
@@ -2262,9 +2179,9 @@ export const TestPinnedIndicatorRenders: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
+    await waitForMessages(canvasElement, 2);
     const pinned = canvasElement.querySelectorAll('.cometchat-message-bubble__pinned-indicator');
-    expect(pinned.length).toBe(1);
+    expect(pinned).toHaveLength(1);
 
     const marked = canvasElement.querySelector('[data-message-id="8102"] .cometchat-message-bubble__pinned-indicator');
     expect(marked).not.toBeNull();
@@ -2312,9 +2229,9 @@ export const TestSavedIndicatorRenders: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
+    await waitForMessages(canvasElement, 2);
     const saved = canvasElement.querySelectorAll('.cometchat-message-bubble__saved-indicator');
-    expect(saved.length).toBe(1);
+    expect(saved).toHaveLength(1);
 
     const marked = canvasElement.querySelector('[data-message-id="8202"] .cometchat-message-bubble__saved-indicator');
     expect(marked).not.toBeNull();
@@ -2358,39 +2275,11 @@ export const TestOrganiseGroupOffersPinAndSave: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="8301"] .cometchat-message-bubble__body') as HTMLElement;
-    expect(body).not.toBeNull();
-
-    // Options only appear on hover.
-    body.dispatchEvent(new MouseEvent('mouseenter'));
-    await new Promise(r => setTimeout(r, 300));
-
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="8301"] #subMenuContext') as HTMLElement;
-    expect(subMenu).not.toBeNull();
-
-    const moreButton = canvasElement.querySelector('[data-message-id="8301"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    expect(moreButton).not.toBeNull();
-
-    moreButton.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    expect(subMenu.getAttribute('data-visible')).toBe('true');
-
-    const group = subMenu.querySelector('#organise') as HTMLElement;
-    expect(group).not.toBeNull();
-
-    group.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    const flyout = subMenu.querySelector('.cometchat-menu-list__group-flyout') as HTMLElement;
-    expect(flyout).not.toBeNull();
-    expect(flyout.querySelectorAll('[role="menuitem"]').length).toBe(2);
-    expect(flyout.textContent!.trim()).toContain('Pin message');
-    expect(flyout.textContent!.trim()).toContain('Save message');
+    const subMenu = await openMessageOptions(canvasElement, 8301);
+    const flyout = await openOrganiseGroup(subMenu);
+    expect(flyout.querySelectorAll('[role="menuitem"]')).toHaveLength(2);
+    expect(flyout).toHaveTextContent('Pin message');
+    expect(flyout).toHaveTextContent('Save message');
   },
 };
 
@@ -2433,37 +2322,10 @@ export const TestOrganiseGroupOffersUnpinAndUnsave: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="8401"] .cometchat-message-bubble__body') as HTMLElement;
-    expect(body).not.toBeNull();
-
-    body.dispatchEvent(new MouseEvent('mouseenter'));
-    await new Promise(r => setTimeout(r, 300));
-
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="8401"] #subMenuContext') as HTMLElement;
-    expect(subMenu).not.toBeNull();
-
-    const moreButton = canvasElement.querySelector('[data-message-id="8401"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    expect(moreButton).not.toBeNull();
-
-    moreButton.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    expect(subMenu.getAttribute('data-visible')).toBe('true');
-
-    const group = subMenu.querySelector('#organise') as HTMLElement;
-    expect(group).not.toBeNull();
-
-    group.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    const flyout = subMenu.querySelector('.cometchat-menu-list__group-flyout') as HTMLElement;
-    expect(flyout).not.toBeNull();
-    expect(flyout.textContent!.trim()).toContain('Unpin message');
-    expect(flyout.textContent!.trim()).toContain('Unsave message');
+    const subMenu = await openMessageOptions(canvasElement, 8401);
+    const flyout = await openOrganiseGroup(subMenu);
+    expect(flyout).toHaveTextContent('Unpin message');
+    expect(flyout).toHaveTextContent('Unsave message');
   },
 };
 
@@ -2504,30 +2366,10 @@ export const TestThreadSubscriptionOptionTitleFlips: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="8501"] .cometchat-message-bubble__body') as HTMLElement;
-    expect(body).not.toBeNull();
-
-    body.dispatchEvent(new MouseEvent('mouseenter'));
-    await new Promise(r => setTimeout(r, 300));
-
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="8501"] #subMenuContext') as HTMLElement;
-    expect(subMenu).not.toBeNull();
-
-    const moreButton = canvasElement.querySelector('[data-message-id="8501"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    expect(moreButton).not.toBeNull();
-
-    moreButton.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    expect(subMenu.getAttribute('data-visible')).toBe('true');
-
-    const option = subMenu.querySelector('#threadSubscription') as HTMLElement;
+    const subMenu = await openMessageOptions(canvasElement, 8501);
+    const option = subMenu.querySelector('#threadSubscription');
     expect(option).not.toBeNull();
-    expect(option.textContent!.trim()).toContain('Unsubscribe from thread');
+    expect(option).toHaveTextContent('Unsubscribe from thread');
   },
 };
 
@@ -2575,26 +2417,7 @@ export const TestPinSaveAndThreadOptionsHidden: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 2000));
-    const body = canvasElement.querySelector('[data-message-id="8601"] .cometchat-message-bubble__body') as HTMLElement;
-    expect(body).not.toBeNull();
-
-    body.dispatchEvent(new MouseEvent('mouseenter'));
-    await new Promise(r => setTimeout(r, 300));
-
-    // Held before the click: opening portals the menu to document.body, out of
-    // this story's canvas, and every closed menu on the page carries the same
-    // id — so a query by id afterwards could just as easily find another one.
-    const subMenu = canvasElement.querySelector('[data-message-id="8601"] #subMenuContext') as HTMLElement;
-    expect(subMenu).not.toBeNull();
-
-    const moreButton = canvasElement.querySelector('[data-message-id="8601"] .cometchat-menu-list__sub-menu') as HTMLElement;
-    expect(moreButton).not.toBeNull();
-
-    moreButton.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    expect(subMenu.getAttribute('data-visible')).toBe('true');
+    const subMenu = await openMessageOptions(canvasElement, 8601);
     expect(subMenu.querySelector('#organise')).toBeNull();
     expect(subMenu.querySelector('#threadSubscription')).toBeNull();
 

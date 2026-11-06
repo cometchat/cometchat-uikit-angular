@@ -352,6 +352,7 @@ describe('cometchat-message-list.helper-utils', () => {
       expect(() => onBubbleErrorImpl({
         error: new Error('bubble error'),
         componentName: 'TestComponent',
+        timestamp: Date.now(),
       })).not.toThrow();
     });
   });

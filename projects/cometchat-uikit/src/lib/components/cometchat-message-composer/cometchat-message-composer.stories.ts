@@ -14,7 +14,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 import { CometChatMessageComposerComponent } from './cometchat-message-composer.component';
 import { createMockUser, MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';

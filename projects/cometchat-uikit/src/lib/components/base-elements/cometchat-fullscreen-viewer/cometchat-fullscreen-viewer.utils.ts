@@ -121,10 +121,10 @@ export function getMediaAltText(
 ): string {
   const sender = senderName || getLocalizedString('unknown');
   if (mediaType === 'video') {
-    return getLocalizedString('fullscreen_viewer_video_alt').replace('{sender}', sender);
+    return getLocalizedString('fullscreen_viewer_video_alt').replace('{sender}', () => sender);
   }
   if (mediaType === 'image') {
-    return getLocalizedString('fullscreen_viewer_image_alt').replace('{sender}', sender);
+    return getLocalizedString('fullscreen_viewer_image_alt').replace('{sender}', () => sender);
   }
   return fileName || getLocalizedString('message_list_full_screen_viewer');
 }
@@ -135,8 +135,8 @@ export function getMediaAltText(
 export function getGalleryPositionText(current: number, total: number): string {
   return (
     getLocalizedString('fullscreen_viewer_index')
-      ?.replace('{current}', current.toString())
-      ?.replace('{total}', total.toString()) ||
+      ?.replace('{current}', () => current.toString())
+      ?.replace('{total}', () => total.toString()) ||
     `${current} of ${total}`
   );
 }

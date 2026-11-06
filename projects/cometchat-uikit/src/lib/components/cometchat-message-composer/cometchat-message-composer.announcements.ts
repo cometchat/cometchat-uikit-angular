@@ -44,28 +44,28 @@ export function announceAttachmentRemovedImpl(ctx: any, fileName: string): void 
 
 export function announceFocusedMentionImpl(ctx: any, name: string, position: number, total: number): void {
   const template = CometChatLocalize.getLocalizedString('message_composer_mention_focused');
-  const message = template
-    .replace('{name}', name)
-    .replace('{position}', position.toString())
-    .replace('{total}', total.toString());
+  const values: Record<string, string> = { '{name}': name, '{position}': position.toString(), '{total}': total.toString() };
+  // One pass with a replacer: `$&`, `$'` or `$$` in a name stay literal, and a name that itself
+  // reads "{position}" or "{total}" is not filled again.
+  const message = template.replace(/\{(?:name|position|total)\}/g, (placeholder) => values[placeholder]);
   announcePoliteImpl(ctx, message);
 }
 
 export function announceMentionSuggestionsCountImpl(ctx: any, count: number): void {
   const template = CometChatLocalize.getLocalizedString('accessibility_mentions_suggestions');
-  const message = template.replace('{count}', count.toString());
+  const message = template.replace('{count}', () => count.toString());
   ctx.liveAnnouncerService.announce(message, 'polite');
 }
 
 export function announceMentionInsertedImpl(ctx: any, name: string): void {
   const template = CometChatLocalize.getLocalizedString('accessibility_mentioned_user');
-  const message = template.replace('{name}', name);
+  const message = template.replace('{name}', () => name);
   ctx.liveAnnouncerService.announce(message, 'polite');
 }
 
 export function announceFormatStateChangeImpl(ctx: any, formatName: string, enabled: boolean): void {
   const templateKey = enabled ? 'message_composer_format_enabled' : 'message_composer_format_disabled';
   const template = CometChatLocalize.getLocalizedString(templateKey);
-  const message = template.replace('{format}', formatName);
+  const message = template.replace('{format}', () => formatName);
   announcePoliteImpl(ctx, message);
 }

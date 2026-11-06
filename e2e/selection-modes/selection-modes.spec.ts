@@ -1,177 +1,192 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import {
+  loginToApp,
+  conversationRow,
+  openConversation,
+  getUserName,
+  sendTextAs,
+  createE2EGroup,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  THIRD_USER,
+  uniqueTag,
+  searchableTag,
+  waitForSearchIndex,
+} from '../helpers';
 
 /**
  * E2E Tests — Selection Modes (Conversations, Users, Groups)
  *
- * Tests the selection mode interactions available in the sample app:
- * - Verifying selection controls render
- * - Selecting/deselecting items
- * - Selection count
- *
- * Note: Selection mode in the sample app may be triggered via a menu or is
- * always active depending on configuration. These tests verify the selection
- * UI when it's accessible.
+ * Which row a list marks as active when you open it, by click or keyboard, and what happens
+ * to that selection when you switch tabs. Every test arranges its own chats or group over
+ * REST and names the row it acts on: other runs' users and groups share these lists.
  */
 
+const tab = (page: Page, name: string) => page.getByLabel('Navigation tabs').getByRole('tab', { name });
+const header = (page: Page) => page.locator('cometchat-message-header').first();
+const users = (page: Page) => page.locator('cometchat-users');
+const groups = (page: Page) => page.locator('cometchat-groups');
+
+/** The row in a Users or Groups list whose title is exactly `name`. */
+function namedRow(list: Locator, itemClass: string, name: string): Locator {
+  return list.locator(`.${itemClass}`).filter({ has: list.page().getByText(name, { exact: true }) }).first();
+}
+
+/** Search a Users or Groups list for `name`, retrying while the debounced search settles, and return its row. */
+async function findRow(list: Locator, itemClass: string, name: string): Promise<Locator> {
+  const row = namedRow(list, itemClass, name);
+  // Let the first page load before searching: a search typed during it can mix that page into the
+  // results (ENG-40729).
+  await expect(list.locator(`.${itemClass}`).first()).toBeVisible({ timeout: 30_000 });
+  await expect(async () => {
+    await list.getByRole('searchbox').fill(name);
+    await expect(row).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 30_000 });
+  return row;
+}
+
+/** Title of the list row that has keyboard focus ('' if none). */
+const focusedRowTitle = (page: Page) =>
+  page.evaluate(
+    () =>
+      document.activeElement
+        ?.closest('.cometchat-paginated-list__item')
+        ?.querySelector('.cometchat-user-item__title-text, .cometchat-group-item__title-text')
+        ?.textContent?.trim() ?? ''
+  );
+
+/** Tab from a list's search box into its rows; returns the title of the row that has focus. */
+async function tabIntoList(page: Page, list: Locator): Promise<string> {
+  await list.getByRole('searchbox').focus();
+  await page.keyboard.press('Tab');
+  const title = await focusedRowTitle(page);
+  expect(title, 'a list row has keyboard focus').toBeTruthy();
+  return title;
+}
+
 test.describe('Selection Modes', () => {
-  let page: Page;
-
-  test.beforeEach(async ({ page: p }) => {
-    page = p;
-    await loginToApp(page);
-    await page.waitForSelector('.cometchat-conversations', { timeout: 30_000 });
-    await page.waitForTimeout(2000);
-  });
-
   // ==================== Conversations Selection ====================
 
   test.describe('Conversations Tab', () => {
-    test('conversation items are clickable and set active state', async () => {
-      const firstItem = page.locator('.cometchat-conversation-item').first();
-      const hasItem = await firstItem.isVisible({ timeout: 5_000 }).catch(() => false);
+    test('conversation items are clickable and set active state', async ({ page }) => {
+      await sendTextAs(SECONDARY_USER, PRIMARY_USER, `Good morning ${uniqueTag()}`);
+      await loginToApp(page);
+      const name = await getUserName(SECONDARY_USER);
 
-      if (hasItem) {
-        await firstItem.click();
-        await page.waitForTimeout(1000);
-
-        // Active state should be set
-        const activeItem = page.locator('.cometchat-conversations__list-item--active, [class*="list-item--active"]');
-        const hasActive = await activeItem.isVisible({ timeout: 5_000 }).catch(() => false);
-        expect(hasActive).toBeTruthy();
-      }
+      await openConversation(page, name);
+      await expect(conversationRow(page, name)).toHaveClass(/cometchat-conversation-item--active/);
+      await expect(page.locator('.cometchat-conversation-item--active')).toHaveCount(1);
     });
 
-    test('clicking different conversation changes active state', async () => {
-      const items = page.locator('.cometchat-conversation-item');
-      const count = await items.count();
+    test('clicking different conversation changes active state', async ({ page }) => {
+      await sendTextAs(SECONDARY_USER, PRIMARY_USER, `See you at lunch ${uniqueTag()}`);
+      await sendTextAs(THIRD_USER, PRIMARY_USER, `Thanks for the notes ${uniqueTag()}`);
+      await loginToApp(page);
+      const [first, second] = await Promise.all([getUserName(SECONDARY_USER), getUserName(THIRD_USER)]);
 
-      if (count >= 2) {
-        // Click first item
-        await items.first().click();
-        await page.waitForTimeout(1000);
+      await openConversation(page, first);
+      await expect(conversationRow(page, first)).toHaveClass(/--active/);
+      await openConversation(page, second);
 
-        // Click second item
-        await items.nth(1).click();
-        await page.waitForTimeout(1000);
-
-        // Only one item should be active
-        const activeItems = page.locator('.cometchat-conversations__list-item--active, [class*="list-item--active"]');
-        const activeCount = await activeItems.count();
-        expect(activeCount).toBeLessThanOrEqual(1);
-      }
+      // Only the chat opened last is active.
+      await expect(conversationRow(page, second)).toHaveClass(/cometchat-conversation-item--active/);
+      await expect(conversationRow(page, first)).not.toHaveClass(/--active/);
+      await expect(page.locator('.cometchat-conversation-item--active')).toHaveCount(1);
     });
   });
 
   // ==================== Users Tab Selection ====================
 
   test.describe('Users Tab', () => {
-    test.beforeEach(async () => {
-      const usersTab = page.locator('[data-testid="tab-users"], button:has-text("Users"), .cometchat-tabs__tab:has-text("Users")').first();
-      await usersTab.click();
-      await page.waitForSelector('cometchat-users, .cometchat-users', { timeout: 15_000 });
-      await page.waitForTimeout(2000);
+    test.beforeEach(async ({ page }) => {
+      await loginToApp(page);
+      await tab(page, 'Users').click();
+      await expect(users(page).getByRole('option').first()).toBeVisible({ timeout: 30_000 });
     });
 
-    test('user items are clickable', async () => {
-      const firstUser = page.locator('.cometchat-user-item, cometchat-user-item, .cometchat-list-item').first();
-      const hasUser = await firstUser.isVisible({ timeout: 5_000 }).catch(() => false);
+    test('user items are clickable', async ({ page }) => {
+      const name = await getUserName(SECONDARY_USER);
+      const row = await findRow(users(page), 'cometchat-user-item', name);
 
-      if (hasUser) {
-        await firstUser.click();
-        await page.waitForTimeout(2000);
-
-        // Should navigate to message view or show active state
-        const hasMessageView = await page.locator('cometchat-message-header, .cometchat-message-header').first().isVisible({ timeout: 10_000 }).catch(() => false);
-        const hasActive = await page.locator('[class*="user-item--active"], [class*="list-item--active"]').isVisible().catch(() => false);
-        expect(hasMessageView || hasActive || true).toBeTruthy();
-      }
+      await row.click();
+      await expect(header(page)).toContainText(name, { timeout: 15_000 });
+      await expect(row).toHaveClass(/cometchat-user-item--active/);
     });
 
-    test('users list supports keyboard selection', async () => {
-      const usersList = page.locator('.cometchat-users').first();
-      const hasList = await usersList.isVisible().catch(() => false);
-
-      if (hasList) {
-        await usersList.click();
-        await page.keyboard.press('ArrowDown');
-        await page.waitForTimeout(300);
-        await page.keyboard.press('ArrowDown');
-        await page.waitForTimeout(300);
-        await page.keyboard.press('Enter');
-        await page.waitForTimeout(2000);
-
-        // Should have selected/opened a user
-        expect(true).toBeTruthy();
-      }
+    test('users list supports keyboard selection', async ({ page }) => {
+      // Known UI Kit defect (ENG-40631): ArrowDown moves focus, but Enter doesn't open the
+      // focused user. Expected to fail until fixed.
+      test.fail();
+      await expect(users(page).getByRole('option').nth(1)).toBeVisible();
+      const first = await tabIntoList(page, users(page));
+      await page.keyboard.press('ArrowDown');
+      await expect.poll(() => focusedRowTitle(page), { message: 'ArrowDown moved focus to another user' }).not.toBe(first);
+      const focused = await focusedRowTitle(page);
+      await page.keyboard.press('Enter');
+      await expect(header(page)).toContainText(focused, { timeout: 10_000 });
     });
   });
 
   // ==================== Groups Tab Selection ====================
 
   test.describe('Groups Tab', () => {
-    test.beforeEach(async () => {
-      const groupsTab = page.locator('[data-testid="tab-groups"], button:has-text("Groups"), .cometchat-tabs__tab:has-text("Groups")').first();
-      await groupsTab.click();
-      await page.waitForSelector('cometchat-groups, .cometchat-groups', { timeout: 15_000 });
-      await page.waitForTimeout(2000);
+    test('group items are clickable', async ({ page }) => {
+      // A group of the run's own user, so clicking it opens the chat (not a join prompt).
+      // Letters only: the list's search must find exactly this group, not other runs' groups.
+      const groupName = `E2E Selection ${searchableTag()}`;
+      await createE2EGroup(`e2e-selection-${uniqueTag()}`, groupName, PRIMARY_USER, [PRIMARY_USER]);
+      await waitForSearchIndex('groups', groupName, 1);
+      await loginToApp(page);
+      await tab(page, 'Groups').click();
+      const row = await findRow(groups(page), 'cometchat-group-item', groupName);
+
+      await row.click();
+      await expect(header(page)).toContainText(groupName, { timeout: 15_000 });
+      await expect(row).toHaveClass(/cometchat-group-item--active/);
     });
 
-    test('group items are clickable', async () => {
-      const firstGroup = page.locator('.cometchat-group-item, cometchat-group-item, .cometchat-list-item').first();
-      const hasGroup = await firstGroup.isVisible({ timeout: 5_000 }).catch(() => false);
-
-      if (hasGroup) {
-        await firstGroup.click();
-        await page.waitForTimeout(3000);
-
-        // Should navigate to group chat or show join dialog
-        const hasMessageView = await page.locator('cometchat-message-header, .cometchat-message-header').first().isVisible({ timeout: 10_000 }).catch(() => false);
-        const hasJoinDialog = await page.locator('.cometchat-join-group, cometchat-join-group').isVisible().catch(() => false);
-        expect(hasMessageView || hasJoinDialog || true).toBeTruthy();
-      }
-    });
-
-    test('groups list supports keyboard selection', async () => {
-      const groupsList = page.locator('.cometchat-groups').first();
-      const hasList = await groupsList.isVisible().catch(() => false);
-
-      if (hasList) {
-        await groupsList.click();
-        await page.keyboard.press('ArrowDown');
-        await page.waitForTimeout(300);
-        await page.keyboard.press('Enter');
-        await page.waitForTimeout(2000);
-
-        // Should have selected/opened a group
-        expect(true).toBeTruthy();
-      }
+    test('groups list supports keyboard selection', async ({ page }) => {
+      // Known UI Kit defect (ENG-40631): ArrowDown moves focus, but Enter doesn't open the
+      // focused group. Expected to fail until fixed.
+      test.fail();
+      await loginToApp(page);
+      await tab(page, 'Groups').click();
+      await expect(groups(page).getByRole('option').nth(1)).toBeVisible({ timeout: 30_000 });
+      const first = await tabIntoList(page, groups(page));
+      await page.keyboard.press('ArrowDown');
+      await expect.poll(() => focusedRowTitle(page), { message: 'ArrowDown moved focus to another group' }).not.toBe(first);
+      const focused = await focusedRowTitle(page);
+      await page.keyboard.press('Enter');
+      await expect(header(page)).toContainText(focused, { timeout: 10_000 });
     });
   });
 
   // ==================== Tab Switching ====================
 
-  test('switching tabs preserves no selection conflicts', async () => {
-    // Click first conversation
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(1000);
+  test('switching tabs preserves no selection conflicts', async ({ page }) => {
+    // Plain text: moderation's "AI Platform Circumvention" rule once blocked "Talk soon <tag>".
+    await sendTextAs(SECONDARY_USER, PRIMARY_USER, `Good afternoon ${uniqueTag()}`);
+    // Hold the chat's first page of messages, so the tabs change while it is still loading. A
+    // load that finished after the chat was closed used to reopen it behind the other tab.
+    await page.route(/\/v3\.0\/users\/[^/?]+\/messages\?/, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      await route.continue();
+    });
+    await loginToApp(page);
+    const name = await getUserName(SECONDARY_USER);
+    await openConversation(page, name);
+    await expect(conversationRow(page, name)).toHaveClass(/--active/);
 
-    // Switch to Users tab
-    const usersTab = page.locator('[data-testid="tab-users"], button:has-text("Users"), .cometchat-tabs__tab:has-text("Users")').first();
-    await usersTab.click();
-    await page.waitForTimeout(2000);
+    for (const [tabName, list] of [['Users', users(page)], ['Groups', groups(page)]] as const) {
+      await tab(page, tabName).click();
+      await expect(tab(page, tabName)).toHaveAttribute('aria-selected', 'true');
+      await expect(list.getByRole('option').first()).toBeVisible({ timeout: 30_000 });
+    }
+    await tab(page, 'Chats').click();
 
-    // Switch to Groups tab
-    const groupsTab = page.locator('[data-testid="tab-groups"], button:has-text("Groups"), .cometchat-tabs__tab:has-text("Groups")').first();
-    await groupsTab.click();
-    await page.waitForTimeout(2000);
-
-    // Switch back to Chats
-    const chatsTab = page.locator('[data-testid="tab-chats"], button:has-text("Chats"), .cometchat-tabs__tab:has-text("Chats")').first();
-    await chatsTab.click();
-    await page.waitForTimeout(2000);
-
-    // App should be stable — no errors, conversations visible
-    await expect(page.locator('.cometchat-conversations')).toBeVisible();
+    // Changing tabs closes the open chat, so no row stays selected and no chat is shown.
+    await expect(conversationRow(page, name)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.cometchat-conversation-item--active')).toHaveCount(0);
+    await expect(page.getByText('Welcome to your Conversations')).toBeVisible();
   });
 });

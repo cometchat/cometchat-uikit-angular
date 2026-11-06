@@ -1,0 +1,51 @@
+name: CI
+
+# Runs in the PUBLIC repo cometchat/cometchat-uikit-angular (CI 5, ENG-40492). It gives each
+# release and any public pull request a visible check. The private repo's release workflow copies
+# it here — do not edit it in the public repo.
+
+on:
+  push:
+    branches: [v5]
+  pull_request:
+    branches: [v5]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Install, type check, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx tsc -b --noEmit
+      - run: npx ng build cometchat-uikit
+      - run: npx ng build sample-app
+
+  unit:
+    name: Unit ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run --shard=${{ matrix.shard }}/4 --reporter=dot

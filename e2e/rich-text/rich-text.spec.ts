@@ -1,5 +1,19 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import {
+  loginToApp,
+  openConversation,
+  scrollToLatestMessage,
+  conversationRow,
+  getUserName,
+  sendTextAs,
+  createE2EGroup,
+  PRIMARY_USER,
+  SECONDARY_USER,
+  THIRD_USER,
+  uniqueTag,
+  waitForModeration,
+  searchMessagesAs,
+} from '../helpers';
 
 /**
  * E2E Tests — Rich Text Formatting (Comprehensive)
@@ -16,109 +30,119 @@ import { loginToApp } from '../helpers';
  * 8. Format renders in thread view
  * 9. Combination matrix — which formats compose and which are mutually exclusive
  * 10. Mentions combined with rich text
+ *
+ * Every test runs in the seeded 1:1 chat between PRIMARY_USER and SECONDARY_USER (the
+ * mention tests in a group of their own), and every assertion waits on UI state.
  */
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/** Open the first 1-on-1 conversation and wait for the composer. */
-async function openFirstConversation(page: Page) {
-  await page.waitForSelector('.cometchat-conversation-item', { timeout: 30_000 });
-  await page.locator('.cometchat-conversation-item').first().click();
-  await page.waitForSelector('cometchat-message-composer', { timeout: 15_000 });
-  await page.waitForTimeout(1500);
+/** Log in and open the seeded 1:1 chat with the secondary user, at its latest message. */
+async function openSecondaryChat(page: Page): Promise<void> {
+  const secondaryName = await getUserName(SECONDARY_USER);
+  await loginToApp(page);
+  await openConversation(page, secondaryName);
+  await scrollToLatestMessage(page);
+  await expect(composerInput(page)).toBeVisible();
 }
 
-/** Open the first GROUP conversation (needed for @mentions). */
-async function openFirstGroup(page: Page) {
-  const groupsTab = page.locator(
-    '[data-testid="tab-groups"], button:has-text("Groups"), .cometchat-tabs__tab:has-text("Groups")'
-  ).first();
-  await groupsTab.click();
-  await page.waitForSelector('cometchat-groups, .cometchat-groups', { timeout: 15_000 });
-  await page.waitForTimeout(1500);
-  const firstGroup = page.locator('.cometchat-group-item, cometchat-group-item').first();
-  if (await firstGroup.isVisible().catch(() => false)) {
-    await firstGroup.click();
-    await page.waitForTimeout(2000);
-    // Dismiss join dialog if present
-    const joinBtn = page.locator('.cometchat-join-group button').first();
-    if (await joinBtn.isVisible().catch(() => false)) {
-      await joinBtn.click();
-      await page.waitForTimeout(1500);
-    }
-  }
-  await page.waitForSelector('cometchat-message-composer', { timeout: 15_000 });
-  await page.waitForTimeout(1000);
+/** The main chat's composer (the thread panel has a composer of its own). */
+function composer(page: Page): Locator {
+  return page.locator('cometchat-messages cometchat-message-composer').first();
 }
 
-/** Get the contenteditable input inside the composer. */
-function composerInput(page: Page) {
-  return page.locator('cometchat-message-composer').first().locator('[contenteditable="true"]').first();
+/** The contenteditable input inside the main composer. */
+function composerInput(page: Page): Locator {
+  return composer(page).locator('[contenteditable="true"]').first();
 }
 
-/** Clear the composer input. */
-async function clearInput(page: Page) {
+/** The composer's fixed formatting toolbar. */
+function toolbar(page: Page): Locator {
+  return composer(page).locator('.cometchat-message-composer__toolbar');
+}
+
+/** A formatting toolbar button by its exact translated aria-label. */
+function toolbarButton(page: Page, label: string): Locator {
+  return toolbar(page).getByRole('button', { name: label, exact: true });
+}
+
+/** The main list's row of the most recent message containing `text`. */
+function rowWithText(page: Page, text: string): Locator {
+  return page.locator('cometchat-messages .cometchat-message-list__message').filter({ hasText: text }).last();
+}
+
+/** The rendered text of the most recent text bubble containing `text`. */
+function bubbleText(page: Page, text: string): Locator {
+  return rowWithText(page, text).locator('.cometchat-text-bubble__text').first();
+}
+
+/** Clear the composer input and wait until it is empty. */
+async function clearInput(page: Page): Promise<void> {
   await composerInput(page).click();
-  await page.keyboard.press('Meta+a');
+  await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.press('Backspace');
-  await page.waitForTimeout(200);
+  await expect(composerInput(page)).toHaveText('');
 }
 
-/**
- * Wait for the formatting toolbar to be visible.
- * The toolbar renders when the composer has focus and enableRichText is true.
- */
-async function waitForToolbar(page: Page): Promise<boolean> {
-  const toolbar = page.locator(
-    '.cometchat-message-composer__toolbar, [class*="formatting-toolbar"][role="toolbar"]'
-  ).first();
-  return toolbar.isVisible({ timeout: 5_000 }).catch(() => false);
-}
-
-/**
- * Find a toolbar button by its exact translated aria-label.
- * Checks both the fixed toolbar and the bubble menu.
- */
-function toolbarButton(page: Page, label: string) {
-  return page.locator(`button[aria-label="${label}"]`).first();
-}
-
-/**
- * Send a message with a given format applied via keyboard shortcut.
- * Uses the send button (not Enter) to avoid the rich text editor
- * intercepting Enter as a newline/list-item insertion.
- */
-async function sendFormattedMessage(
-  page: Page,
-  text: string,
-  shortcut: string | null
-): Promise<void> {
-  const composer = page.locator('cometchat-message-composer').first();
-  const input = composer.locator('[contenteditable="true"]').first();
-  await input.click();
+/** Type `text` into the composer and select all of it. */
+async function typeAndSelectAll(page: Page, text: string): Promise<void> {
+  await composerInput(page).click();
   await page.keyboard.type(text);
-  await page.keyboard.press('Meta+a');
-  await page.waitForTimeout(200);
-  if (shortcut) {
-    await page.keyboard.press(shortcut);
-    await page.waitForTimeout(300);
-  }
-  // Click send button — avoids Enter being intercepted by the rich text editor
-  // (Enter inside a list inserts a new item; inside code block inserts a newline)
-  const sendBtn = composer.locator(
-    '[data-testid="send-button"], [class*="send-button"], button[aria-label="Send message"]'
-  ).first();
-  const hasSend = await sendBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-  if (hasSend) {
-    await sendBtn.click();
-  } else {
-    // Fallback: move to end of content and press Enter
-    await input.press('End');
-    await page.keyboard.press('Enter');
-  }
-  // Wait for message to round-trip through CometChat SDK and re-render
-  await page.waitForTimeout(3000);
+  await page.keyboard.press('ControlOrMeta+a');
 }
+
+/** Click the composer's send button (Enter inside a list or code block adds a line instead). */
+async function clickSend(page: Page): Promise<void> {
+  await composer(page).getByRole('button', { name: 'Send message' }).click();
+}
+
+/**
+ * Send `text` with a format applied to all of it: a keyboard shortcut (e.g. 'ControlOrMeta+b')
+ * or a toolbar button label (e.g. 'Quote'). Waits until the sent bubble shows the text.
+ */
+async function sendFormattedMessage(page: Page, text: string, format: { shortcut?: string; button?: string }) {
+  await typeAndSelectAll(page, text);
+  if (format.shortcut) await page.keyboard.press(format.shortcut);
+  if (format.button) await toolbarButton(page, format.button).click();
+  await clickSend(page);
+  await expect(bubbleText(page, text)).toBeVisible({ timeout: 30_000 });
+  await expect(composerInput(page)).toHaveText('');
+}
+
+/** A unique token of letters only: server search splits words that mix letters and digits. */
+function letterToken(prefix: string): string {
+  return `${prefix}${uniqueTag().replace(/\d/g, (d) => 'abcdefghij'[Number(d)])}`;
+}
+
+/** Hover a main-list message and open its "More options" menu. */
+async function openMessageMenu(page: Page, text: string): Promise<void> {
+  const row = rowWithText(page, text);
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  await row.locator('.cometchat-message-bubble__body').first().hover();
+  await row.getByRole('button', { name: 'More options' }).click();
+}
+
+/** Choose a message action ("Reply", "Edit", "Reply in thread"): a quick button on the bubble or a menu item. */
+async function chooseMessageAction(page: Page, text: string, action: string): Promise<void> {
+  const row = rowWithText(page, text);
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  await row.locator('.cometchat-message-bubble__body').first().hover();
+  // The bubble's quick actions are menu items shown on hover; the rest sit in "More options".
+  const options = row.locator('.cometchat-message-bubble__options');
+  await expect(options.getByRole('button', { name: 'More options' })).toBeVisible();
+  const quick = options
+    .getByRole('menuitem', { name: action, exact: true })
+    .filter({ visible: true });
+  if (await quick.count()) {
+    await quick.click();
+  } else {
+    await openMessageMenu(page, text);
+    await page.getByRole('menuitem', { name: action, exact: true }).filter({ visible: true }).click();
+  }
+}
+
+const replyPreview = (page: Page) => composer(page).locator('.cometchat-message-composer__reply-preview');
+const threadPanel = (page: Page) => page.locator('.cometchat-threaded-messages');
 
 // ─── Test Suite ─────────────────────────────────────────────────────────────
 
@@ -127,94 +151,44 @@ test.describe('Rich Text — Toolbar Visibility', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    await openSecondaryChat(page);
   });
 
   test('formatting toolbar is visible in the composer', async () => {
-    const toolbar = page.locator(
-      '.cometchat-message-composer__toolbar, [class*="formatting-toolbar"], [class*="rich-text"] [class*="toolbar"]'
-    ).first();
-    const hasToolbar = await toolbar.isVisible({ timeout: 5_000 }).catch(() => false);
-    // Toolbar may be always-visible or appear on focus
-    if (!hasToolbar) {
-      await composerInput(page).click();
-      await page.waitForTimeout(500);
-    }
-    // At minimum the composer must render
-    await expect(page.locator('cometchat-message-composer').first()).toBeVisible();
+    await expect(toolbar(page)).toBeVisible();
+    await expect(toolbar(page)).toHaveAttribute('role', 'toolbar');
   });
 
   test('bold button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Bold');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Bold')).toBeVisible();
   });
 
   test('italic button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Italic');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Italic')).toBeVisible();
   });
 
   test('strikethrough button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Strikethrough');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Strikethrough')).toBeVisible();
   });
 
   test('inline code button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Inline code');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Inline code')).toBeVisible();
   });
 
   test('code block button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Code block');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Code block')).toBeVisible();
   });
 
   test('blockquote button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Quote');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Quote')).toBeVisible();
   });
 
   test('ordered list button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Numbered list');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Numbered list')).toBeVisible();
   });
 
   test('unordered list button is present in toolbar', async () => {
-    await composerInput(page).click();
-    await page.waitForTimeout(500);
-    const btn = toolbarButton(page, 'Bulleted list');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) await expect(btn).toBeVisible();
-    else expect(true).toBeTruthy();
+    await expect(toolbarButton(page, 'Bulleted list')).toBeVisible();
   });
 });
 
@@ -225,144 +199,71 @@ test.describe('Rich Text — Format Applied in Composer', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    await openSecondaryChat(page);
   });
 
   test('bold (Cmd+B) wraps selection in <strong>', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('bold test');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasBold).toBeTruthy();
+    await typeAndSelectAll(page, 'bold test');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveText('bold test');
     await clearInput(page);
   });
 
   test('italic (Cmd+I) wraps selection in <em>', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('italic test');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+i');
-    await page.waitForTimeout(300);
-    const hasItalic = await input.locator('em, i').first().isVisible().catch(() => false);
-    expect(hasItalic).toBeTruthy();
+    await typeAndSelectAll(page, 'italic test');
+    await page.keyboard.press('ControlOrMeta+i');
+    await expect(composerInput(page).locator('em, i')).toHaveText('italic test');
     await clearInput(page);
   });
 
   test('underline (Cmd+U) wraps selection in <u>', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('underline test');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+u');
-    await page.waitForTimeout(300);
-    const hasUnderline = await input.locator('u, [style*="underline"]').first().isVisible().catch(() => false);
-    expect(hasUnderline).toBeTruthy();
+    await typeAndSelectAll(page, 'underline test');
+    await page.keyboard.press('ControlOrMeta+u');
+    await expect(composerInput(page).locator('u')).toHaveText('underline test');
     await clearInput(page);
   });
 
   test('strikethrough toolbar button wraps selection in <s> or <del>', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('strike test');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Strikethrough');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const hasStrike = await input.locator('s, del, strike, [style*="line-through"]').first().isVisible().catch(() => false);
-      expect(hasStrike).toBeTruthy();
-    }
+    await typeAndSelectAll(page, 'strike test');
+    await toolbarButton(page, 'Strikethrough').click();
+    await expect(composerInput(page).locator('s, del, strike')).toHaveText('strike test');
     await clearInput(page);
   });
 
   test('inline code toolbar button wraps selection in <code>', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('const x = 1');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Inline code');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const hasCode = await input.locator('code').first().isVisible().catch(() => false);
-      expect(hasCode).toBeTruthy();
-    }
+    await typeAndSelectAll(page, 'const x = 1');
+    await toolbarButton(page, 'Inline code').click();
+    await expect(composerInput(page).locator('code')).toHaveText('const x = 1');
     await clearInput(page);
   });
 
   test('code block toolbar button wraps content in <pre><code>', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('function hello() {}');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Code block');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const hasPre = await input.locator('pre, [class*="code-block"]').first().isVisible().catch(() => false);
-      expect(hasPre).toBeTruthy();
-    }
+    await typeAndSelectAll(page, 'function hello() {}');
+    await toolbarButton(page, 'Code block').click();
+    await expect(composerInput(page).locator('pre')).toContainText('function hello() {}');
     await clearInput(page);
   });
 
   test('blockquote toolbar button wraps content in <blockquote>', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('quoted text');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Quote');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const hasQuote = await input.locator('blockquote').first().isVisible().catch(() => false);
-      expect(hasQuote).toBeTruthy();
-    }
+    await typeAndSelectAll(page, 'quoted text');
+    await toolbarButton(page, 'Quote').click();
+    await expect(composerInput(page).locator('blockquote')).toContainText('quoted text');
     await clearInput(page);
   });
 
   test('ordered list toolbar button creates <ol>', async () => {
-    const input = composerInput(page);
-    await input.click();
+    await composerInput(page).click();
     await page.keyboard.type('first item');
-    const btn = toolbarButton(page, 'Numbered list');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const hasOl = await input.locator('ol').first().isVisible().catch(() => false);
-      expect(hasOl).toBeTruthy();
-    }
+    await toolbarButton(page, 'Numbered list').click();
+    await expect(composerInput(page).locator('ol > li')).toHaveText('first item');
     await clearInput(page);
   });
 
   test('unordered list toolbar button creates <ul>', async () => {
-    const input = composerInput(page);
-    await input.click();
+    await composerInput(page).click();
     await page.keyboard.type('bullet item');
-    const btn = toolbarButton(page, 'Bulleted list');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const hasUl = await input.locator('ul').first().isVisible().catch(() => false);
-      expect(hasUl).toBeTruthy();
-    }
+    await toolbarButton(page, 'Bulleted list').click();
+    await expect(composerInput(page).locator('ul > li')).toHaveText('bullet item');
     await clearInput(page);
   });
 });
@@ -374,210 +275,61 @@ test.describe('Rich Text — Renders in Text Bubble', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    await openSecondaryChat(page);
   });
 
   test('bold message renders <strong> in text bubble', async () => {
-    const tag = `bold-${Date.now()}`;
-    await sendFormattedMessage(page, tag, 'Meta+b');
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-    // Rich text is rendered via [innerHTML] — wait for DOM to settle
-    await page.waitForTimeout(1500);
-    const hasStrong = await bubble.locator('strong, b').first().isVisible().catch(() => false);
-    const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-    const innerHtml = await textDiv.innerHTML().catch(() => '');
-    expect(hasStrong || innerHtml.includes('<strong') || innerHtml.includes('<b')).toBeTruthy();
+    const tag = `bold-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+b' });
+    await expect(bubbleText(page, tag).locator('strong, b')).toHaveText(tag);
   });
 
   test('italic message renders <em> in text bubble', async () => {
-    const tag = `italic-${Date.now()}`;
-    await sendFormattedMessage(page, tag, 'Meta+i');
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-    // Rich text is rendered via [innerHTML] — wait for DOM to settle
-    await page.waitForTimeout(1000);
-    const hasEm = await bubble.locator('em, i').first().isVisible().catch(() => false);
-    // Also check the inner text div directly
-    const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-    const innerHtml = await textDiv.innerHTML().catch(() => '');
-    expect(hasEm || innerHtml.includes('<em') || innerHtml.includes('<i')).toBeTruthy();
+    const tag = `italic-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+i' });
+    await expect(bubbleText(page, tag).locator('em, i')).toHaveText(tag);
   });
 
   test('underline message renders <u> in text bubble', async () => {
-    const tag = `underline-${Date.now()}`;
-    await sendFormattedMessage(page, tag, 'Meta+u');
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-    await page.waitForTimeout(1000);
-    const hasU = await bubble.locator('u, [style*="underline"], [style*="text-decoration"]').first().isVisible().catch(() => false);
-    const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-    const innerHtml = await textDiv.innerHTML().catch(() => '');
-    expect(hasU || innerHtml.includes('<u') || innerHtml.includes('underline') || innerHtml.includes('text-decoration')).toBeTruthy();
+    const tag = `underline-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+u' });
+    await expect(bubbleText(page, tag).locator('u')).toHaveText(tag);
   });
 
   test('strikethrough message renders <s> in text bubble', async () => {
-    const input = composerInput(page);
-    await input.click();
-    const tag = `strike-${Date.now()}`;
-    await page.keyboard.type(tag);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Strikethrough');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(200);
-      await input.press('End');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(3000);
-      // Find the bubble containing our specific tag text
-      const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-      const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-      if (!hasBubble) return; // message may not have arrived yet
-      await page.waitForTimeout(1000);
-      const hasS = await bubble.locator('s, del, strike, [style*="line-through"]').first().isVisible().catch(() => false);
-      const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-      const innerHtml = await textDiv.innerHTML().catch(() => '');
-      expect(hasS || innerHtml.includes('<s') || innerHtml.includes('<del') || innerHtml.includes('<strike')).toBeTruthy();
-    }
+    const tag = `strike-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { button: 'Strikethrough' });
+    await expect(bubbleText(page, tag).locator('s, del, strike')).toHaveText(tag);
   });
 
   test('inline code message renders <code> in text bubble', async () => {
-    const composer = page.locator('cometchat-message-composer').first();
-    const input = composerInput(page);
-    await input.click();
-    const tag = `code-${Date.now()}`;
-    await page.keyboard.type(tag);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Inline code');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const sendBtn = composer.locator('[data-testid="send-button"], [class*="send-button"], button[aria-label*="Send" i]').first();
-      const hasSend = await sendBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasSend) { await sendBtn.click(); } else { await input.press('End'); await page.keyboard.press('Enter'); }
-      await page.waitForTimeout(3000);
-      const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-      const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-      if (!hasBubble) return;
-      await page.waitForTimeout(1000);
-      const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-      const innerHtml = await textDiv.innerHTML().catch(() => '');
-      const hasCode = await bubble.locator('code').first().isVisible().catch(() => false);
-      expect(hasCode || innerHtml.includes('<code')).toBeTruthy();
-    }
+    const tag = `code-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { button: 'Inline code' });
+    await expect(bubbleText(page, tag).locator('code')).toHaveText(tag);
   });
 
   test('code block message renders <pre> in text bubble', async () => {
-    const composer = page.locator('cometchat-message-composer').first();
-    const input = composerInput(page);
-    await input.click();
-    const tag = `codeblock-${Date.now()}`;
-    await page.keyboard.type(tag);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Code block');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const sendBtn = composer.locator('[data-testid="send-button"], [class*="send-button"], button[aria-label*="Send" i]').first();
-      const hasSend = await sendBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasSend) { await sendBtn.click(); } else { await input.press('End'); await page.keyboard.press('Enter'); }
-      await page.waitForTimeout(3000);
-      const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-      const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-      if (!hasBubble) return;
-      await page.waitForTimeout(1000);
-      const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-      const innerHtml = await textDiv.innerHTML().catch(() => '');
-      const hasPre = await bubble.locator('pre, [class*="code-block"], [class*="code_block"]').first().isVisible().catch(() => false);
-      expect(hasPre || innerHtml.includes('<pre') || innerHtml.includes('code-block') || innerHtml.includes('code_block')).toBeTruthy();
-    }
+    const tag = `codeblock-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { button: 'Code block' });
+    await expect(bubbleText(page, tag).locator('pre')).toContainText(tag);
   });
 
   test('blockquote message renders <blockquote> in text bubble', async () => {
-    const input = composerInput(page);
-    await input.click();
-    const tag = `quote-${Date.now()}`;
-    await page.keyboard.type(tag);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Quote');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(200);
-      await input.press('End');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(3000);
-      const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-      const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-      if (!hasBubble) return;
-      const hasQuote = await bubble.locator('blockquote').first().isVisible().catch(() => false);
-      const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-      const innerHtml = await textDiv.innerHTML().catch(() => '');
-      expect(hasQuote || innerHtml.includes('<blockquote')).toBeTruthy();
-    }
+    const tag = `quote-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { button: 'Quote' });
+    await expect(bubbleText(page, tag).locator('blockquote')).toContainText(tag);
   });
 
   test('ordered list message renders <ol> in text bubble', async () => {
-    const composer = page.locator('cometchat-message-composer').first();
-    const input = composerInput(page);
-    await input.click();
-    const tag = `ol-${Date.now()}`;
-    await page.keyboard.type(tag);
-    const btn = toolbarButton(page, 'Numbered list');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const sendBtn = composer.locator('[data-testid="send-button"], [class*="send-button"], button[aria-label*="Send" i]').first();
-      const hasSend = await sendBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasSend) { await sendBtn.click(); } else { await input.press('End'); await page.keyboard.press('Enter'); }
-      await page.waitForTimeout(3000);
-      const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-      const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-      if (!hasBubble) return;
-      await page.waitForTimeout(1000);
-      const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-      const innerHtml = await textDiv.innerHTML().catch(() => '');
-      const hasOl = await bubble.locator('ol').first().isVisible().catch(() => false);
-      expect(hasOl || innerHtml.includes('<ol')).toBeTruthy();
-    }
+    const tag = `ol-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { button: 'Numbered list' });
+    await expect(bubbleText(page, tag).locator('ol > li')).toHaveText(tag);
   });
 
   test('unordered list message renders <ul> in text bubble', async () => {
-    const composer = page.locator('cometchat-message-composer').first();
-    const input = composerInput(page);
-    await input.click();
-    const tag = `ul-${Date.now()}`;
-    await page.keyboard.type(tag);
-    const btn = toolbarButton(page, 'Bulleted list');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(300);
-      const sendBtn = composer.locator('[data-testid="send-button"], [class*="send-button"], button[aria-label*="Send" i]').first();
-      const hasSend = await sendBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-      if (hasSend) { await sendBtn.click(); } else { await input.press('End'); await page.keyboard.press('Enter'); }
-      await page.waitForTimeout(3000);
-      const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: tag }).last();
-      const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-      if (!hasBubble) return;
-      await page.waitForTimeout(1000);
-      const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-      const innerHtml = await textDiv.innerHTML().catch(() => '');
-      const hasUl = await bubble.locator('ul').first().isVisible().catch(() => false);
-      expect(hasUl || innerHtml.includes('<ul')).toBeTruthy();
-    }
+    const tag = `ul-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { button: 'Bulleted list' });
+    await expect(bubbleText(page, tag).locator('ul > li')).toHaveText(tag);
   });
 });
 
@@ -585,76 +337,34 @@ test.describe('Rich Text — Renders in Text Bubble', () => {
 
 test.describe('Rich Text — Conversation Last-Message Preview', () => {
   let page: Page;
+  let secondaryName: string;
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    secondaryName = await getUserName(SECONDARY_USER);
+    await openSecondaryChat(page);
   });
 
+  /** The last-message preview of the chat with the secondary user. */
+  const preview = () => conversationRow(page, secondaryName).locator('.cometchat-conversation-item__subtitle-text');
+
   test('bold message shows text (not raw markdown) in conversation preview', async () => {
-    const tag = `bold-preview-${Date.now()}`;
-    await sendFormattedMessage(page, tag, 'Meta+b');
-    // Navigate away and back to force preview update
-    await page.locator('.cometchat-conversation-item').nth(1).click().catch(() => {});
-    await page.waitForTimeout(500);
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(1000);
-    // The last-message preview in the conversation list should show the text
-    const preview = page.locator('.cometchat-conversation-item').first()
-      .locator('[class*="last-message"], [class*="subtitle"], [class*="preview"]').first();
-    const hasPreview = await preview.isVisible().catch(() => false);
-    if (hasPreview) {
-      const text = await preview.textContent();
-      // Should contain the plain text, NOT raw **bold-preview-xxx** markdown
-      expect(text).not.toMatch(/\*\*/);
-    }
+    const tag = `bold-preview-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+b' });
+    // Exactly the text: no ** markers around it.
+    await expect(preview()).toHaveText(tag, { timeout: 30_000 });
   });
 
   test('italic message shows text (not raw markdown) in conversation preview', async () => {
-    const tag = `italic-preview-${Date.now()}`;
-    await sendFormattedMessage(page, tag, 'Meta+i');
-    await page.locator('.cometchat-conversation-item').nth(1).click().catch(() => {});
-    await page.waitForTimeout(500);
-    await page.locator('.cometchat-conversation-item').first().click();
-    await page.waitForTimeout(1000);
-    const preview = page.locator('.cometchat-conversation-item').first()
-      .locator('[class*="last-message"], [class*="subtitle"], [class*="preview"]').first();
-    const hasPreview = await preview.isVisible().catch(() => false);
-    if (hasPreview) {
-      const text = await preview.textContent();
-      expect(text).not.toMatch(/^_.*_$/);
-    }
+    const tag = `italic-preview-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+i' });
+    await expect(preview()).toHaveText(tag, { timeout: 30_000 });
   });
 
   test('code message shows text (not raw backticks) in conversation preview', async () => {
-    const input = composerInput(page);
-    await input.click();
-    const tag = `code-preview-${Date.now()}`;
-    await page.keyboard.type(tag);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    const btn = toolbarButton(page, 'Inline code');
-    const found = await btn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      await btn.click();
-      await page.waitForTimeout(200);
-      await input.press('End');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(2000);
-      await page.locator('.cometchat-conversation-item').nth(1).click().catch(() => {});
-      await page.waitForTimeout(500);
-      await page.locator('.cometchat-conversation-item').first().click();
-      await page.waitForTimeout(1000);
-      const preview = page.locator('.cometchat-conversation-item').first()
-        .locator('[class*="last-message"], [class*="subtitle"], [class*="preview"]').first();
-      const hasPreview = await preview.isVisible().catch(() => false);
-      if (hasPreview) {
-        const text = await preview.textContent();
-        // Should not show raw backtick syntax
-        expect(text).not.toMatch(/^`.*`$/);
-      }
-    }
+    const tag = `code-preview-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { button: 'Inline code' });
+    await expect(preview()).toHaveText(tag, { timeout: 30_000 });
   });
 });
 
@@ -665,118 +375,44 @@ test.describe('Rich Text — Reply Preview', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
-    // Ensure there is at least one message to reply to
-    await page.waitForSelector('.cometchat-message-bubble', { timeout: 15_000 });
-    await page.waitForTimeout(1000);
+    await openSecondaryChat(page);
   });
 
   test('reply preview shows formatted content of the quoted message', async () => {
-    // Find an incoming message to reply to
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMsg = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasMsg) return;
+    const tag = `reply-src-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+b' });
 
-    await bodyArea.hover();
-    await page.waitForTimeout(500);
-    const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-    const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (!hasMore) return;
+    await chooseMessageAction(page, tag, 'Reply');
 
-    await moreBtn.click();
-    await page.waitForTimeout(500);
-    const replyOption = page.getByRole('menuitem', { name: /Reply$/i });
-    const hasReply = await replyOption.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (!hasReply) return;
-
-    await replyOption.click({ force: true });
-    await page.waitForTimeout(1000);
-
-    // Reply preview should be visible in the composer area
-    const replyPreview = page.locator(
-      '.cometchat-message-composer__reply-preview, [class*="reply-preview"], [class*="quoted-message"]'
-    ).first();
-    await expect(replyPreview).toBeVisible({ timeout: 5_000 });
-
-    // Preview should show some text content (not empty)
-    const previewText = await replyPreview.textContent();
-    expect(previewText?.trim().length).toBeGreaterThan(0);
-
-    // Close preview
-    const closeBtn = replyPreview.locator('button, [class*="close"]').first();
-    if (await closeBtn.isVisible().catch(() => false)) await closeBtn.click();
+    await expect(replyPreview(page)).toBeVisible();
+    await expect(replyPreview(page)).toContainText(tag);
   });
 
   test('reply preview for a bold message does not show raw ** markers', async () => {
-    // Send a bold message first so we have one to reply to
-    const boldTag = `bold-reply-src-${Date.now()}`;
-    await sendFormattedMessage(page, boldTag, 'Meta+b');
-    await page.waitForTimeout(1000);
+    const tag = `bold-reply-src-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+b' });
 
-    // Now reply to that message (last outgoing)
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    await bodyArea.hover();
-    await page.waitForTimeout(500);
-    const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-    const hasMore = await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (!hasMore) return;
+    await chooseMessageAction(page, tag, 'Reply');
 
-    await moreBtn.click();
-    await page.waitForTimeout(500);
-    const replyOption = page.getByRole('menuitem', { name: /Reply$/i });
-    const hasReply = await replyOption.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (!hasReply) return;
-
-    await replyOption.click({ force: true });
-    await page.waitForTimeout(1000);
-
-    const replyPreview = page.locator(
-      '.cometchat-message-composer__reply-preview, [class*="reply-preview"], [class*="quoted-message"]'
-    ).first();
-    const hasPreview = await replyPreview.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasPreview) {
-      const text = await replyPreview.textContent();
-      expect(text).not.toMatch(/\*\*/);
-    }
-
-    const closeBtn = replyPreview.locator('button, [class*="close"]').first();
-    if (await closeBtn.isVisible().catch(() => false)) await closeBtn.click();
+    await expect(replyPreview(page)).toContainText(tag);
+    await expect(replyPreview(page)).not.toContainText('**');
   });
 
   test('sending a reply to a formatted message includes quoted reference in bubble', async () => {
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--incoming').first();
-    const bodyArea = targetBubble.locator('.cometchat-message-bubble__body').first();
-    const hasMsg = await bodyArea.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasMsg) return;
+    const tag = `reply-quoted-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+b' });
 
-    await bodyArea.hover();
-    await page.waitForTimeout(500);
-    const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-    if (!await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false)) return;
+    await chooseMessageAction(page, tag, 'Reply');
+    await expect(replyPreview(page)).toContainText(tag);
 
-    await moreBtn.click();
-    await page.waitForTimeout(500);
-    const replyOption = page.getByRole('menuitem', { name: /Reply$/i });
-    if (!await replyOption.isVisible({ timeout: 3_000 }).catch(() => false)) return;
-
-    await replyOption.click({ force: true });
-    await page.waitForTimeout(1000);
-
-    const replyMsg = `reply-check-${Date.now()}`;
+    const replyMsg = `reply-check-${uniqueTag()}`;
     await composerInput(page).click();
     await page.keyboard.type(replyMsg);
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(3000);
 
-    // The sent reply bubble should contain a quoted/parent message block
-    const sentBubble = page.locator('cometchat-message-list').getByText(replyMsg).locator('../..');
-    const hasQuotedBlock = await sentBubble.locator(
-      '[class*="quoted"], [class*="reply-bubble"], [class*="parent-message"]'
-    ).first().isVisible({ timeout: 5_000 }).catch(() => false);
-    expect(hasQuotedBlock || true).toBeTruthy(); // soft — structure varies
+    const sent = rowWithText(page, replyMsg);
+    await expect(sent.locator('.cometchat-message-bubble__body-reply-view')).toContainText(tag, { timeout: 30_000 });
+    await expect(sent.locator('.cometchat-message-bubble__body-reply-view')).not.toContainText('**');
   });
 });
 
@@ -787,116 +423,57 @@ test.describe('Rich Text — Edit Preview', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
-    await page.waitForSelector('.cometchat-message-bubble', { timeout: 15_000 });
-    await page.waitForTimeout(1000);
+    await openSecondaryChat(page);
   });
 
   test('editing a plain message opens composer with existing text', async () => {
-    // Send a plain message first
-    const plainTag = `edit-src-${Date.now()}`;
-    const input = composerInput(page);
-    await input.click();
+    const plainTag = `edit-src-${uniqueTag()}`;
+    await composerInput(page).click();
     await page.keyboard.type(plainTag);
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(2000);
+    await expect(bubbleText(page, plainTag)).toBeVisible({ timeout: 30_000 });
 
-    // Hover the sent message and click Edit
-    const sentBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').filter({ hasText: plainTag }).last();
-    const hasSentBubble = await sentBubble.isVisible({ timeout: 10_000 }).catch(() => false);
-    if (!hasSentBubble) return;
-    await sentBubble.locator('.cometchat-message-bubble__body').first().hover();
-    await page.waitForTimeout(500);
-    const moreBtn = sentBubble.getByRole('button', { name: 'More options' });
-    if (!await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false)) return;
+    await chooseMessageAction(page, plainTag, 'Edit');
 
-    await moreBtn.click();
-    await page.waitForTimeout(500);
-    const editOption = page.getByRole('menuitem', { name: /Edit/i });
-    if (!await editOption.isVisible({ timeout: 3_000 }).catch(() => false)) return;
-
-    await editOption.click({ force: true });
-    await page.waitForTimeout(1000);
-
-    // Composer should now contain the original text
-    const editorContent = await composerInput(page).textContent();
-    expect(editorContent).toContain(plainTag);
+    await expect(composer(page)).toContainText('Editing message');
+    await expect(composerInput(page)).toHaveText(plainTag);
   });
 
   test('editing a bold message re-populates composer with bold formatting intact', async () => {
-    const boldTag = `edit-bold-${Date.now()}`;
-    await sendFormattedMessage(page, boldTag, 'Meta+b');
-    await page.waitForTimeout(1000);
+    const boldTag = `edit-bold-${uniqueTag()}`;
+    await sendFormattedMessage(page, boldTag, { shortcut: 'ControlOrMeta+b' });
 
-    const sentBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    await sentBubble.locator('.cometchat-message-bubble__body').first().hover();
-    await page.waitForTimeout(500);
-    const moreBtn = sentBubble.getByRole('button', { name: 'More options' });
-    if (!await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false)) return;
+    await chooseMessageAction(page, boldTag, 'Edit');
 
-    await moreBtn.click();
-    await page.waitForTimeout(500);
-    const editOption = page.getByRole('menuitem', { name: /Edit/i });
-    if (!await editOption.isVisible({ timeout: 3_000 }).catch(() => false)) return;
-
-    await editOption.click({ force: true });
-    await page.waitForTimeout(1000);
-
-    // Composer should show bold formatting (strong/b tag) for the original text
-    const editorInput = composerInput(page);
-    const hasBold = await editorInput.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasBold).toBeTruthy();
-
-    // Cancel edit by pressing Escape
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(500);
+    await expect(composer(page)).toContainText('Editing message');
+    await expect(composerInput(page).locator('strong, b')).toHaveText(boldTag);
+    await composer(page).locator('.cometchat-message-preview__close').click();
+    await expect(composer(page)).not.toContainText('Editing message');
   });
 
   test('editing a message and adding bold then saving updates the bubble', async () => {
-    const editTag = `edit-apply-${Date.now()}`;
-    const input = composerInput(page);
-    await input.click();
+    const editTag = `edit-apply-${uniqueTag()}`;
+    await composerInput(page).click();
     await page.keyboard.type(editTag);
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(2000);
+    await expect(bubbleText(page, editTag)).toBeVisible({ timeout: 30_000 });
+    await expect(bubbleText(page, editTag).locator('strong, b')).toHaveCount(0);
+    // The E2E app moderates messages, and the server refuses to edit one still under review
+    // (403 ERR_MESSAGE_NO_ACCESS). Wait for its server id, then for moderation to pass it.
+    const row = rowWithText(page, editTag);
+    await expect(row).toHaveAttribute('data-message-id', /^\d+$/, { timeout: 30_000 });
+    await waitForModeration((await row.getAttribute('data-message-id'))!);
 
-    const sentBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    await sentBubble.locator('.cometchat-message-bubble__body').first().hover();
-    await page.waitForTimeout(500);
-    const moreBtn = sentBubble.getByRole('button', { name: 'More options' });
-    if (!await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false)) return;
+    await chooseMessageAction(page, editTag, 'Edit');
+    await expect(composerInput(page)).toHaveText(editTag);
+    await composerInput(page).click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveText(editTag);
+    await page.keyboard.press('Enter');
 
-    await moreBtn.click();
-    await page.waitForTimeout(500);
-    const editOption = page.getByRole('menuitem', { name: /Edit/i });
-    if (!await editOption.isVisible({ timeout: 3_000 }).catch(() => false)) return;
-
-    await editOption.click({ force: true });
-    await page.waitForTimeout(1000);
-
-    // Select all and apply bold
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
-
-    // Save the edit (Enter or click save button)
-    const saveBtn = page.locator(
-      'button[aria-label*="Save" i], button[aria-label*="Confirm" i], [class*="edit"] button[class*="send"]'
-    ).first();
-    const hasSave = await saveBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasSave) {
-      await saveBtn.click();
-    } else {
-      await page.keyboard.press('Enter');
-    }
-    await page.waitForTimeout(3000);
-
-    // The updated bubble should now contain bold
-    const updatedBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    const hasBold = await updatedBubble.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasBold).toBeTruthy();
+    await expect(rowWithText(page, editTag)).toContainText('Edited', { timeout: 30_000 });
+    await expect(bubbleText(page, editTag).locator('strong, b')).toHaveText(editTag);
   });
 });
 
@@ -907,81 +484,44 @@ test.describe('Rich Text — Search Results', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
-    await page.waitForTimeout(1000);
+    await openSecondaryChat(page);
   });
 
+  /** Search all chats for `token` and return the message result showing it. */
+  async function searchResult(token: string): Promise<Locator> {
+    // The server indexes a new message for search after a delay, and the search panel keeps
+    // the empty result of a keyword searched too early. Wait until the server finds it.
+    await expect
+      .poll(async () => (await searchMessagesAs(PRIMARY_USER, token)).length, { timeout: 60_000 })
+      .toBeGreaterThan(0);
+    await page.locator('cometchat-conversations').getByRole('searchbox').click();
+    const search = page.locator('cometchat-search').first();
+    await expect(search).toBeVisible();
+    const result = search.locator('[data-testid^="search-message-item-"]').filter({ hasText: token }).first();
+    // Search is debounced: retype (clearing first, as the same keyword is not searched again) until shown.
+    await expect(async () => {
+      await search.getByRole('searchbox').fill('');
+      await search.getByRole('searchbox').fill(token);
+      await expect(result).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
+    return result;
+  }
+
   test('bold message text is findable via search (plain text match)', async () => {
-    const searchTag = `searchbold-${Date.now()}`;
-    await sendFormattedMessage(page, searchTag, 'Meta+b');
-    await page.waitForTimeout(1000);
+    const searchTag = letterToken('searchbold');
+    await sendFormattedMessage(page, searchTag, { shortcut: 'ControlOrMeta+b' });
 
-    // Open search
-    const searchIcon = page.locator(
-      '.cometchat-selector__search-icon, [class*="search-icon"], button[aria-label*="Search" i]'
-    ).first();
-    const hasSearchIcon = await searchIcon.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasSearchIcon) return;
-
-    await searchIcon.click();
-    await page.waitForTimeout(1500);
-
-    const searchInput = page.locator('input[placeholder*="Search" i], cometchat-search input').first();
-    if (!await searchInput.isVisible({ timeout: 5_000 }).catch(() => false)) return;
-
-    await searchInput.fill(searchTag);
-    await page.waitForTimeout(3000);
-
-    // Result should appear — text content should be visible, not raw markdown
-    const result = page.locator('[class*="search"] [class*="message"], [class*="search-result"], .cometchat-search-messages__list-item').first();
-    const hasResult = await result.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasResult) {
-      // Use innerText to get rendered text (works with [innerHTML] bindings)
-      const resultText = await result.innerText().catch(() => '') || await result.textContent().catch(() => '') || '';
-      // Also check the subtitle specifically
-      const subtitleEl = result.locator('[class*="subtitle"]').first();
-      const subtitleText = await subtitleEl.innerText().catch(() => '') || await subtitleEl.textContent().catch(() => '') || '';
-      const allText = resultText + subtitleText;
-      if (allText.trim().length > 0) {
-        expect(allText).toContain(searchTag);
-        // Should not show raw ** markers
-        expect(allText).not.toMatch(/\*\*/);
-      }
-    }
+    const result = await searchResult(searchTag);
+    await expect(result).not.toContainText('**');
   });
 
   test('italic message text is findable via search (plain text match)', async () => {
-    const searchTag = `searchitalic-${Date.now()}`;
-    await sendFormattedMessage(page, searchTag, 'Meta+i');
-    await page.waitForTimeout(1000);
+    const searchTag = letterToken('searchitalic');
+    await sendFormattedMessage(page, searchTag, { shortcut: 'ControlOrMeta+i' });
 
-    const searchIcon = page.locator(
-      '.cometchat-selector__search-icon, [class*="search-icon"], button[aria-label*="Search" i]'
-    ).first();
-    if (!await searchIcon.isVisible({ timeout: 5_000 }).catch(() => false)) return;
-
-    await searchIcon.click();
-    await page.waitForTimeout(1500);
-
-    const searchInput = page.locator('input[placeholder*="Search" i], cometchat-search input').first();
-    if (!await searchInput.isVisible({ timeout: 5_000 }).catch(() => false)) return;
-
-    await searchInput.fill(searchTag);
-    await page.waitForTimeout(3000);
-
-    const result = page.locator('[class*="search"] [class*="message"], [class*="search-result"], .cometchat-search-messages__list-item').first();
-    const hasResult = await result.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasResult) {
-      const resultText = await result.innerText().catch(() => '') || await result.textContent().catch(() => '') || '';
-      const subtitleEl = result.locator('[class*="subtitle"]').first();
-      const subtitleText = await subtitleEl.innerText().catch(() => '') || await subtitleEl.textContent().catch(() => '') || '';
-      const allText = resultText + subtitleText;
-      if (allText.trim().length > 0) {
-        expect(allText).toContain(searchTag);
-        expect(allText).not.toMatch(/^_.*_$/);
-      }
-    }
+    const result = await searchResult(searchTag);
+    await expect(result).not.toContainText(`_${searchTag}_`);
+    await expect(result).not.toContainText(`*${searchTag}*`);
   });
 });
 
@@ -992,77 +532,58 @@ test.describe('Rich Text — Thread View', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
-    await page.waitForSelector('.cometchat-message-bubble', { timeout: 15_000 });
-    await page.waitForTimeout(1000);
+    await openSecondaryChat(page);
   });
 
+  /** Open the thread of the main-list message containing `text`. */
+  async function openThread(text: string) {
+    const row = rowWithText(page, text);
+    await expect(row).toHaveAttribute('data-message-id', /^\d+$/, { timeout: 30_000 });
+    const parentId = await row.getAttribute('data-message-id');
+    // A reply sent before the thread's first load completes may never show (ENG-39944).
+    const firstLoad = page.waitForResponse(
+      (r) => r.request().method() === 'GET' && r.url().includes(`/messages/${parentId}/thread`),
+      { timeout: 30_000 }
+    );
+    await chooseMessageAction(page, text, 'Reply in thread');
+    await expect(threadPanel(page).locator('cometchat-thread-header')).toContainText(text);
+    await firstLoad;
+  }
+
   test('bold message sent in thread renders <strong> in thread bubble', async () => {
-    // Open thread from an outgoing message
-    const targetBubble = page.locator('.cometchat-message-bubble__wrapper--outgoing').last();
-    await targetBubble.locator('.cometchat-message-bubble__body').first().hover();
-    await page.waitForTimeout(500);
-    const moreBtn = targetBubble.getByRole('button', { name: 'More options' });
-    if (!await moreBtn.isVisible({ timeout: 3_000 }).catch(() => false)) return;
-
-    await moreBtn.click();
-    await page.waitForTimeout(500);
-    const threadOption = page.getByRole('menuitem', { name: /Reply in thread/i });
-    if (!await threadOption.isVisible({ timeout: 3_000 }).catch(() => false)) return;
-
-    await threadOption.click({ force: true });
-    await page.waitForTimeout(2000);
-
-    // Thread composer should be visible
-    const threadComposer = page.locator(
-      '.cometchat-threaded-messages cometchat-message-composer, .cometchat-thread-view cometchat-message-composer'
-    ).first();
-    if (!await threadComposer.isVisible({ timeout: 5_000 }).catch(() => false)) return;
-
-    // Type and bold in thread composer
-    const threadInput = threadComposer.locator('[contenteditable="true"]').first();
-    await threadInput.click();
-    const threadTag = `thread-bold-${Date.now()}`;
-    await page.keyboard.type(threadTag);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
-    await threadInput.press('End');
+    const parent = `thread-parent-${uniqueTag()}`;
+    await composerInput(page).click();
+    await page.keyboard.type(parent);
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(2000);
+    await expect(bubbleText(page, parent)).toBeVisible({ timeout: 30_000 });
+    await openThread(parent);
 
-    // The thread message list should show the bold bubble
-    const threadList = page.locator('.cometchat-threaded-messages cometchat-message-list, .cometchat-thread-view cometchat-message-list').first();
-    const threadBubble = threadList.locator('cometchat-text-bubble, .cometchat-text-bubble').last();
-    const hasBold = await threadBubble.locator('strong, b').first().isVisible({ timeout: 5_000 }).catch(() => false);
-    expect(hasBold).toBeTruthy();
+    // The thread composer hides the toolbar but keeps the keyboard shortcuts.
+    const threadInput = threadPanel(page).locator('cometchat-message-composer [contenteditable="true"]').first();
+    const threadTag = `thread-bold-${uniqueTag()}`;
+    await threadInput.click();
+    await page.keyboard.type(threadTag);
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(threadInput.locator('strong, b')).toHaveText(threadTag);
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
 
-    // Close thread
-    const closeBtn = page.locator('.cometchat-thread-header__close, [class*="thread-header"] [class*="close"]').first();
-    if (await closeBtn.isVisible().catch(() => false)) await closeBtn.click();
+    const threadBubble = threadPanel(page)
+      .locator('cometchat-message-list .cometchat-message-list__message')
+      .filter({ hasText: threadTag })
+      .locator('.cometchat-text-bubble__text');
+    await expect(threadBubble.locator('strong, b')).toHaveText(threadTag, { timeout: 30_000 });
   });
 
   test('thread parent message preview shows formatted content without raw markers', async () => {
-    const threadReply = page.locator('.cometchat-message-bubble__reply-count, [class*="reply-count"]').first();
-    if (!await threadReply.isVisible().catch(() => false)) return;
+    const tag = `thread-bold-parent-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+b' });
+    await openThread(tag);
 
-    await threadReply.click();
-    await page.waitForSelector('cometchat-thread-header, .cometchat-thread-header', { timeout: 10_000 });
-
-    const preview = page.locator(
-      '.cometchat-thread-header__message-preview, [class*="thread-header"] [class*="preview"]'
-    ).first();
-    if (await preview.isVisible().catch(() => false)) {
-      const text = await preview.textContent();
-      // Should not contain raw markdown syntax
-      expect(text).not.toMatch(/\*\*.*\*\*/);
-      expect(text).not.toMatch(/^_.*_$/);
-    }
-
-    const closeBtn = page.locator('.cometchat-thread-header__close, [class*="thread-header"] [class*="close"]').first();
-    if (await closeBtn.isVisible().catch(() => false)) await closeBtn.click();
+    const header = threadPanel(page).locator('cometchat-thread-header');
+    await expect(header.locator('strong, b').filter({ hasText: tag })).toBeVisible();
+    await expect(header).not.toContainText('**');
   });
 });
 
@@ -1073,204 +594,123 @@ test.describe('Rich Text — Format Combinations', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    await openSecondaryChat(page);
   });
 
   // ✅ SHOULD WORK TOGETHER
 
   test('bold + italic combination applies both marks', async () => {
+    await typeAndSelectAll(page, 'bold italic');
+    await page.keyboard.press('ControlOrMeta+b');
+    await page.keyboard.press('ControlOrMeta+i');
     const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('bold italic');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+i');
-    await page.waitForTimeout(300);
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    const hasItalic = await input.locator('em, i').first().isVisible().catch(() => false);
-    // Both marks should be present (nested or sibling)
-    expect(hasBold && hasItalic).toBeTruthy();
+    await expect(input.locator('strong, b').filter({ hasText: 'bold italic' })).toBeVisible();
+    await expect(input.locator('em, i').filter({ hasText: 'bold italic' })).toBeVisible();
     await clearInput(page);
   });
 
   test('bold + underline combination applies both marks', async () => {
+    await typeAndSelectAll(page, 'bold underline');
+    await page.keyboard.press('ControlOrMeta+b');
+    await page.keyboard.press('ControlOrMeta+u');
     const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('bold underline');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+u');
-    await page.waitForTimeout(300);
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    const hasUnderline = await input.locator('u, [style*="underline"]').first().isVisible().catch(() => false);
-    expect(hasBold && hasUnderline).toBeTruthy();
+    await expect(input.locator('strong, b').filter({ hasText: 'bold underline' })).toBeVisible();
+    await expect(input.locator('u').filter({ hasText: 'bold underline' })).toBeVisible();
     await clearInput(page);
   });
 
   test('bold + italic + underline triple combination applies all three marks', async () => {
+    await typeAndSelectAll(page, 'triple format');
+    await page.keyboard.press('ControlOrMeta+b');
+    await page.keyboard.press('ControlOrMeta+i');
+    await page.keyboard.press('ControlOrMeta+u');
     const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('triple format');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+i');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+u');
-    await page.waitForTimeout(300);
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    const hasItalic = await input.locator('em, i').first().isVisible().catch(() => false);
-    const hasUnderline = await input.locator('u, [style*="underline"]').first().isVisible().catch(() => false);
-    expect(hasBold && hasItalic && hasUnderline).toBeTruthy();
+    await expect(input.locator('strong, b').filter({ hasText: 'triple format' })).toBeVisible();
+    await expect(input.locator('em, i').filter({ hasText: 'triple format' })).toBeVisible();
+    await expect(input.locator('u').filter({ hasText: 'triple format' })).toBeVisible();
     await clearInput(page);
   });
 
   test('bold inside a list item applies bold mark within <li>', async () => {
-    const input = composerInput(page);
-    await input.click();
+    await composerInput(page).click();
     await page.keyboard.type('list bold item');
-    // Apply unordered list first
-    const ulBtn = toolbarButton(page, 'Bulleted list');
-    if (await ulBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await ulBtn.click();
-      await page.waitForTimeout(200);
-    }
-    // Now select and bold
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
-    const hasUl = await input.locator('ul').first().isVisible().catch(() => false);
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    if (hasUl) expect(hasBold).toBeTruthy();
+    await toolbarButton(page, 'Bulleted list').click();
+    await expect(composerInput(page).locator('ul > li')).toHaveText('list bold item');
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('ul li').locator('strong, b')).toHaveText('list bold item');
     await clearInput(page);
   });
 
   test('italic inside blockquote applies italic mark within <blockquote>', async () => {
-    const input = composerInput(page);
-    await input.click();
+    // Known UI Kit defect (ENG-40829): with the caret in a typed line (no selection), Quote does not turn
+    // that line into a quote, as Numbered/Bulleted list do; it appends an empty <blockquote>
+    // after it and leaves the text outside ("quoted italic<blockquote>\u200b</blockquote>").
+    // Code block behaves the same. Expected to fail until fixed.
+    test.fail();
+    await composerInput(page).click();
     await page.keyboard.type('quoted italic');
-    const quoteBtn = toolbarButton(page, 'Quote');
-    if (await quoteBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await quoteBtn.click();
-      await page.waitForTimeout(200);
-    }
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+i');
-    await page.waitForTimeout(300);
-    const hasQuote = await input.locator('blockquote').first().isVisible().catch(() => false);
-    const hasItalic = await input.locator('em, i').first().isVisible().catch(() => false);
-    if (hasQuote) expect(hasItalic).toBeTruthy();
+    await toolbarButton(page, 'Quote').click();
+    await expect(composerInput(page).locator('blockquote')).toContainText('quoted italic');
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.press('ControlOrMeta+i');
+    await expect(composerInput(page).locator('blockquote').locator('em, i')).toHaveText('quoted italic');
     await clearInput(page);
   });
 
   // ❌ SHOULD NOT WORK TOGETHER (mutually exclusive)
 
   test('inline code strips bold mark — code does not nest with bold', async () => {
+    await typeAndSelectAll(page, 'code no bold');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveText('code no bold');
+    await toolbarButton(page, 'Inline code').click();
     const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('code no bold');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    // Apply bold first
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(200);
-    // Then apply inline code — should override/strip bold
-    const codeBtn = toolbarButton(page, 'Inline code');
-    if (await codeBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await codeBtn.click();
-      await page.waitForTimeout(300);
-      // Code should be present
-      const hasCode = await input.locator('code').first().isVisible().catch(() => false);
-      expect(hasCode).toBeTruthy();
-      // Bold inside code is not standard — verify no <strong> inside <code>
-      const boldInsideCode = await input.locator('code strong, code b').first().isVisible().catch(() => false);
-      expect(boldInsideCode).toBeFalsy();
-    }
+    await expect(input.locator('code')).toHaveText('code no bold');
+    await expect(input.locator('code strong, code b')).toHaveCount(0);
     await clearInput(page);
   });
 
   test('code block strips inline marks — no bold/italic inside <pre>', async () => {
+    await typeAndSelectAll(page, 'preformatted code');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveText('preformatted code');
+    await toolbarButton(page, 'Code block').click();
     const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('preformatted code');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(200);
-    const codeBlockBtn = toolbarButton(page, 'Code block');
-    if (await codeBlockBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await codeBlockBtn.click();
-      await page.waitForTimeout(300);
-      const hasPre = await input.locator('pre').first().isVisible().catch(() => false);
-      if (hasPre) {
-        const boldInsidePre = await input.locator('pre strong, pre b').first().isVisible().catch(() => false);
-        expect(boldInsidePre).toBeFalsy();
-      }
-    }
+    await expect(input.locator('pre')).toContainText('preformatted code');
+    await expect(input.locator('pre strong, pre b, pre em, pre i')).toHaveCount(0);
     await clearInput(page);
   });
 
   test('ordered list and unordered list are mutually exclusive', async () => {
-    const input = composerInput(page);
-    await input.click();
+    await composerInput(page).click();
     await page.keyboard.type('list item');
-    const olBtn = toolbarButton(page, 'Numbered list');
-    const ulBtn = toolbarButton(page, 'Bulleted list');
-    const hasOlBtn = await olBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    const hasUlBtn = await ulBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasOlBtn && hasUlBtn) {
-      await olBtn.click();
-      await page.waitForTimeout(200);
-      await ulBtn.click();
-      await page.waitForTimeout(300);
-      // Should be UL now, not both
-      const hasOl = await input.locator('ol').first().isVisible().catch(() => false);
-      const hasUl = await input.locator('ul').first().isVisible().catch(() => false);
-      // Cannot have both ol and ul active simultaneously
-      expect(hasOl && hasUl).toBeFalsy();
-    }
+    await toolbarButton(page, 'Numbered list').click();
+    await expect(composerInput(page).locator('ol > li')).toHaveText('list item');
+    await toolbarButton(page, 'Bulleted list').click();
+    // Switching to bullets replaces the numbered list rather than nesting the two.
+    await expect(composerInput(page).locator('ul > li')).toHaveText('list item');
+    await expect(composerInput(page).locator('ol')).toHaveCount(0);
     await clearInput(page);
   });
 
   test('toggling bold off removes the mark', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('toggle bold');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b'); // apply
-    await page.waitForTimeout(200);
-    const hasBoldOn = await input.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasBoldOn).toBeTruthy();
-    await page.keyboard.press('Meta+b'); // toggle off
-    await page.waitForTimeout(300);
-    const hasBoldOff = await input.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasBoldOff).toBeFalsy();
+    await typeAndSelectAll(page, 'toggle bold');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveText('toggle bold');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveCount(0);
+    await expect(composerInput(page)).toHaveText('toggle bold');
     await clearInput(page);
   });
 
   test('toggling italic off removes the mark', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('toggle italic');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+i');
-    await page.waitForTimeout(200);
-    const hasItalicOn = await input.locator('em, i').first().isVisible().catch(() => false);
-    expect(hasItalicOn).toBeTruthy();
-    await page.keyboard.press('Meta+i');
-    await page.waitForTimeout(300);
-    const hasItalicOff = await input.locator('em, i').first().isVisible().catch(() => false);
-    expect(hasItalicOff).toBeFalsy();
+    await typeAndSelectAll(page, 'toggle italic');
+    await page.keyboard.press('ControlOrMeta+i');
+    await expect(composerInput(page).locator('em, i')).toHaveText('toggle italic');
+    await page.keyboard.press('ControlOrMeta+i');
+    await expect(composerInput(page).locator('em, i')).toHaveCount(0);
+    await expect(composerInput(page)).toHaveText('toggle italic');
     await clearInput(page);
   });
 });
@@ -1279,163 +719,99 @@ test.describe('Rich Text — Format Combinations', () => {
 
 test.describe('Rich Text — Mentions Combined with Formatting', () => {
   let page: Page;
+  let groupName: string;
+  let mentionName: string;
+
+  test.beforeAll(async () => {
+    // A group of this run's own users, so the mention list holds people the run knows.
+    const runId = uniqueTag();
+    groupName = `E2E Rich Mentions ${runId}`;
+    await createE2EGroup(`e2e-rich-mentions-${runId}`, groupName, PRIMARY_USER, [PRIMARY_USER, SECONDARY_USER, THIRD_USER]);
+    mentionName = await getUserName(SECONDARY_USER);
+  });
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
     await loginToApp(page);
-    await openFirstGroup(page);
+    await openConversation(page, groupName);
+    // Let the list finish its first load (the group's "added" messages): a message sent while
+    // it is still loading can be missing from the list once the load lands.
+    await scrollToLatestMessage(page);
+    await expect(composerInput(page)).toBeVisible();
   });
 
+  /**
+   * Type "@" and the secondary user's first name, and pick them from the suggestions with Enter once
+   * they are the only (and so the highlighted) suggestion. Choosing by keyboard avoids clicking
+   * a row the list is about to replace while it refreshes.
+   */
+  async function insertMention() {
+    await composerInput(page).click();
+    // Only the first word: a space ends the mention query. It is unique among the members.
+    await page.keyboard.type(`@${mentionName.split(' ')[0]}`);
+    const options = composer(page).getByRole('listbox').getByRole('option');
+    await expect(options).toHaveCount(1, { timeout: 15_000 });
+    await expect(options.first()).toContainText(mentionName);
+    await expect(options.first()).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Enter');
+    await expect(composerInput(page).locator('.cometchat-mentions').filter({ hasText: mentionName })).toBeVisible();
+  }
+
   test('mention followed by bold text — both render correctly', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('@');
-    await page.waitForTimeout(2000);
-
-    const dropdown = page.locator(
-      '[class*="mention"], [class*="user-member-wrapper"], [class*="suggestion"], [role="listbox"]'
-    ).first();
-    const hasDropdown = await dropdown.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasDropdown) return;
-
-    const firstSuggestion = dropdown.locator(
-      '[class*="item"], [class*="option"], [role="option"], .cometchat-list-item'
-    ).first();
-    if (!await firstSuggestion.isVisible().catch(() => false)) return;
-
-    await firstSuggestion.click();
-    await page.waitForTimeout(500);
-
-    // Type bold text after the mention
-    const boldSuffix = ` bold-after-mention-${Date.now()}`;
-    await page.keyboard.type(boldSuffix);
-    // Select only the suffix (not the mention chip)
+    await insertMention();
+    const boldSuffix = `boldaftermention${uniqueTag()}`;
+    await page.keyboard.type(` ${boldSuffix}`);
     for (let i = 0; i < boldSuffix.length; i++) await page.keyboard.press('Shift+ArrowLeft');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
+    await page.keyboard.press('ControlOrMeta+b');
 
-    // Mention chip should still be present
-    const mentionChip = input.locator('[class*="mention"], [data-mention], [contenteditable="false"]').first();
-    const hasChip = await mentionChip.isVisible().catch(() => false);
-    // Bold should be applied to the suffix
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasChip || hasBold).toBeTruthy(); // at least one should be present
-
+    const input = composerInput(page);
+    await expect(input.locator('.cometchat-mentions').filter({ hasText: mentionName })).toBeVisible();
+    await expect(input.locator('strong, b')).toHaveText(boldSuffix);
     await clearInput(page);
   });
 
   test('mention inside italic text — mention chip renders within italic span', async () => {
-    const input = composerInput(page);
-    await input.click();
-
-    // Start italic, then type @mention
-    await page.keyboard.press('Meta+i');
-    await page.waitForTimeout(200);
+    // Known UI Kit defect (ENG-40830): typing "@" inside formatted text (italic or bold) opens no mention
+    // suggestions — "check @Bob" offers Bob in plain text, but nothing once "check " is italic
+    // (editor holds <i>check @Bob</i>, no listbox). Expected to fail until fixed.
+    test.fail();
+    await composerInput(page).click();
+    await page.keyboard.press('ControlOrMeta+i');
     await page.keyboard.type('check ');
-    await page.keyboard.type('@');
-    await page.waitForTimeout(2000);
+    await expect(composerInput(page).locator('em, i')).toHaveText(/^check\s$/);
+    await insertMention();
 
-    const dropdown = page.locator(
-      '[class*="mention"], [class*="user-member-wrapper"], [class*="suggestion"], [role="listbox"]'
-    ).first();
-    const hasDropdown = await dropdown.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasDropdown) {
-      await clearInput(page);
-      return;
-    }
-
-    const firstSuggestion = dropdown.locator(
-      '[class*="item"], [class*="option"], [role="option"], .cometchat-list-item'
-    ).first();
-    if (await firstSuggestion.isVisible().catch(() => false)) {
-      await firstSuggestion.click();
-      await page.waitForTimeout(500);
-    }
-
-    // Composer should have content (mention + surrounding italic)
-    const content = await input.textContent();
-    expect(content?.trim().length).toBeGreaterThan(0);
-
+    const input = composerInput(page);
+    await expect(input.locator('em, i').filter({ hasText: 'check' })).toBeVisible();
+    await expect(input.locator('em .cometchat-mentions, i .cometchat-mentions')).toContainText(mentionName);
     await clearInput(page);
   });
 
-  test('sending message with mention + bold renders both in text bubble', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('@');
-    await page.waitForTimeout(2000);
-
-    const dropdown = page.locator(
-      '[class*="mention"], [class*="user-member-wrapper"], [class*="suggestion"], [role="listbox"]'
-    ).first();
-    const hasDropdown = await dropdown.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasDropdown) return;
-
-    const firstSuggestion = dropdown.locator(
-      '[class*="item"], [class*="option"], [role="option"], .cometchat-list-item'
-    ).first();
-    if (!await firstSuggestion.isVisible().catch(() => false)) return;
-
-    await firstSuggestion.click();
-    await page.waitForTimeout(500);
-
-    const suffix = ` mention-bold-${Date.now()}`;
-    await page.keyboard.type(suffix);
+  test('sending message with mention + bold renders both in text bubble @quarantine (ENG-40626)', async () => {
+    // @quarantine (ENG-40626): intermittent UI Kit defect — the selection made right after
+    // inserting a mention and typing is sometimes lost to the composer's deferred passes, so
+    // Ctrl+B bolds only the last character. Failed 1 of 7 runs, so it can't be test.fail.
+    await insertMention();
+    const suffix = `mentionbold${uniqueTag()}`;
+    await page.keyboard.type(` ${suffix}`);
     for (let i = 0; i < suffix.length; i++) await page.keyboard.press('Shift+ArrowLeft');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
-    await input.press('End');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveText(suffix);
+    await page.keyboard.press('End');
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(3000);
 
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: suffix.trim() }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-    const hasMention = await bubble.locator(
-      '[class*="mention"], [data-mention], [class*="tagged"]'
-    ).first().isVisible().catch(() => false);
-    // Bubble should contain bold
-    const hasBold = await bubble.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasMention || hasBold).toBeTruthy();
+    const bubble = bubbleText(page, suffix);
+    await expect(bubble.locator('.cometchat-mentions')).toContainText(mentionName, { timeout: 30_000 });
+    await expect(bubble.locator('strong, b')).toHaveText(suffix);
   });
 
   test('@mention in an ordered list item renders correctly', async () => {
-    const input = composerInput(page);
-    await input.click();
+    await composerInput(page).click();
+    await toolbarButton(page, 'Numbered list').click();
+    await expect(composerInput(page).locator('ol > li')).toHaveCount(1);
+    await insertMention();
 
-    // Apply ordered list
-    const olBtn = toolbarButton(page, 'Numbered list');
-    if (!await olBtn.isVisible({ timeout: 5_000 }).catch(() => false)) return;
-
-    await olBtn.click();
-    await page.waitForTimeout(200);
-    await page.keyboard.type('@');
-    await page.waitForTimeout(2000);
-
-    const dropdown = page.locator(
-      '[class*="mention"], [class*="user-member-wrapper"], [class*="suggestion"], [role="listbox"]'
-    ).first();
-    const hasDropdown = await dropdown.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasDropdown) {
-      await clearInput(page);
-      return;
-    }
-
-    const firstSuggestion = dropdown.locator(
-      '[class*="item"], [class*="option"], [role="option"], .cometchat-list-item'
-    ).first();
-    if (await firstSuggestion.isVisible().catch(() => false)) {
-      await firstSuggestion.click();
-      await page.waitForTimeout(500);
-    }
-
-    // List should still be active
-    const hasOl = await input.locator('ol').first().isVisible().catch(() => false);
-    const content = await input.textContent();
-    expect(hasOl || (content?.trim().length ?? 0) > 0).toBeTruthy();
-
+    await expect(composerInput(page).locator('ol > li .cometchat-mentions')).toContainText(mentionName);
     await clearInput(page);
   });
 });
@@ -1447,98 +823,52 @@ test.describe('Rich Text — Link Insertion', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    await openSecondaryChat(page);
   });
 
+  const linkDialog = () => page.locator('cometchat-link-dialog');
+
+  /** Select all typed text, open the link dialog, enter `url` and save. */
+  async function linkSelection(url: string) {
+    await page.keyboard.press('ControlOrMeta+a');
+    await toolbarButton(page, 'Link').click();
+    await expect(linkDialog().getByRole('dialog')).toBeVisible();
+    await linkDialog().getByRole('textbox', { name: 'Link' }).fill(url);
+    await linkDialog().getByRole('button', { name: 'Save' }).click();
+    await expect(linkDialog()).toHaveCount(0);
+  }
+
   test('link button is present in toolbar', async () => {
-    const linkBtn = page.locator(
-      'button[aria-label*="Link" i], button[aria-label*="URL" i], button[title*="Link" i]'
-    ).first();
-    const found = await linkBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (found) await expect(linkBtn).toBeVisible();
-    else expect(true).toBeTruthy(); // may use icon only
+    await expect(toolbarButton(page, 'Link')).toBeVisible();
   });
 
   test('link button opens URL input dialog or inline input', async () => {
-    const input = composerInput(page);
-    await input.click();
+    await composerInput(page).click();
     await page.keyboard.type('click here');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
+    await page.keyboard.press('ControlOrMeta+a');
+    await toolbarButton(page, 'Link').click();
 
-    const linkBtn = page.locator(
-      'button[aria-label*="Link" i], button[aria-label*="URL" i]'
-    ).first();
-    const found = await linkBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (!found) return;
+    // The dialog offers the selected text and a URL field.
+    await expect(linkDialog().getByRole('dialog')).toBeVisible();
+    await expect(linkDialog().getByRole('textbox', { name: 'Text' })).toHaveValue('click here');
+    await linkDialog().getByRole('textbox', { name: 'Link' }).fill('https://cometchat.com');
+    await linkDialog().getByRole('button', { name: 'Save' }).click();
 
-    await linkBtn.click();
-    await page.waitForTimeout(500);
-
-    // A URL input field or dialog should appear
-    const urlInput = page.locator(
-      'input[placeholder*="URL" i], input[placeholder*="http" i], input[type="url"], [class*="link-input"] input'
-    ).first();
-    const hasUrlInput = await urlInput.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (hasUrlInput) {
-      await expect(urlInput).toBeVisible();
-      // Type a URL
-      await urlInput.fill('https://cometchat.com');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(500);
-
-      // Link should be inserted in the editor
-      const hasLink = await input.locator('a[href]').first().isVisible().catch(() => false);
-      expect(hasLink).toBeTruthy();
-    }
-
+    await expect(composerInput(page).locator('a[href^="https://cometchat.com"]')).toHaveText('click here');
     await clearInput(page);
   });
 
   test('link renders as <a> tag in text bubble after send', async () => {
-    const input = composerInput(page);
-    await input.click();
-    const linkText = `link-test-${Date.now()}`;
+    const linkText = `link-test-${uniqueTag()}`;
+    await composerInput(page).click();
     await page.keyboard.type(linkText);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
+    await linkSelection('https://cometchat.com');
+    await expect(composerInput(page).locator('a')).toHaveText(linkText);
+    await clickSend(page);
 
-    const linkBtn = page.locator(
-      'button[aria-label*="Link" i], button[aria-label*="URL" i]'
-    ).first();
-    const found = await linkBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-    if (!found) return;
-
-    await linkBtn.click();
-    await page.waitForTimeout(500);
-
-    const urlInput = page.locator(
-      'input[placeholder*="URL" i], input[placeholder*="http" i], input[type="url"], [class*="link-input"] input'
-    ).first();
-    if (!await urlInput.isVisible({ timeout: 3_000 }).catch(() => false)) return;
-
-    await urlInput.fill('https://cometchat.com');
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(500);
-
-    await input.press('End');
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(3000);
-
-    // Filter by the unique link text to avoid grabbing a stale/wrong bubble
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble')
-      .filter({ hasText: linkText }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-
-    await page.waitForTimeout(1500);
-
-    // Check via isVisible first, then fall back to innerHTML inspection
-    const hasAnchor = await bubble.locator('a[href]').first().isVisible().catch(() => false);
-    const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-    const innerHtml = await textDiv.innerHTML().catch(() => '');
-    expect(hasAnchor || innerHtml.includes('<a ') || innerHtml.includes('href=')).toBeTruthy();
+    await expect(bubbleText(page, linkText).locator('a[href^="https://cometchat.com"]')).toHaveText(linkText, {
+      timeout: 30_000,
+    });
   });
 });
 
@@ -1549,72 +879,42 @@ test.describe('Rich Text — Accessibility', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    await openSecondaryChat(page);
   });
 
   test('all toolbar buttons have aria-label or title attributes', async () => {
-    const toolbar = page.locator(
-      '.cometchat-message-composer__toolbar, [class*="formatting-toolbar"], [class*="rich-text"] [class*="toolbar"]'
-    ).first();
-    const hasToolbar = await toolbar.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasToolbar) return;
-
-    const buttons = toolbar.locator('button');
-    const count = await buttons.count();
-    for (let i = 0; i < count; i++) {
-      const btn = buttons.nth(i);
-      const ariaLabel = await btn.getAttribute('aria-label');
-      const title = await btn.getAttribute('title');
-      const ariaPressed = await btn.getAttribute('aria-pressed');
-      // Each button must have at least one accessible label
-      expect(ariaLabel || title).toBeTruthy();
-    }
+    const buttons = toolbar(page).getByRole('button');
+    await expect(buttons).toHaveCount(10);
+    const labels = await buttons.evaluateAll((els) =>
+      els.map((el) => (el.getAttribute('aria-label') || el.getAttribute('title') || '').trim())
+    );
+    expect(labels.filter((l) => !l)).toEqual([]);
   });
 
   test('active format button has aria-pressed="true"', async () => {
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type('test');
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
-
-    const boldBtn = toolbarButton(page, 'Bold');
-    const found = await boldBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (found) {
-      const pressed = await boldBtn.getAttribute('aria-pressed');
-      expect(pressed).toBe('true');
-    }
-
+    await typeAndSelectAll(page, 'test');
+    await expect(toolbarButton(page, 'Bold')).toHaveAttribute('aria-pressed', 'false');
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(composerInput(page).locator('strong, b')).toHaveText('test');
+    await expect(toolbarButton(page, 'Bold')).toHaveAttribute('aria-pressed', 'true');
     await clearInput(page);
   });
 
   test('toolbar buttons are keyboard focusable via Tab', async () => {
-    const toolbar = page.locator(
-      '.cometchat-message-composer__toolbar, [class*="formatting-toolbar"]'
-    ).first();
-    const hasToolbar = await toolbar.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (!hasToolbar) return;
-
-    // Focus the first button and verify it receives focus
-    const firstBtn = toolbar.locator('button').first();
-    await firstBtn.focus();
-    const isFocused = await firstBtn.evaluate(el => el === document.activeElement);
-    expect(isFocused).toBeTruthy();
+    const bold = toolbarButton(page, 'Bold');
+    await bold.focus();
+    await expect(bold).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(toolbarButton(page, 'Italic')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(toolbarButton(page, 'Underline')).toBeFocused();
   });
 
   test('formatted text bubble has readable text content for screen readers', async () => {
-    const boldTag = `a11y-bold-${Date.now()}`;
-    await sendFormattedMessage(page, boldTag, 'Meta+b');
-
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: boldTag }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-    const text = await bubble.textContent();
-    expect(text?.trim()).toBeTruthy();
-    expect(text).not.toMatch(/\*\*/);
+    const boldTag = `a11y-bold-${uniqueTag()}`;
+    await sendFormattedMessage(page, boldTag, { shortcut: 'ControlOrMeta+b' });
+    // The accessible text is exactly the message: no markdown markers read out.
+    await expect(bubbleText(page, boldTag)).toHaveText(boldTag);
   });
 });
 
@@ -1625,108 +925,72 @@ test.describe('Rich Text — Edge Cases', () => {
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
-    await loginToApp(page);
-    await openFirstConversation(page);
+    await openSecondaryChat(page);
   });
 
   test('empty composer cannot be sent with formatting applied', async () => {
-    const input = composerInput(page);
-    await input.click();
-    // Apply bold with no text
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(200);
+    const rows = page.locator('cometchat-messages .cometchat-message-list__message');
+    const before = await rows.count();
+    await composerInput(page).click();
+    await page.keyboard.press('ControlOrMeta+b');
 
-    // The send button should be disabled when composer has no visible text
-    const composer = page.locator('cometchat-message-composer').first();
-    const sendBtn = composer.locator('button[aria-label*="Send" i], [data-testid="send-button"]').first();
-    const isDisabled = await sendBtn.getAttribute('disabled').catch(() => null);
-
-    // Soft check: either send is disabled OR message count didn't increase
-    const msgListBefore = await page.locator('cometchat-text-bubble').count();
+    await expect(composer(page).getByRole('button', { name: 'Send message' })).toBeDisabled();
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(1500);
-    const msgListAfter = await page.locator('cometchat-text-bubble').count();
-
-    expect(isDisabled !== null || msgListAfter === msgListBefore).toBeTruthy();
+    await expect(rows).toHaveCount(before);
   });
 
   test('formatting clears after message is sent', async () => {
-    const tag = `clear-after-send-${Date.now()}`;
-    await sendFormattedMessage(page, tag, 'Meta+b');
+    const tag = `clear-after-send-${uniqueTag()}`;
+    await sendFormattedMessage(page, tag, { shortcut: 'ControlOrMeta+b' });
 
-    // After send, composer should be empty and have no residual bold
-    const input = composerInput(page);
-    const content = await input.textContent();
-    expect(content?.trim()).toBe('');
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasBold).toBeFalsy();
+    await expect(composerInput(page)).toHaveText('');
+    await expect(composerInput(page).locator('strong, b')).toHaveCount(0);
+    await expect(toolbarButton(page, 'Bold')).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('very long formatted message sends and renders without truncation in bubble', async () => {
-    const longText = `long-${'x'.repeat(200)}-${Date.now()}`;
-    const input = composerInput(page);
-    await input.click();
-    await page.keyboard.type(longText);
-    await page.keyboard.press('Meta+a');
-    await page.waitForTimeout(200);
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(300);
-    await input.press('End');
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(3000);
+    const longText = `long-${'x'.repeat(200)}-${uniqueTag()}`;
+    await typeAndSelectAll(page, longText);
+    await page.keyboard.press('ControlOrMeta+b');
+    await clickSend(page);
 
-    // Filter by a unique substring of the long text to avoid grabbing a stale bubble
-    const uniqueSlice = longText.slice(0, 30); // "long-xxxxxxxxxxxxxxxxxxxxxxxxxx"
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble')
-      .filter({ hasText: uniqueSlice }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-
-    // The bubble may show a "Read more" button for very long text — that's fine,
-    // the full content is still in the DOM. Check innerHTML rather than textContent.
-    const textDiv = bubble.locator('.cometchat-text-bubble__text').first();
-    const innerHtml = await textDiv.innerHTML().catch(() => '');
-    const fullText = await bubble.evaluate(el => el.textContent ?? '').catch(() => '');
-
-    // Either the visible text or the raw HTML should contain a long run of x's
-    expect(
-      fullText.includes('x'.repeat(50)) || innerHtml.includes('x'.repeat(50))
-    ).toBeTruthy();
+    // Long text may collapse behind "Read more", but the whole message stays in the bubble.
+    const bubble = bubbleText(page, longText.slice(0, 30));
+    await expect(bubble.locator('strong, b')).toHaveText(longText, { timeout: 30_000 });
   });
 
   test('multi-line content with Shift+Enter preserves line breaks in bubble', async () => {
-    const input = composerInput(page);
-    await input.click();
-    const line1 = `line1-${Date.now()}`;
-    const line2 = `line2-${Date.now()}`;
+    const line1 = `line1-${uniqueTag()}`;
+    const line2 = `line2-${uniqueTag()}`;
+    await composerInput(page).click();
     await page.keyboard.type(line1);
-    await page.keyboard.press('Shift+Enter'); // soft newline
+    await page.keyboard.press('Shift+Enter');
     await page.keyboard.type(line2);
-    await page.keyboard.press('Enter'); // send
-    await page.waitForTimeout(3000);
+    await page.keyboard.press('Enter');
 
-    const bubble = page.locator('cometchat-text-bubble, .cometchat-text-bubble').filter({ hasText: line1 }).last();
-    const hasBubble = await bubble.isVisible({ timeout: 15_000 }).catch(() => false);
-    if (!hasBubble) return;
-    const text = await bubble.textContent();
-    expect(text).toContain(line1);
-    expect(text).toContain(line2);
+    const bubble = bubbleText(page, line1);
+    await expect(bubble).toContainText(line2, { timeout: 30_000 });
+    // innerText reflects rendered line breaks: the two lines are not run together.
+    expect(await bubble.innerText()).toMatch(new RegExp(`${line1}\\s*\\n\\s*${line2}`));
   });
 
   test('pasting plain text into formatted composer preserves existing format', async () => {
     const input = composerInput(page);
     await input.click();
     await page.keyboard.type('start ');
-    // Apply bold
-    await page.keyboard.press('Meta+b');
-    await page.waitForTimeout(200);
-    // Type more text (should be bold)
+    await page.keyboard.press('ControlOrMeta+b');
     await page.keyboard.type('bold part');
-    await page.waitForTimeout(300);
+    await expect(input.locator('strong, b')).toHaveText('bold part');
 
-    const hasBold = await input.locator('strong, b').first().isVisible().catch(() => false);
-    expect(hasBold).toBeTruthy();
+    // Paste plain text at the end, as a clipboard paste would deliver it.
+    await input.evaluate((el) => {
+      const data = new DataTransfer();
+      data.setData('text/plain', ' pasted');
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    });
 
+    await expect(input).toContainText('start bold part pasted');
+    await expect(input.locator('strong, b').first()).toContainText('bold part');
     await clearInput(page);
   });
 });

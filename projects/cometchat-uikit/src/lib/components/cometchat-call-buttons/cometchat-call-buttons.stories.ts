@@ -19,7 +19,7 @@ import { CometChatCallButtonsComponent } from './cometchat-call-buttons.componen
 import { CallButtonsService } from '../../services/call-buttons.service';
 import { CallAnnouncerService } from '../../services/call-announcer.service';
 import { createMockUser, createMockGroup } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 import {
   MockCallService,
   mockCallAnnouncer,

@@ -1,0 +1,298 @@
+---
+title: "CometChatNotificationFeedComponent"
+description: "Displays the logged-in user's notification feed as a scrollable list of cards with category filter chips, infinite scroll, real-time updates and engagement reporting"
+---
+
+The `CometChatNotificationFeedComponent` renders the notification feed (campaign and promotional notifications) for the logged-in user. Each feed item is shown with its category, its sent time and its card content, which is rendered by `cometchat-card-view` from `@cometchat/cards-angular`. The component fetches items through the CometChat Chat SDK, listens for new items in real time and reports delivery, view, read, click and interaction engagement back to CometChat.
+
+## Overview
+
+- **Category filter chips**: An "All" chip plus one chip per category returned by the SDK, each with an unread count badge
+- **Infinite scroll**: The next page is fetched when the list is scrolled within 100px of the bottom
+- **Real-time updates**: New items received through `CometChat.addNotificationFeedListener` are added to the top of the list when they match the active filter
+- **Engagement reporting**: Items are marked delivered when fetched or received, viewed when at least 50% visible, read after 1 second at 50% visibility, clicked on item click and interacted on card action click
+- **Unread highlighting**: Items with no read timestamp get an unread background and an indicator dot
+- **Deep linking**: `scrollToItemId` scrolls a specific item into view after the first render
+- **Template overrides**: Custom header, loading, empty and error views
+
+<Info>
+  Card rendering depends on the `@cometchat/cards-angular` peer dependency (`^1.0.0`). Make sure it is installed alongside `@cometchat/chat-uikit-angular`.
+</Info>
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import type { CometChatCardAction } from '@cometchat/cards-angular';
+import {
+  CometChatNotificationFeedComponent,
+  NotificationFeedItem,
+} from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-notifications',
+  standalone: true,
+  imports: [CometChatNotificationFeedComponent],
+  template: `
+    <cometchat-notification-feed
+      [showBackButton]="true"
+      (itemClick)="onItemClick($event)"
+      (actionClick)="onActionClick($event)"
+      (backClick)="onBack()"
+      (error)="onError($event)"
+    ></cometchat-notification-feed>
+  `
+})
+export class NotificationsComponent {
+  onItemClick(item: NotificationFeedItem): void {
+    console.log('Feed item clicked:', item.getId());
+  }
+
+  onActionClick(event: { item: NotificationFeedItem; action: CometChatCardAction }): void {
+    console.log('Card action:', event.action, 'on item', event.item.getId());
+  }
+
+  onBack(): void {
+    // Navigate back
+  }
+
+  onError(error: CometChat.CometChatException): void {
+    console.error('Notification feed error:', error);
+  }
+}
+```
+
+The component sizes itself to `100%` of its container's width and height, so place it inside a container with a defined height.
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `title` | `string` | `''` | Title shown in the default header. When empty, the localized `notifications_title` string ("Notifications") is shown. |
+| `showHeader` | `boolean` | `true` | Whether to render the header (default header or `headerView`). Accepts boolean attributes. |
+| `showBackButton` | `boolean` | `false` | Whether to show the back button in the default header. Accepts boolean attributes. |
+| `showFilterChips` | `boolean` | `true` | Whether to show the category filter chips row. Accepts boolean attributes. |
+| `scrollToItemId` | `string \| undefined` | `undefined` | ID of a feed item to scroll into view (smooth, centered) after the view initializes. Read once in `ngAfterViewInit`. |
+| `notificationFeedRequestBuilder` | `any` | `undefined` | A built feed request (the result of `new CometChat.NotificationFeedRequestBuilder()...build()`). Used whenever no category chip is selected. Read once in `ngOnInit`. |
+| `notificationCategoriesRequestBuilder` | `any` | `undefined` | A built categories request (the result of `new CometChat.NotificationCategoriesRequestBuilder()...build()`) used to fetch the filter chip categories. Read once in `ngOnInit`. |
+| `style` | `CometChatNotificationFeedStyle \| undefined` | `undefined` | Inline style overrides. See [Style Object](#style-object). |
+| `cardThemeMode` | `'auto' \| 'light' \| 'dark'` | `'auto'` | Theme mode forwarded to `cometchat-card-view` as `themeMode`. |
+| `cardThemeOverride` | `Record<string, any> \| undefined` | `undefined` | Theme override forwarded to `cometchat-card-view` as `themeOverride`. |
+
+### Template Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `headerView` | `TemplateRef<any> \| undefined` | `undefined` | Replaces the default header (title and back button). Only rendered when `showHeader` is `true`. |
+| `loadingStateView` | `TemplateRef<any> \| undefined` | `undefined` | Replaces the default loading state. |
+| `emptyStateView` | `TemplateRef<any> \| undefined` | `undefined` | Replaces the default empty state. |
+| `errorStateView` | `TemplateRef<any> \| undefined` | `undefined` | Replaces the default error state, including its retry button. |
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `itemClick` | `NotificationFeedItem` | Emitted when a feed item is clicked or activated with `Enter` / `Space`. A `clicked` engagement is reported for the item first. |
+| `actionClick` | `{ item: NotificationFeedItem; action: CometChatCardAction }` | Emitted when an action inside a card is triggered. `action` is the bare `CometChatCardAction` from `@cometchat/cards-angular`. An `interacted` engagement is reported for the item first. |
+| `error` | `CometChat.CometChatException` | Emitted when fetching the first page of items fails (on load, on category switch or on retry). |
+| `backClick` | `void` | Emitted when the default header's back button is clicked or activated with `Enter` / `Space`. |
+
+<Note>
+  `NotificationFeedItem` is exported by the UI Kit as an alias of `CometChat.NotificationFeedItem`. The `error` event is emitted from the component's state-change handler whenever the internal state holds an error, so the same exception can be emitted more than once while the error is held.
+</Note>
+
+## Templates
+
+All four templates are rendered with `ngTemplateOutlet` and receive no context.
+
+```typescript expandable
+@Component({
+  selector: 'app-custom-notifications',
+  standalone: true,
+  imports: [CometChatNotificationFeedComponent],
+  template: `
+    <cometchat-notification-feed
+      [headerView]="header"
+      [emptyStateView]="empty"
+      [errorStateView]="errorView"
+    >
+      <ng-template #header>
+        <div class="my-header">Inbox</div>
+      </ng-template>
+
+      <ng-template #empty>
+        <div class="my-empty">You're all caught up</div>
+      </ng-template>
+
+      <ng-template #errorView>
+        <div class="my-error">Couldn't load notifications</div>
+      </ng-template>
+    </cometchat-notification-feed>
+  `
+})
+export class CustomNotificationsComponent {}
+```
+
+A custom `errorStateView` replaces the default retry button, and the component exposes no public retry method, so your template has no built-in way to re-fetch.
+
+## Filtering and Pagination
+
+### Category chips
+
+When `showFilterChips` is `true`, the chips row shows:
+
+- An **All** chip, which shows every item and carries the total unread count badge
+- One chip per category returned by the categories request, labelled with the category's `label`
+
+By default categories are fetched with `new CometChat.NotificationCategoriesRequestBuilder().setLimit(50).build()`, with a single `fetchNext()` call. If the categories fetch fails, only the **All** chip is shown.
+
+Selecting a category clears the list, shows the loading state and fetches the first page with `setCategory(<category label>)`. The selected chip gets the `--active` modifier and `aria-pressed="true"`. Unread count badges above 99 are displayed as `99+`.
+
+### Feed request
+
+When no category is selected, the component uses the request passed in `notificationFeedRequestBuilder`, or builds `new CometChat.NotificationFeedRequestBuilder().setLimit(15).build()`. When a category is selected, it always builds its own request with `setLimit(15)` and `setCategory(...)`, so custom request settings apply only to the **All** view.
+
+```typescript
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+
+feedRequest = new CometChat.NotificationFeedRequestBuilder()
+  .setLimit(30)
+  .setReadState('unread')
+  .build();
+```
+
+```html
+<cometchat-notification-feed
+  [notificationFeedRequestBuilder]="feedRequest"
+></cometchat-notification-feed>
+```
+
+### Infinite scroll
+
+When the content area is scrolled within 100px of the bottom and more pages are available, the next page is fetched. Items already in the list are filtered out by ID. Pagination stops when a page returns no new items.
+
+## States
+
+| State | When | Default UI |
+|-------|------|------------|
+| Loading | On init and on category switch, until the first page returns | Spinner with the localized `loading` text. Replaced by `loadingStateView`. |
+| Empty | The first page returns no items | Illustration, `notifications_empty_title` ("Nothing here yet") and `notifications_empty_subtitle`. Replaced by `emptyStateView`. |
+| Error | Fetching the first page fails | Illustration, `notifications_error_title` ("Oops!"), `notifications_error_subtitle` and a **Retry** button that re-fetches the first page. Replaced by `errorStateView`. |
+| Loaded | The first page returns items | The feed list |
+| Loading more | A next page is being fetched | Spinner with `loading` text below the list |
+| Pagination error | Fetching a next page fails | "Couldn't load more" / "Tap to retry" row below the list. Clicking it, or pressing `Enter` / `Space` on it, retries the page. |
+
+A real-time item that matches the active filter moves the feed to the loaded state, including from the empty state.
+
+## Read and Engagement Tracking
+
+The component uses an `IntersectionObserver` (threshold `0.5`, rooted on the content area) on every feed item:
+
+| Engagement | Trigger | SDK call |
+|------------|---------|----------|
+| Delivered | Item is fetched or received in real time (once per item) | `CometChat.markFeedItemAsDelivered(item)` |
+| Viewed | Item first becomes at least 50% visible | `CometChat.reportFeedEngagement(item, 'viewed')` |
+| Read | An unread item stays at least 50% visible for 1 second | `CometChat.markFeedItemAsRead(item)` |
+| Clicked | Item is clicked | `CometChat.reportFeedEngagement(item, 'clicked')` |
+| Interacted | A card action is triggered | `CometChat.reportFeedEngagement(item, 'interacted')` |
+
+Engagement calls are fire-and-forget, so their failures are ignored. When an item is marked read, the component sets its read timestamp locally, removes its unread styling, and decrements the total and category unread counts. The total unread count comes from `CometChat.getNotificationFeedUnreadCount()` after each first-page fetch, and it is incremented for every real-time item.
+
+Each item shows its sent time through `cometchat-date`: the time for today, the localized "Yesterday" for yesterday, and the date for older items.
+
+## Style Object
+
+`CometChatNotificationFeedStyle` declares the following keys. The template binds only these:
+
+| Key | Applied to |
+|-----|-----------|
+| `backgroundColor`, `width`, `height` | Root `.cometchat-notification-feed` element |
+| `headerTitleColor`, `headerTitleFont` | Default header title (`color`, `font`) |
+| `chipActiveBackgroundColor`, `chipActiveTextColor` | The selected chip |
+| `chipBorderColor` | Unselected chips (`border-color`) |
+| `unreadIndicatorColor` | Unread indicator dot (`background`) |
+| `cardBackgroundColor`, `cardBorderColor`, `cardBorderRadius`, `cardBorderWidth` | Card container. Setting `cardBorderWidth` also sets `border-style: solid`. |
+
+The interface also declares `chipInactiveBackgroundColor`, `chipInactiveTextColor`, `badgeBackgroundColor`, `badgeTextColor`, `separatorColor`, `timestampTextColor` and `timestampFont`, but the current template doesn't apply them. Use CSS for those elements instead.
+
+## Styling with CSS Variables
+
+The component reads the global CometChat theme tokens. These are the main ones it uses:
+
+```css expandable
+cometchat-notification-feed {
+  /* Surfaces */
+  --cometchat-background-color-01: #ffffff;   /* header, inactive chip with unread badge */
+  --cometchat-background-color-02: #fafafa;   /* inactive chip */
+  --cometchat-background-color-03: #f5f5f5;   /* feed background */
+  --cometchat-extended-primary-color-50: #f7f5fd; /* unread item, active chip badge */
+
+  /* Brand */
+  --cometchat-primary-color: #6852D6;   /* active chip, unread dot, spinners, focus rings */
+
+  /* Text */
+  --cometchat-text-color-primary: #181d27;
+  --cometchat-text-color-secondary: #414651;
+  --cometchat-text-color-tertiary: #a1a1a1;
+
+  /* Borders */
+  --cometchat-border-color-light: #f5f5f5;
+  --cometchat-border-color-default: #d5d7da;
+  --cometchat-neutral-color-200: #f0f0f0;  /* item separator */
+
+  /* Retry button and pagination error */
+  --cometchat-primary-button-background: #6852D6;
+  --cometchat-primary-button-icon: #ffffff;
+  --cometchat-error-color: #F44336;
+
+  /* Component-specific */
+  --cometchat-notification-feed-empty-title-line-height: 28px;
+  --cometchat-notification-feed-error-title-line-height: 28px;
+}
+```
+
+### BEM Classes
+
+| Class | Element |
+|-------|---------|
+| `.cometchat-notification-feed` | Root container |
+| `.cometchat-notification-feed__header`, `__header-left`, `__header-back`, `__header-title` | Default header |
+| `.cometchat-notification-feed__chips`, `__chip`, `__chip-text` | Filter chips row and chips |
+| `.cometchat-notification-feed__chip--active`, `--inactive`, `--inactive-with-badge` | Chip states |
+| `.cometchat-notification-feed__chip-badge`, `--active`, `--inactive` | Chip unread badge |
+| `.cometchat-notification-feed__content` | Scrollable content area |
+| `.cometchat-notification-feed__item`, `__item--unread` | Feed item |
+| `.cometchat-notification-feed__unread-indicator` | Unread dot |
+| `.cometchat-notification-feed__item-meta`, `__item-category`, `__item-time` | Category and time row |
+| `.cometchat-notification-feed__card-container` | Wrapper around `cometchat-card-view` |
+| `.cometchat-notification-feed__loading`, `__empty`, `__error` | Full-area states |
+| `.cometchat-notification-feed__error-retry-button` | Default retry button |
+| `.cometchat-notification-feed__loading-more`, `__pagination-error` | Bottom-of-list states |
+
+## Accessibility
+
+### Keyboard Navigation
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Tab` | Move focus between the back button, chips, feed items and retry controls | Global |
+| `Enter` / `Space` | Activate the focused item (emits `itemClick`) | Feed item |
+| `Enter` / `Space` | Emit `backClick` | Back button |
+| `Enter` / `Space` | Retry loading the next page | Pagination error row |
+
+Chips and the error retry button are native `<button>` elements. Focused items, chips, the back button, the pagination error row and the retry button show a 2px `--cometchat-primary-color` outline on `:focus-visible`.
+
+### ARIA Attributes
+
+- `role="feed"` on the list, labelled with `notifications_title`, with `aria-busy` while the next page loads
+- `role="article"` and `tabindex="0"` on each item, with `aria-label` "Notification from {category}"
+- `role="group"` on the chips row and `aria-pressed` on each chip
+- `role="button"`, `tabindex="0"` and a localized `aria-label` on the back button and on the pagination error row
+- `aria-busy` on the content area while loading, and on the default loading view
+- `aria-label` "Tap to retry" on the default error retry button
+
+## Related Components
+
+- **CometChatNotificationBadgeComponent**: Shows the unread notification count, for example on a navigation tab
+- **CometChatDate**: Formats each item's sent time

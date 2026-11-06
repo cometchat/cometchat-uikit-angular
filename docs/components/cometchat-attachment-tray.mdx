@@ -1,0 +1,146 @@
+---
+title: "CometChatAttachmentTrayComponent"
+description: "Internal staging strip in the message composer that shows attachment tiles while they upload and before they are sent"
+---
+
+The `CometChatAttachmentTrayComponent` (selector `cometchat-attachment-tray`) is the message composer's staging strip for multiple attachments. It renders one [attachment tile](/components/cometchat-attachment-tile) per staged file, wires each tile's cancel, remove and retry actions to `MediaUploadTrayService`, and opens uploaded image and video tiles in a fullscreen viewer.
+
+<Note>
+  This is an **internal** component. It is not exported from `@cometchat/chat-uikit-angular` (it is absent from the components barrel used by `public-api.ts`), and neither is `MediaUploadTrayService`. It appears automatically inside [`CometChatMessageComposer`](/components/cometchat-message-composer) when you attach files; configure it through the composer's attachment properties (for example `maxFileSize` and `allowedFileTypes`).
+</Note>
+
+## Overview
+
+- **Visible only when needed**: Renders nothing until at least one file is staged (`tray.hasTiles()`)
+- **Horizontal row**: Tiles sit in a single scrollable row (`role="list"`) with the scrollbar hidden
+- **Tile actions**: `cancelClick` → `tray.cancel()`, `removeClick` → `tray.remove()`, `retryClick` → `tray.retry()`
+- **Fullscreen preview**: An uploaded image or video tile opens `cometchat-fullscreen-viewer`. Images use the tile's local thumbnail; videos get a fresh object URL from the local file, which is revoked when the viewer closes or the tray is destroyed
+- **Per-composer state**: State comes from the `MediaUploadTrayService` instance the composer provides, so the main composer and a thread composer each have an independent tray and upload batch
+
+## Usage in Context
+
+The composer renders the tray with no bindings, above its input section:
+
+```html
+<!-- cometchat-message-composer.component.html (internal) -->
+<cometchat-attachment-tray></cometchat-attachment-tray>
+```
+
+To use the tray in your app, use the composer:
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatMessageComposerComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-composer',
+  standalone: true,
+  imports: [CometChatMessageComposerComponent],
+  template: `
+    <cometchat-message-composer
+      [user]="user"
+      [maxFileSize]="10485760"
+      [allowedFileTypes]="['image/*', 'application/pdf']"
+    ></cometchat-message-composer>
+  `
+})
+export class ComposerComponent {
+  user!: CometChat.User;
+}
+```
+
+## Properties
+
+The tray has no inputs. It reads all of its state from the injected `MediaUploadTrayService`.
+
+## Events
+
+| Event | Payload Type | Description |
+|-------|-------------|-------------|
+| `error` | `CometChat.CometChatException` | Declared on the component, but the current implementation never emits it and the composer does not bind it. Upload and validation errors are shown as toasts by `MediaUploadTrayService` instead |
+
+## MediaUploadTrayService
+
+`MediaUploadTrayService` (`services/media-upload-tray.service.ts`) owns the staging state machine and wraps the CometChat SDK multi-attachment upload (`CometChat.createUploadFileRequest` and `UploadFileListener`). It is provided at the composer level (`providers: [MediaUploadTrayService, ...]`), not at root.
+
+### State (signals)
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `tiles` | `Signal<AttachmentFile[]>` | Staged tiles in insertion order |
+| `hasTiles` | `Signal<boolean>` | `true` when at least one tile is staged |
+| `aggregate` | `Signal<TrayAggregate>` | Byte-weighted progress across tiles: `{ loaded, total, percent }` |
+| `hasErrorTile` | `Signal<boolean>` | `true` when any tile is `failed`, `rejected` or `error` |
+| `canSend` | `Signal<boolean>` | `true` once the SDK reports the batch complete with at least one success, and no tile is in an error state |
+| `notice` | `Signal<string \| null>` | Transient localized notice, such as the attachment limit message |
+
+### Methods used by the composer and tray
+
+| Method | Description |
+|--------|-------------|
+| `setValidationConfig({ allowedFileTypes, maxFileSize })` | Sets client-side type/size validation from the composer's inputs |
+| `setReceiver(id, type, parentMessageId?)` | Sets the upload destination; changing it clears the current batch |
+| `stage(files, forcedKind?)` | Validates and stages files as `uploading` tiles, then starts the upload. `forcedKind` overrides the MIME-derived type (the "File" picker option stages everything as `file`) |
+| `cancel(tile)` / `remove(tile)` | Removes the tile from the batch (aborting it if still in flight) |
+| `retry(tile)` | Re-uploads a `failed` tile. Does nothing for a `rejected` tile |
+| `clearAll()` / `reset()` | Releases the batch and empties the tray (after send, conversation switch or destroy) |
+| `getSuccessfulTiles()` / `getSuccessfulAttachments()` | Uploaded tiles, or their SDK `Attachment` objects, for the outgoing message |
+| `getBatchId()` | The SDK batch id, or `null` before the first stage |
+| `getMaxCount()` / `remainingSlots()` | The per-message attachment limit and the slots left |
+
+## Validation and Limits
+
+When `stage()` is called:
+
+- Files larger than `maxFileSize`, or whose MIME type does not match `allowedFileTypes` (exact, `type/*` or `*` patterns), are dropped and a localized notice is shown
+- The attachment count limit comes from `CometChat.getMaxAttachmentCount()`, falling back to `10`. The check is all-or-nothing: if the selection would exceed the remaining slots, **none** of it is staged and the "limit reached" notice is shown
+- Errors are surfaced as a toast; identical messages fired in quick succession are de-duplicated
+
+## Upload State Mapping
+
+SDK listener callbacks update the tiles:
+
+| SDK callback | Tile result |
+|--------------|-------------|
+| `onFileProgress` | Updates `loaded`, `total` and `uploadProgress` |
+| `onFileUploaded` | `status: 'uploaded'`, `uploadProgress: 100`, stores the `attachment`. The local preview is kept |
+| `onFileFailure` | `status: 'failed'` (retryable) with a localized `errorMessage` |
+| `onFileError` | `status: 'rejected'` (not retryable) with a localized `errorMessage` |
+| `onComplete` | Enables `canSend` when the batch has at least one successful upload |
+
+Staging new files or retrying a tile disables send until the next `onComplete`.
+
+## Styling with CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-attachment-tray-padding` | Padding on the tray wrapper | `0` |
+| `--cometchat-attachment-tray-border-bottom` | Divider under the tray | `1px solid var(--cometchat-border-color-light)` |
+| `--cometchat-attachment-tray-row-gap` | Gap between tiles | `12px` |
+| `--cometchat-attachment-tray-row-padding-top` | Row top padding (room for the ✕ overhang) | `12px` |
+| `--cometchat-attachment-tray-row-padding` | Row left/right padding | `6px` (global; fallback `12px`) |
+| `--cometchat-attachment-tray-row-padding-bottom` | Row bottom padding | `4px` |
+
+The tray also uses `--cometchat-spacing-2` (wrapper gap) and `--cometchat-background-color-01` (background). Tile sizes and colours are controlled by the [attachment tile variables](/components/cometchat-attachment-tile#styling-with-css-variables).
+
+```css
+cometchat-message-composer {
+  --cometchat-attachment-tray-row-gap: 8px;
+  --cometchat-attachment-tray-border-bottom: none;
+}
+```
+
+### BEM Classes
+
+| Class | Element |
+|-------|---------|
+| `.cometchat-attachment-tray` | Wrapper, rendered only when tiles exist |
+| `.cometchat-attachment-tray__row` | Horizontally scrollable tile row |
+| `.cometchat-attachment-tray__item` | Wrapper around each tile |
+
+## Related Components
+
+- [CometChatAttachmentTile](/components/cometchat-attachment-tile) — one staged attachment
+- [CometChatMessageComposer](/components/cometchat-message-composer) — hosts the tray
+- [CometChatFullScreenViewer](/components/cometchat-fullscreen-viewer) — media preview

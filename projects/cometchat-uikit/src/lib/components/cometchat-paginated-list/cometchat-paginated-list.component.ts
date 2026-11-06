@@ -51,7 +51,10 @@ export class CometChatPaginatedListComponent<T>
   private liveAnnouncer = inject(LiveAnnouncerService);
 
   // ── Data Inputs ──────────────────────────────────────────────────────────
-  @Input() items: T[] = [];
+  /** Null/undefined are treated as an empty list (setter keeps T inference for consumers). */
+  @Input() set items(value: T[] | null | undefined) { this._items = value ?? []; }
+  get items(): T[] { return this._items; }
+  private _items: T[] = [];
   @Input() trackByFn: (index: number, item: T) => any = index => index;
 
   // ── State Inputs ─────────────────────────────────────────────────────────
@@ -373,7 +376,7 @@ export class CometChatPaginatedListComponent<T>
   announceItemsLoaded(count: number): void {
     const message = CometChatLocalize.getLocalizedString('accessibility_items_loaded').replace(
       '{count}',
-      count.toString()
+      () => count.toString()
     );
     this.liveAnnouncer.announce(message, 'polite');
   }

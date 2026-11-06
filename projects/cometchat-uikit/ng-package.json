@@ -8,6 +8,7 @@
     "src/lib/assets",
     { "input": "src/lib/styles", "glob": "**/*.css", "output": "styles" },
     { "input": "src/lib/styles/fonts", "glob": "**/*", "output": "styles/fonts" },
-    "./screenshots"
+    "./screenshots",
+    "./LICENSE.md"
   ]
 }

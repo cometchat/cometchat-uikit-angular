@@ -14,6 +14,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
+import { within, expect, userEvent, waitFor } from 'storybook/test';
 import { CometChatContextMenuComponent } from './cometchat-context-menu.component';
 import { CometChatActionsIcon, CometChatOption } from '../../../modals';
 import { Placement } from '../../../Enums/Enums';
@@ -582,63 +583,74 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
+/** The overflow submenu is portaled to document.body once open, so it is queried there. */
+const body = () => within(document.body);
 
-/** Verifies context menu trigger button renders. */
+/** Opens the "more" overflow menu and returns it once it is shown. */
+async function openOverflowMenu(canvasElement: HTMLElement): Promise<HTMLElement> {
+  const more = await within(canvasElement).findByRole('button', { name: 'More options' });
+  await userEvent.click(more);
+  await waitFor(() => expect(more).toHaveAttribute('aria-expanded', 'true'));
+  const menu = await body().findByRole('menu', { name: 'Submenu options' });
+  await waitFor(() => expect(menu).toBeVisible());
+  return menu;
+}
+
+/** Opens the "Organise" group inside the overflow menu and returns its flyout. */
+async function openOrganiseFlyout(canvasElement: HTMLElement): Promise<{ group: HTMLElement; flyout: HTMLElement }> {
+  const menu = await openOverflowMenu(canvasElement);
+  const group = within(menu).getByRole('menuitem', { name: 'Organise' });
+  await userEvent.click(group);
+  const flyout = await within(group).findByRole('menu', { name: 'Organise' });
+  return { group, flyout };
+}
+
+/** Verifies the top-level item and the overflow trigger render. */
 export const TestTriggerRenders: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const trigger = canvasElement.querySelector('cometchat-context-menu, .cometchat-context-menu');
-    expect(trigger).not.toBeNull();
-    // Should have a clickable trigger (button or icon)
-    const btn = canvasElement.querySelector('.cometchat-context-menu__trigger, [class*="context-menu"] button, [class*="context-menu"] [class*="trigger"]');
-    expect(btn).not.toBeNull();
+    const canvas = within(canvasElement);
+    const more = await canvas.findByRole('button', { name: 'More options' });
+    expect(more).toHaveAttribute('aria-haspopup', 'menu');
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+    // topMenuSize=2 keeps one item in the main menu; the rest overflow.
+    const topItems = within(canvas.getByRole('menu', { name: 'Context menu' })).getAllByRole('menuitem');
+    expect(topItems).toHaveLength(1);
+    expect(topItems[0]).toHaveAccessibleName('Edit');
   },
 };
 
-/** Verifies menu is hidden by default. */
+/** Verifies the overflow submenu is hidden until the trigger is activated. */
 export const TestMenuHiddenByDefault: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    // Menu content/options should not be visible initially
-    const menuContent = canvasElement.querySelector('.cometchat-context-menu__options, [class*="context-menu"] [class*="options"], [role="menu"]');
-    if (menuContent) {
-      const isVisible = (menuContent as HTMLElement).offsetParent !== null;
-      // Menu should be hidden or not rendered
-      expect(isVisible).toBe(false);
-    }
+    const canvas = within(canvasElement);
+    await canvas.findByRole('button', { name: 'More options' });
+    const submenu = canvasElement.querySelector<HTMLElement>('#subMenuContext');
+    expect(submenu).not.toBeNull();
+    expect(submenu).toHaveAttribute('data-visible', 'false');
+    expect(submenu).not.toBeVisible();
+    expect(canvas.queryByRole('menu', { name: 'Submenu options' })).toBeNull();
+    expect(canvas.queryByRole('menuitem', { name: 'Delete' })).toBeNull();
   },
 };
 
-/** Verifies clicking trigger opens the menu. */
+/** Verifies clicking the trigger opens the overflow submenu. */
 export const TestClickOpensMenu: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const trigger = canvasElement.querySelector('.cometchat-context-menu__trigger, [class*="context-menu"] button, [class*="context-menu"] [class*="trigger"]') as HTMLElement;
-    expect(trigger).not.toBeNull();
-
-    // Click the trigger
-    trigger.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    // Menu should now be visible
-    const menuContent = canvasElement.querySelector('.cometchat-context-menu__options, [class*="context-menu"] [class*="options"], [role="menu"], .cometchat-popover__content--visible');
-    expect(menuContent).not.toBeNull();
+    const menu = await openOverflowMenu(canvasElement);
+    expect(menu).toHaveAttribute('data-visible', 'true');
   },
 };
 
-/** Verifies menu items render with correct count. */
+/** Verifies the overflow submenu holds exactly the items beyond topMenuSize. */
 export const TestMenuItemsRender: Story = {
+  ...Default,
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const trigger = canvasElement.querySelector('.cometchat-context-menu__trigger, [class*="context-menu"] button, [class*="context-menu"] [class*="trigger"]') as HTMLElement;
-    if (trigger) {
-      trigger.click();
-      await new Promise(r => setTimeout(r, 500));
-
-      const menuItems = canvasElement.querySelectorAll('[role="menuitem"], .cometchat-context-menu__option, [class*="context-menu"] [class*="option"]');
-      expect(menuItems.length).toBeGreaterThan(0);
-    }
+    const menu = await openOverflowMenu(canvasElement);
+    const items = within(menu).getAllByRole('menuitem');
+    expect(items.map(i => i.getAttribute('aria-label'))).toEqual(['Copy', 'Share', 'Delete']);
   },
 };
 
@@ -667,24 +679,13 @@ export const TestOrganiseGroupRendersClosed: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
-    expect(moreButton).not.toBeNull();
-
-    moreButton.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    // The open menu is portaled to document.body, so it is no longer inside canvasElement.
-    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]');
-    expect(group).not.toBeNull();
-    expect(group!.getAttribute('aria-haspopup')).toBe('menu');
-    expect(group!.getAttribute('aria-expanded')).toBe('false');
-
-    const chevron = group!.querySelector('.cometchat-menu-list__group-chevron, [class*="group-chevron"]');
-    expect(chevron).not.toBeNull();
-
+    const menu = await openOverflowMenu(canvasElement);
+    const group = within(menu).getByRole('menuitem', { name: 'Organise' });
+    expect(group).toHaveAttribute('aria-haspopup', 'menu');
+    expect(group).toHaveAttribute('aria-expanded', 'false');
+    expect(group.querySelector('.cometchat-menu-list__group-chevron')).not.toBeNull();
     // The flyout is not in the DOM at all until the group is activated.
-    expect(group!.querySelector('[class*="group-flyout"]')).toBeNull();
+    expect(group.querySelector('.cometchat-menu-list__group-flyout')).toBeNull();
   },
 };
 
@@ -713,27 +714,11 @@ export const TestOrganiseFlyoutOpensChildren: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
-    expect(moreButton).not.toBeNull();
-
-    moreButton.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]') as HTMLElement;
-    expect(group).not.toBeNull();
-
-    group.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    const flyout = document.querySelector('.cometchat-menu-list__group-flyout, [class*="group-flyout"]') as HTMLElement;
-    expect(flyout).not.toBeNull();
-    expect(flyout.querySelectorAll('[role="menuitem"]').length).toBe(2);
-    expect(flyout.textContent!.trim()).toContain('Pin');
-    expect(flyout.textContent!.trim()).toContain('Save');
-
+    const { group, flyout } = await openOrganiseFlyout(canvasElement);
+    const children = within(flyout).getAllByRole('menuitem');
+    expect(children.map(c => c.getAttribute('aria-label'))).toEqual(['Pin', 'Save']);
     // Opening a group is the whole interaction — it must not close the menu.
-    expect(group.getAttribute('aria-expanded')).toBe('true');
+    expect(group).toHaveAttribute('aria-expanded', 'true');
   },
 };
 
@@ -745,6 +730,9 @@ export const TestOrganiseFlyoutStaysOnScreen: Story = {
     placement: Placement.bottom,
     useParentContainer: true,
   },
+  // Fullscreen so the container really spans the viewport and the menu sits
+  // against its right edge; 'centered' shrinks it to content in the middle.
+  parameters: { layout: 'fullscreen' },
   render: args => ({
     props: args,
     template: `
@@ -762,28 +750,15 @@ export const TestOrganiseFlyoutStaysOnScreen: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await new Promise(r => setTimeout(r, 500));
-    const moreButton = canvasElement.querySelector('.cometchat-menu-list__sub-menu, [class*="menu-list"] [role="button"]') as HTMLElement;
-    expect(moreButton).not.toBeNull();
-
-    moreButton.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    const group = document.querySelector('#subMenuContext #organise, [class*="sub-menu-list-item--group"]') as HTMLElement;
-    expect(group).not.toBeNull();
-
-    group.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    const flyout = document.querySelector('.cometchat-menu-list__group-flyout, [class*="group-flyout"]') as HTMLElement;
-    expect(flyout).not.toBeNull();
-
+    const { flyout } = await openOrganiseFlyout(canvasElement);
     // Flipping left and shifting back by hand are both valid answers here —
     // which one applies depends on the canvas width, so assert the invariant
     // they share rather than one of the two.
-    const moved =
-      flyout.classList.contains('cometchat-menu-list__group-flyout--flip') || !!flyout.style.left;
-    expect(moved).toBe(true);
+    await waitFor(() => {
+      const moved =
+        flyout.classList.contains('cometchat-menu-list__group-flyout--flip') || !!flyout.style.left;
+      expect(moved).toBe(true);
+    });
     expect(Math.round(flyout.getBoundingClientRect().right)).toBeLessThanOrEqual(window.innerWidth);
   },
 };

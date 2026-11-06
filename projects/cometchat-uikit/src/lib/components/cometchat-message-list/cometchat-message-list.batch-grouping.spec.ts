@@ -71,15 +71,14 @@ describe('computeBatchFlagsImpl (property)', () => {
           for (let i = 0; i < list.length; i++) {
             const f = map.get(messages[i])!;
             if (!list[i]) {
-              if (!(f.isFirstInBatch && f.isLastInBatch)) return false;
+              expect(f).toMatchObject({ isFirstInBatch: true, isLastInBatch: true });
             } else {
               const prev = i > 0 ? list[i - 1] : undefined;
               const next = i < list.length - 1 ? list[i + 1] : undefined;
-              if (f.isFirstInBatch !== (list[i] !== prev)) return false;
-              if (f.isLastInBatch !== (list[i] !== next)) return false;
+              expect(f.isFirstInBatch).toBe(list[i] !== prev);
+              expect(f.isLastInBatch).toBe(list[i] !== next);
             }
           }
-          return true;
         },
       ),
     );

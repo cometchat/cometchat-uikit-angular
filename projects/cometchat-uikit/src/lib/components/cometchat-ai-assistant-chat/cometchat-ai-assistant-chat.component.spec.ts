@@ -38,8 +38,9 @@ const mockStreamingSubject = new BehaviorSubject<boolean>(false);
 
 function createMockStreamingObservable() {
   const signalLike = (() => mockStreamingSubject.getValue()) as any;
-  signalLike.subscribe = mockStreamingSubject.asObservable().subscribe.bind(mockStreamingSubject.asObservable());
-  signalLike.pipe = (...args: any[]) => mockStreamingSubject.asObservable().pipe(...args);
+  const streaming$ = mockStreamingSubject.asObservable();
+  signalLike.subscribe = streaming$.subscribe.bind(streaming$);
+  signalLike.pipe = streaming$.pipe.bind(streaming$);
   return signalLike;
 }
 

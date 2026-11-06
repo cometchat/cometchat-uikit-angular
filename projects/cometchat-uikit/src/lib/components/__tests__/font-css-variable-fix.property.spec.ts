@@ -17,10 +17,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-// import * as fc from 'fast-check';
-// import * as fs from 'fs';
-// import * as path from 'path';
-// import { globSync } from 'glob';
+import * as fc from 'fast-check';
+import * as fs from 'fs';
+import * as path from 'path';
+import { globSync } from 'glob';
 
 // ============================================
 // Types
@@ -141,6 +141,29 @@ function isBugCondition(
 ): CSSViolation | null {
   const fileName = path.basename(file);
 
+  // Code text (inline code, code blocks, <pre>/<code>) must render in a
+  // monospace face. Every --cometchat-font-* token resolves to the UI sans
+  // family, so these rules cannot use the shorthand tokens — not a bug.
+  if (
+    isComponentCSS &&
+    (property === 'font-family' || property === 'font-size') &&
+    /(\bcode\b|\bpre\b|inline-code|code-block)/.test(selector) &&
+    !/code-lang/.test(selector)
+  ) {
+    return null;
+  }
+
+  // Glyph sizing (emoji tabs, "×" close buttons) is icon sizing, not typography.
+  if (isComponentCSS && property === 'font-size' && /(emoji|__close\b)/.test(selector)) {
+    return null;
+  }
+
+  // Avatar passthrough consumer: the avatar initials size is driven by
+  // --cometchat-avatar-font-size (derived from the avatar size), not a text token.
+  if (isComponentCSS && property === 'font-size' && value.includes('--cometchat-avatar-font-size')) {
+    return null;
+  }
+
   // ---- Category 1: Standalone font-family in component CSS ----
   if (property === 'font-family' && isComponentCSS && !isCssVariablesFile) {
     // Exclude avatar passthrough (setting --cometchat-avatar-font-size custom property)
@@ -248,15 +271,9 @@ function isBugCondition(
 // File Discovery
 // ============================================
 
-const COMPONENTS_DIR = '' as any; // path.resolve(
-// __dirname,
-// '..'
-// );
+const COMPONENTS_DIR = path.resolve(__dirname, '..');
 
-const CSS_VARIABLES_FILE = '' as any; // path.resolve(
-// __dirname,
-// '../../styles/css-variables.css'
-// );
+const CSS_VARIABLES_FILE = path.resolve(__dirname, '../../styles/css-variables.css');
 
 /**
  * Discovers all component CSS files under the components directory.
@@ -272,14 +289,7 @@ function getComponentCSSFiles(): string[] {
 // Property-Based Tests
 // ============================================
 
-// Placeholder test to prevent "No test suite found" error when all describes are skipped
-it('placeholder: font CSS variable fix tests are skipped (bug exploration)', () => {
-  expect(true).toBe(true);
-});
-
-describe.skip('Property 1: Fault Condition — Standalone Font Properties in Component CSS', () => {
-  // All code below is skipped — guarded to prevent runtime errors from commented-out imports
-  if (true) return;
+describe('Property 1: Fault Condition — Standalone Font Properties in Component CSS', () => {
   /**
    * Collect all violations across all component CSS files and css-variables.css.
    * This runs once and caches the result for all test cases.

@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatDeleteBubbleComponent } from './cometchat-delete-bubble.component';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 const meta: Meta<CometChatDeleteBubbleComponent> = {
   title: 'Components/Bubbles/Delete Bubble',

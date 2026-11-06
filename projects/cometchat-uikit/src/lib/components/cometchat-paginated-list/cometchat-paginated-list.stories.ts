@@ -4,7 +4,7 @@
  * Interactive stories demonstrating the generic paginated list component:
  * - Default with populated items
  * - Default list with scrollbar visible
- * - Empty list with no items
+ * - Loading, empty and error states
  * - All variants showcase
  *
  * @module components/cometchat-paginated-list
@@ -14,7 +14,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatPaginatedListComponent } from './cometchat-paginated-list.component';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Mock Data
@@ -289,8 +289,27 @@ export const DefaultList: Story = {
   },
 };
 
+/** Loading state while the initial page is being fetched. */
+export const LoadingState: Story = {
+  args: {
+    items: [],
+    isLoading: true,
+    hasMore: true,
+    error: null,
+    ariaLabel: 'Loading list',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Paginated list in its initial loading state: `isLoading` is true and there are no items yet, so the loading container (or a custom `loadingTemplate`) is rendered.',
+      },
+    },
+  },
+};
+
 /** Empty list with no items after loading completes. */
-export const EmptyList: Story = {
+export const EmptyState: Story = {
   args: {
     items: [],
     isLoading: false,
@@ -304,6 +323,26 @@ export const EmptyList: Story = {
       description: {
         story:
           'Paginated list in its empty state after loading completes with no results. The component renders the empty state container with an optional custom template.',
+      },
+    },
+  },
+};
+
+/** Error state after the initial fetch fails. */
+export const ErrorState: Story = {
+  args: {
+    items: [],
+    isLoading: false,
+    hasMore: false,
+    error: new Error('Failed to load items. Please try again.'),
+    ariaLabel: 'Error list',
+    errorStateAriaLabel: 'An error occurred',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Paginated list in its error state: `error` is set and loading has finished, so the default error display shows the error message (or a custom `errorTemplate` is rendered).',
       },
     },
   },

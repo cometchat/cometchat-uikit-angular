@@ -8,8 +8,7 @@
   border-radius: var(--cometchat-radius-max, 9999px);
   background-color: var(--cometchat-primary-color, #6852D6);
   color: var(--cometchat-static-white, #fff);
-  font: var(--cometchat-font-caption2-semibold, 600 11px "Roboto");
+  font: var(--cometchat-notification-badge-font, var(--cometchat-font-caption1-medium));
   line-height: 1;
   white-space: nowrap;
-  font-family: var(--cometchat-font-family, "Roboto", sans-serif);
 }

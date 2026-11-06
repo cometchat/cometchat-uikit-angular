@@ -19,7 +19,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatGroupMemberItemComponent } from './cometchat-group-member-item.component';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { createMockGroupMember } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Meta Configuration

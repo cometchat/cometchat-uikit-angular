@@ -31,7 +31,7 @@ import { handleActivation } from '../../../utils/keyboard-utils';
 })
 export class CometChatSearchBarComponent implements OnInit, OnChanges, OnDestroy {
   /** Initial/controlled search text value */
-  @Input() searchText = '';
+  @Input({ transform: (v: string | null | undefined): string => v ?? '' }) searchText = '';
   /** Placeholder text for the search input */
   @Input() placeholderText: string = getLocalizedString('search_placeholder');
   /** Debounce delay in milliseconds (default: 300ms) */

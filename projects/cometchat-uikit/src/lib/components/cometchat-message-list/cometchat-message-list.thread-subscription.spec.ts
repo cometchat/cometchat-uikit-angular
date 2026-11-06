@@ -73,7 +73,7 @@ function ctx(overrides: Partial<MessageOptionsContext> = {}): MessageOptionsCont
 }
 
 const idsOf = (options: { id: string }[]) => options.map(o => o.id);
-const findOption = (options: { id: string }[]) => options.find(o => o.id === OPTION_ID);
+const findOption = <T extends { id: string }>(options: T[]) => options.find(o => o.id === OPTION_ID);
 
 // ---------------------------------------------------------------------------
 // Visibility gates

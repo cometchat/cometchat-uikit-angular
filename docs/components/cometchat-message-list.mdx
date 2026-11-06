@@ -397,6 +397,11 @@ This section provides a complete reference of all @Input properties, @Output eve
 | `hideGroupActionMessages` | `boolean` | `false` | Hides system messages for group actions (member joined, left, etc.). |
 | `hideError` | `boolean` | `false` | Hides error views when errors occur during message loading. |
 | `hideReplyInThreadOption` | `boolean` | `false` | Hides the "Reply in Thread" option from message context menu. |
+| `hideThreadSubscriptionOption` | `boolean` | `false` | Hides the "Follow thread" / "Unfollow thread" option from message context menu without turning the feature off (for apps that want the thread-header control only). |
+| `hidePinMessageOption` | `boolean` | `false` | Hides the "Pin" option from message context menu (shown for unpinned messages when pinning is enabled). |
+| `hideUnpinMessageOption` | `boolean` | `false` | Hides the "Unpin" option from message context menu (shown for pinned messages when pinning is enabled). |
+| `hideSaveMessageOption` | `boolean` | `false` | Hides the "Save" option from message context menu (shown for unsaved messages when saving is enabled). |
+| `hideUnsaveMessageOption` | `boolean` | `false` | Hides the "Unsave" option from message context menu (shown for saved messages when saving is enabled). |
 | `hideTranslateMessageOption` | `boolean` | `false` | Hides the "Translate" option from message context menu. |
 | `hideEditMessageOption` | `boolean` | `false` | Hides the "Edit" option from message context menu (only shown for own text messages). |
 | `hideDeleteMessageOption` | `boolean` | `false` | Hides the "Delete" option from message context menu (only shown for own messages). |
@@ -410,7 +415,12 @@ This section provides a complete reference of all @Input properties, @Output eve
 | `hideReplyOption` | `boolean` | `false` | Hides the "Reply" option from message context menu. |
 | `startFromUnreadMessages` | `boolean` | `true` | When `true`, the message list scrolls to the first unread message on load instead of the bottom. |
 | `isAgentChat` | `boolean` | `false` | When `true`, configures the message list for AI agent chat mode. Accepts messages with `parentMessageId` without filtering, enabling threaded AI conversations. |
+| `loadLastAgentConversation` | `boolean` | `false` | In agent chat (`isAgentChat`) without a `parentMessageId`, keeps the loading shimmer visible instead of showing the empty state, while the host fetches the last conversation and sets the thread once resolved. |
 | `hideModerationView` | `boolean` | `false` | Hides moderation status indicators on messages. |
+| `hideTimestamp` | `boolean` | `false` | Hides the timestamp on message bubbles. |
+| `disableInteraction` | `boolean` | `false` | When `true`, disables interactive elements within message bubbles (context menu, reactions, etc.). Forwarded to each message bubble. |
+| `additionalOptions` | `CometChatActionsIcon[]` | `[]` | Extra options appended to the end of each message's default context menu options. |
+| `optionsOverride` | `(message: CometChat.BaseMessage, defaultOptions: CometChatActionsIcon[]) => CometChatActionsIcon[]` | `undefined` | Function that receives a message and its default options (including `additionalOptions`) and returns the final list of context menu options. |
 
 #### Custom View Properties (Templates)
 
@@ -421,6 +431,12 @@ This section provides a complete reference of all @Input properties, @Output eve
 | `loadingView` | `TemplateRef<any>` | `undefined` | Custom template to display while messages are being loaded. |
 | `headerView` | `TemplateRef<any>` | `undefined` | Custom template for the header section above the message list. |
 | `footerView` | `TemplateRef<any>` | `undefined` | Custom template for the footer section below the message list. |
+| `bubbleFooterView` | `TemplateRef<any> \| null` | `null` | Custom template passed to every message bubble as its `footerView`. |
+| `appendView` | `TemplateRef<any>` | `undefined` | Custom content rendered inside the scroll container after the messages. |
+| `emptyStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `emptyView`. Takes precedence over `emptyView` when both are set. |
+| `errorStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `errorView`. Takes precedence over `errorView` when both are set. |
+| `loadingStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `loadingView`. Takes precedence over `loadingView` when both are set. |
+| `listItemTemplate` | `TemplateRef<any> \| null` | `null` | Accepted for API consistency with the list components; not rendered by this component. |
 
 #### Date Format Properties
 
@@ -452,6 +468,7 @@ This section provides a complete reference of all @Input properties, @Output eve
 | `conversationStarterClick` | `string` | Emitted when a conversation starter is clicked. The payload is the starter text. |
 | `messagePrivatelyClick` | `{ message: CometChat.BaseMessage, user: CometChat.User }` | Emitted when "Message Privately" option is clicked in a group chat. |
 | `replyClick` | `CometChat.BaseMessage` | Emitted when the "Reply" option is clicked on a message. Handle this to show reply preview in composer. |
+| `threadSubscriptionChange` | `{ parentMessageId: number, subscribed: boolean }` | Emitted whenever a thread's subscription changes, whoever caused it. `subscribed` is whether the logged-in user now follows the thread. |
 
 ### Methods
 

@@ -35,13 +35,13 @@ export function getReceiptAriaLabel(
 
   if (type === 'read') {
     return CometChatLocalize.getLocalizedString('accessibility_read_by_user')
-      .replace('{name}', userName)
-      .replace('{time}', timestamp);
+      .replace('{name}', () => userName)
+      .replace('{time}', () => timestamp);
   }
 
   return CometChatLocalize.getLocalizedString('accessibility_delivered_to_user')
-    .replace('{name}', userName)
-    .replace('{time}', timestamp);
+    .replace('{name}', () => userName)
+    .replace('{time}', () => timestamp);
 }
 
 /**

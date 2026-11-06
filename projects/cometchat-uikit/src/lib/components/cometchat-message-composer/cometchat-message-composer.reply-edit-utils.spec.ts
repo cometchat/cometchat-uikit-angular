@@ -56,6 +56,7 @@ function makeSelf(overrides: Record<string, any> = {}) {
   return {
     messageToReplySignal: Object.assign(() => messageToReplySignal.value, messageToReplySignal),
     isPollModalOpen: Object.assign(() => isPollModalOpen.value, isPollModalOpen),
+    closePollModal: vi.fn(),
     messageToEdit: null,
     exitEditMode: vi.fn(),
     exitReplyMode: vi.fn(),

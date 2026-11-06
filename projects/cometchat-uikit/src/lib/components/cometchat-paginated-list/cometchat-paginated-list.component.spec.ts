@@ -290,12 +290,21 @@ describe('CometChatPaginatedListComponent', () => {
     });
 
     it('should handle null items gracefully without throwing', () => {
-      // Component uses items.length in ngOnChanges, so null will throw.
-      // This is expected — callers should always pass an array.
+      // Requirement 3.3: null/undefined inputs must not throw — treated as an empty list
+      fixture.componentRef.setInput('items', ['a', 'b']);
+      fixture.detectChanges();
       expect(() => {
         fixture.componentRef.setInput('items', null as any);
         fixture.detectChanges();
-      }).toThrow();
+      }).not.toThrow();
+      expect(component.items).toEqual([]);
+      expect(component.hasItems()).toBe(false);
+
+      expect(() => {
+        fixture.componentRef.setInput('items', undefined as any);
+        fixture.detectChanges();
+      }).not.toThrow();
+      expect(component.items).toEqual([]);
     });
 
     it('should accept emptyStateAriaLabel', () => {
@@ -739,7 +748,7 @@ describe('CometChatPaginatedListComponent', () => {
   // ---------------------------------------------------------------------------
   describe('ARIA / Accessibility', () => {
     it('should have role="listbox" on the container', () => {
-      component.items = [{ id: '1' }, { id: '2' }];
+      component.items = ['1', '2'];
       fixture.detectChanges();
       const itemsContainer = el.querySelector('.cometchat-paginated-list__items');
       expect(itemsContainer?.getAttribute('role')).toBe('listbox');
@@ -769,12 +778,16 @@ describe('CometChatPaginatedListComponent', () => {
       expect(getListContainer()?.hasAttribute('aria-multiselectable')).toBe(false);
     });
 
-    it('should have role="option" on each item', () => {
+    // The wrapper is deliberately role-less: the projected item component owns
+    // role="option", and nesting one option inside another would break the
+    // listbox -> option ownership assistive tech relies on.
+    it('should leave each item wrapper without an ARIA role', () => {
       component.items = ['a', 'b'];
       fixture.detectChanges();
       const items = getItems();
+      expect(items.length).toBe(2);
       items.forEach(item => {
-        expect(item.getAttribute('role')).toBe('option');
+        expect(item.getAttribute('role')).toBeNull();
       });
     });
 
@@ -843,13 +856,17 @@ describe('CometChatPaginatedListComponent', () => {
       expect(items[2].getAttribute('tabindex')).toBe('-1');
     });
 
-    it('should set aria-selected on items based on isItemSelected', () => {
+    // aria-selected belongs on the element that carries role="option" — the
+    // projected item — not on this wrapper. See the role test above.
+    it('should not put aria-selected on the item wrapper', () => {
       host.items = ['selected', 'not-selected'];
       host.isItemSelected = item => item === 'selected';
       hostFixture.detectChanges();
       const items = hostEl.querySelectorAll('.cometchat-paginated-list__item');
-      expect(items[0].getAttribute('aria-selected')).toBe('true');
-      expect(items[1].getAttribute('aria-selected')).toBe('false');
+      expect(items.length).toBe(2);
+      items.forEach(item => {
+        expect(item.hasAttribute('aria-selected')).toBe(false);
+      });
     });
 
     it('should have aria-hidden on loading more indicator', () => {

@@ -166,6 +166,27 @@ describe('CometChatMarkdownParser', () => {
       const list = nodes.find((n) => n.type === 'orderedList');
       expect(list!.children![0].type).toBe('listItem');
     });
+
+    // AI replies often number with "1)": CommonMark accepts it, and it rendered as one paragraph.
+    it('should parse a list numbered with ")"', () => {
+      const nodes = parser.parse('1) First\n2) Second\n10) Tenth');
+      expect(nodes.map((n) => n.type)).toEqual(['orderedList']);
+      const items = nodes[0].children!;
+      expect(items.map((n) => n.type)).toEqual(['listItem', 'listItem', 'listItem']);
+      expect(items[2].children!.find((n) => n.type === 'text')?.content).toBe('Tenth');
+    });
+
+    it('should end a paragraph where a ")" list starts', () => {
+      const nodes = parser.parse('Here are the tips:\n1) Keep it **short**\n2) Reply in threads');
+      expect(nodes.map((n) => n.type)).toEqual(['paragraph', 'orderedList']);
+      expect(nodes[1].children!.length).toBe(2);
+      expect(nodes[1].children![0].children!.some((n) => n.type === 'bold' && n.content === 'short')).toBe(true);
+    });
+
+    it('should keep "1)" inside a sentence as text', () => {
+      const nodes = parser.parse('Step 1) is optional');
+      expect(nodes.map((n) => n.type)).toEqual(['paragraph']);
+    });
   });
 
   // ── Unordered lists ─────────────────────────────────────────────────────────

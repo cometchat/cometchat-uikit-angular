@@ -303,7 +303,7 @@ export const AllVariantsShowcase: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 /** Verifies button renders with text. */
 export const TestRendersText: Story = {

@@ -333,7 +333,7 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   private focusItemAtIndex(index: number): void { focusGroupItemAtIndex(this.listContainer?.nativeElement, index, this.pendingTimers); }
 
   private announceSelectionCount(): void {
-    const message = CometChatLocalize.getLocalizedString('accessibility_items_selected').replace('{count}', this.selectedGroups.size.toString());
+    const message = CometChatLocalize.getLocalizedString('accessibility_items_selected').replace('{count}', () => this.selectedGroups.size.toString());
     this.liveAnnouncer.announce(message, 'polite');
   }
 

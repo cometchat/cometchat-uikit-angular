@@ -138,7 +138,7 @@ describe('CometChatConversations Property Tests', () => {
      * The component uses different naming conventions than the service.
      */
     const COMPONENT_TO_SERVICE_MAP: Record<TemplateType, keyof ConversationTemplates> = {
-      itemView: 'conversationItem',
+      itemView: 'itemView',
       leadingView: 'leadingView',
       titleView: 'titleView',
       subtitleView: 'subtitleView',
@@ -997,7 +997,11 @@ describe('CometChatConversations Property Tests', () => {
           fc.string({ minLength: 1, maxLength: 20 }),
           fc.string({ minLength: 1, maxLength: 20 }),
           fc.boolean(),
-          (activeId, testId, isUser) => {
+          fc.boolean(),
+          (activeId, otherId, sameConversation, isUser) => {
+            // Two independent random ids are practically never equal, so pick
+            // the same id half the time to exercise the active branch too.
+            const testId = sameConversation ? activeId : otherId;
             const activeConversation = createMockConversation(activeId, isUser);
             const testConversation = createMockConversation(testId, isUser);
             const config = { ...createDefaultConfig(), activeConversation };

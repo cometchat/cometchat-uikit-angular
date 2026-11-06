@@ -23,12 +23,15 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 }));
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, TemplateRef, ViewChild, signal } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { ensureSdkReady, sdkCleanup, flushPromises } from '../../testing';
 import { CometChatConversationsComponent } from './cometchat-conversations.component';
 import { SelectionMode } from '../../Enums/Enums';
+import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import { COMETCHAT_GLOBAL_CONFIG } from '../../services/global-config.service';
+import { CometChatMessageEvents } from '../../events/CometChatMessageEvents';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -511,11 +514,17 @@ describe('CometChatConversationsComponent', () => {
     });
 
     it('should handle setting textFormatters to a non-empty array', () => {
-      const mockFormatter = { format: () => 'test' };
+      class StubFormatter extends CometChatTextFormatter {
+        readonly id = 'stub';
+        getRegex(): RegExp { return /test/g; }
+        format(): string { return 'test'; }
+      }
+      const mockFormatter = new StubFormatter();
       expect(() => {
         component.textFormatters = [mockFormatter];
         fixture.detectChanges();
       }).not.toThrow();
+      expect(component.textFormatters).toEqual([mockFormatter]);
     });
 
     it('should handle rapid selection mode changes', () => {
@@ -616,12 +625,24 @@ describe('CometChatConversationsComponent', () => {
 
     it('should complete ccMessageRead subscription when component is destroyed', () => {
       fixture.detectChanges();
+      const service = (component as any).conversationsService;
+      const readSpy = vi.spyOn(service, 'updateConversationReadStatus').mockImplementation(() => {});
+
+      const groupMsg = new CometChat.TextMessage('cleanup-guid', 'hi', CometChat.RECEIVER_TYPE.GROUP);
+      groupMsg.setReceiver(new CometChat.Group('cleanup-guid', 'Cleanup Group'));
+
+      // While alive, a read event reaches the component's handler
+      CometChatMessageEvents.ccMessageRead.next(groupMsg);
+      expect(readSpy).toHaveBeenCalledTimes(1);
+      expect(readSpy).toHaveBeenCalledWith('cleanup-guid', groupMsg);
 
       // Destroy the component — its takeUntilDestroyed subscription should clean up
       fixture.destroy();
+      readSpy.mockClear();
 
-      // Verify component destroyed without error
-      expect(true).toBe(true);
+      // After destroy, the same event must no longer reach the handler
+      CometChatMessageEvents.ccMessageRead.next(groupMsg);
+      expect(readSpy).not.toHaveBeenCalled();
     });
 
     it('should allow re-creation after destroy without errors', () => {
@@ -635,5 +656,266 @@ describe('CometChatConversationsComponent', () => {
         newFixture.destroy();
       }).not.toThrow();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Effective settings resolution
+//
+// Each `effective*` computed resolves in three steps: an explicitly-set input
+// wins, then the injected global config, then a hard default. Only the default
+// path was previously exercised, which is most of why branch coverage on this
+// component was so low.
+// ---------------------------------------------------------------------------
+describe('Effective settings resolution', () => {
+  /** Builds a component with the given global config provided (or none). */
+  async function build(
+    globalConfig: Record<string, unknown> | null
+  ): Promise<ComponentFixture<CometChatConversationsComponent>> {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [CometChatConversationsComponent],
+      providers: globalConfig
+        ? [{ provide: COMETCHAT_GLOBAL_CONFIG, useValue: globalConfig }]
+        : [],
+    }).compileComponents();
+    return TestBed.createComponent(CometChatConversationsComponent);
+  }
+
+  /**
+   * Each row: the component property, the matching global-config key, the
+   * value to set explicitly, a differing config value, and the hard default.
+   */
+  const settings: Array<{
+    input: string;
+    effective: string;
+    configKey: string;
+    explicit: unknown;
+    fromConfig: unknown;
+    fallback: unknown;
+  }> = [
+    { input: 'hideReceipts', effective: 'effectiveHideReceipts', configKey: 'hideReceipts', explicit: true, fromConfig: true, fallback: false },
+    { input: 'hideError', effective: 'effectiveHideError', configKey: 'hideError', explicit: true, fromConfig: true, fallback: false },
+    { input: 'hideUserStatus', effective: 'effectiveHideUserStatus', configKey: 'hideUserStatus', explicit: true, fromConfig: true, fallback: false },
+    { input: 'hideGroupType', effective: 'effectiveHideGroupType', configKey: 'hideGroupType', explicit: true, fromConfig: true, fallback: false },
+    { input: 'showScrollbar', effective: 'effectiveShowScrollbar', configKey: 'showScrollbar', explicit: true, fromConfig: true, fallback: false },
+    { input: 'showSearchBar', effective: 'effectiveShowSearchBar', configKey: 'showSearchBar', explicit: true, fromConfig: true, fallback: false },
+    { input: 'disableSoundForMessages', effective: 'effectiveDisableSoundForMessages', configKey: 'disableSoundForMessages', explicit: true, fromConfig: true, fallback: false },
+    { input: 'disableDefaultContextMenu', effective: 'effectiveDisableDefaultContextMenu', configKey: 'disableDefaultContextMenu', explicit: false, fromConfig: false, fallback: true },
+    { input: 'customSoundForMessages', effective: 'effectiveCustomSoundForMessages', configKey: 'customSoundForMessages', explicit: 'own.mp3', fromConfig: 'config.mp3', fallback: '' },
+  ];
+
+  it.each(settings.map(s => [s.effective, s] as const))(
+    '%s falls back to its default when nothing is configured',
+    async (_name, s) => {
+      const f = await build(null);
+      const c = f.componentInstance as unknown as Record<string, () => unknown>;
+      expect(c[s.effective]()).toBe(s.fallback);
+      f.destroy();
+    }
+  );
+
+  it.each(settings.map(s => [s.effective, s] as const))(
+    '%s takes the global config value when the input is untouched',
+    async (_name, s) => {
+      const f = await build({ [s.configKey]: s.fromConfig });
+      const c = f.componentInstance as unknown as Record<string, () => unknown>;
+      expect(c[s.effective]()).toBe(s.fromConfig);
+      f.destroy();
+    }
+  );
+
+  it.each(settings.map(s => [s.effective, s] as const))(
+    '%s prefers an explicitly set input over the global config',
+    async (_name, s) => {
+      // Config holds the opposite value, so the assertion can only pass if the
+      // explicit input won.
+      const opposite =
+        typeof s.explicit === 'boolean' ? !s.explicit : `not-${String(s.explicit)}`;
+      const f = await build({ [s.configKey]: opposite });
+      const c = f.componentInstance as unknown as Record<string, unknown>;
+      (c as Record<string, unknown>)[s.input] = s.explicit;
+
+      expect((c[s.effective] as () => unknown)()).toBe(s.explicit);
+      f.destroy();
+    }
+  );
+
+  it('effectiveTextFormatters defaults to an empty array', async () => {
+    const f = await build(null);
+    expect(f.componentInstance.effectiveTextFormatters()).toEqual([]);
+    f.destroy();
+  });
+
+  it('effectiveTextFormatters takes the global config value', async () => {
+    const formatters = [{ name: 'mention' }];
+    const f = await build({ textFormatters: formatters });
+    expect(f.componentInstance.effectiveTextFormatters()).toBe(formatters);
+    f.destroy();
+  });
+
+  it('effectiveTextFormatters prefers an explicitly set input', async () => {
+    const own = [{ name: 'own' }];
+    const f = await build({ textFormatters: [{ name: 'config' }] });
+    (f.componentInstance as unknown as Record<string, unknown>)['textFormatters'] = own;
+    expect(f.componentInstance.effectiveTextFormatters()).toBe(own);
+    f.destroy();
+  });
+
+  it('ignores a global config that omits the key entirely', async () => {
+    const f = await build({ somethingElse: true });
+    expect(f.componentInstance.effectiveHideReceipts()).toBe(false);
+    f.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Effective template resolution
+//
+// Every view getter walks a precedence chain ending at the templates service.
+// ---------------------------------------------------------------------------
+describe('Effective template resolution', () => {
+  let f: ComponentFixture<CometChatConversationsComponent>;
+  let c: CometChatConversationsComponent;
+
+  beforeEach(async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [CometChatConversationsComponent],
+    }).compileComponents();
+    f = TestBed.createComponent(CometChatConversationsComponent);
+    c = f.componentInstance;
+  });
+
+  afterEach(() => f.destroy());
+
+  /** A stand-in template; identity is all these assertions need. */
+  const tpl = (tag: string) => ({ tag }) as unknown as TemplateRef<unknown>;
+
+  it.each([
+    ['effectiveItemView', 'listItemTemplate', 'itemView'],
+    ['effectiveLeadingView', 'leadingView', 'leadingViewContent'],
+    ['effectiveTitleView', 'titleView', 'titleViewContent'],
+    ['effectiveSubtitleView', 'subtitleView', 'subtitleViewContent'],
+    ['effectiveTrailingView', 'trailingView', 'trailingViewContent'],
+  ])('%s prefers the first source in its chain', (effective, first, second) => {
+    const rec = c as unknown as Record<string, unknown>;
+    const winner = tpl(first);
+    rec[first] = winner;
+    rec[second] = tpl(second);
+
+    expect(rec[effective]).toBe(winner);
+  });
+
+  it.each([
+    ['effectiveItemView', 'itemView'],
+    ['effectiveLeadingView', 'leadingViewContent'],
+    ['effectiveTitleView', 'titleViewContent'],
+    ['effectiveSubtitleView', 'subtitleViewContent'],
+    ['effectiveTrailingView', 'trailingViewContent'],
+  ])('%s falls through to the next source', (effective, second) => {
+    const rec = c as unknown as Record<string, unknown>;
+    const fallback = tpl(second);
+    rec[second] = fallback;
+
+    expect(rec[effective]).toBe(fallback);
+  });
+
+  it.each([
+    ['effectiveLoadingView', 'loadingStateTemplate'],
+    ['effectiveEmptyView', 'emptyStateTemplate'],
+    ['effectiveErrorView', 'errorStateTemplate'],
+  ])('%s prefers its explicit state template', (effective, stateTemplate) => {
+    const rec = c as unknown as Record<string, unknown>;
+    const winner = tpl(stateTemplate);
+    rec[stateTemplate] = winner;
+
+    expect(rec[effective]).toBe(winner);
+  });
+
+  it.each([
+    'effectiveItemView',
+    'effectiveLeadingView',
+    'effectiveTitleView',
+    'effectiveSubtitleView',
+    'effectiveTrailingView',
+  ])('%s is undefined when nothing is supplied', (effective) => {
+    expect((c as unknown as Record<string, unknown>)[effective]).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Derived state
+// ---------------------------------------------------------------------------
+describe('Derived state', () => {
+  let f: ComponentFixture<CometChatConversationsComponent>;
+  let c: CometChatConversationsComponent;
+
+  beforeEach(async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [CometChatConversationsComponent],
+    }).compileComponents();
+    f = TestBed.createComponent(CometChatConversationsComponent);
+    c = f.componentInstance;
+  });
+
+  afterEach(() => f.destroy());
+
+  it('reports no selection initially', () => {
+    expect(c.hasSelection()).toBe(false);
+    expect(c.selectedCount()).toBe(0);
+  });
+
+  it('reports a selection once conversations are selected', () => {
+    c.selectedConversations.set(new Set(['a', 'b']));
+    expect(c.hasSelection()).toBe(true);
+    expect(c.selectedCount()).toBe(2);
+  });
+
+  it('reports selection mode inactive by default', () => {
+    expect(c.isSelectionModeActive()).toBe(false);
+  });
+
+  it.each([SelectionMode.single, SelectionMode.multiple])(
+    'reports selection mode active for %s',
+    (mode) => {
+      c.selectionMode = mode;
+      expect(c.isSelectionModeActive()).toBe(true);
+    }
+  );
+
+  it('reports no conversations initially', () => {
+    expect(c.hasConversations()).toBe(false);
+  });
+
+  it('requires both a flag and a target before showing the delete dialog', () => {
+    c.showDeleteConfirmDialog.set(true);
+    expect(c.shouldShowDeleteDialog()).toBe(false);
+
+    c.conversationToDelete.set({} as CometChat.Conversation);
+    expect(c.shouldShowDeleteDialog()).toBe(true);
+  });
+
+  it('hides the delete dialog when the flag is cleared', () => {
+    c.showDeleteConfirmDialog.set(false);
+    c.conversationToDelete.set({} as CometChat.Conversation);
+    expect(c.shouldShowDeleteDialog()).toBe(false);
+  });
+
+  it('mirrors the loading signal', () => {
+    expect(c.isLoading()).toBe(c.loadingState());
+  });
+
+  it('reports no error for a null error state', () => {
+    // errorState is a read-only Signal fed by the service, so the property is
+    // swapped rather than set.
+    (c as unknown as Record<string, unknown>)['errorState'] = signal(null);
+    expect(c.hasError()).toBe(false);
+  });
+
+  it('reports an error once the error state is populated', () => {
+    (c as unknown as Record<string, unknown>)['errorState'] = signal(new Error('boom'));
+    expect(c.hasError()).toBe(true);
   });
 });

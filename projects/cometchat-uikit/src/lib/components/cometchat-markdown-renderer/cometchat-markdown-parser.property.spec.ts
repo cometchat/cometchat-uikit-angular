@@ -40,6 +40,18 @@ function collectTextContent(nodes: MarkdownNode[]): string {
   return text;
 }
 
+/**
+ * Every MarkdownNodeType. Declared as an exhaustive Record so the compiler
+ * rejects this list when a node type is added to the parser and not here.
+ */
+const NODE_TYPE_SET: Record<MarkdownNodeType, true> = {
+  heading: true, paragraph: true, bold: true, italic: true, underline: true,
+  strikethrough: true, inlineCode: true, codeBlock: true, blockquote: true,
+  orderedList: true, unorderedList: true, listItem: true, link: true,
+  image: true, hr: true, lineBreak: true, table: true, text: true,
+};
+const VALID_NODE_TYPES = Object.keys(NODE_TYPE_SET) as MarkdownNodeType[];
+
 // ── Arbitraries ───────────────────────────────────────────────────────────────
 
 /** Generate a valid heading string */
@@ -157,17 +169,26 @@ describe('CometChatMarkdownParser — Property Tests', () => {
         expect(nodes.length).toBeGreaterThan(0);
         // All nodes must have a valid type
         const types = collectTypes(nodes);
-        const validTypes: MarkdownNodeType[] = [
-          'heading', 'paragraph', 'bold', 'italic', 'strikethrough',
-          'inlineCode', 'codeBlock', 'blockquote', 'orderedList', 'unorderedList',
-          'listItem', 'link', 'image', 'hr', 'lineBreak', 'table', 'text',
-        ];
         types.forEach((t) => {
-          expect(validTypes).toContain(t);
+          expect(VALID_NODE_TYPES).toContain(t);
         });
       }),
       { numRuns: 100 }
     );
+  });
+
+  // Counterexample found by the deep property run: `__…__` is the parser's
+  // underline syntax (any non-empty content, whitespace included), so a heading
+  // whose text is `__ __` legitimately contains an 'underline' node.
+  it('Property 9 example: "# __ __ " yields a heading containing an underline node', () => {
+    const nodes = parser.parse('# __ __ ');
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].type).toBe('heading');
+    const types = collectTypes(nodes);
+    expect(types.has('underline')).toBe(true);
+    types.forEach((t) => {
+      expect(VALID_NODE_TYPES).toContain(t);
+    });
   });
 
   it('Property 9b: heading markdown produces heading node with correct level', () => {

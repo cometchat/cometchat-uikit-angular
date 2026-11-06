@@ -13,6 +13,7 @@
  */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ensureSdkReady, sdkCleanup } from '../../../testing';
+import { ControlValueAccessor } from '@angular/forms';
 import { CometChatRadioButtonComponent } from './cometchat-radio-button.component';
 
 describe('CometChatRadioButtonComponent', () => {
@@ -500,13 +501,16 @@ describe('CometChatRadioButtonComponent', () => {
   describe('Edge Cases', () => {
     it('should handle writeValue with null gracefully', () => {
       component.value = 'optA';
-      expect(() => component.writeValue(null)).not.toThrow();
+      // Angular forms call writeValue(null) through the ControlValueAccessor contract on reset.
+      const accessor: ControlValueAccessor = component;
+      expect(() => accessor.writeValue(null)).not.toThrow();
       expect(component.isChecked).toBe(false);
     });
 
     it('should handle writeValue with undefined gracefully', () => {
       component.value = 'optA';
-      expect(() => component.writeValue(undefined)).not.toThrow();
+      const accessor: ControlValueAccessor = component;
+      expect(() => accessor.writeValue(undefined)).not.toThrow();
       expect(component.isChecked).toBe(false);
     });
 

@@ -52,7 +52,11 @@ export function setupConstructorEffectsImpl(self: any): void {
     if (lm) {
       const key = lm === 'multiline' ? 'message_composer_layout_multiline' : 'message_composer_layout_single_line';
       const ann = CometChatLocalize.getLocalizedString(key);
-      setTimeout(() => { self.liveRegionPoliteText.set(ann); setTimeout(() => self.liveRegionPoliteText.set(''), 100); }, 0);
+      // Clear only our own text: another announcement made within the 100 ms window must survive.
+      setTimeout(() => {
+        self.liveRegionPoliteText.set(ann);
+        setTimeout(() => { if (self.liveRegionPoliteText() === ann) self.liveRegionPoliteText.set(''); }, 100);
+      }, 0);
     }
   });
   safeEffect(() => {

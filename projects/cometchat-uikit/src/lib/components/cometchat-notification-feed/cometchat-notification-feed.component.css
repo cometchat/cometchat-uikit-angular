@@ -6,7 +6,7 @@
   max-width: 100%;
   background: var(--cometchat-background-color-03, #f5f5f5);
   overflow: hidden;
-  font-family: var(--cometchat-font-family, "Roboto", sans-serif);
+  font: var(--cometchat-notification-feed-font, var(--cometchat-font-body-regular));
 }
 
 :host {
@@ -239,7 +239,7 @@
   font: var(--cometchat-font-heading3-bold, 700 18px "Roboto");
   color: var(--cometchat-text-color-primary, #181d27);
   margin: 0;
-  line-height: 28px;
+  line-height: var(--cometchat-notification-feed-empty-title-line-height, 28px);
 }
 
 .cometchat-notification-feed__empty-subtitle {
@@ -289,7 +289,7 @@
   font: var(--cometchat-font-heading3-bold, 700 18px "Roboto");
   color: var(--cometchat-text-color-primary, #181d27);
   margin: 0;
-  line-height: 28px;
+  line-height: var(--cometchat-notification-feed-error-title-line-height, 28px);
 }
 
 .cometchat-notification-feed__error-subtitle {
@@ -457,7 +457,7 @@
   white-space: nowrap;
   flex-shrink: 0;
   transition: background-color 0.15s ease, border-color 0.15s ease;
-  font-family: var(--cometchat-font-family, "Roboto", sans-serif);
+  font: var(--cometchat-notification-feed-chip-font, var(--cometchat-font-body-medium));
 }
 
 .cometchat-notification-feed__chip:focus-visible {
@@ -471,8 +471,7 @@
 }
 
 .cometchat-notification-feed__chip--active .cometchat-notification-feed__chip-text {
-  font-weight: 600;
-  font-size: 14px;
+  font: var(--cometchat-notification-feed-chip-text-font, var(--cometchat-font-body-medium));
   line-height: 20px;
   color: var(--cometchat-static-white, #ffffff);
 }
@@ -483,8 +482,7 @@
 }
 
 .cometchat-notification-feed__chip--inactive-with-badge .cometchat-notification-feed__chip-text {
-  font-weight: 600;
-  font-size: 14px;
+  font: var(--cometchat-notification-feed-chip-text-font, var(--cometchat-font-body-medium));
   line-height: 20px;
   color: var(--cometchat-text-color-secondary, #535862);
 }
@@ -495,8 +493,7 @@
 }
 
 .cometchat-notification-feed__chip--inactive .cometchat-notification-feed__chip-text {
-  font-weight: 600;
-  font-size: 14px;
+  font: var(--cometchat-notification-feed-chip-text-font, var(--cometchat-font-body-medium));
   line-height: 20px;
   color: var(--cometchat-text-color-tertiary, #717680);
 }
@@ -512,9 +509,8 @@
   justify-content: center;
   border-radius: var(--cometchat-radius-max, 9999px);
   padding: var(--cometchat-padding-05, 2px) var(--cometchat-padding-2, 8px);
-  font: var(--cometchat-font-caption2-medium, 500 12px "Roboto");
+  font: var(--cometchat-notification-feed-chip-badge-font, var(--cometchat-font-caption2-medium, 500 12px "Roboto"));
   line-height: 18px;
-  font-family: var(--cometchat-font-family, "Roboto", sans-serif);
 }
 
 .cometchat-notification-feed__chip-badge--active {

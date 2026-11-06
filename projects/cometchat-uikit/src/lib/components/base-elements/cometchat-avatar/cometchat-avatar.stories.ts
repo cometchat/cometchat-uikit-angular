@@ -175,7 +175,7 @@ export const BrokenImage: Story = {
 // Interaction Tests — Prop Verification
 // ============================================
 
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 /** Verifies image prop renders an img element. */
 export const TestImageRendersImg: Story = {

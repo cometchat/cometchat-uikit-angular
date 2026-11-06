@@ -83,8 +83,8 @@ const callSettingsBuilderArb = fc.oneof(
     isAudioOnlyCall: fc.boolean(),
     customId: fc.string({ minLength: 0, maxLength: 50 }),
   }),
-  fc.string(),
-  fc.integer()
+  // Arbitrary plain settings objects — the declared domain is `Record<string, any> | null`.
+  fc.object({ maxDepth: 1 })
 );
 
 // ==================== Test Suite ====================

@@ -3,7 +3,8 @@
  *
  * Covers: onEditMessageImpl, onReplyMessageImpl, onMessageInfoImpl,
  *         closeMessageInfoImpl, handleMessagePrivatelyImpl,
- *         onReplyPreviewClickImpl, markMessageAsUnreadImpl.
+ *         onReplyPreviewClickImpl, markMessageAsUnreadImpl,
+ *         copyMessageToClipboardImpl.
  *
  * @module components/cometchat-message-list/interaction-utils
  */
@@ -18,6 +19,7 @@ import {
   handleMessagePrivatelyImpl,
   onReplyPreviewClickImpl,
   markMessageAsUnreadImpl,
+  copyMessageToClipboardImpl,
 } from './cometchat-message-list.interaction-utils';
 import { CometChatMessageEvents } from '../../events/CometChatMessageEvents';
 import { MessageStatus } from '../../Enums/Enums';
@@ -282,6 +284,62 @@ describe('cometchat-message-list.interaction-utils', () => {
       });
       await markMessageAsUnreadImpl(self, msg);
       expect(self.showInlineToast).toHaveBeenCalled();
+    });
+  });
+
+  // ==================== copyMessageToClipboardImpl ====================
+
+  describe('copyMessageToClipboardImpl', () => {
+    let writeText: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    });
+
+    function makeAgentMessage(text: string): CometChat.BaseMessage {
+      return {
+        getCategory: () => 'agentic',
+        getType: () => 'assistant',
+        getElements: () => undefined,
+        getAssistantMessageData: () => ({ getText: () => text }),
+      } as unknown as CometChat.BaseMessage;
+    }
+
+    function makeMediaMessage(caption: string): CometChat.BaseMessage {
+      return {
+        getCategory: () => 'message',
+        getType: () => 'image',
+        getCaption: () => caption,
+        getData: () => ({}),
+      } as unknown as CometChat.BaseMessage;
+    }
+
+    it('should copy a text message and show the copied toast', async () => {
+      const self = makeSelf();
+      await copyMessageToClipboardImpl(self, makeTextMessage(1, 'user2'));
+      expect(writeText).toHaveBeenCalledWith('Hello');
+      expect(self.showInlineToast).toHaveBeenCalledTimes(1);
+    });
+
+    it('should copy an AI agent reply (type "assistant") and show the copied toast', async () => {
+      const self = makeSelf();
+      await copyMessageToClipboardImpl(self, makeAgentMessage('Agent reply'));
+      expect(writeText).toHaveBeenCalledWith('Agent reply');
+      expect(self.showInlineToast).toHaveBeenCalledTimes(1);
+    });
+
+    it('should copy the caption of a media message', async () => {
+      const self = makeSelf();
+      await copyMessageToClipboardImpl(self, makeMediaMessage('Photo caption'));
+      expect(writeText).toHaveBeenCalledWith('Photo caption');
+    });
+
+    it('should not copy a media message without a caption', async () => {
+      const self = makeSelf();
+      await copyMessageToClipboardImpl(self, makeMediaMessage(''));
+      expect(writeText).not.toHaveBeenCalled();
+      expect(self.showInlineToast).not.toHaveBeenCalled();
     });
   });
 });

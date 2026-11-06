@@ -204,6 +204,7 @@ export class InteractiveMessageComponent {
 |----------|------|---------|-------------|
 | `message` | `CometChat.BaseMessage` | **required** | The CometChat message object to render |
 | `alignment` | `MessageBubbleAlignment` | `right` | Alignment of the bubble: `left` (incoming), `right` (outgoing), `center` (action) |
+| `variant` | `'incoming' \| 'outgoing'` | `undefined` | Which colour palette the bubble uses, independent of the side it sits on. When unset, the palette follows `alignment`; ignored for `center` alignment |
 | `group` | `CometChat.Group \| null` | `null` | Group context for group conversations. Enables avatar and sender name display |
 | `options` | `Array<CometChatActionsIcon \| CometChatActionsView>` | `[]` | Message options to display in context menu |
 | `quickOptionsCount` | `number` | `2` | Number of options to show directly on bubble before overflow |
@@ -237,6 +238,9 @@ export class InteractiveMessageComponent {
 | `hideSenderName` | `boolean` | `false` | Whether to hide the sender name |
 | `hideReceipts` | `boolean` | `false` | Whether to hide read receipts |
 | `hideTimestamp` | `boolean` | `false` | Whether to hide the timestamp |
+| `hideStatusInfoView` | `boolean` | `false` | Whether to hide the entire status info view (timestamp and receipts) |
+| `hideThreadView` | `boolean` | `false` | Whether to hide the thread replies indicator shown on messages that have replies |
+| `reserveLeadingSpace` | `boolean` | `false` | When true (and left-aligned), reserves the avatar column even though the avatar is hidden, so batch-continuation messages align under the first message of the batch |
 | `showError` | `boolean` | `false` | Whether to show error state indicator |
 | `hideModerationView` | `boolean` | `false` | Whether to hide moderation status indicators |
 | `disableInteraction` | `boolean` | `false` | When true, disables all interactive elements within the bubble (context menu, reactions, etc.) |

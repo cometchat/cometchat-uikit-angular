@@ -12,7 +12,7 @@ import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { CometChatMarkdownRenderer } from './cometchat-markdown-renderer.component';
 import { MOCK_AVATARS } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 const meta: Meta<CometChatMarkdownRenderer> = {
   title: 'Components/AI/Markdown Renderer',

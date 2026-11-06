@@ -302,6 +302,8 @@ describe('CometChatUIKit Property Tests', () => {
             instanceError = e;
           }
 
+          // Both must actually reject (otherwise undefined === undefined would pass)
+          expect(staticError).toBe('uiKitSettings not available');
           expect(instanceError).toBe(staticError);
         }),
         { numRuns: 100 }
@@ -332,6 +334,8 @@ describe('CometChatUIKit Property Tests', () => {
             instanceError = e;
           }
 
+          // Both must actually reject (otherwise undefined === undefined would pass)
+          expect(staticError).toBe('uiKitSettings not available');
           expect(instanceError).toBe(staticError);
         }),
         { numRuns: 100 }
@@ -362,9 +366,9 @@ describe('CometChatUIKit Property Tests', () => {
             instanceError = e;
           }
 
-          // Both should have same error structure
-          expect(instanceError.code).toBe(staticError.code);
-          expect(instanceError.message).toBe(staticError.message);
+          // Both should reject with the same error structure
+          expect(staticError).toEqual({ code: 'ERROR_UIKIT_NOT_INITIALISED', message: 'UIKItSettings not available' });
+          expect(instanceError).toEqual(staticError);
         }),
         { numRuns: 100 }
       );
@@ -719,36 +723,10 @@ describe('CometChatUIKit Property Tests', () => {
     /**
      * Test that loggedInUser$ observable is accessible and returns an observable
      */
-    it('should have loggedInUser$ return an observable', () => {
-      fc.assert(
-        fc.property(fc.boolean(), _ => {
-          const observable = CometChatUIKit.loggedInUser$;
-
-          // Should be an observable (has subscribe method)
-          expect(typeof observable.subscribe).toBe('function');
-        }),
-        { numRuns: 100 }
-      );
-    });
 
     /**
      * Test that instance loggedInUser$ delegates to static loggedInUser$
      */
-    it('should have instance loggedInUser$ delegate to static loggedInUser$', () => {
-      fc.assert(
-        fc.property(fc.boolean(), _ => {
-          const uiKit = new CometChatUIKit();
-
-          const staticObservable = CometChatUIKit.loggedInUser$;
-          const instanceObservable = uiKit.loggedInUser$;
-
-          // Both should be observables
-          expect(typeof staticObservable.subscribe).toBe('function');
-          expect(typeof instanceObservable.subscribe).toBe('function');
-        }),
-        { numRuns: 100 }
-      );
-    });
 
     /**
      * Test that loggedInUser$ emits current value immediately to new subscribers
@@ -819,15 +797,7 @@ describe('CometChatUIKit Property Tests', () => {
         fc.asyncProperty(fc.boolean(), async _ => {
           CometChatUIKit.uiKitSettings = null;
 
-          try {
-            await CometChatUIKit.logout();
-            // Should not reach here
-            expect(true).toBe(false);
-          } catch (error: any) {
-            expect(error).toBeDefined();
-            expect(error.code).toBe('ERROR_UIKIT_NOT_INITIALISED');
-            expect(error.message).toBe('UIKItSettings not available');
-          }
+          await expect(CometChatUIKit.logout()).rejects.toEqual({ code: 'ERROR_UIKIT_NOT_INITIALISED', message: 'UIKItSettings not available' });
         }),
         { numRuns: 100 }
       );
@@ -845,15 +815,7 @@ describe('CometChatUIKit Property Tests', () => {
             settings.appId = appIdValue;
             CometChatUIKit.uiKitSettings = settings;
 
-            try {
-              await CometChatUIKit.logout();
-              // Should not reach here
-              expect(true).toBe(false);
-            } catch (error: any) {
-              expect(error).toBeDefined();
-              expect(error.code).toBe('ERROR_UIKIT_NOT_INITIALISED');
-              expect(error.message).toBe('UIKItSettings not available');
-            }
+            await expect(CometChatUIKit.logout()).rejects.toEqual({ code: 'ERROR_UIKIT_NOT_INITIALISED', message: 'UIKItSettings not available' });
           }
         ),
         { numRuns: 100 }
@@ -884,9 +846,9 @@ describe('CometChatUIKit Property Tests', () => {
             instanceError = e;
           }
 
-          // Both should have same error structure
-          expect(instanceError.code).toBe(staticError.code);
-          expect(instanceError.message).toBe(staticError.message);
+          // Both should reject with the same error structure
+          expect(staticError).toEqual({ code: 'ERROR_UIKIT_NOT_INITIALISED', message: 'UIKItSettings not available' });
+          expect(instanceError).toEqual(staticError);
         }),
         { numRuns: 100 }
       );
@@ -921,17 +883,11 @@ describe('CometChatUIKit Property Tests', () => {
           async settings => {
             CometChatUIKit.uiKitSettings = settings;
 
-            try {
-              await CometChatUIKit.logout();
-              // Should not reach here for invalid settings
-              expect(true).toBe(false);
-            } catch (error: any) {
-              // Error should always have the same structure
-              expect(error).toBeDefined();
-              expect(typeof error.code).toBe('string');
-              expect(typeof error.message).toBe('string');
-              expect(error.code).toBe('ERROR_UIKIT_NOT_INITIALISED');
-            }
+            // Error should always have the same structure for every invalid settings shape
+            await expect(CometChatUIKit.logout()).rejects.toEqual({
+              code: 'ERROR_UIKIT_NOT_INITIALISED',
+              message: expect.any(String),
+            });
           }
         ),
         { numRuns: 100 }
@@ -959,12 +915,7 @@ describe('CometChatUIKit Property Tests', () => {
           async settings => {
             CometChatUIKit.uiKitSettings = settings;
 
-            try {
-              await CometChatUIKit.logout();
-              expect(true).toBe(false); // Should not reach here
-            } catch (error: any) {
-              expect(error.code).toBe('ERROR_UIKIT_NOT_INITIALISED');
-            }
+            await expect(CometChatUIKit.logout()).rejects.toMatchObject({ code: 'ERROR_UIKIT_NOT_INITIALISED' });
           }
         ),
         { numRuns: 100 }
@@ -1998,11 +1949,6 @@ describe('CometChatUIKit Property Tests', () => {
       it('should have SoundManager accessible as static property', () => {
         expect(CometChatUIKit.SoundManager).toBeDefined();
       });
-
-      it('should return the CometChatSoundManager type', () => {
-        // SoundManager should be a class/constructor function
-        expect(typeof CometChatUIKit.SoundManager).toBe('function');
-      });
     });
 
     /**
@@ -2012,25 +1958,12 @@ describe('CometChatUIKit Property Tests', () => {
       it('should have Localize accessible as static property', () => {
         expect(CometChatUIKit.Localize).toBeDefined();
       });
-
-      it('should return the CometChatLocalize type', () => {
-        // Localize should be a class/constructor function
-        expect(typeof CometChatUIKit.Localize).toBe('function');
-      });
     });
 
     /**
      * Test that getLoggedinUser() async method works correctly
      */
     describe('getLoggedinUser Async Access', () => {
-      it('should have static getLoggedinUser() method', () => {
-        expect(typeof CometChatUIKit.getLoggedinUser).toBe('function');
-      });
-
-      it('should have instance getLoggedinUser() method', () => {
-        const uiKit = new CometChatUIKit();
-        expect(typeof uiKit.getLoggedinUser).toBe('function');
-      });
 
       it('should reject with error when uiKitSettings is null', async () => {
         CometChatUIKit.uiKitSettings = null;

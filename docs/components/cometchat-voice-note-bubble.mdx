@@ -1,0 +1,79 @@
+---
+title: "CometChatVoiceNoteBubbleComponent"
+description: "Renders a recorded voice note message by delegating to the audio bubble's waveform player"
+---
+
+The `CometChatVoiceNoteBubbleComponent` renders voice notes: audio messages recorded with the composer's voice recorder. It is a thin wrapper that delegates to [`CometChatAudioBubble`](/components/cometchat-audio-bubble), so a voice note gets the waveform player, while ordinary audio files are routed to `CometChatAudiosBubble` instead.
+
+## Overview
+
+- **Delegates rendering**: Renders `<cometchat-audio-bubble>` and forwards `message`, `alignment` and `textFormatters` to it. It has no template, styles or events of its own
+- **Voice note detection**: `CometChatMessageBubble` routes an audio message here when its `metadata.audioType` is `'voice_note'` (`CometChatUIKitConstants.AudioType.voiceNote`). The legacy value `'voiceNote'` is also accepted so older voice notes still render as waveforms
+- **Standalone messages**: Voice notes are rendered on their own, not grouped into a multi-attachment batch bubble
+
+## Basic Usage
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatVoiceNoteBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-voice-note',
+  standalone: true,
+  imports: [CometChatVoiceNoteBubbleComponent],
+  template: `
+    <!-- Incoming voice note -->
+    <cometchat-voice-note-bubble
+      [message]="incomingVoiceNote"
+      [alignment]="MessageBubbleAlignment.left"
+    ></cometchat-voice-note-bubble>
+
+    <!-- Outgoing voice note -->
+    <cometchat-voice-note-bubble
+      [message]="outgoingVoiceNote"
+      [alignment]="MessageBubbleAlignment.right"
+    ></cometchat-voice-note-bubble>
+  `
+})
+export class VoiceNoteComponent {
+  incomingVoiceNote!: CometChat.MediaMessage;
+  outgoingVoiceNote!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+In a message list you do not need to render it yourself: `CometChatMessageBubble` picks it automatically for voice notes.
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The audio message to render. Forwarded to the audio bubble |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | `left` for incoming, `right` for outgoing. Forwarded to the audio bubble |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters for the caption text. Forwarded to the audio bubble, which renders the caption |
+
+## Events
+
+The voice note bubble declares no outputs. The audio bubble's outputs (such as `playStateChange` and the download events) are not re-exposed, so use [`CometChatAudioBubble`](/components/cometchat-audio-bubble) directly if you need them.
+
+## Identifying a Voice Note
+
+A voice note is an audio message (`CometChatUIKitConstants.MessageTypes.audio`) whose metadata contains:
+
+```json
+{ "audioType": "voice_note" }
+```
+
+The composer's recorder sets this value. Messages with `"audioType": "voiceNote"` (the value earlier versions of this kit wrote) are also treated as voice notes.
+
+## Styling
+
+The component has no CSS of its own. Its appearance is entirely that of the audio bubble; see [Audio Bubble styling](/components/cometchat-audio-bubble) for the available CSS variables.
+
+## Related Components
+
+- **CometChatAudioBubble**: The waveform player this component delegates to
+- **CometChatAudiosBubble**: Renders non-voice-note audio file messages
+- **CometChatMessageBubble**: Chooses between the voice note and audio file bubbles
+- **CometChatMessageComposer**: Records and sends voice notes

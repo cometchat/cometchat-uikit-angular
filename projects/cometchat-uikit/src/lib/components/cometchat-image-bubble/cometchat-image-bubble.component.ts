@@ -166,7 +166,7 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
   }
 
   protected getOverflowText(): string {
-    return CometChatLocalize.getLocalizedString('image_bubble_overflow_more').replace('{count}', this.overflowCount.toString());
+    return CometChatLocalize.getLocalizedString('image_bubble_overflow_more').replace('{count}', () => this.overflowCount.toString());
   }
 
   protected onImageKeyDown(event: KeyboardEvent, index: number): void {
@@ -174,12 +174,12 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
   }
 
   protected get imageAriaLabel(): string {
-    if (this.captionText) return CometChatLocalize.getLocalizedString('accessibility_image_with_caption').replace('{caption}', this.captionText);
+    if (this.captionText) return CometChatLocalize.getLocalizedString('accessibility_image_with_caption').replace('{caption}', () => this.captionText);
     return CometChatLocalize.getLocalizedString('accessibility_view_image');
   }
 
   protected get overflowAriaLabel(): string {
-    return CometChatLocalize.getLocalizedString('accessibility_show_more_images').replace('{count}', this.overflowCount.toString());
+    return CometChatLocalize.getLocalizedString('accessibility_show_more_images').replace('{count}', () => this.overflowCount.toString());
   }
 
   protected trackByAttachment(index: number, attachment: MediaAttachment): string { return attachment.url || index.toString(); }

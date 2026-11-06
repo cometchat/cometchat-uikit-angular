@@ -9,6 +9,9 @@ dist/
 .vscode/
 .DS_Store
 
+# Local credentials — environment.ts is committed with placeholders only
+**/environments/environment.local.ts
+
 # Test coverage
 coverage/
 
@@ -39,3 +42,23 @@ public-docs-v5
 /blob-report/
 /playwright/.cache/
 e2e/.env
+coverage-e2e
+coverage-merged
+.env
+# tsc -b --noEmit build info (type-check cache)
+/out-tsc
+*.tsbuildinfo
+
+# Vitest shard reports (CI merges them)
+/.vitest-reports
+
+# api-extractor scratch output
+/temp
+
+# Mutation testing scratch and reports
+/.stryker-tmp
+/reports
+
+# Lighthouse (PR gate lighthouse job, scripts/ci/lighthouse/)
+.lighthouseci/
+lighthouse-report.md

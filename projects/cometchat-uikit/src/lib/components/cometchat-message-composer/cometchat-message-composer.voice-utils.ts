@@ -6,6 +6,7 @@ import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKitUtility} from '../../CometChatUIKitUtility';
 import {CometChatLogger} from '../../utils/CometChatLogger';
+import {markMessageFailed} from '../../utils/message-metadata-utils';
 import {MessageComposerService} from '../../services/message-composer.service';
 import {CometChatUIKitConstants} from '../../constants';
 import {stampBatchMetadata} from '../../utils/message-metadata-utils';
@@ -81,9 +82,11 @@ export async function handleRecordingCompleteImpl(ctx: VoiceUtilsContext, audioB
       ctx.sendButtonClick.emit(mediaMessage);
       ctx.playOutgoingMessageSound();
     } else {
+      markMessageFailed(pendingAudioMessage, undefined);
       CometChatMessageEvents.ccMessageSent.next({ message: pendingAudioMessage, status: MessageStatus.error });
     }
   } catch (error) {
+    markMessageFailed(pendingAudioMessage, error);
     CometChatMessageEvents.ccMessageSent.next({ message: pendingAudioMessage, status: MessageStatus.error });
     CometChatLogger.error('CometChatMessageComposer', 'Error sending audio message:', error);
     ctx.emitError(error);

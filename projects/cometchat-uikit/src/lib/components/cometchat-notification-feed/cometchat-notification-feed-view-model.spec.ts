@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NotificationFeedViewModel } from './cometchat-notification-feed-view-model';
 import { NotificationFeedState } from './cometchat-notification-feed.types';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 // Mock CometChat SDK
 vi.mock('@cometchat/chat-sdk-javascript', () => ({
@@ -148,13 +149,20 @@ describe('NotificationFeedViewModel', () => {
 
   describe('engagement reporting', () => {
     it('should only report delivered once per item', () => {
+      const delivered = vi.mocked(CometChat.markFeedItemAsDelivered);
+      delivered.mockClear();
       const item = createMockItem('item-1');
       vm.reportDelivered(item);
       vm.reportDelivered(item);
-      // The deliveredItemIds set should prevent duplicate calls
-      // We can't easily check CometChat mock calls here due to module mock,
-      // but we verify no errors thrown
-      expect(true).toBe(true);
+      // The deliveredItemIds set prevents a duplicate SDK call for the same item
+      expect(delivered).toHaveBeenCalledTimes(1);
+      expect(delivered).toHaveBeenCalledWith(item);
+
+      // A different item is still reported
+      const other = createMockItem('item-2');
+      vm.reportDelivered(other);
+      expect(delivered).toHaveBeenCalledTimes(2);
+      expect(delivered).toHaveBeenLastCalledWith(other);
     });
 
     it('should report viewed without throwing', () => {

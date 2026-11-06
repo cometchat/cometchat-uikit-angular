@@ -859,4 +859,423 @@ describe('CometChatPopoverComponent', () => {
       fixture2.destroy();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Deferred work
+  //
+  // Opening schedules positioning, focus-trap setup and initial focus across
+  // nested timers, so none of it runs until those are flushed.
+  // ---------------------------------------------------------------------------
+  describe('Deferred open sequence', () => {
+    it('should position itself once the open timers settle', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+      hostFixture.detectChanges();
+
+      expect(host.popover.isPositioned).toBe(true);
+    }));
+
+    it('should clear the just-opened guard on the next tick', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      expect((host.popover as unknown as Record<string, unknown>)['justOpened']).toBe(false);
+    }));
+
+    it('should close any other open popover when one opens', fakeAsync(() => {
+      const other = TestBed.createComponent(TestHostComponent);
+      other.detectChanges();
+
+      other.componentInstance.popover.openPopover();
+      other.detectChanges();
+      tick(10);
+      expect(other.componentInstance.popover.isOpen).toBe(true);
+
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      expect(other.componentInstance.popover.isOpen).toBe(false);
+      other.destroy();
+    }));
+  });
+
+  // ---------------------------------------------------------------------------
+  // Window listeners
+  // ---------------------------------------------------------------------------
+  describe('Window listeners', () => {
+    /** Runs rAF callbacks synchronously so the repositioning path executes. */
+    function withSyncRaf(run: () => void): void {
+      const original = globalThis.requestAnimationFrame;
+      (globalThis as unknown as Record<string, unknown>)['requestAnimationFrame'] = (
+        cb: FrameRequestCallback
+      ) => {
+        cb(0);
+        return 0;
+      };
+      try {
+        run();
+      } finally {
+        (globalThis as unknown as Record<string, unknown>)['requestAnimationFrame'] = original;
+      }
+    }
+
+    it('should reposition on resize while open', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      withSyncRaf(() => {
+        host.popover.handleWindowResize();
+        tick(10);
+      });
+
+      expect(host.popover.isPositioned).toBe(true);
+    }));
+
+    it('should ignore a resize while closed', () => {
+      expect(host.popover.isOpen).toBe(false);
+      expect(() => host.popover.handleWindowResize()).not.toThrow();
+    });
+
+    it('should debounce rapid resizes into one reposition', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      withSyncRaf(() => {
+        host.popover.handleWindowResize();
+        host.popover.handleWindowResize();
+        host.popover.handleWindowResize();
+        tick(10);
+      });
+
+      expect(host.popover.isPositioned).toBe(true);
+    }));
+
+    it('should reposition on scroll while open', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      withSyncRaf(() => {
+        host.popover.handleWindowScroll();
+      });
+
+      expect(host.popover.isPositioned).toBe(true);
+    }));
+
+    it('should ignore a scroll while closed', () => {
+      expect(() => host.popover.handleWindowScroll()).not.toThrow();
+    });
+
+    it('should close on Escape while open', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      host.popover.handleEscapeKey();
+      hostFixture.detectChanges();
+
+      expect(host.popover.isOpen).toBe(false);
+    }));
+
+    it('should ignore Escape while closed', () => {
+      host.popover.handleEscapeKey();
+      expect(host.popover.isOpen).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Focus trap
+  // ---------------------------------------------------------------------------
+  describe('Focus trap', () => {
+    /**
+     * Rebuilds the fixture so host inputs are set before the first change
+     * detection pass — assigning them afterwards triggers NG0100.
+     */
+    function rebuild(configure: (h: TestHostComponent) => void): void {
+      hostFixture = TestBed.createComponent(TestHostComponent);
+      host = hostFixture.componentInstance;
+      el = hostFixture.nativeElement;
+      configure(host);
+      hostFixture.detectChanges();
+    }
+
+    function openWithTrap(): void {
+      rebuild(h => {
+        h.trapFocus = true;
+      });
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+    }
+
+    function tab(shiftKey = false): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      });
+      document.dispatchEvent(event);
+      return event;
+    }
+
+    it('should focus the first focusable element on open', fakeAsync(() => {
+      openWithTrap();
+      tick(10);
+      hostFixture.detectChanges();
+
+      const first = el.querySelector('.test-focusable-btn');
+      expect(document.activeElement).toBe(first);
+    }));
+
+    it('should wrap from the last focusable back to the first on Tab', fakeAsync(() => {
+      openWithTrap();
+      tick(10);
+      hostFixture.detectChanges();
+
+      const focusables = (host.popover as unknown as Record<string, HTMLElement[]>)[
+        'focusableElements'
+      ];
+      if (focusables.length === 0) return;
+      focusables[focusables.length - 1].focus();
+
+      const event = tab();
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(focusables[0]);
+    }));
+
+    it('should wrap backwards from the first focusable to the last', fakeAsync(() => {
+      openWithTrap();
+      tick(10);
+      hostFixture.detectChanges();
+
+      const focusables = (host.popover as unknown as Record<string, HTMLElement[]>)[
+        'focusableElements'
+      ];
+      if (focusables.length === 0) return;
+      focusables[0].focus();
+
+      const event = tab(true);
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(focusables[focusables.length - 1]);
+    }));
+
+    it('should stop arrow keys escaping the popover', fakeAsync(() => {
+      openWithTrap();
+      tick(10);
+      hostFixture.detectChanges();
+
+      for (const key of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) {
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        const spy = vi.spyOn(event, 'stopPropagation');
+        document.dispatchEvent(event);
+        expect(spy).toHaveBeenCalled();
+      }
+    }));
+
+    it('should detach the keydown listener on close', fakeAsync(() => {
+      openWithTrap();
+      tick(10);
+
+      const removeSpy = vi.spyOn(document, 'removeEventListener');
+      host.popover.closePopover();
+      hostFixture.detectChanges();
+
+      expect(removeSpy.mock.calls.some(c => c[0] === 'keydown')).toBe(true);
+    }));
+
+    it('should not install a trap when trapFocus is off', fakeAsync(() => {
+      rebuild(h => {
+        h.trapFocus = false;
+      });
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      const focusables = (host.popover as unknown as Record<string, HTMLElement[]>)[
+        'focusableElements'
+      ];
+      expect(focusables).toHaveLength(0);
+    }));
+  });
+
+  // ---------------------------------------------------------------------------
+  // Positioning helpers
+  // ---------------------------------------------------------------------------
+  describe('Positioning helpers', () => {
+    /** Same rationale as the focus-trap block: set inputs before first render. */
+    function rebuild(configure: (h: TestHostComponent) => void): void {
+      hostFixture = TestBed.createComponent(TestHostComponent);
+      host = hostFixture.componentInstance;
+      el = hostFixture.nativeElement;
+      configure(host);
+      hostFixture.detectChanges();
+    }
+
+    it('should expose the top-most CometChat ancestor', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      expect(() => host.popover.getTopMostCometChatElement()).not.toThrow();
+    }));
+
+    it('should fall back to the no-parent-height path when useParentHeight is off', fakeAsync(() => {
+      host.popover.useParentHeight = false;
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      host.popover.calculatePopoverPosition();
+      expect(host.popover.isPositioned).toBe(true);
+    }));
+
+    it('should set a height-independent position directly', fakeAsync(() => {
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      host.popover.setPopoverHeight();
+      expect(host.popover.positionStyle).toBeDefined();
+    }));
+
+    it('should merge contentStyle into the computed position', fakeAsync(() => {
+      rebuild(h => { h.contentStyle = { borderRadius: '8px' }; });
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      expect(host.popover.getPopoverContentStyle()['borderRadius']).toBe('8px');
+    }));
+
+    it('should raise the z-index when background interaction is disabled', fakeAsync(() => {
+      rebuild(h => { h.disableBackgroundInteraction = true; });
+      host.popover.openPopover();
+      hostFixture.detectChanges();
+      tick(10);
+
+      expect(host.popover.getPopoverContentStyle()['zIndex']).toBe('1000');
+    }));
+  });
+
+  // ---------------------------------------------------------------------------
+  // Content that renders after opening (ENG-40617)
+  // ---------------------------------------------------------------------------
+  describe('Content resize', () => {
+    let observerCallback: ResizeObserverCallback | undefined;
+    let observed: Element[];
+    let disconnect: () => void;
+
+    beforeEach(() => {
+      observed = [];
+      disconnect = vi.fn();
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(cb: ResizeObserverCallback) { observerCallback = cb; }
+          observe(target: Element) { observed.push(target); }
+          disconnect() { disconnect(); }
+          unobserve() { /* not used by the popover */ }
+        }
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    /** Give the trigger and the popover content fixed geometry (jsdom has no layout). */
+    function setGeometry(popover: CometChatPopoverComponent, contentHeight: number): void {
+      const trigger = popover.childRef.nativeElement;
+      vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue(
+        { top: 675, bottom: 699, left: 481, right: 505, width: 24, height: 24, x: 481, y: 675, toJSON: () => ({}) } as DOMRect
+      );
+      const content = popover.popoverRef.nativeElement;
+      for (const prop of ['scrollHeight', 'offsetHeight']) {
+        Object.defineProperty(content, prop, { configurable: true, get: () => contentHeight });
+      }
+      for (const prop of ['scrollWidth', 'offsetWidth']) {
+        Object.defineProperty(content, prop, { configurable: true, get: () => 300 });
+      }
+    }
+
+    it('moves a top-placed popover above its trigger once late content gives it a height', fakeAsync(() => {
+      // Set on the component, not the host binding: changing the binding inside fakeAsync trips NG0100.
+      const h = host;
+      const fixture = hostFixture;
+      h.popover.placement = Placement.top;
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+      h.popover.openPopover();
+      fixture.detectChanges();
+      setGeometry(h.popover, 0); // the content has not rendered yet
+      tick();
+
+      // Measured as 0 high, it is placed just above the trigger and would hang below it.
+      expect(h.popover.positionStyle['top']).toBe('665px');
+      expect(observed).toContain(h.popover.popoverRef.nativeElement);
+
+      setGeometry(h.popover, 380); // the deferred content arrives
+      observerCallback!([], {} as ResizeObserver);
+      tick(16); // the re-position runs on the next animation frame
+
+      expect(h.popover.positionStyle['top']).toBe('285px'); // 675 - 380 - 10
+    }));
+
+    it('does not re-position when the content size is unchanged', fakeAsync(() => {
+      // Set on the component, not the host binding: changing the binding inside fakeAsync trips NG0100.
+      const h = host;
+      const fixture = hostFixture;
+      h.popover.placement = Placement.top;
+      h.popover.openPopover();
+      fixture.detectChanges();
+      setGeometry(h.popover, 200);
+      tick();
+      const reposition = vi.spyOn(h.popover, 'getPopoverPositionStyle');
+
+      observerCallback!([], {} as ResizeObserver);
+      tick(16);
+
+      expect(reposition).not.toHaveBeenCalled();
+    }));
+
+    it('stops watching the content when the popover closes', fakeAsync(() => {
+      // Set on the component, not the host binding: changing the binding inside fakeAsync trips NG0100.
+      const h = host;
+      const fixture = hostFixture;
+      h.popover.placement = Placement.top;
+      h.popover.openPopover();
+      fixture.detectChanges();
+      setGeometry(h.popover, 200);
+      tick();
+
+      h.popover.closePopover();
+
+      expect(disconnect).toHaveBeenCalled();
+    }));
+
+    it('does not re-position a popover that closed before the resize frame ran', fakeAsync(() => {
+      // Set on the component, not the host binding: changing the binding inside fakeAsync trips NG0100.
+      const h = host;
+      const fixture = hostFixture;
+      h.popover.placement = Placement.top;
+      h.popover.openPopover();
+      fixture.detectChanges();
+      setGeometry(h.popover, 0);
+      tick();
+      const reposition = vi.spyOn(h.popover, 'getPopoverPositionStyle');
+
+      setGeometry(h.popover, 380); // content grows ...
+      observerCallback!([], {} as ResizeObserver);
+      h.popover.closePopover(); // ... and the popover closes in the same frame
+      tick(16);
+
+      expect(reposition).not.toHaveBeenCalled();
+      expect(h.popover.isPositioned).toBe(false);
+    }));
+  });
 });

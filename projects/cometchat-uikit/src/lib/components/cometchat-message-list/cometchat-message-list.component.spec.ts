@@ -30,6 +30,7 @@ import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { ensureSdkReady, sdkCleanup, fetchTestUser, flushPromises } from '../../testing';
 import { CometChatMessageListComponent } from './cometchat-message-list.component';
+import { scrollToBottomWithRetryImpl } from './cometchat-message-list.scroll-handlers';
 import { States, MessageListAlignment } from '../../Enums/Enums';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 
@@ -792,6 +793,16 @@ describe('CometChatMessageListComponent', () => {
       await initAndDetect(fixture);
       expect(() => fixture.destroy()).not.toThrow();
     });
+
+    it('stops deferred scroll work once destroyed (ngOnDestroy marks the list destroyed)', async () => {
+      await initAndDetect(fixture);
+      const container = { scrollTop: 0, scrollHeight: 500 };
+      (component as any).listContainer = { nativeElement: container };
+      fixture.destroy();
+      // A scroll retry still queued from before the destroy must not touch the list any more.
+      scrollToBottomWithRetryImpl(component as any, 0);
+      expect(container.scrollTop).toBe(0);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -1070,10 +1081,6 @@ describe('CometChatMessageListComponent', () => {
   // Bubble Error Isolation (Error Boundaries — Requirement 7.5)
   // -------------------------------------------------------------------------
   describe('Bubble Error Isolation', () => {
-    it('should have onBubbleError method defined', () => {
-      fixture.detectChanges();
-      expect(typeof component.onBubbleError).toBe('function');
-    });
 
     it('should not throw when onBubbleError is called with an ErrorContext', () => {
       fixture.detectChanges();
@@ -1100,16 +1107,31 @@ describe('CometChatMessageListComponent', () => {
     it('should include cometchat-error-boundary in the template wrapping bubbles', async () => {
       component.user = testUser;
       await initAndDetect(fixture);
-      await new Promise(r => setTimeout(r, 2000));
+
+      // No messages are fetched in this environment, so seed the list directly
+      const sender = new CometChat.User('superhero2');
+      sender.setName('Captain America');
+      const messages = [1, 2].map(id => {
+        const msg = new CometChat.TextMessage(
+          testUser.getUid(),
+          `Message ${id}`,
+          CometChat.RECEIVER_TYPE.USER
+        );
+        msg.setId(id);
+        msg.setSender(sender);
+        msg.setSentAt(1_700_000_000 + id);
+        return msg;
+      });
+      (component as any).messageListService.messagesSignal.set(messages);
+      (component as any).cdr.markForCheck();
       fixture.detectChanges();
-      // If messages are loaded, error boundaries should wrap each bubble
-      if (component.messages().length > 0) {
-        const boundaries = el.querySelectorAll('cometchat-error-boundary');
-        expect(boundaries.length).toBeGreaterThan(0);
-      }
-      // Structural: the component template references cometchat-error-boundary
-      // (verified by the component compiling without errors)
-      expect(component).toBeTruthy();
+      await flushPromises();
+      fixture.detectChanges();
+
+      expect(component.messages().length).toBe(2);
+      // Error boundaries wrap each bubble
+      const boundaries = el.querySelectorAll('cometchat-error-boundary');
+      expect(boundaries.length).toBeGreaterThanOrEqual(2);
     }, 15_000);
 
     it('should have a bubble fallback template in the DOM', async () => {

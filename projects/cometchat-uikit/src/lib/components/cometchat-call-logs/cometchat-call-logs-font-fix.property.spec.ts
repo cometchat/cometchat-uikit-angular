@@ -18,11 +18,10 @@
  * **Feature: call-logs-font-fix, Property 1: Fault Condition**
  */
 
-// @ts-nocheck - Skipped: requires Node.js fs/path modules unavailable in browser test environment
 import { describe, it, expect } from 'vitest';
-// import * as fc from 'fast-check';
-// import * as fs from 'fs';
-// import * as path from 'path';
+import * as fc from 'fast-check';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // ============================================
 // Types
@@ -165,38 +164,56 @@ function findFontRuleForViewport(
   // Sort by max-width descending so the most specific (smallest) is last.
   matchingRules.sort((a, b) => b.maxWidth - a.maxWidth);
 
-  return matchingRules[matchingRules.length - 1].value;
+  return resolveDefaultFont(matchingRules[matchingRules.length - 1].value);
+}
+
+/**
+ * Call-logs font declarations are wrapped in component-level customization hooks,
+ * e.g. `var(--cometchat-call-logs-header-title-font-tablet, var(--cometchat-font-heading4-bold))`.
+ * Those hooks are not defined anywhere by default (verified by a test below), so the
+ * effective font is the fallback. Unwrap the hook(s) to get the default global token.
+ */
+function resolveDefaultFont(value: string): string {
+  let current = value.trim();
+  const hookPattern = /^var\(\s*--cometchat-call-logs-[\w-]+\s*,\s*([\s\S]+)\)$/;
+  let match = current.match(hookPattern);
+  while (match) {
+    current = match[1].trim();
+    match = current.match(hookPattern);
+  }
+  return current;
 }
 
 // ============================================
 // Test Constants
 // ============================================
 
-const CALL_LOGS_CSS_PATH = '' as any; // path.resolve(
-// __dirname,
-// 'cometchat-call-logs.component.css'
-// );
+const CALL_LOGS_CSS_PATH = path.resolve(__dirname, 'cometchat-call-logs.component.css');
 
 const TITLE_SELECTOR = '.cometchat-list-item__body-title';
+const CSS_VARIABLES_PATH = path.resolve(__dirname, '../../styles/css-variables.css');
 const EXPECTED_RESPONSIVE_FONT = 'var(--cometchat-font-body-medium)';
 
 // ============================================
 // Test Suite
 // ============================================
 
-// Placeholder test to prevent "No test suite found" error when all describes are skipped
-it('placeholder: call logs font fix tests are skipped (bug exploration)', () => {
-  expect(true).toBe(true);
-});
-
-describe.skip('Property 1: Fault Condition — Call Logs Title Font at Responsive Breakpoints', () => {
-  // All code below is skipped — guarded to prevent runtime errors from commented-out imports
-  if (true) return;
+describe('Property 1: Fault Condition — Call Logs Title Font at Responsive Breakpoints', () => {
   let cssRules: CSSRule[];
 
   // Parse CSS once before all tests
   const cssContent = fs.readFileSync(CALL_LOGS_CSS_PATH, 'utf-8');
   cssRules = parseCSSWithMediaQueries(cssContent);
+
+  /**
+   * The font values below are resolved through the call-logs customization hooks'
+   * fallbacks. That is only valid if no hook is given a value by default.
+   */
+  it('should not define any --cometchat-call-logs-*-font customization hook by default', () => {
+    const declaresHook = /--cometchat-call-logs-[\w-]*font[\w-]*\s*:/;
+    expect(declaresHook.test(cssContent)).toBe(false);
+    expect(declaresHook.test(fs.readFileSync(CSS_VARIABLES_PATH, 'utf-8'))).toBe(false);
+  });
 
   /**
    * Concrete test: At 768px viewport (tablet breakpoint),
@@ -285,40 +302,40 @@ const BASELINE = {
 
   /** Header title fonts at each breakpoint */
   headerTitle: {
-    base: 'var(--cometchat-call-logs-header-title-font, var(--cometchat-font-heading1-bold))',
-    tablet: 'var(--cometchat-font-heading3-bold)', // @media (max-width: 768px)
+    base: 'var(--cometchat-font-heading1-bold)',
+    tablet: 'var(--cometchat-font-heading4-bold)', // @media (max-width: 768px)
     mobile: 'var(--cometchat-font-heading4-bold)', // @media (max-width: 480px)
   },
 
   /** Subtitle date fonts at each breakpoint */
   subtitleDate: {
-    base: 'var(--cometchat-call-logs-list-item-subtitle-date-font, var(--cometchat-font-body-regular))',
+    base: 'var(--cometchat-font-caption1-regular)',
     tablet: 'var(--cometchat-font-caption1-regular)', // @media (max-width: 768px)
   },
 
   /** Empty state title fonts at each breakpoint */
   emptyStateTitle: {
-    base: 'var(--cometchat-call-logs-empty-state-view-body-title-font, var(--cometchat-font-heading3-bold))',
+    base: 'var(--cometchat-font-heading3-bold)',
     tablet: 'var(--cometchat-font-heading4-medium)', // @media (max-width: 768px)
     mobile: 'var(--cometchat-font-body-bold)', // @media (max-width: 480px)
   },
 
   /** Error state title fonts at each breakpoint */
   errorStateTitle: {
-    base: 'var(--cometchat-call-logs-error-state-view-body-title-font, var(--cometchat-font-heading3-bold))',
+    base: 'var(--cometchat-font-heading3-bold)',
     tablet: 'var(--cometchat-font-heading4-medium)', // @media (max-width: 768px)
     mobile: 'var(--cometchat-font-body-bold)', // @media (max-width: 480px)
   },
 
   /** Empty state description fonts at each breakpoint */
   emptyStateDescription: {
-    base: 'var(--cometchat-call-logs-empty-state-view-body-description-font, var(--cometchat-font-body-regular))',
+    base: 'var(--cometchat-font-body-regular)',
     mobile: 'var(--cometchat-font-caption1-regular)', // @media (max-width: 480px)
   },
 
   /** Error state description fonts at each breakpoint */
   errorStateDescription: {
-    base: 'var(--cometchat-call-logs-error-state-view-body-description-font, var(--cometchat-font-body-regular))',
+    base: 'var(--cometchat-font-body-regular)',
     mobile: 'var(--cometchat-font-caption1-regular)', // @media (max-width: 480px)
   },
 } as const;
@@ -436,9 +453,7 @@ function getExpectedFont(
 // Preservation Test Suite
 // ============================================
 
-describe.skip('Property 2: Preservation — Desktop and Non-Title Font Behavior', () => {
-  // All code below is skipped — guarded to prevent runtime errors from commented-out imports
-  if (true) return;
+describe('Property 2: Preservation — Desktop and Non-Title Font Behavior', () => {
   let cssRules: CSSRule[];
 
   const cssContent = fs.readFileSync(CALL_LOGS_CSS_PATH, 'utf-8');
@@ -542,11 +557,11 @@ describe.skip('Property 2: Preservation — Desktop and Non-Title Font Behavior'
   describe('Header title font preservation (Req 3.3)', () => {
     /**
      * Concrete observation: At 768px viewport, header title font is
-     * `--cometchat-font-heading3-bold`.
+     * `--cometchat-font-heading4-bold` (matches the shipped release CSS).
      *
      * **Validates: Requirement 3.3**
      */
-    it('should have header title font --cometchat-font-heading3-bold at 768px viewport', () => {
+    it('should have header title font --cometchat-font-heading4-bold at 768px viewport', () => {
       const fontValue = findFontRuleForViewport(cssRules, SELECTORS.headerTitle, 768);
       expect(fontValue).toBe(BASELINE.headerTitle.tablet);
     });
@@ -698,7 +713,9 @@ describe.skip('Property 2: Preservation — Desktop and Non-Title Font Behavior'
       const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
 
       // Verify the template uses conditional titleView binding
-      const hasTitleViewConditional = htmlContent.includes('titleView ? customTitleRef : null');
+      // The binding goes through `effectiveTitleView` (input or global config), which
+      // still only swaps in the custom template when one is provided.
+      const hasTitleViewConditional = /\[titleView\]="\w*[tT]itleView \? customTitleRef : null"/.test(htmlContent);
       expect(
         hasTitleViewConditional,
         'Component template should use `titleView ? customTitleRef : null` pattern to bypass default title rendering when custom titleView is provided'
@@ -721,9 +738,8 @@ describe.skip('Property 2: Preservation — Desktop and Non-Title Font Behavior'
       const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
 
       // Verify the template uses conditional subtitleView binding
-      const hasSubtitleViewConditional = htmlContent.includes(
-        'subtitleView ? customSubtitleRef : defaultSubtitleRef'
-      );
+      const hasSubtitleViewConditional =
+        /\[subtitleView\]="\w*[sS]ubtitleView \? customSubtitleRef : defaultSubtitleRef"/.test(htmlContent);
       expect(
         hasSubtitleViewConditional,
         'Component template should use `subtitleView ? customSubtitleRef : defaultSubtitleRef` pattern to bypass default subtitle rendering when custom subtitleView is provided'

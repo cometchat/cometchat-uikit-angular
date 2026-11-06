@@ -11,7 +11,8 @@
  * @module components/cometchat-message-composer/announcements
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import {
   announcePoliteImpl,
   announceAssertiveImpl,
@@ -24,6 +25,7 @@ import {
   announceAttachmentRemovedImpl,
   announceFocusedMentionImpl,
   announceFormatStateChangeImpl,
+  announceMentionInsertedImpl,
 } from './cometchat-message-composer.announcements';
 
 // ---------------------------------------------------------------------------
@@ -150,8 +152,7 @@ describe('cometchat-message-composer.announcements', () => {
       announceAttachmentAddedImpl(ctx, 'photo.jpg');
       expect(ctx.liveRegionPoliteText.set).toHaveBeenCalledWith('');
       vi.advanceTimersByTime(50);
-      const lastCall = ctx.liveRegionPoliteText.set.mock.calls.at(-1);
-      expect(lastCall[0]).toContain('photo.jpg');
+      expect(ctx.liveRegionPoliteText.set).toHaveBeenLastCalledWith(expect.stringContaining('photo.jpg'));
       vi.useRealTimers();
     });
   });
@@ -165,8 +166,7 @@ describe('cometchat-message-composer.announcements', () => {
       announceAttachmentRemovedImpl(ctx, 'photo.jpg');
       expect(ctx.liveRegionPoliteText.set).toHaveBeenCalledWith('');
       vi.advanceTimersByTime(50);
-      const lastCall = ctx.liveRegionPoliteText.set.mock.calls.at(-1);
-      expect(lastCall[0]).toContain('photo.jpg');
+      expect(ctx.liveRegionPoliteText.set).toHaveBeenLastCalledWith(expect.stringContaining('photo.jpg'));
       vi.useRealTimers();
     });
   });
@@ -180,6 +180,44 @@ describe('cometchat-message-composer.announcements', () => {
       announceFocusedMentionImpl(ctx, 'Alice', 1, 5);
       expect(ctx.liveRegionPoliteText.set).toHaveBeenCalledWith('');
       vi.useRealTimers();
+    });
+
+    describe('names with replacement patterns or placeholders', () => {
+      afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+      });
+      const templates: Record<string, string> = {
+        message_composer_mention_focused: '{name}, {position} of {total}',
+        accessibility_mentioned_user: 'Mentioned {name}',
+      };
+      const withTemplates = () =>
+        vi.spyOn(CometChatLocalize, 'getLocalizedString').mockImplementation((key: string) => templates[key] ?? key);
+
+      it("reads $&, $' and $$ in a focused mention's name literally", () => {
+        vi.useFakeTimers();
+        withTemplates();
+        const ctx = makeCtx();
+        announceFocusedMentionImpl(ctx, "A$&B$'C$$D", 2, 7);
+        vi.runAllTimers();
+        expect(ctx.liveRegionPoliteText()).toBe("A$&B$'C$$D, 2 of 7");
+      });
+
+      it("does not fill a placeholder that appears inside the name", () => {
+        vi.useFakeTimers();
+        withTemplates();
+        const ctx = makeCtx();
+        announceFocusedMentionImpl(ctx, '{total}', 1, 3);
+        vi.runAllTimers();
+        expect(ctx.liveRegionPoliteText()).toBe('{total}, 1 of 3');
+      });
+
+      it("reads $& in an inserted mention's name literally", () => {
+        withTemplates();
+        const ctx = makeCtx();
+        announceMentionInsertedImpl(ctx, 'Tom $& Jerry');
+        expect(ctx.liveAnnouncerService.announce).toHaveBeenCalledWith('Mentioned Tom $& Jerry', 'polite');
+      });
     });
   });
 

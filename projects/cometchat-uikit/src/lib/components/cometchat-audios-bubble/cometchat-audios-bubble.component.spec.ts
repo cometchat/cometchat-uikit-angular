@@ -63,7 +63,7 @@ describe('CometChatAudiosBubbleComponent', () => {
       { url: 'a', name: 'a' },
       { url: 'b', name: 'b' },
     ];
-    (comp as unknown as { states: { playing: boolean }[] }).states = [
+    (comp as unknown as { states: { currentTime: number; duration: number; playing: boolean }[] }).states = [
       { currentTime: 0, duration: 10, playing: false },
       { currentTime: 0, duration: 10, playing: false },
     ];

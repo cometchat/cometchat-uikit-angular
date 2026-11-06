@@ -360,18 +360,18 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   private extendSelectionTo(index: number): void { const convs = this.conversations(); if (index < 0 || index >= convs.length) return; const c = convs[index]; const id = this.getConversationId(c); this.selectedConversations.update(sel => { const ns = new Set(sel); ns.add(id); return ns; }); this.select.emit({ conversation: c, selected: true }); this.lastSelectedIndex = index; this.selectionChange.emit({ mode: this.selectionMode, selectedIds: this.selectedConversations(), lastSelectedId: id }); }
   private getFocusedConversation(): CometChat.Conversation | null { const i = this.focusedIndex(); const c = this.conversations(); return (i >= 0 && i < c.length) ? c[i] : null; }
   private openContextMenuForFocused(): void { const c = this.getFocusedConversation(); if (c) this.handleContextMenuOpen(c); }
-  private announceSelectionCount(): void { const c = this.selectedCount(); if (c > 0) this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_items_selected').replace('{count}', c.toString()), 'polite'); }
+  private announceSelectionCount(): void { const c = this.selectedCount(); if (c > 0) this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_items_selected').replace('{count}', () => c.toString()), 'polite'); }
   private announceSelectionCleared(): void { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_selection_cleared'), 'polite'); }
   announceSearchResults(count: number): void {
     if (count === 0) { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_no_results'), 'polite'); }
-    else { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_results_found').replace('{count}', count.toString()), 'polite'); }
+    else { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_results_found').replace('{count}', () => count.toString()), 'polite'); }
   }
-  announceNewConversation(name: string): void { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_new_conversation').replace('{name}', name), 'polite'); }
+  announceNewConversation(name: string): void { this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_new_conversation').replace('{name}', () => name), 'polite'); }
   announceTyping(name: string): void {
     if (this.lastAnnouncedTypingUser === name) return;
     if (this.typingAnnouncementTimeout) clearTimeout(this.typingAnnouncementTimeout);
     this.typingAnnouncementTimeout = setTimeout(() => {
-      this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_user_typing').replace('{name}', name), 'polite');
+      this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('accessibility_user_typing').replace('{name}', () => name), 'polite');
       this.lastAnnouncedTypingUser = name;
       setTimeout(() => { if (this.lastAnnouncedTypingUser === name) this.lastAnnouncedTypingUser = null; }, 5000);
     }, 1000);
@@ -564,7 +564,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
 
     this.toast?.error(
       limit !== null
-        ? CometChatLocalize.getLocalizedString('conversation_pin_limit_error').replace('{limit}', String(limit))
+        ? CometChatLocalize.getLocalizedString('conversation_pin_limit_error').replace('{limit}', () => String(limit))
         : CometChatLocalize.getLocalizedString('pin_save_generic_error')
     );
   }

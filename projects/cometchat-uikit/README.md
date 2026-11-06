@@ -13,9 +13,9 @@ The CometChat Angular UI Kit provides pre-built Angular components to quickly in
 
 ## Prerequisites
 
-- Node.js >= 18
+- Node.js >= 20.19
 - npm >= 10
-- Angular >= 17 (up to Angular 21)
+- Angular >= 18 (up to Angular 21)
 - A [CometChat](https://app.cometchat.com/) account to get your app credentials: _`App ID`_, _`Region`_, and _`Auth Key`_
 
 ## Getting Started
@@ -39,7 +39,7 @@ npm install @cometchat/chat-uikit-angular @cometchat/chat-sdk-javascript
 - 🎨 Customizable theming with CSS variables
 - 📱 Responsive design
 - 🌍 Internationalization with runtime language switching
-- 🔧 Angular 17–21 compatible
+- 🔧 Angular 18–21 compatible
 
 ## Documentation
 

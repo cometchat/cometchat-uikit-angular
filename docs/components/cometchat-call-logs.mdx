@@ -144,15 +144,14 @@ When `callButtonClicked` has no observers, clicking the trailing call button aut
 | `titleView` | `TemplateRef<any>` | `undefined` | Custom template for the title (replaces the other party's name). |
 | `subtitleView` | `TemplateRef<any>` | `undefined` | Custom template for the subtitle (replaces the direction icon and date). |
 | `trailingView` | `TemplateRef<any>` | `undefined` | Custom template for the trailing position (replaces the call button). |
-
-<Info>
-  The default trailing call button is only visible when calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`. When calling is not enabled, the trailing button is hidden automatically. You can still provide a custom `trailingView` template to render your own trailing content regardless of the calling setting.
-</Info>
-
 | `menuView` | `TemplateRef<any>` | `undefined` | Custom template for menu area in the header (e.g., action buttons, 3-dot menu). |
 | `loadingView` | `TemplateRef<any>` | `undefined` | Custom template for the loading state (replaces the default shimmer). |
 | `emptyView` | `TemplateRef<any>` | `undefined` | Custom template for the empty state when no call logs are available. |
 | `errorView` | `TemplateRef<any>` | `undefined` | Custom template for the error state when call log fetching fails. |
+
+<Info>
+  The default trailing call button is only visible when calling is enabled via `UIKitSettingsBuilder.setCallingEnabled(true)`. When calling is not enabled, the trailing button is hidden automatically. You can still provide a custom `trailingView` template to render your own trailing content regardless of the calling setting.
+</Info>
 
 ## Events
 

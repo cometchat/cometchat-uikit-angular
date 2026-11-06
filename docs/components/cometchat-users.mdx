@@ -165,6 +165,10 @@ export class UsersComponent {
 | `titleView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for title section |
 | `subtitleView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for subtitle section |
 | `trailingView` | `TemplateRef<{$implicit: CometChat.User}>` | `undefined` | Custom template for trailing section (selection controls) |
+| `listItemTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `itemView`. Takes precedence over `itemView` when both are set |
+| `emptyStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `emptyView`. Takes precedence over `emptyView` when both are set |
+| `errorStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `errorView`. Takes precedence over `errorView` when both are set |
+| `loadingStateTemplate` | `TemplateRef<any> \| null` | `null` | Alias for `loadingView`. Takes precedence over `loadingView` when both are set |
 
 ## Events
 

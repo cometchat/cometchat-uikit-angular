@@ -145,7 +145,7 @@ export function getAudioRegionAriaLabel(
   const durationText = mediaControlsService.formatTimeForAnnouncement(duration);
   return CometChatLocalize.getLocalizedString('audio_bubble_region').replace(
     '{duration}',
-    durationText
+    () => durationText
   );
 }
 
@@ -222,7 +222,7 @@ export function formatAudioTime(timeInSeconds: number): string {
  */
 export function getExpandAriaLabel(remainingCount: number): string {
   const template = CometChatLocalize.getLocalizedString('audio_bubble_show_more');
-  return template.replace('{count}', remainingCount.toString());
+  return template.replace('{count}', () => remainingCount.toString());
 }
 
 // ── WaveSurfer Event Setup ────────────────────────────────────────────────

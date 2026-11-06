@@ -19,9 +19,9 @@ const ALL_STATUSES: AttachmentTileStatus[] = [
 describe('affordanceFor (property)', () => {
   it('returns a valid affordance for every status', () => {
     fc.assert(
-      fc.property(fc.constantFrom(...ALL_STATUSES), (s) =>
-        ['progress', 'retry', 'error', 'none'].includes(affordanceFor(s)),
-      ),
+      fc.property(fc.constantFrom(...ALL_STATUSES), (s) => {
+        expect(['progress', 'retry', 'error', 'none']).toContain(affordanceFor(s));
+      }),
     );
   });
 
@@ -29,7 +29,7 @@ describe('affordanceFor (property)', () => {
     fc.assert(
       fc.property(fc.constantFrom(...ALL_STATUSES), (s) => {
         const inFlight = s === 'uploading' || s === 'pending';
-        return (affordanceFor(s) === 'progress') === inFlight;
+        expect(affordanceFor(s) === 'progress').toBe(inFlight);
       }),
     );
   });

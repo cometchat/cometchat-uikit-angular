@@ -79,8 +79,8 @@ cometchat-markdown-renderer {
 }
 
 .cometchat-markdown-renderer__code-lang {
-  font-family: var(--cometchat-font-family);
-  font-size: 12px;
+  font: var(--cometchat-markdown-renderer-code-lang-font, var(--cometchat-font-caption1-regular));
+  line-height: inherit;
   color: var(--cometchat-text-color-secondary);
   text-transform: lowercase;
 }

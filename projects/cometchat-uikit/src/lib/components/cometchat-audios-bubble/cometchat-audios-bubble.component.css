@@ -126,9 +126,13 @@
     color-mix(in srgb, var(--cometchat-text-color-primary) 6%, transparent)
   );
   color: var(--cometchat-audios-bubble-toggle-color, var(--cometchat-primary-color));
-  font-size: var(--cometchat-audios-bubble-toggle-font-size, 13px);
-  font-weight: 600;
-  font-family: var(--cometchat-font-family, Inter, sans-serif);
+  /* Whole-font hook; the existing size hook still works inside the default. Weight/size = button-medium. */
+  font: var(
+    --cometchat-audios-bubble-toggle-font,
+    500 var(--cometchat-audios-bubble-toggle-font-size, 14px) var(--cometchat-font-family, Inter, sans-serif)
+  );
+  /* The shorthand resets line-height to normal; keep the inherited one, as before. */
+  line-height: inherit;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }

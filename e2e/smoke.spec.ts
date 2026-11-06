@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/coverage';
 import { loginToApp } from './helpers';
 
 /**
@@ -8,7 +8,7 @@ import { loginToApp } from './helpers';
  * 3. Home page renders with conversations
  */
 test.describe('Smoke Test', () => {
-  test('should load the sample app and login successfully', async ({ page }) => {
+  test('should load the sample app and login successfully @smoke', async ({ page }) => {
     await loginToApp(page);
 
     // Verify the home page loaded

@@ -2,8 +2,8 @@ import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-loc
 
 export function announceNewMessageImpl(self: any, senderName: string, preview: string): void {
   const message = CometChatLocalize.getLocalizedString('accessibility_new_message')
-    .replace('{sender}', senderName)
-    .replace('{preview}', preview);
+    .replace('{sender}', () => senderName)
+    .replace('{preview}', () => preview);
   self.liveAnnouncer.announce(message, 'polite');
 }
 
@@ -39,7 +39,7 @@ export function announceTypingImpl(self: any, name: string): void {
   self.typingAnnouncementTimeout = setTimeout(() => {
     const message = CometChatLocalize.getLocalizedString('accessibility_user_typing').replace(
       '{name}',
-      name
+      () => name
     );
     self.liveAnnouncer.announce(message, 'polite');
     self.typingAnnouncementTimeout = null;

@@ -1,0 +1,106 @@
+---
+title: "CometChatImagesBubbleComponent"
+description: "Renders an image message (one or many attachments, plus caption) at the shared multi-attachment width so every message in a batch lines up"
+---
+The `CometChatImagesBubbleComponent` is the bubble the message list uses for image messages. It renders a single `CometChat.MediaMessage` - its images (single, grid or overflow layout) and its caption - by delegating to the single-item `cometchat-image-bubble`. What it adds on top is batch awareness: it pins all image size caps to one shared width so that consecutive messages sent together in a batch render at the same width.
+
+## Overview
+
+- **Default image renderer**: `CometChatMessageBubble` renders this component for every image message (its `images-batch` content type)
+- **One message per bubble**: Each instance renders exactly one `CometChat.MediaMessage`; a batch is shown as several of these bubbles stacked in the message list
+- **Delegates rendering**: Layout, fullscreen viewer and caption all come from `cometchat-image-bubble`; this component forwards its inputs to it
+- **Shared batch width**: Sizes the image bubble to `--cometchat-multi-attachment-width` (default `400px`)
+- **Caption on last**: The composer puts the caption only on the last message of a batch, so only that bubble shows it
+- **Standalone**: Standalone Angular component with `OnPush` change detection
+
+## Basic Usage
+
+```typescript expandable
+import { Component } from '@angular/core';
+import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChatImagesBubbleComponent, MessageBubbleAlignment } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-chat-message',
+  standalone: true,
+  imports: [CometChatImagesBubbleComponent],
+  template: `
+    <!-- Incoming message (left-aligned) -->
+    <cometchat-images-bubble
+      [message]="incomingMessage"
+      [alignment]="MessageBubbleAlignment.left"
+    ></cometchat-images-bubble>
+
+    <!-- Outgoing message (right-aligned), clicks disabled -->
+    <cometchat-images-bubble
+      [message]="outgoingMessage"
+      [alignment]="MessageBubbleAlignment.right"
+      [disableInteraction]="true"
+    ></cometchat-images-bubble>
+  `
+})
+export class ChatMessageComponent {
+  incomingMessage!: CometChat.MediaMessage;
+  outgoingMessage!: CometChat.MediaMessage;
+  MessageBubbleAlignment = MessageBubbleAlignment;
+}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `message` | `CometChat.MediaMessage` | **required** | The image message to render. Forwarded to `cometchat-image-bubble` |
+| `alignment` | `MessageBubbleAlignment` | `MessageBubbleAlignment.left` | Bubble alignment. `left` for incoming, `right` for outgoing. Forwarded to `cometchat-image-bubble` |
+| `textFormatters` | `CometChatTextFormatter[]` | `undefined` | Formatters applied to the caption text. Forwarded to the delegated bubble, which renders the caption; nothing is applied by this component itself |
+| `disableInteraction` | `boolean` | `false` | When `true`, disables click interactions on the images. Forwarded to `cometchat-image-bubble` |
+
+## Events
+
+This component declares no outputs. The `imageClick`, `viewerOpen` and `viewerClose` events of the inner `cometchat-image-bubble` are not re-emitted. If you need those events, use [`CometChatImageBubbleComponent`](/components/cometchat-image-bubble) directly.
+
+## Customization
+
+### Batch Width
+
+The component sets these custom properties on its host, all derived from one token:
+
+```css
+:host {
+  --cometchat-batch-width: var(--cometchat-multi-attachment-width, 400px);
+  --cometchat-image-bubble-single-max-width: var(--cometchat-batch-width);
+  --cometchat-image-bubble-grid-max-width: var(--cometchat-batch-width);
+  --cometchat-image-bubble-grid-2x2-max-width: var(--cometchat-batch-width);
+  --cometchat-image-bubble-overflow-max-width: var(--cometchat-batch-width);
+  --cometchat-image-bubble-container-max-width: var(--cometchat-batch-width);
+}
+```
+
+To change the width of batch media, set `--cometchat-multi-attachment-width` on an ancestor. The same token is read by the videos, files and audios bubbles, so changing it keeps every type in a batch aligned:
+
+```css
+:root {
+  /* Let batch media fill the bubble instead of capping at 400px */
+  --cometchat-multi-attachment-width: 100%;
+}
+```
+
+### Available CSS Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `--cometchat-multi-attachment-width` | Shared width cap for all batch bubbles (images, videos, files, audios) | `400px` (fallback; not defined by the kit) |
+
+All other visual styling (grid spacing, radius, overflow indicator, gallery viewer) comes from `cometchat-image-bubble`. See the [Image Bubble customization](/components/cometchat-image-bubble#customization) section.
+
+## Batching and the Single-Item Bubble
+
+- **Batches**: When several images are sent together, the composer sends one message per attachment and stamps them all with the same `metadata.batchId` (`CometChatUIKitConstants.MetadataKeys.batchId`). The message list treats a run of consecutive messages that share a `batchId` as one batch and renders each message with its own `cometchat-images-bubble`. The shared width is what makes the batch read as one group.
+- **Single-item bubble**: `CometChatImageBubbleComponent` (`cometchat-image-bubble`) is marked `@deprecated` in favor of this component, but stays public for direct use and is the primitive this component delegates to.
+
+## Related Components
+
+- **CometChatImageBubbleComponent**: The single-item image bubble this component delegates to
+- **CometChatVideosBubbleComponent**, **CometChatFilesBubbleComponent**, **CometChatAudiosBubbleComponent**: The other batch bubbles sharing the same width token
+- **CometChatMessageBubble**: Renders this component as the content view for image messages
+- **CometChatMessageList**: Groups consecutive messages that share a `batchId`

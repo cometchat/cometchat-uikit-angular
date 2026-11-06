@@ -203,12 +203,12 @@ export class CometChatMessagePreviewComponent implements OnInit, OnChanges, Afte
 
     if (this.mode === 'edit') {
       const template = CometChatLocalize.getLocalizedString('accessibility_editing_message');
-      return template.replace('{preview}', preview);
+      return template.replace('{preview}', () => preview);
     }
 
     // Reply mode
     const template = CometChatLocalize.getLocalizedString('accessibility_replying_to');
-    return template.replace('{sender}', this.senderName).replace('{preview}', preview);
+    return template.replace('{sender}', () => this.senderName).replace('{preview}', () => preview);
   }
 
   /**

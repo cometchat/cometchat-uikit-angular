@@ -4,6 +4,7 @@ import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKitUtility} from '../../CometChatUIKitUtility';
 import {CometChatUIKitConstants} from '../../constants';
+import {markMessageFailed} from '../../utils/message-metadata-utils';
 
 export function syncLegacyPopoverSignalsImpl(ctx: any): void {
   const content = ctx.contentToDisplay();
@@ -130,12 +131,14 @@ export async function sendStickerMessageImpl(
       ctx.announceMessageSent();
       ctx.playOutgoingMessageSound();
     } else {
+      markMessageFailed(pendingStickerMessage, undefined);
       CometChatMessageEvents.ccMessageSent.next({
         message: pendingStickerMessage,
         status: MessageStatus.error,
       });
     }
   } catch (error) {
+    markMessageFailed(pendingStickerMessage, error);
     CometChatMessageEvents.ccMessageSent.next({
       message: pendingStickerMessage,
       status: MessageStatus.error,

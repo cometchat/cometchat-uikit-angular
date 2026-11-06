@@ -78,6 +78,7 @@ import { States } from '../../Enums/Enums';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatUIKit } from '../../cometchat-uikit';
+import { CallLogsService } from '../../services/call-logs.service';
 
 // Mock CometChatUIKit.isCallingEnabled to return true for tests
 vi.spyOn(CometChatUIKit, 'isCallingEnabled').mockReturnValue(true);
@@ -574,9 +575,21 @@ describe('CometChatCallLogsComponent', () => {
 
     it('should clean up service on destroy', async () => {
       await initAndDetect(fixture);
-      fixture.destroy();
-      // After destroy, component should not throw on subsequent access
-      expect(true).toBe(true);
+      const service = fixture.debugElement.injector.get(CallLogsService) as any;
+      const subsBefore: { closed: boolean }[] = [...service.subscriptions];
+      expect(subsBefore.length).toBeGreaterThan(0);
+      expect(subsBefore.every(sub => !sub.closed)).toBe(true);
+
+      const cleanupSpy = vi.spyOn(service, 'cleanup');
+      const removeListenerSpy = vi.spyOn(CometChat, 'removeCallListener');
+
+      expect(() => fixture.destroy()).not.toThrow();
+
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
+      expect(removeListenerSpy).toHaveBeenCalledWith(service.listenerId);
+      expect(service.subscriptions).toEqual([]);
+      expect(subsBefore.every(sub => sub.closed)).toBe(true);
+      removeListenerSpy.mockRestore();
     });
   });
 

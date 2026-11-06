@@ -36,6 +36,7 @@ import {
   fetchTestGroup,
 } from '../../testing';
 import { CometChatMessageHeaderComponent } from './cometchat-message-header.component';
+import { MessageHeaderService } from '../../services/message-header.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -353,6 +354,50 @@ describe('CometChatMessageHeaderComponent', () => {
       await initAndDetect(fixture);
       const subtitle = el.querySelector('.cometchat-message-header__subtitle--members');
       expect(subtitle).toBeTruthy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // User subtitle: the status shown under a user's name
+  // -------------------------------------------------------------------------
+  describe('User subtitle', () => {
+    /** Open the test user's chat, then put the header's status signals in a known state. */
+    async function showUser(status: string, lastActiveAt: number | null): Promise<void> {
+      component.user = testUser;
+      await initAndDetect(fixture);
+      const service = (component as unknown as { messageHeaderService: MessageHeaderService }).messageHeaderService;
+      service.updateUserStatus(status);
+      service.updateLastActiveAt(lastActiveAt);
+      fixture.detectChanges();
+    }
+
+    const subtitleText = () => el.querySelector('.cometchat-message-header__subtitle')?.textContent?.trim();
+
+    it('shows "Online" for an online user', async () => {
+      await showUser('online', null);
+      expect(el.querySelector('.cometchat-message-header__subtitle--online')).toBeTruthy();
+      expect(subtitleText()).toBe('Online');
+    });
+
+    it('shows "Last seen" with the time for an offline user who has been active', async () => {
+      await showUser('offline', Math.floor(Date.now() / 1000) - 3600);
+      const subtitle = el.querySelector('.cometchat-message-header__subtitle--last-active');
+      expect(subtitle).toBeTruthy();
+      expect(subtitle?.textContent).toContain('Last seen');
+      expect(subtitle?.querySelector('cometchat-date')).toBeTruthy();
+    });
+
+    it('shows "Offline" for a user who has never signed in (no last active time)', async () => {
+      await showUser('offline', null);
+      expect(el.querySelector('.cometchat-message-header__subtitle--offline')).toBeTruthy();
+      expect(el.querySelector('.cometchat-message-header__subtitle--last-active')).toBeFalsy();
+      expect(subtitleText()).toBe('Offline');
+    });
+
+    it('shows no status at all when hideUserStatus is true', async () => {
+      component.hideUserStatus = true;
+      await showUser('offline', null);
+      expect(el.querySelector('.cometchat-message-header__subtitle')).toBeFalsy();
     });
   });
 

@@ -4,13 +4,13 @@
  *
  * Supported constructs:
  *  1.  Headings h1–h6  (# … ######)
- *  2.  Bold  **text**  or  __text__
+ *  2.  Bold  **text**  (***text*** → bold+italic);  Underline  __text__
  *  3.  Italic  *text*  or  _text_
  *  4.  Strikethrough  ~~text~~
  *  5.  Inline code  `code`
  *  6.  Fenced code blocks  ```lang … ```
  *  7.  Blockquotes  > text
- *  8.  Ordered lists  1. item
+ *  8.  Ordered lists  1. item  or  1) item
  *  9.  Unordered lists  - item / * item
  * 10.  Nested lists (up to 3 levels)
  * 11.  Hyperlinks  [text](url)
@@ -123,11 +123,14 @@ interface RawListItem {
   content: string;
 }
 
+/** An ordered list item: `1. item` or `1) item` (both are CommonMark ordered-list markers). */
+const ORDERED_ITEM = /^\s*\d+[.)]\s+/;
+
 function parseListItems(lines: string[]): MarkdownNode {
   const rawItems: RawListItem[] = [];
 
   for (const line of lines) {
-    const orderedMatch = line.match(/^(\s*)\d+\.\s+(.*)/);
+    const orderedMatch = line.match(/^(\s*)\d+[.)]\s+(.*)/);
     const unorderedMatch = line.match(/^(\s*)[-*]\s+(.*)/);
     if (orderedMatch) {
       rawItems.push({ indent: orderedMatch[1].length, ordered: true, content: orderedMatch[2] });
@@ -171,7 +174,8 @@ function parseListItems(lines: string[]): MarkdownNode {
 // ── Table helpers ─────────────────────────────────────────────────────────────
 
 function parseTableRow(line: string): string[] {
-  return line.split('|').slice(1, -1).map((c) => c.trim());
+  // Cells are rendered straight into trusted HTML, so escape them like every other block.
+  return line.split('|').slice(1, -1).map((c) => escapeHtml(c.trim()));
 }
 
 function isTableSeparator(line: string): boolean {
@@ -281,11 +285,11 @@ export class CometChatMarkdownParser {
       }
 
       // ── Ordered / Unordered list ───────────────────────────────────────────
-      if (/^\s*\d+\.\s+/.test(line) || /^\s*[-*]\s+/.test(line)) {
+      if (ORDERED_ITEM.test(line) || /^\s*[-*]\s+/.test(line)) {
         const listLines: string[] = [];
         while (
           i < lines.length &&
-          (/^\s*\d+\.\s+/.test(lines[i]) ||
+          (ORDERED_ITEM.test(lines[i]) ||
             /^\s*[-*]\s+/.test(lines[i]) ||
             /^\s{2,}/.test(lines[i]))
         ) {
@@ -312,7 +316,7 @@ export class CometChatMarkdownParser {
         getFenceLang(lines[i]) === null &&
         !lines[i].startsWith('> ') &&
         !lines[i].startsWith('|') &&
-        !/^\s*\d+\.\s+/.test(lines[i]) &&
+        !ORDERED_ITEM.test(lines[i]) &&
         !/^\s*[-*]\s+/.test(lines[i]) &&
         !/^-{3,}$/.test(lines[i].trim())
       ) {

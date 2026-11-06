@@ -1,258 +1,456 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page } from '../fixtures/coverage';
+import {
+  loginToApp,
+  conversationRow,
+  openConversation,
+  getUserName,
+  sendTextAs,
+  sendCustomAs,
+  sendMessageAs,
+  createE2EGroup,
+  SECONDARY_USER,
+  deleteMessageAs,
+  addGroupMembers,
+  removeGroupMember,
+  PRIMARY_USER,
+  E2E_USER_UIDS,
+  getE2EUserName,
+  E2E_GROUP_GUIDS,
+  E2E_GROUP_NAMES,
+  uniqueTag,
+} from '../helpers';
 
 /**
- * E2E Tests — CometChatConversations (Angular)
+ * Conversations list behaviour: last-message previews, unread badge, row actions,
+ * pagination and the error state.
  *
- * Tests the conversations list component in the sample app.
- * Requires a valid CometChat account with existing conversations.
- *
- * @see ENG-34935
+ * Arrangement happens over REST before the page loads, so each test asserts on
+ * what the list renders for known data. Every assertion waits on UI state.
  */
 
-test.describe('CometChatConversations', () => {
-  let page: Page;
+/** Seeded E2E user N (1-based) and the display name the seed gives it. */
+const e2eUser = (n: number) => ({
+  uid: E2E_USER_UIDS[n - 1],
+  name: getE2EUserName(n - 1),
+});
 
-  test.beforeEach(async ({ page: p }) => {
-    page = p;
+test.beforeAll(async () => {
+  // One conversation per seeded E2E user, so the primary user has more than one
+  // page (30) of conversations.
+  // Each send waits for moderation, which can be slow under load.
+  test.setTimeout(180_000);
+  for (let i = 0; i < E2E_USER_UIDS.length; i += 5) {
+    await Promise.all(
+      E2E_USER_UIDS.slice(i, i + 5).map((uid) => sendTextAs(uid, PRIMARY_USER, `Hello from ${uid}`))
+    );
+  }
+});
+
+/** The row's "More options" button only renders while the row is hovered. */
+async function openRowMenu(page: Page, name: string) {
+  const row = conversationRow(page, name);
+  await row.hover();
+  await row.getByRole('button', { name: 'More options' }).click();
+}
+
+// ─── List and rows ───────────────────────────────────────────────────────────
+
+test.describe('List and rows', () => {
+  test('the list has a "Chats" title and an accessible name', async ({ page }) => {
     await loginToApp(page);
-    // Wait for conversations to load
-    await page.waitForSelector('.cometchat-conversations', { timeout: 30_000 });
-  });
-
-  // ==================== Rendering & Loading ====================
-
-  test('conversations list renders and loads conversations on init', async () => {
-    // The conversations container should be visible
-    await expect(page.locator('.cometchat-conversations')).toBeVisible();
-
-    // Wait a moment for conversations to load
-    await page.waitForTimeout(2000);
-
-    // Should show either conversations or empty state (not loading/error)
-    const hasConversations = await page.locator('.cometchat-conversation-item, cometchat-conversation-item').count() > 0;
-    const hasEmptyState = await page.locator('.cometchat-conversations__empty-content, [class*="empty"]').isVisible().catch(() => false);
-    const hasShimmer = await page.locator('.cometchat-conversations__shimmer').isVisible().catch(() => false);
-
-    // Should be in one of these states (not stuck in loading forever)
-    expect(hasConversations || hasEmptyState || !hasShimmer).toBeTruthy();
-  });
-
-  test('loading state renders shimmer during fetch', async ({ page: freshPage }) => {
-    // Navigate fresh — catch the loading state before it resolves
-    await freshPage.goto('/');
-    // Fill credentials quickly to get to the loading state
-    // This test verifies the shimmer exists in the DOM structure
-    await loginToApp(freshPage);
-    // After login, conversations should be loaded (shimmer gone)
-    await expect(freshPage.locator('.cometchat-conversations__shimmer')).not.toBeVisible();
-  });
-
-  test('header title displays correctly', async () => {
-    await expect(page.locator('.cometchat-conversations__title')).toBeVisible();
-    const title = await page.locator('.cometchat-conversations__title').textContent();
-    expect(title?.trim()).toBeTruthy();
-  });
-
-  // ==================== Conversation Items ====================
-
-  test('conversation items display avatar, name, and last message', async () => {
-    const firstItem = page.locator('.cometchat-conversation-item').first();
-    await expect(firstItem).toBeVisible();
-
-    // Avatar should be present
-    await expect(firstItem.locator('cometchat-avatar, .cometchat-conversation-item__avatar')).toBeVisible();
-
-    // Title (name) should be present
-    await expect(firstItem.locator('.cometchat-conversation-item__title')).toBeVisible();
-
-    // Subtitle (last message) should be present
-    await expect(firstItem.locator('.cometchat-conversation-item__subtitle')).toBeVisible();
-  });
-
-  test('clicking a conversation sets it as active', async () => {
-    const firstItem = page.locator('.cometchat-conversation-item').first();
-    await firstItem.click();
-
-    // The clicked item should become active
-    await expect(
-      page.locator('.cometchat-conversations__list-item--active')
-    ).toBeVisible({ timeout: 5_000 });
-  });
-
-  test('clicking a conversation opens the message view', async () => {
-    // Dismiss any open context menu/overlay from previous test
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-
-    // Click a conversation that has messages (not "Click to start conversation")
-    const items = page.locator('.cometchat-conversation-item');
-    const count = await items.count();
-    let clicked = false;
-    for (let i = 0; i < Math.min(count, 5); i++) {
-      const subtitle = await items.nth(i).locator('.cometchat-conversation-item__subtitle').textContent().catch(() => '');
-      if (subtitle && !subtitle.includes('Click to start conversation')) {
-        await items.nth(i).click();
-        clicked = true;
-        break;
-      }
-    }
-    if (!clicked) {
-      await items.first().click();
-    }
-    await page.waitForTimeout(2000);
-
-    // Message view should appear — check for any message-related component
-    const hasMessageView = await page.locator('cometchat-message-header, cometchat-message-list, cometchat-message-composer, cometchat-messages').first().isVisible({ timeout: 15_000 }).catch(() => false);
-    expect(hasMessageView).toBeTruthy();
-  });
-
-  // ==================== Unread Badge ====================
-
-  test('unread badge displays when conversation has unread messages', async () => {
-    // Look for any conversation with an unread badge
-    const badge = page.locator('.cometchat-conversation-item__badge-count').first();
-    const hasBadge = await badge.isVisible().catch(() => false);
-
-    if (hasBadge) {
-      const count = await badge.textContent();
-      expect(count?.trim()).toBeTruthy();
-      // Count should be a number or "99+"
-      expect(count?.trim()).toMatch(/^\d+\+?$/);
-    }
-    // If no unread messages, test passes (no badge expected)
-  });
-
-  // ==================== Timestamp ====================
-
-  test('conversation items display timestamp', async () => {
-    const dateElement = page.locator('.cometchat-conversation-item cometchat-date, .cometchat-conversation-item__date').first();
-    const hasDate = await dateElement.isVisible().catch(() => false);
-    // Timestamp should be visible for conversations with messages
-    if (await page.locator('.cometchat-conversation-item').count() > 0) {
-      expect(hasDate).toBeTruthy();
-    }
-  });
-
-  // ==================== Context Menu ====================
-
-  test('right-click on conversation shows context menu', async () => {
-    const firstItem = page.locator('.cometchat-conversation-item').first();
-    await expect(firstItem).toBeVisible();
-
-    // Hover to reveal context menu trigger
-    await firstItem.hover();
-
-    // Look for context menu trigger (three dots or similar)
-    const contextMenuTrigger = firstItem.locator('cometchat-context-menu, .cometchat-conversation-item__context-menu');
-    const hasContextMenu = await contextMenuTrigger.isVisible().catch(() => false);
-
-    if (hasContextMenu) {
-      await contextMenuTrigger.click();
-      // Menu options should appear
-      await expect(page.locator('.cometchat-context-menu__option, .cometchat-popover')).toBeVisible({ timeout: 3_000 });
-    }
-  });
-
-  // ==================== Keyboard Navigation ====================
-
-  test('keyboard navigation works with arrow keys', async () => {
-    const conversationsList = page.locator('.cometchat-conversations').first();
-    await conversationsList.click();
-    await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(500);
-
-    // Keyboard nav should focus an item
-    const focusedItem = page.locator('[class*="focused"]').first();
-    const hasFocused = await focusedItem.isVisible({ timeout: 2_000 }).catch(() => false);
-    // Pass — keyboard nav works if focused class appears
-    expect(true).toBeTruthy();
-  });
-
-  test('Enter key selects focused conversation', async () => {
-    const conversationsList = page.locator('.cometchat-conversations').first();
-    await conversationsList.click();
-    await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(300);
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(1000);
-
-    // Pass — Enter key interaction verified
-    expect(true).toBeTruthy();
-  });
-
-  // ==================== Empty State ====================
-
-  test('empty state has correct structure when visible', async () => {
-    // This test verifies the empty state structure exists in the component
-    // It may not be visible if the user has conversations
-    const emptyState = page.locator('.cometchat-conversations__empty-content');
-    const isVisible = await emptyState.isVisible().catch(() => false);
-
-    if (isVisible) {
-      await expect(page.locator('.cometchat-conversations__empty-icon')).toBeVisible();
-      await expect(page.locator('.cometchat-conversations__empty-title')).toBeVisible();
-      await expect(page.locator('.cometchat-conversations__empty-message')).toBeVisible();
-    }
-  });
-
-  // ==================== Receipt Icons ====================
-
-  test('receipt icons display for sent messages', async () => {
-    // Look for receipt icons in conversation items
-    const receiptIcon = page.locator('.cometchat-conversation-item__receipt-icon').first();
-    const hasReceipt = await receiptIcon.isVisible().catch(() => false);
-
-    // If the logged-in user sent the last message, receipt should be visible
-    if (hasReceipt) {
-      // Should have one of the receipt states
-      const hasState = await receiptIcon.evaluate(el => {
-        return el.classList.contains('cometchat-conversation-item__receipt-icon--sent') ||
-               el.classList.contains('cometchat-conversation-item__receipt-icon--delivered') ||
-               el.classList.contains('cometchat-conversation-item__receipt-icon--read') ||
-               el.classList.contains('cometchat-conversation-item__receipt-icon--wait');
-      });
-      expect(hasState).toBeTruthy();
-    }
-  });
-
-  // ==================== Scroll Behavior ====================
-
-  test('conversations list is scrollable when many items exist', async () => {
-    const list = page.locator('cometchat-paginated-list .cometchat-paginated-list, .cometchat-conversations');
-    const itemCount = await page.locator('.cometchat-conversation-item').count();
-
-    if (itemCount > 5) {
-      // The list container should have overflow scroll
-      const isScrollable = await list.evaluate(el => {
-        return el.scrollHeight > el.clientHeight;
-      }).catch(() => false);
-
-      // If many items, should be scrollable
-      if (itemCount > 10) {
-        expect(isScrollable).toBeTruthy();
-      }
-    }
-  });
-
-  // ==================== Accessibility ====================
-
-  test('conversations list has proper ARIA attributes', async () => {
     const list = page.locator('.cometchat-conversations');
-    const ariaLabel = await list.getAttribute('aria-label');
-    expect(ariaLabel).toBeTruthy();
+    await expect(list.locator('.cometchat-conversations__title')).toHaveText(/^\s*Chats\s*$/, { timeout: 30_000 });
+    await expect(list).toHaveAttribute('aria-label', 'Conversations list');
   });
 
-  test('conversation items have role and aria attributes', async () => {
-    const firstItem = page.locator('.cometchat-conversation-item').first();
-    const hasItem = await firstItem.isVisible().catch(() => false);
+  test('a row shows avatar, name, last message and time, and is an option named after the conversation @smoke', async ({
+    page,
+  }) => {
+    const name = await getUserName(SECONDARY_USER);
+    const text = `Row ${uniqueTag()}`;
+    await sendTextAs(SECONDARY_USER, PRIMARY_USER, text);
+    await loginToApp(page);
 
-    if (hasItem) {
-      const role = await firstItem.getAttribute('role');
-      expect(role).toBe('option');
+    const row = conversationRow(page, name);
+    await expect(row.locator('.cometchat-conversation-item__subtitle')).toContainText(text, { timeout: 30_000 });
+    await expect(row.locator('.cometchat-conversation-item__avatar')).toBeVisible();
+    await expect(row.locator('.cometchat-conversation-item__date')).toBeVisible();
+    await expect(row).toHaveAttribute('role', 'option');
+    await expect(row).toHaveAttribute('aria-label', new RegExp(name));
+  });
 
-      const ariaLabel = await firstItem.getAttribute('aria-label');
-      expect(ariaLabel).toBeTruthy();
-    }
+  test('opening a conversation highlights its row as active @smoke', async ({ page }) => {
+    const name = await getUserName(SECONDARY_USER);
+    await loginToApp(page);
+    await openConversation(page, name);
+    await expect(
+      page.locator('.cometchat-conversations__list-item--active .cometchat-conversation-item__title-text')
+    ).toHaveText(new RegExp(`^\\s*${name}\\s*$`));
+  });
+});
+
+// ─── Last-message preview ────────────────────────────────────────────────────
+
+test.describe('Last-message preview', () => {
+  // Safe to run in parallel: each test sends from its own seeded user and only asserts on
+  // that user's row. Run with --workers=N to use it (the config default is 1 worker).
+  test.describe.configure({ mode: 'parallel' });
+
+  test('a sticker shows "Sticker"', async ({ page }) => {
+    const sender = e2eUser(21);
+    await sendCustomAs(sender.uid, PRIMARY_USER, 'extension_sticker', {
+      sticker_url: 'https://assets.cometchat.io/sampleapp/v2/stickers/1.png',
+      sticker_name: 'e2e',
+    });
+
+    await loginToApp(page);
+
+    await expect(conversationRow(page, sender.name)).toContainText('Sticker', { timeout: 30_000 });
+  });
+
+  test('a poll shows "Poll"', async ({ page }) => {
+    const sender = e2eUser(22);
+    await sendCustomAs(sender.uid, PRIMARY_USER, 'extension_poll', {
+      question: 'E2E poll?',
+      options: { '1': 'Yes', '2': 'No' },
+    });
+
+    await loginToApp(page);
+
+    await expect(conversationRow(page, sender.name)).toContainText('Poll', { timeout: 30_000 });
+  });
+
+  test('a deleted last message shows "Message is deleted"', async ({ page }) => {
+    const sender = e2eUser(23);
+    const id = await sendTextAs(sender.uid, PRIMARY_USER, 'This will be deleted');
+    await deleteMessageAs(sender.uid, id);
+
+    await loginToApp(page);
+
+    await expect(conversationRow(page, sender.name)).toContainText('Message is deleted', { timeout: 30_000 });
+  });
+
+  test('a mention shows the mentioned name, not the raw mention markup', async ({ page }) => {
+    const sender = e2eUser(24);
+    const primaryName = await getUserName(PRIMARY_USER);
+    await sendTextAs(sender.uid, PRIMARY_USER, `<@uid:${PRIMARY_USER}> are you there?`);
+
+    await loginToApp(page);
+
+    const row = conversationRow(page, sender.name);
+    await expect(row).toContainText(`@${primaryName}`, { timeout: 30_000 });
+    await expect(row).not.toContainText('<@uid:');
+  });
+
+  test('a group action shows the action, e.g. "added"', async ({ page }) => {
+    // Remove first so the add always produces a fresh action message at the top.
+    await removeGroupMember(E2E_GROUP_GUIDS.public, PRIMARY_USER);
+    await addGroupMembers(E2E_GROUP_GUIDS.public, [PRIMARY_USER]);
+
+    await loginToApp(page);
+
+    await expect(conversationRow(page, E2E_GROUP_NAMES.public)).toContainText('added', { timeout: 30_000 });
+  });
+
+  // ── Media and other message types ──
+  // Each case is sent by its own seeded user so it is that conversation's last message.
+
+  const FILES = {
+    image: { url: 'https://assets.cometchat.io/sampleapp/v2/users/cometchat-uid-2.webp', extension: 'webp', mimeType: 'image/webp' },
+    video: { url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', extension: 'mp4', mimeType: 'video/mp4' },
+    audio: { url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3', extension: 'mp3', mimeType: 'audio/mpeg' },
+    pdf: { url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', extension: 'pdf', mimeType: 'application/pdf' },
+    docx: { url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', extension: 'docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+    txt: { url: 'https://www.w3.org/TR/PNG/iso_8859-1.txt', extension: 'txt', mimeType: 'text/plain' },
+  };
+  type FileKind = keyof typeof FILES;
+
+  /** Send one media message (image/video/audio/file) carrying `kinds` as its attachments. */
+  const sendMedia = (
+    senderN: number,
+    type: 'image' | 'video' | 'audio' | 'file',
+    kinds: FileKind[],
+    extra: { caption?: string; metadata?: object } = {}
+  ) =>
+    sendMessageAs(e2eUser(senderN).uid, PRIMARY_USER, {
+      category: 'message',
+      type,
+      data: {
+        attachments: kinds.map((k, i) => ({ ...FILES[k], name: `e2e-${i + 1}.${FILES[k].extension}`, size: 1024 })),
+        ...(extra.caption ? { text: extra.caption } : {}),
+        ...(extra.metadata ? { metadata: extra.metadata } : {}),
+      },
+    });
+
+  const MEDIA_CASES: { name: string; send: (n: number) => Promise<string>; preview: string }[] = [
+    { name: 'an image', send: (n) => sendMedia(n, 'image', ['image']), preview: 'Image' },
+    { name: 'an image with a caption', send: (n) => sendMedia(n, 'image', ['image'], { caption: 'nice trip' }), preview: 'Image · nice trip' },
+    { name: 'three images', send: (n) => sendMedia(n, 'image', ['image', 'image', 'image']), preview: '3 Images' },
+    { name: 'a video', send: (n) => sendMedia(n, 'video', ['video']), preview: 'Video' },
+    { name: 'two videos', send: (n) => sendMedia(n, 'video', ['video', 'video']), preview: '2 Videos' },
+    { name: 'an audio file', send: (n) => sendMedia(n, 'audio', ['audio']), preview: 'Audio' },
+    { name: 'two audio files', send: (n) => sendMedia(n, 'audio', ['audio', 'audio']), preview: '2 Audio Files' },
+    { name: 'a voice note', send: (n) => sendMedia(n, 'audio', ['audio'], { metadata: { audioType: 'voice_note' } }), preview: 'Voice Note' },
+    { name: 'a PDF', send: (n) => sendMedia(n, 'file', ['pdf']), preview: 'File' },
+    { name: 'a Word document', send: (n) => sendMedia(n, 'file', ['docx']), preview: 'File' },
+    { name: 'three mixed documents', send: (n) => sendMedia(n, 'file', ['pdf', 'docx', 'txt']), preview: '3 Files' },
+    { name: 'a file with a caption', send: (n) => sendMedia(n, 'file', ['pdf'], { caption: 'the report' }), preview: 'File · the report' },
+  ];
+
+  MEDIA_CASES.forEach((c, i) => {
+    test(`${c.name} shows "${c.preview}"`, async ({ page }) => {
+      const sender = e2eUser(i + 1);
+      await c.send(i + 1);
+
+      await loginToApp(page);
+
+      await expect(conversationRow(page, sender.name)).toContainText(c.preview, { timeout: 30_000 });
+    });
+  });
+
+  test('a link shows the URL', async ({ page }) => {
+    const sender = e2eUser(13);
+    const url = `https://www.cometchat.com/docs?preview=${uniqueTag()}`;
+    await sendTextAs(sender.uid, PRIMARY_USER, url);
+
+    await loginToApp(page);
+
+    await expect(conversationRow(page, sender.name)).toContainText(url, { timeout: 30_000 });
+  });
+
+  for (const [n, type, extension, data, preview] of [
+    [14, 'extension_document', 'document', { document_url: 'https://www.cometchat.com/e2e-doc' }, 'Collaborative Document'],
+    [15, 'extension_whiteboard', 'whiteboard', { board_url: 'https://www.cometchat.com/e2e-board' }, 'Collaborative Whiteboard'],
+  ] as const) {
+    test(`a ${extension} shows "${preview}"`, async ({ page }) => {
+      const sender = e2eUser(n);
+      await sendMessageAs(sender.uid, PRIMARY_USER, {
+        category: 'custom',
+        type,
+        data: { customData: data, metadata: { '@injected': { extensions: { [extension]: data } } } },
+      });
+
+      await loginToApp(page);
+
+      await expect(conversationRow(page, sender.name)).toContainText(preview, { timeout: 30_000 });
+    });
+  }
+
+  test('a card shows its text, falling back to "Card Message"', async ({ page }) => {
+    const sender = e2eUser(16);
+    await sendMessageAs(sender.uid, PRIMARY_USER, {
+      category: 'card',
+      type: 'card',
+      data: { card: { fallbackText: 'E2E card', version: '1.0', body: [{ type: 'text', id: 'e2e-t', content: 'E2E card body' }] } },
+    });
+
+    await loginToApp(page);
+
+    await expect(conversationRow(page, sender.name)).toContainText(/E2E card|Card Message/, { timeout: 30_000 });
+  });
+
+  test('formatted text shows the words without markdown markers', async ({ page }) => {
+    const sender = e2eUser(17);
+    await sendTextAs(sender.uid, PRIMARY_USER, '**Bold news** and _italic_ and ~~old~~');
+
+    await loginToApp(page);
+
+    const row = conversationRow(page, sender.name);
+    await expect(row).toContainText('Bold news', { timeout: 30_000 });
+    for (const marker of ['**', '~~', '_italic_']) await expect(row).not.toContainText(marker);
+  });
+
+  test('in a 1:1 chat, your own last message shows a receipt tick and no "You:" prefix', async ({ page }) => {
+    const peer = e2eUser(18);
+    const text = `Sent by me ${uniqueTag()}`;
+    await sendTextAs(PRIMARY_USER, peer.uid, text);
+
+    await loginToApp(page);
+
+    const row = conversationRow(page, peer.name);
+    await expect(row).toContainText(text, { timeout: 30_000 });
+    await expect(row.locator('.cometchat-conversation-item__receipt')).toBeVisible();
+    await expect(row).not.toContainText('You:');
+  });
+
+  test('in a group, your own last message is prefixed "You:"', async ({ page }) => {
+    const runId = uniqueTag();
+    const groupName = `E2E Preview Mine ${runId}`;
+    const guid = `e2e-preview-mine-${runId}`;
+    await createE2EGroup(guid, groupName, PRIMARY_USER, [PRIMARY_USER, SECONDARY_USER]);
+    const text = `From me ${uniqueTag()}`;
+    await sendMessageAs(PRIMARY_USER, guid, { category: 'message', type: 'text', data: { text } }, 'group');
+
+    await loginToApp(page);
+
+    const row = conversationRow(page, groupName);
+    await expect(row).toContainText(text, { timeout: 30_000 });
+    await expect(row).toContainText('You:');
+  });
+
+  test("in a group, the last message shows who sent it", async ({ page }) => {
+    const runId = uniqueTag();
+    const groupName = `E2E Preview ${runId}`;
+    const guid = `e2e-preview-${runId}`;
+    await createE2EGroup(guid, groupName, PRIMARY_USER, [PRIMARY_USER, SECONDARY_USER]);
+    const text = `From George ${uniqueTag()}`;
+    await sendMessageAs(SECONDARY_USER, guid, { category: 'message', type: 'text', data: { text } }, 'group');
+    const secondaryName = await getUserName(SECONDARY_USER);
+
+    await loginToApp(page);
+
+    const row = conversationRow(page, groupName);
+    await expect(row).toContainText(text, { timeout: 30_000 });
+    await expect(row).toContainText(`${secondaryName}:`);
+  });
+});
+
+// ─── Unread ──────────────────────────────────────────────────────────────────
+
+test.describe('Unread', () => {
+  test('a new message shows a badge, and opening the conversation clears it @smoke', async ({ page }) => {
+    const sender = e2eUser(27);
+    await sendTextAs(sender.uid, PRIMARY_USER, `Unread check [${uniqueTag()}]`);
+    await loginToApp(page);
+    const badge = conversationRow(page, sender.name).locator('.cometchat-conversation-item__badge');
+    await expect(badge).toBeVisible({ timeout: 30_000 });
+
+    await openConversation(page, sender.name);
+
+    await expect(badge).toBeHidden({ timeout: 30_000 });
+  });
+});
+
+// ─── Row actions ─────────────────────────────────────────────────────────────
+
+test.describe('Row actions', () => {
+  test('delete asks first: Cancel keeps the conversation, Delete removes it for good', async ({ page }) => {
+    const target = e2eUser(28);
+    await loginToApp(page);
+    const row = conversationRow(page, target.name);
+    await expect(row).toBeVisible({ timeout: 30_000 });
+    // The overlay and the confirm dialog inside it both carry role="dialog".
+    const dialog = page.locator('.cometchat-conversations__dialog-overlay');
+
+    await openRowMenu(page, target.name);
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await expect(dialog).toContainText('Delete Conversation?');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(row).toBeVisible();
+
+    await openRowMenu(page, target.name);
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await dialog.getByRole('button', { name: 'Delete' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(row).toHaveCount(0);
+
+    await page.reload();
+    await expect(conversationRow(page, e2eUser(30).name)).toBeVisible({ timeout: 30_000 });
+    await expect(row).toHaveCount(0);
+  });
+
+  test('pin moves the conversation to the top and marks it; unpin asks first and removes the mark', async ({
+    page,
+  }) => {
+    const target = e2eUser(29);
+    await loginToApp(page);
+    const row = conversationRow(page, target.name);
+    await expect(row).toBeVisible({ timeout: 30_000 });
+    const pinMark = row.locator('.cometchat-conversation-item__pin');
+    const unpinDialog = page.locator('cometchat-pin-save-confirm-dialog');
+
+    const unpin = async () => {
+      await openRowMenu(page, target.name);
+      await page.getByRole('menuitem', { name: 'Unpin conversation' }).click();
+      await expect(unpinDialog).toContainText('Do you want to unpin this conversation?');
+      await unpinDialog.getByRole('button', { name: 'Unpin' }).click();
+      await expect(unpinDialog).toBeHidden();
+      await expect(pinMark).toBeHidden({ timeout: 30_000 });
+    };
+    // A pin left behind by an earlier interrupted run would make the menu offer Unpin.
+    if (await pinMark.isVisible()) await unpin();
+
+    await openRowMenu(page, target.name);
+    const pin = page.getByRole('menuitem', { name: 'Pin conversation' });
+    // Delete is always offered, so once it renders the menu is complete.
+    await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeVisible();
+    await expect(pin).toBeVisible();
+    await pin.click();
+
+    await expect(page.locator('.cometchat-conversation-item').first()).toContainText(target.name, {
+      timeout: 30_000,
+    });
+    await expect(pinMark).toBeVisible();
+
+    await unpin();
+  });
+});
+
+// ─── Pagination ──────────────────────────────────────────────────────────────
+
+test.describe('Pagination', () => {
+  test('a list of 30 or more conversations scrolls to its last row', async ({ page }) => {
+    await loginToApp(page);
+    const rows = page.locator('.cometchat-conversation-item');
+    await expect(rows).toHaveCount(30, { timeout: 30_000 });
+    const list = page.locator('cometchat-conversations .cometchat-paginated-list');
+
+    const overflows = await list.evaluate((el) => el.scrollHeight > el.clientHeight);
+    expect(overflows, 'the list should overflow and be scrollable').toBe(true);
+    await expect(rows.first()).toBeInViewport();
+    await expect(rows.last()).not.toBeInViewport();
+
+    await rows.first().hover();
+    await expect(async () => {
+      await page.mouse.wheel(0, 1_500);
+      await expect(rows.last()).toBeInViewport({ timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
+    await expect(rows.first()).not.toBeInViewport();
+  });
+
+  test('scrolling past the first page loads more conversations without duplicates @quarantine (ENG-40796)', async ({ page }) => {
+    // @quarantine (ENG-40796): intermittent UI Kit defect. Scrolling to the end of the Chats list
+    // sometimes never requests the next page, so it stays at 30 rows: it passed in two CI runs
+    // and failed both attempts in the next.
+    await loginToApp(page);
+    const rows = page.locator('.cometchat-conversation-item');
+    await expect(rows).toHaveCount(30, { timeout: 30_000 });
+
+    await expect(async () => {
+      await rows.last().hover();
+      await page.mouse.wheel(0, 2_000);
+      expect(await rows.count()).toBeGreaterThan(30);
+    }).toPass({ timeout: 30_000 });
+
+    const titles = await page.locator('.cometchat-conversation-item__title-text').allTextContents();
+    const names = titles.map((t) => t.trim());
+    expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+// ─── Error state ─────────────────────────────────────────────────────────────
+
+test.describe('Error state', () => {
+  test('a failed load shows the error view, and Retry loads the list', async ({ page }) => {
+    let failNext = true;
+    await page.route(/\/conversations(\?|$)/, async (route) => {
+      if (failNext && route.request().method() === 'GET') {
+        failNext = false;
+        return route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: { code: 'ERR_E2E_FORCED', message: 'Forced failure' } }),
+        });
+      }
+      return route.continue();
+    });
+
+    await loginToApp(page);
+
+    await expect(page.locator('.cometchat-conversations__error-title')).toHaveText('OOPS!', { timeout: 30_000 });
+    await page.getByRole('button', { name: 'Retry' }).click();
+    await expect(page.locator('.cometchat-conversations__error-title')).toBeHidden({ timeout: 30_000 });
+    await expect(conversationRow(page, e2eUser(30).name)).toBeVisible({ timeout: 30_000 });
   });
 });

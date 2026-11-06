@@ -1,282 +1,154 @@
-import { test, expect, Page } from '@playwright/test';
-import { loginToApp } from '../helpers';
+import { test, expect, Page, Locator } from '../fixtures/coverage';
+import { loginToApp, getUserName, SECONDARY_USER } from '../helpers';
 
 /**
  * E2E Tests — CometChatSearch (Angular)
  *
- * Tests the search component in the sample app.
- * The search is accessible from the conversations header search icon.
+ * The search component, opened from the Chats panel's search bar: its input, filters,
+ * clicking a result, Back, the loading state, keyboard access and ARIA structure. Finding
+ * conversations and messages and the no-results state are in search-behavior.spec.ts. Search is debounced and results arrive async, so every check waits on UI state.
  *
  * @see ENG-34942
  */
 
+/** Open global search from the Chats panel's search bar. */
+async function openSearch(page: Page): Promise<Locator> {
+  await page.locator('cometchat-conversations').getByRole('searchbox').click();
+  const search = page.locator('cometchat-search').first();
+  await expect(search).toBeVisible();
+  return search;
+}
+
+/** Type a keyword and wait until `ready` holds. */
+async function searchFor(search: Locator, keyword: string, ready: () => Promise<void>) {
+  await expect(async () => {
+    await search.getByRole('searchbox').fill(keyword);
+    await ready();
+  }).toPass({ timeout: 30_000 });
+}
+
+const results = (search: Locator) => search.locator('.cometchat-search__results');
+
 test.describe('CometChatSearch', () => {
   let page: Page;
+  let search: Locator;
 
   test.beforeEach(async ({ page: p }) => {
     page = p;
     await loginToApp(page);
-    await page.waitForSelector('.cometchat-conversations', { timeout: 30_000 });
-
-    // Open search — click the search icon in the conversations header
-    const searchIcon = page.locator('.cometchat-selector__search-icon, [class*="search-icon"], button[aria-label*="Search"], button[aria-label*="search"], .cometchat-conversations__search').first();
-    const hasSearchIcon = await searchIcon.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasSearchIcon) {
-      await searchIcon.click();
-      await page.waitForTimeout(2000);
-    }
+    search = await openSearch(page);
   });
 
   // ==================== Rendering ====================
 
   test('search component renders with input', async () => {
-    const searchComponent = page.locator('cometchat-search, .cometchat-search, [class*="search-messages"], [class*="search-conversations"]').first();
-    const hasSearch = await searchComponent.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasSearch) {
-      await expect(searchComponent).toBeVisible();
-
-      // Search input should be present
-      const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-      await expect(input).toBeVisible();
-    } else {
-      // Search may not be available in this sample app configuration
-      expect(true).toBeTruthy();
-    }
+    await expect(search.getByRole('searchbox')).toBeVisible();
+    await expect(search).toContainText('Start Your Search');
   });
 
   test('search input is focusable and accepts text', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasInput) {
-      await input.click();
-      await input.fill('hello');
-      await page.waitForTimeout(500);
-
-      const value = await input.inputValue();
-      expect(value).toBe('hello');
-    }
+    const box = search.getByRole('searchbox');
+    await box.click();
+    await expect(box).toBeFocused();
+    await box.fill('hello');
+    await expect(box).toHaveValue('hello');
   });
 
   // ==================== Search Triggers ====================
 
-  test('typing in search input triggers search results', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasInput) {
-      await input.fill('test');
-      await page.waitForTimeout(3000); // Wait for debounce + API
-
-      // Results should appear (conversations or messages)
-      const hasResults = await page.locator('.cometchat-search__results, [class*="search-result"], .cometchat-conversation-item, .cometchat-list-item').first().isVisible().catch(() => false);
-      const hasEmpty = await page.locator('[class*="empty"], [class*="no-results"]').isVisible().catch(() => false);
-
-      // Should show results or empty state
-      expect(hasResults || hasEmpty || true).toBeTruthy();
-    }
-  });
-
+  
   // ==================== Filter Tabs ====================
 
   test('filter tabs are visible and switchable', async () => {
-    const searchComponent = page.locator('cometchat-search, .cometchat-search, [class*="search-messages"], [class*="search-conversations"]').first();
-    const hasSearch = await searchComponent.isVisible({ timeout: 5_000 }).catch(() => false);
+    const chips = search.locator('.cometchat-search__body-filter');
+    await expect(chips.first()).toBeVisible();
+    // A pressed chip moves to the front, so address it by its test id, not its position.
+    const files = search.getByTestId('search-filter-files');
+    await expect(files).toHaveAttribute('aria-pressed', 'false');
 
-    if (hasSearch) {
-      // Look for filter tabs (Conversations, Messages, Unread, Groups, etc.)
-      const tabs = page.locator('.cometchat-search__tab, [class*="search"] [class*="tab"], [class*="search"] [role="tab"], [class*="filter"]');
-      const tabCount = await tabs.count();
-
-      if (tabCount > 0) {
-        // Click the second tab to switch
-        const secondTab = tabs.nth(1);
-        const hasSecond = await secondTab.isVisible().catch(() => false);
-        if (hasSecond) {
-          await secondTab.click();
-          await page.waitForTimeout(1000);
-          // Tab should be active
-          expect(true).toBeTruthy();
-        }
-      }
-    }
+    await files.click();
+    await expect(files).toHaveAttribute('aria-pressed', 'true');
+    // Only one filter is on at a time.
+    await expect(search.locator('.cometchat-search__body-filter[aria-pressed="true"]')).toHaveCount(1);
+    await files.click();
+    await expect(files).toHaveAttribute('aria-pressed', 'false');
   });
 
   // ==================== Conversations Results ====================
 
-  test('conversations tab shows matching conversations', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasInput) {
-      await input.fill('super');
-      await page.waitForTimeout(3000);
-
-      // Look for conversation results
-      const conversationResults = page.locator('.cometchat-conversation-item, [class*="search"] .cometchat-list-item').first();
-      const hasConvResults = await conversationResults.isVisible().catch(() => false);
-
-      // May or may not have results depending on data
-      expect(hasConvResults || true).toBeTruthy();
-    }
-  });
-
+  
   // ==================== Messages Results ====================
 
-  test('messages tab shows matching messages', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasInput) {
-      // Switch to messages tab if available
-      const messagesTab = page.locator('[class*="search"] [class*="tab"]:has-text("Messages"), [class*="search"] button:has-text("Messages")').first();
-      const hasMessagesTab = await messagesTab.isVisible().catch(() => false);
-
-      if (hasMessagesTab) {
-        await messagesTab.click();
-        await page.waitForTimeout(1000);
-      }
-
-      await input.fill('hello');
-      await page.waitForTimeout(3000);
-
-      // Look for message results
-      const messageResults = page.locator('[class*="search"] [class*="message-item"], [class*="search-message"]').first();
-      const hasResults = await messageResults.isVisible().catch(() => false);
-
-      expect(hasResults || true).toBeTruthy();
-    }
-  });
-
+  
   // ==================== Result Click ====================
 
   test('clicking a conversation result navigates to it', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasInput) {
-      await input.fill('super');
-      await page.waitForTimeout(3000);
-
-      const resultItem = page.locator('.cometchat-conversation-item, [class*="search"] .cometchat-list-item').first();
-      const hasResult = await resultItem.isVisible().catch(() => false);
-
-      if (hasResult) {
-        await resultItem.click();
-        await page.waitForTimeout(2000);
-
-        // Should navigate to messages view
-        const hasMessages = await page.locator('cometchat-message-header, cometchat-message-list').first().isVisible({ timeout: 10_000 }).catch(() => false);
-        expect(hasMessages || true).toBeTruthy();
-      }
-    }
+    const name = await getUserName(SECONDARY_USER);
+    const result = results(search).locator('.cometchat-conversation-item').filter({ hasText: name }).first();
+    await searchFor(search, name, async () => {
+      await expect(result).toBeVisible({ timeout: 5_000 });
+    });
+    await result.click();
+    await expect(page.locator('cometchat-message-header').first()).toContainText(name, { timeout: 15_000 });
   });
 
   // ==================== Back Button ====================
 
   test('back button closes search', async () => {
-    const searchComponent = page.locator('cometchat-search, .cometchat-search, [class*="search-messages"], [class*="search-conversations"]').first();
-    const hasSearch = await searchComponent.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasSearch) {
-      const backBtn = page.locator('.cometchat-search [class*="back"], cometchat-search [class*="back"], [class*="search"] button[aria-label*="Back"], [class*="search"] button[aria-label*="back"]').first();
-      const hasBack = await backBtn.isVisible().catch(() => false);
-
-      if (hasBack) {
-        await backBtn.click();
-        await page.waitForTimeout(1000);
-
-        // Search should close, conversations should be visible again
-        const hasConversations = await page.locator('.cometchat-conversations').isVisible().catch(() => false);
-        expect(hasConversations).toBeTruthy();
-      }
-    }
+    await search.getByRole('button', { name: 'Back' }).click();
+    await expect(search).toBeHidden();
+    await expect(page.locator('.cometchat-conversations')).toBeVisible();
   });
 
   // ==================== Empty State ====================
 
-  test('empty state renders when no results found', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasInput) {
-      await input.fill('zzzznonexistentsearchterm99999');
-      await page.waitForTimeout(5000);
-
-      // Verify search input accepted the text
-      const value = await input.inputValue();
-      expect(value).toBe('zzzznonexistentsearchterm99999');
-
-      // Check for empty state or reduced results — the conversations search
-      // filters via API and may not produce a true empty state for all queries
-      const listbox = page.locator('[role="listbox"]').first();
-      const hasListbox = await listbox.isVisible().catch(() => false);
-      const options = listbox.locator('[role="option"]');
-      const itemCount = await options.count();
-      const hasEmpty = await page.locator('[class*="empty"], [class*="no-results"]').isVisible().catch(() => false);
-
-      // Pass if: empty state shown, OR no items, OR list is still visible (API didn't filter)
-      expect(hasEmpty || itemCount === 0 || hasListbox).toBeTruthy();
-    }
-  });
-
+  
   // ==================== Loading State ====================
 
   test('loading state shows during search', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
+    // Hold the search requests until the loading state has been seen, so it is checked
+    // deterministically rather than caught in passing.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/searchKey=/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    const name = await getUserName(SECONDARY_USER);
+    await search.getByRole('searchbox').fill(name);
 
-    if (hasInput) {
-      // Type quickly and check for loading indicator
-      await input.fill('test search query');
-
-      // Loading indicator may flash briefly
-      const hasLoading = await page.locator('[class*="loading"], [class*="shimmer"], [class*="spinner"]').first().isVisible({ timeout: 2_000 }).catch(() => false);
-
-      // Wait for results to load
-      await page.waitForTimeout(3000);
-
-      // Pass — loading state is transient and may not be caught
-      expect(true).toBeTruthy();
-    }
+    const shimmers = search.locator('.cometchat-search__shimmer').filter({ visible: true });
+    await expect(shimmers.first()).toBeVisible({ timeout: 10_000 });
+    release();
+    await expect(shimmers).toHaveCount(0, { timeout: 15_000 });
+    await expect(results(search)).toContainText(name);
   });
 
   // ==================== Keyboard Navigation ====================
 
   test('keyboard navigation through results works', async () => {
-    const input = page.locator('cometchat-search input, .cometchat-search input, input[placeholder*="Search"], input[placeholder*="search"]').first();
-    const hasInput = await input.isVisible({ timeout: 5_000 }).catch(() => false);
+    const name = await getUserName(SECONDARY_USER);
+    const result = results(search).locator('.cometchat-conversation-item').filter({ hasText: name }).first();
+    await searchFor(search, name, async () => {
+      await expect(result).toBeVisible({ timeout: 5_000 });
+    });
 
-    if (hasInput) {
-      await input.fill('super');
-      await page.waitForTimeout(3000);
-
-      // Press arrow down to navigate results
-      await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(300);
-
-      // Pass — keyboard navigation verified
-      expect(true).toBeTruthy();
-    }
+    // Tab from the search box until the result has focus, then open it with Enter.
+    await search.getByRole('searchbox').focus();
+    await expect(async () => {
+      await page.keyboard.press('Tab');
+      expect(await result.evaluate((el) => el.contains(document.activeElement) || el === document.activeElement)).toBe(true);
+    }).toPass({ timeout: 10_000 });
+    await page.keyboard.press('Enter');
+    await expect(page.locator('cometchat-message-header').first()).toContainText(name, { timeout: 10_000 });
   });
 
   // ==================== Accessibility ====================
 
   test('search component has proper ARIA attributes', async () => {
-    const searchComponent = page.locator('cometchat-search, .cometchat-search').first();
-    const hasSearch = await searchComponent.isVisible({ timeout: 5_000 }).catch(() => false);
-
-    if (hasSearch) {
-      // Input should have aria-label or placeholder
-      const input = searchComponent.locator('input').first();
-      const hasAriaLabel = await input.getAttribute('aria-label');
-      const hasPlaceholder = await input.getAttribute('placeholder');
-
-      expect(hasAriaLabel || hasPlaceholder).toBeTruthy();
-    } else {
-      expect(true).toBeTruthy();
-    }
+    await expect(page.getByRole('search', { name: 'Search' })).toBeVisible();
+    await expect(search.getByRole('searchbox')).toHaveAttribute('aria-label', /.+/);
+    await expect(search.getByRole('button', { name: 'Back' })).toBeVisible();
+    await expect(search.getByRole('toolbar')).toBeVisible();
   });
 });

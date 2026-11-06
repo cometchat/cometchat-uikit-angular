@@ -416,7 +416,9 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   ngOnInit(): void { try { ngOnInitImpl(this as any); } catch (error) { this.handleLifecycleError(error, 'ngOnInit'); } }
   ngOnChanges(changes: SimpleChanges): void { try { ngOnChangesImpl(this as any, changes); } catch (error) { CometChatLogger.error('CometChatMessageList', 'Error in ngOnChanges:', error); } }
   ngAfterViewInit(): void { try { ngAfterViewInitImpl(this as any); } catch (error) { this.handleLifecycleError(error, 'ngAfterViewInit'); } }
-  ngOnDestroy(): void { try { ngOnDestroyImpl(this as any); } catch (error) { CometChatLogger.error('CometChatMessageList', 'Error in ngOnDestroy:', error); } }
+  /** Set when the list is destroyed; pending scroll frames and retries check it and stop. */
+  isDestroyed = false;
+  ngOnDestroy(): void { this.isDestroyed = true; try { ngOnDestroyImpl(this as any); } catch (error) { CometChatLogger.error('CometChatMessageList', 'Error in ngOnDestroy:', error); } }
   private async initializeLoggedInUser(): Promise<void> { return initializeLoggedInUserImpl(this as any); }
   private initializeFormatters(): void { initializeFormattersImpl(this as any); }
   private configureFormattersWithUser(): void { configureFormattersWithUserImpl(this as any); }

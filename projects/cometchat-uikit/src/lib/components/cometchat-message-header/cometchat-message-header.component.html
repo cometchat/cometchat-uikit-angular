@@ -161,6 +161,11 @@
                       [calendarObject]="getLastActiveDateFormat()">
                     </cometchat-date>
                   </span>
+                } @else if (!effectiveHideUserStatus()) {
+                  <!-- Offline with no last active time (a user who has never signed in) -->
+                  <span class="cometchat-message-header__subtitle cometchat-message-header__subtitle--offline">
+                    {{ 'message_header_status_offline' | translate }}
+                  </span>
                 }
               }
 

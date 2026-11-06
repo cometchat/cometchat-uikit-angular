@@ -52,10 +52,43 @@ const meta: Meta<CometChatAttachmentTrayComponent> = {
   title: 'Components/CometChatAttachmentTray',
   component: CometChatAttachmentTrayComponent,
   tags: ['autodocs'],
+  argTypes: {
+    error: {
+      action: 'error',
+      description: 'Emitted when an attachment fails to stage or upload',
+      table: { type: { summary: 'EventEmitter<CometChat.CometChatException>' }, category: 'Events' },
+    },
+  },
 };
 export default meta;
 
 type Story = StoryObj<CometChatAttachmentTrayComponent>;
+
+/** Default tray: two staged attachments, both uploaded and ready to send. */
+export const Default: Story = {
+  decorators: [
+    withTray(
+      [
+        tile({ fileId: '1', name: 'sunset.jpg', mimeType: 'image/jpeg' }),
+        tile({
+          fileId: '2',
+          type: 'file',
+          name: 'proposal.pdf',
+          mimeType: 'application/pdf',
+          thumbnailUrl: undefined,
+        }),
+      ],
+      { loaded: 12, total: 12, percent: 100 },
+    ),
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story: 'The staging tray with an image and a document attached, both uploaded and ready to send.',
+      },
+    },
+  },
+};
 
 export const Uploading: Story = {
   decorators: [

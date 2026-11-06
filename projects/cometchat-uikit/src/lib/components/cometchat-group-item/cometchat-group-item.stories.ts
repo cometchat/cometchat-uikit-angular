@@ -16,7 +16,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { CometChatGroupItemComponent } from './cometchat-group-item.component';
 import { createMockGroup } from '../../../../../../.storybook/utils/mock-data';
-import { within, expect } from '@storybook/test';
+import { within, expect } from 'storybook/test';
 
 // ============================================
 // Meta Configuration

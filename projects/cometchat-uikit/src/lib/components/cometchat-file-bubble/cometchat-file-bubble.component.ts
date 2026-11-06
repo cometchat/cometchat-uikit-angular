@@ -252,7 +252,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
   protected getShowMoreLabel(): string {
     return CometChatLocalize.getLocalizedString('bubble_show_more').replace(
       '{count}',
-      String(this.getRemainingFilesCount()),
+      () => String(this.getRemainingFilesCount()),
     );
   }
 
@@ -309,7 +309,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
     const count = this.getRemainingFilesCount();
     const template = CometChatLocalize.getLocalizedString('file_bubble_show_more_files');
     if (template && template !== 'file_bubble_show_more_files') {
-      return template.replace('{count}', count.toString());
+      return template.replace('{count}', () => count.toString());
     }
     // Fallback with proper singular/plural
     return count === 1 ? `Show 1 more file` : `Show ${count} more files`;
@@ -329,7 +329,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
   protected getDownloadAriaLabel(filename: string): string {
     return CometChatLocalize.getLocalizedString('accessibility_file_bubble_download').replace(
       '{filename}',
-      filename
+      () => filename
     );
   }
 
@@ -348,9 +348,9 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
     const fileType = this.getFileType(attachment);
     const formattedSize = this.formatFileSize(attachment.size);
     return CometChatLocalize.getLocalizedString('accessibility_file_bubble')
-      .replace('{filename}', attachment.name)
-      .replace('{type}', fileType.toUpperCase())
-      .replace('{size}', formattedSize);
+      .replace('{filename}', () => attachment.name)
+      .replace('{type}', () => fileType.toUpperCase())
+      .replace('{size}', () => formattedSize);
   }
 
   /**
@@ -387,7 +387,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
     this.liveAnnouncer.announce(
       CometChatLocalize.getLocalizedString('accessibility_downloading_file').replace(
         '{filename}',
-        attachment.name
+        () => attachment.name
       ),
       'polite'
     );
@@ -397,7 +397,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
         this.liveAnnouncer.announce(
           CometChatLocalize.getLocalizedString('accessibility_download_complete').replace(
             '{filename}',
-            attachment.name
+            () => attachment.name
           ),
           'polite'
         );
@@ -408,7 +408,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
       this.liveAnnouncer.announceError(
         CometChatLocalize.getLocalizedString('accessibility_download_failed').replace(
           '{filename}',
-          attachment.name
+          () => attachment.name
         )
       );
     });

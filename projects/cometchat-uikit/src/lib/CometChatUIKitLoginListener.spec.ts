@@ -1,8 +1,8 @@
 /**
  * CometChatUIKitLoginListener Tests
  *
- * Skeleton spec for the login listener class that provides static methods
- * for managing logged-in user state and SDK listener attachment.
+ * Spec for the login listener shim. In the Angular kit its static methods are
+ * intentionally no-ops; logged-in state lives on CometChatUIKit.
  *
  * Uses mock utilities from testing/ — no inline mocks.
  *
@@ -10,6 +10,7 @@
  *
  * @module CometChatUIKitLoginListener
  */
+import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatUIKitLoginListener } from './CometChatUIKitLoginListener';
 import { createMockUser } from './testing';
 
@@ -21,57 +22,72 @@ describe('CometChatUIKitLoginListener', () => {
     it('should be defined', () => {
       expect(CometChatUIKitLoginListener).toBeDefined();
     });
-
-    it('should expose setLoggedInUser as a static method', () => {
-      expect(typeof CometChatUIKitLoginListener.setLoggedInUser).toBe('function');
-    });
-
-    it('should expose removeLoggedInUser as a static method', () => {
-      expect(typeof CometChatUIKitLoginListener.removeLoggedInUser).toBe('function');
-    });
-
-    it('should expose attachListener as a static method', () => {
-      expect(typeof CometChatUIKitLoginListener.attachListener).toBe('function');
-    });
   });
 
   // -------------------------------------------------------------------------
-  // setLoggedInUser
+  // The Angular kit tracks the logged-in user on CometChatUIKit itself
+  // (CometChatUIKit._loggedInUser); this class is a compatibility shim whose
+  // methods are intentionally no-ops. These tests pin that contract so a
+  // future change that adds side effects is noticed.
   // -------------------------------------------------------------------------
   describe('setLoggedInUser', () => {
-    it('should accept a User object without throwing', () => {
-      // TODO: Verify setLoggedInUser(mockUser) does not throw
-      const mockUser = createMockUser();
-      expect(() => CometChatUIKitLoginListener.setLoggedInUser(mockUser)).not.toThrow();
+    it('should accept a User object without throwing, returning undefined and leaving the user unmodified', () => {
+      const mockUser = createMockUser({ uid: 'login-listener-user', name: 'Login User' });
+      const ownKeysBefore = Object.keys(mockUser).sort();
+
+      let result: unknown = 'not-called';
+      expect(() => {
+        result = CometChatUIKitLoginListener.setLoggedInUser(mockUser);
+      }).not.toThrow();
+
+      expect(result).toBeUndefined();
+      expect(Object.keys(mockUser).sort()).toEqual(ownKeysBefore);
+      expect(mockUser.getUid()).toBe('login-listener-user');
+      expect(mockUser.getName()).toBe('Login User');
     });
   });
 
-  // -------------------------------------------------------------------------
-  // removeLoggedInUser
-  // -------------------------------------------------------------------------
   describe('removeLoggedInUser', () => {
-    it('should execute without throwing', () => {
-      // TODO: Verify removeLoggedInUser() clears user state
-      expect(() => CometChatUIKitLoginListener.removeLoggedInUser()).not.toThrow();
+    it('should execute without throwing and return undefined', () => {
+      CometChatUIKitLoginListener.setLoggedInUser(createMockUser());
+      let result: unknown = 'not-called';
+      expect(() => {
+        result = CometChatUIKitLoginListener.removeLoggedInUser();
+      }).not.toThrow();
+      expect(result).toBeUndefined();
+      // No user getter exists on the shim — state lives on CometChatUIKit.
+      expect((CometChatUIKitLoginListener as unknown as Record<string, unknown>)['getLoggedInUser']).toBeUndefined();
     });
   });
 
-  // -------------------------------------------------------------------------
-  // attachListener
-  // -------------------------------------------------------------------------
   describe('attachListener', () => {
-    it('should execute without throwing', () => {
-      // TODO: Verify attachListener() registers SDK login listener
-      expect(() => CometChatUIKitLoginListener.attachListener()).not.toThrow();
+    it('should execute without throwing and not register an SDK login listener (no-op shim)', () => {
+      const addLoginListener = vi.fn();
+      const original = (CometChat as unknown as Record<string, unknown>)['addLoginListener'];
+      (CometChat as unknown as Record<string, unknown>)['addLoginListener'] = addLoginListener;
+      try {
+        let result: unknown = 'not-called';
+        expect(() => {
+          result = CometChatUIKitLoginListener.attachListener();
+        }).not.toThrow();
+        expect(result).toBeUndefined();
+        expect(addLoginListener).not.toHaveBeenCalled();
+      } finally {
+        (CometChat as unknown as Record<string, unknown>)['addLoginListener'] = original;
+      }
     });
   });
 
-  // -------------------------------------------------------------------------
-  // Error State
-  // -------------------------------------------------------------------------
   describe('Error handling', () => {
     it('should handle null user gracefully in setLoggedInUser', () => {
-      // TODO: Verify setLoggedInUser(null) does not throw
+      let result: unknown = 'not-called';
+      expect(() => {
+        result = CometChatUIKitLoginListener.setLoggedInUser(null as unknown as CometChat.User);
+      }).not.toThrow();
+      expect(result).toBeUndefined();
+      expect(() =>
+        CometChatUIKitLoginListener.setLoggedInUser(undefined as unknown as CometChat.User)
+      ).not.toThrow();
     });
   });
 });

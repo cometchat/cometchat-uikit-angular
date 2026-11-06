@@ -1,0 +1,110 @@
+---
+title: "CometChatNotificationBadgeComponent"
+description: "Displays the logged-in user's unread notification feed count as a pill badge that stays in sync in real time"
+---
+
+The `CometChatNotificationBadgeComponent` shows the number of unread notification feed items for the logged-in user. It reads the count from the root-provided `NotificationUnreadCountService`, so it updates when new feed items arrive, when the count is re-polled and when the browser window regains focus. Use it next to a Notifications tab or icon that opens `CometChatNotificationFeedComponent`.
+
+## Overview
+
+- **Hidden at zero**: Nothing is rendered while the count is `0`
+- **Count cap**: Counts above `max` are shown as `{max}+` (for example `99+`)
+- **Real-time updates**: Increments when a new feed item is received, then re-fetches the exact count 1 second later
+- **Polling and focus re-sync**: Re-fetches the count every 30 seconds and whenever the window receives `focus`
+
+## Basic Usage
+
+```typescript
+import { Component } from '@angular/core';
+import { CometChatNotificationBadgeComponent } from '@cometchat/chat-uikit-angular';
+
+@Component({
+  selector: 'app-notifications-tab',
+  standalone: true,
+  imports: [CometChatNotificationBadgeComponent],
+  template: `
+    <button class="tab">
+      Notifications
+      <cometchat-notification-badge [max]="99"></cometchat-notification-badge>
+    </button>
+  `
+})
+export class NotificationsTabComponent {}
+```
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `max` | `number` | `99` | Maximum count to display. Higher counts are shown as `{max}+`. |
+| `style` | `NotificationBadgeStyle \| undefined` | `undefined` | Inline style overrides for the badge. See [Style Object](#style-object). |
+| `category` | `string \| undefined` | `undefined` | Passed to `NotificationUnreadCountService.start()`. The service doesn't use it yet, so the badge always shows the total unread count. |
+
+The badge has no events or templates.
+
+## How the Count Is Tracked
+
+On init, the badge calls `NotificationUnreadCountService.start()` and subscribes to its `count$` stream. The service:
+
+1. Fetches the count with `CometChat.getNotificationFeedUnreadCount()`
+2. Polls the count every 30 seconds
+3. Registers a `CometChat.addNotificationFeedListener` listener that adds 1 on each new item and re-fetches the count after 1 second
+4. Re-fetches the count on the window `focus` event
+
+On destroy, the badge unsubscribes and calls `stop()`, which clears polling, removes the listener and removes the focus handler.
+
+<Note>
+  `NotificationUnreadCountService` is a single root-provided instance, and `start()` does nothing if tracking has already started. All badges therefore share one count, and destroying any badge stops tracking for every badge still on screen. Items marked read inside `CometChatNotificationFeedComponent` are reflected in the badge on the next poll or window focus.
+</Note>
+
+## States
+
+| State | Rendered output |
+|-------|-----------------|
+| Count is `0` (including before the first fetch completes) | Nothing |
+| Count is between `1` and `max` | The count, for example `5` |
+| Count is greater than `max` | `{max}+`, for example `99+` |
+
+## Style Object
+
+`NotificationBadgeStyle` fields are bound as inline styles on the badge element:
+
+| Key | CSS property |
+|-----|--------------|
+| `backgroundColor` | `background-color` |
+| `textColor` | `color` |
+| `fontSize` | `font-size` |
+| `borderRadius` | `border-radius` |
+
+```html
+<cometchat-notification-badge
+  [style]="{ backgroundColor: '#F44336', textColor: '#ffffff', borderRadius: '4px' }"
+></cometchat-notification-badge>
+```
+
+## Styling with CSS Variables
+
+The badge element has the class `.cometchat-notification-badge` and reads these theme tokens:
+
+```css
+cometchat-notification-badge {
+  --cometchat-primary-color: #6852D6;          /* background */
+  --cometchat-static-white: #ffffff;           /* text */
+  --cometchat-radius-max: 9999px;              /* pill shape */
+  --cometchat-padding-05: 2px;                 /* vertical padding */
+  --cometchat-padding-1: 6px;                  /* horizontal padding */
+  --cometchat-font-caption2-semibold: 600 11px "Roboto";
+  --cometchat-font-family: "Roboto", sans-serif;
+}
+```
+
+The badge has a fixed `min-width` and `height` of `18px`.
+
+## Accessibility
+
+- `role="status"` on the badge element
+- `aria-label` set to the displayed count followed by the localized `notifications_unread_badge` string, for example "5 unread notifications" or "99+ unread notifications"
+
+## Related Components
+
+- **CometChatNotificationFeedComponent**: The notification feed list whose unread items this badge counts
