@@ -144,6 +144,16 @@
     @if (state().screenState === 'error') {
       @if (errorStateView) {
         <ng-container *ngTemplateOutlet="errorStateView"></ng-container>
+      } @else if (offlineConnectToLoad) {
+        <!-- Offline (D84 rule 3): nothing saved and no connection; no Retry. -->
+        <div class="cometchat-notification-feed__error" role="status" data-testid="cc-empty" data-cc-reason="connect-to-load">
+          <div class="cometchat-notification-feed__error-illustration">
+            <div class="cometchat-notification-feed__error-illustration-icon"></div>
+          </div>
+          <div class="cometchat-notification-feed__error-text-container">
+            <p class="cometchat-notification-feed__error-title">{{ 'notification_feed_connect_to_load' | translate }}</p>
+          </div>
+        </div>
       } @else {
         <div class="cometchat-notification-feed__error">
           <div class="cometchat-notification-feed__error-illustration">

@@ -33,6 +33,7 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatMessageHeaderComponent } from './cometchat-message-header.component';
 import { MessageHeaderService } from '../../services/message-header.service';
 import { ChatStateService } from '../../services/chat-state.service';
+import { OfflineHubService } from '../../services/offline-hub.service';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
 import { CometChatUIEvents } from '../../events/CometChatUIEvents';
 import { CometChatGroupEvents } from '../../events/CometChatGroupEvents';
@@ -1516,6 +1517,59 @@ describe('CometChatMessageHeaderComponent (behaviour)', () => {
 
       expect(payloadGroup.setHasJoined).not.toHaveBeenCalled();
       expect(svc.updateGroupMemberCount).not.toHaveBeenCalled();
+    });
+
+    /**
+     * A swept kick, ban or leave carries the group as it was when the action
+     * happened, which is older than the group the conversation sync delivered
+     * on the same reconnect. Applying its count would undo the joins that
+     * came after it (Prajwal 2026-11-20T13:00Z on #674).
+     */
+    it('a swept action changes membership but not the synced member count', async () => {
+      asLoggedIn(loggedInUid);
+      const group = makeGroup('g1');
+      await build({ group, detect: true });
+      vi.spyOn(TestBed.inject(OfflineHubService), 'wasSweptAction').mockReturnValue(true);
+      const me = makeUser(loggedInUid);
+      const swept = { getId: () => 77 } as never;
+
+      CometChatGroupEvents.ccGroupMemberKicked.next({
+        message: swept,
+        kickedUser: me,
+        kickedFrom: makeGroup('g1', { members: 8 }),
+      } as never);
+      CometChatGroupEvents.ccGroupMemberBanned.next({
+        message: swept,
+        kickedUser: me,
+        kickedFrom: makeGroup('g1', { members: 8 }),
+      } as never);
+      CometChatGroupEvents.ccGroupLeft.next({
+        message: swept,
+        userLeft: me,
+        leftGroup: makeGroup('g1', { members: 7 }),
+      } as never);
+
+      // The user is still told they are no longer in the group.
+      expect(group.setHasJoined).toHaveBeenLastCalledWith(false);
+      // The stale snapshot never reaches the count.
+      expect(group.setMembersCount).not.toHaveBeenCalled();
+      expect(svc.updateGroupMemberCount).not.toHaveBeenCalled();
+    });
+
+    it('a live action still sets the count (nothing is swept with offline off)', async () => {
+      asLoggedIn(loggedInUid);
+      const group = makeGroup('g1');
+      await build({ group, detect: true });
+      vi.spyOn(TestBed.inject(OfflineHubService), 'wasSweptAction').mockReturnValue(false);
+
+      CometChatGroupEvents.ccGroupMemberKicked.next({
+        message: { getId: () => 78 },
+        kickedUser: makeUser(loggedInUid),
+        kickedFrom: makeGroup('g1', { members: 8 }),
+      } as never);
+
+      expect(group.setMembersCount).toHaveBeenLastCalledWith(8);
+      expect(svc.updateGroupMemberCount).toHaveBeenLastCalledWith(8);
     });
   });
 

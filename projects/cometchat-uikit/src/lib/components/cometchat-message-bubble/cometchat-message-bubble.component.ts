@@ -14,6 +14,9 @@ import {CometChatActionsView} from '../../modals/CometChatActionsView';
 import {CometChatTextFormatter} from '../../formatters/cometchat-text-formatter';
 import {CometChatUIKit} from '../../cometchat-uikit';
 import {CometChatUIKitConstants} from '../../constants';
+import {isSending} from '../../utils/offline/identity';
+import {isFailedUnsent, unsentActionsOf, drawsUnsentState} from '../../utils/offline/unsent-actions';
+import {isRetryInFlight, retryFailedMessage, sendKindOf} from '../../utils/offline/send';
 import {MessageUtilsService} from '../../services/message-utils.service';
 import {MessageBubbleConfigService, BubblePart,} from '../../services/message-bubble-config.service';
 import {COMETCHAT_GLOBAL_CONFIG, GlobalConfig} from '../../services/global-config.service';
@@ -368,11 +371,41 @@ export class CometChatMessageBubbleComponent
       this.effectiveQuickOptionsCount
     );
   }
+  /** State-contract identifier (offline TEST-PLAN §3.3): the option ids this row's menu offers. */
+  get contractOptionIds(): string {
+    return this.options.map(option => String((option as { id?: unknown }).id ?? '')).filter(Boolean).join(',');
+  }
   get optionsPositionClass(): string {
     return this.messageUtils.getOptionsPositionClass(this.alignment);
   }
-  get receiptClass(): string { if (!this.message) return ''; const r = this.message.getReadAt(); const d = this.message.getDeliveredAt(); const s = this.message.getSentAt(); if (r) return 'cometchat-receipts-read'; if (d) return 'cometchat-receipts-delivered'; if (s && this.message.getId()) return 'cometchat-receipts-sent'; return 'cometchat-receipts-wait'; }
-  get receiptAriaLabel(): string { if (!this.message) return ''; const r = this.message.getReadAt(); const d = this.message.getDeliveredAt(); const s = this.message.getSentAt(); if (r) return CometChatLocalize.getLocalizedString('message_status_read'); if (d) return CometChatLocalize.getLocalizedString('message_status_delivered'); if (s) return CometChatLocalize.getLocalizedString('message_status_sent'); return CometChatLocalize.getLocalizedString('message_status_sending'); }
+  /**
+   * Offline support only: `sending` (queued, not acked yet) or `failed` for an
+   * own message, derived from the SDK's status on every render (so it survives
+   * a restart) plus the session's failed-direct mark. `null` with offline off,
+   * which keeps today's receipt logic untouched.
+   */
+  get offlineSendState(): 'sending' | 'failed' | null {
+    if (!this.message || !this.isOutgoing || !drawsUnsentState(this.message)) return null;
+    if (isFailedUnsent(this.message)) return 'failed';
+    if (isSending(this.message)) return 'sending';
+    return null;
+  }
+  /**
+   * Offline support only: a failed own message shows "Not sent. Tap to retry"
+   * whatever the reason (ruling R162 / S73, BEH-SEND-37 as rewritten). Retry is
+   * user-invoked only; Delete is in the row's menu.
+   */
+  get offlineCanRetry(): boolean {
+    return this.offlineSendState === 'failed' && unsentActionsOf(this.message)?.retry === true;
+  }
+  /** Offline support only: retry a failed own message (user-invoked; repeated taps are ignored while one runs). */
+  async retryOfflineSend(event?: Event): Promise<void> {
+    event?.stopPropagation();
+    if (!this.message || !this.offlineCanRetry || isRetryInFlight(this.message)) return;
+    try { await retryFailedMessage(this.message, sendKindOf(this.message)); } finally { this.cdr.markForCheck(); }
+  }
+  get receiptClass(): string { if (!this.message) return ''; if (this.offlineSendState === 'sending') return 'cometchat-receipts-wait'; const r = this.message.getReadAt(); const d = this.message.getDeliveredAt(); const s = this.message.getSentAt(); if (r) return 'cometchat-receipts-read'; if (d) return 'cometchat-receipts-delivered'; if (s && this.message.getId()) return 'cometchat-receipts-sent'; return 'cometchat-receipts-wait'; }
+  get receiptAriaLabel(): string { if (!this.message) return ''; if (this.offlineSendState === 'sending') return CometChatLocalize.getLocalizedString('message_list_not_sent_yet'); const r = this.message.getReadAt(); const d = this.message.getDeliveredAt(); const s = this.message.getSentAt(); if (r) return CometChatLocalize.getLocalizedString('message_status_read'); if (d) return CometChatLocalize.getLocalizedString('message_status_delivered'); if (s) return CometChatLocalize.getLocalizedString('message_status_sent'); return CometChatLocalize.getLocalizedString('message_status_sending'); }
   get calendarObject(): CalendarObject {
     if (this.dateFormat) return this.dateFormat;
     // A bubble only ever shows a time, in the locale's own clock.
@@ -413,7 +446,7 @@ export class CometChatMessageBubbleComponent
   get moderationIndicatorTextKey(): string { return this.shouldShowModerationIndicator ? 'moderation_block_message' : 'file_type_not_allowed'; }
   // Besides the explicit `showError` input, a disapproved message or one carrying a send error flips
   // the sender's receipt to the error tick — matching React's MessageReceiptUtils.getReceiptStatus.
-  get showErrorReceipt(): boolean { if (this.showError) return true; return this.isOutgoing && (this.isDisapprovedByModeration || this.hasMessageError); }
+  get showErrorReceipt(): boolean { if (this.showError) return true; if (this.offlineSendState === 'failed') return true; return this.isOutgoing && (this.isDisapprovedByModeration || this.hasMessageError); }
   moderationIndicatorWidth = computed(() => { const w = this.contentViewWidth(); return w >= 240 ? `calc(${w}px + var(--cometchat-padding-1) * 2)` : '240px'; });
 
   get messageTypeKey(): string { if (!this.message) return ''; return `${this.messageType}_${this.messageCategory}`; }

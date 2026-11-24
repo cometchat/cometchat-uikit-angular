@@ -8,6 +8,8 @@ import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-loc
 import {hasMediaCaption} from '../../utils/message-metadata-utils';
 import {isPinSaveEligible, isSystemPinned} from '../../utils/pin-save-utils';
 import {getSubscriptionTargetId, readThreadSubscribed, toThreadId} from '../../utils/thread-subscription-utils';
+import {isUnsent} from '../../utils/offline/identity';
+import {drawsUnsentState, UnsentActions, unsentActionsOf} from '../../utils/offline/unsent-actions';
 
 /**
  * A message disapproved by moderation shows an error indicator on its bubble and must not be
@@ -185,8 +187,32 @@ export interface MessageOptionsContext {
   optionsOverride?: ((message: CometChat.BaseMessage, options: CometChatActionsIcon[]) => CometChatActionsIcon[]) | null;
 }
 
+/**
+ * Offline support (BEH-SEND-37 as rewritten by ruling R162 / S73): an own
+ * message the server has not acked offers only what can work without a server
+ * id: Retry and Delete on every PENDING, SENDING and FAILED row (any reason).
+ * Where its send is under way the SDK answers IN_FLIGHT and the "Sending..."
+ * notice shows. Delete removes it from this device
+ * (`discardLocalMessage`); a failed (direct) row has no stored copy, so its
+ * Delete removes it from the screen only. No Copy, reply, thread, react, edit,
+ * pin, save, mark-unread, info, translate, report or forward.
+ */
+function getUnsentMessageOptions(ctx: MessageOptionsContext, actions: UnsentActions): CometChatActionsIcon[] {
+  const options: CometChatActionsIcon[] = [];
+  if (actions.retry) {
+    options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.retryMessage, title: CometChatLocalize.getLocalizedString('retry'), iconURL: 'assets/retry.svg', onClick: () => {} }));
+  }
+  if (actions.delete && !ctx.hideDeleteMessageOption) {
+    options.push(new CometChatActionsIcon({ id: CometChatUIKitConstants.MessageOption.discardMessage, title: CometChatLocalize.getLocalizedString('message_list_option_delete'), iconURL: 'assets/delete.svg', onClick: () => {} }));
+  }
+  return options;
+}
+
 export function getMessageOptionsImpl(ctx: MessageOptionsContext, message: CometChat.BaseMessage): CometChatActionsIcon[] {
   if (message.getDeletedAt()) return [];
+  if (drawsUnsentState(message) && isSentByMe(ctx.loggedInUser, message) && isUnsent(message)) {
+    return getUnsentMessageOptions(ctx, unsentActionsOf(message) ?? { retry: false, delete: false });
+  }
   // A moderation-rejected message gets the restricted (Delete + Copy) set, matching the React kit.
   if (isDisapprovedByModeration(message)) return getModeratedMessageOptions(ctx, message);
 

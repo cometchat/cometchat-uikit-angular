@@ -89,16 +89,26 @@
 
     <!-- Empty State -->
     @if (listState() === States.empty && effectiveEmptyView) {
-      <div class="cometchat-message-list__empty">
+      <div class="cometchat-message-list__empty" data-testid="cc-empty" data-cc-reason="empty">
         <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
       </div>
     }
 
     <!-- Error State -->
     @if (listState() === States.error && !effectiveHideError()) {
-      <div class="cometchat-message-list__error">
+      <div class="cometchat-message-list__error" [attr.data-testid]="offlineConnectToLoad && !effectiveErrorView ? 'cc-empty' : 'cc-error'" [attr.data-cc-reason]="offlineConnectToLoad && !effectiveErrorView ? 'connect-to-load' : 'error'">
         @if (effectiveErrorView) {
           <ng-container *ngTemplateOutlet="effectiveErrorView"></ng-container>
+        } @else if (offlineConnectToLoad) {
+          <!-- Offline (D84 rule 3): nothing saved and no connection; no Retry. -->
+          <div class="cometchat-message-list__error-content">
+            <div class="cometchat-message-list__error-icon">
+              <span class="cometchat-message-list__error-icon-mask" aria-hidden="true"></span>
+            </div>
+            <p class="cometchat-message-list__error-text">
+              {{ 'message_list_connect_to_load' | translate }}
+            </p>
+          </div>
         } @else {
           <!-- Default Error State -->
           <div class="cometchat-message-list__error-content">
@@ -121,6 +131,15 @@
     @if (listState() === States.loaded) {
       <!-- Scroll Top Anchor for IntersectionObserver -->
       <div #scrollTopAnchor class="cometchat-message-list__scroll-anchor"></div>
+
+      <!-- Offline support: older messages need a connection -->
+      @if (offlineFooter === 'connect_to_load_more' && offlineFooterEdge === 'previous') {
+        <div class="cometchat-message-list__offline-footer" data-testid="cc-list-footer" data-cc-footer="connect-to-load-more" data-cc-edge="previous">
+          <button type="button" class="cometchat-message-list__offline-footer-button" (click)="retryOfflineRead()">
+            {{ 'message_list_connect_to_load_more' | translate }}
+          </button>
+        </div>
+      }
 
       <!-- Loading indicator for previous messages -->
       @if (isFetchingPrevious()) {
@@ -157,6 +176,11 @@
               [class.cometchat-message-list__message--focused]="focusedMessageIndex() === i"
               [attr.data-message-id]="item.message.getId() || item.message.getMuid()"
               [attr.data-index]="i"
+              data-testid="cc-message-row"
+              [attr.data-cc-key]="item.key"
+              [attr.data-cc-id]="contractId(item.message)"
+              [attr.data-cc-state]="contractState(item.message)"
+              [attr.data-cc-mine]="contractMine(item.message)"
               [attr.tabindex]="getMessageTabIndex(i)"
               role="article"
               [attr.aria-label]="'message_aria_label' | translate"
@@ -207,6 +231,15 @@
       @if (isFetchingNext()) {
         <div class="cometchat-message-list__loading-more">
           <div class="cometchat-message-list__spinner"></div>
+        </div>
+      }
+
+      <!-- Offline support (D84 rule 9): newer messages need a connection -->
+      @if (offlineFooter === 'connect_to_load_more' && offlineFooterEdge === 'next') {
+        <div class="cometchat-message-list__offline-footer" data-testid="cc-list-footer" data-cc-footer="connect-to-load-more" data-cc-edge="next">
+          <button type="button" class="cometchat-message-list__offline-footer-button" (click)="retryOfflineRead()">
+            {{ 'message_list_connect_to_load_more' | translate }}
+          </button>
         </div>
       }
 
@@ -280,6 +313,19 @@
   @if (effectiveFooterView) {
     <div class="cometchat-message-list__footer">
       <ng-container *ngTemplateOutlet="effectiveFooterView"></ng-container>
+    </div>
+  }
+
+  <!-- Offline support: notices about unsent messages -->
+  @for (notice of visibleOfflineNotices; track notice) {
+    <div class="cometchat-message-list__offline-notice" data-testid="cc-notice" [attr.data-cc-notice]="notice.kind">
+      <span class="cometchat-message-list__offline-notice-text" role="status" aria-live="polite">{{ offlineNoticeText(notice) }}</span>
+      @if (canCopyOfflineNotice(notice)) {
+        <button type="button" class="cometchat-message-list__offline-notice-action" (click)="copyOfflineNotice(notice)">
+          {{ 'message_list_option_copy' | translate }}
+        </button>
+      }
+      <button type="button" class="cometchat-message-list__offline-notice-close" (click)="dismissOfflineNotice(notice)" [attr.aria-label]="'close' | translate">×</button>
     </div>
   }
 

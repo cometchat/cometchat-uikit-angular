@@ -1,0 +1,117 @@
+---
+title: "Offline Support"
+description: "Let users read cached chats and queue messages while offline with the CometChat Angular UI Kit and Chat SDK offline support."
+---
+
+Offline support lets the UI Kit show chats from the device and queue the messages a user sends while there is no connection. The Chat SDK keeps the cache and the outbox; the UI Kit reads from them, shows each message's send state and catches up when the connection returns.
+
+<Note>
+Offline support needs **Chat SDK JavaScript 4.3.1 or later** and UI Kit **5.3.0 or later**. It is **off by default**: an app that does not turn it on behaves exactly as before.
+</Note>
+
+## Turn it on
+
+Pass an offline config when you build the UI Kit settings. The UI Kit hands it to the Chat SDK.
+
+```typescript
+import { CometChatUIKit, UIKitSettingsBuilder } from '@cometchat/chat-uikit-angular';
+
+const settings = new UIKitSettingsBuilder()
+  .setAppId(APP_ID)
+  .setRegion(REGION)
+  .setAuthKey(AUTH_KEY)
+  .setOfflineConfig({ enabled: true })
+  .build();
+
+await CometChatUIKit.init(settings);
+```
+
+With an older Chat SDK, `setOfflineConfig` is ignored and offline stays off.
+
+## What users see
+
+| Situation | Behaviour |
+| --- | --- |
+| Opening a chat or the conversation list offline | Messages and chats paint from the device first, then refresh from the server when connected. |
+| Scrolling past what is on the device while offline | A tappable **Connect to load more** row at that edge (the top for older messages, the bottom for newer ones) instead of an error. When the connection returns, the page behind the row loads once by itself. |
+| Sending offline | The message appears at once with a clock and the words **Not sent yet**. It is sent automatically when the connection returns; it is not a failure. |
+| A send the server refuses | The message shows the error mark and **Not sent. Tap to retry**, whatever the reason. Retry is always the user's choice. |
+| Options on an unsent message | **Retry** and **Delete**, on every message that is waiting, being sent right now, or failed (for any reason). No copy, reply, reaction, edit or other action until it is sent. If you choose Retry or Delete on a message whose send is already under way, nothing changes and a short **Sending… try again in a moment** notice shows for a few seconds. |
+| Delete on an unsent message | After today's confirmation the message is removed from this device and is never sent (it works offline and survives a restart). If it went out in the meantime, the sent message is deleted the usual way. |
+| Too many waiting, or a file too large to keep offline | The message shows as not sent with a notice; Retry sends it again once there is room. |
+| A list that cannot load because the device is offline, with nothing on screen | The list's offline state: an icon and **Connect to load users** (or groups, chats, members, messages, reactions, notifications), with no Retry button. If you passed an error view, it shows instead. The list's error output fires once. It loads once by itself when the connection is back. |
+| A keyword search that cannot run offline, with no saved match | **Connect to search** with a second line, **Search needs an internet connection.** This is an offline state, so the error output does not fire. It runs again once by itself when the connection is back. A list opened with only a filter (online users, tags, a builder with no keyword) is not a search: it shows **Connect to load users** (or that list's text). |
+| A list that fails for any other reason, with nothing on screen | The list's error view with Retry (yours, if you passed one), and its error output fires once. It is not reloaded by itself. |
+| The Search component, a search that fails for any other reason | Like Android's search screen, it waits for both scopes. If both fail (at least one for a real reason) it shows the error view and the error output fires for each. If only one fails and the other has results, the results stay and the error output still fires once for the failed one. If only one fails and nothing is shown, it shows the plain empty state (**No Results**, or your own empty view) with no error output and no run on reconnect. |
+| A load that fails with rows on screen | The rows stay, with nothing over them. Offline, nothing is reported. Online, the error output fires once for a load the user or app started (opening, pull-to-refresh, a search, paging) and stays silent for a load the kit started (reconnect, sync). |
+| A server that answers with nothing | The list's empty view (yours, if you passed one). |
+| Online status while the connection is down | Nobody shows as online in any list or header, and screen readers do not announce anyone as online, until the connection is back. |
+| Reconnect | The SDK catches every list up; the UI Kit makes no extra fetch. Messages that arrived meanwhile appear without sound and without extra unread counts. |
+| Other actions offline (edit, delete, react, pin, …) | They need a connection: they end with the usual error and leave nothing half-done. |
+
+## Events
+
+Two events are added to `CometChatMessageEvents`. They fire only with offline support on.
+
+| Event | Payload | When |
+| --- | --- | --- |
+| **ccMessageSendStateChanged** | `{ message, state, reason? }` with `state` one of `sending`, `sent`, `failed`, `discarded` | Every send-state change of an own message. |
+| **ccOfflineCacheReset** | `{ reason, pendingMessagesLost }` | The SDK rebuilt its offline cache; lists reload. |
+
+`ccMessageSent` keeps its contract: one `inprogress` and then one `success` or `error` per message. A queued message stays `inprogress` until it is sent.
+
+`CometChatUIKit.sendTextMessage`, `sendMediaMessage` and `sendCustomMessage` resolve when the message is sent and reject on a final failure; with offline on they never reject only because the message was queued.
+
+## Offline texts
+
+These are localization keys. Override them with `CometChatLocalize` as for any other text. In every language the Android UI Kit also ships (all but en-gb, which is English), the texts below are the ones Android uses for the same state.
+
+| Text | Key |
+| --- | --- |
+| Connect to load users | `users_connect_to_load` |
+| Connect to load groups | `groups_connect_to_load` |
+| Connect to load chats | `conversations_connect_to_load` |
+| Connect to load members | `group_members_connect_to_load` |
+| Connect to load messages (message list, threads, pinned, saved) | `message_list_connect_to_load` |
+| Connect to load reactions | `reaction_list_connect_to_load` |
+| Connect to load notifications | `notification_feed_connect_to_load` |
+| Connect to search (lists) | `conversations_connect_to_search` |
+| Connect to search (the Search component) | `search_connect_to_search_messages` |
+| Search needs an internet connection. | `list_connect_to_search_subtitle` |
+| Connect to load more | `message_list_connect_to_load_more` |
+
+## Hiding the offline notices
+
+The message list and the conversation list show short notices (for example, "2 messages weren't sent"). Hide them with:
+
+```html
+<cometchat-message-list [user]="user" [hideOfflineNotices]="true"></cometchat-message-list>
+<cometchat-conversations [hideOfflineNotices]="true"></cometchat-conversations>
+```
+
+## Theming
+
+The offline states use the theme's existing colours and fonts by default. Override them with these CSS variables:
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| `--cometchat-message-bubble-offline-retry-color` | `--cometchat-error-color` | **Not sent. Tap to retry** |
+| `--cometchat-message-bubble-offline-retry-font` | `--cometchat-font-caption1-regular` | **Not sent. Tap to retry** |
+| `--cometchat-message-bubble-offline-pending-color` / `-font` | `--cometchat-text-color-secondary` / `--cometchat-font-caption1-regular` | **Not sent yet** next to the clock |
+| `--cometchat-message-bubble-offline-failed-tint` | `transparent` | The background of a failed unsent message |
+| `--cometchat-message-bubble-offline-failed-icon-color` | `--cometchat-error-color` | The failed mark on an unsent message |
+| `--cometchat-message-list-offline-footer-color` / `-font` | `--cometchat-primary-color` / `--cometchat-font-caption1-medium` | **Connect to load more** |
+| `--cometchat-message-list-offline-notice-background` / `-border` / `-color` / `-font` | `--cometchat-background-color-02` / `1px solid --cometchat-border-color-light` / `--cometchat-text-color-primary` / `--cometchat-font-caption1-regular` | Message list notices |
+| `--cometchat-conversations-offline-notice-background` / `-border` / `-color` / `-font` | as above | Conversation list notices |
+| `--cometchat-conversations-receipt-error-color` | `--cometchat-error-color` | The failed mark on a conversation preview |
+| `--cometchat-image-bubble-offline-placeholder-color` / `-font`, `--cometchat-video-bubble-offline-placeholder-color` / `-font` | `--cometchat-text-color-secondary` / `--cometchat-font-caption1-regular` | **Available when online** |
+
+## Automation identifiers
+
+Message rows, the row menu, conversation rows, notices, the list footer, the composer input, upload tray tiles and the empty and error views carry `data-testid` and `data-cc-*` attributes (`cc-message-row`, `cc-message-options`, `cc-conversation-row`, `cc-notice`, `cc-list-footer`, `cc-composer-input`, `cc-composer-tray-tile`, `cc-empty`, `cc-error`) for automated tests. They contain no message text and are not read by screen readers. `cc-empty` and `cc-error` carry `data-cc-reason`: `empty`, `error`, or, for the offline states, `connect-to-load` and `connect-to-search` (both on `cc-empty`).
+
+## Known limits
+
+- Search with a keyword needs a connection: offline it shows **Connect to search** (and **Search needs an internet connection.**) and runs again once the connection is back.
+- Message information, calls and AI agent streamed replies need a connection.
+- UI Kit 4.x (`legacy`) has no offline support; turning the SDK's offline on with it is unsupported.

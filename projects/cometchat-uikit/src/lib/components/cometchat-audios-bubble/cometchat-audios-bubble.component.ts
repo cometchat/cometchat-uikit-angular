@@ -5,6 +5,8 @@ import {
   ChangeDetectorRef,
   inject,
   OnChanges,
+  OnInit,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -17,6 +19,8 @@ import { getMediaCaption } from '../../utils/message-metadata-utils';
 import { triggerMediaDownload } from '../../utils/media-download';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
+import { CachedMediaUrls } from '../../utils/offline/media';
+import { OfflineHubService } from '../../services/offline-hub.service';
 
 interface AudioRowState {
   currentTime: number;
@@ -40,7 +44,7 @@ interface AudioRowState {
   templateUrl: './cometchat-audios-bubble.component.html',
   styleUrls: ['./cometchat-audios-bubble.component.css'],
 })
-export class CometChatAudiosBubbleComponent implements OnChanges {
+export class CometChatAudiosBubbleComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ required: true }) message!: CometChat.MediaMessage;
   @Input() alignment: MessageBubbleAlignment = MessageBubbleAlignment.left;
   /**
@@ -56,6 +60,9 @@ export class CometChatAudiosBubbleComponent implements OnChanges {
   }
 
   private readonly cdr = inject(ChangeDetectorRef);
+  /** Offline support: object URLs of cached copies this bubble plays. */
+  private readonly offlineMedia = new CachedMediaUrls();
+  private readonly offlineHub = inject(OfflineHubService);
 
   protected attachments: AudioAttachment[] = [];
   protected states: AudioRowState[] = [];
@@ -63,6 +70,11 @@ export class CometChatAudiosBubbleComponent implements OnChanges {
   protected isExpanded = false;
   /** Row indices whose media can't be decoded as audio — rendered as a file row instead of a player. */
   protected errorIndices = new Set<number>();
+  /**
+   * Row index → the source that failed to load. Offline, the remote URL fails before the SDK's
+   * cached copy arrives; once the row shows that copy instead, it gets its player back.
+   */
+  private failedSources = new Map<number, string>();
 
   readonly unsupportedIconUrl = 'assets/unsupported.svg';
 
@@ -125,6 +137,23 @@ export class CometChatAudiosBubbleComponent implements OnChanges {
     triggerMediaDownload(attachment.url, attachment.name ?? 'audio');
   }
 
+  ngOnInit(): void {
+    this.offlineMedia.watch(this.offlineHub.mediaReady$, () => this.offlineHub.connectionChanged$);
+  }
+
+  ngOnDestroy(): void {
+    this.offlineMedia.dispose();
+  }
+
+  /** Offline: this row has no cached copy and the device is offline, so it cannot play now. */
+  protected isUnavailable(attachment: AudioAttachment): boolean {
+    return this.offlineMedia.isUnavailable(attachment);
+  }
+
+  protected get unavailableText(): string {
+    return CometChatLocalize.getLocalizedString('message_bubble_media_available_when_online');
+  }
+
   ngOnChanges(): void {
     this.attachments = extractAudioAttachments(this.message) ?? [];
     this.states = this.attachments.map((a) => ({
@@ -133,19 +162,33 @@ export class CometChatAudiosBubbleComponent implements OnChanges {
       playing: false,
     }));
     this.errorIndices = new Set<number>();
+    this.failedSources.clear();
     this.captionText = getMediaCaption(this.message);
+    // Offline support: play the SDK's cached copy when it has one. A row's <audio> re-reads its
+    // source when the cached URL arrives, so a row the user is listening to keeps its source.
+    this.offlineMedia.resolve(this.attachments, () => this.cdr.markForCheck(), attachment => {
+      const state = this.states[this.attachments.indexOf(attachment as AudioAttachment)];
+      return !!state && (state.playing || state.currentTime > 0);
+    });
   }
 
   /** True when this row's media failed to load as audio (unsupported type / broken link). */
   protected isUnsupported(index: number): boolean {
-    return this.errorIndices.has(index);
+    if (!this.errorIndices.has(index)) return false;
+    const failed = this.failedSources.get(index);
+    // A row that now shows another source (the SDK's cached copy) is not the one that failed.
+    return failed === undefined || failed === this.attachments[index]?.url;
   }
 
   /**
    * The <audio> couldn't decode the source (it isn't a playable audio file, or the link is broken).
    * Swap the row to a file-style layout (icon + name + download) instead of a dead player.
+   * `el` names the source that failed, so a later cached copy can still play.
    */
-  protected onAudioError(index: number): void {
+  protected onAudioError(index: number, el?: HTMLAudioElement): void {
+    const failed = el?.getAttribute('src') ?? this.attachments[index]?.url;
+    if (failed) this.failedSources.set(index, failed);
+    else this.failedSources.delete(index);
     this.errorIndices = new Set(this.errorIndices).add(index);
     this.cdr.markForCheck();
   }
@@ -159,6 +202,8 @@ export class CometChatAudiosBubbleComponent implements OnChanges {
       }
     }
     if (el.paused) {
+      // AC-12.3: keep a copy of what the user chose to play, for when the device is offline.
+      this.offlineMedia.requestDownload(this.attachments[index]);
       void el.play();
       this.states[index].playing = true;
       this.activeEl = el;

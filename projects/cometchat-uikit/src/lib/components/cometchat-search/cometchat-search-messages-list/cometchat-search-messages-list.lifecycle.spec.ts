@@ -9,6 +9,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 }));
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, SimpleChange, SimpleChanges } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -25,6 +26,8 @@ import { CometChatLocalize } from '../../../resources/CometChatLocalize';
  * in the component, so both mocks must resolve by default or `.catch` blows up.
  */
 class MockSearchMessagesService {
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   messages = signal<CometChat.BaseMessage[]>([]);
   fetchState = signal<States>(States.loaded);
   hasMoreResults = signal(false);

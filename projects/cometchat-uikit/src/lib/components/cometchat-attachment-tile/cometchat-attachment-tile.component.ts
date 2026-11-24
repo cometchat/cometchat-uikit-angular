@@ -171,6 +171,22 @@ export class CometChatAttachmentTileComponent implements OnDestroy {
     return this._tile;
   }
 
+  /** State-contract identifier (offline TEST-PLAN §3.3): the tile's fileId, no file name. */
+  get contractFileId(): string {
+    return this._tile?.fileId ?? this._tile?.id ?? '';
+  }
+
+  /** State-contract identifier: `uploading | done | failed | rejected`. */
+  get contractState(): string {
+    switch (this._tile?.status) {
+      case 'uploaded': return 'done';
+      case 'rejected': return 'rejected';
+      case 'failed':
+      case 'error': return 'failed';
+      default: return 'uploading';
+    }
+  }
+
   ngOnDestroy(): void {
     this.cancelTooltipFrame();
     if (this.audioElRef?.nativeElement) {

@@ -27,7 +27,7 @@ vi.mock('../../resources/CometChatSoundManager/CometChatSoundManager', () => ({
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { signal, WritableSignal } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatConversationsComponent } from './cometchat-conversations.component';
@@ -125,6 +125,7 @@ function groupWithMessage(guid: string, messageId: number, senderUid = 'other'):
  */
 interface MockConversationsService {
   conversations$: BehaviorSubject<CometChat.Conversation[]>;
+  keptRowsError$: Subject<unknown>;
   loadingState$: BehaviorSubject<boolean>;
   errorState$: BehaviorSubject<Error | null>;
   activeConversation$: BehaviorSubject<CometChat.Conversation | null>;
@@ -144,6 +145,7 @@ interface MockConversationsService {
 function makeConversationsService(items: CometChat.Conversation[] = []): MockConversationsService {
   return {
     conversations$: new BehaviorSubject<CometChat.Conversation[]>(items),
+    keptRowsError$: new Subject<unknown>(),
     loadingState$: new BehaviorSubject<boolean>(false),
     errorState$: new BehaviorSubject<Error | null>(null),
     activeConversation$: new BehaviorSubject<CometChat.Conversation | null>(null),

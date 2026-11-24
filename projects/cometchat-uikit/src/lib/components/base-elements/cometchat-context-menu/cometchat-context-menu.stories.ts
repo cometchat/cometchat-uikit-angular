@@ -63,9 +63,10 @@ function createNestedAction(id: string, title: string, iconURL: string): CometCh
  * optionClick. Nesting is one level deep by design.
  */
 function createOrganiseGroup(children: CometChatActionsIcon[]): CometChatActionsIcon {
+  const title = 'Organise';
   return new CometChatActionsIcon({
     id: 'organise',
-    title: 'Organise',
+    title,
     iconURL: '/assets/archive.svg',
     onClick: () => {},
     children,

@@ -11,7 +11,9 @@ import {
   ViewChild,
   inject,
   ChangeDetectionStrategy,
+  DestroyRef,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { safeEffect } from '../../../utils/safe-effect';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -89,6 +91,7 @@ export class CometChatSearchConversationsListComponent implements OnInit, OnChan
 
   readonly service = inject(SearchConversationsService);
   readonly States = States;
+  private readonly destroyRef = inject(DestroyRef);
 
   loggedInUser: CometChat.User | null = null;
 
@@ -96,6 +99,10 @@ export class CometChatSearchConversationsListComponent implements OnInit, OnChan
     safeEffect(() => {
       this.stateChange.emit(this.service.fetchState() as States);
     });
+    // Offline (D83): a search the service re-ran by itself on reconnect reports like any other.
+    this.service.reconnectSearchError$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(error => this.searchError.emit(error));
   }
 
   /** Get typing indicator for a conversation */

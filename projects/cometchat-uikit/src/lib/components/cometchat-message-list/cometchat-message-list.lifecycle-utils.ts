@@ -7,25 +7,14 @@ import {PanelAlignment, States} from '../../Enums/Enums';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 import {CometChatMentionsFormatter} from '../../formatters/cometchat-mentions-formatter';
 
-export function setupMessageListenerImpl(self: any): void {
-  CometChat.addMessageListener(
-    self.messageListenerId,
-    new CometChat.MessageListener({
-      onMessagesDelivered: (_messageReceipt: CometChat.MessageReceipt) => {
-        setTimeout(() => { self.cdr.detectChanges(); }, 500);
-      },
-      onMessagesRead: (_messageReceipt: CometChat.MessageReceipt) => {
-        setTimeout(() => { self.cdr.detectChanges(); }, 500);
-      },
-    })
-  );
-}
-
 export function ngOnInitImpl(self: any): void {
-  self.messageListenerId = `message_list_${Date.now()}`;
+  // No SDK message listener here. MessageListService owns the only one
+  // (new messages, edits, deletes, reactions and receipts). A second listener
+  // named `message_list_${Date.now()}` here shared the service's name whenever
+  // both were built in the same millisecond, and the SDK replaces a listener
+  // with the same name, so the open chat silently stopped receiving messages.
   self.initializeLoggedInUser().then(() => {
     self.configureFormattersWithUser();
-    self.setupMessageListener();
   });
   self.initializeFormatters();
   self.subscribeToMessageEvents();
@@ -115,9 +104,6 @@ export function ngAfterViewInitImpl(self: any): void {
 }
 
 export function ngOnDestroyImpl(self: any): void {
-  if (self.messageListenerId) {
-    CometChat.removeMessageListener(self.messageListenerId);
-  }
   self.disconnectObservers();
   self.pendingReadReceipts.clear();
   if (self.typingAnnouncementTimeout) {

@@ -52,6 +52,12 @@ export function handleOptionClickImpl(self: any, option: ContextMenuItem, messag
     case CometChatUIKitConstants.MessageOption.markAsUnread:
       self.markMessageAsUnread(message);
       break;
+    case CometChatUIKitConstants.MessageOption.retryMessage:
+      self.retryOfflineMessage(message);
+      break;
+    case CometChatUIKitConstants.MessageOption.discardMessage:
+      self.requestOfflineDiscard(message);
+      break;
     default:
       break;
   }

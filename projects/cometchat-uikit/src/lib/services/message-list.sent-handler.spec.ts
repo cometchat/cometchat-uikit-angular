@@ -97,6 +97,27 @@ describe('message-list.sent-handler', () => {
       expect(ctx.updateMessageById).toHaveBeenCalled();
     });
 
+    it('a failed send gets a new reference, so an OnPush bubble shows the error tick', () => {
+      const msg = makeTextMessage(1);
+      (msg as any).getMuid = () => 'M1';
+      const ctx = makeCtx();
+      ctx.messageMuidMap.set('M1', {} as CometChat.BaseMessage);
+      handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.error });
+      const [, row] = ctx.updateMessageByMuid.mock.calls[0];
+      expect(row).not.toBe(msg);
+      expect(Object.getPrototypeOf(row)).toBe(Object.getPrototypeOf(msg));
+      expect(row.getMuid()).toBe('M1');
+    });
+
+    it('a failed send the SDK stripped of its receiver still updates its row, found by muid', () => {
+      const msg = makeTextMessage(1);
+      (msg as any).getMuid = () => 'M1';
+      const ctx = makeCtx({ isMessageForCurrentConversation: vi.fn().mockReturnValue(false) });
+      ctx.messageMuidMap.set('M1', {} as CometChat.BaseMessage);
+      handleSentMessageImpl(ctx, { message: msg, status: MessageStatus.error });
+      expect(ctx.updateMessageByMuid).toHaveBeenCalledTimes(1);
+    });
+
     it('should return early when message is not for current conversation', () => {
       const ctx = makeCtx({ isMessageForCurrentConversation: vi.fn().mockReturnValue(false) });
       const msg = makeTextMessage(1);

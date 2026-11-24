@@ -7,6 +7,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 }));
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -23,6 +24,8 @@ import { CometChatTextFormatter } from '../../../formatters/cometchat-text-forma
  * so the double has to hand back a promise.
  */
 class MockSearchMessagesService {
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   messages = signal<any[]>([]);
   fetchState = signal('loaded');
   hasMore = signal(false);

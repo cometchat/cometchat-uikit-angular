@@ -70,9 +70,11 @@
             "production": {
               "budgets": [
                 {
+                  // 5.5MB, was 5MB: Chat SDK 4.3 adds 0.54MB to the initial bundle (offline support
+                  // ships in the SDK's one entry point); the kit's own offline code adds 0.12MB.
                   "type": "initial",
                   "maximumWarning": "1MB",
-                  "maximumError": "5MB"
+                  "maximumError": "5.5MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -97,6 +99,27 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            // The online E2E suite (playwright.config.ts): the sample app turns offline on
+            // by default; this build keeps the kit's own default (offline OFF).
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "define": {
+                "CC_SAMPLE_OFFLINE_DEFAULT": "false"
+              }
+            },
+            "offline-e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "projects/sample-app/src/environments/environment.ts",
+                  "with": "projects/sample-app/src/environments/environment.offline-e2e.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -109,6 +132,12 @@
             },
             "development": {
               "buildTarget": "sample-app:build:development"
+            },
+            "e2e": {
+              "buildTarget": "sample-app:build:e2e"
+            },
+            "offline-e2e": {
+              "buildTarget": "sample-app:build:offline-e2e"
             }
           },
           "defaultConfiguration": "development"

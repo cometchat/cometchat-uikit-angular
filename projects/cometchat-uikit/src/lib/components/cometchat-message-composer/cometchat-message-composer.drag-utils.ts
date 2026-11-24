@@ -9,6 +9,8 @@ import {CometChatLogger} from '../../utils/CometChatLogger';
 import {markMessageFailed} from '../../utils/message-metadata-utils';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
 import {MessageComposerService} from '../../services/message-composer.service';
+import {isOfflineOn} from '../../utils/offline/offline-gate';
+import {revokeWhenSettled} from '../../utils/offline/send';
 
 export interface DragUtilsContext {
   isDraggingOver: { set(v: boolean): void };
@@ -134,6 +136,8 @@ export async function sendFilesDirectlyImpl(ctx: DragUtilsContext, files: File[]
   if (!receiver) { CometChatLogger.warn('CometChatMessageComposer', 'No receiver (user or group) specified'); return; }
   const quotedMessage = ctx.messageToReplySignal() || undefined;
   let lastSentMessage: CometChat.BaseMessage | null = null;
+  let lastWasQueued = false;
+  const offlineOn = isOfflineOn();
   for (const file of files) {
     const fileType = ctx.getFileType(file);
     const mediaType = ctx.getMediaMessageType(fileType);
@@ -152,6 +156,14 @@ export async function sendFilesDirectlyImpl(ctx: DragUtilsContext, files: File[]
     };
     (pendingMediaMessage as any).getAttachments = () => [localAttachment];
     CometChatMessageEvents.ccMessageSent.next({ message: pendingMediaMessage, status: MessageStatus.inprogress });
+    if (offlineOn) {
+      // Offline path: the hub draws the row and emits the public events.
+      const result = await ctx.messageComposerService.sendOffline(pendingMediaMessage, 'media');
+      if (result.state !== 'failed') { lastSentMessage = result.message; lastWasQueued = result.state === 'sending'; }
+      if (result.state === 'sent') URL.revokeObjectURL(blobUrl);
+      else revokeWhenSettled(result.message, [blobUrl]);
+      continue;
+    }
     try {
       const mediaMessage = await ctx.messageComposerService.sendMediaMessage(receiver, file, mediaType, undefined, ctx.parentMessageId, quotedMessage, pendingMediaMessage);
       if (mediaMessage) {
@@ -171,7 +183,7 @@ export async function sendFilesDirectlyImpl(ctx: DragUtilsContext, files: File[]
   }
   if (quotedMessage && lastSentMessage) {
     ctx.exitReplyMode();
-    CometChatMessageEvents.ccReplyToMessage.next({ message: lastSentMessage, status: MessageStatus.success });
+    if (!lastWasQueued) CometChatMessageEvents.ccReplyToMessage.next({ message: lastSentMessage, status: MessageStatus.success });
   }
   if (lastSentMessage) { ctx.sendButtonClick.emit(lastSentMessage); ctx.announceMessageSent(); }
   ctx.playOutgoingMessageSound();

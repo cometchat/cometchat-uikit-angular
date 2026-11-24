@@ -4,11 +4,43 @@
  * Angular Version Compatibility Verification Script
  * 
  * This script verifies that the UIKit components don't use Angular version-specific
- * APIs that would break compatibility with Angular 18-21 (the library's peer range).
+ * APIs that would break compatibility with the library's declared peer range.
+ *
+ * The range is read from the library's own `peerDependencies['@angular/core']`
+ * rather than hardcoded, so widening the peer range cannot leave this script
+ * reporting a stale range. Note what this does and does not prove: the patterns
+ * below guard the range's LOWER bound (an API newer than the oldest supported
+ * Angular). Nothing here builds against the newest supported Angular, so this
+ * check is not evidence of upper-bound compatibility.
  */
 
 const fs = require('fs');
 const path = require('path');
+
+/**
+ * The supported major range, e.g. "18-22", from the library's @angular/core peer
+ * range (">=18.0.0 <23.0.0"). Falls back to the lower bound alone, or to "unknown".
+ */
+function supportedAngularRange() {
+  try {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(__dirname, '..', 'projects', 'cometchat-uikit', 'package.json'), 'utf8')
+    );
+    const range = (pkg.peerDependencies || {})['@angular/core'] || '';
+    const min = /(?:>=|\^|~)?\s*(\d+)\./.exec(range);
+    const below = /<\s*(\d+)\./.exec(range);
+    if (!min) return 'unknown';
+    if (!below) return `${min[1]}+`;
+    return `${min[1]}-${Number(below[1]) - 1}`;
+  } catch {
+    return 'unknown';
+  }
+}
+
+const SUPPORTED_ANGULAR_RANGE = supportedAngularRange();
+
+/** The oldest supported Angular major, from the same peer range; NaN when unknown. */
+const OLDEST_SUPPORTED_MAJOR = Number((/^(\d+)/.exec(SUPPORTED_ANGULAR_RANGE) || [])[1]);
 
 // Colors for console output
 const colors = {
@@ -102,7 +134,10 @@ const versionSpecificPatterns = [
 ];
 
 // Directories to scan
-const componentsDir = path.join(__dirname, '..', 'projects', '@cometchat/chat-uikit-angular', 'src', 'lib', 'components');
+// The library's real path. This previously pointed at
+// projects/@cometchat/chat-uikit-angular, which has never existed in this repo, so the
+// check exited 1 on "Components directory not found" and scanned nothing.
+const componentsDir = path.join(__dirname, '..', 'projects', 'cometchat-uikit', 'src', 'lib', 'components');
 
 // Results tracking
 const results = {
@@ -133,6 +168,17 @@ function getAllFiles(dir, fileList = []) {
 }
 
 /**
+ * Only an API introduced AFTER the oldest supported Angular can break compatibility: on an 18
+ * floor, `inject()` (14) or `signal()` (16) are simply available. Patterns at or below the floor
+ * are therefore inert. Before this filter the check reported every one of them as an error.
+ */
+const activePatterns = versionSpecificPatterns.filter((check) => {
+  const since = Number((/(\d+)/.exec(check.since) || [])[1]);
+  if (!Number.isFinite(since) || !Number.isFinite(OLDEST_SUPPORTED_MAJOR)) return true;
+  return since > OLDEST_SUPPORTED_MAJOR;
+});
+
+/**
  * Check a file for version-specific patterns
  */
 function checkFile(filePath) {
@@ -140,7 +186,7 @@ function checkFile(filePath) {
   const relativePath = path.relative(process.cwd(), filePath);
   const issues = [];
 
-  versionSpecificPatterns.forEach((check) => {
+  activePatterns.forEach((check) => {
     const matches = content.match(check.pattern);
     if (matches) {
       matches.forEach((match) => {
@@ -182,6 +228,17 @@ function printResults() {
   console.log(`${colors.cyan}═══════════════════════════════════════════════════════════════${colors.reset}\n`);
 
   console.log(`Files scanned: ${results.filesScanned}`);
+  console.log(
+    `Peer range: Angular ${SUPPORTED_ANGULAR_RANGE} · patterns newer than the Angular ` +
+      `${OLDEST_SUPPORTED_MAJOR} floor: ${activePatterns.length} of ${versionSpecificPatterns.length}`
+  );
+  if (activePatterns.length === 0) {
+    console.log(
+      `${colors.yellow}No pattern in this script is newer than the Angular ${OLDEST_SUPPORTED_MAJOR} floor, ` +
+        `so this run proves only that nothing newer than Angular ${OLDEST_SUPPORTED_MAJOR} is used. ` +
+        `It is NOT a build against Angular ${SUPPORTED_ANGULAR_RANGE.split('-').pop()}.${colors.reset}`
+    );
+  }
   console.log(`Errors found: ${colors.red}${results.errors.length}${colors.reset}`);
   console.log(`Warnings found: ${colors.yellow}${results.warnings.length}${colors.reset}\n`);
 
@@ -207,13 +264,13 @@ function printResults() {
 
   if (results.passed && results.warnings.length === 0) {
     console.log(`${colors.green}✅ All checks passed! No version-specific APIs detected.${colors.reset}`);
-    console.log(`${colors.green}   The UIKit is compatible with Angular 18-21.${colors.reset}\n`);
+    console.log(`${colors.green}   The UIKit is compatible with Angular ${SUPPORTED_ANGULAR_RANGE}.${colors.reset}\n`);
   } else if (results.passed) {
     console.log(`${colors.yellow}⚠️  Checks passed with warnings.${colors.reset}`);
     console.log(`${colors.yellow}   Review warnings for potential compatibility improvements.${colors.reset}\n`);
   } else {
     console.log(`${colors.red}❌ Compatibility check failed!${colors.reset}`);
-    console.log(`${colors.red}   Fix errors to ensure Angular 18-21 compatibility.${colors.reset}\n`);
+    console.log(`${colors.red}   Fix errors to ensure Angular ${SUPPORTED_ANGULAR_RANGE} compatibility.${colors.reset}\n`);
   }
 
   console.log(`${colors.cyan}═══════════════════════════════════════════════════════════════${colors.reset}\n`);

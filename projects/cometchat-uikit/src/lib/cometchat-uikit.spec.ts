@@ -18,7 +18,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => {
 import { TestBed } from '@angular/core/testing';
 import { CometChatUIKit } from './cometchat-uikit';
 import { InitResult, LogoutResult } from './modals/CometChatUIKitInterfaces';
-import { UIKitSettings } from './UIKitSettings';
+import { UIKitSettings, UIKitSettingsBuilder } from './UIKitSettings';
 import { CometChat, CometChatSettings } from '@cometchat/chat-sdk-javascript';
 import { CometChatUIKitLoginListener } from './CometChatUIKitLoginListener';
 import { _setCallsSDKForTesting } from './CometChatCalls';
@@ -319,6 +319,116 @@ describe('CometChatUIKit Calls SDK init routing', () => {
 
     expect(callsSDKMock.initFromSettings).toHaveBeenCalledWith(settings);
     expect(callsSDKMock.init).not.toHaveBeenCalled();
+  });
+
+  it('initFromSettings hands a code-level offlineConfig to the SDK as chatSDK.offline', async () => {
+    const settings = createAgentSettings();
+    (settings as any).chatSDK = {
+      autoEstablishSocketConnection: true,
+      offline: { enabled: false },
+    };
+    const spy = vi.spyOn(CometChat, 'initFromSettings').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+    await CometChatUIKit.initFromSettings(settings, { enabled: true, maxConversations: 7 });
+
+    const passed = spy.mock.calls[0][0] as any;
+    expect(passed.chatSDK.offline).toEqual({ enabled: true, maxConversations: 7 });
+    expect(passed.chatSDK.autoEstablishSocketConnection).toBe(true);
+    // The caller's object is not changed.
+    expect((settings as any).chatSDK.offline).toEqual({ enabled: false });
+    expect(CometChatUIKit.uiKitSettings?.getOfflineConfig()).toEqual({
+      enabled: true,
+      maxConversations: 7,
+    });
+  });
+
+  it('initFromSettings drops chatSDK.offline when the SDK is below the offline floor (4.3.0)', async () => {
+    // A 4.3.0-shaped SDK: offline API present, but no 4.3.1-only OfflineCacheResetReason.SCHEMA_RESET.
+    const sdk = CometChat as any;
+    const saved = sdk.OfflineCacheResetReason;
+    sdk.OfflineCacheResetReason = undefined;
+    try {
+      const settings = createAgentSettings();
+      (settings as any).chatSDK = { autoEstablishSocketConnection: true, offline: true };
+      const spy = vi.spyOn(CometChat, 'initFromSettings').mockResolvedValue(true as any);
+      vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+      await CometChatUIKit.initFromSettings(settings, { enabled: true });
+
+      const passed = spy.mock.calls[0][0] as any;
+      expect(passed.chatSDK.offline).toBeUndefined();
+      expect('offline' in passed.chatSDK).toBe(false);
+      expect(passed.chatSDK.autoEstablishSocketConnection).toBe(true);
+      // The caller's object is not changed.
+      expect((settings as any).chatSDK.offline).toBe(true);
+    } finally {
+      sdk.OfflineCacheResetReason = saved;
+    }
+  });
+
+  it('init passes the offline config to the SDK only at the offline floor', async () => {
+    const sdk = CometChat as any;
+    const OriginalBuilder = sdk.AppSettingsBuilder;
+    const received: unknown[] = [];
+    // A builder with setOfflineConfig, as 4.3.0 and 4.3.1 both have. The test setup's builder
+    // returns a Proxy from its constructor, so this stub replaces it rather than subclassing it.
+    sdk.AppSettingsBuilder = function RecordingAppSettingsBuilder() {
+      const builder: any = new Proxy(
+        {},
+        {
+          get(_target, prop) {
+            if (prop === 'build') return () => ({});
+            if (prop === 'setOfflineConfig') {
+              return (config: unknown) => {
+                received.push(config);
+                return builder;
+              };
+            }
+            return () => builder;
+          },
+        }
+      );
+      return builder;
+    };
+    const savedReason = sdk.OfflineCacheResetReason;
+    vi.spyOn(CometChat, 'init').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(null as any);
+    try {
+      const make = () =>
+        new UIKitSettingsBuilder()
+          .setAppId('test-app-id')
+          .setRegion('us')
+          .setAuthKey('test-auth-key')
+          .setOfflineConfig({ enabled: true })
+          .build();
+
+      // 4.3.1-shaped SDK (SCHEMA_RESET present): the config reaches the SDK.
+      sdk.OfflineCacheResetReason = { SCHEMA_RESET: 'SCHEMA_RESET' };
+      await CometChatUIKit.init(make());
+      expect(received).toEqual([{ enabled: true }]);
+
+      // 4.3.0-shaped SDK: it does not, so the SDK runs online only, as the kit does.
+      received.length = 0;
+      sdk.OfflineCacheResetReason = undefined;
+      await CometChatUIKit.init(make());
+      expect(received).toEqual([]);
+    } finally {
+      sdk.AppSettingsBuilder = OriginalBuilder;
+      sdk.OfflineCacheResetReason = savedReason;
+    }
+  });
+
+  it('initFromSettings without offlineConfig passes the file offline block unchanged', async () => {
+    const settings = createAgentSettings();
+    (settings as any).chatSDK = { offline: true };
+    const spy = vi.spyOn(CometChat, 'initFromSettings').mockResolvedValue(true as any);
+    vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(createMockUser());
+
+    await CometChatUIKit.initFromSettings(settings);
+
+    expect(spy.mock.calls[0][0]).toBe(settings);
+    expect(CometChatUIKit.uiKitSettings?.getOfflineConfig()).toEqual({ enabled: true });
   });
 
   it('does not initialize the Calls SDK when the settings file does not enable calling', async () => {

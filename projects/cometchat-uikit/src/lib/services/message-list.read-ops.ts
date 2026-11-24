@@ -7,6 +7,21 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { CometChatMessageEvents } from '../events/CometChatMessageEvents';
 import { isRetryableError } from './message-list.error-utils';
+import { isOfflineOn } from '../utils/offline/offline-gate';
+import { isNotConnectedError } from '../utils/offline/reconcile';
+import { OfflineHub } from '../utils/offline/offline-hub';
+
+/**
+ * Offline (ON) path, AC-7.4: a chat read while offline clears its unread count
+ * in the SDK's cache, but the receipt never reaches the server. Remember the
+ * chat so one read receipt goes out after the next sync.
+ */
+function rememberOfflineRead(message: CometChat.BaseMessage, error: unknown): void {
+  if (!isNotConnectedError(error) || !isOfflineOn()) return;
+  const type = message.getReceiverType();
+  const id = type === 'group' ? message.getReceiverId() : message.getSender()?.getUid?.();
+  if (id) OfflineHub.getInstance().rememberReadWhileOffline(id, type);
+}
 
 export interface ReadOpsContext {
   messageIdMap: Map<number, CometChat.BaseMessage>;
@@ -31,6 +46,7 @@ export async function markAsReadImpl(ctx: ReadOpsContext, message: CometChat.Bas
       const isRetryable = isRetryableError(error);
       if (!isRetryable || isLastAttempt) {
         CometChatLogger.error('MessageListService', `markAsRead: Failed after ${attempt + 1} attempt(s)`, { messageId: message.getId(), error, isRetryable });
+        rememberOfflineRead(message, error);
         return;
       }
       await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
@@ -100,6 +116,11 @@ export async function markConversationAsReadImpl(
   try {
     await CometChat.markConversationAsRead(conversationWith, conversationType);
   } catch (error) {
+    // Offline path (AC-7.4): the read stays cleared on the device; send it after the next sync.
+    if (isNotConnectedError(error) && isOfflineOn()) {
+      OfflineHub.getInstance().rememberReadWhileOffline(conversationWith, conversationType);
+      return;
+    }
     CometChatLogger.error('MessageListService', 'markConversationAsRead failed', {
       conversationWith, conversationType, error,
     });

@@ -1,9 +1,11 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from '../resources/CometChatLocalize/cometchat-localize';
 import { CometChatUIKitUtility } from '../CometChatUIKitUtility';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { CometChatToastService } from '../components/base-elements/cometchat-toast/cometchat-toast.service';
+import { hasSdkFunction, isOfflineOn, offlineSdk } from '../utils/offline/offline-gate';
+import { OfflineHub } from '../utils/offline/offline-hub';
 import type {
   AttachmentFile,
 } from '../components/cometchat-message-composer/cometchat-message-composer.types';
@@ -236,7 +238,30 @@ export function extractVideoMeta(file: File, maxDim = 320): Promise<VideoMeta> {
  * `stage()` and whenever a cancel/remove empties the tray.
  */
 @Injectable()
-export class MediaUploadTrayService {
+export class MediaUploadTrayService implements OnDestroy {
+  /** Set once this tray ran on the offline path; scopes the session cleanup below. */
+  private offlineUsed = false;
+  /**
+   * Offline: a logout or user switch lets go of the batch, so no tile of the
+   * previous session stays on screen (UIK-LIFE-01). The SDK keeps the durable
+   * batch itself. A cache reset lets go too, then restores whatever batch the
+   * rebuilt store still holds for this chat. A tray that never ran offline is
+   * untouched, exactly as today.
+   */
+  private readonly offlineSessionSubscription = OfflineHub.getInstance().sessionEnd$.subscribe(() => {
+    if (!this.offlineUsed) { return; }
+    this.detach();
+  });
+  private readonly offlineResetSubscription = OfflineHub.getInstance().cacheReset$.subscribe(() => {
+    if (!this.offlineUsed) { return; }
+    this.detach();
+    this.scheduleRestore();
+  });
+
+  ngOnDestroy(): void {
+    this.offlineSessionSubscription.unsubscribe();
+    this.offlineResetSubscription.unsubscribe();
+  }
   /** key = fileId (UIKit-generated; the SDK echoes it back on every event) */
   private readonly _tilesMap = signal<Map<string, AttachmentFile>>(new Map());
   private readonly _canSend = signal(false);
@@ -306,9 +331,148 @@ export class MediaUploadTrayService {
     this.receiverId = id;
     this.receiverType = type;
     this.parentMessageId = parentMessageId;
+    const offlineOn = isOfflineOn();
+    if (offlineOn) { this.offlineUsed = true; }
     if (changed && this.request) {
-      this.clearAll();
+      // Offline on: the SDK keeps the old destination's batch durable, so this tray only lets go
+      // of it (BEH-UPLOAD-14). Offline off: destroyed, as today.
+      if (offlineOn) { this.detach(); } else { this.clearAll(); }
     }
+    if (changed) { this.restoredKey = null; }
+    this.scheduleRestore();
+  }
+
+  // ── Offline: restore the tray after a restart (BEH-UPLOAD-14, UIK-UPLOAD-01) ──────────────────
+
+  /**
+   * The composer opened on, or moved to, a conversation (or thread): record the destination and
+   * restore its batch. Offline on, a batch of the previous destination is let go (not destroyed).
+   * Offline off, a live batch is left exactly as today (destroyed by `reset()` / the next
+   * `setReceiver`), and nothing is restored - there is no durable batch to restore.
+   */
+  syncReceiver(id: string, type: string, parentMessageId?: string | number): void {
+    if (isOfflineOn()) { this.setReceiver(id, type, parentMessageId); return; }
+    if (this.request || this._tilesMap().size > 0) { return; }
+    if (this.receiverId !== id || this.receiverType !== type || this.parentMessageId !== parentMessageId) { this.restoredKey = null; }
+    this.receiverId = id;
+    this.receiverType = type;
+    this.parentMessageId = parentMessageId;
+    this.scheduleRestore();
+  }
+
+  /** Triple the last restore ran for, so one settled `(receiver, type, parent)` restores once. */
+  private restoredKey: string | null = null;
+  private restoreScheduled = false;
+  /** Tiles that came from a restored batch: their retry hands the SDK this tray's listener. */
+  private readonly restoredIds = new Set<string>();
+
+  private tripleKey(): string {
+    return `${this.receiverType}|${this.receiverId}|${this.parentMessageId ?? ''}`;
+  }
+
+  /**
+   * Restore once, after the caller has finished setting the receiver: the composer sets user/group
+   * and the thread parent in separate steps, and only the settled triple may be restored (a thread
+   * composer must never pick up the main chat's batch). Posted with a microtask so it reads the
+   * final value. Nothing is scheduled at all with offline off.
+   */
+  private scheduleRestore(): void {
+    // Offline off: there is no durable batch to restore, so the kit asks the SDK
+    // nothing at all. The read answered null anyway, but it is still an offline
+    // SDK call - and a microtask and a promise per composer open and per
+    // conversation switch - behind a gate that is meant to cost nothing
+    // (UIK-GATE-03, P1).
+    if (!isOfflineOn()) { return; }
+    if (this.restoreScheduled || !this.receiverId || !hasSdkFunction('getExistingUploadFileRequest')) { return; }
+    this.restoreScheduled = true;
+    queueMicrotask(() => {
+      this.restoreScheduled = false;
+      void this.restore();
+    });
+  }
+
+  private async restore(): Promise<void> {
+    const key = this.tripleKey();
+    if (this.restoredKey === key || this.request || this._tilesMap().size > 0) { return; }
+    this.restoredKey = key;
+    let existing: CometChat.UploadFileRequest | null;
+    try {
+      existing = await offlineSdk().getExistingUploadFileRequest(this.receiverId, this.receiverType, this.parentMessageId);
+    } catch (error) {
+      CometChatLogger.warn('MediaUploadTray', 'Could not restore the upload tray:', error);
+      return;
+    }
+    // The destination moved on, or the user staged files, while the SDK was answering.
+    if (!existing || key !== this.tripleKey() || this.request || this._tilesMap().size > 0) { return; }
+    const items = ((existing as any).getItems?.() ?? (existing as any).getFiles?.() ?? []) as {
+      fileId: string; name: string; size: number; mimeType: string; status: string;
+      attachment?: CometChat.Attachment; failure?: { code?: string; message?: string }; localCopyMissing?: boolean;
+    }[];
+    if (items.length === 0) { return; }
+    this.request = existing;
+    const tiles = new Map<string, AttachmentFile>();
+    for (const item of items) {
+      const status: AttachmentFile['status'] =
+        item.status === 'uploaded' ? 'uploaded'
+        : item.status === 'rejected' || item.localCopyMissing ? 'rejected'
+        : 'failed'; // queued / uploading / failed: interrupted, waits for the user's Retry
+      tiles.set(item.fileId, {
+        id: item.fileId,
+        fileId: item.fileId,
+        // The original handle died with the process; the tile never reads it.
+        file: undefined as unknown as File,
+        type: detectAttachmentType(item.mimeType),
+        name: item.name,
+        size: item.size,
+        mimeType: item.mimeType,
+        uploadProgress: status === 'uploaded' ? 100 : 0,
+        loaded: status === 'uploaded' ? item.size : 0,
+        total: item.size,
+        status,
+        attachment: status === 'uploaded' ? item.attachment : undefined,
+        errorMessage: status === 'uploaded'
+          ? undefined
+          : (item.failure?.code ? this.uploadErrorMessage(item.failure as unknown as CometChat.CometChatException)
+            : CometChatLocalize.getLocalizedString('message_composer_upload_failed')),
+      });
+      this.restoredIds.add(item.fileId);
+    }
+    this._tilesMap.set(tiles);
+    this._canSend.set(deriveCanSend(this.tiles()));
+    this.hydrateRestoredPreviews(existing, items.map(i => i.fileId));
+  }
+
+  /** Best-effort previews from the SDK's own copy of each file (images, and a video's first frame). */
+  private hydrateRestoredPreviews(request: CometChat.UploadFileRequest, fileIds: string[]): void {
+    for (const fileId of fileIds) {
+      const tile = this._tilesMap().get(fileId);
+      if (!tile || (tile.type !== 'image' && tile.type !== 'video')) { continue; }
+      Promise.resolve((request as any).getFileBytes?.(fileId)).then(async (bytes: Blob | null) => {
+        if (!bytes || this.request !== request || !this._tilesMap().has(fileId)) { return; }
+        if (tile.type === 'image') {
+          if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+            this.patchTile(fileId, { thumbnailUrl: URL.createObjectURL(bytes) });
+          }
+          return;
+        }
+        const { poster, durationSec } = await extractVideoMeta(new File([bytes], tile.name, { type: tile.mimeType }));
+        this.patchTile(fileId, { ...(poster ? { thumbnailUrl: poster } : {}), ...(durationSec !== undefined ? { durationSec } : {}) });
+      }).catch(() => { /* no preview: the tile keeps its type glyph */ });
+    }
+  }
+
+  /**
+   * Let go of the batch without telling the SDK to drop it (offline on): the tiles, their object
+   * URLs and this tray's request reference go; the SDK's durable batch stays for the next open.
+   */
+  private detach(): void {
+    for (const tile of this.tiles()) { this.revoke(tile); }
+    this._tilesMap.set(new Map());
+    this.request = null;
+    this.restoredIds.clear();
+    this.restoredKey = null;
+    this._canSend.set(false);
+    this._notice.set(null);
   }
 
   /**
@@ -513,7 +677,9 @@ export class MediaUploadTrayService {
     try {
       // Re-uploads the bytes the SDK retained for this file (re-presigning if the old presign
       // expired) — the file object never has to be handed back.
-      this.request.retryAttachment(fileId);
+      // A restored file has no per-call listener from this session; hand it this
+      // tray's. The listener argument is SDK 4.3, and the kit also builds on 4.2.1.
+      if (this.restoredIds.has(fileId)) { (this.request as any).retryAttachment(fileId, this.listener); } else { this.request.retryAttachment(fileId); }
     } catch {
       /* surfaced via the listener */
     }
@@ -542,13 +708,17 @@ export class MediaUploadTrayService {
     }
     this._tilesMap.set(new Map());
     this.request = null;
+    this.restoredIds.clear();
     this._canSend.set(false);
     this._notice.set(null);
   }
 
-  /** Lifecycle cleanup alias (conversation switch / destroy). */
+  /**
+   * Lifecycle cleanup (conversation switch / destroy). Offline off: the batch is destroyed, as
+   * today. Offline on: the tray lets go and the SDK keeps the batch for the next open.
+   */
   reset(): void {
-    this.clearAll();
+    if (this.request && isOfflineOn()) { this.detach(); } else { this.clearAll(); }
   }
 
   /** Successfully-uploaded attachments to put on the outgoing MediaMessage. */

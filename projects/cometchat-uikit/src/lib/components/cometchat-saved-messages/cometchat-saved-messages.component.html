@@ -43,6 +43,11 @@
     @case (States.error) {
       @if (errorView) {
         <ng-container *ngTemplateOutlet="errorView"></ng-container>
+      } @else if (offlineConnectToLoad()) {
+        <!-- Offline (D84 rule 3): nothing saved and no connection; no Retry. -->
+        <div class="cometchat-saved-messages__state" role="status" data-testid="cc-empty" data-cc-reason="connect-to-load">
+          <p>{{ 'message_list_connect_to_load' | translate }}</p>
+        </div>
       } @else {
         <div class="cometchat-saved-messages__state">
           <p>{{ 'pin_save_generic_error' | translate }}</p>

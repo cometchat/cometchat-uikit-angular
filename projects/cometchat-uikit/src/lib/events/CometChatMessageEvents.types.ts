@@ -17,3 +17,22 @@ export interface IMessages {
    */
   parentMessageId?: number | null;
 }
+
+/** An own message's send state on the offline path. */
+export type MessageSendState = 'sending' | 'sent' | 'failed' | 'discarded';
+
+/** Payload of `CometChatMessageEvents.ccMessageSendStateChanged` (offline support only). */
+export interface IMessageSendStateChanged {
+  message: CometChat.BaseMessage;
+  state: MessageSendState;
+  /** The SDK's `MessageFailureReason` for `failed` and `discarded`. */
+  reason?: string;
+}
+
+/** Payload of `CometChatMessageEvents.ccOfflineCacheReset` (offline support only). */
+export interface IOfflineCacheReset {
+  /** The SDK's `OfflineCacheResetReason`. */
+  reason: string;
+  /** Unsent messages the reset lost; `null` when unknown. */
+  pendingMessagesLost: number | null;
+}

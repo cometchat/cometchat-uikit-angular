@@ -171,7 +171,7 @@ describe('CometChatUIKitConstants', () => {
       expect(Object.isFrozen(CometChatUIKitConstants.MessageOption)).toBe(true);
     });
 
-    it('should have all 20 expected keys', () => {
+    it('should have all 22 expected keys', () => {
       const keys = Object.keys(CometChatUIKitConstants.MessageOption);
       expect(keys).toEqual(
         expect.arrayContaining([
@@ -195,9 +195,12 @@ describe('CometChatUIKitConstants', () => {
           'sendMessagePrivately',
           'replyMessagePrivately',
           'markAsUnread',
+          // Offline support: acting on an own message that has not been sent.
+          'retryMessage',
+          'discardMessage',
         ])
       );
-      expect(keys).toHaveLength(20);
+      expect(keys).toHaveLength(22);
     });
 
     it('should have correct string values', () => {

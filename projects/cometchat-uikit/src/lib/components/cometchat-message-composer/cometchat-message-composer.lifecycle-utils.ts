@@ -1,4 +1,4 @@
-import {SimpleChanges} from '@angular/core';
+import {SimpleChanges, untracked} from '@angular/core';
 import { safeEffect } from '../../utils/safe-effect';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
 import {CometChatMessageComposerAction} from '../../modals';
@@ -18,6 +18,17 @@ export function setupConstructorEffectsImpl(self: any): void {
     } else {
       self.voiceCoordinator.release(self);
     }
+  });
+  // Offline: tell the upload tray which conversation (and thread) it is for, so it can restore
+  // that batch after a restart. Read on the settled values; the tray restores in a microtask.
+  safeEffect(() => {
+    const user = self.currentUser();
+    const group = self.currentGroup();
+    if (!self.enableMultipleAttachments || (!user && !group)) return;
+    untracked(() => {
+      const type = user ? 'user' : 'group';
+      self.mediaUploadTray?.syncReceiver?.(user ? user.getUid() : group.getGuid(), type, self.parentMessageId);
+    });
   });
   safeEffect(() => {
     const st = self.mentionSearchText();

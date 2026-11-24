@@ -7,6 +7,9 @@
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
+import {drawsUnsentState} from '../../utils/offline/unsent-actions';
+import {isOutboxFailed, isSending} from '../../utils/offline/identity';
+import {OfflineHub} from '../../utils/offline/offline-hub';
 
 /**
  * Gets the avatar image URL for a conversation.
@@ -15,8 +18,10 @@ export function getConversationAvatarImage(
   conversationWith: CometChat.User | CometChat.Group | null
 ): string {
   if (!conversationWith) return '';
-  if (conversationWith instanceof CometChat.User) return conversationWith.getAvatar() || '';
-  return (conversationWith as CometChat.Group).getIcon() || '';
+  // A row rebuilt from the device store can be a plain `{ uid }` object with no getters at all
+  // (ENG-57814): read what is there and draw the row, rather than throwing while it renders.
+  if (conversationWith instanceof CometChat.User) return conversationWith.getAvatar?.() || '';
+  return (conversationWith as CometChat.Group).getIcon?.() || '';
 }
 
 /**
@@ -25,7 +30,7 @@ export function getConversationAvatarImage(
 export function getConversationAvatarName(
   conversationWith: CometChat.User | CometChat.Group | null
 ): string {
-  return conversationWith?.getName() || '';
+  return conversationWith?.getName?.() || '';
 }
 
 /**
@@ -64,6 +69,15 @@ export function getReceiptStatus(
   const category = lastMessage.getCategory();
   if (category === 'action' || category === 'call') return null;
 
+  // Offline support: an own preview that is not sent yet shows the clock, or
+  // the error mark once it failed; never a sent tick (BEH-SEND-32).
+  // (The failed mark is isPreviewSendFailed below: the public receiptStatus
+  // union keeps today's members, README P2.)
+  if (drawsUnsentState(lastMessage)) {
+    if (isPreviewSendFailed(lastMessage, isLastMessageByMe)) return null;
+    if (isSending(lastMessage)) return 'wait';
+  }
+
   const readAt = lastMessage.getReadAt();
   const deliveredAt = lastMessage.getDeliveredAt();
   const sentAt = lastMessage.getSentAt();
@@ -72,6 +86,15 @@ export function getReceiptStatus(
   if (deliveredAt) return 'delivered';
   if (sentAt) return 'sent';
   return 'wait';
+}
+
+/**
+ * Offline support only: the chat's last message is an own send that failed
+ * (outbox FAILED, or failed direct this session). Always false with offline off.
+ */
+export function isPreviewSendFailed(lastMessage: CometChat.BaseMessage | undefined, isLastMessageByMe: boolean): boolean {
+  if (!lastMessage || !isLastMessageByMe || !drawsUnsentState(lastMessage)) return false;
+  return OfflineHub.getInstance().directFailureOf(lastMessage) !== undefined || isOutboxFailed(lastMessage);
 }
 
 /**
@@ -101,7 +124,7 @@ export function getConversationAccessibleLabel(
   subtitleText: string,
   unreadCount: number
 ): string {
-  const name = conversationWith?.getName() || '';
+  const name = conversationWith?.getName?.() || '';
   const parts = [name];
   if (subtitleText) {
     // Strip HTML tags from subtitle to produce valid aria-label text

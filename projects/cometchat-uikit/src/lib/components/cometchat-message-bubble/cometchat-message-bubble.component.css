@@ -921,3 +921,47 @@
   -webkit-mask: url('../../assets/bookmark_filled.svg') center center no-repeat;
   mask: url('../../assets/bookmark_filled.svg') center center no-repeat;
 }
+
+/* Offline support: "Not sent. Tap to retry" on a failed own message. */
+.cometchat-message-bubble__offline-retry {
+  background: none;
+  border: none;
+  padding: 0;
+  padding-inline-start: var(--cometchat-padding-1, 4px);
+  margin: 0;
+  cursor: pointer;
+  color: var(--cometchat-message-bubble-offline-retry-color, var(--cometchat-error-color, #f44649));
+  font: var(--cometchat-message-bubble-offline-retry-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px 'Roboto', sans-serif));
+  white-space: nowrap;
+}
+.cometchat-message-bubble__offline-retry:focus-visible {
+  outline: 2px solid var(--cometchat-message-bubble-offline-retry-focus-outline-color, var(--cometchat-primary-color, #6852d6));
+  outline-offset: 2px;
+  border-radius: var(--cometchat-radius-1, 4px);
+}
+/* Offline support: the row tint of an own failed message; none unless themed. */
+.cometchat-message-bubble--offline-failed {
+  background-color: var(--cometchat-message-bubble-offline-failed-tint, transparent);
+}
+/* Offline support: the failed tick of an own unsent message (a themeable icon colour). */
+.cometchat-receipts-error.cometchat-message-bubble__offline-failed .cometchat-message-list__receipt {
+  background: var(--cometchat-message-bubble-offline-failed-icon-color, var(--cometchat-error-color));
+}
+
+/* Offline support: "Not sent yet" next to the clock of an own unsent message.
+   It fades in after a moment, so an online send that is acked at once never
+   flashes it. */
+.cometchat-message-bubble__offline-pending {
+  padding-inline-start: var(--cometchat-padding-1, 4px);
+  white-space: nowrap;
+  color: var(--cometchat-message-bubble-offline-pending-color, var(--cometchat-text-color-secondary, #727272));
+  font: var(--cometchat-message-bubble-offline-pending-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px 'Roboto', sans-serif));
+  opacity: 0;
+  animation: cometchat-message-bubble-offline-pending-in 0s linear 0.4s forwards;
+}
+@keyframes cometchat-message-bubble-offline-pending-in {
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cometchat-message-bubble__offline-pending { animation-duration: 0s; }
+}

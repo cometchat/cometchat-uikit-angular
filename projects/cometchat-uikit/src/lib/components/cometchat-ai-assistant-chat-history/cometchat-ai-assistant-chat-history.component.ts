@@ -19,6 +19,11 @@ import { MessageStatus } from '../../Enums/Enums';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { CometChatUIKitConstants } from '../../constants';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { mergeSnapshotPage, readPageTwoPhase } from '../../utils/offline/two-phase';
+import { OfflineListSession, watchOfflineSession } from '../../utils/offline/list-session';
+import { OfflineHubService } from '../../services/offline-hub.service';
+import { ConnectionStateService } from '../../services/connection-state.service';
 
 /**
  * CometChatAIAssistantChatHistory renders a sidebar list of past AI conversations.
@@ -36,6 +41,15 @@ import { CometChatUIKitConstants } from '../../constants';
 })
 export class CometChatAIAssistantChatHistory implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  /** Offline: logout / user switch clears the list, a cache reset reloads it (UIK-LIFE-01/02). */
+  private readonly offlineSession = new OfflineListSession();
+  private readonly offlineHub = inject(OfflineHubService);
+  private readonly connectionState = inject(ConnectionStateService);
+  /**
+   * Offline (D83): the error view is up because the device was not connected, so the first page
+   * is read once more by itself when the connection is back. A non-network error never sets it.
+   */
+  private reloadOnConnect = false;
   private readonly hostRef = inject(ElementRef<HTMLElement>);
 
   // ── Shared constants ──────────────────────────────────────────────────────
@@ -91,6 +105,28 @@ export class CometChatAIAssistantChatHistory implements OnInit {
     this._buildRequest();
     this.fetchMessages();
     this._subscribeToMessageSent();
+    watchOfflineSession(this.offlineHub, this.destroyRef, this.offlineSession, {
+      clear: () => {
+        this.messages.set([]);
+        this.isLoading.set(false);
+        this.hasError.set(false);
+        this._messagesRequest = null;
+        this._hasMore = true;
+        this._isFirstPage = true;
+      },
+      reload: () => {
+        this._buildRequest();
+        this.fetchMessages();
+      },
+    });
+    // Offline (D83): an error view that is up because the device was offline loads once on reconnect.
+    this.connectionState.reconnected$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (isOfflineOn() && this.reloadOnConnect && this.hasError() && this.messages().length === 0) {
+        this.reloadOnConnect = false;
+        this._buildRequest();
+        this.fetchMessages();
+      }
+    });
   }
 
   // ── Public methods ────────────────────────────────────────────────────────
@@ -123,6 +159,11 @@ export class CometChatAIAssistantChatHistory implements OnInit {
 
     this.isLoading.set(true);
     this.hasError.set(false);
+
+    if (isOfflineOn()) {
+      void this.fetchMessagesOffline(this._messagesRequest);
+      return;
+    }
 
     this._messagesRequest
       .fetchPrevious()
@@ -164,6 +205,58 @@ export class CometChatAIAssistantChatHistory implements OnInit {
           this.hasError.set(true);
         }
       });
+  }
+
+  /**
+   * Offline path of {@link fetchMessages}: the cached page paints at once, the server page then
+   * replaces it in place. Rows are deduped by id and kept newest-first, so "load more" never
+   * repeats one; an offline read past the cache keeps what is shown with no error.
+   */
+  private async fetchMessagesOffline(request: CometChat.MessagesRequest): Promise<void> {
+    this.offlineSession.markRan();
+    const epoch = this.offlineSession.epoch;
+    const keyOf = (m: CometChat.TextMessage) => String(m.getId());
+    const newestFirst = (rows: CometChat.TextMessage[]) =>
+      [...rows].sort((a, b) => (b.getSentAt() - a.getSentAt()) || (b.getId() - a.getId()));
+    const asText = (page: CometChat.BaseMessage[]) =>
+      page.filter((m): m is CometChat.TextMessage => m instanceof CometChat.TextMessage);
+    const first = this._isFirstPage;
+    this.reloadOnConnect = false;
+    let cachedKeys = new Set<string>();
+    try {
+      const { server } = await readPageTwoPhase<CometChat.BaseMessage>(request, 'messages', cached => {
+        const text = asText(cached);
+        if (this.offlineSession.isStale(epoch) || text.length === 0) return;
+        cachedKeys = new Set(text.map(keyOf));
+        this.messages.set(newestFirst(mergeSnapshotPage(this.messages(), new Set<string>(), text, keyOf)));
+      }, 'previous');
+      if (this.offlineSession.isStale(epoch)) return;
+      if (server === null) {
+        // Offline and nothing newer: keep what is shown. With nothing on screen it is the error
+        // view (D83), read once more when the connection is back.
+        this.isLoading.set(false);
+        if (this.messages().length === 0) {
+          this.reloadOnConnect = true;
+          this.hasError.set(true);
+        } else {
+          this._isFirstPage = false;
+        }
+        return;
+      }
+      const text = asText(server);
+      // Only an empty server page ends the list (BEH-READ-09b).
+      if (server.length === 0) this._hasMore = false;
+      this.messages.set(newestFirst(mergeSnapshotPage(this.messages(), cachedKeys, text, keyOf)));
+      this.isLoading.set(false);
+      const newest = this.messages()[0];
+      if (first && this.loadLastAgentConversation() && newest) this.messageClick.emit(newest);
+      if (first && this.messages().length === 0) this.empty.emit();
+      this._isFirstPage = false;
+    } catch {
+      if (this.offlineSession.isStale(epoch)) return;
+      this.isLoading.set(false);
+      if (this.messages().length === 0) this.hasError.set(true);
+    }
   }
 
   /** Handles clicking a message item. */

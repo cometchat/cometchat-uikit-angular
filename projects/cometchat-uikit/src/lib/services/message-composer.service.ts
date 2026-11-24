@@ -1,11 +1,20 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { Subject, debounceTime, switchMap, of, catchError } from 'rxjs';
+import { Subject, Observable, debounceTime, switchMap, of, catchError } from 'rxjs';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { isMediaMessage } from '../utils/message-metadata-utils';
 import { toThreadId, writeThreadSubscribed } from '../utils/thread-subscription-utils';
 import { markMessageFailed } from '../utils/message-metadata-utils';
 import { ThreadSubscriptionService } from './thread-subscription.service';
+import {
+  OfflineSendKind,
+  OfflineSendOptions,
+  OfflineSendResult,
+  sendWithState,
+} from '../utils/offline/send';
+import { isQuietRejection } from '../utils/offline/identity';
+import { isOfflineOn } from '../utils/offline/offline-gate';
+import { isNotConnectedError } from '../utils/offline/reconcile';
 import type { ErrorCallback, MentionSuggestion, PollCreatePayload, CollaborativePayload } from './message-composer.types';
 import {
   handleComposerError,
@@ -42,7 +51,6 @@ export class MessageComposerService {
   private isFetchingMoreMentionsSignal = signal<boolean>(false);
   private hasMoreMentionsSignal = signal<boolean>(true);
   private mentionsPaginationRequest: any = null;
-
   private mentionSearchSubject = new Subject<{
     searchText: string;
     group?: CometChat.Group;
@@ -78,11 +86,11 @@ export class MessageComposerService {
           this.isFetchingMentionsSignal.set(true);
           if (group) {
             return fetchGroupMembersForMention(group, searchText, groupMembersRequestBuilder, disableMentionAll, mentionAllLabel).pipe(
-              catchError(error => { this.handleError(error, 'Error fetching group members for mention'); return of([]); })
+              catchError(error => this.mentionFetchFailed(error, searchText, 'Error fetching group members for mention'))
             );
           }
           return fetchUsersForMention(searchText, usersRequestBuilder).pipe(
-            catchError(error => { this.handleError(error, 'Error fetching users for mention'); return of([]); })
+            catchError(error => this.mentionFetchFailed(error, searchText, 'Error fetching users for mention'))
           );
         })
       )
@@ -90,6 +98,22 @@ export class MessageComposerService {
         this.mentionSuggestionsSignal.set(suggestions);
         this.isFetchingMentionsSignal.set(false);
       });
+  }
+
+  /**
+   * A mention fetch failed. Offline, a keyword search has no cache to answer from: that is an
+   * empty list ("no match"), never an error or a "Connect to search" prompt (Android
+   * `TwoPhaseSuggestionFetch`). Anything else is the error as today.
+   */
+  private mentionFetchFailed(
+    error: unknown,
+    searchText: string,
+    context: string
+  ): Observable<MentionSuggestion[]> {
+    if (!(searchText && isOfflineOn() && isNotConnectedError(error))) {
+      this.handleError(error, context);
+    }
+    return of([]);
   }
 
   // ==================== Error Callback ====================
@@ -136,6 +160,45 @@ export class MessageComposerService {
   }
 
   // ==================== Message Sending ====================
+
+  /**
+   * Offline (ON) path: send a message the composer already built and announced
+   * (`inprogress`), through the offline send helper. The helper reports every
+   * transition, and the public events, through the offline hub, so the caller
+   * emits nothing itself. Resolves once the SDK first answers: `sent`, `sending`
+   * (queued, not a failure) or `failed`. Never rejects.
+   *
+   * @internal
+   */
+  async sendOffline(
+    message: CometChat.BaseMessage,
+    kind: OfflineSendKind,
+    options?: OfflineSendOptions
+  ): Promise<OfflineSendResult> {
+    this.seedOutgoingThreadReply(message);
+    const capturedSession = this.threadSubscription.captureSession();
+    this.isSendingSignal.set(true);
+    try {
+      const result = await sendWithState(message, kind, options);
+      const settled = (r: OfflineSendResult) => {
+        if (r.state === 'sent') {
+          this.mirrorThreadReplySent(r.message, capturedSession);
+        }
+        if (r.state === 'failed' && !r.quiet && !isQuietRejection(r.error)) {
+          this.handleError(
+            r.error ?? new Error(r.reason || 'Message send failed'),
+            'Error sending message'
+          );
+        }
+      };
+      settled(result);
+      // A caller that moved on at pending still gets its send's own answer handled.
+      void result.final?.then(settled);
+      return result;
+    } finally {
+      this.isSendingSignal.set(false);
+    }
+  }
 
   async sendTextMessage(
     receiver: CometChat.User | CometChat.Group,
@@ -365,7 +428,8 @@ export class MessageComposerService {
       this.hasMoreMentionsSignal.set(newSuggestions.length >= 20);
     } catch (error) {
       this.hasMoreMentionsSignal.set(false);
-      this.handleError(error, 'Error fetching more mentions');
+      // Offline past the cache: keep the list, no error toast.
+      if (!(isOfflineOn() && isNotConnectedError(error))) this.handleError(error, 'Error fetching more mentions');
     } finally { this.isFetchingMoreMentionsSignal.set(false); }
   }
 
@@ -380,7 +444,9 @@ export class MessageComposerService {
     } catch (error) { this.handleError(error, 'Error checking self mention'); return false; }
   }
 
-  clearMentionSuggestions(): void { this.mentionSuggestionsSignal.set([]); }
+  clearMentionSuggestions(): void {
+    this.mentionSuggestionsSignal.set([]);
+  }
 
   stopMentionSearch(): void {
     this.isFetchingMentionsSignal.set(false);

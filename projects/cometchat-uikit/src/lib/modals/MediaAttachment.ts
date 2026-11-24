@@ -49,6 +49,13 @@ export interface MediaAttachment {
   /** The MIME type of the media (optional) */
   mimeType?: string;
 
+  /**
+   * The file an unsent (queued) own message still holds; it has no `url` yet. Set only on the
+   * offline path, and replaced by an object URL in `url`/`displayUrl` when the bubble resolves it.
+   * @internal
+   */
+  file?: Blob;
+
   /** The original attachment object from CometChat SDK */
   raw?: CometChat.Attachment;
 }

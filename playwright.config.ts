@@ -25,6 +25,8 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
+  // The offline suite runs against the harness's fake server: playwright.offline.config.ts.
+  testIgnore: ['offline/**', 'offline-baseline/**'],
   fullyParallel: false, // Sequential — tests share CometChat state
   forbidOnly: !!process.env['CI'],
   // Quarantined tests (flaky, tagged @quarantine with a Linear issue in the title) are skipped by
@@ -69,7 +71,8 @@ export default defineConfig({
         timeout: 30_000,
       }
     : {
-        command: `npx ng serve sample-app --port ${PORT}`,
+        // `-c e2e`: offline OFF (the kit's default); the sample app's own default is ON.
+        command: `npx ng serve sample-app -c e2e --port ${PORT}`,
         url: BASE_URL,
         reuseExistingServer: !process.env['CI'],
         timeout: 120_000, // 2 min for Angular build

@@ -35,6 +35,9 @@ import { MediaControlsService } from '../../services/media-controls.service';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
 import { CometChatLogger } from '../../utils/CometChatLogger';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
+import { CachedMediaUrls } from '../../utils/offline/media';
+import { OfflineHubService } from '../../services/offline-hub.service';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import {
   resolveWaveSurferColors,
   createWaveSurferInstance,
@@ -118,12 +121,18 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
 
   private mediaControlsService = inject(MediaControlsService);
   private liveAnnouncer = inject(LiveAnnouncerService);
+  /** Offline support: object URLs of cached copies this bubble plays. */
+  private readonly offlineMedia = new CachedMediaUrls();
+  private readonly offlineHub = inject(OfflineHubService);
 
   constructor(private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-  ngOnInit(): void { this.processMessage(); }
+  ngOnInit(): void {
+    this.offlineMedia.watch(this.offlineHub.mediaReady$, () => this.offlineHub.connectionChanged$);
+    this.processMessage();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     const messageChange = changes['message'];
@@ -147,6 +156,7 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
     this.pendingTimers.forEach(t => clearTimeout(t));
     this.pendingTimers = [];
     this.cleanupWaveSurferInstances();
+    this.offlineMedia.dispose();
   }
 
   // ── Message Processing ────────────────────────────────────────────────────
@@ -160,6 +170,31 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
     this.hasCaption = hasAudioCaption(this.message);
     this.isOutgoing = this.alignment === MessageBubbleAlignment.right;
     this.cdr.markForCheck();
+    // Offline support: play the SDK's cached copy when it has one. A waveform that already started
+    // loading the remote URL is rebuilt on the cached one, never one the user is listening to.
+    this.offlineMedia.resolve(this.attachments, () => {
+      this.cdr.markForCheck();
+      if (this.attachments.some(attachment => this.isAudioInUse(attachment))) return;
+      this.cleanupWaveSurferInstances();
+      this.pendingTimers.push(setTimeout(() => this.initializeAllWaveSurfers(), 0));
+    }, attachment => this.isAudioInUse(attachment));
+  }
+
+  /** Playing, or paused part way through: rebuilding the player would lose the position. */
+  private isAudioInUse(attachment: unknown): boolean {
+    const index = this.attachments.indexOf(attachment as AudioAttachment);
+    if (index < 0) return false;
+    const state = this.getAudioState(index);
+    return state.isPlaying || state.currentTime > 0;
+  }
+
+  /** Offline: this audio has no cached copy and the device is offline, so it cannot play now. */
+  protected isUnavailable(index: number): boolean {
+    return this.offlineMedia.isUnavailable(this.attachments[index]);
+  }
+
+  protected get unavailableText(): string {
+    return CometChatLocalize.getLocalizedString('message_bubble_media_available_when_online');
   }
 
   // ── WaveSurfer Management ─────────────────────────────────────────────────
@@ -200,7 +235,7 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
 
   private initializeWaveSurfer(index: number): void {
     const attachment = this.attachments[index];
-    if (!attachment?.url) return;
+    if (!attachment?.url || this.offlineMedia.isUnavailable(attachment)) return;
     const containers = this.waveformContainers?.toArray();
     if (!containers?.[index]) return;
     const container = containers[index].nativeElement;
@@ -212,7 +247,12 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
     const waveSurfer = createWaveSurferInstance(container, colors);
     state.waveSurfer = waveSurfer;
     this.setupWaveSurferEvents(waveSurfer, index);
-    waveSurfer.load(attachment.url).catch((error: Error) => this.handleLoadError(error, index));
+    waveSurfer.load(attachment.url).catch((error: Error) => {
+      // Rebuilding the player (offline: the cached copy arrived) destroys this one, and its load
+      // then rejects with an AbortError. That failure belongs to a player no longer shown.
+      if (this.audioStates.get(index)?.waveSurfer !== waveSurfer) return;
+      this.handleLoadError(error, index);
+    });
   }
 
   private setupWaveSurferEvents(waveSurfer: WaveSurfer, index: number): void {
@@ -264,6 +304,8 @@ export class CometChatAudioBubbleComponent implements OnInit, OnChanges, OnDestr
       this.playStateChange.emit({ isPlaying: false, attachment });
     } else {
       if (currentAudioPlayer.instance && currentAudioPlayer.instance !== waveSurfer) { closeCurrentMediaPlayer(true); }
+      // AC-12.3: keep a copy of what the user chose to play, for when the device is offline.
+      this.offlineMedia.requestDownload(attachment);
       waveSurfer.play()
         .then(() => {
           state.isPlaying = true;

@@ -12,6 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import {
   Component,
   EventEmitter,
@@ -37,6 +38,8 @@ import { CometChatTextFormatter } from '../../../formatters/cometchat-text-forma
 // ---------------------------------------------------------------------------
 
 class SearchServiceDouble {
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   conversations = signal<CometChat.Conversation[]>([]);
   fetchState = signal<States>(States.loaded);
   hasMoreResults = signal(false);

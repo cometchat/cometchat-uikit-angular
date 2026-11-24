@@ -13,10 +13,29 @@ export interface ReactionOpsContext {
   updateMessageReactions: (id: number, reactions: CometChat.ReactionCount[]) => boolean;
 }
 
-export async function addReactionImpl(ctx: ReactionOpsContext, messageId: number, emoji: string): Promise<void> {
+/**
+ * A copy of a reaction count. The optimistic update edits copies, so the
+ * message's own reaction objects stay as they were and a failed request can
+ * restore them (editing them in place made the rollback restore the edit).
+ */
+function copyOf(reaction: CometChat.ReactionCount): CometChat.ReactionCount {
+  return new CometChat.ReactionCount(
+    reaction.getReaction(),
+    reaction.getCount(),
+    reaction.getReactedByMe()
+  );
+}
+
+export async function addReactionImpl(
+  ctx: ReactionOpsContext,
+  messageId: number,
+  emoji: string
+): Promise<void> {
   const message = ctx.messageIdMap.get(ctx.normalizeMessageId(messageId));
   if (!message) {
-    const error = new Error(`[MessageListService] addReaction: Message with ID ${messageId} not found`);
+    const error = new Error(
+      `[MessageListService] addReaction: Message with ID ${messageId} not found`
+    );
     CometChatLogger.error('MessageListService', error.message);
     throw error;
   }
@@ -24,7 +43,8 @@ export async function addReactionImpl(ctx: ReactionOpsContext, messageId: number
   const updatedReactions: CometChat.ReactionCount[] = [];
   let reactionFound = false;
   let alreadyReacted = false;
-  originalReactions.forEach(reaction => {
+  originalReactions.forEach(original => {
+    const reaction = copyOf(original);
     if (reaction.getReaction() === emoji) {
       reactionFound = true;
       if (reaction.getReactedByMe()) {
@@ -46,7 +66,10 @@ export async function addReactionImpl(ctx: ReactionOpsContext, messageId: number
       updatedReactions.push(reaction);
     }
   });
-  if (!reactionFound) { const newReaction = new CometChat.ReactionCount(emoji, 1, true); updatedReactions.push(newReaction); }
+  if (!reactionFound) {
+    const newReaction = new CometChat.ReactionCount(emoji, 1, true);
+    updatedReactions.push(newReaction);
+  }
   ctx.updateMessageReactions(messageId, updatedReactions);
   try {
     if (alreadyReacted) {
@@ -56,24 +79,41 @@ export async function addReactionImpl(ctx: ReactionOpsContext, messageId: number
       await CometChat.addReaction(messageId, emoji);
     }
   } catch (error) {
-    CometChatLogger.error('MessageListService', 'addReaction: Failed to add/remove reaction', error);
+    CometChatLogger.error(
+      'MessageListService',
+      'addReaction: Failed to add/remove reaction',
+      error
+    );
     ctx.updateMessageReactions(messageId, originalReactions);
-    if (ctx.errorCallback) { ctx.errorCallback(error as CometChat.CometChatException); }
+    if (ctx.errorCallback) {
+      ctx.errorCallback(error as CometChat.CometChatException);
+    }
   }
 }
 
-export async function removeReactionImpl(ctx: ReactionOpsContext, messageId: number, emoji: string): Promise<void> {
+export async function removeReactionImpl(
+  ctx: ReactionOpsContext,
+  messageId: number,
+  emoji: string
+): Promise<void> {
   const message = ctx.messageIdMap.get(ctx.normalizeMessageId(messageId));
   if (!message) {
-    const error = new Error(`[MessageListService] removeReaction: Message with ID ${messageId} not found`);
+    const error = new Error(
+      `[MessageListService] removeReaction: Message with ID ${messageId} not found`
+    );
     CometChatLogger.error('MessageListService', error.message);
     throw error;
   }
   const originalReactions = message.getReactions() || [];
   const updatedReactions: CometChat.ReactionCount[] = [];
-  originalReactions.forEach(reaction => {
+  originalReactions.forEach(original => {
+    const reaction = copyOf(original);
     if (reaction.getReaction() === emoji) {
-      if (reaction.getCount() > 1) { reaction.setCount(reaction.getCount() - 1); reaction.setReactedByMe(false); updatedReactions.push(reaction); }
+      if (reaction.getCount() > 1) {
+        reaction.setCount(reaction.getCount() - 1);
+        reaction.setReactedByMe(false);
+        updatedReactions.push(reaction);
+      }
     } else {
       updatedReactions.push(reaction);
     }
@@ -84,14 +124,22 @@ export async function removeReactionImpl(ctx: ReactionOpsContext, messageId: num
   } catch (error) {
     CometChatLogger.error('MessageListService', 'removeReaction: Failed to remove reaction', error);
     ctx.updateMessageReactions(messageId, originalReactions);
-    if (ctx.errorCallback) { ctx.errorCallback(error as CometChat.CometChatException); }
+    if (ctx.errorCallback) {
+      ctx.errorCallback(error as CometChat.CometChatException);
+    }
   }
 }
 
-export async function fetchReactionsImpl(ctx: ReactionOpsContext, messageId: number, builder?: CometChat.ReactionsRequestBuilder): Promise<CometChat.Reaction[]> {
+export async function fetchReactionsImpl(
+  ctx: ReactionOpsContext,
+  messageId: number,
+  builder?: CometChat.ReactionsRequestBuilder
+): Promise<CometChat.Reaction[]> {
   try {
     let reactionsRequestBuilder: CometChat.ReactionsRequestBuilder;
-    if (builder) { reactionsRequestBuilder = builder.setMessageId(messageId); } else {
+    if (builder) {
+      reactionsRequestBuilder = builder.setMessageId(messageId);
+    } else {
       reactionsRequestBuilder = new CometChat.ReactionsRequestBuilder().setMessageId(messageId);
     }
     const reactionsRequest = reactionsRequestBuilder.build();
@@ -99,7 +147,9 @@ export async function fetchReactionsImpl(ctx: ReactionOpsContext, messageId: num
     return reactions;
   } catch (error) {
     CometChatLogger.error('MessageListService', 'fetchReactions: Failed to fetch reactions', error);
-    if (ctx.errorCallback) { ctx.errorCallback(error as CometChat.CometChatException); }
+    if (ctx.errorCallback) {
+      ctx.errorCallback(error as CometChat.CometChatException);
+    }
     return [];
   }
 }

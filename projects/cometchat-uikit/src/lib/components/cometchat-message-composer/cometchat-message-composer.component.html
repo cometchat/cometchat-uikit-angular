@@ -595,7 +595,7 @@
 
 
     <!-- Text Input Area -->
-    <div class="cometchat-message-composer__text-input-wrapper"
+    <div class="cometchat-message-composer__text-input-wrapper" data-testid="cc-composer-input"
       [class.cometchat-message-composer__text-input-wrapper--disabled]="isMultilineLayout() && isRecording()"
       [class.cometchat-message-composer__text-input-wrapper--hidden]="!isMultilineLayout() && isRecording()">
       <!-- Contenteditable Input (always rendered, disabled during recording) -->

@@ -1,6 +1,8 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../utils/CometChatLogger';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { OfflineHubService } from './offline-hub.service';
 import type { ErrorCallback } from './message-header.types';
 import {
   addUserStatusListener,
@@ -24,6 +26,9 @@ import {
 
 // Re-export types for backward compatibility
 export type { ErrorCallback } from './message-header.types';
+
+/** The group-member actions whose group snapshot carries a member count. */
+const MEMBER_COUNT_ACTIONS = new Set(['joined', 'left', 'kicked', 'banned', 'added']);
 
 /**
  * MessageHeaderService
@@ -77,8 +82,17 @@ export class MessageHeaderService {
   readonly connectionStatus = this.connectionStatusSignal.asReadonly();
 
   private destroyRef = inject(DestroyRef);
+  private readonly offlineHub = inject(OfflineHubService);
 
   constructor() {
+    // Offline path: swept group actions come on neither SDK listener channel
+    // (BEH-SYNC-25). With offline off the hub never emits.
+    this.offlineHub.messageSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
+      // A sweep that belongs to an ended session (logout, user switch, cache
+      // reset) must not touch the header the next session is showing.
+      if (event.gen !== this.offlineHub.gen) return;
+      this.applySweptGroupActions(event.messages);
+    });
     this.destroyRef.onDestroy(() => {
       try {
         this.removeAllListeners();
@@ -338,7 +352,46 @@ export class MessageHeaderService {
     if (this.typingTimeout) { clearTimeout(this.typingTimeout); this.typingTimeout = undefined; }
   }
 
-  /** Increment count if the event is for the current group. */
+  /**
+   * Apply the group-member actions a catch-up sweep replayed.
+   *
+   * A live action means "one member just joined or left", so the live listener
+   * moves the count by one. A swept action is history, and the conversation
+   * sync has already handed the header the group as the server has it now,
+   * with a count that includes every swept action. Moving by one again drifts
+   * (a repeated or PARTIAL sweep drifts further), so the swept path never
+   * increments: the count the header already shows stands, and the newest
+   * swept action's own snapshot is read only when the header has no count at
+   * all yet.
+   */
+  private applySweptGroupActions(messages: readonly CometChat.BaseMessage[]): void {
+    const groupId = this.currentGroupId;
+    if (!groupId) return;
+
+    // A count is already on screen (from the synced group, or from a live
+    // event since): it is newer than anything the sweep carries. Leave it.
+    if (this.groupMemberCountSignal() > 0) return;
+
+    // Nothing to show yet: the newest swept action's snapshot is the best count
+    // there is. Newest wins so a PARTIAL sweep can't move it back.
+    let newest: { at: number; id: number; count: number } | null = null;
+    for (const message of messages) {
+      if (message?.getCategory?.() !== 'action' || message.getType?.() !== 'groupMember') continue;
+      const action = message as CometChat.Action;
+      if (!MEMBER_COUNT_ACTIONS.has(String(action.getAction?.() ?? ''))) continue;
+      const group = action.getActionFor?.() as CometChat.Group | undefined;
+      if (!group || typeof (group as any).getGuid !== 'function') continue;
+      if (group.getGuid() !== groupId) continue;
+      const count = group.getMembersCount?.();
+      if (typeof count !== 'number' || !Number.isFinite(count) || count < 0) continue;
+      const at = action.getSentAt?.() ?? 0;
+      const id = action.getId?.() ?? 0;
+      if (!newest || at > newest.at || (at === newest.at && id > newest.id))
+        newest = { at, id, count };
+    }
+    if (newest) this.groupMemberCountSignal.set(newest.count);
+  }
+
   private handleGroupMemberJoined(group: CometChat.Group): void {
     if (this.currentGroupId && group.getGuid() === this.currentGroupId) this.incrementGroupMemberCount();
   }

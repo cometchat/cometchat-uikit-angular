@@ -29,7 +29,7 @@ vi.mock('../../resources/CometChatSoundManager/CometChatSoundManager', () => ({
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { signal, WritableSignal } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatConversationsComponent } from './cometchat-conversations.component';
@@ -95,6 +95,7 @@ function namedConversation(uid: string, name: string): CometChat.Conversation {
 
 interface MockConversationsService {
   conversations$: BehaviorSubject<CometChat.Conversation[]>;
+  keptRowsError$: Subject<unknown>;
   loadingState$: BehaviorSubject<boolean>;
   errorState$: BehaviorSubject<Error | null>;
   activeConversation$: BehaviorSubject<CometChat.Conversation | null>;
@@ -114,6 +115,7 @@ interface MockConversationsService {
 function makeConversationsService(items: CometChat.Conversation[] = []): MockConversationsService {
   return {
     conversations$: new BehaviorSubject<CometChat.Conversation[]>(items),
+    keptRowsError$: new Subject<unknown>(),
     loadingState$: new BehaviorSubject<boolean>(false),
     errorState$: new BehaviorSubject<Error | null>(null),
     activeConversation$: new BehaviorSubject<CometChat.Conversation | null>(null),
@@ -1055,6 +1057,50 @@ describe('CometChatConversationsComponent — interaction edges', () => {
 
       expect(set).not.toHaveBeenCalled();
       expect(c.focusedIndex()).toBe(1);
+    });
+  });
+  // -------------------------------------------------------------------------
+  // A row the device store rebuilt as a plain object
+  // -------------------------------------------------------------------------
+
+  describe('a conversation whose participant is a plain object', () => {
+    /**
+     * The first message to a new contact came back from the store with the peer as `{ uid }`:
+     * no getters, and not `instanceof CometChat.User`, so `getGuid()` was not a function and the
+     * list threw while rendering - `trackBy` reads the id for every row (ENG-57814).
+     */
+    function plainConversation(key: 'uid' | 'guid', id: string): CometChat.Conversation {
+      return {
+        getConversationId: () => `conv-${id}`,
+        getConversationWith: () => ({ [key]: id }) as unknown as CometChat.User,
+        getConversationType: () => (key === 'uid' ? 'user' : 'group'),
+        getUnreadMessageCount: () => 0,
+        getLastMessage: () => undefined,
+      } as unknown as CometChat.Conversation;
+    }
+
+    it('reads the id of a uid-only row instead of throwing', async () => {
+      const conv = plainConversation('uid', 'bob');
+      await build([conv]);
+
+      expect(c.getConversationId(conv)).toBe('bob');
+      expect(c.getConversationName(conv)).toBe('');
+      expect(c.getTypingIndicator(conv)).toBeNull();
+    });
+
+    it('reads the id of a guid-only row instead of throwing', async () => {
+      const conv = plainConversation('guid', 'team');
+      await build([conv]);
+
+      expect(c.getConversationId(conv)).toBe('team');
+    });
+
+    it('renders a list holding such a row', async () => {
+      await build([plainConversation('uid', 'bob'), userConversation('alice')]);
+
+      expect(() => {
+        fixture.detectChanges();
+      }).not.toThrow();
     });
   });
 });

@@ -18,6 +18,7 @@ import {CometChatContextMenuComponent, ContextMenuItem,} from '../base-elements/
 import {MessageHeaderService} from '../../services/message-header.service';
 import {ChatStateService} from '../../services/chat-state.service';
 import {COMETCHAT_GLOBAL_CONFIG, GlobalConfig} from '../../services/global-config.service';
+import { OfflineHubService } from '../../services/offline-hub.service';
 
 import {TranslatePipe} from '../../resources/CometChatLocalize/translate.pipe';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
@@ -115,7 +116,10 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
       ].filter(Boolean).length > 1
   );
 
-  effectiveHideUserStatus = computed(() => { if (this.hideUserStatusExplicitlySet()) return this._hideUserStatus(); if (this.globalConfig?.hideUserStatus !== undefined) return this.globalConfig.hideUserStatus; return false; });
+  private readonly offlineHub = inject(OfflineHubService);
+  /** Offline on and the SDK not connected: no presence anywhere in the header. */
+  readonly presenceHidden = this.offlineHub.presenceHidden;
+  effectiveHideUserStatus = computed(() => { if (this.presenceHidden()) return true; if (this.hideUserStatusExplicitlySet()) return this._hideUserStatus(); if (this.globalConfig?.hideUserStatus !== undefined) return this.globalConfig.hideUserStatus; return false; });
 
   effectiveHideVoiceCallButton = computed(() => { if (this.hideVoiceCallButtonExplicitlySet()) return this._hideVoiceCallButton(); return !CometChatUIKit.isCallingEnabled(); });
 
@@ -136,7 +140,7 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
   get templateContext(): { user?: CometChat.User; group?: CometChat.Group } { return { user: this.currentUser() ?? undefined, group: this.currentGroup() ?? undefined }; }
   constructor() {
     this.initializeSignals();
-    safeEffect(() => { const s = this.userStatusSignal(); if (this.previousUserStatus !== null && this.previousUserStatus !== s && this.user) this.announceStatusChange(s); this.previousUserStatus = s; });
+    safeEffect(() => { const s = this.userStatusSignal(); if (this.previousUserStatus !== null && this.previousUserStatus !== s && this.user && !this.presenceHidden()) this.announceStatusChange(s); this.previousUserStatus = s; });
     safeEffect(() => {
       const su = this.chatStateService.activeUser(); const sg = this.chatStateService.activeGroup(); const up = this.propsProvided();
       if (!up) {
@@ -295,14 +299,23 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     if (user || group) { this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); }
     else { this.autoSummaryTriggered = false; safeEffect(() => { const u = this.currentUser(); const g = this.currentGroup(); if ((u || g) && !this.autoSummaryTriggered) { this.autoSummaryTriggered = true; this.pendingTimers.push(setTimeout(() => { try { this.triggerSummaryGeneration(); } catch (e) { CometChatLogger.error('CometChatMessageHeader', 'Error during auto-summary generation:', e); this.emitError(e); } }, 0)); } }, { injector: this.injector }); }
   }
+  /**
+   * Whether this group event's own group snapshot may set the member count.
+   * A swept replay carries the group as it was when the action happened, which
+   * is older than the group the conversation sync delivered just before the
+   * replay, so applying it would undo joins that came after it.
+   */
+  private countIsCurrent(message: CometChat.BaseMessage | undefined): boolean {
+    return !this.offlineHub.wasSweptAction(message);
+  }
   private subscribeToGroupEvents(): void {
     const loggedInUser = CometChatUIKit.getLoggedInUser();
     CometChatGroupEvents.ccGroupMemberAdded.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupMemberAdded) => { const group = this.currentGroup(); if (group && group.getGuid() === item.userAddedIn?.getGuid()) { if (item.usersAdded?.length > 0) item.usersAdded.forEach((u: CometChat.User) => { if (u.getUid() === loggedInUser?.getUid()) group.setHasJoined(true); }); group.setMembersCount(item.userAddedIn.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.userAddedIn.getMembersCount()); this.cdr.markForCheck(); } });
-    CometChatGroupEvents.ccGroupMemberBanned.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupMemberKickedBanned) => { const group = this.currentGroup(); if (group && group.getGuid() === item.kickedFrom?.getGuid()) { if (loggedInUser?.getUid() === item.kickedUser?.getUid()) group.setHasJoined(false); group.setMembersCount(item.kickedFrom.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.kickedFrom.getMembersCount()); this.cdr.markForCheck(); } });
+    CometChatGroupEvents.ccGroupMemberBanned.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupMemberKickedBanned) => { const group = this.currentGroup(); if (group && group.getGuid() === item.kickedFrom?.getGuid()) { if (loggedInUser?.getUid() === item.kickedUser?.getUid()) group.setHasJoined(false); if (this.countIsCurrent(item.message)) { group.setMembersCount(item.kickedFrom.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.kickedFrom.getMembersCount()); } this.cdr.markForCheck(); } });
     CometChatGroupEvents.ccGroupMemberJoined.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupMemberJoined) => { const group = this.currentGroup(); if (group && group.getGuid() === item.joinedGroup?.getGuid()) { if (loggedInUser?.getUid() === item.joinedUser?.getUid()) group.setHasJoined(true); group.setMembersCount(item.joinedGroup.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.joinedGroup.getMembersCount()); this.cdr.markForCheck(); } });
-    CometChatGroupEvents.ccGroupMemberKicked.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupMemberKickedBanned) => { const group = this.currentGroup(); if (group && group.getGuid() === item.kickedFrom?.getGuid()) { if (loggedInUser?.getUid() === item.kickedUser?.getUid()) group.setHasJoined(false); group.setMembersCount(item.kickedFrom.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.kickedFrom.getMembersCount()); this.cdr.markForCheck(); } });
+    CometChatGroupEvents.ccGroupMemberKicked.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupMemberKickedBanned) => { const group = this.currentGroup(); if (group && group.getGuid() === item.kickedFrom?.getGuid()) { if (loggedInUser?.getUid() === item.kickedUser?.getUid()) group.setHasJoined(false); if (this.countIsCurrent(item.message)) { group.setMembersCount(item.kickedFrom.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.kickedFrom.getMembersCount()); } this.cdr.markForCheck(); } });
     CometChatGroupEvents.ccOwnershipChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IOwnershipChanged) => { const group = this.currentGroup(); if (group && group.getGuid() === item.group?.getGuid()) { group.setOwner(item.group.getOwner()); this.cdr.markForCheck(); } });
-    CometChatGroupEvents.ccGroupLeft.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupLeft) => { const group = this.currentGroup(); if (group && group.getGuid() === item.leftGroup?.getGuid()) { if (loggedInUser?.getUid() === item.userLeft?.getUid()) group.setHasJoined(false); group.setMembersCount(item.leftGroup.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.leftGroup.getMembersCount()); this.cdr.markForCheck(); } });
+    CometChatGroupEvents.ccGroupLeft.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((item: IGroupLeft) => { const group = this.currentGroup(); if (group && group.getGuid() === item.leftGroup?.getGuid()) { if (loggedInUser?.getUid() === item.userLeft?.getUid()) group.setHasJoined(false); if (this.countIsCurrent(item.message)) { group.setMembersCount(item.leftGroup.getMembersCount()); this.messageHeaderService.updateGroupMemberCount(item.leftGroup.getMembersCount()); } this.cdr.markForCheck(); } });
   }
   getOverflowMenuOptions(): CometChatOption[] {
     const opts: CometChatOption[] = [];
@@ -389,12 +402,14 @@ export class CometChatMessageHeaderComponent implements OnInit, OnDestroy, OnCha
     };
   }
   getHeaderAriaLabel(): string {
+    if (this.presenceHidden() && this.currentUser()) return this.getDisplayName();
     return getHeaderAriaLabel(
       this.getDisplayName(), this.currentUser(), this.currentGroup(),
       this.userStatusSignal(), this.getMemberCount()
     );
   }
   getItemAriaLabel(): string {
+    if (this.presenceHidden() && this.currentUser()) return `${this.getDisplayName()}. ${CometChatLocalize.getLocalizedString('message_header_click_for_details')}`;
     return getItemAriaLabel(
       this.getDisplayName(), this.currentUser(), this.currentGroup(),
       this.userStatusSignal(), this.getMemberCount()

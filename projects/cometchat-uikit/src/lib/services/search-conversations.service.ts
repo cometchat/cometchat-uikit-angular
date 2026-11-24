@@ -1,11 +1,17 @@
-import { Injectable, signal, WritableSignal } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal, WritableSignal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatSearchFilter, States } from '../Enums/Enums';
 import { CometChatUIKitConstants } from '../constants';
 import { CometChatMessageEvents } from '../events/CometChatMessageEvents';
 import { hasValidSearchCriteria } from '../components/cometchat-search/search-filter.utils';
 import { CometChatUIKitUtility } from '../CometChatUIKitUtility';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
+import { ConnectionStateService } from './connection-state.service';
+import { isOfflineOn } from '../utils/offline/offline-gate';
+import { isNotConnectedError } from '../utils/offline/reconcile';
+import { SearchFailureHold } from './search-failure-hold';
+import { mergeSnapshotPage, readPageTwoPhase } from '../utils/offline/two-phase';
 
 /**
  * Service managing conversation search state, SDK queries,
@@ -16,10 +22,30 @@ export class SearchConversationsService {
   readonly conversations: WritableSignal<CometChat.Conversation[]> = signal<CometChat.Conversation[]>([]);
   readonly fetchState: WritableSignal<States> = signal<States>(States.loaded);
   readonly hasMoreResults: WritableSignal<boolean> = signal<boolean>(false);
+  /**
+   * Offline (D83): a search the service re-ran by itself on reconnect failed. A search the user or
+   * app started rejects to its caller instead; this is the channel for the one nobody awaits.
+   */
+  readonly reconnectSearchError$ = new Subject<CometChat.CometChatException>();
+  /**
+   * Offline (D84 rule 7): the search could not reach the server and nothing saved matches, so the list
+   * says "Connect to search" (`fetchState` is `empty`; no `searchError`). It runs once more by itself
+   * when the connection is back (rule 8). Always false with offline off.
+   */
+  readonly connectToSearch: WritableSignal<boolean> = signal<boolean>(false);
+  /**
+   * Offline (D84, Android): the search failed with a real error and nothing is shown, inside the search
+   * component. The component decides, once both scopes have answered, whether that is the error view or
+   * the plain empty state (`fetchState` is `empty`; no `searchError` from this scope). Always false with
+   * offline off, and outside the search component.
+   */
+  readonly searchFailed: WritableSignal<boolean> = signal<boolean>(false);
   readonly typingIndicatorMap: WritableSignal<Map<string, CometChat.TypingIndicator>> = signal<Map<string, CometChat.TypingIndicator>>(new Map());
 
   private searchRequest: CometChat.ConversationsRequest | null = null;
   private isLoadingMore = false;
+  /** Bumped by every new search and reset: an answer for an older one is dropped. */
+  private generation = 0;
   private loggedInUser: CometChat.User | null = null;
   // Listener IDs for cleanup
   private messageListenerId = '';
@@ -28,6 +54,33 @@ export class SearchConversationsService {
   private callListenerId = '';
   private typingListenerId = '';
   private receiptSubscriptions: Subscription[] = [];
+  private readonly connectionState = inject(ConnectionStateService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly failureHold = inject(SearchFailureHold, { optional: true });
+  /**
+   * Offline (D84): "Connect to search" is up because the device was not connected, so the same search
+   * runs once more by itself when the connection is back. A non-network error never sets it.
+   */
+  private reloadOnConnect = false;
+  private lastSearch: {
+    keyword: string;
+    filters: CometChatSearchFilter[];
+    customBuilder?: CometChat.ConversationsRequestBuilder;
+  } | null = null;
+
+  constructor() {
+    this.connectionState.reconnected$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.rerunAfterReconnect());
+  }
+
+  /** Offline on, "Connect to search" up because of no connection: run the last search once more (D84 rule 8). */
+  private rerunAfterReconnect(): void {
+    if (!isOfflineOn() || !this.reloadOnConnect || !this.connectToSearch() || !this.lastSearch) return;
+    this.reloadOnConnect = false;
+    const { keyword, filters, customBuilder } = this.lastSearch;
+    this.search(keyword, filters, customBuilder).catch(error => this.reconnectSearchError$.next(error));
+  }
 
   /**
    * Initiate a conversation search.
@@ -37,9 +90,18 @@ export class SearchConversationsService {
     filters: CometChatSearchFilter[],
     customBuilder?: CometChat.ConversationsRequestBuilder
   ): Promise<void> {
+    const gen = ++this.generation;
+    const stale = () => gen !== this.generation;
+    this.isLoadingMore = false;
     this.fetchState.set(States.loading);
     this.conversations.set([]);
     this.hasMoreResults.set(false);
+    this.reloadOnConnect = false;
+    this.connectToSearch.set(false);
+    this.searchFailed.set(false);
+    this.failureHold?.drop('conversations');
+    this.lastSearch = { keyword, filters, customBuilder };
+    this.keywordSearch = keyword.trim() !== '';
 
     if (!hasValidSearchCriteria(keyword, filters)) {
       this.fetchState.set(States.empty);
@@ -49,7 +111,13 @@ export class SearchConversationsService {
     try {
       this.searchRequest = this.buildRequest(keyword, filters, customBuilder);
       const limit = filters.length > 0 ? 30 : 3;
+      // Offline on, filters without a keyword: cached rows first, then the server's (README §3.9).
+      if (isOfflineOn() && !this.keywordSearch) {
+        await this.searchTwoPhase(this.searchRequest, limit, stale);
+        return;
+      }
       const results = await this.searchRequest.fetchNext();
+      if (stale()) return;
 
       if (results.length > 0) {
         this.conversations.set(results);
@@ -60,9 +128,60 @@ export class SearchConversationsService {
         this.hasMoreResults.set(false);
       }
     } catch (error) {
-      this.fetchState.set(States.error);
+      // An older search's failure says nothing about the current one.
+      if (stale()) return;
+      // Offline on, no connection: the conversations already on screen stay and nothing is reported (D84 rule 2); with
+      // nothing on screen a keyword search is "Connect to search", an offline state with no `searchError`
+      // (rule 7), and runs once more when the connection is back (rule 8). A search by filter alone is not
+      // "Connect to search" (Android): it is the plain empty state, with no report and no re-run.
+      const rowsShown = isOfflineOn() && this.conversations().length > 0;
+      if (isOfflineOn() && isNotConnectedError(error)) {
+        const connectToSearch = this.keywordSearch && !rowsShown;
+        this.reloadOnConnect = connectToSearch;
+        this.connectToSearch.set(connectToSearch);
+        this.fetchState.set(rowsShown ? States.loaded : States.empty);
+        return;
+      }
+      // Offline on, inside the search component, a real failure with nothing on screen waits for the other
+      // scope (Android's final state): the component makes it the error view only when that scope failed too,
+      // reports it when that scope has results, and otherwise it is the plain empty state with no report.
+      if (isOfflineOn() && !rowsShown && this.failureHold) {
+        this.failureHold.hold('conversations', error);
+        this.searchFailed.set(true);
+        this.fetchState.set(States.empty);
+        return;
+      }
+      // Any other failure: results on screen stay (and it is reported once, rule 5); with nothing on
+      // screen it is the error view (rule 4). The caller reports it: this is the search's `onError`.
+      this.fetchState.set(rowsShown ? States.loaded : States.error);
       throw error;
     }
+  }
+
+  /** Whether the current search has a keyword (and so has no cache to read). */
+  private keywordSearch = false;
+
+  /** Filters without a keyword on the offline path: cached then server, deduped by conversation id. */
+  private async searchTwoPhase(request: CometChat.ConversationsRequest, limit: number, stale: () => boolean): Promise<void> {
+    const keyOf = (c: CometChat.Conversation) => c.getConversationId();
+    let cachedKeys = new Set<string>();
+    const { server, unreachable } = await readPageTwoPhase<CometChat.Conversation>(request, 'conversations', cached => {
+      if (stale() || cached.length === 0) return;
+      cachedKeys = new Set(cached.map(keyOf));
+      this.conversations.set(cached);
+      this.fetchState.set(States.loaded);
+    });
+    if (stale()) return;
+    if (server === null) {
+      // Offline and nothing newer: `search()` keeps the cached rows, or says "Connect to search" when
+      // nothing is on screen (D84 rules 2 and 7).
+      this.hasMoreResults.set(false);
+      throw unreachable ?? new Error('not connected');
+    }
+    const merged = mergeSnapshotPage(this.conversations(), cachedKeys, server, keyOf);
+    this.conversations.set(merged);
+    this.fetchState.set(merged.length > 0 ? States.loaded : States.empty);
+    this.hasMoreResults.set(server.length >= limit);
   }
 
   /** Load the next page of results. */
@@ -71,9 +190,16 @@ export class SearchConversationsService {
       return;
     }
     this.isLoadingMore = true;
+    const gen = this.generation;
+    const stale = () => gen !== this.generation;
 
     try {
+      if (isOfflineOn() && !this.keywordSearch) {
+        await this.loadMoreTwoPhase(this.searchRequest, stale);
+        return;
+      }
       const results = await this.searchRequest.fetchNext();
+      if (stale()) return;
       if (results.length > 0) {
         this.conversations.update(prev => {
           const existingIds = new Set(prev.map(c => c.getConversationId()));
@@ -84,9 +210,28 @@ export class SearchConversationsService {
       } else {
         this.hasMoreResults.set(false);
       }
+    } catch (error) {
+      if (stale()) return;
+      // Offline past the cache: keep the rows; the next scroll tries again.
+      if (!(isOfflineOn() && isNotConnectedError(error))) throw error;
     } finally {
-      this.isLoadingMore = false;
+      // A newer search owns the flag.
+      if (!stale()) this.isLoadingMore = false;
     }
+  }
+
+  /** Next page of a keyword-less search on the offline path; "load more" never repeats a row. */
+  private async loadMoreTwoPhase(request: CometChat.ConversationsRequest, stale: () => boolean): Promise<void> {
+    const keyOf = (c: CometChat.Conversation) => c.getConversationId();
+    let cachedKeys = new Set<string>();
+    const { server } = await readPageTwoPhase<CometChat.Conversation>(request, 'conversations', cached => {
+      if (stale() || cached.length === 0) return;
+      cachedKeys = new Set(cached.map(keyOf));
+      this.conversations.update(prev => mergeSnapshotPage(prev, new Set<string>(), cached, keyOf));
+    });
+    if (stale() || server === null) return;
+    this.conversations.update(prev => mergeSnapshotPage(prev, cachedKeys, server, keyOf));
+    this.hasMoreResults.set(server.length >= 30);
   }
 
   /** Attach all real-time SDK listeners. */
@@ -123,10 +268,16 @@ export class SearchConversationsService {
 
   /** Reset all state and detach listeners. */
   reset(): void {
+    this.generation++;
     this.detachListeners();
     this.conversations.set([]);
     this.fetchState.set(States.loaded);
     this.hasMoreResults.set(false);
+    this.reloadOnConnect = false;
+    this.connectToSearch.set(false);
+    this.searchFailed.set(false);
+    this.failureHold?.drop('conversations');
+    this.lastSearch = null;
     this.typingIndicatorMap.set(new Map());
     this.searchRequest = null;
     this.isLoadingMore = false;

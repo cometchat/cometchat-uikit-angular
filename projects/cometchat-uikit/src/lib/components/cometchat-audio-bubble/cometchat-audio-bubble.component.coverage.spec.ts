@@ -505,6 +505,61 @@ describe('CometChatAudioBubbleComponent — behavioural coverage', () => {
       );
     });
 
+    describe('a player replaced by the cached copy (BUG-8)', () => {
+      /** The first player, whose load() is still in flight when it is replaced. */
+      function startReplaceablePlayer(): { first: FakeWaveSurfer; abort: () => void } {
+        stubContainers(1);
+        const first = makeWaveSurfer();
+        let reject: (e: Error) => void = () => undefined;
+        first.load.mockReturnValue(new Promise((_, r) => { reject = r; }));
+        utilMocks.createWaveSurferInstance.mockReturnValueOnce(first);
+        c.initializeWaveSurfer(0);
+        const abort = () => {
+          const error = new Error('signal is aborted without reason');
+          error.name = 'AbortError';
+          reject(error);
+        };
+        return { first, abort };
+      }
+
+      it("the old player's AbortError does not fail the new player", async () => {
+        const { first, abort } = startReplaceablePlayer();
+        const second = makeWaveSurfer();
+        utilMocks.createWaveSurferInstance.mockReturnValueOnce(second);
+
+        // What the bubble does when the cached copy resolves: destroy, then build afresh.
+        c.cleanupWaveSurferInstances();
+        c.initializeWaveSurfer(0);
+        abort();
+        await flush();
+
+        const state: AudioState = c.getAudioState(0);
+        expect(first.destroy).toHaveBeenCalledTimes(1);
+        expect(state.waveSurfer).toBe(second);
+        expect(state.hasError).toBe(false);
+        expect(state.isLoading).toBe(true);
+        second.emit('ready', 10);
+        expect(state.isLoading).toBe(false);
+        expect(state.duration).toBe(10);
+      });
+
+      it('an AbortError that lands before the new player exists leaves no error behind', async () => {
+        const { abort } = startReplaceablePlayer();
+        const second = makeWaveSurfer();
+        utilMocks.createWaveSurferInstance.mockReturnValueOnce(second);
+
+        c.cleanupWaveSurferInstances();
+        abort();
+        await flush();
+        c.initializeWaveSurfer(0);
+
+        const state: AudioState = c.getAudioState(0);
+        expect(state.waveSurfer).toBe(second);
+        expect(state.hasError).toBe(false);
+        expect(logError).not.toHaveBeenCalled();
+      });
+    });
+
     it('resolves receiver colours from the document and forwards them to the factory', () => {
       stubContainers(1);
 

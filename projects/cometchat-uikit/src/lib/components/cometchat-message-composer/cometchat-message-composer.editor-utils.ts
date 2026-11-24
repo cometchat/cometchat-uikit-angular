@@ -37,7 +37,10 @@ export function initializeRichTextEditorImpl(ctx: EditorInitContext): void {
     const containerElement = ctx.richTextEditorContainerRef?.nativeElement;
     if (!containerElement) { CometChatLogger.warn('CometChatMessageComposer', 'Rich text editor container not found'); return; }
     try {
-      const placeholder = CometChatLocalize.getLocalizedString(ctx.placeholderText);
+      // placeholderText may be a localization key or plain text. A key that
+      // doesn't resolve comes back as '', which would leave the input blank,
+      // so fall back to the text as given.
+      const placeholder = CometChatLocalize.getLocalizedString(ctx.placeholderText) || ctx.placeholderText;
       const shouldAutofocus = ctx.disableAutoFocusOnMobile && isMobileDevice() ? false : true;
       ctx.customRichTextEditor = ctx.richTextEditorService.createEditor(
         {

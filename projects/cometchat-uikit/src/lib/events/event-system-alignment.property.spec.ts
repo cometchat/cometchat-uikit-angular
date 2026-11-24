@@ -154,10 +154,13 @@ describe('Property 1: Event subject parity across all event classes', () => {
     // Angular-only subjects that are intentional additions (not in React)
     const ANGULAR_ONLY_SUBJECTS: Record<string, string[]> = {
       CometChatConversationEvents: ['ccUpdateConversation'],
+      // Offline support (plan README §4): Angular adds static subjects next to
+      // ccMessageSent; React adds `ui:message/send-state-changed` and
+      // `ui:offline/cache-reset` members to its own event union instead.
       // Card Messages shipped on Angular first — the SDK beta exposes no
       // CATEGORY_CARD constant yet. Move this into REACT_SUBJECTS once React
       // ships the same event, so parity is asserted rather than exempted.
-      CometChatMessageEvents: ['ccCardActionClicked'],
+      CometChatMessageEvents: ['ccMessageSendStateChanged', 'ccOfflineCacheReset', 'ccCardActionClicked'],
     };
 
     for (const [className, reactSubjects] of Object.entries(REACT_SUBJECTS)) {

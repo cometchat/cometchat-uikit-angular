@@ -1,0 +1,42 @@
+# What may go to the public repo, cometchat/cometchat-uikit-angular (branch v5). Read by
+# public-paths.mjs: one entry per line; a trailing slash is a whole folder; **/<name> matches a
+# file of that name anywhere. internal.txt wins where both match.
+# Every tracked path must be here or in internal.txt (checked in the PR gate and at release), so
+# a new top-level file or folder can't go public, or be forgotten, without a decision.
+# Seeded from what the manual 5.2.2 copy published.
+
+# The UI Kit, the sample app, their tests and docs
+projects/
+e2e/
+docs/
+screenshots/
+.storybook/
+
+# Developer scripts: `npm ci` runs scripts/install-hooks-auto.mjs, `npm run verify`, the public
+# workflows, vitest.config.ts and playwright.config.ts use scripts/ci/.
+scripts/
+
+# Project files
+README.md
+CHANGELOG.md
+LICENSE.md
+SECURITY.md
+SUPPORT.md
+package.json
+package-lock.json
+angular.json
+tsconfig.json
+eslint.config.mjs
+eslint-suppressions.json
+playwright.config.ts
+playwright.offline.config.ts
+playwright.off-baseline.config.ts
+vitest.config.ts
+vitest.setup.mjs
+vitest.setup.ts
+.gitignore
+.gitleaks.toml
+.nvmrc
+.pa11yci.json
+.prettierignore
+.prettierrc

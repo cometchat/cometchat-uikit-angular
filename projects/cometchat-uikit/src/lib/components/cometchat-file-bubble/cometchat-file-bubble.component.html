@@ -31,7 +31,7 @@
       </div>
 
       <button
-        *ngIf="attachment.url"
+        *ngIf="attachment.url && !isUnavailable(attachment)"
         type="button"
         class="cometchat-file-bubble__download"
         [attr.aria-label]="getDownloadAriaLabel(attachment.name)"
@@ -42,7 +42,7 @@
           aria-hidden="true"></div>
       </button>
       <span
-        *ngIf="!attachment.url"
+        *ngIf="!attachment.url || isUnavailable(attachment)"
         class="cometchat-file-bubble__download cometchat-file-bubble__download--disabled"
         [attr.aria-label]="'file_bubble_download_unavailable' | translate"
         [attr.title]="'file_bubble_download_unavailable' | translate">

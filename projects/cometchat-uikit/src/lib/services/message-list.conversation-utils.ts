@@ -2,6 +2,7 @@ import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {CometChatUIKitConstants} from '../constants';
 import {CometChatUIKit} from '../cometchat-uikit';
 import {CometChatLogger} from '../utils/CometChatLogger';
+import {isOfflineOn} from '../utils/offline/offline-gate';
 
 export function isMessageForCurrentConversationImpl(self: any, message: CometChat.BaseMessage): boolean {
   if (!self.currentUser && !self.currentGroup) { return false; }
@@ -83,8 +84,30 @@ export function handleCallActionImpl(self: any, call: CometChat.Call): void {
 export async function handleReconnectionImpl(self: any): Promise<void> {
   try {
     if (!self.currentUser && !self.currentGroup) { return; }
+    // With offline on the SDK's reconnect sweep catches the chat up; the list
+    // consumes it through the offline hub and makes no fetch of its own.
+    if (isOfflineOn()) {
+      // A "Connect to load more" footer now loads on scroll as well as on tap
+      // (UIK-READ-03); nothing is fetched until the user asks.
+      self.markOfflineConnected?.();
+      // The error view is up because the device was offline: the first page is read once now (D83).
+      await self.reloadAfterOfflineError?.();
+      return;
+    }
+    // Kill switch (UIK-LIFE-03): offline was switched off under un-acked rows
+    // this list drew on the offline path; they turn failed (direct).
+    self.checkKillSwitch?.();
     const lastMessageId = self.nextMessageIdSignal();
-    if (lastMessageId === 0) { return; }
+    if (lastMessageId === 0) {
+      // Nothing was ever loaded because the first fetch failed: load the first page
+      // now. A chat that loaded fine and is simply empty makes no request (as today).
+      if (self.allMessagesSignal().length === 0 && self.errorStateSignal() !== null) {
+        self.errorStateSignal.set(null);
+        self.messagesRequest = self.buildMessagesRequest();
+        await self.fetchPreviousMessages();
+      }
+      return;
+    }
     self.nextMessagesRequest = self.buildNextMessagesRequest(lastMessageId);
     await self.fetchNextMessages();
   } catch (error) {

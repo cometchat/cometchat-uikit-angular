@@ -94,6 +94,25 @@
   <ng-template #emptyTemplateRef>
     @if (effectiveEmptyView) {
       <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
+    } @else if (offlineConnectToSearch) {
+      <!-- Offline (D84 rule 7): a keyword search needs the server; no error. -->
+      <div
+        class="cometchat-groups__empty-state-view"
+        role="status"
+        data-testid="cc-empty"
+        data-cc-reason="connect-to-search"
+        [attr.aria-label]="'conversations_connect_to_search' | translate"
+      >
+        <div class="cometchat-groups__empty-state-view-icon">
+          <span class="cometchat-groups__empty-state-view-icon-mask" aria-hidden="true"></span>
+        </div>
+        <h3 class="cometchat-groups__empty-state-view-title">
+          {{ 'conversations_connect_to_search' | translate }}
+        </h3>
+        <p class="cometchat-groups__empty-state-view-subtitle">
+          {{ 'list_connect_to_search_subtitle' | translate }}
+        </p>
+      </div>
     } @else {
       <div
         class="cometchat-groups__empty-state-view"
@@ -118,6 +137,22 @@
     @if (!hideError) {
       @if (effectiveErrorView) {
         <ng-container *ngTemplateOutlet="effectiveErrorView"></ng-container>
+      } @else if (offlineConnectToLoad) {
+        <!-- Offline (D84 rule 3): nothing saved and no connection; no Retry. -->
+        <div
+          class="cometchat-groups__empty-state-view"
+          role="status"
+          data-testid="cc-empty"
+          data-cc-reason="connect-to-load"
+          [attr.aria-label]="'groups_connect_to_load' | translate"
+        >
+          <div class="cometchat-groups__empty-state-view-icon">
+            <span class="cometchat-groups__empty-state-view-icon-mask" aria-hidden="true"></span>
+          </div>
+          <h3 class="cometchat-groups__empty-state-view-title">
+            {{ 'groups_connect_to_load' | translate }}
+          </h3>
+        </div>
       } @else {
         <div
           class="cometchat-groups__error-state-view"

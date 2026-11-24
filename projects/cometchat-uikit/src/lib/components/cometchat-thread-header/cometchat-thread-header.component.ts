@@ -34,6 +34,9 @@ import { ThreadSubscriptionService } from '../../services/thread-subscription.se
 import { toThreadId, writeThreadSubscribed } from '../../utils/thread-subscription-utils';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
 import { LiveAnnouncerService } from '../../services/live-announcer.service';
+import { OfflineHubService } from '../../services/offline-hub.service';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { OfflineReplyCount } from '../../utils/offline/reply-count';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 
 const MAX_PREVIEW_LENGTH = 50;
@@ -61,8 +64,11 @@ export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChan
   private readonly globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, {
     optional: true,
   });
+  private readonly offlineHub = inject(OfflineHubService);
   private messageListenerId = '';
   private processedMessageIds = new Set<number>();
+  /** Own replies counted at pending on the offline path. */
+  private readonly offlineReplies = new OfflineReplyCount();
 
   @Input() parentMessage!: CometChat.BaseMessage;
   @Input() replyCount = 0;
@@ -310,6 +316,7 @@ export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChan
     this.messageListenerId = `thread_header_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     this.subscribeToMessageEvents();
     this.subscribeToThreadEvents();
+    this.subscribeToOfflineReplyEvents();
     this.attachSdkListener();
   }
 
@@ -325,6 +332,7 @@ export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChan
     if (changes['parentMessage'] && !changes['parentMessage'].firstChange) {
       // Re-subscribe when parent message changes
       this.processedMessageIds.clear();
+      this.offlineReplies.reset();
       this.internalReplyCount = this.replyCount || this.parentMessage?.getReplyCount?.() || 0;
       this.removeSdkListener();
       this.subscribeToMessageEvents();
@@ -365,8 +373,41 @@ export class CometChatThreadHeaderComponent implements OnInit, OnDestroy, OnChan
         data.status === MessageStatus.success &&
         data.message?.getParentMessageId() === parentId
       ) {
+        // Offline path: an own reply counted at pending is not counted again on its ack.
+        if (isOfflineOn() && this.offlineReplies.wasCounted(data.message)) {
+          const id = data.message.getId();
+          if (id) this.processedMessageIds.add(id);
+          return;
+        }
         this.incrementReplyCount(data.message);
       }
+    });
+  }
+
+  /**
+   * Offline path (README §3.9): an own reply counts from the moment it is
+   * pending and uncounts when discarded; a fresher parent from the SDK replaces
+   * the count. With offline off the hub never emits, so nothing here runs.
+   */
+  private subscribeToOfflineReplyEvents(): void {
+    this.offlineHub.sendState$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
+      const parentId = this.parentMessage?.getId?.();
+      if (!parentId) return;
+      const delta = this.offlineReplies.apply(event, parentId);
+      if (delta === 0) return;
+      this.internalReplyCount = Math.max(0, this.internalReplyCount + delta);
+      this.cdr.markForCheck();
+    });
+    this.offlineHub.messagesUpdated$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
+      const parentId = this.parentMessage?.getId?.();
+      const fresher = parentId ? event.messages.find(m => m.getId?.() === parentId) : undefined;
+      if (!fresher) return;
+      // The fresher count replaces what is shown, but the record of which own
+      // replies are counted is kept: they are counted in this value as well,
+      // so clearing it would count a still-pending reply again on its ack, and
+      // leave no -1 if it is discarded instead.
+      this.internalReplyCount = fresher.getReplyCount?.() || 0;
+      this.cdr.markForCheck();
     });
   }
 

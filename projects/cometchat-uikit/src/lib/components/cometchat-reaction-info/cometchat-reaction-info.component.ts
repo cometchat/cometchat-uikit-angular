@@ -13,6 +13,8 @@ import { TranslatePipe } from '../../resources/CometChatLocalize';
 import { CometChatLocalize } from '../../resources/CometChatLocalize';
 import { CometChatUIKitConstants } from '../../constants';
 import { CometChatLogger } from '../../utils/CometChatLogger';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { readPageTwoPhase } from '../../utils/offline/two-phase';
 
 /**
  * CometChatReactionInfoComponent displays a tooltip showing who reacted
@@ -129,6 +131,24 @@ export class CometChatReactionInfoComponent implements OnInit, OnChanges {
         .setLimit(limit)
         .build();
 
+      if (isOfflineOn()) {
+        // Two rounds: cached names first, then the server's.
+        const { server } = await readPageTwoPhase<CometChat.Reaction>(request, 'reactions', page => {
+          if (page.length > 0) {
+            this.reactionNames.set(this.formatReactionNames(page));
+            this.state.set('loaded');
+          }
+        });
+        if (server) {
+          this.reactionNames.set(this.formatReactionNames(server));
+          this.state.set('loaded');
+        } else if (this.state() === 'loading') {
+          // Offline and nothing cached for this emoji: nothing to name, no error.
+          this.state.set('loaded');
+        }
+        return;
+      }
+
       const reactions = await request.fetchNext();
       const names = this.formatReactionNames(reactions);
       this.reactionNames.set(names);
@@ -142,6 +162,12 @@ export class CometChatReactionInfoComponent implements OnInit, OnChanges {
   /**
    * Formats reactor names: logged-in user becomes localized "You" and is placed first,
    * other names follow in order.
+   *
+   * A cached reaction can come back without its reactor, so the reactor is read
+   * the same way the reaction list reads it (`getReactedBy()?.` with the
+   * reaction's own `getUid()` as the fallback). A reaction with no reactor and
+   * no name is skipped rather than named: it still counts towards
+   * {@link totalReactions}, so it shows up in the "and N others" suffix.
    */
   private formatReactionNames(reactions: CometChat.Reaction[]): string[] {
     const youText = CometChatLocalize.getLocalizedString('reaction_popup_you');
@@ -149,11 +175,15 @@ export class CometChatReactionInfoComponent implements OnInit, OnChanges {
     let isLoggedInUserIncluded = false;
 
     for (const reaction of reactions) {
-      const reactedBy = reaction.getReactedBy();
-      if (reactedBy.getUid() === this.loggedInUserUid) {
+      const reactedBy = reaction.getReactedBy?.();
+      const uid = reactedBy?.getUid?.() ?? reaction.getUid?.();
+      if (uid && uid === this.loggedInUserUid) {
         isLoggedInUserIncluded = true;
-      } else {
-        names.push(reactedBy.getName());
+        continue;
+      }
+      const name = reactedBy?.getName?.();
+      if (name) {
+        names.push(name);
       }
     }
 

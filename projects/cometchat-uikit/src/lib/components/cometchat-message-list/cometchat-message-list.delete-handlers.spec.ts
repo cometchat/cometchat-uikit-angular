@@ -211,6 +211,22 @@ describe('cometchat-message-list.delete-handlers', () => {
       expect(ctx.error.emit).toHaveBeenCalledWith(err);
     });
 
+    it('should tell the user a failed delete did not happen', async () => {
+      // Offline, a delete of an already-sent message is refused: no SDK queues one, and the
+      // message stays on screen. The dialog used to sit there with nothing said.
+      const msg = makeMessage(42);
+      const ctx = makeCtx();
+      ctx.messageToDelete.set(msg);
+      vi.mocked(CometChat.deleteMessage).mockRejectedValueOnce(new Error('network'));
+
+      await handleDeleteConfirmImpl(ctx);
+
+      expect(ctx.showInlineToast).toHaveBeenCalledWith(expect.any(String), 'error', 3000);
+      expect(ctx.showInlineToast).not.toHaveBeenCalledWith(
+        expect.stringContaining('deleted'), undefined, undefined
+      );
+    });
+
     it('should set isDeleting to false in finally block', async () => {
       const msg = makeMessage(42);
       const ctx = makeCtx();

@@ -8,7 +8,6 @@ import { DOCUMENT } from '@angular/common';
  *
  * ## Features
  * - Respects `prefers-color-scheme` OS preference on first load
- * - Persists user choice to `localStorage`
  * - Applies `data-theme` attribute to `<html>` via Angular's `DOCUMENT` token (SSR-safe)
  * - Exposes a reactive `currentTheme` signal for template bindings
  * - Cleans up the `matchMedia` listener on destroy
@@ -78,9 +77,8 @@ export class ThemeService implements OnDestroy {
    * Resolves and applies the theme on startup.
    *
    * Priority:
-   * 1. Stored user preference (`localStorage`)
-   * 2. OS `prefers-color-scheme`
-   * 3. Fallback: `'light'`
+   * 1. OS `prefers-color-scheme`
+   * 2. Fallback: `'light'`
    */
   initFromPreference(): void {
     const prefersDark =
@@ -90,7 +88,7 @@ export class ThemeService implements OnDestroy {
   }
 
   /**
-   * Explicitly sets the theme and persists the choice to `localStorage`.
+   * Explicitly sets the theme.
    *
    * @param theme - `'light'` or `'dark'`
    */
@@ -99,7 +97,7 @@ export class ThemeService implements OnDestroy {
   }
 
   /**
-   * Toggles between light and dark, persisting the result.
+   * Toggles between light and dark.
    */
   toggleTheme(): void {
     this.setTheme(this.currentTheme() === 'dark' ? 'light' : 'dark');

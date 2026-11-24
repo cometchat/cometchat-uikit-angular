@@ -1,6 +1,9 @@
 <div
   #tileRoot
   class="cometchat-attachment-tile"
+  data-testid="cc-composer-tray-tile"
+  [attr.data-cc-file-id]="contractFileId"
+  [attr.data-cc-state]="contractState"
   [class.cometchat-attachment-tile--image]="view.isImage"
   [class.cometchat-attachment-tile--video]="view.isVideo"
   [class.cometchat-attachment-tile--file]="view.isFile"

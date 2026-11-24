@@ -1,35 +1,42 @@
 import {inject, DestroyRef, signal, WritableSignal, Signal, NgZone} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
-import {Observable, Subscription} from 'rxjs';
+import {Observable, Subject, Subscription} from 'rxjs';
 import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {ErrorCallback} from './message-composer.service';
 import {CometChatUIKitConstants} from '../constants';
 import {CometChatUIKit} from '../cometchat-uikit';
 import {CometChatMessageEvents, IMessages} from '../events/CometChatMessageEvents';
-import {MessageStatus} from '../Enums/Enums';
-import {CometChatUIKitUtility} from '../CometChatUIKitUtility';
 import {CometChatLogger} from '../utils/CometChatLogger';
-import {isRecoverableError, isRecoverableErrorMessage, isRetryableError, getUserFriendlyErrorMessage, getRetryDelay, delay as delayUtil} from './message-list.error-utils';
-import {applyReactionEvent, isReactionForCurrentConversation, isReceiptForCurrentConversation, applyReadReceipt, applyDeliveryReceipt} from './message-list.reaction-utils';
+import {isRecoverableError, isRecoverableErrorMessage, isRetryableError, getUserFriendlyErrorMessage, delay as delayUtil} from './message-list.error-utils';
+import {applyReactionEvent} from './message-list.reaction-utils';
 import {setupMessageListener as setupMsgListener, setupGroupListener as setupGrpListener, setupCallListener as setupCallLstnr, setupConnectionListener as setupConnListener} from './message-list.listeners';
 import {fetchPreviousMessagesImpl, fetchNextMessagesImpl, fetchMessagesAroundIdImpl, handleReceiptImpl} from './message-list.fetch-utils';
-import {addMessageImpl, updateMessageByIdImpl, updateMessageByMuidImpl, deleteMessageImpl, editMessageImpl, removeMessageImpl, getMessageByIdImpl, updateReplyCountImpl, updateMessageReactionsImpl, deduplicateMessagesImpl, clearMessagesImpl, clearMessagesAndStateImpl} from './message-list.message-ops';
+import {addMessageImpl, updateMessageByIdImpl, updateMessageByMuidImpl, deleteMessageImpl, editMessageImpl, removeMessageImpl, getMessageByIdImpl, updateReplyCountImpl, updateMessageReactionsImpl, deduplicateMessagesImpl, clearMessagesImpl} from './message-list.message-ops';
 import {addReactionImpl, removeReactionImpl, fetchReactionsImpl} from './message-list.reaction-ops';
 import {markAsReadImpl, updateLocalReadStatusImpl, markInitialMessagesAsReadImpl, markConversationAsReadImpl, markAsDeliveredImpl, markAsUnreadImpl, getMessagesInRangeImpl, getTotalMessageCountImpl} from './message-list.read-ops';
 import {handleTypingStartedImpl, handleTypingEndedImpl, clearTypingIndicatorImpl, isTypingIndicatorForCurrentConversationImpl} from './message-list.typing-utils';
 import {translateMessageImpl, getCachedTranslationImpl, clearTranslationCacheImpl, flagMessageImpl} from './message-list.translation-utils';
 import {setupSentMessageListenerImpl, setupEditedMessageListenerImpl, handleSentMessageImpl, updateSentMessageByMuidImpl, updateSentMessageReplyCountImpl, handleEditedMessageImpl} from './message-list.sent-handler';
-import {buildMessagesRequestImpl, buildNextMessagesRequestImpl, getDefaultMessageTypesImpl, getDefaultMessageCategoriesImpl} from './message-list.request-builder';
+import {buildMessagesRequestImpl, buildNextMessagesRequestImpl, getDefaultMessageTypesImpl, getDefaultMessageCategoriesImpl, acceptsSweptRowImpl} from './message-list.request-builder';
 import {isMessageForCurrentConversationImpl, isThreadReplyForCurrentConversationImpl, handleGroupActionImpl, handleCallActionImpl, handleReconnectionImpl} from './message-list.conversation-utils';
 import {ThreadSubscriptionService} from './thread-subscription.service';
+import {OfflineHubService} from './offline-hub.service';
+import {isOfflineOn} from '../utils/offline/offline-gate';
+import {HeldReceipts} from '../utils/offline/reconcile';
+import {serverIdOf} from '../utils/offline/identity';
+import {applyReceiptToMessage} from './message-list.fetch-utils';
+import {uniqueListenerSuffix} from './message-list.types';
+import {applyMessageSync, applyMessagesUpdated, applySendState, failStrandedSends, OfflineFooterState, refreshNewestWindow, setRows, upsertOffline} from './message-list.offline';
 
 export class MessageListService {
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
   private threadSubscription = inject(ThreadSubscriptionService);
+  private offlineHub = inject(OfflineHubService);
 
-  private messageListenerId = `message_list_${Date.now()}`; private groupListenerId = `message_list_group_${Date.now()}`;
-  private callListenerId = `message_list_call_${Date.now()}`; private connectionListenerId = `message_list_connection_${Date.now()}`;
+  // Unique per list, not just per millisecond: the SDK replaces a listener registered under an id it already has.
+  private messageListenerId = ''; private groupListenerId = '';
+  private callListenerId = ''; private connectionListenerId = '';
 
   private ccMessageSentSubscription: Subscription | null = null; private ccMessageEditedSubscription: Subscription | null = null;
 
@@ -56,9 +63,79 @@ export class MessageListService {
   private parentMessage: CometChat.BaseMessage | null = null;
   private isAgentChatMode = false; private messagesRequestBuilder: CometChat.MessagesRequestBuilder | null = null; private hideGroupActionMessages = false;
   private messagesRequest: CometChat.MessagesRequest | null = null; private nextMessagesRequest: CometChat.MessagesRequest | null = null; private errorCallback: ErrorCallback | null = null;
-  private customMessageTypes: Set<string> = new Set(); private customMessageCategories: Set<string> = new Set(); private replacedMessageTypes: Set<string> | null = null; private replacedMessageCategories: Set<string> | null = null;
+  private customMessageTypes = new Set<string>(); private customMessageCategories = new Set<string>(); private replacedMessageTypes: Set<string> | null = null; private replacedMessageCategories: Set<string> | null = null;
   private readonly DEFAULT_MESSAGE_LIMIT = 30; private readonly TYPING_INDICATOR_TIMEOUT = 5000; private readonly MAX_RETRY_ATTEMPTS = 3; private readonly RETRY_DELAYS = [1000, 2000, 4000] as const;
   private fetchGeneration = 0; private retryAttempts = new Map<string, number>(); private translationCache = new Map<string, string>();
+
+  // ── Offline support (ON path only; inert while offline is off) ──
+  private offlineFooterSignal: WritableSignal<OfflineFooterState> = signal<OfflineFooterState>('none');
+  /**
+   * `connect_to_load_more` when an offline read could not go past the saved messages.
+   *
+   * @internal
+   */
+  readonly offlineFooter: Signal<OfflineFooterState> = this.offlineFooterSignal.asReadonly();
+  private offlineFooterRetryableSignal: WritableSignal<boolean> = signal(false);
+  /**
+   * The footer shows and the connection is back: scrolling to that end loads
+   * again, as tapping the footer does (UIK-READ-03). `false` while still offline.
+   *
+   * @internal
+   */
+  readonly offlineFooterRetryable: Signal<boolean> = this.offlineFooterRetryableSignal.asReadonly();
+  private newestWindowResetSignal: WritableSignal<number> = signal(0);
+  /**
+   * Offline: bumped when a PARTIAL sweep's refresh reset the list to the newest window (README §3.7).
+   *
+   * @internal
+   */
+  readonly newestWindowReset: Signal<number> = this.newestWindowResetSignal.asReadonly();
+  private heldReceipts = new HeldReceipts();
+  private offlinePathUsed = false;
+  /** See {@link OfflineListContext.offlinePreviousExhausted}. */
+  private offlinePreviousExhausted = false;
+  /** See {@link OfflineListContext.offlineBlocked}. */
+  private offlineBlocked: { previous: boolean; next: boolean } | undefined;
+  private connectionWatched = false;
+  private readonly offlineConnectToLoadSignal: WritableSignal<boolean> = signal(false);
+  /**
+   * Offline (D84 rule 3): the chat was read with no connection and nothing on screen, so the list shows
+   * "Connect to load messages" in place of its error view (the app's own error view still wins; the error
+   * state is set and `error` fired once). The first page is read once by itself when the connection is
+   * back (rule 8). Always false with offline off.
+   *
+   * @internal
+   */
+  readonly offlineConnectToLoad: Signal<boolean> = this.offlineConnectToLoadSignal.asReadonly();
+  /** See {@link OfflineListContext.offlineReloadOnConnect}: the same state as {@link offlineConnectToLoad}. */
+  private get offlineReloadOnConnect(): boolean { return this.offlineConnectToLoadSignal(); }
+  private set offlineReloadOnConnect(value: boolean) { this.offlineConnectToLoadSignal.set(value); }
+  private readonly edgeReloadSubject = new Subject<void>();
+  /**
+   * Offline (D84 rule 9): the connection is back while an edge shows "Connect to load more"; the list
+   * loads that page once by itself. Never emits with offline off.
+   *
+   * @internal
+   */
+  readonly edgeReload$: Observable<void> = this.edgeReloadSubject.asObservable();
+  private readonly loadErrorSubject = new Subject<Error>();
+  /**
+   * Offline (D83): a first-page load the user or app started failed while messages were on screen.
+   * The rows stay; the list's `error` output reports it. Never emits with offline off.
+   *
+   * @internal
+   */
+  readonly loadError$: Observable<Error> = this.loadErrorSubject.asObservable();
+  /**
+   * Offline (D83): report a failed load over rows on screen (see {@link loadError$}).
+   *
+   * @internal
+   */
+  reportLoadError(error: unknown): void {
+    this.loadErrorSubject.next(error as Error);
+  }
+  private offlineSubscriptions: Subscription[] = [];
+  private applyReceiptToMessage = applyReceiptToMessage;
 
   private buildMessagesRequest(messageId?: number): CometChat.MessagesRequest { return buildMessagesRequestImpl(this as any, messageId); }
   private buildNextMessagesRequest(messageId?: number): CometChat.MessagesRequest { return buildNextMessagesRequestImpl(this as any, messageId); }
@@ -91,12 +168,187 @@ export class MessageListService {
   readonly errorState$: Observable<Error | null> = toObservable(this.errorStateSignal);
 
   constructor() {
+    this.regenerateListenerIds();
     this.destroyRef.onDestroy(() => {
+      // The offline streams live as long as the service; cleanup() also runs on
+      // a refresh, which keeps listening to the hub.
+      this.offlineSubscriptions.forEach(sub => sub.unsubscribe());
+      this.offlineSubscriptions = [];
       this.cleanup();
     });
     this.setupSentMessageListener();
     this.setupEditedMessageListener();
     this.setupMessageListener();
+    this.setupOfflineStreams();
+  }
+
+  /**
+   * Subscribe to the offline hub. With offline off the hub never emits, so
+   * none of these handlers runs and the list behaves exactly as before.
+   */
+  private setupOfflineStreams(): void {
+    const ctx = this as any;
+    this.offlineSubscriptions.push(
+      this.offlineHub.sendState$.subscribe(event => applySendState(ctx, event)),
+      this.offlineHub.messageSync$.subscribe(event => applyMessageSync(ctx, event)),
+      this.offlineHub.messagesUpdated$.subscribe(event => applyMessagesUpdated(ctx, event)),
+      this.offlineHub.syncFailed$.subscribe(event => {
+        if (event.phase === 'message' && event.gen === this.offlineHub.gen && this.offlinePathUsed && (this.currentUser || this.currentGroup)) {
+          void refreshNewestWindow(ctx);
+        }
+      }),
+      this.offlineHub.cacheReset$.subscribe(() => this.reloadAfterOfflineReset()),
+      this.offlineHub.session$.subscribe(() => {
+        // Logout or user switch: no frame of the old session's rows. Scoped to
+        // lists that ran the offline path, so offline-off screens are untouched.
+        if (!this.offlinePathUsed) return;
+        this.heldReceipts.clear();
+        this.offlineReloadOnConnect = false;
+        this.offlineFooterSignal.set('none');
+        this.offlineFooterRetryableSignal.set(false);
+        this.offlineBlocked = undefined;
+        this.fetchGeneration++;
+        setRows(ctx, []);
+        this.loadingStateSignal.set(false);
+      }),
+    );
+
+  }
+
+  /** The SDK rebuilt its offline cache: reload this chat from scratch, two-phase. */
+  private reloadAfterOfflineReset(): void {
+    if (!this.offlinePathUsed || (!this.currentUser && !this.currentGroup)) return;
+    this.heldReceipts.clear();
+    this.clearMessagesAndState();
+    this.messagesRequest = this.buildMessagesRequest();
+    this.nextMessagesRequest = this.buildNextMessagesRequest();
+    void this.fetchPreviousMessages();
+  }
+
+  /**
+   * Kill switch (UIK-LIFE-03): when offline support has been switched off under
+   * un-acked rows, they turn failed (direct) with one notice. Runs only for a
+   * list that used the offline path.
+   *
+   * @internal
+   */
+  checkKillSwitch(): void {
+    if (this.offlinePathUsed && !isOfflineOn()) failStrandedSends(this as any);
+  }
+
+  /**
+   * Watch the connection. Subscribed on the first ON-path operation, so an offline-off list adds
+   * no listener. Two things follow it:
+   * - "The next connection event" of UIK-LIFE-03: the kill-switch check.
+   * - A reconnect (taken from the SDK's connect events): the list's own reconnect handler runs,
+   *   which reads the first page once by itself when the error view is up because the device
+   *   was offline (D83), and lets a "Connect to load more" footer load on scroll.
+   */
+  private watchConnection(): void {
+    if (this.connectionWatched) return;
+    this.connectionWatched = true;
+    this.offlineSubscriptions.push(
+      this.offlineHub.connects$.subscribe(() => {
+        this.checkKillSwitch();
+        // The SDK fires `onDisconnected` only when the socket closes while its status is neither
+        // DISCONNECTED nor CONNECTING (`CometChat.js`, WS ready-state CLOSED), so an app opened
+        // with no connection - and a drop inside the launch connect window, while the status is
+        // still CONNECTING - is never reported. `reconnected$` is a connect that follows a
+        // reported disconnect (`connection-state.service.ts`), so in those runs nothing reaches
+        // it and the list stayed on "Connect to load messages" until it was reopened.
+        // The connect itself is the signal, which is why this follows `connects$` and not the
+        // state: with the drop unreported the state never changed, so it still read `true` from
+        // the connect before it and the connect that ended the outage set `true` over `true` -
+        // a `toObservable` of it emits nothing, and watching it here left this read unreachable
+        // in exactly the run it was written for (ENG-57333, Angular QA 5 major 2).
+        // An empty list reads its first page once per connection, as Android does
+        // (`MessageListOfflineSync.onConnected`). The read is one-shot
+        // (`reloadAfterOfflineError` clears the flag before it fetches), so this and the
+        // reconnect subscription below can never make two reads.
+        void this.reloadAfterOfflineError();
+      }),
+      this.offlineHub.reconnected$.subscribe(() => {
+        this.ngZone.run(() => void this.handleReconnection());
+      })
+    );
+  }
+
+  /**
+   * The realtime connection is back (offline on). A "Connect to load more" row now loads on scroll as
+   * well as on tap (UIK-READ-03), and the page behind it loads once by itself (D84 rule 9): the list
+   * hears {@link edgeReload$} and reads each blocked edge, the older one first.
+   *
+   * @internal
+   */
+  markOfflineConnected(): void {
+    if (this.offlineFooterSignal() !== 'connect_to_load_more') return;
+    if (!this.offlineFooterRetryableSignal()) this.offlineFooterRetryableSignal.set(true);
+    this.edgeReloadSubject.next();
+  }
+
+  /**
+   * The edges that show "Connect to load more" (the older one, the newer one, or both).
+   *
+   * @internal
+   */
+  offlineBlockedEdges(): { previous: boolean; next: boolean } {
+    if (this.offlineFooterSignal() !== 'connect_to_load_more') return { previous: false, next: false };
+    return { previous: this.offlineBlocked?.previous === true, next: this.offlineBlocked?.next === true };
+  }
+
+  /**
+   * Offline (D83), on reconnect: the error view is up because the device was offline, so the
+   * first page is read once by itself. Returns whether that read was started.
+   *
+   * @internal
+   */
+  async reloadAfterOfflineError(): Promise<boolean> {
+    if (
+      !this.offlineReloadOnConnect ||
+      this.errorStateSignal() === null ||
+      // Only a row the server has counts as "this chat has loaded something". A message the
+      // user sent from the "Connect to load messages" screen is a row with no server id, and
+      // counting it made this read give up: the chat stayed on that screen for the rest of the
+      // session even though its first page had never loaded. The server page it reads cannot
+      // drop the un-acked row (`reconcileServerPage` keeps every row without a server id).
+      this.allMessagesSignal().some(row => serverIdOf(row) > 0) ||
+      (!this.currentUser && !this.currentGroup)
+    ) {
+      return false;
+    }
+    this.offlineReloadOnConnect = false;
+    this.errorStateSignal.set(null);
+    this.messagesRequest = this.buildMessagesRequest();
+    this.nextMessagesRequest = this.buildNextMessagesRequest();
+    await this.fetchPreviousMessages();
+    return true;
+  }
+
+  /**
+   * The edge a tap on "Connect to load more" reads: the older one, unless only the newer one was blocked.
+   *
+   * @internal
+   */
+  offlineRetryDirection(): 'previous' | 'next' {
+    return this.offlineBlocked?.next && !this.offlineBlocked.previous ? 'next' : 'previous';
+  }
+
+  /**
+   * Retry the "Connect to load more" row's read. With a `direction` (the reload on reconnect, which
+   * reads each blocked edge in turn) the other edge keeps its mark until its own read runs.
+   *
+   * @internal
+   */
+  retryOfflineRead(direction?: 'previous' | 'next'): Promise<boolean> {
+    const edge = direction ?? this.offlineRetryDirection();
+    const other = edge === 'previous' ? 'next' : 'previous';
+    const keepOther = direction !== undefined && this.offlineBlocked?.[other] === true;
+    this.offlineFooterSignal.set('none');
+    this.offlineFooterRetryableSignal.set(false);
+    this.offlineBlocked = keepOther
+      ? { previous: other === 'previous', next: other === 'next' }
+      : undefined;
+    return edge === 'next' ? this.fetchNextMessages() : this.fetchPreviousMessages();
   }
   cleanup(): void {
     this.removeMessageListener();
@@ -136,11 +388,11 @@ export class MessageListService {
     this.translationCache.clear();
   }
   private regenerateListenerIds(): void {
-    const timestamp = Date.now();
-    this.messageListenerId = `message_list_${timestamp}`;
-    this.groupListenerId = `message_list_group_${timestamp}`;
-    this.callListenerId = `message_list_call_${timestamp}`;
-    this.connectionListenerId = `message_list_connection_${timestamp}`;
+    const suffix = uniqueListenerSuffix();
+    this.messageListenerId = `message_list_${suffix}`;
+    this.groupListenerId = `message_list_group_${suffix}`;
+    this.callListenerId = `message_list_call_${suffix}`;
+    this.connectionListenerId = `message_list_connection_${suffix}`;
   }
   private normalizeMessageId(messageId: string | number): number { return typeof messageId === 'string' ? parseInt(messageId, 10) : messageId; }
   private removeMessageListener(): void {
@@ -251,6 +503,11 @@ export class MessageListService {
   setErrorCallback(callback: ErrorCallback | null): void { this.errorCallback = callback; }
   private clearMessagesAndState(): void {
     this.fetchGeneration++;
+    this.heldReceipts.clear();
+    this.offlineReloadOnConnect = false;
+    this.offlineFooterSignal.set('none');
+    this.offlineFooterRetryableSignal.set(false);
+    this.offlineBlocked = undefined;
     this.messagesSignal.set([]);
     this.allMessagesSignal.set([]);
     this.messageIdMap.clear();
@@ -347,6 +604,7 @@ export class MessageListService {
   private updateSentMessageReplyCount(message: CometChat.BaseMessage): void { updateSentMessageReplyCountImpl(this as any, message); }
   private setupMessageListener(): void { setupMsgListener(this, this.ngZone); }
   private isMessageForCurrentConversation(message: CometChat.BaseMessage): boolean { return isMessageForCurrentConversationImpl(this as any, message); }
+  private acceptsSweptRow(message: CometChat.BaseMessage): boolean { return acceptsSweptRowImpl(this as any, message); }
   handleNewMessage(message: CometChat.BaseMessage): void {
     if (!this.parentMessageId && message.getParentMessageId() && !this.isAgentChatMode) {
       if (this.isThreadReplyForCurrentConversation(message)) { this.updateSentMessageReplyCount(message); }
@@ -367,6 +625,9 @@ export class MessageListService {
     if (this.isAgentChatMode && !this.parentMessageId && this.messagesSignal().length === 0) {
       return;
     }
+    // Offline path: a swept message can be older than live ones already shown,
+    // so every insert goes into its sorted place (BEH-READ-10).
+    if (isOfflineOn()) { upsertOffline(this as any, [message]); return; }
     this.addMessage(message);
   }
   /**

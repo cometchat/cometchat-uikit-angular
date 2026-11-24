@@ -17,6 +17,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import { Component, EventEmitter, Input, Output, TemplateRef, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -28,6 +29,8 @@ import { TranslatePipe } from '../../../resources/CometChatLocalize/translate.pi
 import { States } from '../../../Enums/Enums';
 
 class SearchServiceDouble {
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   messages = signal<CometChat.BaseMessage[]>([]);
   fetchState = signal<States>(States.loaded);
   hasMoreResults = signal(false);

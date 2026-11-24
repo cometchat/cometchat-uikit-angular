@@ -29,6 +29,8 @@ import { CometChatFullScreenViewerComponent } from '../base-elements/cometchat-f
 import { MediaControlsService } from '../../services/media-controls.service';
 import { formatVideoDuration, cleanupPipResources } from './cometchat-video-bubble.utils';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
+import { CachedMediaUrls } from '../../utils/offline/media';
+import { OfflineHubService } from '../../services/offline-hub.service';
 
 // Re-export types for backward compatibility
 export type { MediaAttachment, MediaLayoutType } from '../../modals/MediaAttachment';
@@ -129,6 +131,10 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
 
   private mediaControlsService = inject(MediaControlsService);
 
+  /** Offline support: object URLs of cached copies this bubble shows. */
+  private readonly offlineMedia = new CachedMediaUrls();
+  private readonly offlineHub = inject(OfflineHubService);
+
   constructor(private cdr: ChangeDetectorRef) {}
 
   // ============================================
@@ -136,6 +142,7 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
   // ============================================
 
   ngOnInit(): void {
+    this.offlineMedia.watch(this.offlineHub.mediaReady$, () => this.offlineHub.connectionChanged$);
     this.processMessage();
   }
 
@@ -146,6 +153,7 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
   }
 
   ngOnDestroy(): void {
+    this.offlineMedia.dispose();
     this.pendingTimers.forEach(t => clearTimeout(t));
     this.pendingTimers = [];
     cleanupPipResources(this.isPipActive, this.pipVideoElement?.nativeElement ?? null,
@@ -162,6 +170,8 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
 
   private processMessage(): void {
     this.attachments = extractMediaAttachments(this.message, 'video', 'CometChatVideoBubble');
+    // Offline support: play the SDK's cached copy when it has one.
+    this.offlineMedia.resolve(this.attachments, () => this.cdr.markForCheck());
     this.captionText = extractMediaCaption(this.message, 'CometChatVideoBubble');
     const info = extractSenderInfo(this.message, 'CometChatVideoBubble');
     this.senderName = info.senderName;
@@ -184,12 +194,16 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
   // ============================================
 
   protected onVideoClick(index: number): void {
-    if (this.disableInteraction) return;
     if (index < 0 || index >= this.attachments.length) {
       CometChatLogger.warn('CometChatVideoBubble', `Invalid video index: ${index}`);
       return;
     }
-    this.videoClick.emit({ attachment: this.attachments[index], index });
+    // Offline support (AC-12.3): a tap online asks the SDK to cache a never-downloaded video.
+    this.offlineMedia.requestDownload(this.attachments[index]);
+    if (this.disableInteraction || this.offlineMedia.isUnavailable(this.attachments[index])) return;
+    // The remote attachment, never this bubble's object URL: the bubble revokes
+    // that when it re-resolves or is destroyed.
+    this.videoClick.emit({ attachment: this.offlineMedia.original(this.attachments[index]), index });
     this.openPlayerViewer(index);
   }
 
@@ -329,8 +343,13 @@ export class CometChatVideoBubbleComponent implements OnInit, OnChanges, OnDestr
    * on and is not parked awaiting a retry (that gap is what lets the retry mount a fresh element).
    */
   protected shouldShowThumbnail(index: number): boolean {
-    return !this.failedThumbnails.has(index) && !this.reloadingThumbnails.has(index);
+    return !this.failedThumbnails.has(index) && !this.reloadingThumbnails.has(index)
+      && !this.offlineMedia.isUnavailable(this.attachments[index]);
   }
+
+  /** Offline: some video has no cached copy and the device is offline. */
+  protected get mediaUnavailable(): boolean { return this.offlineMedia.hasUnavailable(); }
+  protected get unavailableText(): string { return CometChatLocalize.getLocalizedString('message_bubble_media_available_when_online'); }
 
   /**
    * Builds the <video> src used to paint a video's FIRST FRAME as the tile thumbnail.

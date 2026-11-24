@@ -8,7 +8,28 @@
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from './CometChatLogger';
+import { isOfflineOn } from './offline/offline-gate';
 import { MediaAttachment, MediaLayoutType } from '../modals/MediaAttachment';
+
+/**
+ * The files an unsent (queued) own media message still holds (`message.files`, one per attachment,
+ * in order), as URL-less attachments. Offline ON only; nothing otherwise.
+ */
+function queuedFileAttachments(message: CometChat.MediaMessage, mediaType: 'image' | 'video'): MediaAttachment[] {
+  if (!isOfflineOn()) return [];
+  const files = (message as any).files;
+  if (!Array.isArray(files)) return [];
+  return files
+    .filter((f): f is Blob => typeof Blob !== 'undefined' && f instanceof Blob)
+    .map(file => ({
+      url: '',
+      type: mediaType,
+      file,
+      name: (file as File).name || undefined,
+      mimeType: file.type || undefined,
+      size: file.size || undefined,
+    }));
+}
 
 /**
  * Extracts media attachments from a CometChat message.
@@ -32,6 +53,8 @@ export function extractMediaAttachments(
     const rawAttachments = message.getAttachments();
 
     if (!rawAttachments || !Array.isArray(rawAttachments)) {
+      const queued = queuedFileAttachments(message, mediaType);
+      if (queued.length > 0) return queued;
       CometChatLogger.warn(logPrefix, 'Message has no attachments or attachments is not an array');
       return [];
     }
@@ -59,6 +82,7 @@ export function extractMediaAttachments(
         : (typeof thumbnailGenExt?.['url_small'] === 'string' ? thumbnailGenExt['url_small'] : undefined);
 
     const mediaAttachments: MediaAttachment[] = [];
+    const queuedFiles = queuedFileAttachments(message, mediaType);
 
     for (let i = 0; i < rawAttachments.length; i++) {
       const attachment = rawAttachments[i];
@@ -70,6 +94,12 @@ export function extractMediaAttachments(
 
       const url = (attachment as any).url || (attachment as any).getUrl?.();
       if (!url || typeof url !== 'string') {
+        // Unsent own media (offline): previewed from the file the message still holds.
+        const queuedFile = queuedFiles[i];
+        if (queuedFile) {
+          mediaAttachments.push(queuedFile);
+          continue;
+        }
         CometChatLogger.warn(logPrefix, `Attachment at index ${i} is missing URL, skipping`);
         continue;
       }
@@ -105,7 +135,7 @@ export function extractMediaAttachments(
       mediaAttachments.push(mediaAttachment);
     }
 
-    return mediaAttachments;
+    return mediaAttachments.length > 0 ? mediaAttachments : queuedFiles;
   } catch (error) {
     CometChatLogger.error(logPrefix, 'Error extracting attachments:', error);
     return [];

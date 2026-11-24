@@ -18,6 +18,7 @@ class UsersServiceStub {
   readonly users = signal<CometChat.User[]>([]).asReadonly();
   readonly fetchState = signal<States>(States.loaded).asReadonly();
   readonly hasMore = signal(false).asReadonly();
+  readonly offlineSettled = signal(0);
   setErrorCallback(): void {}
   initialize(): void {}
   search(): void {}

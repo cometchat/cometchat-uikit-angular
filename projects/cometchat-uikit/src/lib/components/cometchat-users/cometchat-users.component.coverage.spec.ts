@@ -61,6 +61,7 @@ class FakeUsersService {
   readonly users = this.usersSignal.asReadonly();
   readonly fetchState = this.fetchStateSignal.asReadonly();
   readonly hasMore = this.hasMoreSignal.asReadonly();
+  readonly offlineSettled = signal(0);
 
   errorCallback: ((error: CometChat.CometChatException) => void) | null = null;
   initializeCalls: InitConfig[] = [];

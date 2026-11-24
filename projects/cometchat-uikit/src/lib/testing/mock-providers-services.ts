@@ -129,6 +129,7 @@ export function createMockConversationsService(): Record<string, any> {
     removeConversation: vi.fn(),
     findConversation: vi.fn(() => null),
     replaceConversation: vi.fn(() => false),
+    applyPinState: vi.fn(() => false),
     moveConversationToTop: vi.fn(() => false),
     insertConversationAt: vi.fn(),
     getConversationIndex: vi.fn(() => -1),

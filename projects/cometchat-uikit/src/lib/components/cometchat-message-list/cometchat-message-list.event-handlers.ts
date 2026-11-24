@@ -73,9 +73,19 @@ export interface GroupEventContext {
   cdr: ChangeDetectorRef;
   parentMessageId: number | null;
   group: CometChat.Group | null | undefined;
+  /** When set, a group event updates the group but adds no action row. */
+  hideGroupActionMessages?: boolean;
   messageListService: MessageListService;
   scrollToBottom(smooth: boolean): void;
+  /** Updates the list's group in place; it must not reset the list. */
   setGroup(group: CometChat.Group): void;
+}
+
+/** Add group action rows to the main list, unless the list hides group actions. */
+function addGroupActions(ctx: GroupEventContext, messages: CometChat.BaseMessage[]): void {
+  if (ctx.parentMessageId || ctx.hideGroupActionMessages) return;
+  messages.forEach(message => ctx.messageListService.addMessage(message));
+  ctx.scrollToBottom(false);
 }
 
 export function subscribeToGroupEventsImpl(ctx: GroupEventContext): void {
@@ -85,34 +95,34 @@ export function subscribeToGroupEventsImpl(ctx: GroupEventContext): void {
   CometChatGroupEvents.ccGroupMemberScopeChanged.pipe(takeUntilDestroyed(ctx.destroyRef)).subscribe((data: IGroupMemberScopeChanged) => {
     if (ctx.group && data.group.getGuid() === ctx.group.getGuid()) {
       ctx.setGroup(data.group);
-      if (!ctx.parentMessageId) { ctx.messageListService.addMessage(data.message); ctx.scrollToBottom(false); }
+      addGroupActions(ctx, [data.message]);
       ctx.cdr.markForCheck();
     }
   });
   CometChatGroupEvents.ccGroupMemberAdded.pipe(takeUntilDestroyed(ctx.destroyRef)).subscribe((data: IGroupMemberAdded) => {
     if (ctx.group && data.userAddedIn.getGuid() === ctx.group.getGuid()) {
       ctx.setGroup(data.userAddedIn);
-      if (!ctx.parentMessageId) { data.messages.forEach(message => { ctx.messageListService.addMessage(message); }); ctx.scrollToBottom(false); }
+      addGroupActions(ctx, data.messages);
       ctx.cdr.markForCheck();
     }
   });
   CometChatGroupEvents.ccGroupMemberBanned.pipe(takeUntilDestroyed(ctx.destroyRef)).subscribe((data: IGroupMemberKickedBanned) => {
     if (ctx.group && data.kickedFrom.getGuid() === ctx.group.getGuid()) {
       ctx.setGroup(data.kickedFrom);
-      if (!ctx.parentMessageId) { ctx.messageListService.addMessage(data.message); ctx.scrollToBottom(false); }
+      addGroupActions(ctx, [data.message]);
       ctx.cdr.markForCheck();
     }
   });
   CometChatGroupEvents.ccGroupMemberKicked.pipe(takeUntilDestroyed(ctx.destroyRef)).subscribe((data: IGroupMemberKickedBanned) => {
     if (ctx.group && data.kickedFrom.getGuid() === ctx.group.getGuid()) {
       ctx.setGroup(data.kickedFrom);
-      if (!ctx.parentMessageId) { ctx.messageListService.addMessage(data.message); ctx.scrollToBottom(false); }
+      addGroupActions(ctx, [data.message]);
       ctx.cdr.markForCheck();
     }
   });
   CometChatGroupEvents.ccGroupLeft.pipe(takeUntilDestroyed(ctx.destroyRef)).subscribe((data: IGroupLeft) => {
     if (ctx.group && data.leftGroup.getGuid() === ctx.group.getGuid()) {
-      if (!ctx.parentMessageId) { ctx.messageListService.addMessage(data.message); ctx.scrollToBottom(false); }
+      addGroupActions(ctx, [data.message]);
       ctx.cdr.markForCheck();
     }
   });

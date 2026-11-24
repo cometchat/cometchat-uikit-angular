@@ -250,17 +250,20 @@ describe('MessageListService (coverage)', () => {
 
     it('regenerates all four listener ids so a later teardown cannot remove the new listeners', () => {
       const before = service.getMessageListenerId();
-      // Date.now() is the only input to the new ids; pinning it keeps the
-      // assertion exact even when two cleanups land in the same millisecond.
+      // The ids are the time plus a per-page counter, so they differ even when
+      // two cleanups land in the same millisecond.
       vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
 
       service.cleanup();
 
-      expect(service.getMessageListenerId()).toBe('message_list_1700000000000');
-      expect(service.getGroupListenerId()).toBe('message_list_group_1700000000000');
-      expect(service.getCallListenerId()).toBe('message_list_call_1700000000000');
-      expect(service.getConnectionListenerId()).toBe('message_list_connection_1700000000000');
+      const suffix = service.getMessageListenerId().replace('message_list_', '');
+      expect(suffix).toMatch(/^1700000000000_\d+$/);
+      expect(service.getGroupListenerId()).toBe(`message_list_group_${suffix}`);
+      expect(service.getCallListenerId()).toBe(`message_list_call_${suffix}`);
+      expect(service.getConnectionListenerId()).toBe(`message_list_connection_${suffix}`);
       expect(service.getMessageListenerId()).not.toBe(before);
+      service.cleanup();
+      expect(service.getMessageListenerId()).not.toBe(`message_list_${suffix}`);
     });
 
     it('logs and keeps going when the SDK throws while removing each listener', () => {

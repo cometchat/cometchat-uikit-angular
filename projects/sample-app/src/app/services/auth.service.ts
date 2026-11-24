@@ -1,9 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
-import { CometChatUIKit } from '@cometchat/chat-uikit-angular';
+import { CometChatLocalize, CometChatUIKit } from '@cometchat/chat-uikit-angular';
 import { AppStateService } from './app-state.service';
 import { NavigationService } from './navigation.service';
+import { ToastService } from './toast.service';
 
 interface SampleUserData {
   uid: string;
@@ -27,6 +28,8 @@ export class AuthService {
   private router = inject(Router);
   private appStateService = inject(AppStateService);
   private navigationService = inject(NavigationService);
+  private toastService = inject(ToastService);
+  private loggingOut = false;
 
   isLoggedIn = signal(false);
   loggedInUser = signal<CometChat.User | null>(null);
@@ -39,8 +42,42 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Logs out and goes to sign-in. Never rejects; a second call while one is running is ignored.
+   *
+   * ENG-57327: offline, the SDK signs out locally (session and stored user cleared) and then
+   * rejects. Like Android's sample, which goes to sign-in on success and on failure, a failed
+   * logout still goes to sign-in once the SDK no longer has a user (or that check fails); only a
+   * user still signed in stays here, with an error toast.
+   */
   async logout(): Promise<void> {
-    await CometChatUIKit.logout();
+    if (this.loggingOut) return;
+    this.loggingOut = true;
+    try {
+      try {
+        await CometChatUIKit.logout();
+      } catch (error) {
+        if (await this.stillLoggedIn()) {
+          console.error('[AuthService] logout failed', error);
+          this.toastService.showError(CometChatLocalize.getLocalizedString('something_went_wrong'));
+          return;
+        }
+      }
+      this.goToSignIn();
+    } finally {
+      this.loggingOut = false;
+    }
+  }
+
+  private async stillLoggedIn(): Promise<boolean> {
+    try {
+      return (await CometChat.getLoggedinUser()) != null;
+    } catch {
+      return false;
+    }
+  }
+
+  private goToSignIn(): void {
     this.loggedInUser.set(null);
     this.isLoggedIn.set(false);
     this.appStateService.reset();

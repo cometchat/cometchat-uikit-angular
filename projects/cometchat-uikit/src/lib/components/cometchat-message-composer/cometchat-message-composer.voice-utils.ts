@@ -10,6 +10,8 @@ import {markMessageFailed} from '../../utils/message-metadata-utils';
 import {MessageComposerService} from '../../services/message-composer.service';
 import {CometChatUIKitConstants} from '../../constants';
 import {stampBatchMetadata} from '../../utils/message-metadata-utils';
+import {isOfflineOn} from '../../utils/offline/offline-gate';
+import {revokeWhenSettled} from '../../utils/offline/send';
 
 export interface VoiceUtilsContext {
   isRecording: { (): boolean; set(v: boolean): void };
@@ -69,6 +71,21 @@ export async function handleRecordingCompleteImpl(ctx: VoiceUtilsContext, audioB
   };
   (pendingAudioMessage as any).getAttachments = () => [localAttachment];
   CometChatMessageEvents.ccMessageSent.next({ message: pendingAudioMessage, status: MessageStatus.inprogress });
+  if (isOfflineOn()) {
+    // Offline path: the hub draws the row and emits the public events.
+    const result = await ctx.messageComposerService.sendOffline(pendingAudioMessage, 'media');
+    if (result.state !== 'failed') {
+      if (quotedMessage) {
+        ctx.exitReplyMode();
+        if (result.state === 'sent') CometChatMessageEvents.ccReplyToMessage.next({ message: result.message, status: MessageStatus.success });
+      }
+      ctx.sendButtonClick.emit(result.message);
+      ctx.playOutgoingMessageSound();
+    }
+    if (result.state === 'sent') setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    else revokeWhenSettled(result.message, [blobUrl]);
+    return;
+  }
   try {
     const mediaMessage = await ctx.messageComposerService.sendMediaMessage(
       receiver, audioFile, CometChat.MESSAGE_TYPE.AUDIO, undefined, ctx.parentMessageId, quotedMessage, pendingAudioMessage

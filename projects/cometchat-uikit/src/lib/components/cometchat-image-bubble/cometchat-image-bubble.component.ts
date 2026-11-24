@@ -10,6 +10,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   NgZone,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -28,6 +29,9 @@ import { CometChatTextBubbleComponent } from '../cometchat-text-bubble/cometchat
 import { CometChatFullScreenViewerComponent } from '../base-elements/cometchat-fullscreen-viewer/cometchat-fullscreen-viewer.component';
 import { CometChatLogger } from '../../utils/CometChatLogger';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
+import { CachedMediaUrls } from '../../utils/offline/media';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { OfflineHubService } from '../../services/offline-hub.service';
 
 /**
  * CometChatImageBubbleComponent renders image messages with single/multi-image layouts,
@@ -103,9 +107,16 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
 
   readonly MessageBubbleAlignment = MessageBubbleAlignment;
 
+  /** Offline support: object URLs of cached copies this bubble shows. */
+  private readonly offlineMedia = new CachedMediaUrls();
+  private readonly offlineHub = inject(OfflineHubService);
+
   constructor(private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
 
-  ngOnInit(): void { this.processMessage(); }
+  ngOnInit(): void {
+    this.offlineMedia.watch(this.offlineHub.mediaReady$, () => this.offlineHub.connectionChanged$);
+    this.processMessage();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['message'] || changes['alignment']) this.processMessage();
@@ -126,6 +137,11 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
     this.reloadingIndices = new Set<number>();
     this.retryCounts.clear();
     this.cdr.markForCheck();
+    // Offline support: show the SDK's cached copy when it has one.
+    this.offlineMedia.resolve(this.attachments, () => {
+      this.errorIndices = new Set<number>();
+      this.cdr.markForCheck();
+    });
   }
 
   private extractAttachments(): MediaAttachment[] { return extractMediaAttachments(this.message, 'image', 'CometChatImageBubble'); }
@@ -146,9 +162,13 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
   private determineAlignment(): void { this.isOutgoing = this.alignment === MessageBubbleAlignment.right; }
 
   protected onImageClick(index: number): void {
-    if (this.disableInteraction) return;
     if (index < 0 || index >= this.attachments.length) { CometChatLogger.warn('CometChatImageBubble', `Invalid image index: ${index}`); return; }
-    this.imageClick.emit({ attachment: this.attachments[index], index });
+    // Offline support (AC-12.3): a tap online asks the SDK to cache a never-downloaded image.
+    this.offlineMedia.requestDownload(this.attachments[index]);
+    if (this.disableInteraction || this.offlineMedia.isUnavailable(this.attachments[index])) return;
+    // The remote attachment, never this bubble's object URL: the bubble revokes
+    // that when it re-resolves or is destroyed.
+    this.imageClick.emit({ attachment: this.offlineMedia.original(this.attachments[index]), index });
     this.openGalleryViewer(index);
   }
 
@@ -182,6 +202,9 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
     return CometChatLocalize.getLocalizedString('accessibility_show_more_images').replace('{count}', () => this.overflowCount.toString());
   }
 
+  /** Offline: some image has no cached copy and the device is offline. */
+  protected get mediaUnavailable(): boolean { return this.offlineMedia.hasUnavailable(); }
+
   protected trackByAttachment(index: number, attachment: MediaAttachment): string { return attachment.url || index.toString(); }
 
   /**
@@ -193,7 +216,8 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
     return (
       !this.loadedIndices.has(index) &&
       !this.errorIndices.has(index) &&
-      !this.reloadingIndices.has(index)
+      !this.reloadingIndices.has(index) &&
+      !this.offlineMedia.isUnavailable(this.attachments[index])
     );
   }
 
@@ -254,6 +278,15 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
       return;
     }
 
+    // Offline on: the thumbnail is gone (an expired or unreachable preview URL): try the full image — the cached
+    // copy when there is one, else its URL — before giving up on the tile.
+    const attachment = this.attachments[index];
+    if (isOfflineOn() && attachment?.url && attachment.displayUrl && attachment.displayUrl !== attachment.url) {
+      attachment.displayUrl = attachment.url;
+      this.ngZone.run(() => this.cdr.markForCheck());
+      return;
+    }
+
     this.ngZone.run(() => {
       this.errorIndices = new Set(this.errorIndices).add(index);
       this.cdr.markForCheck();
@@ -266,6 +299,7 @@ export class CometChatImageBubbleComponent implements OnInit, OnChanges, OnDestr
   }
 
   ngOnDestroy(): void {
+    this.offlineMedia.dispose();
     this.clearRetryTimers();
   }
 }

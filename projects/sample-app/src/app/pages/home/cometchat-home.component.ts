@@ -829,7 +829,10 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.push(
-      CometChatGroupEvents.ccGroupMemberScopeChanged.subscribe(() => {
+      CometChatGroupEvents.ccGroupMemberScopeChanged.subscribe((data) => {
+        // With offline support the kit also emits a scope change it caught up
+        // on after a reconnect; only the user's own change gets the toast.
+        if (!this.isOwnGroupAction(data?.message)) return;
         this.toastService.showSuccess(
           CometChatLocalize.getLocalizedString('permissions_updated_successfully')
         );
@@ -845,7 +848,9 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.push(
-      CometChatGroupEvents.ccGroupMemberBanned.subscribe(() => {
+      CometChatGroupEvents.ccGroupMemberBanned.subscribe((data) => {
+        if (this.handleRemovedFromActiveGroup(data, 'you_were_banned_by_admin')) return;
+        if (!this.isOwnGroupAction(data?.message, data?.kickedBy)) return;
         this.toastService.showSuccess(
           CometChatLocalize.getLocalizedString('member_banned_toast')
         );
@@ -861,7 +866,9 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.push(
-      CometChatGroupEvents.ccGroupMemberKicked.subscribe(() => {
+      CometChatGroupEvents.ccGroupMemberKicked.subscribe((data) => {
+        if (this.handleRemovedFromActiveGroup(data, 'you_were_removed_by_admin')) return;
+        if (!this.isOwnGroupAction(data?.message, data?.kickedBy)) return;
         this.toastService.showSuccess(
           CometChatLocalize.getLocalizedString('member_removed_toast')
         );
@@ -1162,6 +1169,32 @@ export class CometChatHomeComponent implements OnInit, OnDestroy {
    * Scope changed / added / joined / left: keeps the active group object in sync
    * (matches React's SideComponentGroup + BannedOrKickedMembers patterns).
    */
+  /** Whether a group event is the signed-in user's own action (not one caught up on after a reconnect). */
+  private isOwnGroupAction(message?: CometChat.Action, actor?: CometChat.User): boolean {
+    const me = CometChatUIKit.getLoggedInUser()?.getUid();
+    const by = actor?.getUid?.() ?? (message?.getActionBy?.() as CometChat.User | undefined)?.getUid?.();
+    return !by || !me || by === me;
+  }
+
+  /**
+   * Offline support: a kick or ban of the signed-in user that the kit caught up
+   * on after a reconnect arrives as a group event, not on the SDK listener.
+   * Handle it as the live listener below does.
+   */
+  private handleRemovedFromActiveGroup(
+    data: { kickedUser?: CometChat.User; kickedFrom?: CometChat.Group } | undefined,
+    messageKey: string
+  ): boolean {
+    const me = CometChatUIKit.getLoggedInUser()?.getUid();
+    if (!data?.kickedUser || !me || data.kickedUser.getUid() !== me) return false;
+    if (data.kickedFrom && this.isActiveGroup(data.kickedFrom)) {
+      this.toastService.showError(CometChatLocalize.getLocalizedString(messageKey));
+      this.chatStateService.clearActiveChat();
+      this.navigationService.reset();
+    }
+    return true;
+  }
+
   private attachSDKGroupListener(): void {
     this.groupListenerId = `HomeGroupListener_${Date.now()}`;
     const loggedInUser = CometChatUIKit.getLoggedInUser();

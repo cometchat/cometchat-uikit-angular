@@ -53,7 +53,8 @@
             "pages": [
               "core-features",
               "extensions",
-              "ai-features"
+              "ai-features",
+              "offline-support"
             ]
           },
           {

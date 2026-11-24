@@ -117,6 +117,10 @@ export class CometChatUIKitConstants {
     sendMessagePrivately: 'sendMessagePrivately',
     replyMessagePrivately: 'replyMessagePrivately',
     markAsUnread: 'markAsUnread',
+    /** Offline support: retry a failed own message. */
+    retryMessage: 'retryMessage',
+    /** Offline support: remove an own message that has not been sent. */
+    discardMessage: 'discardMessage',
   });
 
   static GroupOptions = Object.freeze({

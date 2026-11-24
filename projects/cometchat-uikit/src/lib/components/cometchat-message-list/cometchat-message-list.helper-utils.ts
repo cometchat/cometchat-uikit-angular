@@ -64,15 +64,25 @@ export function updateListStateImpl(self: any): void {
   const messages = self.messages();
   if (loading && messages.length === 0) {
     self.listState.set(States.loading);
-  } else if (error && !loading && !self.effectiveHideError()) {
+  } else if (error && !loading && messages.length === 0 && !self.effectiveHideError()) {
     // ENG-35029: Only show error state when NOT loading. A stale error from a previous
     // conversation's fetch can arrive after setUser/setGroup clears the error state but
     // before the new fetch completes. Ignoring errors during loading prevents false
     // "Something went wrong" screens when switching conversations quickly.
+    //
+    // ENG-57333: and only with nothing to show. Every load that fails over rows already on
+    // screen leaves the error state alone for that reason (`failPageLoad`,
+    // `message-list.fetch-utils.ts:97`; the offline path's `onError`,
+    // `message-list.offline.ts:328-331`), so the error state and rows only meet when a row
+    // arrives after the error: the message the user sends from the "Connect to load messages"
+    // screen. The error view hid it, and the message looked lost.
     self.listState.set(States.error);
-  } else if (messages.length === 0) {
+  } else if (messages.length === 0 && self.messageListService?.offlineFooter?.() !== 'connect_to_load_more') {
     self.listState.set(States.empty);
   } else {
+    // Messages filtered out by the list but a "Connect to load more" footer still showing: the
+    // loaded view shows the footer (UIK-READ-03, AC-4.3). With nothing on screen offline, the
+    // error state above wins (D83).
     self.listState.set(States.loaded);
   }
 }

@@ -13,6 +13,7 @@ import {
   ChangeDetectionStrategy,
   ElementRef,
   ViewChild,
+  viewChild,
   inject,
   DestroyRef,
 } from '@angular/core';
@@ -41,6 +42,8 @@ import { FormatterConfigService } from '../../services/formatter-config.service'
 import { CometChatUIKit } from '../../cometchat-uikit';
 import { SearchConversationsService } from '../../services/search-conversations.service';
 import { SearchMessagesService } from '../../services/search-messages.service';
+import { SearchFailureHold } from '../../services/search-failure-hold';
+import { safeEffect } from '../../utils/safe-effect';
 
 export interface SearchConversationClickEvent {
   conversation: CometChat.Conversation;
@@ -85,7 +88,7 @@ const DEFAULT_FILTERS: CometChatSearchFilter[] = [
   // gets its own isolated service instances. Without this, both the global search
   // and the in-chat (scoped) search share the same singleton services, causing
   // filter selections in one to trigger searches and shimmer in the other.
-  providers: [SearchConversationsService, SearchMessagesService],
+  providers: [SearchConversationsService, SearchMessagesService, SearchFailureHold],
 })
 export class CometChatSearchComponent implements OnInit, OnDestroy {
   // searchIn, searchFilters, uid and guid feed the computed filter bar and result lists below,
@@ -299,6 +302,53 @@ export class CometChatSearchComponent implements OnInit, OnDestroy {
     () => this.showConversations() && this.showMessages()
   );
 
+  private readonly conversationsList = viewChild(CometChatSearchConversationsListComponent);
+  private readonly messagesList = viewChild(CometChatSearchMessagesListComponent);
+
+  /**
+   * Offline (D84 rule 7): a scope whose search could not reach the server and found nothing saved
+   * says "Connect to search" (its state is `empty`; there is no `searchError`).
+   */
+  readonly conversationsOfflineMiss: Signal<boolean> = computed(
+    () => this.conversationsList()?.service.connectToSearch() === true
+  );
+  readonly messagesOfflineMiss: Signal<boolean> = computed(
+    () => this.messagesList()?.service.connectToSearch() === true
+  );
+
+  /**
+   * Offline (D84, Android): a scope whose search failed with a real error while it showed nothing. Its
+   * state is `empty` and it has not reported the error: this component decides, once both scopes have
+   * answered, whether that is the error view or the plain empty state (see `SearchFailureHold`).
+   */
+  private readonly conversationsFailed: Signal<boolean> = computed(
+    () => this.conversationsList()?.service.searchFailed() === true
+  );
+  private readonly messagesFailed: Signal<boolean> = computed(
+    () => this.messagesList()?.service.searchFailed() === true
+  );
+
+  /**
+   * Both scopes failed, at least one for a real reason, is the error view (Android's
+   * `updateFinalStateIfCompleted`): a scope that could not search for want of a connection counts as
+   * failed then (D84 rule 7 needs every failure to be a not-connected one). Every other combination
+   * keeps each scope's own state.
+   */
+  private readonly failedTogether: Signal<boolean> = computed(() => {
+    if (!this.bothScopesActive()) return false;
+    const conversationsDown = this.conversationsFailed() || this.conversationsOfflineMiss();
+    const messagesDown = this.messagesFailed() || this.messagesOfflineMiss();
+    return conversationsDown && messagesDown && (this.conversationsFailed() || this.messagesFailed());
+  });
+
+  /** The state the unified view acts on: the scopes' own, except when they failed together. */
+  private readonly conversationsEffectiveState: Signal<States> = computed(() =>
+    this.failedTogether() ? States.error : this.conversationsState()
+  );
+  private readonly messagesEffectiveState: Signal<States> = computed(() =>
+    this.failedTogether() ? States.error : this.messagesState()
+  );
+
   /**
    * Hide the conversations section entirely when:
    * - Both scopes active AND conversations is empty AND messages has data
@@ -307,8 +357,8 @@ export class CometChatSearchComponent implements OnInit, OnDestroy {
    */
   readonly hideConversationsSection: Signal<boolean> = computed(() => {
     if (!this.bothScopesActive()) return false;
-    const cs = this.conversationsState();
-    const ms = this.messagesState();
+    const cs = this.conversationsEffectiveState();
+    const ms = this.messagesEffectiveState();
     // Both empty → parent shows unified empty, hide both sections
     if (cs === States.empty && ms === States.empty) return true;
     // Both error → parent shows unified error, hide both sections
@@ -326,8 +376,8 @@ export class CometChatSearchComponent implements OnInit, OnDestroy {
    */
   readonly hideMessagesSection: Signal<boolean> = computed(() => {
     if (!this.bothScopesActive()) return false;
-    const cs = this.conversationsState();
-    const ms = this.messagesState();
+    const cs = this.conversationsEffectiveState();
+    const ms = this.messagesEffectiveState();
     if (cs === States.empty && ms === States.empty) return true;
     if (cs === States.error && ms === States.error) return true;
     if (ms === States.empty && cs === States.loaded) return true;
@@ -337,13 +387,38 @@ export class CometChatSearchComponent implements OnInit, OnDestroy {
   /** Show a single unified empty view when both child lists report empty. */
   readonly showUnifiedEmpty: Signal<boolean> = computed(() => {
     if (!this.bothScopesActive()) return false;
-    return this.conversationsState() === States.empty && this.messagesState() === States.empty;
+    return this.conversationsEffectiveState() === States.empty && this.messagesEffectiveState() === States.empty;
   });
+
+  /** The unified empty view says "Connect to search" when a scope could not search for want of a connection. */
+  readonly unifiedOfflineMiss: Signal<boolean> = computed(
+    () => this.conversationsOfflineMiss() || this.messagesOfflineMiss()
+  );
 
   /** Show a single unified error view when both child lists report error. */
   readonly showUnifiedError: Signal<boolean> = computed(() => {
     if (!this.bothScopesActive()) return false;
-    return this.conversationsState() === States.error && this.messagesState() === States.error;
+    return this.conversationsEffectiveState() === States.error && this.messagesEffectiveState() === States.error;
+  });
+
+  private readonly failureHold = inject(SearchFailureHold);
+
+  /**
+   * Offline (D84, Android): the real errors a scope held while it showed nothing reach `searchError`
+   * only once both scopes have answered, and only when Android's final state would report them: both
+   * scopes failed (the error view), or the other scope has results (they stay, rule 5). No results
+   * anywhere is the plain empty state, with no report.
+   */
+  private readonly reportHeldErrors = safeEffect(() => {
+    const conversations = this.showConversations() ? this.conversationsEffectiveState() : States.empty;
+    const messages = this.showMessages() ? this.messagesEffectiveState() : States.empty;
+    const unifiedError = this.showUnifiedError();
+    if (!this.failureHold.hasHeld) return;
+    if (conversations === States.loading || messages === States.loading) return;
+    const errors = this.failureHold.take();
+    if (unifiedError || conversations === States.loaded || messages === States.loaded) {
+      errors.forEach(error => this.searchError.emit(error as CometChat.CometChatException));
+    }
   });
 
   handleConversationsStateChange(state: States): void {

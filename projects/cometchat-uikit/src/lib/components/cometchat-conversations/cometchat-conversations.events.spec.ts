@@ -32,7 +32,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { MockInstance } from 'vitest';
 import { signal, WritableSignal } from '@angular/core';
 import type { Provider } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatConversationsComponent } from './cometchat-conversations.component';
@@ -123,6 +123,7 @@ function pinnedConversation(uid: string): CometChat.Conversation {
 
 interface MockConversationsService {
   conversations$: BehaviorSubject<CometChat.Conversation[]>;
+  keptRowsError$: Subject<unknown>;
   loadingState$: BehaviorSubject<boolean>;
   errorState$: BehaviorSubject<Error | null>;
   activeConversation$: BehaviorSubject<CometChat.Conversation | null>;
@@ -135,6 +136,7 @@ interface MockConversationsService {
   searchConversations: ReturnType<typeof vi.fn>;
   clearError: ReturnType<typeof vi.fn>;
   replaceConversation: ReturnType<typeof vi.fn>;
+  applyPinState: ReturnType<typeof vi.fn>;
   updateConversationReadStatus: ReturnType<typeof vi.fn>;
   updateConversationUnreadCount: ReturnType<typeof vi.fn>;
 }
@@ -142,6 +144,7 @@ interface MockConversationsService {
 function makeConversationsService(items: CometChat.Conversation[] = []): MockConversationsService {
   return {
     conversations$: new BehaviorSubject<CometChat.Conversation[]>(items),
+    keptRowsError$: new Subject<unknown>(),
     loadingState$: new BehaviorSubject<boolean>(false),
     errorState$: new BehaviorSubject<Error | null>(null),
     activeConversation$: new BehaviorSubject<CometChat.Conversation | null>(null),
@@ -154,6 +157,7 @@ function makeConversationsService(items: CometChat.Conversation[] = []): MockCon
     searchConversations: vi.fn(),
     clearError: vi.fn(),
     replaceConversation: vi.fn(),
+    applyPinState: vi.fn(() => true),
     updateConversationReadStatus: vi.fn(),
     updateConversationUnreadCount: vi.fn(),
   };
@@ -410,13 +414,14 @@ describe('CometChatConversationsComponent — event subscriptions', () => {
       expect(service.updateConversationUnreadCount).not.toHaveBeenCalled();
     });
 
-    it('logs instead of throwing when the participant is neither a user nor a group', () => {
-      // A plain object has no getGuid, so the group fallback throws.
+    it('reads the id of a plain participant instead of failing', () => {
+      // A row rebuilt from the device store can be a plain `{ uid }` object with no getters
+      // (ENG-57814). Its id is read off the object, so the unread count still reaches the row.
       expect(() =>
         CometChatConversationEvents.ccUpdateConversation.next(updatedConversation({ uid: 'bob' }, 1))
       ).not.toThrow();
-      expect(logError).toHaveBeenCalledWith('CometChatConversations', UPDATE_FAILED, expect.any(TypeError));
-      expect(service.updateConversationUnreadCount).not.toHaveBeenCalled();
+      expect(logError).not.toHaveBeenCalledWith('CometChatConversations', UPDATE_FAILED, expect.any(TypeError));
+      expect(service.updateConversationUnreadCount).toHaveBeenCalledWith('bob', 1);
     });
 
     it('stops answering conversation updates once the component is destroyed', () => {
@@ -432,38 +437,46 @@ describe('CometChatConversationsComponent — event subscriptions', () => {
   // -------------------------------------------------------------------------
 
   describe('conversation pin events', () => {
-    it('swaps in the conversation a pin confirmation carries', () => {
+    it('puts the pin state a pin confirmation carries on the row', () => {
       const conversation = pinnedConversation('bob');
       CometChatPinSaveEvents.publishConversationPinned({ conversation });
 
-      expect(service.replaceConversation).toHaveBeenCalledTimes(1);
-      expect(service.replaceConversation).toHaveBeenCalledWith(conversation);
+      expect(service.applyPinState).toHaveBeenCalledTimes(1);
+      expect(service.applyPinState).toHaveBeenCalledWith(conversation);
+      // The event's conversation is partial: it never replaces the row wholesale (BUG-11).
+      expect(service.replaceConversation).not.toHaveBeenCalled();
     });
 
-    it('swaps in the conversation an unpin confirmation carries', () => {
+    it('puts the pin state an unpin confirmation carries on the row', () => {
       const conversation = pinnedConversation('bob');
       CometChatPinSaveEvents.publishConversationUnpinned({ conversation });
 
-      expect(service.replaceConversation).toHaveBeenCalledTimes(1);
-      expect(service.replaceConversation).toHaveBeenCalledWith(conversation);
+      expect(service.applyPinState).toHaveBeenCalledTimes(1);
+      expect(service.applyPinState).toHaveBeenCalledWith(conversation);
+      // The event's conversation is partial: it never replaces the row wholesale (BUG-11).
+      expect(service.replaceConversation).not.toHaveBeenCalled();
     });
 
-    it('swaps in a conversation this client optimistically pinned', () => {
+    it('puts the pin state of a conversation this client optimistically pinned on the row', () => {
       const conversation = pinnedConversation('bob');
       CometChatPinSaveEvents.publishConversationPinChanged({ conversation, pinned: true });
 
       // Both channels run the same handler, so a change that leaked into the
-      // unpin view as well would swap the row in twice.
-      expect(service.replaceConversation).toHaveBeenCalledTimes(1);
-      expect(service.replaceConversation).toHaveBeenCalledWith(conversation);
+      // unpin view as well would apply it twice.
+      expect(service.applyPinState).toHaveBeenCalledTimes(1);
+      expect(service.applyPinState).toHaveBeenCalledWith(conversation);
+      // The event's conversation is partial: it never replaces the row wholesale (BUG-11).
+      expect(service.replaceConversation).not.toHaveBeenCalled();
     });
 
-    it('swaps in a conversation this client optimistically unpinned', () => {
+    it('puts the pin state of a conversation this client optimistically unpinned on the row', () => {
       const conversation = pinnedConversation('bob');
       CometChatPinSaveEvents.publishConversationPinChanged({ conversation, pinned: false });
 
-      expect(service.replaceConversation).toHaveBeenCalledTimes(1);
-      expect(service.replaceConversation).toHaveBeenCalledWith(conversation);
+      expect(service.applyPinState).toHaveBeenCalledTimes(1);
+      expect(service.applyPinState).toHaveBeenCalledWith(conversation);
+      // The event's conversation is partial: it never replaces the row wholesale (BUG-11).
+      expect(service.replaceConversation).not.toHaveBeenCalled();
     });
 
     it('marks the view for check so the row repaints with its new pin state', () => {
@@ -479,24 +492,24 @@ describe('CometChatConversationsComponent — event subscriptions', () => {
     it('ignores a pin event with no conversation', () => {
       CometChatPinSaveEvents.publishConversationPinned({ conversation: null as unknown as CometChat.Conversation });
 
-      expect(service.replaceConversation).not.toHaveBeenCalled();
+      expect(service.applyPinState).not.toHaveBeenCalled();
     });
 
     it('ignores an unpin event with no conversation', () => {
       CometChatPinSaveEvents.publishConversationUnpinned({ conversation: null as unknown as CometChat.Conversation });
 
-      expect(service.replaceConversation).not.toHaveBeenCalled();
+      expect(service.applyPinState).not.toHaveBeenCalled();
     });
 
-    it('swaps once per event across both channels', () => {
+    it('applies once per event across both channels', () => {
       const pinned = pinnedConversation('bob');
       const unpinned = pinnedConversation('alice');
       CometChatPinSaveEvents.publishConversationPinned({ conversation: pinned });
       CometChatPinSaveEvents.publishConversationUnpinned({ conversation: unpinned });
 
-      expect(service.replaceConversation).toHaveBeenCalledTimes(2);
-      expect(service.replaceConversation.mock.calls[0][0]).toBe(pinned);
-      expect(service.replaceConversation.mock.calls[1][0]).toBe(unpinned);
+      expect(service.applyPinState).toHaveBeenCalledTimes(2);
+      expect(service.applyPinState.mock.calls[0][0]).toBe(pinned);
+      expect(service.applyPinState.mock.calls[1][0]).toBe(unpinned);
     });
 
     it('stops answering pin events once the component is destroyed', () => {
@@ -504,7 +517,7 @@ describe('CometChatConversationsComponent — event subscriptions', () => {
       CometChatPinSaveEvents.publishConversationPinned({ conversation: pinnedConversation('bob') });
       CometChatPinSaveEvents.publishConversationUnpinned({ conversation: pinnedConversation('bob') });
 
-      expect(service.replaceConversation).not.toHaveBeenCalled();
+      expect(service.applyPinState).not.toHaveBeenCalled();
     });
   });
 

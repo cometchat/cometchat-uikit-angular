@@ -24,8 +24,29 @@ import { CometChatUIKitConstants } from '../constants';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { getConversationEntityId } from './conversations.utils';
 
+/**
+ * Whether `message` is older than `shown`, the row's current last message
+ * (Android ConversationListOffline.isOlderThan): the same message is not older;
+ * otherwise the earlier sentAt is older, and on a tie the lower id.
+ */
+export function isOlderThanShown(message: CometChat.BaseMessage, shown: CometChat.BaseMessage): boolean {
+  const id = message.getId?.() ?? 0;
+  const shownId = shown.getId?.() ?? 0;
+  if (id && id === shownId) return false;
+  const sentAt = message.getSentAt?.() ?? 0;
+  const shownSentAt = shown.getSentAt?.() ?? 0;
+  if (sentAt !== shownSentAt) return sentAt < shownSentAt;
+  return id !== 0 && id < shownId;
+}
+
 export interface UIEventHandlers {
   refreshSingleConversation: (message: CometChat.BaseMessage) => void;
+  /**
+   * Like refreshSingleConversation, for a kick, ban or scope change: it updates
+   * the row's preview and order only when the action is newer than the row's
+   * last message, since the offline hub replays swept actions after the sync.
+   */
+  refreshForGroupAction: (action: CometChat.BaseMessage) => void;
   removeConversationSilently: (id: string) => void;
   updateGroupOnConversation: (group: CometChat.Group) => void;
   updateUserOnConversation: (user: CometChat.User) => void;
@@ -54,7 +75,7 @@ export function setupUIEventSubscriptions(handlers: UIEventHandlers): Subscripti
 
   // ccGroupMemberScopeChanged: update last message
   subs.push(CometChatGroupEvents.ccGroupMemberScopeChanged.subscribe((item: IGroupMemberScopeChanged) =>
-    handlers.refreshSingleConversation(item.message)
+    handlers.refreshForGroupAction(item.message)
   ));
 
   // ccGroupMemberAdded: update group + last message
@@ -65,10 +86,10 @@ export function setupUIEventSubscriptions(handlers: UIEventHandlers): Subscripti
 
   // ccGroupMemberKicked / ccGroupMemberBanned
   subs.push(CometChatGroupEvents.ccGroupMemberKicked.subscribe((item: IGroupMemberKickedBanned) => {
-    handlers.updateGroupOnConversation(item.kickedFrom); handlers.refreshSingleConversation(item.message);
+    handlers.updateGroupOnConversation(item.kickedFrom); handlers.refreshForGroupAction(item.message);
   }));
   subs.push(CometChatGroupEvents.ccGroupMemberBanned.subscribe((item: IGroupMemberKickedBanned) => {
-    handlers.updateGroupOnConversation(item.kickedFrom); handlers.refreshSingleConversation(item.message);
+    handlers.updateGroupOnConversation(item.kickedFrom); handlers.refreshForGroupAction(item.message);
   }));
 
   // ccUserBlocked: remove or update depending on request builder setting

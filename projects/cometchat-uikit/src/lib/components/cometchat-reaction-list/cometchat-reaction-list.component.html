@@ -4,8 +4,8 @@
     role="dialog"
     [attr.aria-label]="'message_bubble_reactions' | translate">
     
-    <!-- Emoji Tabs (shown during loaded and loading states) -->
-    @if (!hasError() || filteredReactions().length > 0) {
+    <!-- Emoji Tabs (shown during loaded and loading states, and offline with "Connect to load", ENG-57325) -->
+    @if (!hasError() || filteredReactions().length > 0 || offlineConnectToLoad()) {
       <div 
         class="cometchat-reaction-list__tabs"
         role="tablist"
@@ -75,7 +75,18 @@
     }
 
     <!-- Error State -->
-    @if (hasError() && filteredReactions().length === 0) {
+    @if (hasError() && filteredReactions().length === 0 && offlineConnectToLoad()) {
+      <!-- Offline (D84 rule 3): nothing saved and no connection; no Retry. -->
+      <div
+        class="cometchat-reaction-list__error"
+        role="status"
+        data-testid="cc-empty"
+        data-cc-reason="connect-to-load">
+        <span>
+          {{ 'reaction_list_connect_to_load' | translate }}
+        </span>
+      </div>
+    } @else if (hasError() && filteredReactions().length === 0) {
       <div 
         class="cometchat-reaction-list__error"
         role="alert">
@@ -111,15 +122,15 @@
                 [attr.tabindex]="isCurrentUser(reaction) ? 0 : -1"
                 [attr.aria-label]="isCurrentUser(reaction) 
                   ? ('reaction_list_you' | translate) + ' - ' + reaction.getReaction() + ' - ' + ('reaction_list_click_to_remove' | translate)
-                  : reaction.getReactedBy().getName() + ' - ' + reaction.getReaction()"
+                  : (reaction.getReactedBy()?.getName() || '') + ' - ' + reaction.getReaction()"
                 (click)="onItemClick($event, reaction)"
                 (keydown)="onItemKeyDown($event, reaction)">
                 
                 <!-- User Avatar -->
                 <div class="cometchat-reaction-list__item-avatar">
                   <cometchat-avatar
-                    [image]="reaction.getReactedBy().getAvatar()"
-                    [name]="reaction.getReactedBy().getName()">
+                    [image]="reaction.getReactedBy()?.getAvatar() || ''"
+                    [name]="reaction.getReactedBy()?.getName() || ''">
                   </cometchat-avatar>
                 </div>
 
@@ -129,7 +140,7 @@
                     @if (isCurrentUser(reaction)) {
                       {{ 'reaction_list_you' | translate }}
                     } @else {
-                      {{ reaction.getReactedBy().getName() }}
+                      {{ reaction.getReactedBy()?.getName() || '' }}
                     }
                   </span>
                   @if (isCurrentUser(reaction)) {

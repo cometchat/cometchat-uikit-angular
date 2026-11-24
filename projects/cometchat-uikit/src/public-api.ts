@@ -25,7 +25,7 @@ export * from './lib/services';
 export { CometChatConversationEvents } from './lib/events/CometChatConversationEvents';
 
 export { CometChatMessageEvents } from './lib/events/CometChatMessageEvents';
-export type { IMessages, ICardActionEvent } from './lib/events/CometChatMessageEvents';
+export type { IMessages, ICardActionEvent, IMessageSendStateChanged, IOfflineCacheReset, MessageSendState } from './lib/events/CometChatMessageEvents';
 export { CometChatCallEvents } from './lib/events/CometChatCallEvents';
 export { CometChatGroupEvents } from './lib/events/CometChatGroupEvents';
 export type {

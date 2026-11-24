@@ -222,6 +222,19 @@
 <ng-template #emptyTpl>
   @if (emptyView) {
     <ng-container *ngTemplateOutlet="emptyView"></ng-container>
+  } @else if (service.connectToSearch()) {
+    <!-- Offline (D84 rule 7): the search needs the server; no error. -->
+    <div class="cometchat-search__empty-view" aria-live="assertive" data-testid="cc-empty" data-cc-reason="connect-to-search">
+      <div class="cometchat-search__empty-view-icon"></div>
+      <div class="cometchat-search__empty-view-body">
+        <div class="cometchat-search__empty-view-body-title">
+          {{ 'search_connect_to_search_messages' | translate }}
+        </div>
+        <div class="cometchat-search__empty-view-body-description">
+          {{ 'list_connect_to_search_subtitle' | translate }}
+        </div>
+      </div>
+    </div>
   } @else {
     <div class="cometchat-search__empty-view" aria-live="assertive">
       <div class="cometchat-search__empty-view-icon"></div>

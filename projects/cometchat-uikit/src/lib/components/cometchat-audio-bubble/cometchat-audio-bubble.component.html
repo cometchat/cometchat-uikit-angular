@@ -131,7 +131,9 @@
               <div 
                 class="cometchat-audio-bubble__time"
                 aria-hidden="true">
-                @if (getAudioState(0).isLoading) {
+                @if (isUnavailable(0)) {
+                  {{ unavailableText }}
+                } @else if (getAudioState(0).isLoading) {
                   {{ 'audio_bubble_loading' | translate }}
                 } @else {
                   {{ formatTime(getAudioState(0).currentTime) }} / {{ formatTime(getAudioState(0).duration) }}
@@ -285,7 +287,9 @@
                   <div 
                     class="cometchat-audio-bubble__time"
                     aria-hidden="true">
-                    @if (getAudioState(i + 1).isLoading) {
+                    @if (isUnavailable(i + 1)) {
+                      {{ unavailableText }}
+                    } @else if (getAudioState(i + 1).isLoading) {
                       {{ 'audio_bubble_loading' | translate }}
                     } @else {
                       {{ formatTime(getAudioState(i + 1).currentTime) }} / {{ formatTime(getAudioState(i + 1).duration) }}

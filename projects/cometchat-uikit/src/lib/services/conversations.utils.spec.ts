@@ -12,6 +12,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import {
+  mergeSilentRefresh,
   orderPinnedFirst,
   isRecoverableError,
   getUserFriendlyErrorMessage,
@@ -272,3 +273,97 @@ describe('orderPinnedFirst', () => {
   });
 });
 
+
+/**
+ * mergeSilentRefresh — the reconnect refresh against live socket updates
+ * (Prajwal 2026-11-20T11:54Z on #674).
+ *
+ * The refresh runs silently while the list stays on screen, so a realtime
+ * listener can update a row WHILE the fetch is in flight. That copy is newer
+ * than anything the fetch can return, and the refresh used to replace it
+ * regardless: the message vanished from the subtitle and the unread count went
+ * back to what the server had said.
+ */
+describe('mergeSilentRefresh', () => {
+  /** A conversation whose last message has this sentAt (and optionally id). */
+  function withLastMessage(uid: string, sentAt: number, id = 1): CometChat.Conversation {
+    const conv = makeConversation('user', uid);
+    const message = new CometChat.TextMessage(uid, 'hi', CometChat.RECEIVER_TYPE.USER);
+    message.setSentAt(sentAt);
+    message.setId(id);
+    conv.setLastMessage(message);
+    return conv;
+  }
+  const ids = (list: CometChat.Conversation[]) => list.map(getConversationEntityId);
+  const sentAtOf = (list: CometChat.Conversation[], uid: string) =>
+    list.find(c => getConversationEntityId(c) === uid)?.getLastMessage()?.getSentAt();
+
+  it('keeps a row a realtime event made newer while the fetch was in flight', () => {
+    const live = withLastMessage('a', 2000);
+    const fetched = withLastMessage('a', 1000);
+
+    const merged = mergeSilentRefresh([fetched], [live]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toBe(live);
+  });
+
+  it('takes the fetched row when it is the newer one', () => {
+    const stale = withLastMessage('a', 1000);
+    const fetched = withLastMessage('a', 2000);
+
+    const merged = mergeSilentRefresh([fetched], [stale]);
+
+    expect(merged[0]).toBe(fetched);
+  });
+
+  it('breaks a sentAt tie on the message id, so a same-second message is not lost', () => {
+    const live = withLastMessage('a', 1000, 9);
+    const fetched = withLastMessage('a', 1000, 4);
+
+    expect(mergeSilentRefresh([fetched], [live])[0]).toBe(live);
+    expect(mergeSilentRefresh([withLastMessage('a', 1000, 9)], [withLastMessage('a', 1000, 4)])[0]
+      ?.getLastMessage()
+      ?.getId()).toBe(9);
+  });
+
+  it('follows the server page order and keeps a row below it (D1)', () => {
+    const shown = [withLastMessage('old', 500), withLastMessage('b', 900)];
+    const page = [withLastMessage('a', 3000), withLastMessage('b', 1000)];
+
+    const merged = mergeSilentRefresh(page, shown);
+
+    expect(ids(merged)).toEqual(['a', 'b', 'old']);
+    // 'b' is newer in the page, so the page's copy won.
+    expect(sentAtOf(merged, 'b')).toBe(1000);
+  });
+
+  it('lists each conversation once, whichever copy wins', () => {
+    const live = withLastMessage('a', 2000);
+    const merged = mergeSilentRefresh([withLastMessage('a', 1000)], [live, withLastMessage('b', 1)]);
+    expect(ids(merged)).toEqual(['a', 'b']);
+  });
+
+  it('keeps a row the fetch has no last message for', () => {
+    const live = withLastMessage('a', 2000);
+    const fetchedWithout = makeConversation('user', 'a');
+
+    expect(mergeSilentRefresh([fetchedWithout], [live])[0]).toBe(live);
+  });
+
+  it('takes the fetched row when the one on screen has no last message', () => {
+    const fetched = withLastMessage('a', 2000);
+
+    expect(mergeSilentRefresh([fetched], [makeConversation('user', 'a')])[0]).toBe(fetched);
+  });
+
+  it('is the fetched page when nothing is on screen', () => {
+    const page = [withLastMessage('a', 1), withLastMessage('b', 2)];
+    expect(ids(mergeSilentRefresh(page, []))).toEqual(['a', 'b']);
+  });
+
+  it('keeps the rows on screen when the fetch came back empty', () => {
+    const live = withLastMessage('a', 2000);
+    expect(mergeSilentRefresh([], [live])).toEqual([live]);
+  });
+});

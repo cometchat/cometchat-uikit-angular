@@ -11,7 +11,9 @@ import {
   ViewChild,
   inject,
   ChangeDetectionStrategy,
+  DestroyRef,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { safeEffect } from '../../../utils/safe-effect';
 import { CommonModule } from '@angular/common';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -84,6 +86,7 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
 
   readonly service = inject(SearchMessagesService);
   readonly States = States;
+  private readonly destroyRef = inject(DestroyRef);
   readonly MessageTypes = CometChatUIKitConstants.MessageTypes;
 
   private readonly htmlSanitizer = inject(HtmlSanitizerService);
@@ -94,6 +97,10 @@ export class CometChatSearchMessagesListComponent implements OnInit, OnChanges, 
     safeEffect(() => {
       this.stateChange.emit(this.service.fetchState() as States);
     });
+    // Offline (D83): a search the service re-ran by itself on reconnect reports like any other.
+    this.service.reconnectSearchError$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(error => this.searchError.emit(error));
   }
 
   /** Whether the paginated list is in loading state (initial load only) */

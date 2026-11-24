@@ -3,6 +3,8 @@ import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-loc
 import {CometChatSoundManager} from '../../resources/CometChatSoundManager/CometChatSoundManager';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 import {getBatchId} from '../../utils/message-metadata-utils';
+import {isOfflineOn} from '../../utils/offline/offline-gate';
+import {isSyncDelivered, renderKey} from '../../utils/offline/identity';
 
 export function handleNewMessagesImpl(ctx: any, currentMessages: CometChat.BaseMessage[]): void {
   if (currentMessages.length === 0 || ctx.previousMessages.length === 0) {
@@ -26,6 +28,10 @@ export function handleNewMessagesImpl(ctx: any, currentMessages: CometChat.BaseM
     ctx.hideConversationStarters.set(true);
     const sender = latestMessage.getSender();
     const isOwnMessage = ctx.loggedInUser && sender?.getUid() === ctx.loggedInUser.getUid();
+    // Offline path: a message the SDK's catch-up sweep delivered makes no sound,
+    // gets no per-message receipt and no unread +1 (UIK-SYNC-02); one read
+    // receipt follows the sweep instead.
+    const swept = isOfflineOn() && isSyncDelivered(latestMessage);
     if (!isOwnMessage) {
       ctx.lastReceivedMessage.set(latestMessage);
       if (ctx.shouldShowSmartRepliesForMessage(latestMessage)) {
@@ -33,11 +39,11 @@ export function handleNewMessagesImpl(ctx: any, currentMessages: CometChat.BaseM
       } else {
         ctx.hideSmartReplies.set(true);
       }
-      ctx.handleRealtimeMessageReceipt(latestMessage);
+      if (!swept) ctx.handleRealtimeMessageReceipt(latestMessage);
       const senderName = sender?.getName() || CometChatLocalize.getLocalizedString('unknown');
       const preview = ctx.getMessagePreview(latestMessage);
       ctx.announceNewMessage(senderName, preview);
-      if (!ctx.isAtBottom()) {
+      if (!ctx.isAtBottom() && !swept) {
         ctx.newMessagesCount.update((count: number) => count + 1);
         ctx.showNewMessagesBanner.set(true);
         // Update the conversation list unread count when the user is scrolled up
@@ -54,7 +60,7 @@ export function handleNewMessagesImpl(ctx: any, currentMessages: CometChat.BaseM
         }
       }
     }
-    if (ctx.shouldPlaySound(latestMessage)) { ctx.playMessageSound(); }
+    if (!swept && ctx.shouldPlaySound(latestMessage)) { ctx.playMessageSound(); }
     if (isOwnMessage) {
       setTimeout(() => ctx.scrollToBottom(), 0);
     } else if (ctx.scrollToBottomOnNewMessages && ctx.isAtBottom()) {
@@ -96,8 +102,21 @@ function messageTrackKey(message: CometChat.BaseMessage): string {
   return `msg-${message.getMuid?.() || message.getId()}`;
 }
 
+/**
+ * The track key for this read of the list: today's with offline off, `renderKey` with it on. A list
+ * that has used the offline keys keeps them, so the kill switch turning offline off mid-session
+ * never rebuilds every row (the list is not reloaded then); a list that never ran offline keeps
+ * today's keys.
+ */
+export function trackKeyFor(ctx: any): (message: CometChat.BaseMessage) => string {
+  if (!(ctx.usesOfflineTrackKeys ||= isOfflineOn())) return messageTrackKey;
+  const ownUid = ctx.loggedInUser?.getUid?.();
+  return message => renderKey(message, ownUid);
+}
+
 export function computeMessagesWithDateSeparatorsImpl(ctx: any): any[] {
   const messages = ctx.messages();
+  const trackKey = trackKeyFor(ctx);
   const idCounts = new Map<number, number>();
   for (const msg of messages) {
     const id = msg.getId();
@@ -119,7 +138,7 @@ export function computeMessagesWithDateSeparatorsImpl(ctx: any): any[] {
         message: msg,
         isFirstInBatch,
         isLastInBatch,
-        key: messageTrackKey(msg),
+        key: trackKey(msg),
       };
     });
   }
@@ -143,7 +162,7 @@ export function computeMessagesWithDateSeparatorsImpl(ctx: any): any[] {
       message,
       isFirstInBatch,
       isLastInBatch,
-      key: messageTrackKey(message),
+      key: trackKey(message),
     });
   }
   return result;

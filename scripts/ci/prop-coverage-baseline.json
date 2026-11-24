@@ -1,5 +1,5 @@
 {
-  "measured": "2026-10-27",
+  "measured": "2026-11-16",
   "untested": [
     "CometChatAIAssistantChat.backClick (output)",
     "CometChatAIAssistantChat.greetingTemplate (input)",
@@ -14,7 +14,6 @@
     "CometChatAIAssistantChatHistory.showNewChat (input)",
     "CometChatAttachmentTrayComponent.error (output)",
     "CometChatAudioBubbleComponent.textFormatters (input)",
-    "CometChatAudiosBubbleComponent.message (input)",
     "CometChatAudiosBubbleComponent.textFormatters (input)",
     "CometChatAvatarComponent.loading (input)",
     "CometChatCallButtonsComponent.callSettingsBuilder (input)",
@@ -152,7 +151,6 @@
     "CometChatPaginatedListComponent.scrollToTop (output)",
     "CometChatPaginatedListComponent.trackByFn (input)",
     "CometChatPinnedMessagesComponent.emptyView (input)",
-    "CometChatPinnedMessagesComponent.errorView (input)",
     "CometChatPinnedMessagesComponent.headerView (input)",
     "CometChatPinnedMessagesComponent.hideCloseButton (input)",
     "CometChatPinnedMessagesComponent.hideCopyMessageOption (input)",

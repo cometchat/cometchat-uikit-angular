@@ -3,11 +3,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CometChatSearchConversationsListComponent } from './cometchat-search-conversations-list.component';
 import { SearchConversationsService } from '../../../services/search-conversations.service';
 import { signal } from '@angular/core';
+import { Subject } from 'rxjs';
 import { CometChatLocalize } from '../../../resources/CometChatLocalize/cometchat-localize';
 
 class MockSearchConversationsService {
   conversations = signal<any[]>([]);
   fetchState = signal('loaded');
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   hasMore = signal(false);
   searchKeyword = signal('');
   activeFilters = signal<any[]>([]);

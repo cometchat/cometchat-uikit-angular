@@ -1,0 +1,23 @@
+# What stays in this repo and never reaches the public repo. Same format as allowlist.txt; an
+# entry here wins over the allowlist.
+
+# This repo's own workflows (the public repo gets scripts/public-repo/workflows/ instead), agent
+# and planning notes
+.github/
+.kiro/
+aidlc-docs/
+
+# The release machinery itself
+scripts/public-repo/
+scripts/release/
+
+# Tooling only this repo's CI and bots use: the public API report (PR gate), mutation testing,
+# internal code analyzers, Renovate
+api/
+api-extractor.json
+api-extractor.tsconfig.json
+stryker.config.mjs
+tools/
+renovate.json
+
+**/.DS_Store

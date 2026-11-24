@@ -3,9 +3,9 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { MessageStatus } from '../Enums/Enums';
 import { Subject, Subscription } from 'rxjs';
 import { subscribeWithOptionalCleanup } from './event-utils';
-import { IMessages } from './CometChatMessageEvents.types';
+import { IMessages, IMessageSendStateChanged, IOfflineCacheReset, MessageSendState } from './CometChatMessageEvents.types';
 
-export type { IMessages };
+export type { IMessages, IMessageSendStateChanged, IOfflineCacheReset, MessageSendState };
 
 /**
  * Payload for the `ccCardActionClicked` event (Card Messages).
@@ -52,6 +52,17 @@ export class CometChatMessageEvents {
    * subscribes once and runs the action.
    */
   static ccCardActionClicked: Subject<ICardActionEvent> = new Subject<ICardActionEvent>();
+  /**
+   * Offline support only: an own message's send state changed (`sending`,
+   * `sent`, `failed`, `discarded`), once per transition. Never emitted while
+   * offline support is off. `ccMessageSent` keeps its meaning and still fires.
+   */
+  static ccMessageSendStateChanged: Subject<IMessageSendStateChanged> = new Subject<IMessageSendStateChanged>();
+  /**
+   * Offline support only: the SDK wiped and rebuilt its offline cache, so every
+   * list reloads. `pendingMessagesLost` is `null` when the SDK cannot know.
+   */
+  static ccOfflineCacheReset: Subject<IOfflineCacheReset> = new Subject<IOfflineCacheReset>();
 
   // ── SDK-wrapper Subjects ──
   static onTextMessageReceived: Subject<CometChat.TextMessage> =

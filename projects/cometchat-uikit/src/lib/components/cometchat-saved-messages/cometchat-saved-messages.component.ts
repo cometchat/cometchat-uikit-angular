@@ -18,6 +18,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ConnectionStateService } from '../../services/connection-state.service';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { CometChatAvatarComponent } from '../base-elements/cometchat-avatar/cometchat-avatar.component';
@@ -39,6 +40,10 @@ import { FocusTrapService } from '../../services/focus-trap.service';
 import { CometChatPinSaveEvents } from '../../events/CometChatPinSaveEvents';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { CometChatLogger } from '../../utils/CometChatLogger';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { readPageTwoPhase } from '../../utils/offline/two-phase';
+import { OfflineListSession, watchOfflineSession } from '../../utils/offline/list-session';
+import { OfflineHubService } from '../../services/offline-hub.service';
 import { States } from '../../Enums/Enums';
 
 /** One saved message plus the source conversation we resolve ourselves. */
@@ -80,6 +85,22 @@ interface SourceIdentity {
 export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
+  /** Offline: logout / user switch clears the list, a cache reset reloads it (UIK-LIFE-01/02). */
+  private readonly offlineSession = new OfflineListSession();
+  private readonly offlineHub = inject(OfflineHubService);
+  private readonly connectionState = inject(ConnectionStateService);
+  /**
+   * Offline (D83): the error view is up because the device was not connected, so the saved
+   * messages are read once more by themselves when the connection is back. A non-network error
+   * never sets it.
+   */
+  private reloadOnConnect = false;
+  /**
+   * Offline (D84 rule 3): nothing on screen and no connection, so the panel says "Connect to load
+   * messages" in place of its error view (the app's own error view still wins; `error` fired once).
+   * Always false with offline off.
+   */
+  readonly offlineConnectToLoad = signal(false);
   private readonly pinSave = inject(PinSaveService);
   private readonly focusTrap = inject(FocusTrapService);
   private readonly elementRef = inject(ElementRef);
@@ -189,6 +210,13 @@ export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, O
   /** False once the server has nothing further, or cannot advance. */
   private hasMore = signal(true);
   private loadingMore = false;
+  /**
+   * The ids of the page the last fetch returned. The saved list's cursor can
+   * silently fail to advance, and the same page coming back twice is the only
+   * honest sign of it — the rows being already on screen is not, because the
+   * cached pre-fill of this very page puts them there first.
+   */
+  private lastPageIds: string | null = null;
 
   visibleRows = computed(() => this.rows());
   hasMoreToShow = computed(() => this.hasMore());
@@ -215,18 +243,46 @@ export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, O
     this.loadingMore = true;
     const generation = this.loadGeneration;
     try {
-      const page = await this.request.fetchPrevious();
+      let page: CometChat.BaseMessage[];
+      let cachedIds = new Set<string>();
+      if (isOfflineOn()) {
+        this.offlineSession.markRan();
+        // The cached page joins the list at once; the server page then replaces it in place.
+        const { server } = await readPageTwoPhase<CometChat.BaseMessage>(this.request, 'messages', cached => {
+          if (generation !== this.loadGeneration || cached.length === 0) return;
+          cachedIds = new Set(cached.map(m => String(m.getId())));
+          const known = new Set(this.rows().map(r => String(r.message.getId())));
+          const fresh = cached.filter(m => !known.has(String(m.getId())));
+          if (fresh.length === 0) return;
+          this.rows.update(rows => sortRowsNewestFirst([...rows, ...fresh.map(message => ({ message, sourceName: null, sourceAvatar: '' }))]));
+          this.hydrateSources(fresh);
+        }, 'previous');
+        if (generation !== this.loadGeneration) return;
+        if (server === null) return; // offline past the cache: keep the rows, try again on the next scroll
+        // Cached rows of this page the server no longer has (unsaved elsewhere) go away.
+        const serverIds = new Set(server.map(m => String(m.getId())));
+        this.rows.update(rows => rows.filter(r => !cachedIds.has(String(r.message.getId())) || serverIds.has(String(r.message.getId()))));
+        page = server;
+      } else {
+        page = await this.request.fetchPrevious();
+      }
       if (generation !== this.loadGeneration) return;
 
       const seen = new Set(this.rows().map(r => String(r.message.getId())));
       const fresh = page.filter(m => !seen.has(String(m.getId())));
 
-      // Nothing new: either the list is exhausted or the cursor did not move.
-      // Either way there is no further page worth asking for.
-      if (fresh.length === 0) {
-        this.hasMore.set(false);
-        return;
-      }
+      // Whether a further page exists is the server's to say, and a short page
+      // is how it says no. How many rows were NEW cannot stand in for that:
+      // offline, the cached half of this same two-phase read has already added
+      // them, so every such list used to stop dead at the first scroll.
+      const pageIds = pageKeyOf(page);
+      // A cursor that cannot advance hands back the page it just gave. Stop,
+      // rather than refetch it on every scroll event for the rest of the session.
+      const stalled = pageIds !== '' && pageIds === this.lastPageIds;
+      this.lastPageIds = pageIds;
+      this.hasMore.set(!stalled && page.length >= this.pageSize);
+
+      if (fresh.length === 0) return;
 
       this.rows.update(rows =>
         sortRowsNewestFirst([
@@ -234,7 +290,6 @@ export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, O
           ...fresh.map(message => ({ message, sourceName: null, sourceAvatar: '' })),
         ])
       );
-      this.hasMore.set(page.length >= this.pageSize);
       this.hydrateSources(fresh);
     } catch (err) {
       CometChatLogger.error('CometChatSavedMessages', 'Failed to load more saved messages:', err);
@@ -281,11 +336,34 @@ export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, O
   ngOnInit(): void {
     void this.load();
     this.subscribeToSaveEvents();
+    watchOfflineSession(this.offlineHub, this.destroyRef, this.offlineSession, {
+      clear: () => {
+        this.loadGeneration++;
+        this.loadingMore = false;
+        this.lastPageIds = null;
+        this.rows.set([]);
+        this.hasMore.set(true);
+        this.request = null;
+        this.state.set(States.loading);
+        this.cdr.markForCheck();
+      },
+      reload: () => void this.load(true),
+    });
+    // Offline (D83): an error view that is up because the device was offline loads once on reconnect.
+    this.connectionState.reconnected$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (isOfflineOn() && this.reloadOnConnect && this.state() === States.error && this.rows().length === 0) {
+        this.reloadOnConnect = false;
+        void this.load();
+      }
+    });
   }
 
   /** The server caps a user at 100 saves, so one page covers the whole list. */
-  private async load(): Promise<void> {
+  private async load(automatic = false): Promise<void> {
     const generation = ++this.loadGeneration;
+    this.lastPageIds = null;
+    this.reloadOnConnect = false;
+    this.offlineConnectToLoad.set(false);
     this.state.set(States.loading);
     try {
 
@@ -305,7 +383,35 @@ export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, O
       // Retained: later pages continue from where this one ended.
       this.request = request;
 
-      const page = await request.fetchPrevious();
+      let page: CometChat.BaseMessage[];
+      if (isOfflineOn()) {
+        this.offlineSession.markRan();
+        // Two rounds: the cached list paints first, then the server's replaces it.
+        const { server, unreachable } = await readPageTwoPhase<CometChat.BaseMessage>(request, 'messages', cached => {
+          if (generation !== this.loadGeneration || cached.length === 0) return;
+          this.rows.set(sortRowsNewestFirst(cached.map(message => ({ message, sourceName: null, sourceAvatar: '' }))));
+          this.state.set(States.loaded);
+          this.hydrateSources(cached);
+          this.cdr.markForCheck();
+        }, 'previous');
+        if (generation !== this.loadGeneration) return;
+        if (server === null) {
+          // Offline and nothing newer (D84): with nothing on screen it is "Connect to load messages" (and `error` once), read once
+          // more when the connection is back; with rows on screen they stay and the app hears of it.
+          if (this.rows().length === 0) {
+            this.reloadOnConnect = true;
+            this.offlineConnectToLoad.set(true);
+            this.state.set(States.error);
+            this.error.emit(unreachable as CometChat.CometChatException);
+          } else {
+            this.state.set(States.loaded);
+          }
+          return;
+        }
+        page = server;
+      } else {
+        page = await request.fetchPrevious();
+      }
 
       // A reload started while this was in flight owns the list now.
       if (generation !== this.loadGeneration) return;
@@ -313,6 +419,7 @@ export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, O
       this.rows.set(
         sortRowsNewestFirst(page.map(message => ({ message, sourceName: null, sourceAvatar: '' })))
       );
+      this.lastPageIds = pageKeyOf(page);
       this.hasMore.set(page.length >= this.pageSize);
       this.state.set(page.length ? States.loaded : States.empty);
       // Rows render immediately; names arrive after.
@@ -320,8 +427,10 @@ export class CometChatSavedMessagesComponent implements OnInit, AfterViewInit, O
     } catch (err) {
       const error = err as CometChat.CometChatException;
       if (generation !== this.loadGeneration) return;
-      this.state.set(States.error);
-      this.error.emit(error);
+      // Offline on (D83): rows already on screen stay, with no error view over them.
+      const rowsShown = isOfflineOn() && this.rows().length > 0;
+      this.state.set(rowsShown ? States.loaded : States.error);
+      if (!(rowsShown && automatic)) this.error.emit(error);
       CometChatLogger.error('CometChatSavedMessages', 'Failed to load saved messages:', err);
     } finally {
       this.cdr.markForCheck();
@@ -672,4 +781,17 @@ function sortRowsNewestFirst(rows: SavedRow[]): SavedRow[] {
   return [...rows].sort(
     (a, b) => (b.message.getSentAt?.() ?? 0) - (a.message.getSentAt?.() ?? 0)
   );
+}
+
+/**
+ * A page's identity, used only to notice the very same page arriving twice
+ * (a cursor that did not advance). Sorted, so the server returning the page's
+ * rows in another order still reads as the same page.
+ */
+function pageKeyOf(page: CometChat.BaseMessage[]): string {
+  if (page.length === 0) return '';
+  return page
+    .map(m => String(m.getId()))
+    .sort()
+    .join(',');
 }

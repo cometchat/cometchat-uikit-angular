@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ElementRef,
   ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy,
-  inject, HostListener, signal, computed, DestroyRef, booleanAttribute,
+  inject, HostListener, signal, computed, DestroyRef, booleanAttribute, effect, untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -22,6 +22,7 @@ import { CometChatUIKitConstants } from '../../constants';
 import { CometChatOption } from '../../modals/CometChatOption';
 import { SelectionState } from '../../modals/SelectionState';
 import { UsersService } from '../../services/users.service';
+import { OfflineHubService } from '../../services/offline-hub.service';
 import { ChatStateService } from '../../services/chat-state.service';
 import { CometChatTemplatesService } from '../../services/templates.service';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
@@ -47,6 +48,11 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
   readonly shimmerList = CometChatUIKitConstants.shimmerList;
   private cdr = inject(ChangeDetectorRef);
   private usersService = inject(UsersService);
+  private readonly presenceHidden = inject(OfflineHubService).presenceHidden;
+  /** @internal Offline (D84 rule 7): a keyword search that needs the server says "Connect to search". */
+  get offlineConnectToSearch(): boolean { return this.usersService.connectToSearch?.() === true; }
+  /** @internal Offline (D84 rule 3): nothing saved and no connection says "Connect to load ...". */
+  get offlineConnectToLoad(): boolean { return this.usersService.connectToLoad?.() === true; }
   private chatStateService = inject(ChatStateService);
   private templatesService = inject(CometChatTemplatesService);
   private destroyRef = inject(DestroyRef);
@@ -154,6 +160,11 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
     toObservable(this.usersService.hasMore)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(v => this.hasMore.set(v));
+    // Offline (D83): a load the kit started itself (reconnect, cache reset) redraws the list.
+    // The counter only moves on the offline path, so offline off adds no redraw.
+    effect(() => {
+      if (this.usersService.offlineSettled() > 0) untracked(() => this.syncStateFromService());
+    });
   }
 
   ngOnInit(): void {
@@ -312,7 +323,11 @@ export class CometChatUsersComponent implements OnInit, OnDestroy {
   getSelectedUsersArray(): CometChat.User[] { return Array.from(this.selectedUsersMap.values()); }
   getOptionsForUser(user: CometChat.User): CometChatOption[] { return this.options ? this.options(user) : []; }
   handleOptionClick(option: CometChatOption, _user: CometChat.User): void { if (option.onClick) option.onClick(); }
-  getUserAriaLabel(user: CometChat.User): string { const n = user.getName() || ''; const s = user.getStatus(); return (this.hideUserStatus || !s) ? n : `${n}, ${s}`; }
+  getUserAriaLabel(user: CometChat.User): string {
+    const n = user.getName() || ''; const s = user.getStatus();
+    // Offline on and the SDK not connected: nobody is announced as online (D84 rule 10).
+    return (this.hideUserStatus || this.presenceHidden() || !s) ? n : `${n}, ${s}`;
+  }
   trackBySelectedUser(_index: number, entry: { key: string; value: CometChat.User }): string { return entry.key; }
 
   @HostListener('focus')

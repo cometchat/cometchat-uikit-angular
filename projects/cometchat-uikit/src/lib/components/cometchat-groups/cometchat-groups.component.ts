@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ElementRef,
   ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy,
-  inject, HostListener, signal, computed, booleanAttribute, DestroyRef,
+  inject, HostListener, signal, computed, booleanAttribute, DestroyRef, effect, untracked,
 } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
@@ -45,6 +45,10 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
   readonly shimmerList = CometChatUIKitConstants.shimmerList;
   private cdr = inject(ChangeDetectorRef);
   private groupsService = inject(GroupsService);
+  /** @internal Offline (D84 rule 7): a keyword search that needs the server says "Connect to search". */
+  get offlineConnectToSearch(): boolean { return this.groupsService.connectToSearch?.() === true; }
+  /** @internal Offline (D84 rule 3): nothing saved and no connection says "Connect to load ...". */
+  get offlineConnectToLoad(): boolean { return this.groupsService.connectToLoad?.() === true; }
   private chatStateService = inject(ChatStateService);
   private templatesService = inject(CometChatTemplatesService);
   private destroyRef = inject(DestroyRef);
@@ -143,6 +147,11 @@ export class CometChatGroupsComponent implements OnInit, OnDestroy {
     toObservable(this.groupsService.hasMore)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(v => this.hasMore.set(v));
+    // Offline (D83): a load the kit started itself (reconnect, cache reset) redraws the list.
+    // The counter only moves on the offline path, so offline off adds no redraw.
+    effect(() => {
+      if (this.groupsService.offlineSettled() > 0) untracked(() => this.syncStateFromService());
+    });
   }
 
   ngOnInit(): void {

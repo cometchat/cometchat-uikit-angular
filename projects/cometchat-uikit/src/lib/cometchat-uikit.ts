@@ -2,13 +2,15 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CometChat, CometChatSettings } from '@cometchat/chat-sdk-javascript';
 import { CometChatLocalize } from './resources/CometChatLocalize/cometchat-localize';
-import { UIKitSettings, UIKitSettingsBuilder } from './UIKitSettings';
+import { CometChatOfflineConfig, UIKitSettings, UIKitSettingsBuilder } from './UIKitSettings';
 import { CometChatSoundManager } from './resources/CometChatSoundManager/CometChatSoundManager';
 import { CometChatUIKitLoginListener } from './CometChatUIKitLoginListener';
 import { ChatSdkEventInitializer } from './utils/ChatSdkEventInitializer';
 import { InitResult, LogoutResult } from './modals/CometChatUIKitInterfaces';
 import { CometChatLogger, LogLevel } from './utils/CometChatLogger';
 import { CometChatUIKitCalls, getCometChatCalls } from './CometChatCalls';
+import { OfflineHub } from './utils/offline/offline-hub';
+import { hasOfflineSdk } from './utils/offline/offline-gate';
 import {
   sendTextMessage,
   sendMediaMessage,
@@ -98,13 +100,21 @@ export class CometChatUIKit {
     if (uiKitSettings!.getAdminHost()) { builder.overrideAdminHost(uiKitSettings!.getAdminHost()!); }
     if (uiKitSettings!.getClientHost()) { builder.overrideClientHost(uiKitSettings!.getClientHost()!); }
     builder.setStorageMode(uiKitSettings!.getStorageMode() as any);
+    // Pass-through only, and only on an SDK at the offline floor (4.3.1). Published 4.3.0 also
+    // has setOfflineConfig, but the kit runs online only on it, so the SDK must not run offline
+    // under it either: a half-on SDK would queue and cache while the kit's screens act online.
+    const offlineConfig = uiKitSettings!.getOfflineConfig?.();
+    if (offlineConfig && hasOfflineSdk() && typeof (builder as any).setOfflineConfig === 'function') {
+      (builder as any).setOfflineConfig(offlineConfig);
+    }
     const appSettings = builder.build();
     if (CometChat.setSource) { CometChat.setSource('uikit-v5', 'web', 'angular'); }
     CometChatLocalize.setCurrentLanguage(CometChatLocalize.getBrowserLanguage());
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.2.3' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.3.0' };
       CometChat.init(uiKitSettings?.appId, appSettings)
         .then(() => {
+          OfflineHub.getInstance().start();
           CometChat.getLoggedinUser()
             .then((user: CometChat.User | null) => {
               if (user) { CometChatUIKitLoginListener.setLoggedInUser(user); CometChatUIKit._loggedInUser.next(user); this.initiateAfterLogin(); }
@@ -128,9 +138,47 @@ export class CometChatUIKit {
    * This method is independent of `init()` — it does NOT call `init()`.
    * It builds UIKitSettings internally so login/createUser/updateUser keep working.
    *
+   * Offline support works the same as on `init()`: pass `offlineConfig` (the
+   * config `UIKitSettingsBuilder.setOfflineConfig()` takes) and it reaches the
+   * SDK as `chatSDK.offline`, replacing any value in the settings file. Without
+   * it, the file's `chatSDK.offline` reaches the SDK unchanged.
+   *
+   * @param settings - The parsed cometchat-settings.json object.
+   * @param offlineConfig - Optional offline support settings for the Chat SDK.
    * @internal — excluded from public API docs
    */
-  static initFromSettings(settings: CometChatSettings): Promise<InitResult> {
+  static initFromSettings(
+    settings: CometChatSettings,
+    offlineConfig?: CometChatOfflineConfig
+  ): Promise<InitResult> {
+    // Offline: a code-level config wins over the file's; the caller's object is left as is.
+    // `chatSDK.offline` is typed by SDK 4.3+ only; it is read and written
+    // structurally so the kit also compiles against 4.2.x (peer `^4.2.0`).
+    if (offlineConfig) {
+      settings = {
+        ...settings,
+        chatSDK: {
+          ...settings.chatSDK,
+          offline: offlineConfig,
+        } as CometChatSettings['chatSDK'],
+      };
+    }
+    const fileOffline: unknown = (settings.chatSDK as { offline?: unknown } | undefined)?.offline;
+    // Below the offline floor (4.3.0 and older) the SDK must not run offline either, or it would
+    // queue and cache while the kit's screens act online: drop `chatSDK.offline` from what the SDK
+    // gets. The caller's object is left as is.
+    if (fileOffline !== undefined && !hasOfflineSdk()) {
+      const chatSDK = { ...((settings.chatSDK ?? {}) as Record<string, unknown>) };
+      delete chatSDK['offline'];
+      settings = { ...settings, chatSDK: chatSDK as CometChatSettings['chatSDK'] };
+    }
+    const effectiveOffline: CometChatOfflineConfig | undefined =
+      typeof fileOffline === 'boolean'
+        ? { enabled: fileOffline }
+        : fileOffline && typeof fileOffline === 'object'
+          ? (fileOffline as CometChatOfflineConfig)
+          : undefined;
+
     // Extract UIKit-specific config from the settings JSON
     const authKey = settings.credentials?.authKey;
     const subscribeAll = settings.uiKit?.['subscribePresenceForAllUsers'] ?? true;
@@ -145,6 +193,10 @@ export class CometChatUIKit {
     if (authKey) { builder.setAuthKey(authKey); }
     if (subscribeAll) { builder.subscribePresenceForAllUsers(); }
     if (callingEnabled) { builder.setCallingEnabled(true); }
+    // Same as init(): the kit's settings carry the offline config the SDK was given.
+    if (effectiveOffline) {
+      builder.setOfflineConfig(effectiveOffline);
+    }
     CometChatUIKit._uiKitSettings = builder.build();
 
     // Retained for the Calls SDK: initCalling() uses its presence to pick
@@ -159,10 +211,12 @@ export class CometChatUIKit {
     // This is the SDK's file-based init path which sets
     // integrationSource = "ai-agent" for telemetry.
     return new Promise((resolve, reject) => {
-      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.2.3' };
+      window.CometChatUiKit = { name: '@cometchat/chat-uikit-angular', version: '5.3.0' };
 
+      // `chatSDK.offline` (from the file or `offlineConfig`) reaches the SDK here.
       CometChat.initFromSettings(settings)
         .then(() => {
+          OfflineHub.getInstance().start();
           CometChat.getLoggedinUser()
             .then((user: CometChat.User | null) => {
               if (user) {
@@ -197,6 +251,7 @@ export class CometChatUIKit {
   // ── Post-Login Setup ──────────────────────────────────────────────────────
 
   private static initiateAfterLogin(): void {
+    OfflineHub.getInstance().onLogin(CometChatUIKit.getLoggedInUser());
     if (CometChatUIKit._uiKitSettings != null) {
       CometChat.getConversationUpdateSettings().then((res: CometChat.ConversationUpdateSettings) => {
         CometChatUIKit._conversationUpdateSettings = res;
@@ -221,12 +276,12 @@ export class CometChatUIKit {
           settings && typeof callsSDK.initFromSettings === 'function'
             ? callsSDK.initFromSettings(settings)
             : callsSDK.init(
-              CometChatUIKit._uiKitSettings?.getCallAppSettings()
-              ?? new callsSDK.CallAppSettingsBuilder()
-                .setAppId(CometChatUIKit._uiKitSettings?.appId!)
-                .setRegion(CometChatUIKit._uiKitSettings?.region!)
-                .build()
-            );
+                CometChatUIKit._uiKitSettings?.getCallAppSettings() ??
+                  new callsSDK.CallAppSettingsBuilder()
+                    .setAppId(CometChatUIKit._uiKitSettings?.appId ?? '')
+                    .setRegion(CometChatUIKit._uiKitSettings?.region ?? '')
+                    .build()
+              );
         initCallsSDK.then(
           (result: any) => {
             // The Calls SDK reports validation failures in the resolved value

@@ -583,3 +583,10 @@
     font: var(--cometchat-font-heading3-bold);
   }
 }
+
+/* Offline: caption line for media the SDK never downloaded. */
+.cometchat-video-bubble__unavailable {
+  padding: var(--cometchat-padding-1, 4px) var(--cometchat-padding-2, 8px);
+  font: var(--cometchat-video-bubble-offline-placeholder-font, var(--cometchat-font-caption1-regular, 400 12px/16px sans-serif));
+  color: var(--cometchat-video-bubble-offline-placeholder-color, var(--cometchat-text-color-secondary, #727272));
+}

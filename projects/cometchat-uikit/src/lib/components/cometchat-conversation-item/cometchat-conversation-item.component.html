@@ -151,13 +151,14 @@
             </span>
           } @else {
             <!-- Receipt icon (only for messages sent by logged-in user, aria-hidden since info is decorative) -->
-            @if (!effectiveHideReceipts() && receiptStatus) {
+            @if (!effectiveHideReceipts() && (receiptStatus || previewSendFailed)) {
               <div class="cometchat-conversation-item__receipt" aria-hidden="true">
                 <span class="cometchat-conversation-item__receipt-icon"
                       [class.cometchat-conversation-item__receipt-icon--wait]="receiptStatus === 'wait'"
                       [class.cometchat-conversation-item__receipt-icon--sent]="receiptStatus === 'sent'"
                       [class.cometchat-conversation-item__receipt-icon--delivered]="receiptStatus === 'delivered'"
-                      [class.cometchat-conversation-item__receipt-icon--read]="receiptStatus === 'read'">
+                      [class.cometchat-conversation-item__receipt-icon--read]="receiptStatus === 'read'"
+                      [class.cometchat-conversation-item__receipt-icon--error]="previewSendFailed">
                 </span>
               </div>
             }

@@ -875,3 +875,9 @@ right: 6px;
     right: 2px;
   }
 }
+/* Offline support: an own last message that failed to send. */
+.cometchat-conversation-item__receipt-icon--error {
+  -webkit-mask: url('../../assets/error_info.svg') center center no-repeat;
+  mask: url('../../assets/error_info.svg') center center no-repeat;
+  background: var(--cometchat-conversations-receipt-error-color, var(--cometchat-error-color));
+}

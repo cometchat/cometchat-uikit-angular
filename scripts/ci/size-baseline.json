@@ -1,7 +1,7 @@
 {
-  "packedBytes": 4834313,
-  "unpackedBytes": 18451744,
-  "files": 335,
+  "packedBytes": 5066673,
+  "unpackedBytes": 19424991,
+  "files": 336,
   "maxGrowthPercent": 5,
-  "measured": "ci-sandbox-v5, 24 Oct 2026, v5.2.3. DIST2 (trim the package) should lower these."
+  "measured": "feature/offline-messaging merged with dev-v5 (5.2.3), 15 Nov 2026, v5.3.0. The offline support code grew the package by about 5% over the 5.2.3 baseline."
 }

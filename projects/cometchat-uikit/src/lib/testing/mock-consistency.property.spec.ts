@@ -28,7 +28,7 @@ const REPORT_PATH = path.resolve(
 
 // Patterns that indicate a testing/ import is present
 const TESTING_IMPORT_PATTERN =
-  /from\s+['"].*?\/testing['"]|from\s+['"].*?mock-sdk['"]|from\s+['"].*?mock-builders['"]|from\s+['"].*?mock-providers['"]|from\s+['"].*?mock-users['"]|from\s+['"].*?mock-messages['"]|from\s+['"].*?test-helpers['"]/;
+  /from\s+['"].*?\/testing['"]|from\s+['"].*?mock-sdk['"]|from\s+['"].*?mock-builders['"]|from\s+['"].*?mock-providers['"]|from\s+['"].*?mock-users['"]|from\s+['"].*?mock-messages['"]|from\s+['"].*?test-helpers['"]|from\s+['"].*?offline-sdk-fake['"]|from\s+['"].*?two-phase-request-fake['"]/;
 
 // Patterns that indicate inline mock object definitions
 const INLINE_MOCK_PATTERNS = [
@@ -160,7 +160,6 @@ describe('Mock Consistency — spec files use testing utilities, not inline mock
     'components/cometchat-message-composer/cometchat-message-composer.mentions-handler.spec.ts',
     'components/cometchat-message-list/cometchat-message-list.event-handlers.coverage.spec.ts',
     'components/cometchat-outgoing-call/cometchat-outgoing-call.component.spec.ts',
-    'components/cometchat-reaction-list/cometchat-reaction-list.component.spec.ts',
     'components/cometchat-reactions/cometchat-reactions.component.spec.ts',
     'components/cometchat-video-bubble/cometchat-video-bubble-fullscreen-integration.spec.ts',
     'events/CometChatMessageEvents.spec.ts',

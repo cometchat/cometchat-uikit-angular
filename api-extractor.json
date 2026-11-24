@@ -1,0 +1,28 @@
+// CI 3 api-diff (ENG-40479): the public API of the built package as one committed report.
+// CI fails when it changes and api/cometchat-uikit.api.md was not updated in the same PR.
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+  "mainEntryPointFilePath": "<projectFolder>/dist/cometchat-uikit/types/cometchat-chat-uikit-angular.d.ts",
+  "bundledPackages": [],
+  "compiler": {
+    "tsconfigFilePath": "<projectFolder>/api-extractor.tsconfig.json"
+  },
+  "apiReport": {
+    "enabled": true,
+    "reportFileName": "cometchat-uikit.api.md",
+    "reportFolder": "<projectFolder>/api/",
+    "reportTempFolder": "<projectFolder>/temp/api-extractor/"
+  },
+  "docModel": { "enabled": false },
+  "dtsRollup": { "enabled": false },
+  "tsdocMetadata": { "enabled": false },
+  "messages": {
+    "compilerMessageReporting": { "default": { "logLevel": "warning" } },
+    "extractorMessageReporting": {
+      "default": { "logLevel": "none", "addToApiReportFile": false },
+      "ae-missing-release-tag": { "logLevel": "none", "addToApiReportFile": false },
+      "ae-forgotten-export": { "logLevel": "none", "addToApiReportFile": false }
+    },
+    "tsdocMessageReporting": { "default": { "logLevel": "none" } }
+  }
+}

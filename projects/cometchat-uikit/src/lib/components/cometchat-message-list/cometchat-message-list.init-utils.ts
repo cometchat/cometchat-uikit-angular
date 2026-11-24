@@ -2,6 +2,7 @@ import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 import {CometChatUIEvents} from '../../events/CometChatUIEvents';
 import {States} from '../../Enums/Enums';
+import {openAtMessageId} from './cometchat-message-list.conversation-handlers';
 
 export function initializeServiceImpl(self: any): void {
   if (self.user) { self.messageListService.setUser(self.user); } else if (self.group) { self.messageListService.setGroup(self.group); }
@@ -27,11 +28,7 @@ export function initializeServiceImpl(self: any): void {
       ? parseInt(self.goToMessageId, 10)
       : Number(self.goToMessageId);
     if (!isNaN(numericId)) {
-      self.hasMorePrevious.set(false);
-      self.hasMoreNext.set(false);
-      self.messageListService.fetchMessagesAroundId(numericId).then(() => {
-        self.cdr.markForCheck();
-        self.scrollToMessageWithRetry(self.goToMessageId!, 10);
+      openAtMessageId(self, numericId).then(() => {
         self.publishActiveChatChanged();
       }).catch((error: unknown) => {
         CometChatLogger.error('CometChatMessageList', 'Error fetching messages around goToMessageId:', error);

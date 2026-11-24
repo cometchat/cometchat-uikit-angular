@@ -121,6 +121,49 @@ export function dedupeConversations(conversations: CometChat.Conversation[]): Co
 }
 
 /**
+ * Merge a silent reconnect refresh into the rows already on screen.
+ *
+ * Ordering follows the server's page: after a reconnect the rows on screen are
+ * the stale ones (D1), and a row the page does not carry is kept after it.
+ *
+ * Which COPY of a conversation survives is a separate question, and the page is
+ * not always the right answer. A realtime listener can deliver a message while
+ * this fetch is in flight, and that copy is newer than anything the fetch can
+ * return; taking the fetched copy regardless dropped the message from the
+ * subtitle and put the unread count back to what the server had said. So the
+ * copy on screen wins only when its last message is strictly newer, by `sentAt`
+ * with the message id breaking a tie.
+ */
+export function mergeSilentRefresh(
+  fetched: CometChat.Conversation[],
+  onScreen: CometChat.Conversation[]
+): CometChat.Conversation[] {
+  if (onScreen.length === 0) return dedupeConversations(fetched);
+  const live = new Map<string, CometChat.Conversation>();
+  for (const conv of onScreen) {
+    const id = getConversationEntityId(conv);
+    if (!live.has(id)) live.set(id, conv);
+  }
+  const resolved = fetched.map(conv => {
+    const current = live.get(getConversationEntityId(conv));
+    return current && hasNewerLastMessage(current, conv) ? current : conv;
+  });
+  return dedupeConversations([...resolved, ...onScreen]);
+}
+
+/** Whether `a`'s last message is strictly newer than `b`'s. */
+function hasNewerLastMessage(a: CometChat.Conversation, b: CometChat.Conversation): boolean {
+  const mine = a.getLastMessage?.();
+  const theirs = b.getLastMessage?.();
+  if (!mine) return false;
+  if (!theirs) return true;
+  const at = mine.getSentAt?.() ?? 0;
+  const bt = theirs.getSentAt?.() ?? 0;
+  if (at !== bt) return at > bt;
+  return Number(mine.getId?.() ?? 0) > Number(theirs.getId?.() ?? 0);
+}
+
+/**
  * Lifts pinned conversations above unpinned ones, keeping the order within each
  * block untouched.
  *

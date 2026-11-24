@@ -4,6 +4,11 @@ import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { States } from '../Enums/Enums';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import { ConnectionStateService } from './connection-state.service';
+import { isOfflineOn } from '../utils/offline/offline-gate';
+import { fetchNextTwoPhase, mergeSnapshotPage } from '../utils/offline/two-phase';
+import { OfflineListSession, watchOfflineSession } from '../utils/offline/list-session';
+import { isKeywordSearch, offlineStateFor } from '../utils/offline/list-states';
+import { OfflineHubService } from './offline-hub.service';
 
 /**
  * Error callback type for propagating errors to the component.
@@ -29,6 +34,29 @@ export class UsersService {
   // ==================== State Signals ====================
 
   private usersSignal = signal<CometChat.User[]>([]);
+  /**
+   * Offline support (D83): bumped when a load the kit started itself (a cache-reset or
+   * reconnect reload) has settled, so the component redraws from this service. Never
+   * changes with offline off.
+   */
+  private readonly offlineSettledSignal = signal(0);
+  readonly offlineSettled = this.offlineSettledSignal.asReadonly();
+  /**
+   * Offline (D84 rule 3): the list was read with no connection and nothing on screen, so
+   * the kit shows "Connect to load users" in place of the error view (the app's own error
+   * view still wins). `fetchState` is `error` and `error` fired once. Always false with
+   * offline off.
+   */
+  private readonly connectToLoadSignal = signal(false);
+  readonly connectToLoad = this.connectToLoadSignal.asReadonly();
+  /**
+   * Offline (D84 rule 7): a keyword search could not run with no connection and nothing is
+   * saved for it, so the list says "Connect to search" (`fetchState` is `empty`, no
+   * `error`). Only a real keyword is a search; a filter alone is the plain list. Always
+   * false with offline off.
+   */
+  private readonly connectToSearchSignal = signal(false);
+  readonly connectToSearch = this.connectToSearchSignal.asReadonly();
   private fetchStateSignal = signal<States>(States.loading);
   private hasMoreSignal = signal<boolean>(true);
 
@@ -44,16 +72,28 @@ export class UsersService {
   // ==================== Private State ====================
 
   private usersRequest: CometChat.UsersRequest | null = null;
-  /** What the list was last built from (initialize or search), so a reconnect rebuilds the same list. */
-  private requestArgs: Parameters<UsersService['buildRequest']> = ['', null, null, ''];
+  /** The next offline read was started by the kit (cache reset, reconnect), not by the user or app. */
+  private automaticLoad = false;
   private errorCallback: UsersErrorCallback | null = null;
   private isFetching = false;
   /** Guard: only re-fetch on reconnect after the first fetch has completed. */
   private initialFetchDone = false;
+  /**
+   * Offline (D84): the offline state ("Connect to load users" or "Connect to search") is up
+   * because the device was not connected, so the first page loads once by itself when the
+   * connection is back. A non-network error never sets it.
+   */
+  private reloadOnConnect = false;
+  /** Offline: the server answered a page of the current request (the next read is a "load more"). */
+  private serverPageRead = false;
 
   // Shared singleton connection listener — no per-service SDK listener needed.
   private connectionState = inject(ConnectionStateService);
   private destroyRef = inject(DestroyRef);
+
+  /** Offline: logout / user switch clears the list, a cache reset reloads it (UIK-LIFE-01/02). */
+  private readonly offlineSession = new OfflineListSession();
+  private lastRequestArgs: [string, CometChat.UsersRequestBuilder | null, CometChat.UsersRequestBuilder | null, string] | null = null;
 
   // ==================== Configuration ====================
 
@@ -65,6 +105,10 @@ export class UsersService {
     this.connectionState.reconnected$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.handleReconnect());
+    watchOfflineSession(inject(OfflineHubService), this.destroyRef, this.offlineSession, {
+      clear: () => this.clearForSession(),
+      reload: () => this.reloadAfterReset(),
+    });
   }
 
   // ==================== Public API ====================
@@ -95,13 +139,17 @@ export class UsersService {
       usersSearchText = '',
     } = config;
 
+    this.offlineSession.supersede();
     this.usersSignal.set([]);
     this.fetchStateSignal.set(States.loading);
     this.hasMoreSignal.set(true);
     this.isFetching = false;
+    this.reloadOnConnect = false;
+    this.clearOfflineStates();
+    this.serverPageRead = false;
 
-    this.requestArgs = [searchText, usersRequestBuilder, searchRequestBuilder, usersSearchText];
-    this.usersRequest = this.buildRequest(...this.requestArgs);
+    this.lastRequestArgs = [searchText, usersRequestBuilder, searchRequestBuilder, usersSearchText];
+    this.usersRequest = this.buildRequest(...this.lastRequestArgs);
   }
 
   /**
@@ -113,8 +161,16 @@ export class UsersService {
     if (!this.usersRequest || this.isFetching) {
       return;
     }
+    if (isOfflineOn()) {
+      const automatic = this.automaticLoad;
+      this.automaticLoad = false;
+      return this.fetchNextOffline(this.usersRequest, automatic);
+    }
 
     this.isFetching = true;
+    // A search or re-initialisation meanwhile makes this read stale: its page is
+    // dropped and it leaves `isFetching` to the read that replaced it.
+    const epoch = this.offlineSession.epoch;
 
     const isInitialFetch =
       this.usersSignal().length === 0 && this.fetchStateSignal() === States.loading;
@@ -129,6 +185,7 @@ export class UsersService {
         const remainingTime = Math.max(0, UsersService.MIN_SHIMMER_TIME - elapsed);
         await new Promise<void>(resolve => setTimeout(resolve, remainingTime));
       }
+      if (this.offlineSession.isStale(epoch)) return;
 
       if (newUsers.length === 0) {
         this.hasMoreSignal.set(false);
@@ -148,13 +205,14 @@ export class UsersService {
       this.fetchStateSignal.set(States.loaded);
       this.initialFetchDone = true;
     } catch (error) {
+      if (this.offlineSession.isStale(epoch)) return;
       CometChatLogger.error('UsersService', 'Error fetching users:', error);
       if (this.usersSignal().length === 0) {
         this.fetchStateSignal.set(States.error);
       }
       this.handleError(error);
     } finally {
-      this.isFetching = false;
+      if (!this.offlineSession.isStale(epoch)) this.isFetching = false;
     }
   }
 
@@ -172,13 +230,22 @@ export class UsersService {
       usersSearchText?: string;
     }
   ): void {
+    this.offlineSession.supersede();
     this.usersSignal.set([]);
     this.fetchStateSignal.set(States.loading);
     this.hasMoreSignal.set(true);
     this.isFetching = false;
+    this.reloadOnConnect = false;
+    this.clearOfflineStates();
+    this.serverPageRead = false;
 
-    this.requestArgs = [keyword, config?.usersRequestBuilder ?? null, config?.searchRequestBuilder ?? null, config?.usersSearchText ?? ''];
-    this.usersRequest = this.buildRequest(...this.requestArgs);
+    this.lastRequestArgs = [
+      keyword,
+      config?.usersRequestBuilder ?? null,
+      config?.searchRequestBuilder ?? null,
+      config?.usersSearchText ?? '',
+    ];
+    this.usersRequest = this.buildRequest(...this.lastRequestArgs);
   }
 
   // ==================== Listener Management ====================
@@ -197,12 +264,14 @@ export class UsersService {
    * Resets the list and re-fetches the first page of users.
    */
   private handleReconnect(): void {
+    if (this.needsOfflineReload()) return this.reloadAfterReset();
     if (!this.usersRequest || !this.initialFetchDone) return;
     CometChatLogger.info('UsersService', 'WebSocket reconnected — refreshing user list');
     // Silent refresh: don't show shimmer, don't clear the list until new data arrives.
-    // The first page of the same list: the app's usersRequestBuilder and any active search.
+    // Build a fresh request for the latest first page, from the same request config
+    // (app builder and current search keyword) as the list's current load.
     const replaced = this.usersRequest;
-    const freshRequest = this.buildRequest(...this.requestArgs);
+    const freshRequest = this.buildRequest(...(this.lastRequestArgs ?? (['', null, null, ''] as const)));
     freshRequest.fetchNext()
       .then(newUsers => {
         // A search or re-initialize since the reconnect owns the list now.
@@ -276,6 +345,7 @@ export class UsersService {
    * Full cleanup: detach listeners and reset state.
    */
   cleanup(): void {
+    this.offlineSession.supersede();
     this.detachListeners();
     this.usersSignal.set([]);
     this.fetchStateSignal.set(States.loading);
@@ -284,6 +354,9 @@ export class UsersService {
     this.errorCallback = null;
     this.isFetching = false;
     this.initialFetchDone = false;
+    this.reloadOnConnect = false;
+    this.clearOfflineStates();
+    this.serverPageRead = false;
   }
 
   // ==================== Private Helpers ====================
@@ -351,5 +424,132 @@ export class UsersService {
       message: String(error),
       details: '',
     });
+  }
+
+  /**
+   * Offline path of {@link fetchNext}: the cached page paints at once, the
+   * server page then replaces it in place (D83). A failed load with nothing on
+   * screen shows the error view and fires `onError` once; with rows on screen the
+   * rows stay and `onError` fires once for a first-page load the user or app
+   * started (never for a "load more" page, never for a load the kit started).
+   */
+  private async fetchNextOffline(
+    request: NonNullable<typeof this.usersRequest>,
+    automatic = false
+  ): Promise<void> {
+    this.isFetching = true;
+    this.offlineSession.markRan();
+    const epoch = this.offlineSession.epoch;
+    const firstPage = !this.serverPageRead;
+    // A reload the kit starts from the offline state reports once, not again if it fails the same way.
+    const reportedOffline = this.connectToLoadSignal();
+    if (firstPage) {
+      this.reloadOnConnect = false;
+      this.clearOfflineStates();
+    }
+    let cachedKeys = new Set<string>();
+    const keyOf = (item: CometChat.User) => item.getUid();
+    try {
+      await fetchNextTwoPhase<CometChat.User>(request, 'users', {
+        onCached: page => {
+          if (this.offlineSession.isStale(epoch) || page.length === 0) return;
+          cachedKeys = new Set(page.map(keyOf));
+          this.clearOfflineStates();
+          this.usersSignal.set(mergeSnapshotPage(this.usersSignal(), new Set<string>(), page, keyOf));
+          this.fetchStateSignal.set(States.loaded);
+        },
+        onServer: page => {
+          if (this.offlineSession.isStale(epoch)) return;
+          this.reloadOnConnect = false;
+          this.clearOfflineStates();
+          this.serverPageRead = true;
+          this.usersSignal.set(mergeSnapshotPage(this.usersSignal(), cachedKeys, page, keyOf));
+          // Only an empty server page ends the list (BEH-READ-09b).
+          this.hasMoreSignal.set(page.length > 0);
+          this.fetchStateSignal.set(this.usersSignal().length === 0 ? States.empty : States.loaded);
+          this.initialFetchDone = true;
+        },
+        onError: (error, notConnected) => {
+          if (this.offlineSession.isStale(epoch)) return;
+          CometChatLogger.error('UsersService', 'Error fetching (offline path):', error);
+          if (this.usersSignal().length === 0) {
+            // Nothing on screen. Offline: "Connect to search" for a keyword search (no `error`),
+            // else the offline state in the error state (`error` once, D84 rules 3 and 7); any
+            // other failure is the error view with Retry (rule 4). One more load when the
+            // connection is back if that is why it failed (rule 8).
+            this.reloadOnConnect = notConnected;
+            const state = offlineStateFor(notConnected, this.isKeywordSearch(request));
+            this.connectToSearchSignal.set(state === 'connect_to_search');
+            this.connectToLoadSignal.set(state === 'connect_to_load');
+            if (state === 'connect_to_search') {
+              this.fetchStateSignal.set(States.empty);
+              return;
+            }
+            this.fetchStateSignal.set(States.error);
+            if (!(automatic && notConnected && reportedOffline)) this.handleError(error);
+          } else if (!automatic && !notConnected) {
+            // Rows stay. A real failure of a load the user or app started reports once (rule 5);
+            // offline over rows (rule 2) and a load the kit started report nothing.
+            this.handleError(error);
+          }
+        },
+      });
+    } finally {
+      if (!this.offlineSession.isStale(epoch)) {
+        this.isFetching = false;
+        if (automatic) this.offlineSettledSignal.update(n => n + 1);
+      }
+    }
+  }
+
+  /** Whether the read is a keyword search (D84 addition B): a filter alone is the plain list. */
+  private isKeywordSearch(request: unknown): boolean {
+    const args = this.lastRequestArgs;
+    return isKeywordSearch(request, args?.[0], args?.[3]);
+  }
+
+  private clearOfflineStates(): void {
+    if (this.connectToLoadSignal()) this.connectToLoadSignal.set(false);
+    if (this.connectToSearchSignal()) this.connectToSearchSignal.set(false);
+  }
+
+  /** Logout / user switch: nothing of the old session stays on screen. */
+  private clearForSession(): void {
+    this.reloadOnConnect = false;
+    this.clearOfflineStates();
+    this.serverPageRead = false;
+    this.usersSignal.set([]);
+    this.fetchStateSignal.set(States.loading);
+    this.hasMoreSignal.set(true);
+    this.usersRequest = null;
+    this.isFetching = false;
+    this.initialFetchDone = false;
+  }
+
+  /**
+   * Offline on, on reconnect: a list showing the error view because the device was
+   * offline loads its first page once by itself (D83); so does a list whose cached rows
+   * are shown but whose first page never loaded (quietly). A non-network error is not
+   * reloaded. A list that did load refreshes as before.
+   */
+  private needsOfflineReload(): boolean {
+    if (!isOfflineOn() || !this.offlineSession.ranOffline || this.isFetching || !this.lastRequestArgs) {
+      return false;
+    }
+    const rowsShown = this.usersSignal().length > 0;
+    return (
+      (this.reloadOnConnect && !rowsShown && (this.connectToLoadSignal() || this.connectToSearchSignal())) ||
+      (rowsShown && !this.initialFetchDone)
+    );
+  }
+
+  /** The offline cache was rebuilt: read the first page again, cached then server. */
+  private reloadAfterReset(): void {
+    if (!this.lastRequestArgs) return;
+    this.usersRequest = this.buildRequest(...this.lastRequestArgs);
+    this.serverPageRead = false;
+    if (this.usersSignal().length === 0) this.fetchStateSignal.set(States.loading);
+    this.automaticLoad = true;
+    void this.fetchNext().finally(() => (this.automaticLoad = false));
   }
 }

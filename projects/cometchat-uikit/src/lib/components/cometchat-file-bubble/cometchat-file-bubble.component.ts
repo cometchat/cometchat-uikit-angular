@@ -29,6 +29,8 @@ import { CometChatLogger } from '../../utils/CometChatLogger';
 import { triggerMediaDownload } from '../../utils/media-download';
 import { getFileType, getFileIcon, formatFileSize, resolveFileExtension } from './cometchat-file-bubble.types';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
+import { CachedMediaUrls } from '../../utils/offline/media';
+import { OfflineHubService } from '../../services/offline-hub.service';
 
 /**
  * CometChatFileBubbleComponent renders file/document message attachments.
@@ -80,7 +82,12 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
   /** LiveAnnouncerService for screen reader announcements */
   private liveAnnouncer = inject(LiveAnnouncerService);
 
+  /** Offline support: object URLs of cached copies this bubble hands to Download. */
+  private readonly offlineMedia = new CachedMediaUrls();
+  private readonly offlineHub = inject(OfflineHubService);
+
   ngOnInit(): void {
+    this.offlineMedia.watch(this.offlineHub.mediaReady$, () => this.offlineHub.connectionChanged$);
     this.processMessage();
   }
 
@@ -110,6 +117,9 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
 
     // Trigger change detection
     this.cdr.markForCheck();
+
+    // Offline support: Download uses the SDK's cached copy when it has one.
+    this.offlineMedia.resolve(this.attachments, () => this.cdr.markForCheck());
   }
 
   /**
@@ -256,6 +266,11 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
     );
   }
 
+  /** Offline: this file has no cached copy and the device is offline, so it cannot be downloaded now. */
+  protected isUnavailable(attachment: FileAttachment): boolean {
+    return this.offlineMedia.isUnavailable(attachment);
+  }
+
   /** Uppercased extension for the meta line (e.g. "DOC"), or "FILE" when there is none. */
   protected getFileExtLabel(attachment: FileAttachment): string {
     const parts = (attachment.name ?? '').split('.');
@@ -267,6 +282,9 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
 
   /** Meta line: `DOC · 98 KB`, falling back to just the extension when the size is unknown. */
   protected getFileMeta(attachment: FileAttachment): string {
+    if (this.isUnavailable(attachment)) {
+      return CometChatLocalize.getLocalizedString('message_bubble_media_available_when_online');
+    }
     const ext = this.getFileExtLabel(attachment);
     const size = attachment.size;
     return size && size > 0 ? `${ext} · ${formatFileSize(size)}` : ext;
@@ -383,6 +401,8 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
    * @see Requirements 10.5, 10.6, 10.7
    */
   protected initiateDownload(attachment: FileAttachment): void {
+    // Offline support (AC-12.3): a tap online also asks the SDK to cache it.
+    this.offlineMedia.requestDownload(attachment);
     // Announce download start
     this.liveAnnouncer.announce(
       CometChatLocalize.getLocalizedString('accessibility_downloading_file').replace(
@@ -430,6 +450,7 @@ export class CometChatFileBubbleComponent implements OnInit, OnChanges, OnDestro
   }
 
   ngOnDestroy(): void {
+    this.offlineMedia.dispose();
     this.pendingTimers.forEach(t => clearTimeout(t));
     this.pendingTimers = [];
   }

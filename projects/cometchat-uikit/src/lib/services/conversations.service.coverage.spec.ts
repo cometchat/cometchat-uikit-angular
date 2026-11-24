@@ -403,6 +403,27 @@ describe('ConversationsService (coverage)', () => {
       expect(infoLog).not.toHaveBeenCalled();
     });
 
+    it('refetches on reconnect after a first fetch that failed', async () => {
+      const recovered = userConversation('u-recovered');
+      // 'boom' is not recoverable, so the fetch publishes the error and rethrows without retrying.
+      const fetchNext = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValue([recovered]);
+      const builder = { build: vi.fn(() => ({ fetchNext })) } as unknown as CometChat.ConversationsRequestBuilder;
+      skipShimmerDelay();
+
+      await expect(service.fetchConversations(builder)).rejects.toThrow();
+      expect(service.hasError()).toBe(true);
+      expect(service.getConversations()).toEqual([]);
+
+      reconnected$.next(true);
+      await flush();
+
+      // The failed first page still counts as attempted: the reconnect must reload it,
+      // otherwise the list stays on the error view for the rest of the session.
+      expect(fetchNext).toHaveBeenCalledTimes(2);
+      expect(service.getConversations()).toEqual([recovered]);
+      expect(service.errorState()).toBeNull();
+    });
+
     it('refetches through the stored builder and merges onto the visible list', async () => {
       const first = userConversation('u-first');
       const second = userConversation('u-second');
@@ -416,8 +437,9 @@ describe('ConversationsService (coverage)', () => {
       reconnected$.next(true);
       await flush();
 
-      // Silent: the existing entry was never cleared, so the new page lands behind it.
-      expect(service.getConversations()).toEqual([first, second]);
+      // Silent: the existing entry was never cleared, but the fetched page is the server's order
+      // and wins over a row already shown, so it lands in front (5.3.0 release note D1).
+      expect(service.getConversations()).toEqual([second, first]);
       expect(fetchNext).toHaveBeenCalledTimes(2);
       expect(infoLog).toHaveBeenCalledWith(
         'ConversationsService',
@@ -425,22 +447,36 @@ describe('ConversationsService (coverage)', () => {
       );
     });
 
-    it('falls back to a fresh 30-limit builder when no request builder was ever stored', async () => {
+    it('refetches through the builder the list was loaded with, even one passed as an argument', async () => {
       const seeded = userConversation('u-seeded');
-      const { builder } = builderReturning([seeded]);
+      const { builder, build } = builderReturning([seeded], []);
       skipShimmerDelay();
-      // Passing the builder as an argument leaves `requestBuilder` unset.
+      // Passing the builder as an argument leaves `requestBuilder` unset, but the list remembers it.
       await service.fetchConversations(builder);
 
-      const reconnectPage = userConversation('u-reconnect');
-      const def = stubDefaultRequestBuilder([reconnectPage]);
+      const def = stubDefaultRequestBuilder([userConversation('u-default')]);
 
       reconnected$.next(true);
       await flush();
 
+      expect(def.constructedCount()).toBe(0);
+      expect(build).toHaveBeenCalledTimes(2);
+      expect(service.getConversations()).toEqual([seeded]);
+    });
+
+    it('falls back to a fresh 30-limit builder when no builder was ever supplied', async () => {
+      const seeded = userConversation('u-seeded');
+      const def = stubDefaultRequestBuilder([seeded]);
+      skipShimmerDelay();
+      await service.fetchConversations();
       expect(def.constructedCount()).toBe(1);
+
+      reconnected$.next(true);
+      await flush();
+
+      expect(def.constructedCount()).toBe(2);
       expect(def.setLimit).toHaveBeenCalledWith(30);
-      expect(service.getConversations()).toEqual([seeded, reconnectPage]);
+      expect(service.getConversations()).toEqual([seeded]);
     });
 
     it('logs the failure when the silent reconnect refetch rejects', async () => {
@@ -505,8 +541,62 @@ describe('ConversationsService (coverage)', () => {
       release([fresh]);
       await pending;
 
-      expect(service.getConversations()).toEqual([stale, fresh]);
+      // The fetched copy comes first and wins over a row already shown (5.3.0 release note D1).
+      expect(service.getConversations()).toEqual([fresh, stale]);
       expect(service.loadingState()).toBe(false);
+    });
+
+    /**
+     * The refresh runs while the list stays on screen, so a realtime listener
+     * can touch a row mid-flight. That copy is newer than anything the fetch
+     * can return (Prajwal 2026-11-20T11:54Z on #674).
+     */
+    it('a message that arrives during a silent refresh is not overwritten by it', async () => {
+      skipShimmerDelay();
+      let release!: (value: CometChat.Conversation[]) => void;
+      const { builder } = builderWith(() => new Promise(resolve => { release = resolve; }));
+
+      const pending = service.fetchConversations(builder, true);
+
+      // Bob's message lands while the refresh is in flight.
+      const live = userConversation('u-bob', {
+        unread: 3,
+        lastMessage: createMockTextMessage({ receiverId: 'u-bob', text: 'just now', sentAt: 2000, id: 90 }),
+      });
+      seed(live);
+
+      // The server built its page before that message existed.
+      release([
+        userConversation('u-bob', {
+          unread: 0,
+          lastMessage: createMockTextMessage({ receiverId: 'u-bob', text: 'older', sentAt: 1000, id: 40 }),
+        }),
+      ]);
+      await pending;
+
+      const rows = service.getConversations();
+      expect(rows).toHaveLength(1);
+      expect(rows[0].getLastMessage()?.getText()).toBe('just now');
+      expect(rows[0].getUnreadMessageCount()).toBe(3);
+    });
+
+    it('a silent refresh still replaces a row the server has moved on from', async () => {
+      skipShimmerDelay();
+      const stale = userConversation('u-bob', {
+        lastMessage: createMockTextMessage({ receiverId: 'u-bob', text: 'old', sentAt: 1000, id: 40 }),
+      });
+      seed(stale);
+      const { builder } = builderWith(async () => [
+        userConversation('u-bob', {
+          lastMessage: createMockTextMessage({ receiverId: 'u-bob', text: 'caught up', sentAt: 5000, id: 95 }),
+        }),
+      ]);
+
+      await service.fetchConversations(builder, true);
+
+      const rows = service.getConversations();
+      expect(rows).toHaveLength(1);
+      expect(rows[0].getLastMessage()?.getText()).toBe('caught up');
     });
 
     it('keeps the realtime copy of a conversation that also arrives in the fetched page', async () => {

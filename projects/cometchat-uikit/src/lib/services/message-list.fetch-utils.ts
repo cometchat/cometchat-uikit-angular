@@ -9,6 +9,11 @@ import {CometChatUIKitUtility} from '../CometChatUIKitUtility';
 import {ErrorCallback} from './message-composer.service';
 import {flushPendingSentMessages} from './message-list.sent-handler';
 import {isDuplicateMessageImpl} from './message-list.message-ops';
+import {isOfflineOn} from '../utils/offline/offline-gate';
+import {readThreadSubscribed, writeThreadSubscribed} from '../utils/thread-subscription-utils';
+import {serverIdOf} from '../utils/offline/identity';
+import {failStrandedSends, fetchAroundOffline, fetchNextOffline, fetchPreviousOffline} from './message-list.offline';
+import {isClientFiltered} from './message-list.request-builder';
 
 /**
  * Drops messages the list already holds, and any repeated within the batch itself.
@@ -30,7 +35,28 @@ function excludeAlreadyListed(ctx: FetchContext, messages: CometChat.BaseMessage
   });
 }
 
+/**
+ * A fetched page can hold the server copy of a message still listed as its
+ * local pending copy (same muid, no id yet): the server copy replaces it,
+ * keeping the state the kit stamped locally (thread subscription, quoted
+ * message), as a send acknowledgement does (D4).
+ */
+function replaceListedPendingCopies(ctx: FetchContext, messages: CometChat.BaseMessage[]): void {
+  for (const fetched of messages) {
+    const muid = fetched.getMuid?.();
+    if (!muid) continue;
+    const listed = ctx.messageMuidMap.get(muid);
+    if (!listed || listed === fetched) continue;
+    if (Number(listed.getId()) > 0 || !(Number(fetched.getId()) > 0)) continue;
+    if (readThreadSubscribed(listed) && !readThreadSubscribed(fetched)) writeThreadSubscribed(fetched, true);
+    const quoted = (listed as any).getQuotedMessage?.();
+    if (quoted && !(fetched as any).getQuotedMessage?.()) (fetched as any).setQuotedMessage?.(quoted);
+    ctx.updateMessageByMuid?.(muid, fetched);
+  }
+}
+
 export interface FetchContext {
+  updateMessageByMuid?(muid: string, message: CometChat.BaseMessage): boolean;
   messagesRequest: CometChat.MessagesRequest | null;
   nextMessagesRequest: CometChat.MessagesRequest | null;
   fetchGeneration: number;
@@ -105,12 +131,18 @@ async function fetchPreviousMessagesOnce(ctx: FetchContext): Promise<boolean> {
     CometChatLogger.warn('MessageListService', 'fetchPreviousMessages blocked in agent chat mode: parentMessageId is null. Messages are only fetched when loading a historical thread.');
     return false;
   }
+  if (isOfflineOn()) { return fetchPreviousOffline(ctx as any); }
+  // Kill switch: offline was switched off under un-acked rows (UIK-LIFE-03).
+  failStrandedSends(ctx as any);
+  // Kill switch: this request was built to be filtered on the offline path; today's path needs the server to filter.
+  if (isClientFiltered(ctx.messagesRequest)) { ctx.messagesRequest = ctx.buildMessagesRequest(ctx.prevMessageIdSignal() || undefined); }
   const generation = ctx.fetchGeneration;
   ctx.loadingStateSignal.set(true);
   try {
     const messages: CometChat.BaseMessage[] = await ctx.messagesRequest.fetchPrevious();
     if (generation !== ctx.fetchGeneration) return false;
     if (messages && messages.length > 0) {
+      replaceListedPendingCopies(ctx, messages);
       // Cursors and the has-more result track what the server returned, not what
       // survived deduplication, so paging stays correct even if the whole page
       // was already on screen.
@@ -154,12 +186,17 @@ export async function fetchNextMessagesImpl(ctx: FetchContext): Promise<boolean>
     CometChatLogger.warn('MessageListService', 'Cannot fetch next messages: No conversation context set. Call setUser() or setGroup() first.');
     return false;
   }
+  if (isOfflineOn()) { return fetchNextOffline(ctx as any); }
+  // Kill switch: offline was switched off under un-acked rows (UIK-LIFE-03).
+  failStrandedSends(ctx as any);
+  if (isClientFiltered(ctx.nextMessagesRequest)) { ctx.nextMessagesRequest = ctx.buildNextMessagesRequest(ctx.nextMessageIdSignal() || undefined); }
   const generation = ctx.fetchGeneration;
   ctx.loadingStateSignal.set(true);
   try {
     const messages: CometChat.BaseMessage[] = await ctx.nextMessagesRequest.fetchNext();
     if (generation !== ctx.fetchGeneration) return false;
     if (messages && messages.length > 0) {
+      replaceListedPendingCopies(ctx, messages);
       // On reconnect this request is rebuilt from the stored cursor and re-runs,
       // so it commonly returns messages that already arrived over the socket.
       const newMessages = excludeAlreadyListed(ctx, messages);
@@ -195,6 +232,9 @@ export async function fetchMessagesAroundIdImpl(ctx: FetchContext, messageId: nu
     ctx.errorStateSignal.set(error);
     throw error;
   }
+  if (isOfflineOn()) { return fetchAroundOffline(ctx as any, messageId); }
+  // Kill switch: offline was switched off under un-acked rows (UIK-LIFE-03).
+  failStrandedSends(ctx as any);
   ctx.clearMessagesAndState();
   const generation = ctx.fetchGeneration;
   ctx.loadingStateSignal.set(true);
@@ -250,6 +290,7 @@ export async function fetchMessagesAroundIdImpl(ctx: FetchContext, messageId: nu
 }
 
 export interface ReceiptContext {
+  heldReceipts?: { hold(messageId: number, receipt: CometChat.MessageReceipt): void };
   currentGroup: CometChat.Group | null;
   currentUser: CometChat.User | null;
   allMessagesSignal: WritableSignal<CometChat.BaseMessage[]>;
@@ -270,6 +311,12 @@ export function handleReceiptImpl(ctx: ReceiptContext, receipt: CometChat.Messag
   const loggedInUser = CometChatUIKit.getLoggedInUser();
   if (!loggedInUser) { return; }
   const loggedInUserId = loggedInUser.getUid();
+  // Offline (ON) path: an unsent row never shows a receipt, and a receipt for a
+  // message whose ack has not landed yet is held until a row gets that id.
+  const offlineOn = isOfflineOn();
+  if (offlineOn && ctx.heldReceipts && !ctx.allMessagesSignal().some(m => serverIdOf(m) === messageId)) {
+    ctx.heldReceipts.hold(messageId, receipt);
+  }
   let needsUpdate = false;
   ctx.allMessagesSignal.update(current => {
     let targetIndex = current.findIndex(m => ctx.normalizeMessageId(m.getId()) === messageId);
@@ -282,6 +329,7 @@ export function handleReceiptImpl(ctx: ReceiptContext, receipt: CometChat.Messag
       if (senderUid !== loggedInUserId) { continue; }
       const msgId = ctx.normalizeMessageId(msg.getId());
       if (msgId > messageId && msgId !== 0) { continue; }
+      if (offlineOn && serverIdOf(msg) === 0) { continue; }
       if (readAt) {
         if (msg.getReadAt()) { break; }
         const cloned = CometChatUIKitUtility.clone(msg);
@@ -319,6 +367,7 @@ export function handleReceiptImpl(ctx: ReceiptContext, receipt: CometChat.Messag
         if (senderUid !== loggedInUserId) { continue; }
         const msgId = ctx.normalizeMessageId(msg.getId());
         if (msgId > messageId && msgId !== 0) { continue; }
+        if (offlineOn && serverIdOf(msg) === 0) { continue; }
         if (readAt) {
           if (msg.getReadAt()) { break; }
           const cloned = ctx.messageIdMap.get(ctx.normalizeMessageId(msgId)) || CometChatUIKitUtility.clone(msg);
@@ -334,4 +383,19 @@ export function handleReceiptImpl(ctx: ReceiptContext, receipt: CometChat.Messag
       return updated;
     });
   }
+}
+
+/** Apply one held receipt to the row that now has its id (offline path). */
+export function applyReceiptToMessage(message: CometChat.BaseMessage, receipt: CometChat.MessageReceipt): CometChat.BaseMessage {
+  const readAt = receipt.getReadAt();
+  const deliveredAt = receipt.getDeliveredAt();
+  if ((readAt && message.getReadAt()) || (!readAt && deliveredAt && message.getDeliveredAt())) return message;
+  const cloned = CometChatUIKitUtility.clone(message);
+  if (readAt) {
+    cloned.setReadAt(readAt);
+    if (!cloned.getDeliveredAt()) cloned.setDeliveredAt(readAt);
+  } else if (deliveredAt) {
+    cloned.setDeliveredAt(deliveredAt);
+  }
+  return cloned;
 }

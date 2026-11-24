@@ -26,11 +26,17 @@ function makeMessage(id: number, reactions: CometChat.ReactionCount[] = []): Com
   (msg as any).id = id;
   (msg as any).getId = () => id;
   (msg as any).getReactions = () => reactions;
-  (msg as any).setReactions = vi.fn((r: CometChat.ReactionCount[]) => { (msg as any).getReactions = () => r; });
+  (msg as any).setReactions = vi.fn((r: CometChat.ReactionCount[]) => {
+    (msg as any).getReactions = () => r;
+  });
   return msg as unknown as CometChat.BaseMessage;
 }
 
-function makeReactionCount(emoji: string, count: number, reactedByMe = false): CometChat.ReactionCount {
+function makeReactionCount(
+  emoji: string,
+  count: number,
+  reactedByMe = false
+): CometChat.ReactionCount {
   const r = new CometChat.ReactionCount(emoji, count, reactedByMe);
   return r;
 }
@@ -48,7 +54,6 @@ function makeCtx(messages: CometChat.BaseMessage[] = []): ReactionOpsContext {
 }
 
 describe('message-list.reaction-ops', () => {
-
   beforeEach(() => {
     vi.mocked(CometChat.addReaction).mockResolvedValue(undefined as any);
     vi.mocked(CometChat.removeReaction).mockResolvedValue(undefined as any);
@@ -67,7 +72,8 @@ describe('message-list.reaction-ops', () => {
       const ctx = makeCtx([msg]);
       await addReactionImpl(ctx, 1, '👍');
       expect(ctx.updateMessageReactions).toHaveBeenCalledTimes(1);
-      const reactions = (ctx.updateMessageReactions as any).mock.calls[0][1] as CometChat.ReactionCount[];
+      const reactions = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
       expect(reactions.some(r => r.getReaction() === '👍')).toBe(true);
     });
 
@@ -83,7 +89,8 @@ describe('message-list.reaction-ops', () => {
       const msg = makeMessage(1, [existing]);
       const ctx = makeCtx([msg]);
       await addReactionImpl(ctx, 1, '👍');
-      const reactions = (ctx.updateMessageReactions as any).mock.calls[0][1] as CometChat.ReactionCount[];
+      const reactions = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
       const thumbs = reactions.find(r => r.getReaction() === '👍');
       expect(thumbs?.getCount()).toBe(3);
       expect(thumbs?.getReactedByMe()).toBe(true);
@@ -103,7 +110,8 @@ describe('message-list.reaction-ops', () => {
       const msg = makeMessage(1, [existing]);
       const ctx = makeCtx([msg]);
       await addReactionImpl(ctx, 1, '👍');
-      const reactions = (ctx.updateMessageReactions as any).mock.calls[0][1] as CometChat.ReactionCount[];
+      const reactions = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
       expect(reactions.find(r => r.getReaction() === '👍')).toBeUndefined();
     });
 
@@ -115,6 +123,34 @@ describe('message-list.reaction-ops', () => {
       await addReactionImpl(ctx, 1, '👍');
       // Should call updateMessageReactions twice: once optimistic, once rollback
       expect(ctx.updateMessageReactions).toHaveBeenCalledTimes(2);
+    });
+
+    it('rolls back to the original count and reactedByMe when adding fails', async () => {
+      const existing = makeReactionCount('👍', 2, false);
+      const msg = makeMessage(1, [existing]);
+      const ctx = makeCtx([msg]);
+      vi.mocked(CometChat.addReaction).mockRejectedValueOnce(new Error('fail'));
+      await addReactionImpl(ctx, 1, '👍');
+      const optimistic = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
+      expect(optimistic[0].getCount()).toBe(3);
+      const rolledBack = (ctx.updateMessageReactions as any).mock
+        .calls[1][1] as CometChat.ReactionCount[];
+      expect(rolledBack[0].getCount()).toBe(2);
+      expect(rolledBack[0].getReactedByMe()).toBe(false);
+    });
+
+    it('rolls back a toggle-off (own reaction removed) when the SDK call fails', async () => {
+      const existing = makeReactionCount('👍', 1, true);
+      const msg = makeMessage(1, [existing]);
+      const ctx = makeCtx([msg]);
+      vi.mocked(CometChat.removeReaction).mockRejectedValueOnce(new Error('fail'));
+      await addReactionImpl(ctx, 1, '👍');
+      const rolledBack = (ctx.updateMessageReactions as any).mock
+        .calls[1][1] as CometChat.ReactionCount[];
+      expect(rolledBack).toHaveLength(1);
+      expect(rolledBack[0].getCount()).toBe(1);
+      expect(rolledBack[0].getReactedByMe()).toBe(true);
     });
 
     it('should call errorCallback on SDK error', async () => {
@@ -141,7 +177,8 @@ describe('message-list.reaction-ops', () => {
       const msg = makeMessage(1, [existing]);
       const ctx = makeCtx([msg]);
       await removeReactionImpl(ctx, 1, '👍');
-      const reactions = (ctx.updateMessageReactions as any).mock.calls[0][1] as CometChat.ReactionCount[];
+      const reactions = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
       const thumbs = reactions.find(r => r.getReaction() === '👍');
       expect(thumbs?.getCount()).toBe(2);
     });
@@ -151,7 +188,8 @@ describe('message-list.reaction-ops', () => {
       const msg = makeMessage(1, [existing]);
       const ctx = makeCtx([msg]);
       await removeReactionImpl(ctx, 1, '👍');
-      const reactions = (ctx.updateMessageReactions as any).mock.calls[0][1] as CometChat.ReactionCount[];
+      const reactions = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
       expect(reactions.find(r => r.getReaction() === '👍')).toBeUndefined();
     });
 
@@ -172,13 +210,29 @@ describe('message-list.reaction-ops', () => {
       expect(ctx.updateMessageReactions).toHaveBeenCalledTimes(2);
     });
 
+    it('restores your reaction (count and reactedByMe) when removing fails', async () => {
+      const existing = makeReactionCount('👍', 2, true);
+      const msg = makeMessage(1, [existing]);
+      const ctx = makeCtx([msg]);
+      vi.mocked(CometChat.removeReaction).mockRejectedValueOnce(new Error('fail'));
+      await removeReactionImpl(ctx, 1, '👍');
+      const optimistic = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
+      expect(optimistic[0].getCount()).toBe(1);
+      const rolledBack = (ctx.updateMessageReactions as any).mock
+        .calls[1][1] as CometChat.ReactionCount[];
+      expect(rolledBack[0].getCount()).toBe(2);
+      expect(rolledBack[0].getReactedByMe()).toBe(true);
+    });
+
     it('should preserve other reactions when removing one', async () => {
       const thumbs = makeReactionCount('👍', 2, true);
       const heart = makeReactionCount('❤️', 1, false);
       const msg = makeMessage(1, [thumbs, heart]);
       const ctx = makeCtx([msg]);
       await removeReactionImpl(ctx, 1, '👍');
-      const reactions = (ctx.updateMessageReactions as any).mock.calls[0][1] as CometChat.ReactionCount[];
+      const reactions = (ctx.updateMessageReactions as any).mock
+        .calls[0][1] as CometChat.ReactionCount[];
       expect(reactions.find(r => r.getReaction() === '❤️')).toBeDefined();
     });
   });
@@ -195,7 +249,9 @@ describe('message-list.reaction-ops', () => {
         build: vi.fn().mockReturnValue(mockRequest),
       };
       // Use a proper constructor function
-      (CometChat as any).ReactionsRequestBuilder = function() { return mockBuilder; };
+      (CometChat as any).ReactionsRequestBuilder = function () {
+        return mockBuilder;
+      };
 
       const result = await fetchReactionsImpl(ctx, 1);
       expect(result).toBe(mockReactions);

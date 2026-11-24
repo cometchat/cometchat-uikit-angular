@@ -21,6 +21,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ConnectionStateService } from '../../services/connection-state.service';
 import { merge } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
@@ -44,6 +45,10 @@ import { CometChatUIEvents } from '../../events/CometChatUIEvents';
 import { CometChatMessageEvents, IMessages } from '../../events/CometChatMessageEvents';
 import { CometChatTextFormatter } from '../../formatters/cometchat-text-formatter';
 import { CometChatLogger } from '../../utils/CometChatLogger';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { mergeSnapshotPage, readPageTwoPhase } from '../../utils/offline/two-phase';
+import { OfflineListSession, watchOfflineSession } from '../../utils/offline/list-session';
+import { OfflineHubService } from '../../services/offline-hub.service';
 import {
   applyPinSaveFrom,
   carryPinSaveForward,
@@ -78,6 +83,21 @@ import { States } from '../../Enums/Enums';
 export class CometChatPinnedMessagesComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
+  /** Offline: logout / user switch clears the list, a cache reset reloads it (UIK-LIFE-01/02). */
+  private readonly offlineSession = new OfflineListSession();
+  private readonly offlineHub = inject(OfflineHubService);
+  private readonly connectionState = inject(ConnectionStateService);
+  /**
+   * Offline (D83): the error view is up because the device was not connected, so the pins are
+   * read once more by themselves when the connection is back. A non-network error never sets it.
+   */
+  private reloadOnConnect = false;
+  /**
+   * Offline (D84 rule 3): nothing on screen and no connection, so the panel says "Connect to load
+   * messages" in place of its error view (the app's own error view still wins; `error` fired once).
+   * Always false with offline off.
+   */
+  readonly offlineConnectToLoad = signal(false);
   private readonly pinSave = inject(PinSaveService);
   private readonly focusTrap = inject(FocusTrapService);
   private readonly elementRef = inject(ElementRef);
@@ -238,6 +258,22 @@ export class CometChatPinnedMessagesComponent implements OnInit, OnChanges, Afte
     void this.load();
     void this.resolveSaveEnabled();
     this.subscribeToPinEvents();
+    watchOfflineSession(this.offlineHub, this.destroyRef, this.offlineSession, {
+      clear: () => {
+        this.loadGeneration++;
+        this.messages.set([]);
+        this.state.set(States.loading);
+        this.cdr.markForCheck();
+      },
+      reload: () => void this.load(true, true),
+    });
+    // Offline (D83): an error view that is up because the device was offline loads once on reconnect.
+    this.connectionState.reconnected$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (isOfflineOn() && this.reloadOnConnect && this.state() === States.error && this.messages().length === 0) {
+        this.reloadOnConnect = false;
+        void this.load(true);
+      }
+    });
   }
 
   /**
@@ -310,8 +346,10 @@ export class CometChatPinnedMessagesComponent implements OnInit, OnChanges, Afte
    * The server caps a conversation at 100 pins and exposes no count field, so
    * the panel fetches the whole list and counts it. One request covers the cap.
    */
-  private async load(reset = false): Promise<void> {
+  private async load(reset = false, automatic = false): Promise<void> {
     const generation = ++this.loadGeneration;
+    this.reloadOnConnect = false;
+    this.offlineConnectToLoad.set(false);
     // An explicit reload starts from nothing. Merging into rows that belong to
     // the conversation we just left would append this conversation's pins to
     // the previous one's.
@@ -336,7 +374,38 @@ export class CometChatPinnedMessagesComponent implements OnInit, OnChanges, Afte
       }
 
       const scope = this.group ? `GUID ${this.group.getGuid()}` : `UID ${this.user?.getUid()}`;
-      const page = await builder.build().fetchPrevious();
+      const request = builder.build();
+      const idOf = (m: CometChat.BaseMessage) => String(m.getId());
+      // Offline on: the cached list paints first, then the server's replaces it in place.
+      let cachedKeys = null as Set<string> | null;
+      let page: CometChat.BaseMessage[];
+      if (isOfflineOn()) {
+        this.offlineSession.markRan();
+        const { server, unreachable } = await readPageTwoPhase<CometChat.BaseMessage>(request, 'messages', cached => {
+          if (generation !== this.loadGeneration || cached.length === 0) return;
+          cachedKeys = new Set(cached.map(idOf));
+          this.messages.set(sortByPinnedAtDesc(mergeSnapshotPage(this.messages(), new Set<string>(), cached, idOf)));
+          this.state.set(States.loaded);
+          this.cdr.markForCheck();
+        }, 'previous');
+        if (generation !== this.loadGeneration) return;
+        if (server === null) {
+          // Offline and nothing newer (D84): with nothing on screen it is "Connect to load messages" (and `error` once), read once
+          // more when the connection is back; with pins on screen they stay and the app hears of it.
+          if (this.messages().length === 0) {
+            this.reloadOnConnect = true;
+            this.offlineConnectToLoad.set(true);
+            this.state.set(States.error);
+            this.error.emit(unreachable as CometChat.CometChatException);
+          } else {
+            this.state.set(States.loaded);
+          }
+          return;
+        }
+        page = server;
+      } else {
+        page = await request.fetchPrevious();
+      }
 
       // A conversation switch mid-flight must not land the old result.
       if (generation !== this.loadGeneration) return;
@@ -346,17 +415,22 @@ export class CometChatPinnedMessagesComponent implements OnInit, OnChanges, Afte
       // On a reload the list was emptied above, so this merges into nothing but
       // still catches a pin that arrived while THIS request was in flight.
       const seen = new Set(this.messages().map(m => m.getId()));
-      const merged = sortByPinnedAtDesc([
-        ...this.messages(),
-        ...page.filter(m => !seen.has(m.getId())),
-      ]);
+      const merged = sortByPinnedAtDesc(cachedKeys
+        // Server copies replace cached ones; a cached pin the server no longer has is dropped.
+        ? mergeSnapshotPage(this.messages(), cachedKeys, page, idOf)
+        : [
+          ...this.messages(),
+          ...page.filter(m => !seen.has(m.getId())),
+        ]);
       this.messages.set(merged);
       this.state.set(merged.length ? States.loaded : States.empty);
     } catch (err) {
       if (generation !== this.loadGeneration) return;
       const error = err as CometChat.CometChatException;
-      this.state.set(States.error);
-      this.error.emit(error);
+      // Offline on (D83): pins already on screen stay, with no error view over them.
+      const rowsShown = isOfflineOn() && this.messages().length > 0;
+      this.state.set(rowsShown ? States.loaded : States.error);
+      if (!(rowsShown && automatic)) this.error.emit(error);
       CometChatLogger.error('CometChatPinnedMessages', 'Failed to load pinned messages:', err);
     } finally {
       this.cdr.markForCheck();

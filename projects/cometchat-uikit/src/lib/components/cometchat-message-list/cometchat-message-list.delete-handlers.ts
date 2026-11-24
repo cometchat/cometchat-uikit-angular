@@ -46,8 +46,11 @@ export async function handleDeleteConfirmImpl(ctx: DeleteHandlerContext): Promis
     ctx.showDeleteConfirmDialog.set(false);
     ctx.messageToDelete.set(null);
   } catch (error) {
+    // Offline, a delete of an already-sent message is refused and the message stays on screen:
+    // no SDK queues one. Without this the dialog just sat there and the user tapped Delete again.
     CometChatLogger.error('CometChatMessageList', 'Error deleting message:', error);
     ctx.error.emit(error as CometChat.CometChatException);
+    ctx.showInlineToast(CometChatLocalize.getLocalizedString('message_list_error_subtitle'), ToastType.error, 3000);
   } finally {
     ctx.isDeleting.set(false);
   }

@@ -3,7 +3,9 @@
  *
  * Covers: single listener registration, connected() signal transitions,
  * reconnected$ skipping the first connect and firing on genuine reconnects,
- * root-singleton behaviour, and the listener-attach error path.
+ * connects$ firing on every connect (including one that changes nothing),
+ * the browser connectivity backstop, root-singleton behaviour, and the
+ * listener-attach error path.
  *
  * @module services/connection-state
  */
@@ -46,6 +48,29 @@ describe('ConnectionStateService', () => {
       TestBed.tick();
     };
     return { service, reconnects, sub, set };
+  }
+
+  /** Create the service with collectors on both streams, effects flushed. */
+  function setupConnects() {
+    const service = TestBed.inject(ConnectionStateService);
+    const connects: number[] = [];
+    const reconnects: boolean[] = [];
+    const subs = [
+      service.connects$.subscribe(() => connects.push(1)),
+      service.reconnected$.subscribe(v => reconnects.push(v)),
+    ];
+    TestBed.tick();
+    const set = (fn: () => void) => {
+      fn();
+      TestBed.tick();
+    };
+    const done = () => subs.forEach(s => s.unsubscribe());
+    return { service, connects, reconnects, set, done };
+  }
+
+  /** What the SDK itself reports about the socket, which both browser handlers read first. */
+  function sdkSocket(up: boolean) {
+    vi.spyOn(CometChat, 'getConnectionStatus').mockReturnValue((up ? 'connected' : 'disconnected') as never);
   }
 
   it('registers exactly one connection listener with a global_conn_ id', () => {
@@ -189,5 +214,178 @@ describe('ConnectionStateService', () => {
 
     expect(service.connected()).toBeNull();
     expect(errorSpy).toHaveBeenCalledWith('ConnectionStateService', 'Error attaching connection listener:', err);
+  });
+
+  /**
+   * ENG-57333 (Angular QA 5, major 2). The SDK fires `onDisconnected` only when the socket
+   * closes while its status is neither DISCONNECTED nor CONNECTING, so a drop inside a connect
+   * window is never reported. Everything that answers "did the state change?" is then blind to
+   * the connect that ends the outage: the state still holds the earlier `true`, and no disconnect
+   * was reported, so `reconnected$` has nothing to fire either. `connects$` is what a screen that
+   * has loaded nothing can follow.
+   */
+  describe('connects$ — every connect, whether or not anything changed', () => {
+    it('emits on a connect over an unchanged `true` that follows no reported disconnect', () => {
+      const { service, connects, reconnects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      expect(service.connected()).toBe(true);
+      const afterStartup = connects.length;
+
+      // The outage: the SDK reported nothing, so the state is untouched.
+      // The connect that ends it sets `true` over `true`.
+      set(() => listener.onConnected());
+
+      expect(service.connected()).toBe(true);
+      expect(connects.length).toBe(afterStartup + 1);
+      expect(reconnects).toEqual([]);
+      done();
+    });
+
+    it('emits on the first connect and once per connect afterwards', () => {
+      const { connects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      expect(connects.length).toBe(1);
+      set(() => listener.onDisconnected());
+      set(() => listener.onConnected());
+      expect(connects.length).toBe(2);
+      done();
+    });
+
+    it('does not emit on a disconnect', () => {
+      const { connects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      const afterStartup = connects.length;
+      set(() => listener.onDisconnected());
+      expect(connects.length).toBe(afterStartup);
+      done();
+    });
+  });
+
+  /**
+   * The browser reports the interface going down and coming back even in the runs the SDK stays
+   * silent about, so it stands in as a backstop. Neither handler invents state: each reads the
+   * SDK's own status first, so a browser event that disagrees with a live socket changes nothing.
+   */
+  describe('the browser connectivity backstop', () => {
+    it('records the disconnect the SDK never reported, so the connect after it is a reconnect', () => {
+      const { service, reconnects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      sdkSocket(false);
+
+      set(() => window.dispatchEvent(new Event('offline')));
+      expect(service.connected()).toBe(false);
+
+      set(() => listener.onConnected());
+      expect(service.connected()).toBe(true);
+      expect(reconnects).toEqual([true]);
+      done();
+    });
+
+    it('leaves a live socket alone when the browser claims to be offline', () => {
+      const { service, reconnects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      sdkSocket(true);
+
+      set(() => window.dispatchEvent(new Event('offline')));
+
+      expect(service.connected()).toBe(true);
+      // Nothing was reported down, so the next connect is not a reconnect either.
+      set(() => listener.onConnected());
+      expect(reconnects).toEqual([]);
+      done();
+    });
+
+    it('reports the connect itself when the browser returns with the socket already up', () => {
+      // The SDK has nothing left to report in this run - it never reported the close - so no
+      // `onConnected` arrives and this is the only signal the connection is back.
+      const { service, connects, reconnects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      sdkSocket(false);
+      set(() => window.dispatchEvent(new Event('offline')));
+      const afterDrop = connects.length;
+
+      sdkSocket(true);
+      set(() => window.dispatchEvent(new Event('online')));
+
+      expect(service.connected()).toBe(true);
+      expect(connects.length).toBe(afterDrop + 1);
+      expect(reconnects).toEqual([true]);
+      done();
+    });
+
+    it('waits for the SDK when the browser returns with the socket still down', () => {
+      const { service, connects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      sdkSocket(false);
+      set(() => window.dispatchEvent(new Event('offline')));
+      const afterDrop = connects.length;
+
+      set(() => window.dispatchEvent(new Event('online')));
+
+      expect(service.connected()).toBe(false);
+      expect(connects.length).toBe(afterDrop);
+
+      // The SDK's own connect is what ends it.
+      set(() => listener.onConnected());
+      expect(service.connected()).toBe(true);
+      expect(connects.length).toBe(afterDrop + 1);
+      done();
+    });
+
+    it('counts one unreported drop once, however many offline events the browser fires', () => {
+      const { reconnects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      sdkSocket(false);
+      set(() => window.dispatchEvent(new Event('offline')));
+      set(() => window.dispatchEvent(new Event('offline')));
+      set(() => listener.onConnected());
+      expect(reconnects).toEqual([true]);
+      done();
+    });
+
+    /**
+     * Found in review of the commit that added the backstop. Before the guard, a browser
+     * `offline` on the login screen - where nothing has connected yet - recorded a disconnect,
+     * so the sign-in connect counted as a reconnect and every root list (Conversations, Users,
+     * Groups, Pinned, ...) refetched once at login. `reconnected$` documents that it skips the
+     * first connect.
+     */
+    it('ignores a browser offline before anything has connected, so sign-in is not a reconnect', () => {
+      const { service, connects, reconnects, set, done } = setupConnects();
+      expect(service.connected()).toBeNull();
+      sdkSocket(false);
+
+      set(() => window.dispatchEvent(new Event('offline')));
+      // Still "unknown", not "disconnected": there was no connection to lose.
+      expect(service.connected()).toBeNull();
+
+      set(() => listener.onConnected());
+      expect(service.connected()).toBe(true);
+      expect(reconnects).toEqual([]);
+      expect(connects.length).toBe(1);
+      done();
+    });
+
+    it('stops following the browser once the service is destroyed', () => {
+      const { service, connects, set, done } = setupConnects();
+      set(() => listener.onConnected());
+      sdkSocket(true);
+      const afterStartup = connects.length;
+
+      (service as unknown as { ngOnDestroy(): void }).ngOnDestroy();
+      set(() => window.dispatchEvent(new Event('online')));
+
+      expect(connects.length).toBe(afterStartup);
+      done();
+    });
+
+    it('attaches nothing when there is no window (server-side rendering)', () => {
+      // The service is built once per injector, so this only has to not throw: a run with no
+      // `window` reaches `watchBrowserConnectivity` and leaves without touching it.
+      const attached = (TestBed.inject(ConnectionStateService) as unknown as {
+        browserListenersAttached: boolean;
+      }).browserListenersAttached;
+      expect(typeof attached).toBe('boolean');
+    });
   });
 });

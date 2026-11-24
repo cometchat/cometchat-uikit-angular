@@ -33,6 +33,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TemplateRef, WritableSignal, signal } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 import { CometChatMessageListComponent, MessageListItem } from './cometchat-message-list.component';
@@ -91,6 +92,13 @@ function createServiceStub(): ServiceStub {
     loadingState,
     errorState,
     unreadCount,
+    loadError$: new Subject<unknown>(),
+    edgeReload$: new Subject<void>(),
+    offlineConnectToLoad: signal(false),
+    // Offline-only signals the shell reads; with offline off they stay at rest.
+    newestWindowReset: signal(0),
+    offlineFooter: signal('none'),
+    offlineFooterRetryable: signal(false),
     setUser: vi.fn(),
     setGroup: vi.fn(),
     clearConversation: vi.fn(),
@@ -860,12 +868,32 @@ describe('CometChatMessageListComponent — shell behaviour', () => {
       expect(errors[0].message).toBe('observer unavailable');
     });
 
-    it('tears down the listener, the timeout and the scroll handler on destroy', () => {
+    it('registers no SDK message listener of its own; MessageListService owns the only one', async () => {
+      // Regression: the component used to add a receipt-only listener named
+      // `message_list_${Date.now()}`, the same format as the service's main
+      // listener. Built in the same millisecond, the names matched and the SDK
+      // replaced the service's listener, so the open chat stopped receiving
+      // messages. A frozen clock makes that collision certain.
+      vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+      vi.spyOn(CometChat, 'getLoggedinUser').mockResolvedValue(me());
+      const added = vi.spyOn(CometChat, 'addMessageListener').mockImplementation(() => undefined);
+      const removed = vi.spyOn(CometChat, 'removeMessageListener').mockImplementation(() => undefined);
+      const { c, fixture } = setup();
+
+      fixture.detectChanges();
+      await tick();
+      c.ngOnDestroy();
+
+      const own = (calls: unknown[][]) => calls.map(call => String(call[0])).filter(id => id.startsWith('message_list_'));
+      expect(own(added.mock.calls)).toEqual([]);
+      expect(own(removed.mock.calls)).toEqual([]);
+    });
+
+    it('tears down the timeout and the scroll handler on destroy', () => {
       const { c, fixture } = setup();
       fixture.detectChanges();
       const { container } = makeListDom();
       const removeEventListener = vi.spyOn(container, 'removeEventListener');
-      const removeMessageListener = vi.spyOn(CometChat, 'removeMessageListener');
       const listener = () => undefined;
       pinViewChild(c, 'listContainer', { nativeElement: container });
       c.scrollListener = listener;
@@ -874,7 +902,6 @@ describe('CometChatMessageListComponent — shell behaviour', () => {
 
       c.ngOnDestroy();
 
-      expect(removeMessageListener).toHaveBeenCalledWith(c.messageListenerId);
       expect(removeEventListener).toHaveBeenCalledWith('scroll', listener);
       expect(c.scrollListener).toBeNull();
       expect(c.typingAnnouncementTimeout).toBeNull();
@@ -1731,6 +1758,12 @@ describe('CometChatMessageListComponent — shell behaviour', () => {
       const { container } = makeListDom(1);
       pinViewChild(c, 'listContainer', { nativeElement: container });
 
+      // The jump replaced the rows: it starts a new fetch generation (ENG-57322).
+      let generation = 0;
+      svc['getFetchGeneration'].mockImplementation(() => generation);
+      svc['fetchMessagesAroundId'].mockImplementation(async () => {
+        generation++;
+      });
       c.scrollToMessage('555');
       await tick();
 

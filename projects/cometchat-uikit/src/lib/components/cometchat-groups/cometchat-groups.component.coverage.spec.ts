@@ -118,6 +118,7 @@ interface MockGroupsService {
   groups: WritableSignal<CometChat.Group[]>;
   fetchState: WritableSignal<States>;
   hasMore: WritableSignal<boolean>;
+  offlineSettled: WritableSignal<number>;
   initialize: ReturnType<typeof vi.fn>;
   cleanup: ReturnType<typeof vi.fn>;
   attachListeners: ReturnType<typeof vi.fn>;
@@ -135,6 +136,7 @@ function makeGroupsService(): MockGroupsService {
     groups: signal<CometChat.Group[]>([]),
     fetchState: signal<States>(States.loaded),
     hasMore: signal<boolean>(true),
+    offlineSettled: signal(0),
     initialize: vi.fn(),
     cleanup: vi.fn(),
     attachListeners: vi.fn(),

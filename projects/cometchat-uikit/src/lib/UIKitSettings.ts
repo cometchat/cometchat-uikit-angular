@@ -1,6 +1,36 @@
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 
 /**
+ * Offline support settings, passed through unchanged to the Chat SDK's
+ * `AppSettingsBuilder.setOfflineConfig()`.
+ *
+ * Declared structurally so the kit's public types never depend on an SDK
+ * release that has offline support. It lists exactly the options the SDK's
+ * `OfflineConfig` has, with no catch-all, so a misspelled option (for example
+ * `enable` for `enabled`) is a compile error instead of leaving offline off.
+ * Offline support needs a Chat SDK with offline support (4.3.1 or later); on an
+ * older SDK, 4.3.0 included, this setting has no effect.
+ * Leaving it unset keeps offline support off.
+ */
+export interface CometChatOfflineConfig {
+  enabled?: boolean;
+  cacheDurationDays?: number;
+  maxStorageSize?: number;
+  maxMessagesPerConversation?: number;
+  maxConversations?: number;
+  maxPendingMessages?: number;
+  autoSendPendingOnReconnect?: boolean;
+  pendingQueueOverflowPolicy?: string;
+  mediaCaching?: string;
+  maxMediaCacheSize?: number;
+  maxSnapshotQueries?: number;
+  snapshotTtlDays?: number;
+  encryption?: boolean;
+  encryptionFailureBehavior?: string;
+  debugTracing?: boolean;
+}
+
+/**
  * Represents the settings required to initialize the CometChat UIKit.
  * Use `UIKitSettingsBuilder` to create an instance of this class.
  *
@@ -39,6 +69,12 @@ export class UIKitSettings {
   callAppSettings?: any;
 
   /**
+   * Offline support settings handed to the Chat SDK at init. Absent by
+   * default, which leaves offline support off.
+   */
+  offlineConfig?: CometChatOfflineConfig;
+
+  /**
    * Creates a new UIKitSettings instance.
    * Prefer using UIKitSettingsBuilder for a fluent API.
    */
@@ -55,6 +91,7 @@ export class UIKitSettings {
       this.storageMode = builder.storageMode ?? CometChat.StorageMode.LOCAL;
       this.callingEnabled = builder.callingEnabled ?? false;
       this.callAppSettings = builder.callAppSettings;
+      this.offlineConfig = builder.offlineConfig;
     } else {
       this.autoEstablishSocketConnection = true;
       this.storageMode = CometChat.StorageMode.LOCAL;
@@ -99,6 +136,9 @@ export class UIKitSettings {
   getCallAppSettings(): any | undefined {
     return this.callAppSettings;
   }
+  getOfflineConfig(): CometChatOfflineConfig | undefined {
+    return this.offlineConfig;
+  }
 }
 
 /**
@@ -124,6 +164,7 @@ export class UIKitSettingsBuilder {
   storageMode?: CometChat.StorageMode;
   callingEnabled?: boolean;
   callAppSettings?: any;
+  offlineConfig?: CometChatOfflineConfig;
 
   build(): UIKitSettings {
     return UIKitSettings.fromBuilder(this);
@@ -219,6 +260,24 @@ export class UIKitSettingsBuilder {
    */
   setCallAppSettings(callAppSettings: any): UIKitSettingsBuilder {
     this.callAppSettings = callAppSettings;
+    return this;
+  }
+
+  /**
+   * Turns on the Chat SDK's offline support (cached reads, a durable outbox,
+   * catch-up sync) and the kit's offline UI. The config is passed to the SDK
+   * as is. Requires a Chat SDK with offline support; on an older SDK it is
+   * ignored and the kit behaves as before.
+   *
+   * @example
+   * new UIKitSettingsBuilder()
+   *   .setAppId('APP_ID')
+   *   .setRegion('REGION')
+   *   .setOfflineConfig({ enabled: true })
+   *   .build();
+   */
+  setOfflineConfig(config: CometChatOfflineConfig): UIKitSettingsBuilder {
+    this.offlineConfig = config;
     return this;
   }
 }

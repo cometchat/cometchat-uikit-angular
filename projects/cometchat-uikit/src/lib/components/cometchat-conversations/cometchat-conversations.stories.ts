@@ -55,6 +55,7 @@ type ConversationsServiceMock = Pick<
   | 'deleteConversation'
   | 'setActiveConversation'
   | 'replaceConversation'
+  | 'applyPinState'
   | 'updateConversationUnreadCount'
   | 'updateConversationReadStatus'
   | 'clearError'
@@ -103,6 +104,7 @@ function createMockConversationsService(
     deleteConversation: () => Promise.resolve(),
     setActiveConversation: () => {},
     replaceConversation: () => false,
+    applyPinState: () => false,
     updateConversationUnreadCount: () => {},
     updateConversationReadStatus: () => {},
     clearError: () => {

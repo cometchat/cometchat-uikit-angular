@@ -5,6 +5,7 @@ import {CommonModule} from '@angular/common';
 import {CometChat} from '@cometchat/chat-sdk-javascript';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
 import {COMETCHAT_GLOBAL_CONFIG, GlobalConfig} from '../../services/global-config.service';
+import { OfflineHubService } from '../../services/offline-hub.service';
 
 import {CometChatAvatarComponent} from '../base-elements/cometchat-avatar/cometchat-avatar.component';
 import {CometChatDateComponent} from '../base-elements/cometchat-date/cometchat-date.component';
@@ -23,7 +24,7 @@ import {stripRichTextFormatting} from '../../utils/util';
 import {getMediaCaption} from '../../utils/message-metadata-utils';
 import {getMediaPreview, isMediaPreviewType} from '../../utils/message-preview-utils';
 import {CometChatUIKitConstants} from '../../constants';
-import {getConversationAvatarImage, getConversationAvatarName, getConversationUserStatus, getConversationGroupType, getReceiptStatus, isURL, hasMarkdownLink, getConversationAccessibleLabel,} from './cometchat-conversation-item.utils';
+import {getConversationAvatarImage, getConversationAvatarName, getConversationUserStatus, getConversationGroupType, getReceiptStatus, isPreviewSendFailed, isURL, hasMarkdownLink, getConversationAccessibleLabel,} from './cometchat-conversation-item.utils';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 import {convertMarkdownToHtml} from '../cometchat-text-bubble/cometchat-text-bubble.utils';
 import {getAgentMessageSubtitleText} from '../../utils/agent-message-utils';
@@ -69,7 +70,8 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   set textFormatters(value: CometChatTextFormatter[]) { this._textFormatters.set(value); this.textFormattersExplicitlySet.set(true); }
   get textFormatters(): CometChatTextFormatter[] { return this._textFormatters(); }
   effectiveHideReceipts = computed(() => { if (this.hideReceiptsExplicitlySet()) return this._hideReceipts(); return this.globalConfig?.hideReceipts ?? false; });
-  effectiveHideUserStatus = computed(() => { if (this.hideUserStatusExplicitlySet()) return this._hideUserStatus(); return this.globalConfig?.hideUserStatus ?? false; });
+  private readonly presenceHidden = inject(OfflineHubService).presenceHidden;
+  effectiveHideUserStatus = computed(() => { if (this.presenceHidden()) return true; if (this.hideUserStatusExplicitlySet()) return this._hideUserStatus(); return this.globalConfig?.hideUserStatus ?? false; });
   effectiveHideGroupType = computed(() => { if (this.hideGroupTypeExplicitlySet()) return this._hideGroupType(); return this.globalConfig?.hideGroupType ?? false; });
 
   effectiveDisableDefaultContextMenu = computed(() => { if (this.disableDefaultContextMenuExplicitlySet()) return this._disableDefaultContextMenu(); return this.globalConfig?.disableDefaultContextMenu ?? true; });
@@ -179,6 +181,11 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
   get receiptStatus(): 'wait' | 'sent' | 'delivered' | 'read' | null {
     if (this.isAgentConversation) return null;
     return getReceiptStatus(this.lastMessage, this.isLastMessageByMe);
+  }
+  /** Offline support only: the own last message failed to send (the preview shows the error mark). */
+  get previewSendFailed(): boolean {
+    if (this.isAgentConversation) return false;
+    return isPreviewSendFailed(this.lastMessage, this.isLastMessageByMe);
   }
   get subtitleText(): string {
     // Agent chat: always show "click to start conversation" regardless of last message
@@ -452,7 +459,12 @@ export class CometChatConversationItemComponent implements OnInit, OnDestroy {
     };
   }
   get accessibleLabel(): string {
-    const label = getConversationAccessibleLabel(this.conversationWith, this.subtitleText, this.unreadCount);
+    let label = getConversationAccessibleLabel(this.conversationWith, this.subtitleText, this.unreadCount);
+    // The failed mark of an own unsent preview is aria-hidden too (Android announces it: the
+    // receipt's error description), so the failed state reaches a screen reader here.
+    if (this.previewSendFailed) {
+      label = `${label}, ${CometChatLocalize.getLocalizedString('accessibility_message_failed')}`;
+    }
     // The pin marker itself is aria-hidden, so the state has to reach a screen
     // reader through the row's own label — otherwise pinned and unpinned rows
     // are indistinguishable without sight.

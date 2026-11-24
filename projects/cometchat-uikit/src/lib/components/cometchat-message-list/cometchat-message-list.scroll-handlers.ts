@@ -5,6 +5,7 @@
 
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../../utils/CometChatLogger';
+import { sdkConnected } from '../../utils/offline/offline-gate';
 import { highlightAndScrollToElement as highlightAndScrollToElementUtil } from './cometchat-message-list.scroll-utils';
 
 export interface ScrollHandlerContext {
@@ -45,8 +46,37 @@ export interface ScrollHandlerContext {
   announceLoadingMore: () => void;
 }
 
+/**
+ * Whether this direction may still load more. Offline a read past the saved
+ * messages says no more only for now: just an empty server page, online, ends
+ * the list (UIK-READ-03), so the next scroll or the footer's tap reads again.
+ */
+function mayLoadMore(ctx: ScrollHandlerContext, hasMore: boolean): boolean {
+  return hasMore || ctx.messageListService.offlineFooter?.() === 'connect_to_load_more';
+}
+
+/**
+ * Offline, the "Connect to load more" footer shows at the top and the last
+ * older read found nothing cached either: a scroll there reads nothing more
+ * until the connection is back (the footer is retryable), so it does not issue
+ * one refused older read per scroll. Older cached pages still load, and the
+ * footer's tap still reads. With offline off the footer never shows.
+ */
+function waitsForConnection(ctx: ScrollHandlerContext): boolean {
+  const service = ctx.messageListService;
+  return (
+    service?.offlineFooter?.() === 'connect_to_load_more' &&
+    service.offlinePreviousExhausted === true &&
+    !service.offlineFooterRetryable?.() &&
+    !sdkConnected()
+  );
+}
+
 export async function handleScrollToTopImpl(ctx: ScrollHandlerContext): Promise<void> {
   if (ctx.isFetchingPrevious()) { return; }
+  if (waitsForConnection(ctx)) {
+    return;
+  }
   ctx.isFetchingPrevious.set(true);
   const container = ctx.listContainer?.nativeElement;
   const scrollHeightBefore = container?.scrollHeight || 0;
@@ -58,7 +88,7 @@ export async function handleScrollToTopImpl(ctx: ScrollHandlerContext): Promise<
   try {
     const hasMore = await ctx.messageListService.fetchPreviousMessages();
     if (ctx.messageListService.getFetchGeneration?.() !== generation) return;
-    ctx.hasMorePrevious.set(hasMore);
+    ctx.hasMorePrevious.set(mayLoadMore(ctx, hasMore));
     if (container) {
       requestAnimationFrame(() => {
         const scrollHeightAfter = container.scrollHeight;
@@ -84,7 +114,7 @@ export function handleScrollToBottomImpl(ctx: ScrollHandlerContext): void {
     .then((hasMore: boolean) => {
       ctx.isFetchingNext.set(false);
       if (ctx.messageListService.getFetchGeneration?.() !== generation) return;
-      ctx.hasMoreNext.set(hasMore);
+      ctx.hasMoreNext.set(mayLoadMore(ctx, hasMore));
       if (container) { requestAnimationFrame(() => { container.scrollTop = scrollTopBefore; }); }
     })
     .catch((error: unknown) => {
@@ -217,6 +247,9 @@ export function scrollToBottomWithRetryImpl(ctx: ScrollHandlerContext, retries: 
   if (retries > 0) setTimeout(() => scrollToBottomWithRetryImpl(ctx, retries - 1), 100);
 }
 
+/** Paging flags from before a jump still in flight, per list, so overlapping jumps restore the first ones. */
+const flagsBeforeJump = new WeakMap<object, { previous: boolean; next: boolean; pending: number }>();
+
 export function scrollToMessageImpl(ctx: ScrollHandlerContext, messageId: string | number): void {
   if (!ctx.listContainer?.nativeElement) { return; }
   const messageElement = ctx.listContainer.nativeElement.querySelector(`[data-message-id="${messageId}"]`);
@@ -225,15 +258,31 @@ export function scrollToMessageImpl(ctx: ScrollHandlerContext, messageId: string
   } else {
     const numericId = typeof messageId === 'string' ? parseInt(messageId, 10) : messageId;
     if (isNaN(numericId)) return;
+    const flags = flagsBeforeJump.get(ctx) ?? { previous: ctx.hasMorePrevious(), next: ctx.hasMoreNext(), pending: 0 };
+    flags.pending++;
+    flagsBeforeJump.set(ctx, flags);
+    const generation = ctx.messageListService.getFetchGeneration?.();
     ctx.hasMorePrevious.set(false);
     ctx.hasMoreNext.set(false);
     ctx.messageListService.fetchMessagesAroundId(numericId)
       .then(() => {
         ctx.cdr.markForCheck();
+        if (generation !== undefined && ctx.messageListService.getFetchGeneration?.() === generation) {
+          // The rows were kept (ENG-57322: offline, the target could not be read): paging
+          // goes on as before the jump, and there is nothing to scroll to.
+          if (flags.pending === 1) {
+            ctx.hasMorePrevious.set(flags.previous);
+            ctx.hasMoreNext.set(flags.next);
+          }
+          return;
+        }
         scrollToMessageWithRetryImpl(ctx, messageId, 10);
       })
       .catch((error: unknown) => {
         CometChatLogger.error('CometChatMessageList', 'Error fetching messages around ID for scroll:', error);
+      })
+      .finally(() => {
+        if (--flags.pending === 0) flagsBeforeJump.delete(ctx);
       });
   }
 }

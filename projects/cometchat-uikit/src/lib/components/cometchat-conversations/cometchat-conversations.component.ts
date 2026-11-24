@@ -1,4 +1,6 @@
 
+import {isOfflineOn} from '../../utils/offline/offline-gate';
+import {contractMessageState, ContractMessageState} from '../../utils/state-contract';
 import { Component, ChangeDetectorRef, Input, Output, EventEmitter, TemplateRef, ViewChild, ContentChild, ChangeDetectionStrategy, OnInit, OnDestroy, signal, computed, Signal, inject, ElementRef, booleanAttribute, Optional, DestroyRef } from '@angular/core';
 import { safeEffect } from '../../utils/safe-effect';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -37,7 +39,23 @@ import { CalendarObject } from '../../resources/CometChatLocalize/localization.i
 import { ConversationSlots } from '../../interfaces/conversation-slots.interface';
 import { SelectionState } from '../../modals/SelectionState';
 import { CometChatPinSaveEvents } from '../../events/CometChatPinSaveEvents';
+import { OfflineHubService } from '../../services/offline-hub.service';
+import { OfflineNotice } from '../../utils/offline/offline-hub';
+import { offlineNoticeText } from '../../utils/offline/notices';
 export type { SelectionState } from '../../modals/SelectionState';
+
+
+/**
+ * The id of a conversation's user or group, from a real model or from a plain row the device
+ * store rebuilt (`{ uid }` / `{ guid }`, no getters).
+ */
+function peerIdOf(peer: CometChat.User | CometChat.Group | null | undefined): string {
+  const p = peer as unknown as { getGuid?: () => string; getUid?: () => string; guid?: string; uid?: string } | null;
+  if (!p) return '';
+  if (typeof p.getGuid === 'function') return p.getGuid();
+  if (typeof p.getUid === 'function') return p.getUid();
+  return p.guid ?? p.uid ?? '';
+}
 
 @Component({
   selector: 'cometchat-conversations',
@@ -60,6 +78,13 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   private toast = inject(CometChatToastService, { optional: true });
   private pinSave = inject(PinSaveService, { optional: true });
   private conversationsService = inject(ConversationsService);
+  /** @internal Offline (D84 rule 7): a list with a search keyword that needs the server says "Connect to search". */
+  get offlineConnectToSearch(): boolean { return this.conversationsService.connectToSearch?.() === true; }
+  /** @internal Offline (D84 rule 3): nothing saved and no connection says "Connect to load chats". */
+  get offlineConnectToLoad(): boolean { return this.conversationsService.connectToLoad?.() === true; }
+  private offlineHubService = inject(OfflineHubService);
+  /** While mounted, this list shows the cache-reset notices instead of the message list. */
+  private releaseOfflineNotices = this.offlineHubService.conversationListMounted();
   private templatesService = inject(CometChatTemplatesService);
   private chatStateService = inject(ChatStateService);
   private formatterConfigService = inject(FormatterConfigService);
@@ -84,6 +109,12 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   /** Hides the Pin conversation entry from the row menu. */
   @Input({ transform: booleanAttribute }) hidePinConversation = false;
   @Input({ transform: booleanAttribute }) hideDeleteConversation = false;
+  /**
+   * Offline support only: hide the notice shown when the SDK's offline cache
+   * was reset and unsent messages were or may have been lost. Has no effect
+   * while offline support is off.
+   */
+  @Input({ transform: booleanAttribute }) hideOfflineNotices = false;
   @Input({ transform: booleanAttribute })
   set hideUserStatus(value: boolean) { this._hideUserStatus.set(value); this.hideUserStatusExplicitlySet.set(true); }
   get hideUserStatus(): boolean { return this._hideUserStatus(); }
@@ -195,6 +226,9 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
     safeEffect(() => { const ti = this.typingIndicators(); const currentSize = ti?.size ?? 0; if (currentSize > this.previousTypingSize && currentSize > 0) { const e = ti.entries().next().value; if (e) { const s = (e[1] as CometChat.TypingIndicator).getSender(); if (s) this.announceTyping(s.getName()); } } this.previousTypingSize = currentSize; });
 
     safeEffect(() => { const e = this.errorState(); if (e && !this.effectiveHideError()) this.error.emit(e as CometChat.CometChatException); });
+    // Offline (D83): a first-page load that failed while conversations are on screen keeps them and
+    // reaches `error` once. The service never emits this with offline off.
+    this.conversationsService.keptRowsError$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(e => this.error.emit(e as CometChat.CometChatException));
 
     safeEffect(() => { if (this.showDeleteConfirmDialog() && this.dialogOverlay?.nativeElement) setTimeout(() => this.dialogOverlay?.nativeElement?.focus(), 0); });
 
@@ -227,6 +261,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
     }
   }
   ngOnDestroy(): void {
+    this.releaseOfflineNotices();
     try {
       if (this.typingAnnouncementTimeout) {
         clearTimeout(this.typingAnnouncementTimeout);
@@ -236,6 +271,13 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
       CometChatLogger.error('CometChatConversations', 'Error in ngOnDestroy:', error);
     }
   }
+  /** Offline support: cache-reset notices (unsent messages lost or maybe lost). */
+  get visibleOfflineNotices(): OfflineNotice[] {
+    if (this.hideOfflineNotices) return [];
+    return this.offlineHubService.notices().filter(n => n.kind === 'unsent_messages_lost' || n.kind === 'unsent_messages_maybe_lost');
+  }
+  offlineNoticeText(notice: OfflineNotice): string { return offlineNoticeText(notice); }
+  dismissOfflineNotice(notice: OfflineNotice): void { this.offlineHubService.dismissNotice(notice); }
   private async initializeLoggedInUser(): Promise<void> { try { this.loggedInUser = await CometChat.getLoggedinUser(); } catch (error) { CometChatLogger.error('CometChatConversations', 'Error getting logged-in user:', error); } }
   private initializeFormatters(): void { const ef = this.effectiveTextFormatters(); this.activeFormatters = (ef?.length > 0) ? [...ef] : this.formatterConfigService.getDefaultFormatters(); this.configureFormattersWithUser(); }
   private configureFormattersWithUser(): void { if (!this.loggedInUser) return; this.activeFormatters = this.formatterConfigService.getFormattersWithContext(this.loggedInUser, undefined); }
@@ -247,6 +289,15 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   }
   handleScrollToTop(): void { this.scrollToTop.emit(); }
   handleScrollToBottom(): void { this.scrollToBottom.emit(); }
+  /** State-contract identifiers (data-cc-*): no message text, never read by screen readers. */
+  contractWith(conversation: CometChat.Conversation): string {
+    const peer: any = conversation.getConversationWith?.();
+    return `${conversation.getConversationType?.()}:${peer?.getUid?.() ?? peer?.getGuid?.() ?? ''}`;
+  }
+  contractPreviewState(conversation: CometChat.Conversation): ContractMessageState | '' {
+    const last = conversation.getLastMessage?.() as CometChat.BaseMessage | undefined;
+    return last ? contractMessageState(last) : '';
+  }
   handleConversationClick(conversation: CometChat.Conversation): void {
     if (this.selectionMode !== SelectionMode.none) { this.handleSelection(conversation); this.announceSelectionCount(); return; }
     // ENG-35029: Guard against clicks while the conversation list is still loading.
@@ -307,7 +358,7 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   handleDeleteConversationClick(conversation: CometChat.Conversation): void { this.conversationToDelete.set(conversation); this.showDeleteConfirmDialog.set(true); }
   async handleDeleteConfirm(): Promise<void> {
     const conv = this.conversationToDelete(); if (!conv) return;
-    try { const cw = conv.getConversationWith(); const id = cw instanceof CometChat.User ? cw.getUid() : cw.getGuid(); const type = cw instanceof CometChat.User ? 'user' : 'group'; await this.conversationsService.deleteConversation(id, type); this.announceConversationDeleted(); }
+    try { const cw = conv.getConversationWith(); const id = peerIdOf(cw); const type = conv.getConversationType() === 'group' || cw instanceof CometChat.Group ? 'group' : 'user'; await this.conversationsService.deleteConversation(id, type); this.announceConversationDeleted(); }
     catch (error) { this.error.emit(error as CometChat.CometChatException); } finally { this.showDeleteConfirmDialog.set(false); this.conversationToDelete.set(null); }
   }
   handleDeleteCancel(): void { this.showDeleteConfirmDialog.set(false); this.conversationToDelete.set(null); }
@@ -610,10 +661,25 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   private isMessageFromLoggedInUser(message: CometChat.BaseMessage): boolean { if (!this.loggedInUser) return false; const s = message.getSender(); return s?.getUid() === this.loggedInUser.getUid(); }
   private playMessageSound(): void { try { this.lastSoundPlayedAt = Date.now(); CometChatSoundManager.play('incomingMessage', this.effectiveCustomSoundForMessages() || null); } catch (error) { CometChatLogger.error('CometChatConversations', 'Error playing sound:', error); } }
 
+  /**
+   * The id of the user or group a conversation is with.
+   *
+   * A row rebuilt from the device store can carry a plain `{ uid }` / `{ guid }` object instead
+   * of a `User` / `Group`: it is not `instanceof CometChat.User`, and `getGuid()` is then not a
+   * function (ENG-57814). This is read while the list renders - `trackBy` calls it for every row -
+   * so a throw here failed the whole list. Read the id either way.
+   */
   getConversationId(conversation: CometChat.Conversation): string {
-    const cw = conversation.getConversationWith(); return cw instanceof CometChat.User ? cw.getUid() : cw.getGuid(); }
+    return peerIdOf(conversation.getConversationWith()); }
 
-  getTypingIndicator(conversation: CometChat.Conversation): CometChat.TypingIndicator | null { const ti = this.typingIndicators(); if (!ti) return null; const cw = conversation.getConversationWith(); const id = cw instanceof CometChat.User ? cw.getUid() : cw.getGuid(); return ti.get(id) || null; }
+  /** The name of the user or group a conversation is with, or '' when the row carries none. */
+  getConversationName(conversation: CometChat.Conversation): string {
+    const cw = conversation.getConversationWith() as unknown as { getName?: () => string; name?: string } | null;
+    if (!cw) return '';
+    if (typeof cw.getName === 'function') return cw.getName() ?? '';
+    return cw.name ?? ''; }
+
+  getTypingIndicator(conversation: CometChat.Conversation): CometChat.TypingIndicator | null { const ti = this.typingIndicators(); if (!ti) return null; return ti.get(this.getConversationId(conversation)) || null; }
   getDefaultDateTimeFormat(): CalendarObject {
     return {
       // Clock and field order follow the locale; hard-coding 'hh:mm A' and
@@ -654,15 +720,16 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
       catch (e) { CometChatLogger.error('CometChatConversations', 'Error handling message read event:', e); }
     });
     CometChatConversationEvents.ccUpdateConversation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((conv: CometChat.Conversation) => {
-      try { const cw = conv.getConversationWith(); const id = cw instanceof CometChat.User ? cw.getUid() : (cw as CometChat.Group).getGuid(); this.conversationsService.updateConversationUnreadCount(id, conv.getUnreadMessageCount() ?? 0); }
+      try { const id = peerIdOf(conv.getConversationWith()); this.conversationsService.updateConversationUnreadCount(id, conv.getUnreadMessageCount() ?? 0); }
       catch (e) { CometChatLogger.error('CometChatConversations', 'Error handling ccUpdateConversation event:', e); }
     });
   }
   /**
    * A conversation pin is private to the user but syncs across their devices,
    * and an admin can pin one globally. Either way the change arrives here rather
-   * than through this component, so the row has to be swapped in — its own
-   * `isPinned()` is otherwise stale until the next fetch.
+   * than through this component, so the row takes the event's pin state — its own
+   * `isPinned()` is otherwise stale until the next fetch. Only the pin state: the
+   * event's conversation is partial (no name, avatar or last message).
    *
    * Subscribes to the merged views, so this also covers a pin made from another
    * surface in the same app.
@@ -670,7 +737,11 @@ export class CometChatConversationsComponent implements OnInit, OnDestroy {
   private subscribeToConversationPinEvents(): void {
     const swap = ({ conversation }: { conversation: CometChat.Conversation }) => {
       if (!conversation) return;
-      this.conversationsService.replaceConversation(conversation);
+      if (isOfflineOn()) {
+        void this.conversationsService.applyPinEvent(conversation).then(() => this.cdr?.markForCheck());
+        return;
+      }
+      this.conversationsService.applyPinState(conversation);
       this.cdr?.markForCheck();
     };
     CometChatPinSaveEvents.conversationPinned$

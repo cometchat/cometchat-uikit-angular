@@ -36,6 +36,7 @@ import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-l
 import { CometChatOption } from '../../modals/CometChatOption';
 import { Placement } from '../../Enums/Enums';
 import { COMETCHAT_GLOBAL_CONFIG, GlobalConfig } from '../../services/global-config.service';
+import { OfflineHubService } from '../../services/offline-hub.service';
 
 /**
  * CometChatGroupMemberItem is a standalone Angular component that renders
@@ -88,7 +89,9 @@ export class CometChatGroupMemberItemComponent {
   set disableDefaultContextMenu(value: boolean) { this._disableDefaultContextMenu.set(value); this.disableDefaultContextMenuExplicitlySet.set(true); }
   get disableDefaultContextMenu(): boolean { return this._disableDefaultContextMenu(); }
 
+  private readonly presenceHidden = inject(OfflineHubService).presenceHidden;
   effectiveHideUserStatus = computed(() => {
+    if (this.presenceHidden()) return true;
     if (this.hideUserStatusExplicitlySet()) return this._hideUserStatus();
     if (this.globalConfig?.hideUserStatus !== undefined) return this.globalConfig.hideUserStatus;
     return false;

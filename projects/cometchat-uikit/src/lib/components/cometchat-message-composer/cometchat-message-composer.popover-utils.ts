@@ -4,6 +4,7 @@ import {CometChatMessageEvents} from '../../events/CometChatMessageEvents';
 import {MessageStatus} from '../../Enums/Enums';
 import {CometChatUIKitUtility} from '../../CometChatUIKitUtility';
 import {CometChatUIKitConstants} from '../../constants';
+import {isOfflineOn} from '../../utils/offline/offline-gate';
 import {markMessageFailed} from '../../utils/message-metadata-utils';
 
 export function syncLegacyPopoverSignalsImpl(ctx: any): void {
@@ -106,6 +107,20 @@ export async function sendStickerMessageImpl(
     message: pendingStickerMessage,
     status: MessageStatus.inprogress,
   });
+  if (isOfflineOn()) {
+    // Offline path: the hub draws the row and emits the public events.
+    const result = await ctx.messageComposerService.sendOffline(pendingStickerMessage, 'custom');
+    if (result.state !== 'failed') {
+      if (quotedMessage) {
+        ctx.exitReplyMode();
+        if (result.state === 'sent') CometChatMessageEvents.ccReplyToMessage.next({ message: result.message, status: MessageStatus.success });
+      }
+      ctx.sendButtonClick.emit(result.message);
+      ctx.announceMessageSent();
+      ctx.playOutgoingMessageSound();
+    }
+    return;
+  }
   try {
     const sentMessage = await ctx.messageComposerService.sendStickerMessage(
       receiver,

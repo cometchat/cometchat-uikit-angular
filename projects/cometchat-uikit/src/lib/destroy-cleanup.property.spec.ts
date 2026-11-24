@@ -129,6 +129,12 @@ function analyseSource(src: string, fileLabel: string): SubscribeViolation[] {
     // SAFE: pushed into an array (this.subscriptions.push(...)
     if (/^[\w$.]+\.push\s*\(/.test(stmt)) continue;
 
+    // SAFE: added to a Subscription that its owner unsubscribes (subscriptions.add(...))
+    if (/^[\w$.]+\.add\s*\(/.test(stmt)) continue;
+
+    // SAFE: kept in a class field (private readonly sub = x$.subscribe(...))
+    if (/^(?:(?:private|protected|public|readonly|static)\s+)+[\w$]+(?:\s*:[^=]+)?\s*=(?!=)/.test(stmt)) continue;
+
     // SAFE: returned to the caller, who owns the teardown (return x.subscribe( / return [ ... ])
     if (/^return\b/.test(stmt)) continue;
 
@@ -186,12 +192,14 @@ describe('Property 5: No bare Observable subscriptions without teardown', () => 
     const safe = analyseSource(
       [
         'class B {',
+        '  private readonly kept = i$.subscribe();',
         '  init() {',
         '    a$.pipe(takeUntil(this.destroy$)).subscribe();',
         '    this.sub = b$.subscribe();',
         '    ctx.sub = c$.subscribe();',
         '    const s = d$.subscribe();',
         '    this.subs.push(e$.subscribe());',
+        '    subscription.add(h$.subscribe());',
         '    return [f$.subscribe(), g$.subscribe()];',
         '  }',
         '}',

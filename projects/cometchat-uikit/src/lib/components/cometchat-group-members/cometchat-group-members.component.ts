@@ -19,6 +19,7 @@ import { CometChatErrorBoundaryComponent } from '../base-elements/cometchat-erro
 import { TranslatePipe } from '../../resources/CometChatLocalize/translate.pipe';
 import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 import { SelectionMode, States } from '../../Enums/Enums';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
 import { CometChatLogger } from '../../utils/CometChatLogger';
 import { CometChatOption } from '../../modals/CometChatOption';
 import { SelectionState } from '../../modals/SelectionState';
@@ -44,6 +45,18 @@ export class CometChatGroupMembersComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
   protected groupMembersService = inject(GroupMembersService);
+  /** @internal Offline (D84 rule 7): a keyword search that needs the server says "Connect to search". */
+  get offlineConnectToSearch(): boolean { return this.groupMembersService.connectToSearch?.() === true; }
+  /** @internal Offline (D84 rule 3): nothing saved and no connection says "Connect to load ...". */
+  get offlineConnectToLoad(): boolean { return this.groupMembersService.connectToLoad?.() === true; }
+  /**
+   * The error the list shows. With offline on (D83) the error view shows only while the list
+   * has nothing on screen; a failed load over rows reaches `error` and leaves the rows alone.
+   */
+  get listError(): Error | null {
+    if (isOfflineOn() && this.groupMembersService.fetchState() !== States.error) return null;
+    return this.lastError;
+  }
   private templatesService = inject(CometChatTemplatesService);
   private globalConfig: Partial<GlobalConfig> | null = inject(COMETCHAT_GLOBAL_CONFIG, { optional: true });
   @ViewChild('paginatedList') paginatedList?: CometChatPaginatedListComponent<CometChat.GroupMember>;

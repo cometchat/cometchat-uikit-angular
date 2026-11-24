@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CometChatSearchMessagesListComponent } from './cometchat-search-messages-list.component';
 import { SearchMessagesService } from '../../../services/search-messages.service';
 import { signal } from '@angular/core';
+import { Subject } from 'rxjs';
 
 /**
  * Mock SearchMessagesService that provides the signals the component needs.
@@ -10,6 +11,8 @@ import { signal } from '@angular/core';
 class MockSearchMessagesService {
   messages = signal<any[]>([]);
   fetchState = signal('loaded');
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   hasMore = signal(false);
   searchKeyword = signal('');
   activeFilters = signal<any[]>([]);

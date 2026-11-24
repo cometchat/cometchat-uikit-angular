@@ -1,5 +1,7 @@
 
-import {Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, OnChanges, AfterViewInit, SimpleChanges, signal, computed, Signal, inject, DestroyRef, booleanAttribute, Injector,} from '@angular/core';
+import {contractMessageState, contractServerId, ContractMessageState} from '../../utils/state-contract';
+import {FrameProbeReporter} from '../../utils/offline/frame-probe';
+import {Component, Input, Output, EventEmitter, TemplateRef, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, OnChanges, AfterViewInit, AfterViewChecked, SimpleChanges, signal, computed, Signal, inject, DestroyRef, booleanAttribute, Injector, untracked,} from '@angular/core';
 import {
   CometChatPinSaveConfirmDialogComponent,
   PinSaveConfirmMessageAction,
@@ -48,22 +50,26 @@ import {showEmojiKeyboardForMessageImpl, calculateEmojiKeyboardPositionImpl, onE
 import {showDeleteConfirmationImpl, handleDeleteConfirmImpl, handleDeleteCancelImpl, getDeleteDialogTitleImpl, getDeleteDialogSubtitleImpl, getDeleteDialogConfirmTextImpl, getDeleteDialogCancelTextImpl, showFlagConfirmationImpl, handleFlagConfirmImpl, handleFlagCancelImpl} from './cometchat-message-list.delete-handlers';
 import {translateMessageImpl, getTranslatedTextImpl, isMessageTranslatingImpl, isMessageTranslatedImpl, getDefaultTranslationLanguageImpl, setPreferredTranslationLanguageImpl} from './cometchat-message-list.translate-handlers';
 import {handleConversationChangeImpl, handleParentMessageIdChangeImpl, subscribeToChatStateServiceImpl, scheduleDeferredConversationChangeImpl, handleUserChangeImpl, handleGroupChangeImpl, scrollToFirstUnreadOrBottomImpl} from './cometchat-message-list.conversation-handlers';
-import {handleNewMessagesImpl, shouldPlaySoundImpl, playMessageSoundImpl, computeMessagesWithDateSeparatorsImpl, getReactionFingerprintImpl, getDateStringImpl} from './cometchat-message-list.message-state';
+import {handleNewMessagesImpl, shouldPlaySoundImpl, playMessageSoundImpl, computeMessagesWithDateSeparatorsImpl, getReactionFingerprintImpl, getDateStringImpl, trackKeyFor} from './cometchat-message-list.message-state';
 import {markInitialMessagesAsReadImpl, handleRealtimeMessageReceiptImpl, markMessagesReadOnScrollToBottomImpl, markAsReadWithRetryImpl} from './cometchat-message-list.read-handlers';
 import {initializeServiceImpl, publishActiveChatChangedImpl, setupIntersectionObserversImpl} from './cometchat-message-list.init-utils';
 import {handleOptionClickImpl} from './cometchat-message-list.option-click';
+import {OfflineHubService} from '../../services/offline-hub.service';
+import {OfflineNotice} from '../../utils/offline/offline-hub';
+import {offlineNoticeText} from '../../utils/offline/notices';
+import {discardOfflineMessageImpl, retryOfflineMessageImpl} from './cometchat-message-list.offline-actions';
+import { attachRetryOnScroll } from './cometchat-message-list.offline-scroll';
 import {announceNewMessageImpl, announceMessageSentImpl, announceMessageFailedImpl, announceMessageDeletedImpl, announceMessageEditedImpl, announceTypingImpl, announceLoadingMoreImpl} from './cometchat-message-list.announce-utils';
 import {onEditMessageImpl, onReplyMessageImpl, onReplyPreviewClickImpl, onMessageInfoImpl, closeMessageInfoImpl, copyMessageToClipboardImpl, handleMessagePrivatelyImpl, markMessageAsUnreadImpl} from './cometchat-message-list.interaction-utils';
 import {handleKeydownImpl, setFocusedIndexImpl, getMessageTabIndexImpl} from './cometchat-message-list.keyboard-utils';
-import {setupMessageListenerImpl, ngOnInitImpl, ngOnChangesImpl, ngAfterViewInitImpl, ngOnDestroyImpl, initializeLoggedInUserImpl, initializeFormattersImpl, configureFormattersWithUserImpl} from './cometchat-message-list.lifecycle-utils';
+import {ngOnInitImpl, ngOnChangesImpl, ngAfterViewInitImpl, ngOnDestroyImpl, initializeLoggedInUserImpl, initializeFormattersImpl, configureFormattersWithUserImpl} from './cometchat-message-list.lifecycle-utils';
 import {setupScrollListenersImpl, getMessageAlignmentImpl, isCallForCurrentConversationImpl, updateListStateImpl, showInlineToastImpl, notifyMessagesReadImpl, handleLifecycleErrorImpl, handleServiceErrorImpl, onBubbleErrorImpl, handleReceiptErrorImpl, shouldShowSmartRepliesForMessageImpl} from './cometchat-message-list.helper-utils';
 
-import {CometChatSoundManager} from '../../resources/CometChatSoundManager/CometChatSoundManager';
 import {CometChatLocalize} from '../../resources/CometChatLocalize/cometchat-localize';
 import {TranslatePipe} from '../../resources/CometChatLocalize/translate.pipe';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 
-import {States, MessageListAlignment, MessageBubbleAlignment, Placement, PanelAlignment,} from '../../Enums/Enums';
+import {States, MessageListAlignment, MessageBubbleAlignment, Placement,} from '../../Enums/Enums';
 import {CalendarObject} from '../../resources/CometChatLocalize/localization.interfaces';
 import {CometChatTextFormatter} from '../../formatters/cometchat-text-formatter';
 import {CometChatUIKitConstants} from '../../constants';
@@ -111,9 +117,10 @@ export interface MessageListItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessageListService],
 })
-export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
+export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit, AfterViewChecked {
   readonly shimmerList = CometChatUIKitConstants.shimmerList;
   private messageListService = inject(MessageListService);
+  private offlineHubService = inject(OfflineHubService);
   private chatStateService = inject(ChatStateService);
   private templatesService = inject(CometChatTemplatesService);
   private cdr = inject(ChangeDetectorRef);
@@ -200,6 +207,12 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   set hideReceipts(value: boolean) { this._hideReceipts.set(value); this.hideReceiptsExplicitlySet.set(true); }
   get hideReceipts(): boolean { return this._hideReceipts(); }
   @Input({ transform: booleanAttribute }) hideDateSeparator = false;
+  /**
+   * Offline support only: hide the notices the list shows about unsent
+   * messages (removed, not sent, queue full, cache reset). Has no effect while
+   * offline support is off, when no such notice is ever raised.
+   */
+  @Input({ transform: booleanAttribute }) hideOfflineNotices = false;
   @Input({ transform: booleanAttribute }) hideStickyDate = false;
   @Input({ transform: booleanAttribute })
   set hideAvatar(value: boolean) { this._hideAvatar.set(value); this.hideAvatarExplicitlySet.set(true); }
@@ -233,11 +246,11 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   @Input({ transform: booleanAttribute })
   set hideModerationView(value: boolean) { this._hideModerationView.set(value); this.hideModerationViewExplicitlySet.set(true); }
   get hideModerationView(): boolean { return this._hideModerationView(); }
-  @Input({ transform: booleanAttribute }) hideFlagRemarkField: boolean = false;
-  @Input({ transform: booleanAttribute }) hideFlagMessageOption: boolean = false;
-  @Input({ transform: booleanAttribute }) showMarkAsUnreadOption: boolean = true;
-  @Input({ transform: booleanAttribute }) startFromUnreadMessages: boolean = true;
-  @Input({ transform: booleanAttribute }) hideReplyOption: boolean = false;
+  @Input({ transform: booleanAttribute }) hideFlagRemarkField = false;
+  @Input({ transform: booleanAttribute }) hideFlagMessageOption = false;
+  @Input({ transform: booleanAttribute }) showMarkAsUnreadOption = true;
+  @Input({ transform: booleanAttribute }) startFromUnreadMessages = true;
+  @Input({ transform: booleanAttribute }) hideReplyOption = false;
   @Input({ transform: booleanAttribute }) disableInteraction = false;
   @Input() emptyView?: TemplateRef<any>;
   @Input() errorView?: TemplateRef<any>;
@@ -259,6 +272,7 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   @Input({ transform: booleanAttribute }) showSmartReplies = false;
   @Input() smartRepliesKeywords: string[] = ['what', 'when', 'why', 'who', 'where', 'how', '?'];
   @Input() smartRepliesDelayDuration = 10000;
+  // eslint-disable-next-line @angular-eslint/no-output-native -- public output, renaming it would break integrators
   @Output() error = new EventEmitter<CometChat.CometChatException>();
   @Output() threadRepliesClick = new EventEmitter<CometChat.BaseMessage>();
   @Output() reactionClick = new EventEmitter<{ reaction: CometChat.ReactionCount; message: CometChat.BaseMessage }>();
@@ -389,7 +403,6 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   readonly MessageListAlignment = MessageListAlignment;
   readonly MessageBubbleAlignment = MessageBubbleAlignment;
   readonly Placement = Placement;
-  private messageListenerId = `message_list_${Date.now()}`;
 
   constructor() {
     this.messages = this.messageListService.messages;
@@ -408,14 +421,34 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
         this.handleServiceError(error);
       }
     });
+    // Offline (D83): a first-page load that failed while messages are on screen keeps them (no error
+    // view) and reaches `error` once. The service never emits this with offline off.
+    this.messageListService.loadError$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(error => this.error.emit(error as CometChat.CometChatException));
     safeEffect(() => {
       this.updateListState();
     });
+    // Offline path: a send of this chat that turns failed is announced, since
+    // the row only changes its icon (a11y). The hub never emits with offline off.
+    this.offlineHubService.sendState$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
+      if (event.state !== 'failed' || !event.message) return;
+      const loggedInUid = this.loggedInUser?.getUid?.() ?? '';
+      if (!isMessageForCurrentConversationUtil(event.message, this.user || null, this.group || null, loggedInUid)) return;
+      // This list's thread level too, as `visibleOfflineNotices` does: a thread
+      // panel and the main list are both mounted on the same chat, so without
+      // it a failed reply was read out twice to a screen-reader user.
+      const level = Number(event.message.getParentMessageId?.() ?? 0) || 0;
+      if (level !== (Number(this.parentMessageId) || 0)) return;
+      this.liveAnnouncer.announce(CometChatLocalize.getLocalizedString('message_list_not_sent_tap_to_retry'), 'polite');
+    });
   }
-    private setupMessageListener(): void { setupMessageListenerImpl(this as any); }
   ngOnInit(): void { try { ngOnInitImpl(this as any); } catch (error) { this.handleLifecycleError(error, 'ngOnInit'); } }
   ngOnChanges(changes: SimpleChanges): void { try { ngOnChangesImpl(this as any, changes); } catch (error) { CometChatLogger.error('CometChatMessageList', 'Error in ngOnChanges:', error); } }
   ngAfterViewInit(): void { try { ngAfterViewInitImpl(this as any); } catch (error) { this.handleLifecycleError(error, 'ngAfterViewInit'); } }
+  /** Debug/source builds only: report committed rows to the installed frame probe. */
+  ngAfterViewChecked(): void { this.frameProbe.report(this.messages(), () => trackKeyFor(this)); }
+  private readonly frameProbe = new FrameProbeReporter('message-list');
   /** Set when the list is destroyed; pending scroll frames and retries check it and stop. */
   isDestroyed = false;
   ngOnDestroy(): void { this.isDestroyed = true; try { ngOnDestroyImpl(this as any); } catch (error) { CometChatLogger.error('CometChatMessageList', 'Error in ngOnDestroy:', error); } }
@@ -431,7 +464,25 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   private handleGroupChange(group: CometChat.Group): void { handleGroupChangeImpl(this as any, group); }
   private scrollToFirstUnreadOrBottom(): void { scrollToFirstUnreadOrBottomImpl(this as any); }
   private subscribeToMessageEvents(): void { subscribeToMessageEventsImpl(this as any); }
-  private subscribeToGroupEvents(): void { subscribeToGroupEventsImpl(this as any); }
+  /**
+   * Typed context, not `this as any`: a group event in the open group updates the
+   * list's group in place (the service's setGroup would clear the list) and adds
+   * the action row unless group actions are hidden.
+   */
+  private subscribeToGroupEvents(): void {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const list = this;
+    subscribeToGroupEventsImpl({
+      destroyRef: this.destroyRef,
+      cdr: this.cdr,
+      messageListService: this.messageListService,
+      get parentMessageId() { return list.parentMessageId ?? null; },
+      get group() { return list.group; },
+      get hideGroupActionMessages() { return list.hideGroupActionMessages; },
+      scrollToBottom: smooth => this.scrollToBottom(smooth),
+      setGroup: group => { this.group = group; },
+    });
+  }
   private subscribeToCallEvents(): void { subscribeToCallEventsImpl(this as any); }
   private subscribeToUIDialogEvents(): void { subscribeToUIDialogEventsImpl(this as any); }
   private isCallForCurrentConversation(call: CometChat.Call): boolean { return isCallForCurrentConversationImpl(this as any, call); }
@@ -455,6 +506,10 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   getEffectiveMessageDateFormat(): CalendarObject {
     return this.messageSentAtDateTimeFormat || this.getDefaultMessageDateFormat();
   }
+  /** State-contract identifiers (data-cc-*): no message text, never read by screen readers. */
+  contractId(message: CometChat.BaseMessage): string { return contractServerId(message); }
+  contractState(message: CometChat.BaseMessage): ContractMessageState { return contractMessageState(message); }
+  contractMine(message: CometChat.BaseMessage): boolean { return this.getMessageAlignment(message) === MessageBubbleAlignment.right; }
   getMessageAlignment(message: CometChat.BaseMessage): MessageBubbleAlignment { return getMessageAlignmentImpl(this as any, message); }
 
   /**
@@ -703,8 +758,24 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   onConversationStarterClick(starter: string): void { this.conversationStarterClick.emit(starter); this.hideConversationStarters.set(true); CometChatUIEvents.ccComposeMessage.next(starter); }
   onNewMessagesBannerClick(): void { this.scrollToBottom(); this.showNewMessagesBanner.set(false); this.newMessagesCount.set(0); }
   showDeleteConfirmation(message: CometChat.BaseMessage): void { showDeleteConfirmationImpl(this as any, message); }
-  async handleDeleteConfirm(): Promise<void> { return handleDeleteConfirmImpl(this as any); }
-  handleDeleteCancel(): void { handleDeleteCancelImpl(this as any); }
+  async handleDeleteConfirm(): Promise<void> {
+    const discard = this.offlineDiscardTarget;
+    if (discard && discard === this.messageToDelete()) {
+      // A second confirm while the discard runs is swallowed (Android: actionsInFlight); it must
+      // not fall through to a server delete of the unsent message (id 0).
+      if (this.offlineDiscardRunning) return;
+      this.offlineDiscardRunning = true;
+      try {
+        return await this.discardOfflineMessage(discard);
+      } finally {
+        this.offlineDiscardRunning = false;
+        if (this.offlineDiscardTarget === discard) this.offlineDiscardTarget = null;
+      }
+    }
+    this.offlineDiscardTarget = null;
+    return handleDeleteConfirmImpl(this as any);
+  }
+  handleDeleteCancel(): void { this.offlineDiscardTarget = null; handleDeleteCancelImpl(this as any); }
   getDeleteDialogTitle(): string { return getDeleteDialogTitleImpl(); }
   getDeleteDialogSubtitle(): string { return getDeleteDialogSubtitleImpl(); }
   getDeleteDialogConfirmText(): string { return getDeleteDialogConfirmTextImpl(); }
@@ -721,6 +792,131 @@ export class CometChatMessageListComponent implements OnInit, OnDestroy, OnChang
   handleMessagePrivately(message: CometChat.BaseMessage): void { handleMessagePrivatelyImpl(this as any, message); }
   handleOptionClick(option: ContextMenuItem, message: CometChat.BaseMessage): void { handleOptionClickImpl(this as any, option, message); }
   async markMessageAsUnread(message: CometChat.BaseMessage): Promise<void> { return markMessageAsUnreadImpl(this as any, message); }
+
+  // ── Offline support (ON path only) ──
+  /**
+   * After the SDK's catch-up sweep: one cumulative read receipt for the newest
+   * message of the open chat, if the user is at the bottom (README §3.6).
+   */
+  private readonly offlineSweepReceipt = this.offlineHubService.messageSync$
+    .pipe(takeUntilDestroyed())
+    .subscribe(event => {
+      if (event.gen !== this.offlineHubService.gen || !this.isAtBottom()) return;
+      const latest = this.getLatestReceiverMessage(this.messages());
+      if (latest && latest.getId() && !latest.getReadAt()) void this.messageListService.markAsRead(latest);
+    });
+  /**
+   * Offline (README §3.7): after a PARTIAL sweep the list may reset to the
+   * newest window. A reader at the bottom stays there; anyone scrolled up gets
+   * the existing scroll-to-bottom ("jump to latest") button instead of a jump.
+   */
+  private readonly offlineNewestWindowReset = (() => {
+    let seen = 0;
+    return safeEffect(() => {
+      const count = this.messageListService.newestWindowReset();
+      if (count === seen) return;
+      seen = count;
+      if (untracked(() => this.isAtBottom())) setTimeout(() => this.scrollToBottom(), 0);
+      else this.showScrollToBottom.set(true);
+    });
+  })();
+  /** Detaches the scroll-to-load listeners while a "Connect to load more" footer may load on scroll. */
+  private detachOfflineScrollRetry: (() => void) | null = null;
+  /**
+   * UIK-READ-03: once the connection is back, scrolling to the end the footer
+   * stands at loads, as tapping the footer does. The listeners exist only while
+   * the footer shows and the connection is back, so offline off adds none.
+   */
+  private readonly offlineRetryOnScroll = (() => {
+    const detach = () => {
+      this.detachOfflineScrollRetry?.();
+      this.detachOfflineScrollRetry = null;
+    };
+    this.destroyRef.onDestroy(detach);
+    return safeEffect(() => {
+      const active =
+        this.messageListService.offlineFooter() === 'connect_to_load_more' &&
+        this.messageListService.offlineFooterRetryable();
+      untracked(() => {
+        detach();
+        if (active) this.detachOfflineScrollRetry = attachRetryOnScroll(this as any);
+      });
+    });
+  })();
+  /** `connect_to_load_more` while an offline read could not go past the saved messages. */
+  get offlineFooter(): string { return this.messageListService.offlineFooter(); }
+  /** Offline (D84 rule 3): nothing on screen and no connection says "Connect to load messages", not an error with Retry. */
+  get offlineConnectToLoad(): boolean { return this.messageListService.offlineConnectToLoad?.() === true; }
+  /** The edge the "Connect to load more" row stands at: `previous` is the top of the list, `next` the bottom. */
+  get offlineFooterEdge(): 'previous' | 'next' { return this.messageListService.offlineRetryDirection(); }
+  /** A tap on the "Connect to load more" row. */
+  retryOfflineRead(): void { void this.readBlockedEdge(this.messageListService.offlineRetryDirection(), false); }
+  /**
+   * Offline (D84 rule 9): the connection is back, so the page behind each "Connect to load more"
+   * row loads once by itself, the older edge first. An edge whose direction is already reading
+   * stays as it is: its own read settles it.
+   */
+  private readonly offlineEdgeReload = (() => {
+    this.messageListService.edgeReload$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      const edges = this.messageListService.offlineBlockedEdges();
+      const generation = this.messageListService.getFetchGeneration();
+      void (async () => {
+        if (edges.previous) await this.readBlockedEdge('previous', true);
+        if (edges.next && this.messageListService.getFetchGeneration() === generation) await this.readBlockedEdge('next', true);
+      })();
+    });
+  })();
+  private async readBlockedEdge(direction: 'previous' | 'next', keepOther: boolean): Promise<void> {
+    const newer = direction === 'next';
+    // One read per direction at a time, shared with scrolling (Android: one `inProgress` for the list).
+    const fetching = newer ? this.isFetchingNext : this.isFetchingPrevious;
+    if (fetching()) return;
+    const wasEmpty = !this.hasMessages();
+    const generation = this.messageListService.getFetchGeneration();
+    fetching.set(true);
+    const hasMore = await this.messageListService.retryOfflineRead(keepOther ? direction : undefined);
+    fetching.set(false);
+    // The user opened another chat meanwhile: this answer is for the old one.
+    if (this.messageListService.getFetchGeneration() !== generation) return;
+    (newer ? this.hasMoreNext : this.hasMorePrevious).set(
+      hasMore || this.offlineFooter === 'connect_to_load_more'
+    );
+    if (wasEmpty) this.scrollToBottomAfterLoad();
+  }
+  /** Retry an own unsent message (user-invoked; taps while one runs are ignored). */
+  async retryOfflineMessage(message: CometChat.BaseMessage): Promise<void> { await retryOfflineMessageImpl(this as any, message); }
+  /** The unsent message the open delete dialog will discard (offline support only). */
+  private offlineDiscardTarget: CometChat.BaseMessage | null = null;
+  /** The discard of {@link offlineDiscardTarget} is under way (a double confirm runs it once). */
+  private offlineDiscardRunning = false;
+  /** Delete on an own unsent message: today's confirm dialog, then a device-only discard. */
+  requestOfflineDiscard(message: CometChat.BaseMessage): void {
+    this.offlineDiscardTarget = message;
+    this.showDeleteConfirmation(message);
+  }
+  /** Remove an own message that has not been sent, from this device (BEH-SEND-36/37). */
+  async discardOfflineMessage(message: CometChat.BaseMessage): Promise<void> { await discardOfflineMessageImpl(this as any, message); }
+  /** Notices this list shows: sends of this chat, and cache resets when no conversation list is mounted. */
+  get visibleOfflineNotices(): OfflineNotice[] {
+    if (this.hideOfflineNotices) return [];
+    const loggedInUid = this.loggedInUser?.getUid?.() ?? '';
+    return this.offlineHubService.notices().filter(notice => {
+      if (notice.kind === 'unsent_messages_lost' || notice.kind === 'unsent_messages_maybe_lost') return !this.offlineHubService.hasConversationList;
+      // Either the message the notice is about, or one of them when it covers
+      // several (the kill switch): both say which list it belongs to.
+      const about = notice.message ?? notice.scopeMessage;
+      if (!about) return true;
+      // This list's chat AND its thread level: a thread panel and the main list each show their own
+      // (Android: acceptsOfflineSendRow), so a send in the panel is not told twice.
+      const level = Number(about.getParentMessageId?.() ?? 0) || 0;
+      if (level !== (Number(this.parentMessageId) || 0)) return false;
+      return isMessageForCurrentConversationUtil(about, this.user || null, this.group || null, loggedInUid);
+    });
+  }
+  offlineNoticeText(notice: OfflineNotice): string { return offlineNoticeText(notice); }
+  canCopyOfflineNotice(notice: OfflineNotice): boolean { return notice.kind === 'unsent_message_removed' && notice.message?.getType?.() === 'text'; }
+  copyOfflineNotice(notice: OfflineNotice): void { if (notice.message) void this.copyMessageToClipboard(notice.message); this.offlineHubService.dismissNotice(notice); }
+  dismissOfflineNotice(notice: OfflineNotice): void { this.offlineHubService.dismissNotice(notice); }
   showEmojiKeyboardForMessage(message: CometChat.BaseMessage): void { showEmojiKeyboardForMessageImpl(this as any, message); }
   private calculateEmojiKeyboardPosition(message: CometChat.BaseMessage): void { calculateEmojiKeyboardPositionImpl(this as any, message); }
   async onEmojiSelected(emoji: string): Promise<void> { return onEmojiSelectedImpl(this as any, emoji); }

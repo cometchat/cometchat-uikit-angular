@@ -1459,3 +1459,29 @@ cometchat-confirm-dialog{
   border-width: var(--cometchat-conversations-sr-only-border-width, 0);
 }
 
+
+/* Offline support */
+.cometchat-conversations__offline-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--cometchat-spacing-2, 8px);
+  margin: var(--cometchat-margin-2, 8px) var(--cometchat-margin-3, 12px);
+  padding: var(--cometchat-padding-2, 8px) var(--cometchat-padding-3, 12px);
+  border-radius: var(--cometchat-radius-2, 8px);
+  background: var(--cometchat-conversations-offline-notice-background, var(--cometchat-background-color-02, #fafafa));
+  border: var(--cometchat-conversations-offline-notice-border, 1px solid var(--cometchat-border-color-light, #f5f5f5));
+  color: var(--cometchat-conversations-offline-notice-color, var(--cometchat-text-color-primary, #141414));
+  font: var(--cometchat-conversations-offline-notice-font, var(--cometchat-font-caption1-regular, 400 12px/14.4px 'Roboto', sans-serif));
+}
+.cometchat-conversations__offline-notice-text { flex: 1; }
+.cometchat-conversations__offline-notice-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--cometchat-icon-color-secondary, #a1a1a1);
+  padding: var(--cometchat-padding-1, 4px);
+}
+.cometchat-conversations__offline-notice-close:focus-visible {
+  outline: 2px solid var(--cometchat-primary-color, #6852d6);
+  outline-offset: 2px;
+}

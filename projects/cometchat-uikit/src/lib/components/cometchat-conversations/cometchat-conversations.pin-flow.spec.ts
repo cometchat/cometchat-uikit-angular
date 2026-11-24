@@ -29,7 +29,7 @@ vi.mock('../../resources/CometChatSoundManager/CometChatSoundManager', () => ({
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { signal, WritableSignal } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatConversationsComponent } from './cometchat-conversations.component';
@@ -104,6 +104,7 @@ function pinnedGroupConversation(guid: string): CometChat.Conversation {
 
 interface MockConversationsService {
   conversations$: BehaviorSubject<CometChat.Conversation[]>;
+  keptRowsError$: Subject<unknown>;
   loadingState$: BehaviorSubject<boolean>;
   errorState$: BehaviorSubject<Error | null>;
   activeConversation$: BehaviorSubject<CometChat.Conversation | null>;
@@ -116,6 +117,7 @@ interface MockConversationsService {
   searchConversations: ReturnType<typeof vi.fn>;
   clearError: ReturnType<typeof vi.fn>;
   replaceConversation: ReturnType<typeof vi.fn>;
+  applyPinState: ReturnType<typeof vi.fn>;
   updateConversationReadStatus: ReturnType<typeof vi.fn>;
   updateConversationUnreadCount: ReturnType<typeof vi.fn>;
 }
@@ -123,6 +125,7 @@ interface MockConversationsService {
 function makeConversationsService(items: CometChat.Conversation[] = []): MockConversationsService {
   return {
     conversations$: new BehaviorSubject<CometChat.Conversation[]>(items),
+    keptRowsError$: new Subject<unknown>(),
     loadingState$: new BehaviorSubject<boolean>(false),
     errorState$: new BehaviorSubject<Error | null>(null),
     activeConversation$: new BehaviorSubject<CometChat.Conversation | null>(null),
@@ -135,6 +138,7 @@ function makeConversationsService(items: CometChat.Conversation[] = []): MockCon
     searchConversations: vi.fn(),
     clearError: vi.fn(),
     replaceConversation: vi.fn(),
+    applyPinState: vi.fn(() => true),
     updateConversationReadStatus: vi.fn(),
     updateConversationUnreadCount: vi.fn(),
   };

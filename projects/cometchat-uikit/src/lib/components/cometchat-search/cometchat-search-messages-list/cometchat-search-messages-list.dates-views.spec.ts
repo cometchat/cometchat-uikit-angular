@@ -7,6 +7,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 }));
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import type { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -22,6 +23,8 @@ import { CometChatLocalize } from '../../../resources/CometChatLocalize';
  * wrong name makes the pagination handlers throw instead of resolving.
  */
 class MockSearchMessagesService {
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   messages = signal<any[]>([]);
   fetchState = signal('loaded');
   hasMoreResults = signal(false);

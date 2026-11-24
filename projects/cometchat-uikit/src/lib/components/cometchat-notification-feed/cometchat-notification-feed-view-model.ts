@@ -6,6 +6,9 @@ import {
   TimestampGroup,
 } from './cometchat-notification-feed.types';
 import { groupByTimestamp } from './cometchat-notification-feed.utils';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { mergeSnapshotPage, readPageTwoPhase } from '../../utils/offline/two-phase';
+import { OfflineListSession } from '../../utils/offline/list-session';
 
 /**
  * ViewModel for CometChatNotificationFeed.
@@ -19,6 +22,8 @@ export class NotificationFeedViewModel {
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private deliveredItemIds: Set<string> = new Set();
   private fetchVersion: number = 0;
+  /** Offline: logout / user switch clears the feed, a cache reset reloads it (UIK-LIFE-01/02). */
+  readonly offlineSession = new OfflineListSession();
   private onStateChange: (state: NotificationFeedState) => void;
 
   private state: NotificationFeedState = {
@@ -37,12 +42,30 @@ export class NotificationFeedViewModel {
     paginationError: false,
   };
 
+  /**
+   * Offline (D84): "Connect to load notifications" is up (the error state, because the device was not
+   * connected), so the first page is read once by itself when the connection is back. A non-network
+   * error never sets it.
+   */
+  private reloadOnConnect = false;
+  /** Offline (D84 rule 3): nothing on screen and no connection says "Connect to load notifications", with no Retry. */
+  get connectToLoad(): boolean {
+    return this.reloadOnConnect && this.state.screenState === 'error' && isOfflineOn();
+  }
+  /**
+   * Offline (D83): a load the user or app started failed while feed items were on screen. The
+   * items stay and no error view shows; this is how the failure reaches `onError`.
+   */
+  private onKeptRowsError?: (error: CometChat.CometChatException) => void;
+
   constructor(
     onStateChange: (state: NotificationFeedState) => void,
     feedRequestBuilder?: any,
-    categoriesRequestBuilder?: any
+    categoriesRequestBuilder?: any,
+    onKeptRowsError?: (error: CometChat.CometChatException) => void
   ) {
     this.onStateChange = onStateChange;
+    this.onKeptRowsError = onKeptRowsError;
     this.customFeedRequestBuilder = feedRequestBuilder || null;
     this.feedRequestBuilder = feedRequestBuilder || null;
     this.categoriesRequestBuilder = categoriesRequestBuilder || null;
@@ -107,17 +130,87 @@ export class NotificationFeedViewModel {
   }
 
   /**
+   * One page of the feed. Offline on: `onCached` gets the cached page first and the answer is the
+   * server page, or null when the server could not be reached (an offline read past the cache).
+   * Offline off: the request's one read, as before.
+   */
+  private async readFeedPage(
+    onCached: (items: NotificationFeedItem[]) => void
+  ): Promise<{ page: NotificationFeedItem[] | null; unreachable?: unknown }> {
+    if (!isOfflineOn()) return { page: await this.feedRequestBuilder.fetchNext() };
+    this.offlineSession.markRan();
+    const { server, unreachable } = await readPageTwoPhase<NotificationFeedItem>(this.feedRequestBuilder, 'notificationFeed', onCached);
+    return { page: server, unreachable };
+  }
+
+  /**
+   * Offline on (D84): a first-page load failed. With nothing on screen it is the error state, `onError`
+   * once; offline, the feed shows "Connect to load notifications" and loads once more when the
+   * connection is back (rules 3 and 8). With items on screen they stay: a not-connected failure
+   * reports nothing (rule 2), a real failure of a load the user or app started reports once (rule 5).
+   * Returns false when offline is off: the caller keeps today's error handling.
+   */
+  private failOffline(error: unknown, notConnected: boolean, automatic: boolean, extra: Partial<NotificationFeedState> = {}): boolean {
+    if (!isOfflineOn()) return false;
+    if (this.state.items.length === 0) {
+      this.reloadOnConnect = notConnected;
+      this.setState({ ...extra, screenState: 'error', error: error as CometChat.CometChatException });
+    } else {
+      this.setState({ ...extra, screenState: 'loaded' });
+      if (!automatic && !notConnected) this.onKeptRowsError?.(error as CometChat.CometChatException);
+    }
+    return true;
+  }
+
+  /**
+   * Offline on, on reconnect: the error view is up because the device was offline, so the first
+   * page is read once by itself (D83). A non-network error is not reloaded.
+   */
+  reloadAfterOfflineError(): void {
+    if (!isOfflineOn() || !this.reloadOnConnect || this.state.screenState !== 'error' || this.state.items.length > 0) return;
+    this.reloadOnConnect = false;
+    this.setState({ screenState: 'loading' });
+    void this.fetchInitialItems(true);
+  }
+
+  /** Logout / user switch: nothing of the old session stays on screen. */
+  clearForSession(): void {
+    this.fetchVersion++;
+    this.deliveredItemIds.clear();
+    this.setState({
+      items: [], screenState: 'loading', isLoadingMore: false, isRefreshing: false,
+      hasMorePages: true, paginationError: false, totalUnreadCount: 0, categoryUnreadCounts: new Map(),
+    });
+  }
+
+  /** The offline cache was rebuilt: read the first page again, cached then server. */
+  reloadAfterReset(): void {
+    void this.fetchInitialItems(true);
+  }
+
+  /**
    * Fetch the first page of feed items.
    * Uses fetchVersion to discard stale results from previous category switches.
    */
-  async fetchInitialItems(): Promise<void> {
+  async fetchInitialItems(automatic = false): Promise<void> {
     const version = ++this.fetchVersion;
+    this.reloadOnConnect = false;
     try {
       this.initFeedRequestBuilder();
-      const items: NotificationFeedItem[] = await this.feedRequestBuilder.fetchNext();
+      const { page: items, unreachable } = await this.readFeedPage(cached => {
+        if (version === this.fetchVersion && cached.length > 0) {
+          this.setState({ items: cached, screenState: 'loaded', hasMorePages: true });
+        }
+      });
 
       // Discard result if a newer fetch was triggered (category switch race)
       if (version !== this.fetchVersion) return;
+
+      if (items === null) {
+        // Offline and nothing newer to show: cached items stay; the load failed (D83).
+        this.failOffline(unreachable, true, automatic);
+        return;
+      }
 
       if (items.length === 0) {
         this.setState({ items: [], screenState: 'empty', hasMorePages: false });
@@ -129,6 +222,7 @@ export class NotificationFeedViewModel {
       await this.fetchUnreadCount();
     } catch (error: any) {
       if (version !== this.fetchVersion) return;
+      if (this.failOffline(error, false, automatic)) return;
       this.setState({
         screenState: 'error',
         error: error as CometChat.CometChatException,
@@ -145,6 +239,10 @@ export class NotificationFeedViewModel {
     this.setState({ isLoadingMore: true, paginationError: false });
 
     try {
+      if (isOfflineOn()) {
+        await this.fetchNextPageOffline();
+        return;
+      }
       const items: NotificationFeedItem[] = await this.feedRequestBuilder.fetchNext();
 
       if (items.length === 0) {
@@ -169,6 +267,35 @@ export class NotificationFeedViewModel {
   }
 
   /**
+   * Offline path of {@link fetchNextPage}: cached rows join the list at once, the server page then
+   * replaces them in place; rows are deduped by id so "load more" never repeats one, and a read
+   * past the cache while offline leaves the list and offers a retry.
+   */
+  private async fetchNextPageOffline(): Promise<void> {
+    this.offlineSession.markRan();
+    const epoch = this.offlineSession.epoch;
+    const keyOf = (item: NotificationFeedItem) => item.getId();
+    let cachedKeys = new Set<string>();
+    const server = await readPageTwoPhase<NotificationFeedItem>(this.feedRequestBuilder, 'notificationFeed', cached => {
+      if (this.offlineSession.isStale(epoch) || cached.length === 0) return;
+      cachedKeys = new Set(cached.map(keyOf));
+      this.setState({ items: mergeSnapshotPage(this.state.items, new Set<string>(), cached, keyOf) });
+    }).then(result => result.server);
+    if (this.offlineSession.isStale(epoch)) return;
+    if (server === null) {
+      this.setState({ isLoadingMore: false, paginationError: true });
+      return;
+    }
+    this.setState({
+      items: mergeSnapshotPage(this.state.items, cachedKeys, server, keyOf),
+      isLoadingMore: false,
+      // Only an empty server page ends the list (BEH-READ-09b).
+      hasMorePages: server.length > 0,
+    });
+    this.reportDeliveredBatch(server);
+  }
+
+  /**
    * Retry pagination after error.
    */
   retryPagination(): void {
@@ -184,10 +311,19 @@ export class NotificationFeedViewModel {
 
     this.setState({ isRefreshing: true });
     this.deliveredItemIds.clear();
+    this.reloadOnConnect = false;
 
     try {
       this.initFeedRequestBuilder();
-      const items: NotificationFeedItem[] = await this.feedRequestBuilder.fetchNext();
+      const { page: items, unreachable } = await this.readFeedPage(cached => {
+        if (cached.length > 0) this.setState({ items: cached, screenState: 'loaded', hasMorePages: true });
+      });
+
+      if (items === null) {
+        // Offline: cached items stay; the refresh failed (D83).
+        this.failOffline(unreachable, true, false, { isRefreshing: false });
+        return;
+      }
 
       if (items.length === 0) {
         this.setState({ items: [], screenState: 'empty', isRefreshing: false, hasMorePages: false });
@@ -198,6 +334,7 @@ export class NotificationFeedViewModel {
 
       await this.fetchUnreadCount();
     } catch (error: any) {
+      if (this.failOffline(error, false, false, { isRefreshing: false })) return;
       this.setState({
         screenState: 'error',
         isRefreshing: false,

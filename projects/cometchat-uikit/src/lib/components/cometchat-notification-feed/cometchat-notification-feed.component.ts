@@ -13,13 +13,19 @@ import {
   NgZone,
   ChangeDetectorRef,
   inject,
+  DestroyRef,
   booleanAttribute,
   AfterViewInit,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CalendarObject } from '../../resources/CometChatLocalize/localization.interfaces';
 import { NotificationFeedViewModel } from './cometchat-notification-feed-view-model';
+import { watchOfflineSession } from '../../utils/offline/list-session';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
+import { ConnectionStateService } from '../../services/connection-state.service';
+import { OfflineHubService } from '../../services/offline-hub.service';
 import { VisibilityTracker } from './cometchat-notification-feed.utils';
 import {
   NotificationFeedItem,
@@ -52,6 +58,11 @@ import type { CometChatCardAction, CometChatCardActionEvent } from '@cometchat/c
 export class CometChatNotificationFeedComponent implements OnInit, OnDestroy, AfterViewInit {
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
+  private offlineHub = inject(OfflineHubService);
+  private connectionState = inject(ConnectionStateService);
+  /** Offline: the last error this feed reported, so a state that still holds it does not report it again. */
+  private lastEmittedError: unknown = null;
 
   // --- Inputs ---
 
@@ -135,6 +146,8 @@ export class CometChatNotificationFeedComponent implements OnInit, OnDestroy, Af
   });
 
   private viewModel: NotificationFeedViewModel | null = null;
+  /** @internal Offline (D84 rule 3): nothing on screen and no connection says "Connect to load notifications". */
+  get offlineConnectToLoad(): boolean { return this.viewModel?.connectToLoad === true; }
   private visibilityTracker: VisibilityTracker | null = null;
   private observedItemIds: Set<string> = new Set();
 
@@ -145,17 +158,33 @@ export class CometChatNotificationFeedComponent implements OnInit, OnDestroy, Af
       (newState) => {
         this.ngZone.run(() => {
           this.state.set({ ...newState });
-          if (newState.error) {
+          // Offline on (D83): the state keeps its last error, so each error reports once.
+          if (newState.error && (!isOfflineOn() || newState.error !== this.lastEmittedError)) {
+            this.lastEmittedError = newState.error;
             this.error.emit(newState.error);
           }
           this.cdr.markForCheck();
         });
       },
       this.notificationFeedRequestBuilder,
-      this.notificationCategoriesRequestBuilder
+      this.notificationCategoriesRequestBuilder,
+      // Offline (D83): a first-page load that failed while items are on screen keeps them (no error
+      // view) and reaches `error` once. The view model never calls this with offline off.
+      (error) => this.ngZone.run(() => this.error.emit(error))
     );
 
     this.viewModel.init();
+    // Offline (D83): an error view that is up because the device was offline loads once on reconnect.
+    this.connectionState.reconnected$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.viewModel?.reloadAfterOfflineError());
+
+    // Offline: end of session clears the feed, a cache reset reloads it.
+    const viewModel = this.viewModel;
+    watchOfflineSession(this.offlineHub, this.destroyRef, viewModel.offlineSession, {
+      clear: () => viewModel.clearForSession(),
+      reload: () => viewModel.reloadAfterReset(),
+    });
   }
 
   ngAfterViewInit(): void {

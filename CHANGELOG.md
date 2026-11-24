@@ -11,6 +11,68 @@ cutting the release.
 
 ## [Unreleased]
 
+## [5.3.0]
+
+_Not yet released; the date is set when it is tagged._ Full notes:
+[`docs/release-notes/5.3.0-offline.md`](docs/release-notes/5.3.0-offline.md).
+
+### Added
+
+- Offline support, off by default. Turn it on with `UIKitSettingsBuilder.setOfflineConfig({ enabled: true })`
+  (or `chatSDK.offline` in `initFromSettings`). It needs Chat SDK JavaScript 4.3.1 or later; the peer
+  dependency stays `^4.2.0`, and with an older SDK (4.3.0 included) offline stays off. With it on, chats and lists the user
+  has opened show from the device first, messages sent offline wait with **Not sent yet** and go out on
+  reconnect, unsent messages offer Retry and Delete, media saved on the device plays offline, and a list
+  with nothing saved shows **Connect to load …** (or **Connect to search** for a keyword search) and loads
+  by itself on reconnect.
+- `UIKitSettings.offlineConfig` and the `CometChatOfflineConfig` type.
+- `CometChatMessageEvents.ccMessageSendStateChanged` and `ccOfflineCacheReset` (never emitted with offline
+  off).
+- `hideOfflineNotices` input on `cometchat-message-list` and `cometchat-conversations`.
+- `ConnectionStateService.connects$`, every connect the SDK reports. The message list reloads a chat that
+  could not load on this, since a drop the SDK never reports leaves the connection state unchanged. The
+  service also takes the browser's `online`/`offline` events as a backstop.
+- `CometChatUIKitConstants.MessageOption.retryMessage` and `.discardMessage`.
+- Offline strings in all 19 locales, and CSS variables for the offline states.
+- Angular 22 support: the `@angular/common` and `@angular/core` peer range is now `>=18.0.0 <23.0.0`.
+
+### Changed
+
+These apply with offline off too.
+
+- `CometChatUIKit.sendTextMessage`, `sendMediaMessage` and `sendCustomMessage` merge `metadata.error` into
+  the message's existing metadata on failure instead of replacing it, so your own metadata keys stay.
+- Message rows, the row menu, conversation rows, notices, the list footer, the composer input, tray tiles
+  and the empty and error views gain `data-testid` and `data-cc-*` attributes for test automation. They are
+  DOM additions only, but DOM snapshot tests may change.
+- Chat SDK JavaScript 4.3 adds about 0.54 MB to an app's initial bundle and this kit about 0.12 MB, with
+  offline on or off.
+- With offline on, `CometChatUIKit.send*` promises still open when the session ends (logout or user switch)
+  or the offline cache resets reject once with `ERROR_OFFLINE_MESSAGE_DISCARDED`. Add a `.catch` if you
+  await them.
+
+### Fixed
+
+- An open chat could stop receiving new, edited and deleted messages and reactions until it was reopened.
+  The message list registered two SDK listeners whose names could collide in the same millisecond, and the
+  second replaced the first. Two message lists (a chat and its thread panel) created in the same millisecond
+  could also share listener names, so closing one removed the other's listeners; names are now unique per
+  list. Present in 5.2.3.
+- `placeholderText` on the composer shows as plain text instead of a blank input.
+- After a conversation is pinned or unpinned on one device, the row on the user's other devices keeps its
+  name, avatar, last message and unread count, instead of turning blank ("Click to start conversation" with
+  offline support off). Only the pin state and the row's place in the pinned-first order change.
+- A failed composer send shows the error mark instead of the clock.
+- The server copy of your own message replaces the local one and keeps its thread-subscribed flag and quote.
+- A `messagesRequestBuilder` you pass in is no longer changed by the kit.
+- The conversation list's reconnect refresh keeps the fetched copy of a row instead of the stale one,
+  unless a live update reached the row while the refresh was in flight: a preview or unread count that
+  arrived meanwhile is no longer overwritten by the older fetched copy.
+- Opening a chat with unread messages (offline support off) leaves older messages reachable when the
+  unread pivot cannot be determined, instead of ending paging at the first page.
+- A reaction that fails to be added or removed rolls the row back to the count it really had. The
+  optimistic update now edits copies, so a failed request no longer restores its own edit.
+
 ## [5.2.3]
 
 _Not yet released; the date is set when it is tagged._

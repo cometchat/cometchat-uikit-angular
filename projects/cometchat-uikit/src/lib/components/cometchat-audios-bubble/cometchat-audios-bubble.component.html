@@ -11,7 +11,12 @@
          so $index still indexes `states` correctly. -->
     @for (att of visibleAttachments; track att.url; let i = $index) {
       <div class="cometchat-audios-bubble__item" [class.cometchat-audios-bubble__item--unsupported]="isUnsupported(i)">
-        @if (isUnsupported(i)) {
+        @if (isUnavailable(att)) {
+          <!-- Offline and never downloaded: nothing to play yet. -->
+          <img class="cometchat-audios-bubble__file-icon" [src]="unsupportedIconUrl" alt="" aria-hidden="true" />
+          <span class="cometchat-audios-bubble__name cometchat-audios-bubble__name--file" [title]="att.name">{{ att.name }}</span>
+          <span class="cometchat-audios-bubble__duration" role="status">{{ unavailableText }}</span>
+        } @else if (isUnsupported(i)) {
           <!-- Not a playable audio file (unsupported type / broken link): render like a file row. -->
           <img class="cometchat-audios-bubble__file-icon" [src]="unsupportedIconUrl" alt="" aria-hidden="true" />
           <span class="cometchat-audios-bubble__name cometchat-audios-bubble__name--file" [title]="att.name">{{ att.name }}</span>
@@ -55,12 +60,12 @@
             (timeupdate)="onTimeUpdate(i, audioEl)"
             (loadedmetadata)="onLoadedMetadata(i, audioEl)"
             (ended)="onEnded(i)"
-            (error)="onAudioError(i)"
+            (error)="onAudioError(i, audioEl)"
           ></audio>
         }
 
         <button
-          *ngIf="att.url"
+          *ngIf="att.url && !isUnavailable(att)"
           type="button"
           class="cometchat-audios-bubble__download"
           [attr.aria-label]="'file_bubble_download' | translate"

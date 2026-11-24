@@ -7,6 +7,7 @@ vi.mock('@cometchat/calls-sdk-javascript', () => ({
 }));
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
@@ -20,6 +21,8 @@ import { States } from '../../../Enums/Enums';
  * spells it `fetchNext` leaves the pagination paths silently unexercised.
  */
 class MockSearchMessagesService {
+  reconnectSearchError$ = new Subject<unknown>();
+  connectToSearch = () => false;
   messages = signal<any[]>([]);
   fetchState = signal<States>(States.loaded);
   hasMore = signal(false);

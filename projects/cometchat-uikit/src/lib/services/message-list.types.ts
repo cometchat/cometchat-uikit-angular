@@ -108,30 +108,45 @@ export const RETRY_DELAYS = [1000, 2000, 4000] as const;
 
 // ==================== Listener ID Helpers ====================
 
+let listenerIdSequence = 0;
+
+/**
+ * A listener id suffix no other call in this page returns: the time plus a
+ * module-level counter. The SDK replaces a listener registered under an id it
+ * already has, so two message lists (a chat and its thread panel) created in
+ * the same millisecond must not share one.
+ *
+ * @internal
+ */
+export function uniqueListenerSuffix(): string {
+  listenerIdSequence += 1;
+  return `${Date.now()}_${listenerIdSequence}`;
+}
+
 /**
  * Generates a unique listener ID for message events.
  */
 export function generateMessageListenerId(): string {
-  return `message_list_${Date.now()}`;
+  return `message_list_${uniqueListenerSuffix()}`;
 }
 
 /**
  * Generates a unique listener ID for group events.
  */
 export function generateGroupListenerId(): string {
-  return `message_list_group_${Date.now()}`;
+  return `message_list_group_${uniqueListenerSuffix()}`;
 }
 
 /**
  * Generates a unique listener ID for call events.
  */
 export function generateCallListenerId(): string {
-  return `message_list_call_${Date.now()}`;
+  return `message_list_call_${uniqueListenerSuffix()}`;
 }
 
 /**
  * Generates a unique listener ID for connection events.
  */
 export function generateConnectionListenerId(): string {
-  return `message_list_connection_${Date.now()}`;
+  return `message_list_connection_${uniqueListenerSuffix()}`;
 }

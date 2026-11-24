@@ -132,7 +132,7 @@
               
               <!-- User Conversation Subtitle -->
               @if (currentUser()) {
-                @if (isTyping()) {
+                @if (isTyping() && !presenceHidden()) {
                   <!-- Typing indicator for user -->
                   <span 
                     class="cometchat-message-header__subtitle cometchat-message-header__subtitle--typing"

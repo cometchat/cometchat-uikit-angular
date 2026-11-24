@@ -51,6 +51,7 @@
         [class]="bubbleClassName"
         [class.cometchat-message-bubble--align-left]="isColourOnlyOutgoing"
         [class.cometchat-message-bubble--multi-attachment]="isBatchBubble"
+        [class.cometchat-message-bubble--offline-failed]="offlineSendState === 'failed'"
         [id]="'message-' + messageId">
       
       <!-- Header View (Sender Name) -->
@@ -76,6 +77,8 @@
           @if (options.length > 0 && !disableInteraction) {
             <div 
               class="cometchat-message-bubble__options"
+              data-testid="cc-message-options"
+              [attr.data-cc-options]="contractOptionIds"
               [class.cometchat-message-bubble__options--visible]="isHovering"
               [class]="optionsPositionClass">
               <cometchat-context-menu
@@ -320,10 +323,21 @@
                         <!-- Error state indicator - shown when a message is in error / disapproved state -->
                         <div
                           class="cometchat-receipts cometchat-receipts-error"
+                          [class.cometchat-message-bubble__offline-failed]="offlineSendState === 'failed'"
                           role="img"
                           [attr.aria-label]="'message_status_error' | translate">
                           <div class="cometchat-message-list__receipt"></div>
                         </div>
+                        @if (offlineCanRetry) {
+                          <!-- Offline support: a failed own message offers Retry (user-invoked only). -->
+                          <button
+                            type="button"
+                            class="cometchat-message-bubble__offline-retry"
+                            data-testid="offline-retry"
+                            (click)="retryOfflineSend($event)">
+                            {{ 'message_list_not_sent_tap_to_retry' | translate }}
+                          </button>
+                        }
                       } @else if (!effectiveHideReceipts() && isOutgoingStyle && !isDeleted) {
                         <div 
                           class="cometchat-receipts" 
@@ -332,6 +346,13 @@
                           [attr.aria-label]="receiptAriaLabel">
                           <div class="cometchat-message-list__receipt"></div>
                         </div>
+                        @if (offlineSendState === 'sending') {
+                          <!-- Offline support: the row state in words next to the clock (README §3.4).
+                               The clock above already carries it for screen readers. -->
+                          <span class="cometchat-message-bubble__offline-pending" data-testid="offline-pending" aria-hidden="true">
+                            {{ 'message_list_not_sent_yet' | translate }}
+                          </span>
+                        }
                       }
                     </div>
                   }

@@ -98,7 +98,9 @@ done
 #
 # Developers must use safeEffect() from utils/safe-effect.ts instead of
 # Angular's effect() directly. This ensures allowSignalWrites:true is always
-# set, making the code compatible with Angular 18–21.
+# set, making the code compatible with the library's whole Angular peer range
+# (>=18 <23 at the time of writing; see scripts/verify-angular-compatibility.js,
+# which derives the range from the library's package.json).
 # Skips: safe-effect.ts itself and test-setup.ts
 # =============================================================================
 section "Check 3: Direct effect() usage (use safeEffect instead)"

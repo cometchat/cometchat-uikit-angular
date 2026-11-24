@@ -7,6 +7,8 @@ import { Observable } from 'rxjs';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatLogger } from '../utils/CometChatLogger';
 import type { ErrorCallback, MentionSuggestion } from './message-composer.types';
+import { isOfflineOn } from '../utils/offline/offline-gate';
+import { fetchNextTwoPhase } from '../utils/offline/two-phase';
 
 // ─── Error Helpers ────────────────────────────────────────────────────────────
 
@@ -69,19 +71,36 @@ export function fetchUsersForMention(
       if (searchText) requestBuilder = requestBuilder.setSearchKeyword(searchText);
     }
 
+    const toSuggestions = (users: CometChat.User[]): MentionSuggestion[] =>
+      users.map(user => ({
+        uid: user.getUid(),
+        name: user.getName(),
+        avatar: user.getAvatar(),
+        isAllMention: false,
+        entity: user,
+      }));
+
+    // Offline on, no keyword: the cached people first, then the server's (a keyword has no cache).
+    if (isOfflineOn() && !searchText) {
+      let emitted = false;
+      void fetchNextTwoPhase<CometChat.User>(requestBuilder.build(), 'users', {
+        onCached: page => { if (page.length > 0) { emitted = true; observer.next(toSuggestions(page)); } },
+        onServer: page => { observer.next(toSuggestions(page)); observer.complete(); },
+        onError: (error, notConnected) => {
+          if (!notConnected) { observer.error(error); return; }
+          // Offline past the cache: keep what was shown, no error toast.
+          if (!emitted) observer.next([]);
+          observer.complete();
+        },
+      });
+      return;
+    }
+
     requestBuilder
       .build()
       .fetchNext()
       .then((users: CometChat.User[]) => {
-        observer.next(
-          users.map(user => ({
-            uid: user.getUid(),
-            name: user.getName(),
-            avatar: user.getAvatar(),
-            isAllMention: false,
-            entity: user,
-          }))
-        );
+        observer.next(toSuggestions(users));
         observer.complete();
       })
       .catch((error: unknown) => observer.error(error));
@@ -109,30 +128,49 @@ export function fetchGroupMembersForMention(
       if (searchText) requestBuilder = requestBuilder.setSearchKeyword(searchText);
     }
 
+    const toSuggestions = (members: CometChat.GroupMember[]): MentionSuggestion[] => {
+      const suggestions: MentionSuggestion[] = [];
+
+      if (
+        !disableMentionAll &&
+        (!searchText || mentionAllLabel.toLowerCase().includes(searchText.toLowerCase()))
+      ) {
+        suggestions.push({ uid: 'all', name: mentionAllLabel, isAllMention: true });
+      }
+
+      members.forEach(member => {
+        suggestions.push({
+          uid: member.getUid(),
+          name: member.getName(),
+          avatar: member.getAvatar(),
+          isAllMention: false,
+          entity: member,
+        });
+      });
+      return suggestions;
+    };
+
+    // Offline on, no keyword: the cached members first, then the server's (a keyword has no cache).
+    if (isOfflineOn() && !searchText) {
+      let emitted = false;
+      void fetchNextTwoPhase<CometChat.GroupMember>(requestBuilder.build(), 'groupMembers', {
+        onCached: page => { if (page.length > 0) { emitted = true; observer.next(toSuggestions(page)); } },
+        onServer: page => { observer.next(toSuggestions(page)); observer.complete(); },
+        onError: (error, notConnected) => {
+          if (!notConnected) { observer.error(error); return; }
+          // Offline past the cache: keep what was shown, no error toast.
+          if (!emitted) observer.next(toSuggestions([]));
+          observer.complete();
+        },
+      });
+      return;
+    }
+
     requestBuilder
       .build()
       .fetchNext()
       .then((members: CometChat.GroupMember[]) => {
-        const suggestions: MentionSuggestion[] = [];
-
-        if (
-          !disableMentionAll &&
-          (!searchText || mentionAllLabel.toLowerCase().includes(searchText.toLowerCase()))
-        ) {
-          suggestions.push({ uid: 'all', name: mentionAllLabel, isAllMention: true });
-        }
-
-        members.forEach(member => {
-          suggestions.push({
-            uid: member.getUid(),
-            name: member.getName(),
-            avatar: member.getAvatar(),
-            isAllMention: false,
-            entity: member,
-          });
-        });
-
-        observer.next(suggestions);
+        observer.next(toSuggestions(members));
         observer.complete();
       })
       .catch((error: unknown) => observer.error(error));

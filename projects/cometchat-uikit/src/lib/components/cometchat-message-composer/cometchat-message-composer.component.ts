@@ -65,6 +65,7 @@ import {setupConstructorEffectsImpl, ngOnInitImpl as composerNgOnInitImpl, ngOnC
 import {CometChatAttachmentTrayComponent} from '../cometchat-attachment-tray';
 import {MediaUploadTrayService, detectAttachmentType} from '../../services/media-upload-tray.service';
 import {stampBatchMetadata, markMessageFailed} from '../../utils/message-metadata-utils';
+import {isOfflineOn, sdkConnected} from '../../utils/offline/offline-gate';
 
 export const MENTIONS_LIMIT = 10;
 
@@ -125,6 +126,7 @@ export class CometChatMessageComposerComponent
   implements OnInit, OnDestroy, OnChanges, AfterViewInit
 {
   private messageComposerService = inject(MessageComposerService);
+  /** Offline: a mentions keyword search needs a connection; the popup says so. */
   private threadSubscription = inject(ThreadSubscriptionService);
   private richTextEditorService = inject(RichTextEditorService);
   private chatStateService = inject(ChatStateService);
@@ -505,6 +507,34 @@ export class CometChatMessageComposerComponent
       if (quoted) { this.exitReplyMode(); }
 
       let last: CometChat.BaseMessage | undefined;
+      if (isOfflineOn()) {
+        // Offline path: each message goes through the offline send helper, which
+        // draws its row and emits its public events; a queued one is not a failure.
+        // Each file is handed off once the SDK holds it (the outbox keeps the order), as on Android:
+        // a send queued behind an unsent message of the chat would otherwise hold the next file ~15 s.
+        let anySent = false;
+        const mirrorOnce = () => {
+          if (anySent) return;
+          anySent = true;
+          if (this.parentMessageId) {
+            this.threadSubscription.mirrorSubscribed(this.parentMessageId, capturedSession);
+          }
+        };
+        for (const message of messages) {
+          const result = await this.messageComposerService.sendOffline(message, 'media', {
+            handOffAtPending: true,
+          });
+          if (result.state !== 'failed') {
+            last = result.message;
+            if (result.state === 'sent') mirrorOnce();
+          }
+          void result.final?.then(final => {
+            if (final.state === 'sent') mirrorOnce();
+          });
+        }
+        if (last) { this.sendButtonClick.emit(last); this.playOutgoingMessageSound(); this.announceMessageSent(); }
+        return;
+      }
       for (const message of messages) {
         let sent: CometChat.BaseMessage | undefined;
         try {
@@ -684,7 +714,10 @@ export class CometChatMessageComposerComponent
   private processFiles(files: File[]): void {
     const pickerKind = this.pendingPickerKind;
     this.pendingPickerKind = undefined;
-    if (this.enableMultipleAttachments) {
+    // Offline the tray's upload cannot start, so its Send would never enable. The
+    // file goes straight to the SDK's queue instead: its row shows at once and it
+    // sends on reconnect (AC-12.4, UIT-MEDIA-03).
+    if (this.enableMultipleAttachments && !(isOfflineOn() && !sdkConnected())) {
       this.mediaUploadTray.setValidationConfig({ allowedFileTypes: this.allowedFileTypes, maxFileSize: this.maxFileSize });
       // The SDK presign endpoint needs the recipient (uid/guid + user/group) for role-based access,
       // plus the thread parent so a thread upload is scoped to that thread.

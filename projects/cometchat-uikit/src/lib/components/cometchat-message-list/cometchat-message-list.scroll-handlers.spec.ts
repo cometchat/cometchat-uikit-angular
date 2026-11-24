@@ -118,6 +118,50 @@ describe('cometchat-message-list.scroll-handlers', () => {
       expect(ctx.messageListService.fetchPreviousMessages).not.toHaveBeenCalled();
     });
 
+    describe('offline, at the "Connect to load more" footer', () => {
+      const footerCtx = (retryable: boolean, exhausted = true) => {
+        const ctx = makeCtx({
+          listContainer: { nativeElement: makeScrollContainer(0, 1000, 500) },
+        });
+        ctx.messageListService.offlineFooter = () => 'connect_to_load_more';
+        ctx.messageListService.offlineFooterRetryable = () => retryable;
+        ctx.messageListService.offlinePreviousExhausted = exhausted;
+        return ctx;
+      };
+      let status: ReturnType<typeof vi.spyOn> | undefined;
+      afterEach(() => status?.mockRestore());
+
+      it('a scroll to the top issues no further older read while not connected', async () => {
+        status = vi.spyOn(CometChat as any, 'getConnectionStatus').mockReturnValue('disconnected');
+        const ctx = footerCtx(false);
+        for (let i = 0; i < 5; i++) await handleScrollToTopImpl(ctx);
+        expect(ctx.messageListService.fetchPreviousMessages).not.toHaveBeenCalled();
+      });
+
+      it('still reads while the last refused read had cached rows (older pages come from the cache)', async () => {
+        status = vi.spyOn(CometChat as any, 'getConnectionStatus').mockReturnValue('disconnected');
+        const ctx = footerCtx(false, false);
+        await handleScrollToTopImpl(ctx);
+        expect(ctx.messageListService.fetchPreviousMessages).toHaveBeenCalledTimes(1);
+      });
+
+      it('reads again once the connection is back (the footer turned retryable)', async () => {
+        status = vi.spyOn(CometChat as any, 'getConnectionStatus').mockReturnValue('disconnected');
+        const ctx = footerCtx(true);
+        await handleScrollToTopImpl(ctx);
+        expect(ctx.messageListService.fetchPreviousMessages).toHaveBeenCalledTimes(1);
+      });
+
+      it('reads again when the SDK is connected even before the footer turned retryable', async () => {
+        status = vi
+          .spyOn(CometChat as any, 'getConnectionStatus')
+          .mockReturnValue((CometChat as any).CONNECTION_STATUS?.CONNECTED ?? 'connected');
+        const ctx = footerCtx(false);
+        await handleScrollToTopImpl(ctx);
+        expect(ctx.messageListService.fetchPreviousMessages).toHaveBeenCalledTimes(1);
+      });
+    });
+
     it('should call fetchPreviousMessages', async () => {
       const container = makeScrollContainer(0, 1000, 500);
       const ctx = makeCtx({ listContainer: { nativeElement: container } });
@@ -413,6 +457,58 @@ describe('cometchat-message-list.scroll-handlers', () => {
       await new Promise(r => setTimeout(r, 10));
       expect(ctx.messageListService.fetchMessagesAroundId).toHaveBeenCalledWith(999);
       // End like a real list: destroying it stops the pending scroll retries.
+      ctx.isDestroyed = true;
+    });
+  });
+
+  // ==================== ENG-57322: a jump that kept the rows ====================
+
+  describe('scrollToMessageImpl: a jump that kept the rows (ENG-57322)', () => {
+    /** A list whose jump leaves the fetch generation at `after` (unchanged = the rows were kept). */
+    function jumpCtx(after: number) {
+      let generation = 7;
+      const ctx = makeCtx({ listContainer: { nativeElement: document.createElement('div') } });
+      ctx.hasMorePrevious.set(true);
+      ctx.hasMoreNext.set(true);
+      vi.mocked(ctx.hasMorePrevious.set).mockClear();
+      ctx.messageListService.getFetchGeneration = vi.fn(() => generation);
+      ctx.messageListService.fetchMessagesAroundId = vi.fn(async () => {
+        generation = after;
+      });
+      return ctx;
+    }
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it('restores both paging flags and does not scroll when the rows were kept', async () => {
+      const ctx = jumpCtx(7);
+      const frame = vi.spyOn(globalThis, 'requestAnimationFrame');
+      scrollToMessageImpl(ctx, 999);
+      // No paging while the target is looked up.
+      expect(ctx.hasMorePrevious()).toBe(false);
+      expect(ctx.hasMoreNext()).toBe(false);
+      await vi.waitFor(() => expect(ctx.hasMorePrevious()).toBe(true));
+      expect(ctx.hasMoreNext()).toBe(true);
+      expect(frame).not.toHaveBeenCalled();
+      ctx.isDestroyed = true;
+    });
+
+    it('restores the flags as they were, not as "more" (an edge already at its end stays there)', async () => {
+      const ctx = jumpCtx(7);
+      ctx.hasMoreNext.set(false);
+      scrollToMessageImpl(ctx, 999);
+      await vi.waitFor(() => expect(ctx.hasMorePrevious()).toBe(true));
+      expect(ctx.hasMoreNext()).toBe(false);
+      ctx.isDestroyed = true;
+    });
+
+    it('a jump that replaced the rows scrolls to the target as before', async () => {
+      const ctx = jumpCtx(8);
+      const frame = vi.spyOn(globalThis, 'requestAnimationFrame');
+      scrollToMessageImpl(ctx, 999);
+      await vi.waitFor(() => expect(frame).toHaveBeenCalled());
+      expect(ctx.hasMorePrevious()).toBe(false);
+      expect(ctx.hasMoreNext()).toBe(false);
       ctx.isDestroyed = true;
     });
   });

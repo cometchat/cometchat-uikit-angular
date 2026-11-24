@@ -10,6 +10,8 @@ import {markMessageFailed} from '../../utils/message-metadata-utils';
 import {CometChatTextFormatter} from '../../formatters/cometchat-text-formatter';
 import {MessageComposerService} from '../../services/message-composer.service';
 import {AttachmentFile} from './cometchat-message-composer.component';
+import {isOfflineOn} from '../../utils/offline/offline-gate';
+import {revokeWhenSettled} from '../../utils/offline/send';
 
 export interface SendUtilsContext {
   parentMessageId?: number;
@@ -120,6 +122,9 @@ export async function handleSendNewMessageImpl(
   attachments: AttachmentFile[]
 ): Promise<void> {
   let lastSentMessage: CometChat.BaseMessage | null = null;
+  // Read once for this send; every message of it takes the same path.
+  const offlineOn = isOfflineOn();
+  let lastWasQueued = false;
   const metadata = buildMessageMetadataImpl(ctx);
   const mentionedUsers = extractMentionedUsersImpl(ctx);
   const quotedMessage = ctx.messageToReplySignal() || undefined;
@@ -136,13 +141,22 @@ export async function handleSendNewMessageImpl(
     CometChatMessageEvents.ccMessageSent.next({ message: pendingTextMessage, status: MessageStatus.inprogress });
     ctx.clearComposer();
     ctx.resetMentionsFormatter();
-    try {
+    if (offlineOn) {
+      // The offline hub draws the row and emits the public events from here on.
+      const result = await ctx.messageComposerService.sendOffline(pendingTextMessage, 'text');
+      if (result.state !== 'failed') {
+        applyTextFormattersImpl(ctx, result.message as CometChat.TextMessage);
+        lastSentMessage = result.message;
+        lastWasQueued = result.state === 'sending';
+      }
+    } else try {
       const textMessage = await ctx.messageComposerService.sendTextMessage(receiver, text, metadata, ctx.parentMessageId, quotedMessage, pendingTextMessage);
       if (textMessage) {
         applyTextFormattersImpl(ctx, textMessage);
         lastSentMessage = textMessage;
         CometChatMessageEvents.ccMessageSent.next({ message: textMessage, status: MessageStatus.success });
       } else {
+        // Without a mark the failed message keeps showing the clock.
         markMessageFailed(pendingTextMessage, undefined);
         CometChatMessageEvents.ccMessageSent.next({ message: pendingTextMessage, status: MessageStatus.error });
       }
@@ -182,7 +196,16 @@ export async function handleSendNewMessageImpl(
 
     CometChatMessageEvents.ccMessageSent.next({ message: pendingMediaMessage, status: MessageStatus.inprogress });
     if (text.length === 0 && !composerClearedForMedia) { ctx.clearComposer(); ctx.resetMentionsFormatter(); composerClearedForMedia = true; }
-    try {
+    if (offlineOn) {
+      const result = await ctx.messageComposerService.sendOffline(pendingMediaMessage, 'media');
+      if (result.state !== 'failed') { lastSentMessage = result.message; lastWasQueued = result.state === 'sending'; }
+      // A queued or failed bubble still shows the local preview: keep its blob
+      // URLs until the send settles.
+      if (result.state !== 'sent') {
+        revokeWhenSettled(result.message, [createdBlobUrl, attachment.thumbnailUrl]);
+        continue;
+      }
+    } else try {
       const mediaMessage = await ctx.messageComposerService.sendMediaMessage(receiver, attachment.file, mediaType, undefined, ctx.parentMessageId, quotedMessage, pendingMediaMessage);
       if (mediaMessage) {
         lastSentMessage = mediaMessage;
@@ -202,7 +225,7 @@ export async function handleSendNewMessageImpl(
     if (createdBlobUrl) { URL.revokeObjectURL(createdBlobUrl); }
     if (attachment.thumbnailUrl) { URL.revokeObjectURL(attachment.thumbnailUrl); }
   }
-  if (quotedMessage && lastSentMessage) {
+  if (quotedMessage && lastSentMessage && !lastWasQueued) {
     CometChatMessageEvents.ccReplyToMessage.next({ message: lastSentMessage, status: MessageStatus.success });
   }
   if (lastSentMessage) { ctx.sendButtonClick.emit(lastSentMessage); ctx.announceMessageSent(); }

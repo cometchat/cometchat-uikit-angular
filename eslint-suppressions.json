@@ -25,11 +25,6 @@
       "count": 1
     }
   },
-  "projects/cometchat-uikit/src/lib/cometchat-uikit.ts": {
-    "@typescript-eslint/no-non-null-asserted-optional-chain": {
-      "count": 2
-    }
-  },
   "projects/cometchat-uikit/src/lib/components/base-elements/cometchat-action-sheet/cometchat-action-sheet.component.html": {
     "@angular-eslint/template/click-events-have-key-events": {
       "count": 1
@@ -812,17 +807,6 @@
       "count": 2
     }
   },
-  "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.component.ts": {
-    "@angular-eslint/no-output-native": {
-      "count": 1
-    },
-    "@typescript-eslint/no-inferrable-types": {
-      "count": 5
-    },
-    "unused-imports/no-unused-imports": {
-      "count": 2
-    }
-  },
   "projects/cometchat-uikit/src/lib/components/cometchat-message-list/cometchat-message-list.delete-handlers.spec.ts": {
     "unused-imports/no-unused-imports": {
       "count": 1
@@ -1329,14 +1313,6 @@
   "projects/cometchat-uikit/src/lib/services/message-list.service.coverage.spec.ts": {
     "@typescript-eslint/array-type": {
       "count": 1
-    }
-  },
-  "projects/cometchat-uikit/src/lib/services/message-list.service.ts": {
-    "@typescript-eslint/consistent-generic-constructors": {
-      "count": 2
-    },
-    "unused-imports/no-unused-imports": {
-      "count": 8
     }
   },
   "projects/cometchat-uikit/src/lib/services/message-list.translation-utils.spec.ts": {

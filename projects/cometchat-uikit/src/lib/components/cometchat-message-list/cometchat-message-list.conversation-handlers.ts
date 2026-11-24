@@ -3,6 +3,29 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {CometChatLogger} from '../../utils/CometChatLogger';
 import {CometChatUIKitConstants} from '../../constants';
 import {States} from '../../Enums/Enums';
+import {isOfflineOn} from '../../utils/offline/offline-gate';
+import {getConversationTwoPhase} from '../../utils/offline/two-phase';
+import {markOpeningJump} from '../../services/message-list.offline';
+
+/**
+ * Open at a message id (goToMessageId: push, deep link). With offline on and the
+ * message neither cached nor reachable, the list is left on the newest cached
+ * page as a normal offline open: no error, no scroll target, older messages
+ * reachable. Offline off: the anchored read and the scroll, unchanged.
+ */
+export function openAtMessageId(ctx: any, numericId: number): Promise<void> {
+  ctx.hasMorePrevious.set(false);
+  ctx.hasMoreNext.set(false);
+  return ctx.messageListService.fetchMessagesAroundId(numericId).then(() => {
+    ctx.cdr.markForCheck();
+    if (isOfflineOn() && !ctx.messages().some((m: CometChat.BaseMessage) => Number(m.getId()) === numericId)) {
+      ctx.hasMorePrevious.set(true);
+      ctx.scrollToBottomAfterLoad();
+      return;
+    }
+    ctx.scrollToMessageWithRetry(ctx.goToMessageId, 10);
+  });
+}
 
 export function handleConversationChangeImpl(ctx: any): void {
   ctx.footerPanelConfig.set(null);
@@ -31,11 +54,7 @@ export function handleConversationChangeImpl(ctx: any): void {
         ? parseInt(ctx.goToMessageId, 10)
         : Number(ctx.goToMessageId);
       if (!isNaN(numericId)) {
-        ctx.hasMorePrevious.set(false);
-        ctx.hasMoreNext.set(false);
-        ctx.messageListService.fetchMessagesAroundId(numericId).then(() => {
-          ctx.cdr.markForCheck();
-          ctx.scrollToMessageWithRetry(ctx.goToMessageId, 10);
+        openAtMessageId(ctx, numericId).then(() => {
           ctx.publishActiveChatChanged();
         }).catch((error: unknown) => {
           CometChatLogger.error('CometChatMessageList', 'Error fetching messages around goToMessageId on conversation change:', error);
@@ -59,11 +78,7 @@ export function handleConversationChangeImpl(ctx: any): void {
         ? parseInt(ctx.goToMessageId, 10)
         : Number(ctx.goToMessageId);
       if (!isNaN(numericId)) {
-        ctx.hasMorePrevious.set(false);
-        ctx.hasMoreNext.set(false);
-        ctx.messageListService.fetchMessagesAroundId(numericId).then(() => {
-          ctx.cdr.markForCheck();
-          ctx.scrollToMessageWithRetry(ctx.goToMessageId, 10);
+        openAtMessageId(ctx, numericId).then(() => {
           ctx.publishActiveChatChanged();
         }).catch((error: unknown) => {
           CometChatLogger.error('CometChatMessageList', 'Error fetching messages around goToMessageId on conversation change:', error);
@@ -161,12 +176,7 @@ export function handleUserChangeImpl(ctx: any, user: CometChat.User): void {
       ? parseInt(ctx.goToMessageId, 10)
       : Number(ctx.goToMessageId);
     if (!isNaN(numericId)) {
-      ctx.hasMorePrevious.set(false);
-      ctx.hasMoreNext.set(false);
-      ctx.messageListService.fetchMessagesAroundId(numericId).then(() => {
-        ctx.cdr.markForCheck();
-        ctx.scrollToMessageWithRetry(ctx.goToMessageId, 10);
-      }).catch((error: unknown) => {
+      openAtMessageId(ctx, numericId).catch((error: unknown) => {
         CometChatLogger.error('CometChatMessageList', 'Error fetching around goToMessageId in handleUserChange:', error);
       });
       return;
@@ -207,12 +217,7 @@ export function handleGroupChangeImpl(ctx: any, group: CometChat.Group): void {
       ? parseInt(ctx.goToMessageId, 10)
       : Number(ctx.goToMessageId);
     if (!isNaN(numericId)) {
-      ctx.hasMorePrevious.set(false);
-      ctx.hasMoreNext.set(false);
-      ctx.messageListService.fetchMessagesAroundId(numericId).then(() => {
-        ctx.cdr.markForCheck();
-        ctx.scrollToMessageWithRetry(ctx.goToMessageId, 10);
-      }).catch((error: unknown) => {
+      openAtMessageId(ctx, numericId).catch((error: unknown) => {
         CometChatLogger.error('CometChatMessageList', 'Error fetching around goToMessageId in handleGroupChange:', error);
       });
       return;
@@ -239,6 +244,134 @@ export function handleGroupChangeImpl(ctx: any, group: CometChat.Group): void {
  * 3. Else → fetchPreviousMessages() and scroll to bottom
  */
 async function fetchWithUnreadPivot(
+  ctx: any,
+  id: string,
+  receiverType: string
+): Promise<void> {
+  if (isOfflineOn()) { return fetchNewestThenUnreadPivot(ctx, id, receiverType); }
+  return fetchWithUnreadPivotFromServer(ctx, id, receiverType);
+}
+
+/**
+ * Offline path of the chat-open read. The cache is a hole-free newest window
+ * (BEH-READ-13), so a chat must open on its newest page to paint from the
+ * device (AC-2.1): an anchored first read has nothing cached and would show an
+ * empty chat offline. The unread divider is placed inside that page when the
+ * last-read message is in it; only when the unread run starts before it does
+ * the list jump there with the anchored read, as with offline off.
+ *
+ * The window is positioned last (start from first unread). The newest page
+ * paints first, cached then server, with the list at its top and the top
+ * sentinel in view, so until the list is positioned neither scroll observer may
+ * page: the top one would load an older page from there, move the rows under
+ * the reader and race the positioning below. Paging resumes once it is placed.
+ */
+async function fetchNewestThenUnreadPivot(ctx: any, id: string, receiverType: string): Promise<void> {
+  ctx.hasMorePrevious.set(false);
+  ctx.hasMoreNext.set(false);
+  const generation = ctx.messageListService.getFetchGeneration?.() ?? 0;
+  await ctx.messageListService.fetchPreviousMessages();
+  if (ctx.messageListService.getFetchGeneration?.() !== generation) return;
+  // Two-phase (BEH-READ-32): offline, the device copy carries the unread
+  // count and read marker, so the divider is placed without the server.
+  const { value } = await getConversationTwoPhase(id, receiverType);
+  const conversation: CometChat.Conversation | null = value;
+  if (ctx.messageListService.getFetchGeneration?.() !== generation) return;
+  const lastReadId = Number(conversation?.getLastReadMessageId?.() ?? 0);
+  const unreadCount = conversation?.getUnreadMessageCount?.() || 0;
+  const rows: CometChat.BaseMessage[] = ctx.messages();
+  if (unreadCount > 0 && lastReadId > 0 && rows.length > 0) {
+    const lastReadIndex = rows.findIndex(m => Number(m.getId()) === lastReadId);
+    const oldestShown = Number(rows.find(m => Number(m.getId()) > 0)?.getId() ?? 0);
+    if (lastReadIndex === -1 && oldestShown > lastReadId) {
+      // The unread run starts before the newest page: jump to it with the
+      // anchored read, cache first, on the conversation already read two-phase
+      // (no server-only getConversation). Not cached and not reachable: the
+      // newest cached page stays, with no divider and no scroll target.
+      return jumpToUnreadOffline(ctx, lastReadId, unreadCount);
+    }
+    const divider = lastReadIndex >= 0 ? rows[lastReadIndex + 1] : undefined;
+    if (divider && Number(divider.getId()) > 0) {
+      ctx.unreadDividerMessageId.set(divider.getId());
+      ctx.markedAsUnreadCount.set(unreadCount);
+      ctx.showScrollToBottom.set(true);
+      ctx.cdr.markForCheck();
+      ctx.scrollToMessageWithRetry(divider.getId(), 10);
+      resumePagingIfStillOff(ctx);
+      ctx.publishActiveChatChanged();
+      return;
+    }
+  }
+  ctx.hasMorePrevious.set(true);
+  ctx.scrollToBottomAfterLoad();
+  ctx.publishActiveChatChanged();
+}
+
+/** The offline jump to the first unread message when the unread run starts before the newest page. */
+async function jumpToUnreadOffline(ctx: any, lastReadId: number, unreadCount: number): Promise<void> {
+  let generation = 0;
+  try {
+    // The open's own jump: it replaces the newest page whether or not the target is saved.
+    // The jump reads the mark as it starts; one that never got that far leaves none behind.
+    const unmark = markOpeningJump(ctx.messageListService);
+    let around: Promise<void>;
+    try {
+      around = ctx.messageListService.fetchMessagesAroundId(lastReadId);
+    } finally {
+      unmark();
+    }
+    // The read resets the list synchronously, which starts its own generation;
+    // a chat switch after that changes it again.
+    generation = ctx.messageListService.getFetchGeneration?.() ?? 0;
+    await around;
+  } catch (error) {
+    CometChatLogger.error('CometChatMessageList', 'Error fetching messages around the last-read message:', error);
+  }
+  if (ctx.messageListService.getFetchGeneration?.() !== generation) return;
+  const rows: CometChat.BaseMessage[] = ctx.messages();
+  const lastReadIndex = rows.findIndex(m => Number(m.getId()) === lastReadId);
+  const divider = lastReadIndex >= 0
+    ? rows[lastReadIndex + 1]
+    : undefined;
+  if (divider && Number(divider.getId()) > 0) {
+    ctx.unreadDividerMessageId.set(divider.getId());
+    ctx.markedAsUnreadCount.set(unreadCount);
+    ctx.showScrollToBottom.set(true);
+    ctx.hasMoreNext.set(true);
+    ctx.cdr.markForCheck();
+    ctx.scrollToMessageWithRetry(divider.getId(), 10);
+    resumePagingIfStillOff(ctx);
+    ctx.publishActiveChatChanged();
+    return;
+  }
+  // The last-read message was not reached: the newest cached page stays.
+  ctx.hasMorePrevious.set(true);
+  ctx.hasMoreNext.set(false);
+  ctx.cdr.markForCheck();
+  ctx.scrollToBottomAfterLoad();
+  ctx.publishActiveChatChanged();
+}
+
+/** How long after positioning on the unread divider paging resumes if the scroll never found it. */
+export const RESUME_PAGING_AFTER_MS = 1500;
+
+/**
+ * Positioning re-enables paging itself once it finds the target (300 ms after).
+ * If it never does (the divider row is not rendered), older messages must stay
+ * reachable, so paging resumes after a while.
+ */
+export function resumePagingIfStillOff(ctx: any): void {
+  // The timer belongs to the chat that set it: a chat opened meanwhile has its own paging
+  // (Android drops an op captured under an older list generation).
+  const generation = ctx.messageListService.getFetchGeneration?.() ?? 0;
+  setTimeout(() => {
+    if ((ctx.messageListService.getFetchGeneration?.() ?? 0) !== generation) return;
+    if (!ctx.hasMorePrevious()) ctx.hasMorePrevious.set(true);
+  }, RESUME_PAGING_AFTER_MS);
+}
+
+/** The chat-open read with offline off: today's unread pivot, unchanged. */
+async function fetchWithUnreadPivotFromServer(
   ctx: any,
   id: string,
   receiverType: string
@@ -365,7 +498,9 @@ async function fetchWithUnreadPivot(
     CometChatLogger.error('CometChatMessageList', 'Error fetching conversation for unread pivot:', error);
   }
 
-  // No unread messages or couldn't determine pivot → load latest and scroll to bottom
+  // No unread messages or couldn't determine pivot → load latest and scroll to bottom.
+  // Older messages stay reachable (the offline path pauses paging until it has positioned).
+  ctx.hasMorePrevious.set(true);
   ctx.messageListService.fetchPreviousMessages().then(() => {
     ctx.scrollToBottomAfterLoad();
     ctx.publishActiveChatChanged();

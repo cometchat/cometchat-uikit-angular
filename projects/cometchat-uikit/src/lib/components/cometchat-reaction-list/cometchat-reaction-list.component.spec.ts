@@ -171,8 +171,10 @@ vi.mock('@cometchat/chat-sdk-javascript', () => {
 
 // Now import modules AFTER mocks are set up
 import { EventEmitter, signal, computed } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { CometChat } from '@cometchat/chat-sdk-javascript';
 import { CometChatReactionListComponent } from './cometchat-reaction-list.component';
+import { isOfflineOn } from '../../utils/offline/offline-gate';
 
 // ==================== Mock Helpers ====================
 
@@ -247,6 +249,7 @@ function createComponent(message?: CometChat.BaseMessage): CometChatReactionList
   comp.selectedEmoji = signal<string | null>(null);
   comp.isLoading = signal(false);
   comp.hasError = signal(false);
+  (comp as any).offlineConnectToLoad = signal(false);
   comp.hasMoreReactions = signal(true);
   (comp as any).allReactions = signal<any[]>([]);
   (comp as any).loggedInUserUid = 'logged-in-user';
@@ -1032,5 +1035,59 @@ describe('CometChatReactionListComponent — Property Tests', () => {
       const component = createComponent();
       expect(component).toBeTruthy();
     });
+  });
+});
+
+// ==================== ANG-3: rendering with a missing reactor or avatar ====================
+
+describe('rendering a reactor with no avatar or no user (ANG-3)', () => {
+  /** Renders the real template with `rows` as the loaded reactions. */
+  function render(rows: unknown[]) {
+    const fixture = TestBed.createComponent(CometChatReactionListComponent);
+    (fixture.componentInstance as any).allReactions.set(rows);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    return {
+      el,
+      items: () => Array.from(el.querySelectorAll('.cometchat-reaction-list__list-item')),
+    };
+  }
+
+  for (const [label, reactedBy] of [
+    ['null', null],
+    ['undefined', undefined],
+  ] as const) {
+    it(`renders a row whose reactor is missing (${label}) without throwing`, () => {
+      const row = { getReaction: () => '👍', getReactedBy: () => reactedBy };
+      const { items } = render([row]);
+      const [item] = items();
+      expect(items()).toHaveLength(1);
+      expect(item.querySelector('.cometchat-reaction-list__item-name')?.textContent?.trim()).toBe('');
+      expect(item.querySelector('.cometchat-avatar__text')?.textContent?.trim()).toBe('');
+      expect(item.querySelector('img')).toBeNull();
+      expect(item.getAttribute('aria-label')).toBe(' - 👍');
+      expect(item.querySelector('.cometchat-reaction-list__item-emoji')?.textContent?.trim()).toBe('👍');
+    });
+  }
+
+  it('shows the initials of the name when the reactor has no avatar', () => {
+    // Regression guard: the avatar already turns a null image into '' (cometchat-avatar.component.ts).
+    const noAvatar = { getUid: () => 'u1', getName: () => 'Alice', getAvatar: () => undefined };
+    const { items } = render([{ getReaction: () => '👍', getReactedBy: () => noAvatar }]);
+    const [item] = items();
+    expect(item.querySelector('img')).toBeNull();
+    expect(item.querySelector('.cometchat-avatar__text')?.textContent?.trim()).toBe('AL');
+    expect(item.querySelector('.cometchat-reaction-list__item-name')?.textContent?.trim()).toBe('Alice');
+  });
+
+  it('a well-formed reaction renders as before (offline-OFF unchanged)', () => {
+    expect(isOfflineOn()).toBe(false);
+    const alice = new MockUser('u1', 'Alice', 'https://example.com/alice.png');
+    const { items } = render([new MockReaction('👍', alice)]);
+    const [item] = items();
+    expect(item.querySelector('img')?.getAttribute('src')).toBe('https://example.com/alice.png');
+    expect(item.querySelector('.cometchat-reaction-list__item-name')?.textContent?.trim()).toBe('Alice');
+    expect(item.getAttribute('aria-label')).toBe('Alice - 👍');
+    expect(item.classList.contains('cometchat-reaction-list__list-item--readonly')).toBe(true);
   });
 });

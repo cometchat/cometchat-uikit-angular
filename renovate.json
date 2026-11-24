@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "CI 3 (ENG-40480). Active once a repo admin installs the Renovate GitHub app. Angular packages move together, so the compat matrix tests a new Angular major the day it ships (the Angular 22 peer break, ENG-39232, was found late).",
+  "extends": ["config:recommended", ":semanticCommitsDisabled"],
+  "baseBranches": ["dev-v5"],
+  "timezone": "Asia/Kolkata",
+  "schedule": ["before 9am on monday"],
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "groupName": "Angular",
+      "matchPackageNames": ["@angular/**", "@angular-devkit/**", "@schematics/angular", "ng-packagr", "zone.js", "angular-eslint", "@angular-eslint/**"]
+    },
+    {
+      "groupName": "Storybook",
+      "matchPackageNames": ["storybook", "@storybook/**", "@chromatic-com/storybook", "eslint-plugin-storybook"]
+    },
+    {
+      "groupName": "Vitest",
+      "matchPackageNames": ["vitest", "@vitest/**", "@analogjs/vitest-angular"]
+    },
+    {
+      "description": "Pinned on purpose: upgrades go in their own PR (E2E design doc §8).",
+      "matchPackageNames": ["@playwright/test"],
+      "rangeStrategy": "pin",
+      "groupName": "Playwright"
+    },
+    {
+      "description": "CometChat SDKs are released by other teams; review them by hand.",
+      "matchPackageNames": ["@cometchat/**"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "GitHub Actions stay pinned to commit SHAs.",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "groupName": "GitHub Actions"
+    }
+  ]
+}

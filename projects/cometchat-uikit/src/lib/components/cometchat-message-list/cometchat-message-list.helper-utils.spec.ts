@@ -212,6 +212,23 @@ describe('cometchat-message-list.helper-utils', () => {
       expect(self.listState.set).toHaveBeenCalledWith(States.loaded);
     });
 
+    /**
+     * ENG-57333: "Connect to load messages" is the view for a chat with nothing saved and no
+     * connection. A message the user then sends is a row the list holds, so the error view must
+     * give way to it - it hid the row, and the message looked lost.
+     */
+    it('shows the rows, not the error view, once the list holds a message', () => {
+      const msg = makeTextMessage('user1');
+      const self = makeSelf({
+        loadingState: vi.fn().mockReturnValue(false),
+        errorState: vi.fn().mockReturnValue(new Error('ERROR_INTERNET_UNAVAILABLE')),
+        messages: vi.fn().mockReturnValue([msg]),
+      });
+      updateListStateImpl(self);
+      expect(self.listState.set).toHaveBeenCalledWith(States.loaded);
+      expect(self.listState.set).not.toHaveBeenCalledWith(States.error);
+    });
+
     it('should not show error when effectiveHideError is true', () => {
       const self = makeSelf({
         loadingState: vi.fn().mockReturnValue(false),

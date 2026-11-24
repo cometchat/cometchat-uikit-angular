@@ -152,6 +152,13 @@
     </div>
   </div>
 
+  <!-- Offline: a never-downloaded image says when it will be available -->
+  @if (mediaUnavailable) {
+    <div class="cometchat-image-bubble__unavailable" role="status">
+      {{ 'message_bubble_media_available_when_online' | translate }}
+    </div>
+  }
+
   <!-- TODO: Caption (Task 4.5) -->
   
   <!-- Caption Rendering -->

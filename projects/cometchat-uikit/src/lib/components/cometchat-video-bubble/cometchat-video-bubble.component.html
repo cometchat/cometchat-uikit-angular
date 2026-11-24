@@ -242,6 +242,13 @@
     </div>
   </div>
 
+  <!-- Offline: a never-downloaded video says when it will be available -->
+  @if (mediaUnavailable) {
+    <div class="cometchat-video-bubble__unavailable" role="status">
+      {{ unavailableText }}
+    </div>
+  }
+
   <!-- Caption Rendering -->
   <div 
     *ngIf="captionText"

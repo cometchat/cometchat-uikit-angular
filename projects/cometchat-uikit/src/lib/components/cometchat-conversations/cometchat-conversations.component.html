@@ -41,6 +41,14 @@
     }
   </div>
 
+  <!-- Offline support: the offline cache was reset under unsent messages -->
+  @for (notice of visibleOfflineNotices; track notice) {
+    <div class="cometchat-conversations__offline-notice" data-testid="cc-notice" [attr.data-cc-notice]="notice.kind">
+      <span class="cometchat-conversations__offline-notice-text" role="status" aria-live="polite">{{ offlineNoticeText(notice) }}</span>
+      <button type="button" class="cometchat-conversations__offline-notice-close" (click)="dismissOfflineNotice(notice)" [attr.aria-label]="'close' | translate">×</button>
+    </div>
+  }
+
   <!-- ==================== List Body using CometChatPaginatedList ==================== -->
   <cometchat-paginated-list
     #paginatedList
@@ -82,8 +90,17 @@
   <ng-template #emptyTemplateRef>
     @if (effectiveEmptyView) {
       <ng-container *ngTemplateOutlet="effectiveEmptyView"></ng-container>
+    } @else if (offlineConnectToSearch) {
+      <!-- Offline (D84 rule 7): a keyword search needs the server; no error. -->
+      <div class="cometchat-conversations__empty-content" data-testid="cc-empty" data-cc-reason="connect-to-search">
+        <div class="cometchat-conversations__empty-icon">
+          <span class="cometchat-conversations__empty-icon-mask" aria-hidden="true"></span>
+        </div>
+        <h3 class="cometchat-conversations__empty-title">{{ 'conversations_connect_to_search' | translate }}</h3>
+        <p class="cometchat-conversations__empty-message">{{ 'list_connect_to_search_subtitle' | translate }}</p>
+      </div>
     } @else {
-      <div class="cometchat-conversations__empty-content">
+      <div class="cometchat-conversations__empty-content" data-testid="cc-empty" data-cc-reason="empty">
         <div class="cometchat-conversations__empty-icon">
           <span class="cometchat-conversations__empty-icon-mask" aria-hidden="true"></span>
         </div>
@@ -98,8 +115,16 @@
     @if (!effectiveHideError()) {
       @if (effectiveErrorView) {
         <ng-container *ngTemplateOutlet="effectiveErrorView; context: { $implicit: error }"></ng-container>
+      } @else if (offlineConnectToLoad) {
+        <!-- Offline (D84 rule 3): nothing saved and no connection; no Retry. -->
+        <div class="cometchat-conversations__empty-content" data-testid="cc-empty" data-cc-reason="connect-to-load">
+          <div class="cometchat-conversations__empty-icon">
+            <span class="cometchat-conversations__empty-icon-mask" aria-hidden="true"></span>
+          </div>
+          <h3 class="cometchat-conversations__empty-title">{{ 'conversations_connect_to_load' | translate }}</h3>
+        </div>
       } @else {
-        <div class="cometchat-conversations__error-content">
+        <div class="cometchat-conversations__error-content" data-testid="cc-error" data-cc-reason="error">
           <div class="cometchat-conversations__error-icon">
             <span class="cometchat-conversations__error-icon-mask" aria-hidden="true"></span>
           </div>
@@ -127,6 +152,12 @@
         <ng-container *ngTemplateOutlet="effectiveItemView; context: { $implicit: conversation }"></ng-container>
       } @else {
         <cometchat-conversation-item
+          data-testid="cc-conversation-row"
+          [attr.data-cc-with]="contractWith(conversation)"
+          [attr.data-cc-preview-state]="contractPreviewState(conversation)"
+          [attr.data-cc-unread]="conversation.getUnreadMessageCount()"
+          [attr.data-cc-pinned]="!!conversation.isPinned?.()"
+          [attr.data-cc-index]="index"
           [conversation]="conversation"
           [isActive]="isConversationActive(conversation)"
           [isSelected]="isConversationSelected(conversation)"
@@ -161,13 +192,13 @@
       @if (selectionMode === SelectionMode.multiple) {
         <cometchat-checkbox
           [checked]="isConversationSelected(conversation)"
-          [ariaLabel]="'Select ' + (conversation.getConversationWith().getName() || '')"
+          [ariaLabel]="'Select ' + getConversationName(conversation)"
           (checkboxChanged)="handleSelectionClick(conversation)">
         </cometchat-checkbox>
       } @else if (selectionMode === SelectionMode.single) {
         <cometchat-radio-button
           [checked]="isConversationSelected(conversation)"
-          [ariaLabel]="'Select ' + (conversation.getConversationWith().getName() || '')"
+          [ariaLabel]="'Select ' + getConversationName(conversation)"
           (radioChanged)="handleSelectionClick(conversation)">
         </cometchat-radio-button>
       }

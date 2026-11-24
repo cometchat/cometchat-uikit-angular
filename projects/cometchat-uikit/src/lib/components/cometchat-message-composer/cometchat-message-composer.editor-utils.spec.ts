@@ -7,11 +7,14 @@
  * @module components/cometchat-message-composer/editor-utils
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   clearComposerImpl,
   ClearComposerContext,
+  initializeRichTextEditorImpl,
+  EditorInitContext,
 } from './cometchat-message-composer.editor-utils';
+import { CometChatLocalize } from '../../resources/CometChatLocalize/cometchat-localize';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -140,6 +143,48 @@ describe('cometchat-message-composer.editor-utils', () => {
       const ctx = makeCtx();
       clearComposerImpl(ctx);
       expect(ctx.textChange.emit).toHaveBeenCalledWith('');
+    });
+  });
+
+  describe('initializeRichTextEditorImpl placeholder', () => {
+    /** Runs editor setup and returns the placeholder handed to the editor. */
+    function placeholderFor(placeholderText: string): string | undefined {
+      vi.useFakeTimers();
+      const createEditor = vi.fn().mockReturnValue({});
+      const ctx = {
+        customRichTextEditor: null,
+        placeholderText,
+        richTextEditorContainerRef: { nativeElement: document.createElement('div') },
+        richTextEditorService: { createEditor },
+        composerText: () => '',
+        enableRichText: false,
+        disableAutoFocusOnMobile: false,
+        configureTextFormatters: vi.fn(),
+        emitError: vi.fn(),
+      } as unknown as EditorInitContext;
+      initializeRichTextEditorImpl(ctx);
+      vi.runAllTimers();
+      vi.useRealTimers();
+      return createEditor.mock.calls[0]?.[0]?.placeholder;
+    }
+
+    beforeEach(() => {
+      CometChatLocalize.init({ language: 'en-US' } as any);
+    });
+
+    it('resolves the default localization key', () => {
+      expect(placeholderFor('message_composer_placeholder')).toBe(
+        CometChatLocalize.getLocalizedString('message_composer_placeholder')
+      );
+    });
+
+    it('resolves a key registered with addTranslation', () => {
+      CometChatLocalize.addTranslation({ 'en-US': { group_composer_placeholder: 'Message the group' } });
+      expect(placeholderFor('group_composer_placeholder')).toBe('Message the group');
+    });
+
+    it('shows plain text as given instead of an empty placeholder', () => {
+      expect(placeholderFor('Type a message to the group...')).toBe('Type a message to the group...');
     });
   });
 });
